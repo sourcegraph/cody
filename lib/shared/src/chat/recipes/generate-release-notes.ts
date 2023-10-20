@@ -3,6 +3,7 @@ import { spawnSync } from 'child_process'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
+import { newAssistantMessage, newHumanMessage } from '../transcript/messages'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -66,12 +67,8 @@ export class ReleaseNotes implements Recipe {
         if (!gitLogOutput) {
             const emptyGitLogMessage = 'No recent changes found to generate release notes.'
             return new Interaction(
-                { speaker: 'human', displayText: rawDisplayText },
-                {
-                    speaker: 'assistant',
-                    prefix: emptyGitLogMessage,
-                    text: emptyGitLogMessage,
-                },
+                newHumanMessage(undefined, { displayText: rawDisplayText }),
+                newAssistantMessage(emptyGitLogMessage, { prefix: emptyGitLogMessage }),
                 Promise.resolve([]),
                 []
             )

@@ -9,6 +9,7 @@ import {
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
+import { newAssistantMessage, newHumanMessage } from '../transcript/messages'
 
 import { isSingleWord, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -24,8 +25,8 @@ export class ChatQuestion implements Recipe {
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
-                { speaker: 'assistant' },
+                newHumanMessage(truncatedText, { displayText: humanChatInput }),
+                newAssistantMessage(),
                 this.getContextMessages(
                     truncatedText,
                     context.editor,

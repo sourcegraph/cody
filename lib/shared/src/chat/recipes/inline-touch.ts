@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto'
+
 import * as vscode from 'vscode'
 
 import { ContextMessage } from '../../codebase-context/messages'
@@ -7,6 +9,7 @@ import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { getEditorDirContext, getEditorOpenTabsContext } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
+import { MessageID } from '../transcript/messages'
 
 import { ChatQuestion } from './chat-question'
 import { commandRegex, contentSanitizer } from './helpers'
@@ -91,11 +94,13 @@ export class InlineTouch implements Recipe {
         return Promise.resolve(
             new Interaction(
                 {
+                    id: randomUUID() as MessageID,
                     speaker: 'human',
                     text: promptText,
                     displayText,
                 },
                 {
+                    id: randomUUID() as MessageID,
                     speaker: 'assistant',
                     prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },

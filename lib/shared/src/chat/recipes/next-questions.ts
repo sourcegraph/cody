@@ -6,6 +6,7 @@ import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS }
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
+import { newAssistantMessage, newHumanMessage } from '../transcript/messages'
 
 import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -27,12 +28,8 @@ export class NextQuestions implements Recipe {
         const assistantResponsePrefix = 'Sure, here are great follow-up discussion topics and learning ideas:\n\n - '
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: promptMessage },
-                {
-                    speaker: 'assistant',
-                    prefix: assistantResponsePrefix,
-                    text: assistantResponsePrefix,
-                },
+                newHumanMessage(promptMessage),
+                newAssistantMessage(assistantResponsePrefix, { prefix: assistantResponsePrefix }),
                 this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext),
                 []
             )

@@ -2,7 +2,8 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
+import { Client /* createClient  */ } from '@sourcegraph/cody-shared/src/chat/client'
+import { ChatHandler } from '@sourcegraph/cody-shared/src/chat/client2'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -66,7 +67,7 @@ function initializeVscodeExtension(): void {
 }
 
 export class Agent extends MessageHandler {
-    private client: Promise<Client | null> = Promise.resolve(null)
+    private client: Promise<ChatHandler | null> = Promise.resolve(null)
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
 
@@ -103,10 +104,10 @@ export class Agent extends MessageHandler {
                 }
             }
 
-            const codyStatus = codyClient.codyStatus
+            const codyStatus = codyClient.status.codyStatus
             return {
                 name: 'cody-agent',
-                authenticated: codyClient.sourcegraphStatus.authenticated,
+                authenticated: codyClient.status.sourcegraphStatus.authenticated,
                 codyEnabled: codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
                 codyVersion: codyStatus.version,
             }
@@ -155,8 +156,9 @@ export class Agent extends MessageHandler {
         )
 
         this.registerNotification('transcript/reset', async () => {
-            const client = await this.client
-            client?.reset()
+            // const client = await this.client
+            // client?.reset()
+            throw new Error('Should not reset transcript anymore. Just use a new transcript ID')
         })
 
         this.registerRequest('recipes/execute', async (data, token) => {
@@ -295,18 +297,37 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
-        const client = await createClient({
-            initialTranscript: this.oldClient?.transcript,
-            editor: new AgentEditor(this),
-            config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
-            setMessageInProgress: messageInProgress => {
-                this.notify('chat/updateMessageInProgress', messageInProgress)
+
+        const client = await ChatHandler.init(
+            {
+                initialTranscript: this.oldClient?.transcript,
+                editor: new AgentEditor(this),
+                config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
+                createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
+
+                // TODO(tjdevries): These won't be used anymore when I'm done
+                setMessageInProgress: () => {
+                    throw new Error('SHOULD NEVER BE CALLED')
+                },
+                setTranscript: () => {
+                    throw new Error('SHOULD NEVER BE CALLED')
+                },
             },
-            setTranscript: () => {
-                // Not supported yet by agent.
-            },
-            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
-        })
+            // Clients now actually get... proper notifications! Instead of just relying on
+            // global state and also never being able to have two transcripts run simultaneously
+            {
+                onMessageChange: (transcriptID, messageID, text) => {
+                    this.notify('chat/update', { transcriptID, messageID, text })
+                },
+                onMessageComplete: (transcriptID, messageID, text) => {
+                    this.notify('chat/completed', { transcriptID, messageID, text })
+                },
+                onMessageError: (transcriptID, messageID, error) => {
+                    this.notify('chat/errored', { transcriptID, messageID, error })
+                },
+            }
+        )
+
         this.oldClient = client
         return client
     }

@@ -120,7 +120,7 @@ function startCompletionStreaming(
     streamCompletions(promptMessages, {
         onChange: text => {
             // console.log('Stream update: ', text)
-            lastInteraction.setAssistantMessage({ ...lastInteraction.getAssistantMessage(), text })
+            lastInteraction.setAssistantMessage(text)
             onBotMessageChange(channel, inProgressMessageTs, reformatBotMessage(text, '') + suffix)?.catch(
                 console.error
             )

@@ -1,10 +1,14 @@
+import { randomUUID } from 'crypto'
+
 import { ContextFile, ContextMessage, OldContextMessage, PreciseContext } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
 
 import { Interaction, InteractionJSON } from './interaction'
-import { ChatMessage } from './messages'
+import { ChatMessage, MessageID } from './messages'
+
+export type TranscriptID = string & { readonly __brand: 'TranscriptID' }
 
 export interface TranscriptJSONScope {
     includeInferredRepository: boolean
@@ -14,7 +18,7 @@ export interface TranscriptJSONScope {
 
 export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
-    id: string
+    id: TranscriptID
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
     scope?: TranscriptJSONScope
@@ -25,62 +29,12 @@ export interface TranscriptJSON {
  * Any "controller" logic belongs outside of this class.
  */
 export class Transcript {
-    public static fromJSON(json: TranscriptJSON): Transcript {
-        return new Transcript(
-            json.interactions.map(
-                ({
-                    humanMessage,
-                    assistantMessage,
-                    context,
-                    fullContext,
-                    usedContextFiles,
-                    usedPreciseContext,
-                    timestamp,
-                }) => {
-                    if (!fullContext) {
-                        fullContext = context || []
-                    }
-                    return new Interaction(
-                        humanMessage,
-                        assistantMessage,
-                        Promise.resolve(
-                            fullContext.map(message => {
-                                if (message.file) {
-                                    return message
-                                }
-
-                                const { fileName } = message as any as OldContextMessage
-                                if (fileName) {
-                                    return { ...message, file: { fileName } }
-                                }
-
-                                return message
-                            })
-                        ),
-                        usedContextFiles || [],
-                        usedPreciseContext || [],
-                        timestamp || new Date().toISOString()
-                    )
-                }
-            ),
-            json.id
-        )
-    }
-
+    public id: TranscriptID
     private interactions: Interaction[] = []
 
-    private internalID: string
-
-    constructor(interactions: Interaction[] = [], id?: string) {
+    constructor(interactions: Interaction[] = [], id?: TranscriptID) {
+        this.id = id || (randomUUID() as TranscriptID)
         this.interactions = interactions
-        this.internalID =
-            id ||
-            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
-            new Date().toISOString()
-    }
-
-    public get id(): string {
-        return this.internalID
     }
 
     public get isEmpty(): boolean {
@@ -96,7 +50,7 @@ export class Transcript {
             }
         }
 
-        return this.internalID
+        return this.id
     }
 
     public addInteraction(interaction: Interaction | null): void {
@@ -104,6 +58,11 @@ export class Transcript {
             return
         }
         this.interactions.push(interaction)
+    }
+
+    public getInteraction(messageID: string): Interaction | null {
+        // TODO: Only from Human Messages?
+        return this.interactions.find(interaction => interaction.getHumanMessage().id === messageID) || null
     }
 
     public getLastInteraction(): Interaction | null {
@@ -131,11 +90,12 @@ export class Transcript {
      *
      * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
      */
-    public addErrorAsAssistantResponse(errorText: string): void {
-        const lastInteraction = this.getLastInteraction()
+    public addErrorAsAssistantResponse(messageID: MessageID, errorText: string): void {
+        const lastInteraction = this.getInteraction(messageID)
         if (!lastInteraction) {
             return
         }
+
         // If assistant has responsed before, we will add the error message after it
         const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
         lastInteraction.setAssistantMessage(
@@ -255,8 +215,50 @@ export class Transcript {
     }
 
     public reset(): void {
+        this.id = randomUUID() as TranscriptID
         this.interactions = []
-        this.internalID = new Date().toISOString()
+    }
+
+    public static fromJSON(json: TranscriptJSON): Transcript {
+        return new Transcript(
+            json.interactions.map(
+                ({
+                    humanMessage,
+                    assistantMessage,
+                    context,
+                    fullContext,
+                    usedContextFiles,
+                    usedPreciseContext,
+                    timestamp,
+                }) => {
+                    if (!fullContext) {
+                        fullContext = context || []
+                    }
+                    return new Interaction(
+                        humanMessage,
+                        assistantMessage,
+                        Promise.resolve(
+                            fullContext.map(message => {
+                                if (message.file) {
+                                    return message
+                                }
+
+                                const { fileName } = message as any as OldContextMessage
+                                if (fileName) {
+                                    return { ...message, file: { fileName } }
+                                }
+
+                                return message
+                            })
+                        ),
+                        usedContextFiles || [],
+                        usedPreciseContext || [],
+                        timestamp || new Date().toISOString()
+                    )
+                }
+            ),
+            json.id
+        )
     }
 }
 

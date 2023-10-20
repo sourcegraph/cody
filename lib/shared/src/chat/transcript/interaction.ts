@@ -28,8 +28,12 @@ export class Interaction {
         return { ...this.assistantMessage }
     }
 
-    public setAssistantMessage(assistantMessage: InteractionMessage): void {
-        this.assistantMessage = assistantMessage
+    public setAssistantMessage(text: string, displayText?: string): void {
+        this.assistantMessage.text = text
+
+        if (displayText) {
+            this.assistantMessage.displayText = displayText
+        }
     }
 
     public getHumanMessage(): InteractionMessage {

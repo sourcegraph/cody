@@ -4,6 +4,7 @@ import path from 'path'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
+import { newAssistantMessage, newHumanMessage } from '../transcript/messages'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -60,12 +61,8 @@ export class GitHistory implements Recipe {
         if (!gitLogOutput) {
             const emptyGitLogMessage = 'No recent changes found'
             return new Interaction(
-                { speaker: 'human', displayText: rawDisplayText },
-                {
-                    speaker: 'assistant',
-                    prefix: emptyGitLogMessage,
-                    text: emptyGitLogMessage,
-                },
+                newHumanMessage(undefined, { displayText: rawDisplayText }),
+                newAssistantMessage(emptyGitLogMessage, { prefix: emptyGitLogMessage }),
                 Promise.resolve([]),
                 []
             )
@@ -80,12 +77,8 @@ export class GitHistory implements Recipe {
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
+            newHumanMessage(promptMessage, { displayText: rawDisplayText }),
+            newAssistantMessage(assistantResponsePrefix, { prefix: assistantResponsePrefix }),
             Promise.resolve([]),
             []
         )

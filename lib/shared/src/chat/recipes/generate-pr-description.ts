@@ -5,6 +5,7 @@ import path from 'path'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
+import { newAssistantMessage, newHumanMessage } from '../transcript/messages'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -52,12 +53,8 @@ export class PrDescription implements Recipe {
         if (!gitCommitOutput) {
             const emptyGitCommitMessage = 'No commits history found in the current branch.'
             return new Interaction(
-                { speaker: 'human', displayText: rawDisplayText },
-                {
-                    speaker: 'assistant',
-                    prefix: emptyGitCommitMessage,
-                    text: emptyGitCommitMessage,
-                },
+                newHumanMessage(undefined, { displayText: emptyGitCommitMessage }),
+                newAssistantMessage(emptyGitCommitMessage, { prefix: emptyGitCommitMessage }),
                 Promise.resolve([]),
                 []
             )

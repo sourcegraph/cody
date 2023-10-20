@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, MessageID } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { TranscriptID } from '@sourcegraph/cody-shared/src/chat/transcript/transcript2'
 import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { CompletionEvent } from '../../vscode/src/completions/logger'
@@ -101,6 +102,9 @@ export type Notifications = {
     // request. The server should never send this notification outside of a
     // 'chat/executeRecipe' request.
     'chat/updateMessageInProgress': [ChatMessage | null]
+
+    'chat/update': [{ transcriptID: TranscriptID; messageID: MessageID; text: string }]
+    'chat/completed': [{ transcriptID: TranscriptID; messageID: MessageID; text: string }]
 
     'debug/message': [DebugMessage]
 }

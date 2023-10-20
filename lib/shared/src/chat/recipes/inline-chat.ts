@@ -4,6 +4,7 @@ import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
+import { newAssistantMessage, newHumanMessage } from '../transcript/messages'
 
 import { ChatQuestion } from './chat-question'
 import { Fixup } from './fixup'
@@ -50,12 +51,8 @@ export class InlineChat implements Recipe {
 
         return Promise.resolve(
             new Interaction(
-                {
-                    speaker: 'human',
-                    text: promptText,
-                    displayText,
-                },
-                { speaker: 'assistant' },
+                newHumanMessage(promptText, { displayText }),
+                newAssistantMessage(),
                 this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
                 []
             )
