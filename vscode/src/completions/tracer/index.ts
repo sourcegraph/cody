@@ -7,7 +7,7 @@ import { InlineCompletionsResult, TriggerKind } from '../get-inline-completions'
 import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
 
 /**
- * Traces invocations of {@link CodyCompletionItemProvider.provideInlineCompletionItems}.
+ * Traces invocations of {@link InlineCompletionItemProvider.provideInlineCompletionItems}.
  *
  * The tracer API assumes that only a single in-flight completion request can exist at a time.
  *

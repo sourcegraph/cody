@@ -340,6 +340,16 @@ export class FixupController
             const codeCount = countCode(replacementText)
             const source = task.source
             telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+
+            // format the selected area after applying edits
+            const range = new vscode.Range(
+                new vscode.Position(task.selectionRange.start.line, 0),
+                new vscode.Position(
+                    task.selectionRange.start.line + codeCount.lineCount,
+                    task.selectionRange.end.character
+                )
+            )
+            await vscode.commands.executeCommand('editor.action.formatDocument', range)
         }
 
         // TODO: See if we can discard a FixupFile now.

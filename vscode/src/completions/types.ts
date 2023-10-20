@@ -22,7 +22,7 @@ export interface InlineCompletionItem {
 /**
  * Keep property names in sync with the `EmbeddingsSearchResult` type.
  */
-interface FileContextSnippet {
+export interface FileContextSnippet {
     fileName: string
     content: string
 }
