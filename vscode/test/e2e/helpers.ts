@@ -60,7 +60,8 @@ export const test = base
             const page = await app.firstWindow()
 
             // Bring the cody sidebar to the foreground
-            await page.click('[aria-label="Cody"]')
+            // await page.click('[aria-label="Cody"]')
+
             // Ensure that we remove the hover from the activity icon
             await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
@@ -70,7 +71,7 @@ export const test = base
 
             await run(async () => {
                 // Ensure we're signed out.
-                if (await page.isVisible('[aria-label="User Settings"]')) {
+                if (!(await page.isVisible('[aria-label="New Chat"]'))) {
                     await signOut(page)
                 }
 

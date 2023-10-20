@@ -13,34 +13,31 @@ test('checks if clear chat history button clears history and current session', a
 
     // Bring the cody sidebar to the foreground
     await page.click('[aria-label="Cody"]')
-    await page.click('[aria-label="Chat History"]')
-    await expect(sidebar.getByText('Chat History')).toBeVisible()
 
     // start a new chat session and check history
 
-    await page.click('[aria-label="Start a New Chat Session"]')
-    await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
-    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hola')
-    await sidebar.locator('vscode-button').getByRole('img').click()
+    await page.getByRole('heading', { name: 'Cody Chat' }).click()
 
-    await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
+    await page.getByRole('textbox', { name: 'Chat message' }).fill('Hola')
+    await page.locator('vscode-button').getByRole('img').click()
 
-    await page.click('[aria-label="Start a New Chat Session"]')
-    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hey')
-    await sidebar.locator('vscode-button').getByRole('img').click()
+    await expect(page.getByText('hello from the assistant')).toBeVisible()
 
-    await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
-    await expect(sidebar.getByText('Hola')).not.toBeVisible()
+    await page.getByRole('button', { name: 'Start a New Chat Session' }).click()
+    await page.getByRole('textbox', { name: 'Chat message' }).fill('Hey')
+    await page.locator('vscode-button').getByRole('img').click()
 
-    await page.getByRole('button', { name: 'Chat History' }).click()
+    await expect(page.getByText('hello from the assistant')).toBeVisible()
+    await expect(page.getByText('Hola')).not.toBeVisible()
 
     // Remove Hey history item from chat history view
-    await expect(sidebar.getByText('Hey')).toBeVisible()
-    await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
-    await expect(sidebar.getByText('Hey')).not.toBeVisible()
+    await expect(page.getByText('Hey')).toBeVisible()
+    await page.locator('vscode-button').filter({ hasText: 'Clear' }).click()
+    await expect(page.getByText('Hey')).not.toBeVisible()
 
-    await page.click('[aria-label="Start a New Chat Session"]')
+    await page.getByRole('button', { name: 'Start a New Chat Session' }).click()
 
     // Open the Cody Commands palette and run a command
     await page.getByRole('button', codyEditorCommandButtonRole).click()
@@ -48,5 +45,5 @@ test('checks if clear chat history button clears history and current session', a
     await page.keyboard.press('Enter')
 
     // Check if the old message "Hey" is cleared
-    await expect(sidebar.getByText('Hey')).not.toBeVisible()
+    await expect(page.getByText('Hey')).not.toBeVisible()
 })

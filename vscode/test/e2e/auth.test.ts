@@ -28,10 +28,16 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    // Collapse the task tree view
-    await page.getByRole('button', { name: 'Fixups Section' }).click()
+    await page.getByRole('heading', { name: 'Cody' }).hover()
+    await page.getByRole('heading', { name: 'Commands' }).hover()
+    await page.getByRole('heading', { name: 'Search' }).hover()
+    await page.getByRole('heading', { name: 'Chats' }).hover()
 
-    await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
+    await expect(sidebar.getByText('Enable Search Indexing')).toBeVisible()
+    await expect(sidebar.getByText('Sign Out')).toBeVisible()
+
+    await sidebar.getByRole('button', { name: 'New Chat' }).click()
+    await expect(page.getByText("Hello! I'm Cody.")).toBeVisible()
 
     // Check if embeddings server connection error is visible
     await expect(sidebar.getByText('Error while establishing embeddings server connection.')).not.toBeVisible()

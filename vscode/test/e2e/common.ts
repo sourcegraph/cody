@@ -11,12 +11,12 @@ export const sidebarSignin = async (page: Page, sidebar: Frame): Promise<void> =
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    // Collapse the task tree view
-    await page.getByRole('button', { name: 'Fixups Section' }).click()
+    await expect(page.getByRole('button', { name: 'New Chat' })).toBeVisible()
 
-    await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
-
-    await page.getByRole('button', { name: 'Chat Section' }).hover()
+    // if the clear notification is visible, click on it
+    if (await page.getByRole('button', { name: /Clear Notification.*/ }).isVisible()) {
+        await page.getByRole('button', { name: /Clear Notification.*/ }).click()
+    }
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
