@@ -165,6 +165,7 @@ export class FireworksProvider extends Provider {
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
             timeoutMs: multiline ? 15000 : 5000,
+            logprobs: 0,
         }
 
         tracer?.params(args)
