@@ -140,3 +140,4 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
 }
+

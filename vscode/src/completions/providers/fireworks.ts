@@ -176,6 +176,8 @@ export class FireworksProvider extends Provider {
             })
         )
 
+        console.log('# completions:', completions)
+
         tracer?.result({ completions })
 
         return completions
@@ -223,6 +225,7 @@ export class FireworksProvider extends Provider {
                     abortController.signal
                 )
 
+                // NEXT: compute the average logprob and log it
                 const processedCompletion = this.postProcess(result.completion)
                 const completion = parseAndTruncateCompletion(processedCompletion, this.options)
 
