@@ -23,6 +23,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
 import com.intellij.util.ui.UIUtil;
+import com.intellij.xml.util.XmlStringUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.agent.CodyAgentServer;
@@ -519,7 +520,8 @@ public class CodyToolWindowContent implements UpdatableChat {
 
     startMessageProcessing();
 
-    ChatMessage humanMessage = new ChatMessage(Speaker.HUMAN, message, message);
+    String displayText = XmlStringUtil.escapeString(message);
+    ChatMessage humanMessage = new ChatMessage(Speaker.HUMAN, message, displayText);
     addMessageToChat(humanMessage);
     activateChatTab();
 
