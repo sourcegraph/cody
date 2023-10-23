@@ -65,10 +65,6 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
                 return this.diff(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.revert', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'revert' })
-                return this.revert(id)
-            }),
             vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
                 return this.regenerate(id)
@@ -310,7 +306,7 @@ export class FixupController
 
         if (visibleEditor) {
             document = visibleEditor.document
-            edit = visibleEditor.edit.bind(this) // TODO: Check this works as expected
+            edit = visibleEditor.edit.bind(this)
         } else {
             // Perform the edit in the background
             document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
@@ -343,7 +339,6 @@ export class FixupController
             const source = task.source
             telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
 
-            // TODO: Can we improve how we calculate the edited range?
             task.editedRange = new vscode.Range(
                 new vscode.Position(task.selectionRange.start.line, 0),
                 new vscode.Position(
@@ -355,7 +350,12 @@ export class FixupController
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
-            await this.formatEdit(edit, document, task, formatEditOptions)
+            await this.formatEdit(
+                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                document,
+                task,
+                formatEditOptions
+            )
         }
 
         // TODO: See if we can discard a FixupFile now.
@@ -370,7 +370,6 @@ export class FixupController
                 `Edit applied to ${task.fixupFile.fileName}`,
                 showChangesButton
             )
-            // TODO: remove notification
             if (result === showChangesButton) {
                 const editor = await vscode.window.showTextDocument(task.fixupFile.uri)
                 editor.revealRange(task.selectionRange)
@@ -455,7 +454,7 @@ export class FixupController
         const rangeToFormat = task.editedRange
 
         if (!rangeToFormat) {
-            return true
+            return false
         }
 
         const formattingChanges = (
@@ -467,7 +466,7 @@ export class FixupController
         ).filter(change => rangeToFormat.contains(change.range))
 
         if (formattingChanges.length === 0) {
-            return true
+            return false
         }
 
         logDebug('FixupController:edit', 'formatting')
@@ -530,49 +529,6 @@ export class FixupController
         }
         this.setTaskState(task, CodyTaskState.finished)
         this.discard(task)
-    }
-
-    private async revert(id: taskID): Promise<void> {
-        const task = this.tasks.get(id)
-        if (!task) {
-            return
-        }
-        return this.revertTask(task)
-    }
-
-    /**
-     * Reverts an applied fixup task by replacing the edited code range with the original code.
-     *
-     * TODO: It is possible the original code is out of date if the user edited it whilst the fixup was running.
-     * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
-     */
-    private async revertTask(task: FixupTask): Promise<void> {
-        if (task.state !== CodyTaskState.applied) {
-            return
-        }
-
-        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
-        if (!editor) {
-            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
-        }
-
-        editor.revealRange(task.selectionRange)
-        const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(task.selectionRange, task.original)
-        })
-
-        if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed')
-            return
-        }
-
-        const replacementText = task.replacement
-        if (replacementText) {
-            const tokenCount = countCode(replacementText)
-            telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
-        }
-
-        this.setTaskState(task, CodyTaskState.finished)
     }
 
     private discard(task: FixupTask): void {
@@ -801,7 +757,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.selectionRange
+        const range = task.editedRange || task.selectionRange
         edit.replace(tempDocUri, range, diff.originalText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
