@@ -21,17 +21,18 @@ using the `jetbrains-ide` & `team/integrations` labels.
     - https://plugins.jetbrains.com/plugin/8527-google-java-format
     - https://plugins.jetbrains.com/plugin/14912-ktfmt
 
-| What                                                          | Command                                                                  |
-|---------------------------------------------------------------|--------------------------------------------------------------------------|
-| Run the plugin locally                                        | `./gradlew :runIDE`                                                      |
-| Run the plugin locally with fresh build of Cody               | `./gradlew -PforceAgentBuild=true :runIDE`                               |
-| Run the plugin locally with fresh build of Code Search assets | `./gradlew -PforceCodeSearchBuild=true :runIDE`                          |
-| Build Code Search assets (separate terminal)                  | `pnpm build`                                                             |
-| Continuously re-build Code Search assets (separate terminal)  | `pnpm watch`                                                             |
-| Code Search "Find with Sourcegraph" window                    | `pnpm standalone && open http://localhost:3000/`                         |
-| Build deployable plugin                                       | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
-| Reformat Java and Kotlin sources                              | `./gradlew spotlessApply`                                                |
-| Debug agent JSON-RPC communication                            | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
+| What                                                             | Command                                                                  |
+|------------------------------------------------------------------|--------------------------------------------------------------------------|
+| Run the plugin locally                                           | `./gradlew :runIDE`                                                      |
+| Run the plugin locally with fresh build of Cody                  | `./gradlew -PforceAgentBuild=true :runIDE`                               |
+| Run the plugin locally with fresh build of a local clone of Cody | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIDE`       |
+| Run the plugin locally with fresh build of Code Search assets    | `./gradlew -PforceCodeSearchBuild=true :runIDE`                          |
+| Build Code Search assets (separate terminal)                     | `pnpm build`                                                             |
+| Continuously re-build Code Search assets (separate terminal)     | `pnpm watch`                                                             |
+| Code Search "Find with Sourcegraph" window                       | `pnpm standalone && open http://localhost:3000/`                         |
+| Build deployable plugin                                          | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
+| Reformat Java and Kotlin sources                                 | `./gradlew spotlessApply`                                                |
+| Debug agent JSON-RPC communication                               | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
 ## Using Nightly channel releases
 

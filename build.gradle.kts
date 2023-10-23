@@ -213,6 +213,17 @@ tasks {
     return destination
   }
   fun unzipCody(): File {
+    val fromEnvironmentVariable = System.getenv("CODY_DIR")
+    if (!fromEnvironmentVariable.isNullOrEmpty()) {
+      // "~" works fine from the terminal, however it breaks IntelliJ's run configurations
+      val pathString =
+          if (fromEnvironmentVariable.startsWith("~")) {
+            System.getProperty("user.home") + fromEnvironmentVariable.substring(1)
+          } else {
+            fromEnvironmentVariable
+          }
+      return Paths.get(pathString).toFile()
+    }
     val zipFile = downloadCody()
     val destination = githubArchiveCache.resolve("cody").resolve("cody-$codyCommit")
     unzip(zipFile, destination.parentFile)
@@ -225,6 +236,7 @@ tasks {
       return buildCodyDir
     }
     val codyDir = unzipCody()
+    println("Using cody from codyDir=$codyDir")
     exec {
       workingDir(codyDir)
       commandLine("pnpm", "install", "--frozen-lockfile")
