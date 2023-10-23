@@ -42,6 +42,7 @@ export interface CodyCompletionItemProviderConfig {
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     triggerNotice: ((notice: { key: string }) => void) | null
+    isRunningInsideAgent?: boolean
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -92,6 +93,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableRecyclingOfPreviousRequests,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
+            isRunningInsideAgent: config.isRunningInsideAgent ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -374,7 +376,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             }
 
             if (items.length > 0) {
-                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
+                if (!this.config.isRunningInsideAgent) {
+                    // Since VS Code has no callback as to when a completion is shown, we assume
+                    // that if we pass the above visibility tests, the completion is going to be
+                    // rendered in the UI
+                    this.unstable_handleDidShowCompletionItem(result.logId, result.items[0])
+                }
             } else {
                 CompletionLogger.noResponse(result.logId)
             }
@@ -437,8 +444,20 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     }
 
     /**
-     * Called when the user partially accepts a completion. This API is inspired by the the
-     * be named the same, it's prefixed with `unstable_`
+     * Called when a suggestion is shown. This API is inspired by the proposed VS Code API of the
+     * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
+     */
+    public unstable_handleDidShowCompletionItem(
+        logId: SuggestionID,
+        completion: InlineCompletionItemWithAnalytics
+    ): void {
+        CompletionLogger.suggested(logId, completion)
+    }
+
+    /**
+     * Called when the user partially accepts a completion. This API is inspired by the proposed VS
+     * Code API of the same name, it's prefixed with `unstable_` to avoid a clash when the new API
+     * goes GA.
      */
     public unstable_handleDidPartiallyAcceptCompletionItem(
         logId: SuggestionID,

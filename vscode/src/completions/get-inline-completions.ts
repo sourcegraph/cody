@@ -306,7 +306,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             ? InlineCompletionsResultSource.CacheAfterRequestStart
             : InlineCompletionsResultSource.Network
 
-    CompletionLogger.loaded(logId, reqContext, completions)
+    CompletionLogger.loaded(logId, reqContext, completions, source)
 
     return {
         logId,

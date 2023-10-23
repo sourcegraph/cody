@@ -177,11 +177,18 @@ export function networkRequestStarted(id: SuggestionID, contextSummary: ContextS
     }
 }
 
-export function loaded(id: SuggestionID, params: RequestParams, items: InlineCompletionItemWithAnalytics[]): void {
+export function loaded(
+    id: SuggestionID,
+    params: RequestParams,
+    items: InlineCompletionItemWithAnalytics[],
+    source: InlineCompletionsResultSource
+): void {
     const event = activeSuggestions.get(id)
     if (!event) {
         return
     }
+
+    event.params.source = source
 
     // Check if we already have a completion id for the loaded completion item
     const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
@@ -204,11 +211,7 @@ export function loaded(id: SuggestionID, params: RequestParams, items: InlineCom
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(
-    id: SuggestionID,
-    source: InlineCompletionsResultSource,
-    completion: InlineCompletionItem
-): void {
+export function suggested(id: SuggestionID, completion: InlineCompletionItem): void {
     const event = activeSuggestions.get(id)
     if (!event) {
         return
@@ -221,7 +224,7 @@ export function suggested(
 
     if (!event.suggestedAt) {
         const { lineCount, charCount } = lineAndCharCount(completion)
-        event.params.source = source
+
         event.params.lineCount = lineCount
         event.params.charCount = charCount
         event.suggestedAt = performance.now()

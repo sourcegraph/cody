@@ -46,8 +46,8 @@ describe('logger', () => {
 
         CompletionLogger.start(id)
         CompletionLogger.networkRequestStarted(id, { strategy: 'fake', duration: 0.1337 })
-        CompletionLogger.loaded(id, defaultRequestParams, [item])
-        CompletionLogger.suggested(id, InlineCompletionsResultSource.Network, item)
+        CompletionLogger.loaded(id, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
+        CompletionLogger.suggested(id, item)
         CompletionLogger.accept(id, document, item)
 
         const shared = {
@@ -108,8 +108,8 @@ describe('logger', () => {
         const id1 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id1)
         CompletionLogger.networkRequestStarted(id1, { strategy: 'fake', duration: 0 })
-        CompletionLogger.loaded(id1, defaultRequestParams, [item])
-        CompletionLogger.suggested(id1, InlineCompletionsResultSource.Network, item)
+        CompletionLogger.loaded(id1, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
+        CompletionLogger.suggested(id1, item)
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
         const completionId = loggerItem?.params.id
@@ -118,8 +118,8 @@ describe('logger', () => {
         const id2 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id2)
         CompletionLogger.networkRequestStarted(id2, { strategy: 'fake', duration: 0 })
-        CompletionLogger.loaded(id2, defaultRequestParams, [item])
-        CompletionLogger.suggested(id2, InlineCompletionsResultSource.Cache, item)
+        CompletionLogger.loaded(id2, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
+        CompletionLogger.suggested(id2, item)
         CompletionLogger.accept(id2, document, item)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
@@ -151,8 +151,8 @@ describe('logger', () => {
         const id3 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id3)
         CompletionLogger.networkRequestStarted(id3, { strategy: 'fake', duration: 0 })
-        CompletionLogger.loaded(id3, defaultRequestParams, [item])
-        CompletionLogger.suggested(id3, InlineCompletionsResultSource.Cache, item)
+        CompletionLogger.loaded(id3, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
+        CompletionLogger.suggested(id3, item)
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
         expect(loggerItem3?.params.id).not.toBe(completionId)

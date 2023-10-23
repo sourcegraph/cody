@@ -83,6 +83,7 @@ export async function createInlineCompletionItemProvider(
             disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
+            isRunningInsideAgent: config.isRunningInsideAgent,
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
