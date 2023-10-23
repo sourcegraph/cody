@@ -15,6 +15,7 @@ import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-to
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
+import { defaultPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 
 import { ExtensionApi } from './extension-api'
@@ -47,6 +48,8 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
  * https://github.dev, etc.).
  */
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
+    PromptMixin.add(defaultPromptMixin())
+
     return activateCommon(context, {
         createCompletionsClient: (...args) => new SourcegraphBrowserCompletionsClient(...args),
         createSentryService: (...args) => new WebSentryService(...args),
