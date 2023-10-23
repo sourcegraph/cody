@@ -14,7 +14,7 @@ describe('singlelineTriggers', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.singlelineTriggers.getEnclosingTrigger,
+            captures: queries.getSinglelineTrigger,
             sourcesPath: 'test-data/singleline-triggers.ts',
         })
     })
@@ -26,7 +26,7 @@ describe('singlelineTriggers', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.singlelineTriggers.getEnclosingTrigger,
+            captures: queries.getSinglelineTrigger,
             sourcesPath: 'test-data/singleline-triggers.go',
         })
     })

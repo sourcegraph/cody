@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 
 import { detectMultiline } from './detect-multiline'
+import { getLanguageConfig } from './language'
 import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
+import { CompletionIntent, execQueryWrapper } from './tree-sitter/query-sdk'
 
 export interface DocumentContext {
     prefix: string
@@ -25,6 +27,8 @@ export interface DocumentContext {
     injectedPrefix: string | null
 
     multilineTrigger: string | null
+
+    completionIntent?: CompletionIntent
 }
 
 interface GetCurrentDocContextParams {
@@ -111,7 +115,19 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    const docContext = {
+    const blockStart = getLanguageConfig(document.languageId)?.blockStart
+    const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
+    // Use `blockStart` for the cursor position if it's active.
+    const positionBeforeCursor = isBlockStartActive
+        ? document.positionAt(prefix.lastIndexOf(blockStart))
+        : {
+              line: position.line,
+              character: Math.max(0, position.character - 1),
+          }
+
+    const [completionItent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
+
+    const docContext: Omit<DocumentContext, 'multilineTrigger'> = {
         prefix,
         suffix,
         contextRange: new vscode.Range(
@@ -123,10 +139,17 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         prevNonEmptyLine,
         nextNonEmptyLine,
         injectedPrefix,
+        completionIntent: completionItent?.name,
     }
 
     return {
         ...docContext,
-        multilineTrigger: detectMultiline({ docContext, document, enableExtendedTriggers, syntacticTriggers }),
+        multilineTrigger: detectMultiline({
+            docContext,
+            document,
+            enableExtendedTriggers,
+            syntacticTriggers,
+            cursorPosition: positionBeforeCursor,
+        }),
     }
 }

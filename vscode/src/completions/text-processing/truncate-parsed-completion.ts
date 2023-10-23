@@ -29,14 +29,10 @@ export function truncateParsedCompletion(context: CompletionContext): string {
     const { tree, points } = completion
 
     const queryStart = points?.trigger || points?.start
-    const [captureGroup] = documentQuerySDK.queries.blocks.getFirstMultilineBlockForTruncation(
-        tree.rootNode,
-        queryStart,
-        {
-            row: queryStart.row,
-            column: queryStart.column + 1,
-        }
-    )
+    const [captureGroup] = documentQuerySDK.queries.getFirstMultilineBlockForTruncation(tree.rootNode, queryStart, {
+        row: queryStart.row,
+        column: queryStart.column + 1,
+    })
 
     if (captureGroup) {
         const overlap = findLargestSuffixPrefixOverlap(captureGroup.node.text, completion.insertText)

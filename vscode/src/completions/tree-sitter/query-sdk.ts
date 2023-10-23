@@ -1,19 +1,20 @@
+import { Position, TextDocument } from 'vscode'
 import Parser, { Language, Point, Query, QueryCapture, SyntaxNode } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from './grammars'
+import { getCachedParseTreeForDocument } from './parse-tree-cache'
 import { getParser } from './parser'
-import { languages, QueryName } from './queries'
-import { Captures } from './query-tests/annotate-and-match-snapshot'
+import { CompletionIntent, intentPriority, languages, QueryName } from './queries'
 
 interface ParsedQuery {
     compiled: Query
     raw: string
 }
 type ResolvedQueries = {
-    [name in QueryName]: ParsedQuery & QueryWrappers[name]
+    [name in QueryName]: ParsedQuery
 }
 
-const QUERIES_LOCAL_CACHE: Partial<Record<SupportedLanguage, ResolvedQueries>> = {}
+const QUERIES_LOCAL_CACHE: Partial<Record<SupportedLanguage, ResolvedQueries & QueryWrappers>> = {}
 
 /**
  * Reads all language queries from disk and parses them.
@@ -42,22 +43,15 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
 
     const queries = Object.fromEntries<ParsedQuery>(queryEntries) as ResolvedQueries
 
-    // Add query wrappers to respective queries.
-    // The resulting object ensures that query wrappers are inaccessible for languages
-    // where queries are not defined yet.
-    const queryWrappers = getLanguageSpecificQueryWrappers(queries, parser)
-    const queriesWithQueryWrappers = Object.fromEntries(
-        Object.entries(queries).map(([name, query]) => {
-            return [name, { ...query, ...queryWrappers[name as keyof QueryWrappers] }] as const
-        })
-    ) as ResolvedQueries
-
-    QUERIES_LOCAL_CACHE[languageId] = queriesWithQueryWrappers
+    QUERIES_LOCAL_CACHE[languageId] = {
+        ...queries,
+        ...getLanguageSpecificQueryWrappers(queries, parser),
+    }
 }
 
 export interface DocumentQuerySDK {
     parser: Parser
-    queries: ResolvedQueries
+    queries: ResolvedQueries & QueryWrappers
     language: SupportedLanguage
 }
 
@@ -85,26 +79,27 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     }
 }
 
-interface QueryWrappers {
-    blocks: {
-        /**
-         * Returns the first block-like node (block_statement).
-         * Handles special cases where we want to use the parent block instead
-         * if it has a specific node type (if_statement).
-         */
-        getFirstMultilineBlockForTruncation: (
-            node: SyntaxNode,
-            start: Point,
-            end?: Point
-        ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
-    }
-    singlelineTriggers: {
-        getEnclosingTrigger: (
-            node: SyntaxNode,
-            start: Point,
-            end?: Point
-        ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
-    }
+export interface QueryWrappers {
+    /**
+     * Returns the first block-like node (block_statement).
+     * Handles special cases where we want to use the parent block instead
+     * if it has a specific node type (if_statement).
+     */
+    getFirstMultilineBlockForTruncation: (
+        node: SyntaxNode,
+        start: Point,
+        end?: Point
+    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
+    getSinglelineTrigger: (
+        node: SyntaxNode,
+        start: Point,
+        end?: Point
+    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
+    getCompletionIntent: (
+        node: SyntaxNode,
+        start: Point,
+        end?: Point
+    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: CompletionIntent }]
 }
 
 /**
@@ -112,36 +107,108 @@ interface QueryWrappers {
  */
 function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
     return {
-        blocks: {
-            getFirstMultilineBlockForTruncation: (root, start, end) => {
-                const captures = queries.blocks.compiled.captures(root, start, end)
-                const { trigger } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
+        getFirstMultilineBlockForTruncation: (root, start, end) => {
+            const captures = queries.blocks.compiled.captures(root, start, end)
+            const { trigger } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
 
-                if (!trigger) {
-                    return []
-                }
+            if (!trigger) {
+                return []
+            }
 
-                // Check for special cases where we need match a parent node.
-                const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
-                const potentialParent = potentialParentNodes.find(capture => trigger.parent?.id === capture.node.id)
-                    ?.node
+            // Check for special cases where we need match a parent node.
+            const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
+            const potentialParent = potentialParentNodes.find(capture => trigger.parent?.id === capture.node.id)?.node
 
-                return [{ node: potentialParent || trigger, name: 'trigger' }] as const
-            },
+            return [{ node: potentialParent || trigger, name: 'trigger' }] as const
         },
-        singlelineTriggers: {
-            getEnclosingTrigger: (root, start, end) => {
-                const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
-                const { trigger, block } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
+        getSinglelineTrigger: (root, start, end) => {
+            const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
+            const { trigger, block } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
 
-                if (!trigger || !block || !isBlockNodeEmpty(block)) {
-                    return []
-                }
+            if (!trigger || !block || !isBlockNodeEmpty(block)) {
+                return []
+            }
 
-                return [{ node: trigger, name: 'trigger' }] as const
-            },
+            return [{ node: trigger, name: 'trigger' }] as const
         },
-    } satisfies Partial<Record<QueryName, Record<string, Captures>>>
+        getCompletionIntent: (root, start, end) => {
+            const captures = queries.intents.compiled.captures(root, start, end)
+
+            const { intentCapture } = getIntentFromCaptures(captures, start)
+
+            if (!intentCapture) {
+                return []
+            }
+
+            return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
+        },
+    }
+}
+
+// TODO: check if the block parent is empty in the consumer.
+function getIntentFromCaptures(
+    captures: QueryCapture[],
+    cursor: Point
+): { cursorCapture?: Parser.QueryCapture; intentCapture?: Parser.QueryCapture } {
+    const emptyResult = {
+        cursorCapture: undefined,
+        intentCapture: undefined,
+    }
+
+    if (!captures.length) {
+        return emptyResult
+    }
+
+    const [cursorCapture] = sortByIntentPriority(
+        captures.filter(capture => {
+            const { name, node } = capture
+
+            const matchesCursorPosition =
+                node.startPosition.column === cursor.column && node.startPosition.row === cursor.row
+
+            return name.endsWith('.cursor') && matchesCursorPosition
+        })
+    )
+
+    const cursorCaptureIndex = captures.findIndex(capture => capture.node === cursorCapture?.node)
+    const intentCapture = captures[cursorCaptureIndex - 1]
+
+    if (cursorCapture && intentCapture && intentCapture.name === withoutCursorSuffix(cursorCapture?.name)) {
+        return { cursorCapture, intentCapture }
+    }
+
+    const atomicCapture = captures.findLast(capture => {
+        // TODO: should we check against the cursor position?
+        // const matchesCursorPosition =
+        // node.startPosition.column === cursor.column && node.startPosition.row === cursor.row
+
+        return capture.name.endsWith('!')
+    })
+
+    if (atomicCapture) {
+        return {
+            intentCapture: {
+                ...atomicCapture,
+                // Remove `!` from the end of the capture name.
+                name: atomicCapture.name.slice(0, -1),
+            },
+        }
+    }
+
+    return emptyResult
+}
+
+function sortByIntentPriority(captures: QueryCapture[]): QueryCapture[] {
+    return captures.sort((a, b) => {
+        return (
+            intentPriority.indexOf(withoutCursorSuffix(a.name) as CompletionIntent) -
+            intentPriority.indexOf(withoutCursorSuffix(b.name) as CompletionIntent)
+        )
+    })
+}
+
+function withoutCursorSuffix(name?: string): string | undefined {
+    return name?.split('.').slice(0, -1).join('.')
 }
 
 function getTriggerNodeWithBlockStaringAtPoint(
@@ -227,3 +294,44 @@ function isBlockNodeEmpty(node: SyntaxNode | null): boolean {
 
     return isBlockEmpty || isMissingBlockEnd
 }
+
+interface QueryPoints {
+    startPoint: Point
+    endPoint: Point
+}
+
+export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
+    const startPoint = {
+        row: position.line,
+        column: position.character,
+    }
+
+    const endPoint = {
+        row: position.line,
+        // Querying around one character after trigger position.
+        column: position.character + 1,
+    }
+
+    return { startPoint, endPoint }
+}
+
+export function execQueryWrapper<T extends keyof QueryWrappers>(
+    document: TextDocument,
+    position: Pick<Position, 'line' | 'character'>,
+    queryWrapper: T
+): ReturnType<QueryWrappers[T]> | never[] {
+    const parseTreeCache = getCachedParseTreeForDocument(document)
+    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+
+    const { startPoint, endPoint } = positionToQueryPoints(position)
+
+    if (documentQuerySDK && parseTreeCache) {
+        return documentQuerySDK.queries[queryWrapper](parseTreeCache.tree.rootNode, startPoint, endPoint) as ReturnType<
+            QueryWrappers[T]
+        >
+    }
+
+    return []
+}
+
+export { CompletionIntent }

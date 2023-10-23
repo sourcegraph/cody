@@ -1,22 +1,31 @@
 import { omit } from 'lodash'
 import * as uuid from 'uuid'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import * as CompletionLogger from '../logger'
+import { CompletionEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
+import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] completion event', () => {
-    it('fills all the expected fields on `CompletionLogger.loaded` calls', async () => {
+    beforeAll(async () => {
         await initTreeSitterParser()
+    })
+
+    afterAll(() => {
+        resetParsersCache()
+    })
+
+    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionEvent>> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
         await getInlineCompletions(
-            params('function foo() {█}', [
+            params(code, [
                 {
-                    completion: 'console.log(bar)\nreturn false}',
+                    completion,
                     stopReason: 'unit-test',
                 },
             ])
@@ -26,7 +35,7 @@ describe('[getInlineCompletions] completion event', () => {
         const suggestionId: CompletionLogger.SuggestionID = spy.mock.calls[0][0]
         const completionEvent = CompletionLogger.getCompletionEvent(suggestionId!)
 
-        const eventWithoutTimestamps = omit(completionEvent, [
+        return omit(completionEvent, [
             'acceptedAt',
             'loadedAt',
             'networkRequestStartedAt',
@@ -36,8 +45,16 @@ describe('[getInlineCompletions] completion event', () => {
             'suggestionAnalyticsLoggedAt',
             'suggestionLoggedAt',
         ])
+    }
 
-        expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
+    describe('fills all the expected fields on `CompletionLogger.loaded` calls', () => {
+        it('for multiLine completions', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {█}',
+                'console.log(bar)\nreturn false}'
+            )
+
+            expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
           {
             "id": "stable-uuid",
             "items": [
@@ -64,6 +81,7 @@ describe('[getInlineCompletions] completion event', () => {
             ],
             "loggedPartialAcceptedLength": 0,
             "params": {
+              "completionIntent": "function.body",
               "contextSummary": undefined,
               "id": "stable-uuid",
               "languageId": "typescript",
@@ -76,5 +94,51 @@ describe('[getInlineCompletions] completion event', () => {
             },
           }
         `)
+        })
+
+        it('for singleline completions', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+
+            expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
+              {
+                "id": "stable-uuid",
+                "items": [
+                  {
+                    "charCount": 5,
+                    "lineCount": 1,
+                    "lineTruncatedCount": undefined,
+                    "nodeTypes": {
+                      "atCursor": "return",
+                      "grandparent": "statement_block",
+                      "greatGrandparent": "function_declaration",
+                      "parent": "return_statement",
+                    },
+                    "nodeTypesWithCompletion": {
+                      "atCursor": "return",
+                      "grandparent": "statement_block",
+                      "greatGrandparent": "function_declaration",
+                      "parent": "return_statement",
+                    },
+                    "parseErrorCount": 0,
+                    "stopReason": "unit-test",
+                    "truncatedWith": undefined,
+                  },
+                ],
+                "loggedPartialAcceptedLength": 0,
+                "params": {
+                  "completionIntent": "return_statement",
+                  "contextSummary": undefined,
+                  "id": "stable-uuid",
+                  "languageId": "typescript",
+                  "multiline": false,
+                  "multilineMode": null,
+                  "providerIdentifier": "anthropic",
+                  "providerModel": "claude-instant-infill",
+                  "triggerKind": "Automatic",
+                  "type": "inline",
+                },
+              }
+            `)
+        })
     })
 })
