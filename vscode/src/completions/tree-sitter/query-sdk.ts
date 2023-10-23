@@ -1,3 +1,4 @@
+import { findLast } from 'lodash'
 import { Position, TextDocument } from 'vscode'
 import Parser, { Language, Point, Query, QueryCapture, SyntaxNode } from 'web-tree-sitter'
 
@@ -175,7 +176,7 @@ function getIntentFromCaptures(
     const cursorCaptureIndex = captures.findIndex(capture => capture.node === cursorCapture?.node)
 
     // Find the corresponding preceding intent capture that matches the cursor capture name.
-    const intentCapture = captures.slice(0, cursorCaptureIndex).findLast(capture => {
+    const intentCapture = findLast(captures.slice(0, cursorCaptureIndex), capture => {
         const { name, node } = capture
 
         const matchesCursorPosition =
@@ -190,7 +191,7 @@ function getIntentFromCaptures(
 
     // If we didn't find a multinode intent, use the most nested atomic capture group.
     // Atomic capture groups are matches with one node and `!` at the end the capture group name.
-    const atomicCapture = captures.findLast(capture => {
+    const atomicCapture = findLast(captures, capture => {
         return capture.name.endsWith('!')
     })
 
