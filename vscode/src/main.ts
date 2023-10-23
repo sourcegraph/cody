@@ -114,13 +114,13 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
-    const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
+    const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
     if (symfRunner) {
         authProvider.addChangeListener(async (authStatus: AuthStatus) => {
             if (authStatus.isLoggedIn) {
-                symfRunner.setAuthToken(await getAccessToken())
+                symfRunner.setSourcegraphAuth(authStatus.endpoint, await getAccessToken())
             } else {
-                symfRunner.setAuthToken(null)
+                symfRunner.setSourcegraphAuth(null, null)
             }
         })
     }
@@ -524,7 +524,7 @@ const register = async (
             externalServicesOnDidConfigurationChange(newConfig)
             void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
-            symfRunner?.setAuthToken(newConfig.accessToken)
+            symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }
