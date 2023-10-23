@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import dedent from 'dedent'
+import { findLast } from 'lodash'
 import { expect } from 'vitest'
 import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
@@ -246,7 +247,7 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
     // Snippets are required to mimick such behavior and test the order of returned captures.
     const snippets = code.split(separator)
     // Support "// only" to focus on one code sample at a time
-    const onlySnippet = snippets.findLast(snippet => snippet.startsWith(`${delimiter} only`))
+    const onlySnippet = findLast(snippets, snippet => snippet.startsWith(`${delimiter} only`))
 
     const header = dedent`
         ${commentOutLines(DOCUMENTATION_HEADER, delimiter)}
