@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline/promises'
 import { Command } from 'commander'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
-import { AgentMessageHandler } from '@sourcegraph/cody-agent/src/agent'
+import { AgentMessageHandler } from '@sourcegraph/cody-agent/src/AgentMessageHandler'
 import { AutocompleteItem, AutocompleteParams, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol-alias'
 
 interface CompleteOptions {
