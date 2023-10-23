@@ -11,7 +11,7 @@ import { FixupTaskFactory } from './roles'
 export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
-    private async getInstructionFromQuickPick({
+    public async getInstructionFromQuickPick({
         title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
         placeholder = 'Your instructions',
         value = '',

@@ -69,6 +69,10 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
                 return this.regenerate(id)
             }),
+            vscode.commands.registerCommand('cody.fixup.codelens.revert', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'revert' })
+                return this.revert(id)
+            }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
                 return this.accept(id)
@@ -335,7 +339,7 @@ export class FixupController
 
         const replacementText = task.replacement
         if (replacementText) {
-            const codeCount = countCode(replacementText)
+            const codeCount = countCode(replacementText.trim())
             const source = task.source
             telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
 
@@ -529,6 +533,55 @@ export class FixupController
         }
         this.setTaskState(task, CodyTaskState.finished)
         this.discard(task)
+    }
+
+    private async revert(id: taskID): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        return this.revertTask(task)
+    }
+
+    /**
+     * Reverts an applied fixup task by replacing the edited code range with the original code.
+     *
+     * TODO: It is possible the original code is out of date if the user edited it whilst the fixup was running.
+     * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
+     */
+    private async revertTask(task: FixupTask): Promise<void> {
+        if (task.state !== CodyTaskState.applied) {
+            return
+        }
+
+        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+        }
+
+        const replacementText = task.replacement
+        if (!replacementText) {
+            return
+        }
+
+        const revertRange = task.editedRange || task.selectionRange
+        const diff = computeDiff(task.replacement || '', task.original, task.replacement || '', revertRange.start)
+        console.log('Revert diff', diff)
+
+        editor.revealRange(revertRange)
+        const editOk = await editor.edit(editBuilder => {
+            editBuilder.replace(revertRange, task.original)
+        })
+
+        if (!editOk) {
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed')
+            return
+        }
+
+        const tokenCount = countCode(replacementText)
+        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
+
+        this.setTaskState(task, CodyTaskState.finished)
     }
 
     private discard(task: FixupTask): void {
@@ -784,12 +837,20 @@ export class FixupController
         if (!task) {
             return
         }
-        const range = task.selectionRange
-        const instruction = task.instruction
+        const previousRange = task.selectionRange
+        const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        // Remove the previous task and code lenses
-        this.cancel(id)
-        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction, document }, 'regenerate')
+
+        // Revert and remove the previous task
+        await this.revertTask(task)
+
+        // Prompt the user for a new instruction, and create a new fixup
+        const instruction = (await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })).trim()
+        void vscode.commands.executeCommand(
+            'cody.command.edit-code',
+            { range: previousRange, instruction, document },
+            'regenerate'
+        )
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
