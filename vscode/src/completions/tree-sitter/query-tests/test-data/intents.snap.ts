@@ -20,13 +20,13 @@
 // ------------------------------------
 
   function testParams() {
-//                   ^^ parameters[1]
+//                   ^^ function.parameters[1]
 //                   █
       wrapper
   }
 
 // Nodes types:
-// parameters[1]: formal_parameters
+// function.parameters[1]: formal_parameters
 
 // ------------------------------------
 
