@@ -1,10 +1,8 @@
-import { Fuel } from './types'
 import { Vehicle, VehicleBuilder } from './vehicleBuilder'
 
 interface CarConfig extends Vehicle {
     make: string
     model: string
-    fuel: Fuel
 }
 
 export function createCar(config: CarConfig): Vehicle {
@@ -12,6 +10,17 @@ export function createCar(config: CarConfig): Vehicle {
     builder.setType('car')
     builder.setMake(config.make)
     builder.setModel(config.model)
-    builder.setFuel(config.fuel)
+    if (config.modification) {
+        builder.setModification(config.modification)
+    }
+    if (config.bodyType) {
+        builder.setBodyType(config.bodyType)
+    }
+    if (config.fuel) {
+        builder.setFuel(config.fuel)
+    }
+    if (config.gearbox) {
+        builder.setGearbox(config.gearbox)
+    }
     return builder.build()
 }

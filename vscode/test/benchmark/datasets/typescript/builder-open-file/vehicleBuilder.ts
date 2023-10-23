@@ -5,7 +5,7 @@ export class Vehicle {
     public make?: string
     public model?: string
     public modification?: string
-    public bodyType?: string
+    public bodyType?: BodyType
     public fuel?: Fuel
     public gearbox?: Gearbox
 }
