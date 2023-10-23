@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline/promises'
 import { Command } from 'commander'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
-import { Agent } from '@sourcegraph/cody-agent/src/agent'
+import { AgentMessageHandler } from '@sourcegraph/cody-agent/src/agent'
 import { AutocompleteItem, AutocompleteParams, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol-alias'
 
 interface CompleteOptions {
@@ -80,7 +80,7 @@ async function codyAgentComplete({
     content,
     position,
 }: CodyAgentCompleteParams): Promise<AutocompleteResult> {
-    const agent = new Agent()
+    const agent = new AgentMessageHandler()
     const client = agent.clientForThisInstance()
     await client.request('initialize', {
         name: 'cody-cli',

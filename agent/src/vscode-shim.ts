@@ -26,7 +26,7 @@ import {
     Uri,
 } from '../../vscode/src/testutils/mocks'
 
-import type { Agent } from './agent'
+import type { AgentMessageHandler } from './AgentMessageHandler'
 import { AgentTabGroups } from './AgentTabGroups'
 import type { ExtensionConfiguration } from './protocol-alias'
 
@@ -207,8 +207,8 @@ const statusBarItem: Partial<vscode.StatusBarItem> = {
 export const visibleTextEditors: vscode.TextEditor[] = []
 
 export const tabGroups = new AgentTabGroups()
-let agent: Agent | undefined
-export function setAgent(newAgent: Agent): void {
+let agent: AgentMessageHandler | undefined
+export function setAgent(newAgent: AgentMessageHandler): void {
     agent = newAgent
 }
 

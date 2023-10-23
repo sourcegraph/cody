@@ -9,14 +9,14 @@ import {
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 
-import { Agent } from './agent'
+import { AgentMessageHandler } from './AgentMessageHandler'
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol-alias'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
 
-    constructor(private agent: Agent) {}
+    constructor(private agent: AgentMessageHandler) {}
 
     public didReceiveFixupText(): Promise<void> {
         throw new Error('Method not implemented.')

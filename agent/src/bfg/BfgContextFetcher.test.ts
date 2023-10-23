@@ -11,7 +11,7 @@ import * as vscode from 'vscode'
 
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
 import { BfgContextFetcher } from '../../../vscode/src/graph/bfg/BfgContextFetcher'
-import { Agent, initializeVscodeExtension } from '../agent'
+import { AgentMessageHandler, initializeVscodeExtension } from '../AgentMessageHandler'
 import { MessageHandler } from '../jsonrpc-alias'
 import * as vscode_shim from '../vscode-shim'
 
@@ -58,7 +58,7 @@ describe('BfgContextFetcher', async () => {
         }
     })
 
-    const agent = new Agent()
+    const agent = new AgentMessageHandler()
 
     const debugHandler = new MessageHandler()
     debugHandler.registerNotification('debug/message', params => console.log(`${params.channel}: ${params.message}`))

@@ -1,8 +1,8 @@
-import { Agent } from './agent'
+import { AgentMessageHandler } from './AgentMessageHandler'
 
 process.stderr.write('Starting Cody Agent...\n')
 
-const agent = new Agent()
+const agent = new AgentMessageHandler()
 
 console.log = console.error
 
