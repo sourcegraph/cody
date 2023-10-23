@@ -61,10 +61,11 @@ export class FixupDocumentEditObserver {
         const tasks = this.provider_.tasksForFile(file)
         // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
+            const targetRange = task.editedRange || task.selectionRange
             for (const edit of event.contentChanges) {
                 if (
-                    edit.range.end.isBeforeOrEqual(task.selectionRange.start) ||
-                    edit.range.start.isAfterOrEqual(task.selectionRange.end)
+                    edit.range.end.isBeforeOrEqual(targetRange.start) ||
+                    edit.range.start.isAfterOrEqual(targetRange.end)
                 ) {
                     continue
                 }
