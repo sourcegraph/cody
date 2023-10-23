@@ -10,12 +10,10 @@ import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
-    fixBadCompletionStart,
     getHeadAndTail,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
     PrefixComponents,
-    trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
@@ -67,10 +65,9 @@ export class AnthropicProvider extends Provider {
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.raw
+        const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
         // code before the cursor, without the code extracted for the infillBlock
-        // TODO remove this after the bug where head and tail are duplicated
-        const infillPrefix = head.trimmed === tail.trimmed ? '' : head.raw
+        const infillPrefix = head.raw
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
         const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
@@ -78,11 +75,19 @@ export class AnthropicProvider extends Provider {
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${relativeFilePath}. Review the code around the ${OPENING_CODE_TAG} tag to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose code only inside ${OPENING_CODE_TAG} precisely without duplicating existing implementations. Here is the code enclosed in <completion_request> tags:\n<completion_request>\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n</completion_request>`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
             },
             {
                 speaker: 'assistant',
-                text: `<_cursor_> replaced:${OPENING_CODE_TAG}${infillBlock}<_cursor_>`,
+                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
+            },
+            {
+                speaker: 'human',
+                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
+            },
+            {
+                speaker: 'assistant',
+                text: `${OPENING_CODE_TAG}${infillBlock}`,
             },
         ]
 
@@ -93,17 +98,8 @@ export class AnthropicProvider extends Provider {
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
         const { messages: prefixMessages, prefix } = this.createPromptPrefix()
-        const introMessages: Message[] = [
-            {
-                speaker: 'human',
-                text: 'You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.',
-            },
-            {
-                speaker: 'assistant',
-                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
-            },
-        ]
-        const referenceSnippetMessages: Message[] = [...introMessages]
+
+        const referenceSnippetMessages: Message[] = []
 
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
@@ -113,12 +109,12 @@ export class AnthropicProvider extends Provider {
                     speaker: 'human',
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
-                            ? `Documentation for \`${snippet.symbol}\`:\n<shared_context>${snippet.content}</shared_context>`
-                            : `File context from '${snippet.fileName}':\n<shared_context>${snippet.content}</shared_context>`,
+                            ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
+                            : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'Context reviewed.',
+                    text: 'I will refer to this code to complete your next request.',
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
@@ -217,12 +213,7 @@ export class AnthropicProvider extends Provider {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
             // leading `\n` followed by whitespace that Claude might add.
             completion = completion.replace(/^\s*\n\s*/, '')
-        } else {
-            completion = trimLeadingWhitespaceUntilNewline(completion)
         }
-
-        // Remove bad symbols from the start of the completion string.
-        completion = fixBadCompletionStart(completion)
 
         return completion
     }
