@@ -47,8 +47,7 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     // Ensures Code Lenses are added
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Revert' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Show Diff' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Regenerate' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
 
     // Click apply to apply the fixup
     await page.getByRole('button', { name: 'Accept' }).click()

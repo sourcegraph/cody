@@ -65,13 +65,13 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
                 return this.diff(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => {
+            vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
-                return this.regenerate(id)
+                return this.retry(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.revert', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'revert' })
-                return this.revert(id)
+            vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
+                return this.undo(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
@@ -535,12 +535,12 @@ export class FixupController
         this.discard(task)
     }
 
-    private async revert(id: taskID): Promise<void> {
+    private async undo(id: taskID): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
-        return this.revertTask(task)
+        return this.undoTask(task)
     }
 
     /**
@@ -549,7 +549,7 @@ export class FixupController
      * TODO: It is possible the original code is out of date if the user edited it whilst the fixup was running.
      * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
      */
-    private async revertTask(task: FixupTask): Promise<void> {
+    private async undoTask(task: FixupTask): Promise<void> {
         if (task.state !== CodyTaskState.applied) {
             return
         }
@@ -832,7 +832,7 @@ export class FixupController
     }
 
     // Regenerate code with the same set of instruction
-    public async regenerate(id: taskID): Promise<void> {
+    public async retry(id: taskID): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -841,11 +841,12 @@ export class FixupController
         const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
-        // Revert and remove the previous task
-        await this.revertTask(task)
-
         // Prompt the user for a new instruction, and create a new fixup
         const instruction = (await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })).trim()
+
+        // Revert and remove the previous task
+        await this.undoTask(task)
+
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
             { range: previousRange, instruction, document },
