@@ -30,6 +30,8 @@ const defaultRequestParams: RequestParams = {
     selectedCompletionInfo: undefined,
 }
 
+const completionItemId = 'completion-item-id' as CompletionLogger.CompletionItemID
+
 describe('logger', () => {
     let logSpy: MockInstance
     beforeEach(() => {
@@ -40,7 +42,7 @@ describe('logger', () => {
     })
 
     it('logs a suggestion life cycle', () => {
-        const item = { insertText: 'foo' }
+        const item = { id: completionItemId, insertText: 'foo' }
         const id = CompletionLogger.create(defaultArgs)
         expect(typeof id).toBe('string')
 
@@ -48,7 +50,7 @@ describe('logger', () => {
         CompletionLogger.networkRequestStarted(id, { strategy: 'fake', duration: 0.1337 })
         CompletionLogger.loaded(id, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
         CompletionLogger.suggested(id, item)
-        CompletionLogger.accept(id, document, item)
+        CompletionLogger.accepted(id, document, item)
 
         const shared = {
             id: expect.any(String),
@@ -103,7 +105,7 @@ describe('logger', () => {
     })
 
     it('reuses the completion ID for the same completion', () => {
-        const item = { insertText: 'foo' }
+        const item = { id: completionItemId, insertText: 'foo' }
 
         const id1 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id1)
@@ -120,7 +122,7 @@ describe('logger', () => {
         CompletionLogger.networkRequestStarted(id2, { strategy: 'fake', duration: 0 })
         CompletionLogger.loaded(id2, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
         CompletionLogger.suggested(id2, item)
-        CompletionLogger.accept(id2, document, item)
+        CompletionLogger.accepted(id2, document, item)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)

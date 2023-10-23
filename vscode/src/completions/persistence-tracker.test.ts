@@ -4,11 +4,11 @@ import type * as vscode from 'vscode'
 import { telemetryService } from '../services/telemetry'
 import { range } from '../testutils/textDocument'
 
-import { CompletionID } from './logger'
+import { CompletionAnalyticsID } from './logger'
 import { PersistenceTracker } from './persistence-tracker'
 import { document } from './test-helpers'
 
-const completionId = '123' as CompletionID
+const completionId = '123' as CompletionAnalyticsID
 
 describe('PersistenceTracker', () => {
     let logSpy: MockInstance

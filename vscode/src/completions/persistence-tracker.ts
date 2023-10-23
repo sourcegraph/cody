@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
-import { CompletionID, logCompletionEvent } from './logger'
+import { CompletionAnalyticsID, logCompletionEvent } from './logger'
 import { lines } from './text-processing'
 import { InlineCompletionItem } from './types'
 
@@ -14,7 +14,7 @@ const MEASURE_TIMEOUTS = [
     600 * 1000, // 10 minutes
 ]
 interface TrackedCompletion {
-    id: CompletionID
+    id: CompletionAnalyticsID
     uri: vscode.Uri
     // When a document is rename, the TextDocument instance will still work
     // however the URI it resolves to will be outdated. Ensure we never use it.
@@ -47,7 +47,7 @@ export class PersistenceTracker implements vscode.Disposable {
         completion,
         document,
     }: {
-        id: CompletionID
+        id: CompletionAnalyticsID
         insertedAt: number
         completion: InlineCompletionItem
         document: vscode.TextDocument

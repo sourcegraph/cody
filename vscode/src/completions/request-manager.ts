@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { logCompletionEvent, SuggestionID } from './logger'
+import { CompletionLogID, logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
@@ -149,7 +149,7 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
-                logId: '' as SuggestionID,
+                logId: '' as CompletionLogID,
                 source: InlineCompletionsResultSource.Network,
                 items,
             },

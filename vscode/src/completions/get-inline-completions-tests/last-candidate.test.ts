@@ -4,7 +4,7 @@ import { describe, expect, it, vitest } from 'vitest'
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
-import { SuggestionID } from '../logger'
+import { CompletionLogID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
 import { getInlineCompletions, params, V } from './helpers'
@@ -28,7 +28,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             lastTriggerPosition: position,
             lastTriggerSelectedInfoItem,
             result: {
-                logId: '1' as SuggestionID,
+                logId: '1' as CompletionLogID,
                 source: InlineCompletionsResultSource.Network,
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
             },
