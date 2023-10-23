@@ -40,7 +40,7 @@ function getErrorLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(warning) Applying edits failed',
-        command: 'cody.fixup.codelens.show-error',
+        command: 'cody.fixup.codelens.error',
         arguments: [id],
     }
     return lens

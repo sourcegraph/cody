@@ -83,13 +83,7 @@ export class Fixup implements Recipe {
         taskId: string,
         context: RecipeContext
     ): Promise<FixupIntent | null> {
-        try {
-            const intent = await fixupController.getTaskIntent(taskId, context.intentDetector)
-            return intent
-        } catch (error) {
-            await context.editor.showWarningMessage((error as Error).message)
-            return null
-        }
+        return fixupController.getTaskIntent(taskId, context.intentDetector)
     }
 
     public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {

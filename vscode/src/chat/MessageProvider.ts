@@ -320,13 +320,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Create a new multiplexer to drop any old subscribers
         this.multiplexer = new BotResponseMultiplexer()
 
-        const interaction = await recipe.getInteraction(humanChatInput, {
-            editor: this.editor,
-            intentDetector: this.intentDetector,
-            codebaseContext: this.contextProvider.context,
-            responseMultiplexer: this.multiplexer,
-            firstInteraction: this.transcript.isEmpty,
-        })
+        let interaction: Interaction | null = null
+
+        try {
+            interaction = await recipe.getInteraction(humanChatInput, {
+                editor: this.editor,
+                intentDetector: this.intentDetector,
+                codebaseContext: this.contextProvider.context,
+                responseMultiplexer: this.multiplexer,
+                firstInteraction: this.transcript.isEmpty,
+            })
+        } catch (error: any) {
+            this.handleError(error.message, 'system')
+            return
+        }
+
         if (!interaction) {
             return
         }
