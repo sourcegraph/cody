@@ -83,7 +83,7 @@ describe('[getInlineCompletions] common', () => {
         )
         expect(requests).toHaveLength(3)
         const messages = requests[0].messages
-        expect(messages.at(-1)!.text).toBe('<_cursor_> replaced:<CODE5711>class Range {\n\n\n    <_cursor_>')
+        expect(messages.at(-1)!.text).toBe('<CODE5711>class Range {')
     })
 
     test('uses a more complex prompt for larger files', async () => {
@@ -122,8 +122,8 @@ describe('[getInlineCompletions] common', () => {
         expect(messages.at(-1)).toMatchInlineSnapshot(`
             {
               "speaker": "assistant",
-              "text": "<_cursor_> replaced:<CODE5711>    constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
-                    this.startLine = <_cursor_>",
+              "text": "<CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+                    this.startLine =",
             }
         `)
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', MULTILINE_STOP_SEQUENCE])
