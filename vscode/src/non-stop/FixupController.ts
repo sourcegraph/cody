@@ -299,8 +299,7 @@ export class FixupController
             : await this.replaceEdit(editor, diff, applyEditOptions)
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
-            // This is currently a test/demo of the new events system
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
 
             // TODO: Try to recover, for example by respinning
@@ -313,9 +312,7 @@ export class FixupController
             const codeCount = countCode(replacementText)
             const source = task.source
 
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
-            // This is currently a test/demo of the new events system, by
-            // replicating the above legacy telemetryService.log call
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
                 metadata: {
                     lineCount: codeCount.lineCount,

@@ -425,7 +425,9 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * recordTelemetryEvents uses the new Telemetry API to record events that
-     * gets exported.
+     * gets exported: https://docs.sourcegraph.com/dev/background-information/telemetry
+     *
+     * Only available on Sourcegraph 5.2.0 and later.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
@@ -434,16 +436,48 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(initialResponse, data => data)
     }
 
-    public async logEvent(event: event): Promise<LogEventResponse | Error> {
+    /**
+     * logEvent is the legacy event-logging mechanism.
+     */
+    public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
         if (this.config?.telemetryLevel === 'off') {
             return {}
         }
+        /**
+         * If connected to dotcom, just log events to the instance, as it means
+         * the same thing.
+         */
         if (this.isDotCom()) {
             return this.sendEventLogRequestToAPI(event)
         }
+
+        switch (mode) {
+            /**
+             * Only log events to dotcom, not the connected instance. Used when
+             * another mechanism delivers event logs the instance (i.e. the
+             * new telemetry clients)
+             */
+            case 'dotcom-only':
+                return this.sendEventLogRequestToDotComAPI(event)
+
+            /**
+             * Only log events to the connected instance, not dotcom. Used when
+             * another mechanism handles reporting to dotcom (i.e. the old
+             * client and/or the new telemetry framework, which exports events
+             * from all instances: https://docs.sourcegraph.com/dev/background-information/telemetry)
+             */
+            case 'connected-instance-only':
+                return this.sendEventLogRequestToAPI(event)
+
+            case 'all': // continue to default handling
+        }
+
+        /**
+         * Otherwise, send events to the connected instance AND to dotcom (default)
+         */
         const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
             this.sendEventLogRequestToDotComAPI(event),
@@ -641,3 +675,8 @@ async function verifyResponseCode(response: Response): Promise<Response> {
 
 class RepoNotFoundError extends Error {}
 export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
+
+export type LogEventMode =
+    | 'dotcom-only' // only log to dotcom
+    | 'connected-instance-only' // only log to the connected instance
+    | 'all' // log to both dotcom AND the connected instance

@@ -8,6 +8,7 @@ import {
 
 import { ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
@@ -31,14 +32,19 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     BillingCategory,
     BillingProduct
 > {
-    constructor(extensionDetails: ExtensionDetails, config: ConfigurationWithAccessToken, anonymousUserID: string) {
+    constructor(
+        extensionDetails: ExtensionDetails,
+        config: ConfigurationWithAccessToken,
+        anonymousUserID: string,
+        legacyBackcompatLogEventMode: LogEventMode
+    ) {
         const client = new SourcegraphGraphQLAPIClient(config)
         super(
             {
                 client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
                 clientVersion: extensionDetails.version,
             },
-            new GraphQLTelemetryExporter(client, anonymousUserID),
+            new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [new ConfigurationMetadataProcessor(config)],
             {
                 ...defaultEventRecordingOptions,

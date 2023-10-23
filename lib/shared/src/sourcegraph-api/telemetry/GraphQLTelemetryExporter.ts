@@ -1,12 +1,16 @@
 import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
 import { isError } from '../../utils'
-import { SourcegraphGraphQLAPIClient } from '../graphql/client'
+import { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
 
 type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2+'
 
 /**
- * GraphQLTelemetryExporter exports events via the
+ * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
+ * framework: https://docs.sourcegraph.com/dev/background-information/telemetry
+ *
+ * If configured to do so, it will also attempt to send events to the old
+ * event-logging mutations if the instance is older than 5.2.0.
  */
 export class GraphQLTelemetryExporter implements TelemetryExporter {
     private exportMode: ExportMode | undefined
@@ -20,7 +24,11 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
 
     constructor(
         public client: SourcegraphGraphQLAPIClient,
-        anonymousUserID: string
+        anonymousUserID: string,
+        /**
+         * logEvent mode to use if exporter needs to use a legacy export mode.
+         */
+        private legacyBackcompatLogEventMode: LogEventMode
     ) {
         this.client.setAnonymousUserID(anonymousUserID)
     }
@@ -36,12 +44,13 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (this.exportMode === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
-                return // swallow error, try again later
+                console.warn('telemetry: failed to evaluate server version:', siteVersion)
+                return // we can try again later
             }
 
             const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
             if (insiderBuild) {
-                this.exportMode = '5.2.2+'
+                this.exportMode = '5.2.2+' // use full export, set to 'legacy' to test backcompat mode
             } else if (siteVersion === '5.2.0' || siteVersion === '5.2.1') {
                 this.exportMode = '5.2.0-5.2.1' // special handling required for https://github.com/sourcegraph/sourcegraph/pull/57719
             } else if (siteVersion > '5.2.2') {
@@ -49,6 +58,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
             } else {
                 this.exportMode = 'legacy'
             }
+            console.log('telemetry: evaluated export mode:', this.exportMode)
         }
         if (this.exportMode === 'legacy' && this.legacySiteIdentification === undefined) {
             const siteIdentification = await this.client.getSiteIdentification()
@@ -73,42 +83,56 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
         await this.setLegacyEventsStateOnce()
 
+        /**
+         * Use the legacy logEvent mutation with the configured legacyBackcompatLogEventMode
+         * if setLegacyEventsStateOnce determines we need to do so.
+         */
         if (this.exportMode === 'legacy') {
-            // Swallow any problems, this is only a best-effort mechanism to
-            // use the old export mechanism.
-            await Promise.all(
+            const resultOrError = await Promise.all(
                 events.map(event =>
-                    this.client.logEvent({
-                        client: event.source.client,
-                        event: `${event.feature}.${event.action}`,
-                        source: 'IDEEXTENSION', // hardcoded in existing client
-                        url: event.marketingTracking?.url || '',
-                        publicArgument: () =>
-                            event.parameters.metadata?.reduce((acc, curr) => ({
-                                ...acc,
-                                [curr.key]: curr.value,
-                            })),
-                        argument: JSON.stringify(event.parameters.privateMetadata),
-                        userCookieID: this.client.anonymousUserID || '',
-                        connectedSiteID: this.legacySiteIdentification?.siteid,
-                        hashedLicenseKey: this.legacySiteIdentification?.hashedLicenseKey,
-                    })
+                    this.client.logEvent(
+                        {
+                            client: event.source.client,
+                            event: `${event.feature}.${event.action}`,
+                            source: 'IDEEXTENSION', // hardcoded in existing client
+                            url: event.marketingTracking?.url || '',
+                            publicArgument: () =>
+                                event.parameters.metadata?.reduce((acc, curr) => ({
+                                    ...acc,
+                                    [curr.key]: curr.value,
+                                })),
+                            argument: JSON.stringify(event.parameters.privateMetadata),
+                            userCookieID: this.client.anonymousUserID || '',
+                            connectedSiteID: this.legacySiteIdentification?.siteid,
+                            hashedLicenseKey: this.legacySiteIdentification?.hashedLicenseKey,
+                        },
+                        this.legacyBackcompatLogEventMode
+                    )
                 )
             )
+            if (isError(resultOrError)) {
+                console.error('Error exporting telemetry events as legacy event logs:', resultOrError, {
+                    legacyBackcompatLogEventMode: this.legacyBackcompatLogEventMode,
+                })
+            }
 
             return
         }
 
-        // In early releases, the privateMetadata field is broken. Circumvent
-        // this by filtering out the privateMetadata field for now.
-        // https://github.com/sourcegraph/sourcegraph/pull/57719
+        /**
+         * In early releases, the privateMetadata field is broken. Circumvent
+         * this by filtering out the privateMetadata field for now.
+         * https://github.com/sourcegraph/sourcegraph/pull/57719
+         */
         if (this.exportMode === '5.2.0-5.2.1') {
             events.forEach(event => {
                 event.parameters.privateMetadata = undefined
             })
         }
 
-        // Otherwise, use the new mechanism as intended.
+        /**
+         * Record events with the new mutations.
+         */
         const resultOrError = await this.client.recordTelemetryEvents(events)
         if (isError(resultOrError)) {
             console.error('Error exporting telemetry events:', resultOrError)

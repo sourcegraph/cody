@@ -61,7 +61,13 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         const events = req.body as TelemetryEventInput[]
         events.forEach(event => {
             void logTestingData('new', JSON.stringify(event))
-            loggedV2Events.push(`${event.feature} - ${event.action}`)
+            if (
+                ![
+                    'cody.extension', // extension setup events can behave differently in test environments
+                ].includes(event.feature)
+            ) {
+                loggedV2Events.push(`${event.feature}/${event.action}`)
+            }
         })
         res.status(200)
     })

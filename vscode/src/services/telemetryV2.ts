@@ -1,4 +1,5 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
@@ -18,6 +19,15 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  * Recorder for recording telemetry events in the new telemetry framework:
  * https://docs.sourcegraph.com/dev/background-information/telemetry
  *
+ * DEPRECATED: Callsites should ALSO record an event using services/telemetryV2
+ * as well and indicate this has happened, for example:
+ *
+ *   logEvent(name, properties, { hasV2Event: true })
+ *   telemetryRecorder.recordEvent(...)
+ *
+ * See GraphQLTelemetryExporter to learn more about how events are exported
+ * when recorded using the new recorder.
+ *
  * The default recorder throws an error if it is used before initialization
  * via createOrUpdateTelemetryRecorderProvider.
  */
@@ -27,27 +37,46 @@ export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvi
     }),
 ])
 
-function updateGlobalInstances(provider: TelemetryRecorderProvider): void {
+/**
+ * For legacy events export, where we are connected to a pre-5.2.0 instance,
+ * the current strategy is to manually instrument a callsite the legacy logEvent
+ * clients as well, and that will report events directly to dotcom. To avoid
+ * duplicating the data, when we are doing a legacy export, we only send events
+ * to the connected instance.
+ *
+ * In the future, when we remove the legacy event-logging clients, we should
+ * change this back to 'all' so that legacy instances report events to
+ * dotcom as well through the new clients.
+ */
+const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
+
+function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void {
     telemetryRecorderProvider?.complete()
-    telemetryRecorderProvider = provider
-    telemetryRecorder = provider.getRecorder([
+    telemetryRecorderProvider = updatedProvider
+    telemetryRecorder = updatedProvider.getRecorder([
         // Log all events in debug for reference.
         new CallbackTelemetryProcessor(event => {
             logDebug(
                 'telemetryV2',
-                `recordEvent: ${event.feature} - ${event.action} (${JSON.stringify({
-                    ...event,
-                    // feature, action is in summary, just log rest of the metadata
-                    feature: undefined,
-                    action: undefined,
-                })})`
+                `recordEvent: ${event.feature}/${event.action}: ${JSON.stringify({
+                    parameters: event.parameters,
+                })}`
             )
         }),
     ])
 }
 
+/**
+ * Initializes or configures new event-recording globals, which leverage the
+ * new telemetry framework:
+ * https://docs.sourcegraph.com/dev/background-information/telemetry
+ */
 export async function createOrUpdateTelemetryRecorderProvider(
     config: ConfigurationWithAccessToken,
+    /**
+     * Hardcode isExtensionModeDevOrTest to false to test real exports - when
+     * true, exports are logged to extension output instead.
+     */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     if (config.telemetryLevel === 'off') {
@@ -56,30 +85,37 @@ export async function createOrUpdateTelemetryRecorderProvider(
     }
 
     const { anonymousUserID, created: newAnonymousUser } = await localStorage.anonymousUserID()
+    const initialize = telemetryRecorderProvider === undefined
 
-    // In testing, send events to the mock server.
+    /**
+     * In testing, send events to the mock server.
+     */
     if (process.env.CODY_TESTING === 'true') {
         logDebug('telemetryV2', 'using mock exporter')
         updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
-        return
-    }
-
-    // In dev, log events to console.
-    if (isExtensionModeDevOrTest) {
-        logDebug('telemetryV2', 'using no-op exports (see debug logs events)')
+    } else if (isExtensionModeDevOrTest) {
+        logDebug('telemetryV2', 'using no-op exports')
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
-        return
+    } else {
+        updateGlobalInstances(
+            new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
+        )
     }
 
-    if (telemetryRecorderProvider === undefined) {
-        updateGlobalInstances(new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
-        // Log some additional events on initial configuration of telemetryRecorderProvider
+    /**
+     * On first initialization, also record some initial events.
+     */
+    if (initialize) {
         if (newAnonymousUser) {
-            telemetryRecorder.recordEvent('cody', 'installed')
+            /**
+             * New user
+             */
+            telemetryRecorder.recordEvent('cody.extension', 'installed')
         } else {
-            telemetryRecorder.recordEvent('cody.savedLogin', 'executed')
+            /**
+             * Repeat user
+             */
+            telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
         }
-    } else {
-        updateGlobalInstances(new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
     }
 }
