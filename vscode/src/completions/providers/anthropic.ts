@@ -10,10 +10,12 @@ import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
+    fixBadCompletionStart,
     getHeadAndTail,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
     PrefixComponents,
+    trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
@@ -213,7 +215,12 @@ export class AnthropicProvider extends Provider {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
             // leading `\n` followed by whitespace that Claude might add.
             completion = completion.replace(/^\s*\n\s*/, '')
+        } else {
+            completion = trimLeadingWhitespaceUntilNewline(completion)
         }
+
+        // Remove bad symbols from the start of the completion string.
+        completion = fixBadCompletionStart(completion)
 
         return completion
     }
