@@ -185,13 +185,14 @@ const register = async (
     const executeRecipeInSidebar = async (
         recipe: RecipeID,
         openChatView = true,
-        humanInput?: string
+        humanInput?: string,
+        source?: string
     ): Promise<void> => {
         if (openChatView) {
             await sidebarChatProvider.setWebviewView('chat')
         }
 
-        await sidebarChatProvider.executeRecipe(recipe, humanInput)
+        await sidebarChatProvider.executeRecipe(recipe, humanInput, source)
     }
 
     const executeFixup = async (
@@ -335,8 +336,8 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
-            await executeRecipeInSidebar('chat-question', true, input)
+        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: string) => {
+            await executeRecipeInSidebar('chat-question', true, input, source)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')

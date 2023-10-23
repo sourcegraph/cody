@@ -288,7 +288,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
+    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', source?: string): Promise<void> {
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -370,7 +370,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 })
             }
         }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, { contextSummary })
+        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, { contextSummary, source })
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -528,7 +528,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!question) {
                     question = await showAskQuestionQuickPick()
                 }
-                await vscode.commands.executeCommand('cody.action.chat', question)
+                await vscode.commands.executeCommand('cody.action.chat', question, 'sidebar')
                 return null
             }
             case /^\/edit(\s)?/.test(text):
