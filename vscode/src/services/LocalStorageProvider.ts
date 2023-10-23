@@ -145,6 +145,10 @@ export class LocalStorage {
             console.error(error)
         }
     }
+
+    public async delete(key: string): Promise<void> {
+        await this.storage.update(key, undefined)
+    }
 }
 
 /**

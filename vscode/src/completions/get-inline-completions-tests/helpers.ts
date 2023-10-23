@@ -99,7 +99,6 @@ export function params(
         triggerKind,
         selectedCompletionInfo,
         providerConfig,
-        toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
         ...params,
     }

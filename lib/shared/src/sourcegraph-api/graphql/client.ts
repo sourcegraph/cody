@@ -244,6 +244,12 @@ export class SourcegraphGraphQLAPIClient {
         return isLocalApp(this.config.serverEndpoint)
     }
 
+    // Gets the server endpoint for this client. The UI uses this to display
+    // which endpoint provides embeddings.
+    public get endpoint(): string {
+        return this.config.serverEndpoint
+    }
+
     public async getSiteVersion(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
             response =>

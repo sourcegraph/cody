@@ -1,0 +1,5 @@
+{
+  "entryFile": "main.go",
+  "solutionFile": "solution.go",
+  "testCommand": "go build main.go"
+}

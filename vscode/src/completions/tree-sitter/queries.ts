@@ -5,7 +5,7 @@ import { SupportedLanguage } from './grammars'
 export type QueryName = 'blocks' | 'singlelineTriggers'
 
 const JS_BLOCKS_QUERY = dedent`
-    (_ ("{")) @blocks
+    (_ ("{") @block_start) @trigger
 
     [(try_statement)
     (if_statement)] @parents
@@ -34,7 +34,7 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     },
     [SupportedLanguage.Go]: {
         blocks: dedent`
-            (_ ("{")) @blocks
+            (_ ("{") @block_start) @trigger
 
             [(if_statement)] @parents
         `,

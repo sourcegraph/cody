@@ -36,11 +36,20 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugRegex = new RegExp('.*')
     }
 
+    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = config.get(
+        CONFIG_KEY.autocompleteExperimentalGraphContext,
+        null
+    )
+    // Handle the old `true` option
+    if (autocompleteExperimentalGraphContext === true) {
+        autocompleteExperimentalGraphContext = 'lsp-light'
+    }
+
     let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
         CONFIG_KEY.autocompleteAdvancedProvider,
         null
     )
-    // Backwards compatibility for old config values
+    // Handle the old `unstable-fireworks` option
     if (autocompleteAdvancedProvider === 'unstable-fireworks') {
         autocompleteAdvancedProvider = 'fireworks'
     }
@@ -86,10 +95,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             true
         ),
-        autocompleteExperimentalGraphContext: config.get<boolean>(
-            CONFIG_KEY.autocompleteExperimentalGraphContext,
-            false
-        ),
+        autocompleteExperimentalGraphContext,
 
         /**
          * UNDOCUMENTED FLAGS

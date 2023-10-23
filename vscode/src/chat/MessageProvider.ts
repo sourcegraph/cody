@@ -175,7 +175,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private sendPrompt(
         promptMessages: Message[],
         responsePrefix = '',
-        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC
+        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC,
+        recipeId: RecipeID
     ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
@@ -212,8 +213,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.onCompletionEnd()
                 // Count code generated from response
                 const codeCount = countGeneratedCode(text)
-                const op = codeCount ? 'hasCode' : 'noCode'
-                telemetryService.log('CodyVSCodeExtension:chatResponse:' + op, codeCount || {})
+                if (codeCount?.charCount) {
+                    const source = lastInteraction?.getHumanMessage().source || recipeId
+                    telemetryService.log('CodyVSCodeExtension:chatResponse:hasCode', { ...codeCount, source })
+                }
             },
         })
 
@@ -356,7 +359,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
+                this.sendPrompt(
+                    prompt,
+                    interaction.getAssistantMessage().prefix ?? '',
+                    recipe.multiplexerTopic,
+                    recipeId
+                )
                 await this.saveTranscriptToChatHistory()
 
                 contextFiles.map(file => {
@@ -482,7 +490,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!type) {
                     break
                 }
-                await this.editor.controllers.command?.config('add', type)
+                await this.editor.controllers.command?.configFileAction('add', type)
                 telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked')
                 break
         }

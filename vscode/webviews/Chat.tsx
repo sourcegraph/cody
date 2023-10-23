@@ -6,7 +6,6 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
@@ -19,7 +18,7 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
-import { CODY_FEEDBACK_URL, OnboardingExperimentArm } from '../src/chat/protocol'
+import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
@@ -47,8 +46,8 @@ interface ChatboxProps {
     chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     applessOnboarding: {
-        arm: OnboardingExperimentArm
         endpoint: string | null
+        embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
 }
@@ -106,33 +105,27 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCopyBtnClick = useCallback(
-        (text: string, eventType: 'Button' | 'Keydown' = 'Button', command?: string) => {
+        (text: string, eventType: 'Button' | 'Keydown' = 'Button', source?: string) => {
             const op = 'copy'
-            const commandName = command
             // remove the additional /n added by the text area at the end of the text
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({ command: op, eventType, text: code, commandName })
+            vscodeAPI.postMessage({ command: op, eventType, text: code, source })
         },
         [vscodeAPI]
     )
 
     const onInsertBtnClick = useCallback(
-        (text: string, newFile = false) => {
+        (text: string, newFile = false, source?: string) => {
             const op = newFile ? 'newFile' : 'insert'
             const eventType = 'Button'
             // remove the additional /n added by the text area at the end of the text
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({ command: op, eventType, text: code })
+            vscodeAPI.postMessage({ command: op, eventType, text: code, source })
         },
         [vscodeAPI]
     )
-
-    const useSimplifiedAppOnboarding =
-        applessOnboarding.arm === OnboardingExperimentArm.Simplified &&
-        applessOnboarding.endpoint &&
-        (isDotCom(applessOnboarding.endpoint) || isLocalApp(applessOnboarding.endpoint))
 
     return (
         <ChatUI
@@ -182,15 +175,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            contextStatusComponent={useSimplifiedAppOnboarding ? ChatInputContextSimplified : undefined}
-            contextStatusComponentProps={
-                useSimplifiedAppOnboarding
-                    ? {
-                          contextStatus,
-                          ...applessOnboarding.props,
-                      }
-                    : undefined
-            }
+            contextStatusComponent={ChatInputContextSimplified}
+            contextStatusComponentProps={{
+                contextStatus,
+                ...applessOnboarding.props,
+            }}
         />
     )
 }

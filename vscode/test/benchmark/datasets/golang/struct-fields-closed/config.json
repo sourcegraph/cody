@@ -1,0 +1,7 @@
+{
+  "entryFile": "main.go",
+  "openFiles": [],
+  "closedFiles": ["context.go"],
+  "solutionFile": "solution.go",
+  "testCommand": "go build main.go context.go"
+}

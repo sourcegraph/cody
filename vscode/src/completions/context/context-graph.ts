@@ -5,7 +5,8 @@ import { ContextSnippet } from '../types'
 
 import { GetContextResult } from './context'
 
-export interface GraphContextFetcher {
+export interface GraphContextFetcher extends vscode.Disposable {
+    identifier: string
     getContextAtPosition(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -62,13 +63,14 @@ export async function getContextFromGraph(options: Options): Promise<GetContextR
     return {
         context,
         logSummary: {
+            strategy: options.graphContextFetcher!.identifier,
             graph: includedGraphMatches,
             duration: performance.now() - start,
         },
     }
 }
 
-function supportedLanguageId(languageId: string): boolean {
+export function supportedLanguageId(languageId: string): boolean {
     switch (languageId) {
         case 'python':
         case 'go':

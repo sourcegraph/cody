@@ -1,8 +1,11 @@
+import { Position, TextDocument } from 'vscode'
+
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { Completion, ContextSnippet } from '../types'
+import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { ContextSnippet } from '../types'
 
 export interface ProviderConfig {
     /**
@@ -58,12 +61,15 @@ export interface ProviderOptions {
     // A unique and descriptive identifier for the provider.
     id: string
 
+    position: Position
+    document: TextDocument
     docContext: DocumentContext
-    fileName: string
-    languageId: string
     multiline: boolean
     // Number of parallel LLM requests per completion.
     n: number
+
+    // Use indentation-based or tree-sitter-based truncation strategies to stop streaming early.
+    disableStreamingTruncation?: boolean
 }
 
 export abstract class Provider {
@@ -73,7 +79,7 @@ export abstract class Provider {
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): Promise<Completion[]>
+    ): Promise<InlineCompletionItemWithAnalytics[]>
 }
 
 /**
@@ -88,9 +94,6 @@ export interface CompletionProviderTracer {
 }
 
 export interface CompletionProviderTracerResultData {
-    /** The raw response from the LLM. */
-    rawResponses: unknown
-
     /** The post-processed completions that are returned by the provider. */
-    completions: Completion[]
+    completions: InlineCompletionItemWithAnalytics[]
 }
