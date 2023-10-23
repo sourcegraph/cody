@@ -46,6 +46,7 @@ export type CompletionIntent = (typeof intentPriority)[number]
  * a specific cursor position to match.
  *
  * TODO: classes, try/catch, members, if/else, loops, etc.
+ * Tracking: https://github.com/sourcegraph/cody/issues/1456
  */
 const JS_INTENTS_QUERY = dedent`
     ; Cursor dependent intents

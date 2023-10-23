@@ -146,6 +146,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
 }
 
 // TODO: check if the block parent is empty in the consumer.
+// Tracking: https://github.com/sourcegraph/cody/issues/1452
 function getIntentFromCaptures(
     captures: QueryCapture[],
     cursor: Point
@@ -178,10 +179,6 @@ function getIntentFromCaptures(
     }
 
     const atomicCapture = captures.findLast(capture => {
-        // TODO: should we check against the cursor position?
-        // const matchesCursorPosition =
-        // node.startPosition.column === cursor.column && node.startPosition.row === cursor.row
-
         return capture.name.endsWith('!')
     })
 
