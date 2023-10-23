@@ -489,7 +489,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        return this.executeRecipe('custom-prompt', title)
+        return this.executeRecipe('custom-prompt', title, 'custom-command')
     }
 
     protected async chatCommandsFilter(

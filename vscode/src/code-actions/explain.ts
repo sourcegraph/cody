@@ -16,10 +16,10 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         if (diagnostics.length === 0) {
             return []
         }
-        return [this.createCommandCodeAction(diagnostics, range)]
+        return [this.createCommandCodeAction(diagnostics)]
     }
 
-    private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
+    private createCommandCodeAction(diagnostics: vscode.Diagnostic[]): vscode.CodeAction {
         const action = new vscode.CodeAction('Ask Cody to Explain', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
