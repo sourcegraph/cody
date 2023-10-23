@@ -1,11 +1,12 @@
 [
   {
     "completions": [
+      "    const logger = signale.scope('my-logger')\n    logger.info(message)",
       "    const logger = signale.scope('logger')\n    logger.info(message)",
       "    signale.info(message)"
     ],
-    "elapsed": 1290,
-    "timestamp": "1698086370191",
+    "elapsed": 1617,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -15,12 +16,12 @@
   },
   {
     "completions": [
-      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n\n    fs.writeFile(filename, date.toISOString(), err => {\n        if (err) {\n            console.error('Failed to write date', err)\n        } else {\n            console.log('Written date to', filename)\n        }\n    })",
-      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n\n    fs.writeFileSync(\n        filename,\n        date.toLocaleString(),\n        { flag: 'wx' }\n    )",
-      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n\n    fs.writeFileSync(filename, date.toISOString(), 'utf8')"
+      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n\n    fs.writeFileSync(filename, date.toISOString(), 'utf8')",
+      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n\n    fs.writeFileSync(filename, date.toISOString())",
+      "    const date = new Date();\n    const filename = path.join(__dirname, 'date.txt');\n\n    fs.writeFileSync(filename, date.toISOString(), 'utf8');"
     ],
-    "elapsed": 1917,
-    "timestamp": "1698086370191",
+    "elapsed": 1309,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -30,12 +31,10 @@
   },
   {
     "completions": [
-      "        const lineNumber = this.lineNumber(position);\n        return {\n            text: this.lines[lineNumber - 1],\n            range: new vscode.Range(\n                this.positionAt(lineNumber, 0),\n                this.positionAt(lineNumber, this.lines[lineNumber].length)\n            )\n        };",
-      "        const lineNumber = typeof position === 'number' ? position : position.line\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }",
-      "        const lineNumber = typeof position === 'number' ? position : position.line\n        return new vscode.TextLine(this.lines[lineNumber], lineNumber)"
+      "        const lineNumber = typeof position === 'number' ? position : position.line\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }"
     ],
-    "elapsed": 1847,
-    "timestamp": "1698086370191",
+    "elapsed": 1763,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -45,11 +44,12 @@
   },
   {
     "completions": [
-      "        try {\n                return execFileSync('uname', ['-s']).toString().trim()\n            } catch (err) {\n                return null\n            }\n        } else {\n            return window.navigator.platform\n        }",
-      "        try {\n                return require('os').platform()\n            } catch (err) {\n                return null\n            }\n        } else {\n            return null\n        }"
+      "        try {\n                return require('os').platform();\n            } catch (error) {\n                return null;\n            }\n        } else {\n            return window.navigator.platform;\n        }",
+      "        try {\n            return require('os').platform()\n        } catch (err) {\n            return null\n        }\n    } else {\n        return null\n    }",
+      "        try {\n            return require('os').platform();\n        } catch (error) {\n            return null;\n        }\n    } else {\n        return null;\n    }"
     ],
-    "elapsed": 1301,
-    "timestamp": "1698086370191",
+    "elapsed": 1145,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -61,8 +61,8 @@
     "completions": [
       "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
     ],
-    "elapsed": 746,
-    "timestamp": "1698086370191",
+    "elapsed": 865,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -74,8 +74,8 @@
     "completions": [
       "    const min = Math.min(a, b)"
     ],
-    "elapsed": 1087,
-    "timestamp": "1698086370191",
+    "elapsed": 2216,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "twoNums.ts",
@@ -87,8 +87,8 @@
     "completions": [
       "// A function returns the sum of two numbers"
     ],
-    "elapsed": 893,
-    "timestamp": "1698086370191",
+    "elapsed": 1127,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "comment.ts",
@@ -98,10 +98,10 @@
   },
   {
     "completions": [
-      "const array = [5, 3, 6, 2, 10];"
+      "function bubbleSort(array) {"
     ],
-    "elapsed": 851,
-    "timestamp": "1698086370191",
+    "elapsed": 1006,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "LineAfterCompletedComment.ts",
@@ -111,10 +111,10 @@
   },
   {
     "completions": [
-      "function logSum(a: number, b: number): void {"
+      "function printSum(a: number, b: number): void {"
     ],
-    "elapsed": 934,
-    "timestamp": "1698086370191",
+    "elapsed": 1047,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "LineAfterIncompleteComment.ts",
@@ -124,10 +124,10 @@
   },
   {
     "completions": [
-      "function logGreeting() {"
+      "function myFunction() {"
     ],
-    "elapsed": 1319,
-    "timestamp": "1698086370191",
+    "elapsed": 812,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "LineAfterIncompleteCommentInEmptyDocs.ts",
@@ -137,10 +137,10 @@
   },
   {
     "completions": [
-      "    return window.location.host === 'localhost' || window.location.host === '127.0.0.1';"
+      "    return window.location.host === 'localhost';"
     ],
-    "elapsed": 956,
-    "timestamp": "1698086370191",
+    "elapsed": 766,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -150,10 +150,10 @@
   },
   {
     "completions": [
-      "     * Wether to trim leading and trailing whitespace from suggestions"
+      "     * Wether to trim whitespace from the completion results"
     ],
-    "elapsed": 1084,
-    "timestamp": "1698086370191",
+    "elapsed": 974,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [],
       "fileName": "interface.ts",
@@ -163,11 +163,12 @@
   },
   {
     "completions": [
+      "    return text.toLowerCase().replace(/[^a-z0-9-_]/g, '');",
       "    return text.toLowerCase().replace(/[^\\w-]+/g, '');",
       "    return text.toLowerCase().replace(/[^\\w-]+/g, '')"
     ],
-    "elapsed": 1849,
-    "timestamp": "1698086370191",
+    "elapsed": 1569,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [
         {
@@ -194,12 +195,12 @@
   },
   {
     "completions": [
-      "    mockResponseLines := []string{`{\"completion\":\"func main() \",\"stopReason\":\"Complete\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockResponseLines))\n    var events []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        events = append(events, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 1, len(events))\n    assert.Equal(t, \"func main() \", events[0].Completion)\n    assert.Equal(t, \"Complete\", events[0].StopReason)\n}",
-      "    var mockAnthropicResponseLines = []string{`{\"Completion\": \"func\", \"StopReason\": \"\"}`, `{\"Completion\": \"\", \"StopReason\": \"stream ended\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n    var completions []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        completions = append(completions, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, len(completions), 2)\n    assert.Equal(t, completions[0].Completion, \"func\")\n    assert.Equal(t, completions[1].StopReason, \"stream ended\")\n}",
-      "    mockAnthropicResponseLines := []string{`{\"Completion\":\"func main() {}\",\"StopReason\":\"Done\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n    var completions []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        completions = append(completions, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 1, len(completions))\n    assert.Equal(t, \"func main() {}\", completions[0].Completion)\n    assert.Equal(t, \"Done\", completions[0].StopReason)\n}"
+      "    var mockAnthropicResponseLines = []string{`{\"completion\":\"func main() {\"}`, `{\"completion\":\"fmt.Println(\\\"Hello World!\\\")\"}`, `{\"stopReason\":\"Complete\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n    completions := []types.CompletionResponse{}\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        completions = append(completions, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 3, len(completions))\n    assert.Equal(t, \"func main() {\", completions[0].Completion)\n    assert.Equal(t, \"fmt.Println(\\\"Hello World!\\\")\", completions[1].Completion)\n    assert.Equal(t, types.StopReasonComplete, completions[2].StopReason)\n}",
+      "    var mockAnthropicResponseLines = []string{`{\"completion\":\"func\", \"stopReason\":\"Complete\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n    var completionsReceived []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        completionsReceived = append(completionsReceived, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 1, len(completionsReceived))\n    assert.Equal(t, \"func\", completionsReceived[0].Completion)\n    assert.Equal(t, \"Complete\", completionsReceived[0].StopReason)\n}",
+      "    var mockAnthropicResponseLines = []string{`{\"Completion\":\"func main() {}\",\"StopReason\":\"Done\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n    var completionsReceived []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        completionsReceived = append(completionsReceived, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 1, len(completionsReceived))\n    assert.Equal(t, \"func main() {}\", completionsReceived[0].Completion)\n    assert.Equal(t, \"Done\", completionsReceived[0].StopReason)\n}"
     ],
-    "elapsed": 4430,
-    "timestamp": "1698086370191",
+    "elapsed": 3757,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [
         {
@@ -226,10 +227,11 @@
   },
   {
     "completions": [
+      "    issues = api_client.github.get_issues(state=\"open\")\n    assert issues",
       "    issues = api_client.github.get_issues(state=\"open\")"
     ],
-    "elapsed": 4074,
-    "timestamp": "1698086370191",
+    "elapsed": 1706,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [
         {
@@ -262,8 +264,8 @@
     "completions": [
       "            tool_cls.from_toolkit(self)"
     ],
-    "elapsed": 2036,
-    "timestamp": "1698086370191",
+    "elapsed": 1159,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [
         {
@@ -286,12 +288,12 @@
   },
   {
     "completions": [
-      "                providerConfig,\n                history: new History(),\n                noopStatusBar,",
-      "                ...providerConfig,\n                statusBar: noopStatusBar",
+      "                config: providerConfig,\n                statusBar: noopStatusBar,\n                history: new History(),",
+      "                providerConfig,\n                statusBar: noopStatusBar,\n                history: new History(),",
       "                config: providerConfig,\n                statusBar: noopStatusBar"
     ],
-    "elapsed": 1712,
-    "timestamp": "1698086370191",
+    "elapsed": 1658,
+    "timestamp": "1698092878117",
     "sample": {
       "context": [
         {

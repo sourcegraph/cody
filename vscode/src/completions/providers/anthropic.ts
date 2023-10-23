@@ -216,6 +216,10 @@ export class AnthropicProvider extends Provider {
             // leading `\n` followed by whitespace that Claude might add.
             completion = completion.replace(/^\s*\n\s*/, '')
         } else {
+            // prevent normalizeStartLine from removing the starting new line
+            if (completion.startsWith('\n')) {
+                completion = '\n' + completion.trimStart()
+            }
             completion = trimLeadingWhitespaceUntilNewline(completion)
         }
 
