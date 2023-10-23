@@ -6,7 +6,7 @@ import {
     TelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
-import { ConfigurationWithAccessToken, getContextSelectionID } from '../configuration'
+import { ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
@@ -108,7 +108,7 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
         event.parameters.metadata.push(
             {
                 key: 'contextSelection',
-                value: getContextSelectionID(this.config.useContext),
+                value: CONTEXT_SELECTION_ID[this.config.useContext],
             },
             {
                 key: 'chatPredictions',
