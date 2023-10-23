@@ -324,9 +324,11 @@ export class FixupController
 
         visibleEditor?.revealRange(task.selectionRange)
 
+        // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
+        const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
         const editOk = task.insertMode
-            ? await this.insertEdit(edit, document, task)
-            : await this.replaceEdit(edit, diff, task)
+            ? await this.insertEdit(edit, document, task, applyEditOptions)
+            : await this.replaceEdit(edit, diff, task, applyEditOptions)
 
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
@@ -341,15 +343,19 @@ export class FixupController
             const source = task.source
             telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
 
-            // format the selected area after applying edits
-            const range = new vscode.Range(
+            // TODO: Can we improve how we calculate the edited range?
+            task.editedRange = new vscode.Range(
                 new vscode.Position(task.selectionRange.start.line, 0),
                 new vscode.Position(
                     task.selectionRange.start.line + codeCount.lineCount,
                     task.selectionRange.end.character
                 )
             )
-            await vscode.commands.executeCommand('editor.action.formatDocument', range)
+
+            // Add the missing undo stop after this change.
+            // Now when the user hits 'undo', the entire format and edit will be undone at once
+            const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+            await this.formatEdit(edit, document, task, formatEditOptions)
         }
 
         // TODO: See if we can discard a FixupFile now.
@@ -364,6 +370,7 @@ export class FixupController
                 `Edit applied to ${task.fixupFile.fileName}`,
                 showChangesButton
             )
+            // TODO: remove notification
             if (result === showChangesButton) {
                 const editor = await vscode.window.showTextDocument(task.fixupFile.uri)
                 editor.revealRange(task.selectionRange)
@@ -375,7 +382,8 @@ export class FixupController
     private async replaceEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         diff: Diff,
-        task: FixupTask
+        task: FixupTask,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
 
@@ -403,14 +411,15 @@ export class FixupController
                     diffEdit.text
                 )
             }
-        })
+        }, options)
     }
 
     // Insert edit returned by Cody at task selection range
     private async insertEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         document: vscode.TextDocument,
-        task: FixupTask
+        task: FixupTask,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'inserting')
         const text = task.replacement
@@ -434,7 +443,47 @@ export class FixupController
 
         return edit(editBuilder => {
             editBuilder.insert(range.start, replacementText)
-        })
+        }, options)
+    }
+
+    private async formatEdit(
+        edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
+        document: vscode.TextDocument,
+        task: FixupTask,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+    ): Promise<boolean> {
+        const rangeToFormat = task.editedRange
+
+        if (!rangeToFormat) {
+            return true
+        }
+
+        const formattingChanges = (
+            await vscode.commands.executeCommand<vscode.TextEdit[]>(
+                'vscode.executeFormatDocumentProvider',
+                document.uri,
+                {}
+            )
+        ).filter(change => rangeToFormat.contains(change.range))
+
+        if (formattingChanges.length === 0) {
+            return true
+        }
+
+        logDebug('FixupController:edit', 'formatting')
+
+        if (edit instanceof vscode.WorkspaceEdit) {
+            for (const change of formattingChanges) {
+                edit.replace(task.fixupFile.uri, change.range, change.newText)
+            }
+            return vscode.workspace.applyEdit(edit)
+        }
+
+        return edit(editBuilder => {
+            for (const change of formattingChanges) {
+                editBuilder.replace(change.range, change.newText)
+            }
+        }, options)
     }
 
     // Accepting fixups from tree item click
