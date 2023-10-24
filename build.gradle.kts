@@ -159,7 +159,7 @@ fun unzip(input: File, output: File, excludeMatcher: PathMatcher? = null) {
 }
 
 val githubArchiveCache =
-    Paths.get(System.getProperty("user.home"), ".gradle", "caches", "sourcegraph").toFile()
+    Paths.get(System.getProperty("user.home"), ".sourcegraph", "caches", "jetbrains").toFile()
 
 tasks {
   val codeSearchCommit = "9d86a4f7d183e980acfe5d6b6468f06aaa0d8acf"
