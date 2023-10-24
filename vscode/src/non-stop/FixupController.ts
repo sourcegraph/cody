@@ -10,6 +10,7 @@ import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -298,7 +299,9 @@ export class FixupController
             : await this.replaceEdit(editor, diff, applyEditOptions)
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return
@@ -308,7 +311,19 @@ export class FixupController
         if (replacementText) {
             const codeCount = countCode(replacementText)
             const source = task.source
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+                metadata: {
+                    lineCount: codeCount.lineCount,
+                    charCount: codeCount.charCount,
+                },
+                privateMetadata: {
+                    // TODO: generate numeric ID representing source so that it
+                    // can be included in metadata for default export.
+                    source,
+                },
+            })
 
             // format the selected area after applying edits
             const editedRange = new vscode.Range(

@@ -58,7 +58,17 @@ export class EventLogger {
     }
 
     /**
-     * Log a telemetry event.
+     * Log a telemetry event using the legacy event-logging mutations.
+     *
+     * DEPRECATED: Callsites should ALSO record an event using services/telemetryV2
+     * as well and indicate this has happened, for example:
+     *
+     *   logEvent(name, properties, { hasV2Event: true })
+     *   telemetryRecorder.recordEvent(...)
+     *
+     * In the future, all usages of TelemetryService will be removed in
+     * favour of the new libraries. For more information, see:
+     * https://docs.sourcegraph.com/dev/background-information/telemetry
      *
      * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
      * properties may get sent to analytics tools, so must not include private information, such as
@@ -69,7 +79,12 @@ export class EventLogger {
      * @param properties Event properties. Do NOT include any private information, such as full
      * URLs that may contain private repository names or search queries.
      */
-    public log(eventName: string, anonymousUserID: string, properties?: TelemetryEventProperties): void {
+    public log(
+        eventName: string,
+        anonymousUserID: string,
+        properties?: TelemetryEventProperties,
+        { hasV2Event }: { hasV2Event: boolean } = { hasV2Event: false }
+    ): void {
         const publicArgument = {
             ...properties,
             serverEndpoint: this.serverEndpoint,
@@ -84,17 +99,26 @@ export class EventLogger {
             version: this.extensionDetails.version, // for backcompat
         }
         this.gqlAPIClient
-            .logEvent({
-                event: eventName,
-                userCookieID: anonymousUserID,
-                source: 'IDEEXTENSION',
-                url: '',
-                argument: '{}',
-                publicArgument: JSON.stringify(publicArgument),
-                client: this.client,
-                connectedSiteID: this.siteIdentification?.siteid,
-                hashedLicenseKey: this.siteIdentification?.hashedLicenseKey,
-            })
+            .logEvent(
+                {
+                    event: eventName,
+                    userCookieID: anonymousUserID,
+                    source: 'IDEEXTENSION',
+                    url: '',
+                    argument: '{}',
+                    publicArgument: JSON.stringify(publicArgument),
+                    client: this.client,
+                    connectedSiteID: this.siteIdentification?.siteid,
+                    hashedLicenseKey: this.siteIdentification?.hashedLicenseKey,
+                },
+                /**
+                 * If a V2 event is created, the new recorder's exporter will
+                 * make sure that the instance receives a copy of the event.
+                 * In this case, this event log is only created for backcompat
+                 * with existing dotcom data, so we log only to dotcom.
+                 */
+                hasV2Event ? 'dotcom-only' : 'all'
+            )
             .then(response => {
                 if (isError(response)) {
                     console.error('Error logging event', response)
