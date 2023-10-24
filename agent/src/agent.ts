@@ -268,8 +268,8 @@ export class Agent extends MessageHandler {
             return typeof result === 'string' ? result : null
         })
 
-        this.registerRequest('git/codebaseName', ([cloneURL]) => {
-            const result = convertGitCloneURLToCodebaseName(cloneURL)
+        this.registerRequest('git/codebaseName', ({ url }) => {
+            const result = convertGitCloneURLToCodebaseName(url)
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
