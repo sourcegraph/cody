@@ -648,7 +648,7 @@ export class FixupController
             return
         }
         const diff = this.applicableDiffOrRespin(task, editor.document)
-        if (!diff || diff.mergedText === undefined) {
+        if (diff?.mergedText === undefined) {
             return
         }
         // show diff view between the current document and replacement

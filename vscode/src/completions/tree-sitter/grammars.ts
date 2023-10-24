@@ -21,7 +21,9 @@ export enum SupportedLanguage {
 }
 
 export const getParseLanguage = (languageId: string): SupportedLanguage | null => {
-    const matchedLang = Object.entries(SupportedLanguage).find(([key, value]) => value === languageId)
+    const matchedLang = Object.entries(SupportedLanguage).find(
+        ([key, value]) => value === (languageId as SupportedLanguage)
+    )
 
     return matchedLang ? (languageId as SupportedLanguage) : null
 }
