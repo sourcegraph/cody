@@ -189,7 +189,7 @@ telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
 
 When events are recorded to both systems:
 
-1. `telemetryService` will *only* send the event directly to dotcom's `event_logs`.
+1. `telemetryService` will _only_ send the event directly to dotcom's `event_logs`.
 2. `telemetryRecorder` will make sure the connected instance receives the event in the new framework, if the instance is 5.2.0 or later, or translated to the legacy `event_logs` format, if the instance is older.
    1. In instances 5.2.1 or later, the event will [also be exported from the instance](https://docs.sourcegraph.com/dev/background-information/telemetry/architecture).
 
