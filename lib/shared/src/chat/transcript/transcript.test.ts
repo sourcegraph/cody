@@ -39,7 +39,7 @@ async function generateLongTranscript(): Promise<{ transcript: Transcript; token
 }
 
 describe('Transcript', () => {
-    it.only('generates an empty prompt with no interactions', async () => {
+    it('generates an empty prompt with no interactions', async () => {
         const transcript = new Transcript()
         const { prompt } = await transcript.getPromptForLastInteraction()
         assert.deepStrictEqual(prompt, [])
