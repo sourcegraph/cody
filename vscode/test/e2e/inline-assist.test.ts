@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, loggedV2Events, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -54,4 +54,5 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await page.getByRole('button', { name: 'Apply Edits' }).click()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
+    await expect.poll(() => loggedV2Events).toEqual(['cody.fixup.apply/succeeded'])
 })

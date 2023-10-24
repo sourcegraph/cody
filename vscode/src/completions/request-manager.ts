@@ -48,26 +48,21 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
-    private completeSuggestWidgetSelection = true
     private disableNetworkCache = false
     private disableRecyclingOfPreviousRequests = false
 
     constructor(
         {
-            completeSuggestWidgetSelection = true,
             disableNetworkCache = false,
             disableRecyclingOfPreviousRequests = false,
         }: {
-            completeSuggestWidgetSelection?: boolean
             disableNetworkCache?: boolean
             disableRecyclingOfPreviousRequests?: boolean
         } = {
-            completeSuggestWidgetSelection: true,
             disableNetworkCache: false,
             disableRecyclingOfPreviousRequests: false,
         }
     ) {
-        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
         this.disableNetworkCache = disableNetworkCache
         this.disableRecyclingOfPreviousRequests = disableRecyclingOfPreviousRequests
     }
@@ -147,7 +142,7 @@ export class RequestManager {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerDocContext: docContext,
-            lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
+            lastTriggerSelectedCompletionInfo: selectedCompletionInfo,
             result: {
                 logId: '' as SuggestionID,
                 source: InlineCompletionsResultSource.Network,
@@ -170,7 +165,6 @@ export class RequestManager {
                 lastCandidate,
                 docContext: request.params.docContext,
                 selectedCompletionInfo: request.params.selectedCompletionInfo,
-                completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 
             if (synthesizedCandidate) {
