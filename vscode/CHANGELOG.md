@@ -13,6 +13,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Fixed
 
 - User selection in active editor will not be replaced by smart selections for the `/edit` command. [pull/1429](https://github.com/sourcegraph/cody/pull/1429)
+- Fixes an issue that caused part of the autocomplete response to be completed when selecting an item from the suggest widget. [pull/](https://github.com/sourcegraph/cody/pull/)
 
 ### Changed
 

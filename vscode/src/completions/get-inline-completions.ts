@@ -79,7 +79,7 @@ export interface LastInlineCompletionCandidate {
     lastTriggerPosition: vscode.Position
 
     /** The selected info item. */
-    lastTriggerSelectedInfoItem: string | undefined
+    lastTriggerSelectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
     /** The previously suggested result. */
     result: InlineCompletionsResult
@@ -177,7 +177,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         setIsLoading,
         abortSignal,
         tracer,
-        completeSuggestWidgetSelection = true,
         disableStreamingTruncation = false,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
@@ -218,7 +217,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   lastCandidate,
                   docContext,
                   selectedCompletionInfo,
-                  completeSuggestWidgetSelection,
                   handleDidAcceptCompletionItem,
                   handleDidPartiallyAcceptCompletionItem,
               })
