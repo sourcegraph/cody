@@ -15,8 +15,9 @@ if ! command -v gdate &>/dev/null; then
 fi
 
 
-MAJOR_MINOR=$(gh release list --repo sourcegraph/sourcegraph --limit 1 --exclude-drafts --exclude-pre-releases | awk '{ print $2 }' | tail -n 1 | cut -d. -f1 -f2)
-LAST_RELEASE_TIMESTAMP=$(gh release list --repo sourcegraph/sourcegraph --limit 1 --exclude-drafts --exclude-pre-releases | awk '{ print $5 }')
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/sourcegraph --limit 20 --exclude-drafts --exclude-pre-releases | awk '$3 ~ /v[0-9]+\.[0-9]+\.0$/ { print $3, $4; exit }')
+MAJOR_MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1 -f2)
+LAST_RELEASE_TIMESTAMP=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $2 }')
 
 # Current year
 MILLIS_START_YEAR="$(gdate -d "$LAST_RELEASE_TIMESTAMP" +%s%3N)"
