@@ -14,4 +14,4 @@ curl -Lo ldid.zip https://github.com/xerub/ldid/archive/refs/heads/master.zip
 unzip ldid.zip
 cd ldid-master
 ./make.sh
-cp ldid2 /usr/local/bin/
+cp ldid /usr/local/bin/

@@ -17,7 +17,7 @@
     "agent": "pnpm run build && node dist/agent.js",
     "agent:debug": "pnpm run build && node --inspect ./dist/agent.js",
     "build-ts": "tsc --build",
-    "build-agent-binaries": "pnpm run build && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
+    "build-agent-binaries": "which ldid && pnpm run build && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "pnpm run build && vitest"
