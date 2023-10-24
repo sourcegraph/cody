@@ -6,6 +6,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.protocol.CloneURL;
 import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.common.ErrorNotification;
 import git4idea.GitVcs;
@@ -65,7 +67,7 @@ public class RepoUtil {
         message = "Error determining repository info: " + err.getMessage();
       }
       ErrorNotification.show(project, message);
-      Logger.getInstance(RepoUtil.class).warn(message);
+      logger.warn(message);
       logger.warn(err);
     }
     return new RepoInfo(
@@ -143,7 +145,17 @@ public class RepoUtil {
     VCSType vcsType = getVcsType(project, file);
 
     if (vcsType == VCSType.GIT && repository != null) {
-      return GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
+      String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
+      String codebaseName =
+          CodyAgent.withServer(
+                  project,
+                  server -> server.convertGitCloneURLToCodebaseName(new CloneURL(cloneURL)))
+              .join();
+      if (codebaseName == null) {
+        throw new Exception(
+            "Failed to convert git clone URL to codebase name for cloneURL: " + cloneURL);
+      }
+      return codebaseName;
     }
 
     if (vcsType == VCSType.PERFORCE) {

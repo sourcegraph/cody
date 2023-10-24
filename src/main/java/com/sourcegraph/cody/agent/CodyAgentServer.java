@@ -44,6 +44,9 @@ public interface CodyAgentServer {
   @JsonRequest("graphql/getRepoId")
   CompletableFuture<@Nullable String> getRepoId(GetRepoID repoName);
 
+  @JsonRequest("git/codebaseName")
+  CompletableFuture<@Nullable String> convertGitCloneURLToCodebaseName(CloneURL cloneURL);
+
   // Notifications
   @JsonNotification("initialized")
   void initialized();
