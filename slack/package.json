@@ -25,7 +25,7 @@
     "lodash": "^4.17.21",
     "octokit": "^2.1.0",
     "openai": "^3.2.1",
-    "slackify-markdown": "^4.3.1"
+    "slackify-markdown": "^4.4.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.195"

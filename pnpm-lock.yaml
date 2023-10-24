@@ -353,8 +353,8 @@ importers:
         specifier: ^3.2.1
         version: 3.2.1
       slackify-markdown:
-        specifier: ^4.3.1
-        version: 4.3.1
+        specifier: ^4.4.0
+        version: 4.4.0
     devDependencies:
       '@types/lodash':
         specifier: ^4.14.195
@@ -15875,8 +15875,8 @@ packages:
   /sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
-  /slackify-markdown@4.3.1:
-    resolution: {integrity: sha512-6Uktkq4rEB6JZlRguI/dpPDF6Rak6QXZm3Gv2IM0VMeYQRSufp+TLFfOylxwINnOeMRc9ciYRhsbt1hUFD+uuQ==}
+  /slackify-markdown@4.4.0:
+    resolution: {integrity: sha512-a2b0Rh4aPi3PYt23N0vxPn7emkQtShewhLX8uIiXOMlPBAXRki+/9kEXJztZr1Oo9rDb1YxScGuZ0D2ubLPhvQ==}
     dependencies:
       mdast-util-to-markdown: 0.6.5
       remark-gfm: 1.0.0
