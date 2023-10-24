@@ -2,6 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
@@ -265,6 +266,11 @@ export class Agent extends MessageHandler {
                 console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
+        })
+
+        this.registerRequest('git/codebaseName', ([cloneURL]) => {
+            const result = convertGitCloneURLToCodebaseName(cloneURL)
+            return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {

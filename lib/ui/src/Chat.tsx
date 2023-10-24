@@ -257,8 +257,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 event.key === 'Enter' &&
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
-                formInput &&
-                formInput.trim() &&
+                formInput?.trim() &&
                 !displayCommands?.length
             ) {
                 event.preventDefault()

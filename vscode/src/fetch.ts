@@ -20,6 +20,7 @@ import { addCustomUserAgent, customUserAgent } from '@sourcegraph/cody-shared/sr
  */
 export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     if (customUserAgent) {
         init = init ?? {}

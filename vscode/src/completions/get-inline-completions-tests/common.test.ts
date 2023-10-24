@@ -83,7 +83,7 @@ describe('[getInlineCompletions] common', () => {
         )
         expect(requests).toHaveLength(3)
         const messages = requests[0].messages
-        expect(messages.at(-1)!.text).toBe('<CODE5711>class Range {\n')
+        expect(messages.at(-1)!.text).toBe('<CODE5711>class Range {')
     })
 
     test('uses a more complex prompt for larger files', async () => {

@@ -67,7 +67,7 @@ export class AnthropicProvider extends Provider {
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed
+        const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
         // code before the cursor, without the code extracted for the infillBlock
         const infillPrefix = head.raw
         // code after the cursor
@@ -85,7 +85,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
+                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
             },
             {
                 speaker: 'assistant',
