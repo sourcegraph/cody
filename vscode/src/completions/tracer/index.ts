@@ -24,6 +24,7 @@ export type ProvideInlineCompletionItemsTracer = (data: ProvideInlineCompletions
  */
 export interface ProvideInlineCompletionsItemTraceData {
     invocationSequence: number
+    startTime: number
     params?: {
         document: vscode.TextDocument
         position: vscode.Position
@@ -41,4 +42,5 @@ export interface ProvideInlineCompletionsItemTraceData {
     context?: GetContextResult | null
     result?: InlineCompletionsResult | null
     error?: string
+    modTime?: number
 }

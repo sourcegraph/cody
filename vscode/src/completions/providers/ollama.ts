@@ -8,7 +8,7 @@ import { BrowserOrNodeResponse, fetch } from '../../fetch'
 import { logDebug, logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 
-import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
 export function createOllamaProviderConfig(ollamaOptions: OllamaOptions): ProviderConfig {
     return {
@@ -25,7 +25,9 @@ export function createOllamaProviderConfig(ollamaOptions: OllamaOptions): Provid
                         INFILL_TOKENS.EOT,
 
                         // Tokens that reduce the quality of multi-line completions but improve performance.
-                        '}\n',
+                        '; ',
+                        ';\t',
+                        // TODO(sqs): '}\n',
                     ],
                     temperature: 0.5,
                     top_k: -1,
@@ -35,6 +37,9 @@ export function createOllamaProviderConfig(ollamaOptions: OllamaOptions): Provid
             })
         },
         contextSizeHints: {
+            // We don't use other files as context yet in Ollama, so this doesn't matter.
+            totalFileContextChars: 0,
+
             // Ollama evaluates the prompt at ~50 tok/s for codellama:7b-code on a MacBook Air M2.
             // If the prompt has a common prefix across inference requests, subsequent requests do
             // not incur prompt reevaluation and are therefore much faster. So, we want a large
@@ -51,7 +56,7 @@ export function createOllamaProviderConfig(ollamaOptions: OllamaOptions): Provid
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         model: ollamaOptions.model,
-        useLongerDebounce: true,
+        // useLongerDebounce: true,
     }
 }
 
@@ -107,6 +112,7 @@ interface LlamaCodePrompt {
 
 function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean): string {
     // TODO(sqs): use the correct comment syntax for the language (eg '#' for Python, not '//').
+    prompt.suffix = '' // TODO(sqs)
     return (
         prompt.snippets
             .map(
@@ -165,7 +171,11 @@ class OllamaProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ContextSnippet[],
+        tracer?: CompletionProviderTracer
+    ): Promise<Completion[]> {
         // Only use infill if the suffix has alphanumerics, where it might give us a var name we should refer to. TODO(sqs): playing around with this...
         const useInfill = /\s*\w/.test(this.options.docContext.suffix)
         const request: OllamaGenerateRequest = {
@@ -173,13 +183,14 @@ class OllamaProvider extends Provider {
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
             options: {
-                num_predict: this.options.multiline ? 100 : 15,
+                num_predict: this.options.multiline ? 200 : 30,
                 ...this.ollamaOptions.parameters,
                 stop: this.options.multiline
                     ? this.ollamaOptions.parameters?.stop
                     : [...(this.ollamaOptions.parameters?.stop ?? []), '\n'],
             },
         }
+        tracer?.params(request as any)
 
         const log = logger.startCompletion({
             request,
@@ -203,47 +214,15 @@ class OllamaProvider extends Provider {
                 throw new Error(`ollama generation error: ${errorResponse?.error || 'unknown error'}`)
             }
 
+            let debugMessage: string | undefined
             const processLine = (line: OllamaGenerateResponse): void => {
                 if (line.response) {
                     responseText += line.response
                 }
                 if (line.done && line.total_duration) {
-                    const logKeys: (keyof OllamaGenerateResponse)[] = [
-                        'total_duration',
-                        'load_duration',
-                        'prompt_eval_count',
-                        'prompt_eval_duration',
-                        'eval_count',
-                        'eval_duration',
-                        'sample_count',
-                        'sample_duration',
-                    ]
-                    logDebug(
-                        'ollama',
-                        'generation done',
-                        [
-                            ...logKeys
-                                .filter(key => line[key] !== undefined)
-                                .map(
-                                    key =>
-                                        `${key}=${
-                                            key.endsWith('_duration')
-                                                ? `${(line[key] as number) / 1000000}ms`
-                                                : line[key]
-                                        }`
-                                ),
-                            line.prompt_eval_count !== undefined && line.prompt_eval_duration !== undefined
-                                ? `prompt_eval_tok/sec=${
-                                      line.prompt_eval_count / (line.prompt_eval_duration / 1000000000)
-                                  }`
-                                : null,
-                            line.eval_count !== undefined && line.eval_duration !== undefined
-                                ? `response_tok/sec=${line.eval_count / (line.eval_duration / 1000000000)}`
-                                : null,
-                        ]
-                            .filter(isDefined)
-                            .join(' ')
-                    )
+                    const timingInfo = formatOllamaTimingInfo(line)
+                    debugMessage = timingInfo.join('\n')
+                    logDebug('ollama', 'generation done', timingInfo.join(' '))
                 }
             }
             if (isNodeResponse(response)) {
@@ -254,6 +233,7 @@ class OllamaProvider extends Provider {
 
             const completions: Completion[] = responseText ? [{ content: postProcess(responseText) }] : []
             log?.onComplete(completions.map(c => c.content))
+            tracer?.result({ rawResponses: null, completions, debugMessage })
             return completions
         } catch (error: any) {
             if (!isAbortError(error)) {
@@ -262,6 +242,30 @@ class OllamaProvider extends Provider {
             throw error
         }
     }
+}
+
+function formatOllamaTimingInfo(line: OllamaGenerateResponse): string[] {
+    const logKeys: (keyof OllamaGenerateResponse)[] = [
+        'total_duration',
+        'load_duration',
+        'prompt_eval_count',
+        'prompt_eval_duration',
+        'eval_count',
+        'eval_duration',
+        'sample_count',
+        'sample_duration',
+    ]
+    return [
+        ...logKeys
+            .filter(key => line[key] !== undefined)
+            .map(key => `${key}=${key.endsWith('_duration') ? `${(line[key] as number) / 1000000}ms` : line[key]}`),
+        line.prompt_eval_count !== undefined && line.prompt_eval_duration !== undefined
+            ? `prompt_eval_tok/sec=${line.prompt_eval_count / (line.prompt_eval_duration / 1000000000)}`
+            : null,
+        line.eval_count !== undefined && line.eval_duration !== undefined
+            ? `response_tok/sec=${line.eval_count / (line.eval_duration / 1000000000)}`
+            : null,
+    ].filter(isDefined)
 }
 
 function postProcess(content: string): string {

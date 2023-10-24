@@ -90,6 +90,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
         `# Cody autocomplete trace view${data ? ` (#${data.invocationSequence})` : ''}`,
         statisticSummary(),
         data ? null : 'Waiting for you to trigger a completion...',
+        data?.modTime ? `Time: ${Math.round(data.modTime - data.startTime)}ms` : null,
         data?.params &&
             `
 ## Params
@@ -150,7 +151,20 @@ ${codeDetailsWithSummary('Params', JSON.stringify(data.completionProviderCallPar
 
 ${
     data.completionProviderCallResult
-        ? codeDetailsWithSummary('Result', JSON.stringify(data.completionProviderCallResult, null, 2))
+        ? [
+              codeDetailsWithSummary('Result', JSON.stringify(data.completionProviderCallResult.completions, null, 2)),
+              data.completionProviderCallResult.debugMessage
+                  ? codeDetailsWithSummary(
+                        'Timing',
+                        data.completionProviderCallResult.debugMessage,
+                        undefined,
+                        undefined,
+                        true
+                    )
+                  : null,
+          ]
+              .filter(isDefined)
+              .join('\n\n')
         : '_Loading result..._'
 }
 
@@ -221,7 +235,8 @@ function codeDetailsWithSummary(
     title: string,
     value: string,
     anchor: 'start' | 'end' | 'none' = 'none',
-    excerptLength = 50
+    excerptLength = 50,
+    open = false
 ): string {
     const excerpt =
         anchor === 'start' ? value.slice(0, excerptLength) : anchor === 'end' ? value.slice(-excerptLength) : null
@@ -232,7 +247,7 @@ function codeDetailsWithSummary(
                   .replaceAll('<', '&lt;')
                   .replaceAll('>', '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
     return `
-<details>
+<details${open ? ' open' : ''}>
 <summary>${title}${excerptMarkdown}</summary>
 
 ${markdownCodeBlock(value)}

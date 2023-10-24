@@ -475,9 +475,12 @@ let globalInvocationSequenceForTracer = 0
  * for that invocation.
  */
 function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): InlineCompletionsParams['tracer'] {
-    let data: ProvideInlineCompletionsItemTraceData = { invocationSequence: ++globalInvocationSequenceForTracer }
+    let data: ProvideInlineCompletionsItemTraceData = {
+        invocationSequence: ++globalInvocationSequenceForTracer,
+        startTime: performance.now(),
+    }
     return (update: Partial<ProvideInlineCompletionsItemTraceData>) => {
-        data = { ...data, ...update }
+        data = { ...data, ...update, modTime: performance.now() }
         tracer(data)
     }
 }
