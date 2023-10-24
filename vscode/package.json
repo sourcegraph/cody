@@ -224,7 +224,7 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "!cody.chatPanel"
+          "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
           "id": "cody.fixup.tree.view",
