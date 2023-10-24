@@ -5,7 +5,15 @@ import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api
 
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { CLOSING_CODE_TAG, getHeadAndTail, MULTILINE_STOP_SEQUENCE, OPENING_CODE_TAG } from '../text-processing'
+import {
+    CLOSING_CODE_TAG,
+    extractFromCodeBlock,
+    fixBadCompletionStart,
+    getHeadAndTail,
+    MULTILINE_STOP_SEQUENCE,
+    OPENING_CODE_TAG,
+    trimLeadingWhitespaceUntilNewline,
+} from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
@@ -55,14 +63,14 @@ export class UnstableOpenAIProvider extends Provider {
         const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed
+        const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
         // code before the cursor, without the code extracted for the infillBlock
-        const infillPrefix = head.raw?.startsWith(tail.trimmed) ? '' : `${head.raw}`
+        const infillPrefix = head.raw
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
         const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
 
-        return `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\`
+        return `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\`
 
 ${OPENING_CODE_TAG}${infillBlock}`
     }
@@ -159,14 +167,24 @@ ${OPENING_CODE_TAG}${infillBlock}`
         })
     }
 
-    private postProcess(content: string): string {
-        if (content.startsWith('```')) {
-            let arr = content.split('\n')
-            arr.shift()
-            content = arr.join('\n')
+    private postProcess(rawResponse: string): string {
+        let completion = extractFromCodeBlock(rawResponse)
+
+        const trimmedPrefixContainNewline = this.options.docContext.prefix
+            .slice(this.options.docContext.prefix.trimEnd().length)
+            .includes('\n')
+        if (trimmedPrefixContainNewline) {
+            // The prefix already contains a `\n` that LLM was not aware of, so we remove any
+            // leading `\n` followed by whitespace that might be add.
+            completion = completion.replace(/^\s*\n\s*/, '')
+        } else {
+            completion = trimLeadingWhitespaceUntilNewline(completion)
         }
 
-        return content.trimEnd()
+        // Remove bad symbols from the start of the completion string.
+        completion = fixBadCompletionStart(completion)
+
+        return completion
     }
 }
 
