@@ -138,8 +138,8 @@ For more information, see [Cody quality tools](../doc/dev/quality/index.md)
 Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://docs.sourcegraph.com/dev/background-information/telemetry). Events primarily comprise of:
 
 1. `feature`, a string denoting the feature that the event is associated with.
-   1. **All events must use a `feature` that starts with `cody.`**, for example `cody.myFeature`.
-The feature name should not include the name of the extension, as that is already included in the event metadata.
+   1. **All events must use a `feature` that starts with `cody.`**, for example `cody.myFeature`
+   2. The feature name should not include the name of the extension, as that is already included in the event metadata.
 2. `action`, a string denoting the action on the feature that the event is associated with.
 3. `parameters`, which includes safe numeric `metadata` and [unsafe arbitrarily-shaped `privateMetadata`](https://docs.sourcegraph.com/dev/background-information/telemetry#sensitive-attributes).
 

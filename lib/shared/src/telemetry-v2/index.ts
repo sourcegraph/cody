@@ -1,8 +1,10 @@
 /**
  * Features indicate the functionality being tracked.
  *
+ * All Cody features must start with `cody.`, for example `cody.myFeature`.
+ *
  * Features should NOT be 'scoped' to a specific extension - extension metadata
- * is already tracked separately. For example, do not use feature name
+ * is already tracked separately. For example, do NOT use the feature name
  * 'vscode.cody.foobar', as we already know an event comes from VS Code - just
  * use 'cody.foobar' instead.
  */
@@ -19,8 +21,20 @@ export type EventFeature =
  */
 export type EventAction = 'succeeded' | 'failed' | 'installed' | 'savedLogin' | 'executed' | 'created'
 
-export type MetadataKey = 'metadata' | 'duration' | 'lineCount' | 'charCount'
+/**
+ * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
+ * Where possible, reuse an existing key.
+ */
+export type MetadataKey = 'durationMs' | 'lineCount' | 'charCount'
 
+/**
+ * Events accept billing metadata for ease of categorization in analytics
+ * pipelines - this type enumerates known categories.
+ */
 export type BillingCategory = 'exampleBillingCategory'
 
+/**
+ * Events accept billing metadata for ease of categorization in analytics
+ * pipelines - this type enumerates known products.
+ */
 export type BillingProduct = 'exampleBillingProduct'
