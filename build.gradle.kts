@@ -247,13 +247,13 @@ tasks {
       commandLine("pnpm", "run", "build-agent-binaries")
       environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", buildCodyDir.toString())
     }
-    // If running on Linux in CI, run ldid2 -S on the macos-arm64 binary so that it can be run on
+    // If running on Linux in CI, run ldid -S on the macos-arm64 binary so that it can be run on
     // Apple M1 computers. This is required to prevent the following issue
     // https://github.com/vercel/pkg/issues/2004
     if (isLdidSign) {
       val arm64Binary = buildCodyDir.resolve("agent-macos-arm64").toString()
-      println("Signing ldid2 -S $arm64Binary")
-      exec { commandLine("ldid2", "-S", arm64Binary) }
+      println("Signing ldid -S $arm64Binary")
+      exec { commandLine("ldid", "-S", arm64Binary) }
     }
     return buildCodyDir
   }
