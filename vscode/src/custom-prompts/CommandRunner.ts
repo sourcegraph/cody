@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
+import { getActiveEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -44,7 +45,7 @@ export class CommandRunner implements vscode.Disposable {
         logDebug('CommandRunner:init', this.kind)
 
         // Commands only work in active editor / workspace unless context specifies otherwise
-        this.editor = vscode.window.activeTextEditor || undefined
+        this.editor = getActiveEditor()
         if (!this.editor || command.context?.none) {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
@@ -188,7 +189,6 @@ export class CommandRunner implements vscode.Disposable {
 
 /**
  * Adds the selection range to the prompt string.
- *
  * @param prompt - The original prompt string
  * @param code - The code snippet to include in the prompt
  * @returns The updated prompt string with the code snippet added

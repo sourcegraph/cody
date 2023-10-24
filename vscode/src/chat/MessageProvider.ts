@@ -121,7 +121,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.loadChatHistory()
         this.sendTranscript()
         this.sendHistory()
-        await this.loadRecentChat()
         await this.contextProvider.init()
         await this.sendCodyCommands()
     }
@@ -153,6 +152,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     public async restoreSession(chatID: string): Promise<void> {
         await this.saveTranscriptToChatHistory()
+
+        if (chatID === this.currentChatID) {
+            return
+        }
+
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
@@ -648,23 +652,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             })
         } catch (error) {
             logError('MessageProvider:exportHistory', 'Failed to export chat history', error)
-        }
-    }
-
-    /**
-     * Loads the most recent chat
-     */
-    private async loadRecentChat(): Promise<void> {
-        const localHistory = localStorage.getChatHistory()
-        if (localHistory) {
-            const chats = localHistory.chat
-            const sortedChats = Object.entries(chats).sort(
-                (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
-            )
-            const chatID = sortedChats[0][0]
-            if (chatID !== this.currentChatID) {
-                await this.restoreSession(chatID)
-            }
         }
     }
 

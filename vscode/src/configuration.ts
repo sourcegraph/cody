@@ -71,6 +71,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             '*': true,
             scminput: false,
         }),
+        experimentalChatPanel: config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),

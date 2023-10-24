@@ -5,6 +5,7 @@ import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
+import { TreeViewProvider } from '../services/TreeViewProvider'
 
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
@@ -43,6 +44,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
+    private treeView = new TreeViewProvider('command')
+
     constructor(context: vscode.ExtensionContext) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
@@ -53,13 +56,13 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
+
+        vscode.window.registerTreeDataProvider('cody.commands.tree.view', this.treeView)
     }
 
     /**
      * Gets a CodyPrompt object for the given command runner ID.
-     *
      * @param commandRunnerId - The ID of the command runner to get the prompt for.
-     *
      * @returns The CodyPrompt object for the command runner, or null if not found.
      *
      * Looks up the command runner instance in the commandRunners map by the given ID.
@@ -76,10 +79,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     /**
      * Adds a new command to the commands map.
-     *
      * @param key - The unique key for the command. e.g. /test
      * @param input - Optional input text from the user.
-     *
      * @returns A promise resolving to the command ID string if successful,
      * or 'invalid' if the command is not found.
      *
@@ -136,7 +137,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     /**
      * Get the list of command names and prompts to send to the webview for display.
-     *
      * @returns An array of tuples containing the command name and prompt object.
      */
     public async getAllCommands(keepSperator = false): Promise<[string, CodyPrompt][]> {
@@ -146,7 +146,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     /**
      * Gets the custom prompt configuration by refreshing the store.
-     *
      * @returns The custom prompt configuration object containing the prompt map, premade text, and starter text.
      */
     public async getCustomConfig(): Promise<MyPrompts> {

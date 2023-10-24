@@ -8,8 +8,8 @@ import { View } from '../../webviews/NavBar'
 import { getActiveEditor } from '../editor/active-editor'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
-import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import { telemetryService } from '../services/telemetry'
+import { createCodyChatTreeItems, TreeViewProvider } from '../services/TreeViewProvider'
 
 import { addWebviewViewHTML } from './ChatViewManager'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
@@ -26,23 +26,21 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-interface ChatViewProviderOptions extends MessageProviderOptions {
+interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
+    treeView: TreeViewProvider
 }
 
-export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
+export class ChatPanelProvider extends MessageProvider {
     private extensionUri: vscode.Uri
     public webview?: ChatViewProviderWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
+    public treeView: TreeViewProvider
 
-    constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
+    constructor({ treeView, extensionUri, ...options }: ChatPanelProviderOptions) {
         super(options)
         this.extensionUri = extensionUri
-
-        const localAppWatcher = new LocalAppWatcher()
-        this.disposables.push(localAppWatcher)
-        this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
-        this.disposables.push(localAppWatcher.onTokenFileChange(tokenFile => this.tokenFileChanged(tokenFile)))
+        this.treeView = treeView
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -192,17 +190,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         await this.contextProvider.forceUpdateCodebaseContext()
     }
 
-    private appWatcherChanged(appWatcher: LocalAppWatcher): void {
-        void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
-        void this.simplifiedOnboardingReloadEmbeddingsState()
-    }
-
-    private tokenFileChanged(file: vscode.Uri): void {
-        void this.authProvider.appDetector
-            .tryFetchAppJson(file)
-            .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
-    }
-
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
@@ -257,13 +244,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Sends chat history to webview
+     * Update chat history in Tree View
      */
     protected handleHistory(history: UserLocalHistory): void {
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: history,
-        })
+        this.treeView.updateTree(createCodyChatTreeItems(history))
     }
 
     /**
@@ -356,46 +340,72 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Set webview view
      */
     public async setWebviewView(view: View): Promise<void> {
-        await vscode.commands.executeCommand('cody.chat.focus')
-        await this.webview?.postMessage({
-            type: 'view',
-            messages: view,
-        })
+        if (view !== 'chat') {
+            return
+        }
+        this.webviewPanel?.reveal(vscode.ViewColumn.Beside, !!view)
+        return Promise.resolve()
     }
 
     /**
-     * create webview resources
+     * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _context: vscode.WebviewViewResolveContext<unknown>,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _token: vscode.CancellationToken
-    ): Promise<void> {
-        this.webview = webviewView.webview
-        this.authProvider.webview = webviewView.webview
-        this.contextProvider.webview = webviewView.webview
-
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [webviewPath],
-            enableCommandUris: true,
+    public async createWebviewPanel(): Promise<vscode.WebviewPanel | undefined> {
+        // Create the webview panel only if the user is logged in.
+        // Allows users to login via the sidebar webview.
+        if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
+            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
+            return
         }
 
-        await addWebviewViewHTML(this.extensionUri, webviewView)
+        // Checks if the webview panel already exists and is visible.
+        // If so, returns early to avoid creating a duplicate.
+        // Otherwise, reveals the existing panel or creates a new one.
+        if (this.webviewPanel) {
+            if (this.webviewPanel.visible && this.transcript.isEmpty) {
+                return
+            }
+            this.webviewPanel.reveal(vscode.ViewColumn.Two)
+            return
+        }
+
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        const panel = vscode.window.createWebviewPanel(
+            this.currentChatID,
+            'Cody Chat',
+            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+                enableFindWidget: true,
+                localResourceRoots: [webviewPath],
+                enableCommandUris: true,
+            }
+        )
+
+        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
+        await addWebviewViewHTML(this.extensionUri, panel)
 
         // Register webview
-        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        this.authProvider.webview = panel.webview
+        this.contextProvider.webview = panel.webview
+        this.webviewPanel = panel
+        this.webview = panel.webview
+
+        panel.onDidDispose(() => {
+            this.webviewPanel = undefined
+            panel.dispose()
+        })
+
+        // Used for keeping sidebar chat view closed when webview panel is enabled
+        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', true)
+
+        this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+
+        return panel
     }
 
-    /**
-     * Clears the chat history for the given chatID.
-     * If no chatID is provided, clears all chat history.
-     */
     public async clearChatHistory(chatID?: string): Promise<void> {
-        // If the given chatID matches the current chat session, restarts the current session.
         if (chatID === this.currentChatID) {
             await this.clearAndRestartSession()
         }

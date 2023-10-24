@@ -37,6 +37,7 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
+    | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
@@ -292,7 +293,6 @@ export class ContextProvider implements vscode.Disposable {
 
 /**
  * Gets codebase context for the current workspace.
- *
  * @param config Cody configuration
  * @param rgPath Path to rg (ripgrep) executable
  * @param editor Editor instance
