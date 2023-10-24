@@ -532,8 +532,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       dedent:
-        specifier: ^0.7.0
-        version: 0.7.0
+        specifier: ^1.5.1
+        version: 1.5.1
       envalid:
         specifier: ^7.3.1
         version: 7.3.1
@@ -8654,8 +8654,13 @@ packages:
     dependencies:
       mimic-response: 3.1.0
 
-  /dedent@0.7.0:
-    resolution: {integrity: sha512-Q6fKUPqnAHAyhiUgFU7BUzLiv0kd8saH9al7tnu5Q/okj6dnupxyTgFIBjVzJATdfIAm9NAsvXNzjaKa+bxVyA==}
+  /dedent@1.5.1:
+    resolution: {integrity: sha512-+LxW+KLWxu3HW3M2w2ympwtqPrqYRzU8fqi6Fhd18fBALe15blJPI/I4+UHveMVG6lJqB4JNd4UG0S5cnVHwIg==}
+    peerDependencies:
+      babel-plugin-macros: ^3.1.0
+    peerDependenciesMeta:
+      babel-plugin-macros:
+        optional: true
     dev: true
 
   /deep-eql@4.1.3:
