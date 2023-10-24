@@ -18,7 +18,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Changed the "Ask Cody to Explain" Code Action to respond in the Cody sidebar instead of Inline Chat. [pull/1427](https://github.com/sourcegraph/cody/pull/1427)
-- Updated prompt preambles for chat to mitigate hallucinations. [pull/1442](https://github.com/sourcegraph/cody/pull/1442)
+- Updated prompt preambles and mixin for chat to mitigate hallucinations. [pull/1442](https://github.com/sourcegraph/cody/pull/1442) [pull/1479](https://github.com/sourcegraph/cody/pull/1479)
 - Cody can now respond in languages other than the default language of the user's editor. [pull/1442](https://github.com/sourcegraph/cody/pull/1442)
 
 ## [0.14.1]
