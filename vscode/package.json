@@ -997,7 +997,7 @@
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.20.8",
     "wink-eng-lite-web-model": "^1.5.0",
-    "wink-nlp": "^1.13.1",
+    "wink-nlp": "^1.14.3",
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
