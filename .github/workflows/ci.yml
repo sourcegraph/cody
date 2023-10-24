@@ -47,7 +47,7 @@ jobs:
   test-unit-mac:
     strategy:
       fail-fast: false
-    runs-on: macos-latest
+    runs-on: macos-13
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
