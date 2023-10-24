@@ -259,7 +259,7 @@ describe('Transcript', () => {
         const transcript = new Transcript()
 
         const interaction = await chatQuestionRecipe.getInteraction(
-            CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph',
+            'how do access tokens work in sourcegraph',
             newRecipeContext({
                 editor,
                 intentDetector,
