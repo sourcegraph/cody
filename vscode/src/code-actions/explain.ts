@@ -2,11 +2,6 @@ import * as vscode from 'vscode'
 
 export class ExplainCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
-    private command: string
-
-    constructor(inline: boolean) {
-        this.command = inline ? 'cody.inline.add' : 'cody.action.chat'
-    }
 
     public provideCodeActions(
         document: vscode.TextDocument,
@@ -28,7 +23,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         const action = new vscode.CodeAction('Ask Cody to Explain', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
-            command: this.command,
+            command: 'cody.action.chat',
             arguments: [instruction, range],
             title: 'Ask Cody to Explain',
         }
@@ -37,7 +32,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
     }
 
     private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string =>
-        `Explain the following error${diagnostics.length > 1 ? 's' : ''}:\n${diagnostics
+        `Explain the following error${diagnostics.length > 1 ? 's' : ''}:\n\n${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
-            .join('\n')}`
+            .join('\n\n')}`
 }

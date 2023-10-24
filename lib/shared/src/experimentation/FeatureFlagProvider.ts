@@ -15,6 +15,7 @@ export enum FeatureFlag {
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
+    CodyAutocompleteGraphContextBfg = 'cody-autocomplete-graph-context-bfg',
     CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
@@ -45,7 +46,7 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        if (!this.apiClient.isDotCom() || process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+        if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
             return false
         }
 
@@ -64,12 +65,8 @@ export class FeatureFlagProvider {
     }
 
     private async refreshFeatureFlags(): Promise<void> {
-        if (this.apiClient.isDotCom()) {
-            const data = await this.apiClient.getEvaluatedFeatureFlags()
-            this.featureFlags = isError(data) ? {} : data
-        } else {
-            this.featureFlags = {}
-        }
+        const data = await this.apiClient.getEvaluatedFeatureFlags()
+        this.featureFlags = isError(data) ? {} : data
         this.lastUpdated = Date.now()
     }
 }

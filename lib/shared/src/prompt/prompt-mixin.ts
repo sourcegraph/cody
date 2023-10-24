@@ -51,6 +51,15 @@ export function languagePromptMixin(languageCode: string): PromptMixin {
     return new PromptMixin(`(Reply as Cody, a coding assistant developed by Sourcegraph${languagePrompt}) `)
 }
 
+/**
+ * Creates a default prompt mixin that instructs Cody to identify itself and avoid hallucinations.
+ */
+export function defaultPromptMixin(): PromptMixin {
+    const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
+    const hallucinate = 'Never make any assumptions nor provide any misleading or hypothetical examples.'
+    return new PromptMixin(`(${identity} ${hallucinate})`)
+}
+
 export function newPromptMixin(text: string): PromptMixin {
     return new PromptMixin(text)
 }

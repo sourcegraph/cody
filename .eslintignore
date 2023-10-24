@@ -4,3 +4,4 @@ build/
 **/test-data/
 vscode/src/testutils/vscode/
 vscode/test/benchmark/datasets/
+agent/src/bfg/__tests__/

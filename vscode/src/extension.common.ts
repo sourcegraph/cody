@@ -2,13 +2,14 @@ import * as vscode from 'vscode'
 
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { languagePromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { defaultPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { CommandsController } from './custom-prompts/CommandsController'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
+import { BfgContextFetcher } from './graph/bfg/BfgContextFetcher'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import type { SymfRunner } from './local-context/symf'
@@ -26,6 +27,7 @@ export interface PlatformContext {
     createCommandsController?: Constructor<typeof CommandsController>
     createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
     createSymfRunner?: Constructor<typeof SymfRunner>
+    createBfgContextFetcher?: Constructor<typeof BfgContextFetcher>
     createFilenameContextFetcher?: Constructor<typeof FilenameContextFetcher>
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
@@ -37,7 +39,7 @@ export interface PlatformContext {
 
 export function activate(context: vscode.ExtensionContext, platformContext: PlatformContext): ExtensionApi {
     const api = new ExtensionApi()
-    PromptMixin.add(languagePromptMixin(vscode.env.language))
+    PromptMixin.add(defaultPromptMixin())
 
     start(context, platformContext)
         .then(disposable => {
