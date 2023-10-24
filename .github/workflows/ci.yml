@@ -38,6 +38,37 @@ jobs:
       - run: pnpm run build-agent-binaries
         working-directory: agent
       # - run: ldid2 -S agent/dist/agent-macos-arm64
+      # - run: zip agent.zip agent/dist/agent-macos-arm64
+      # - name: Upload Asset
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: agent
+      #     path: agent.zip
+  test-unit-mac:
+    strategy:
+      fail-fast: false
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@v2
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm run build-agent-binaries-mac
+        working-directory: agent
+      # - run: ldid2 -S agent/dist/agent-macos-arm64
       - run: zip agent.zip agent/dist/agent-macos-arm64
       - name: Upload Asset
         uses: actions/upload-artifact@v2
