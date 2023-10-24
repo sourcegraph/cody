@@ -43,7 +43,7 @@ jobs:
       - run: ./install-ldid.sh
       - run: pnpm run build-agent-binaries
         working-directory: agent
-      - run: ldid2 -S agent/dist/agent-macos-arm64
+      # - run: ldid2 -S agent/dist/agent-macos-arm64
       - run: zip agent.zip agent/dist/agent-macos-arm64
       - name: Upload Asset
         uses: actions/upload-artifact@v2
