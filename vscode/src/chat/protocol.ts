@@ -14,7 +14,12 @@ import { View } from '../../webviews/NavBar'
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | { command: 'event'; eventName: string; properties: TelemetryEventProperties | undefined } // new event log internal API (use createWebviewTelemetryService wrapper)
+    | {
+          command: 'event'
+          eventName: string
+          eventAction: string | undefined
+          properties: TelemetryEventProperties | undefined
+      } // new event log internal API (use createWebviewTelemetryService wrapper)
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }

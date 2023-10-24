@@ -30,6 +30,12 @@ export type EventFeature =
     | 'cody.walkthrough'
     | 'cody.walkthrough.showExplain'
     | 'cody.walkthrough.enableInlineChat'
+    // chat-related events
+    | 'cody.editChatButton'
+    | 'cody.sidebar.abortButton'
+    | 'cody.app:download'
+    | 'cody.app:connect'
+    | 'cody.authReloadButton'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where

@@ -3,12 +3,14 @@ import * as vscode from 'vscode'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { EventAction, EventFeature } from '@sourcegraph/cody-shared/src/telemetry-v2'
 
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import {
@@ -59,11 +61,17 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
-                telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
+                telemetryService.log(
+                    'CodyVSCodeExtension:abortButton:clicked',
+                    { source: 'sidebar' },
+                    { hasV2Event: true }
+                )
+                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
@@ -74,7 +82,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
                     const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
+                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`, undefined, { hasV2Event: true }) // TODO(sqs): remove when new events are working
+                    telemetryRecorder.recordEvent(`cody.${value}`, 'clicked')
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -101,6 +110,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
+                telemetryRecorder.recordEvent(
+                    message.eventName as EventFeature,
+                    message.eventAction as EventAction,
+                    message.properties
+                )
                 break
             case 'history':
                 if (message.action === 'clear') {
@@ -124,7 +138,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
                 break
             case 'openFile':
                 await this.openFilePath(message.filePath)
@@ -203,7 +218,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
         if (text === '/') {
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
@@ -220,7 +235,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
+        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
@@ -309,7 +324,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     /**
      * Handles copying code and detecting a paste event.
-     *
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */
