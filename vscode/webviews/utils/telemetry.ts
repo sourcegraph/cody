@@ -7,7 +7,7 @@ import { VSCodeWrapper } from './VSCodeApi'
  */
 export function createWebviewTelemetryService(vscodeAPI: VSCodeWrapper): TelemetryService {
     return {
-        log: (eventName, eventAction, properties) => {
+        log: (eventName, properties) => {
             vscodeAPI.postMessage({ command: 'event', eventName, properties })
         },
     }
