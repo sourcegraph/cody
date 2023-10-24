@@ -7,7 +7,6 @@
  * use 'cody.foobar' instead.
  */
 export type EventFeature =
-    | 'cody'
     // extension-setup-related events
     | 'cody.extension'
     // fixup-related events
