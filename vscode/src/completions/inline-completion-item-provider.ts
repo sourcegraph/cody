@@ -110,7 +110,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         this.requestManager = new RequestManager({
-            completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
@@ -367,7 +366,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     uri: document.uri,
                     lastTriggerPosition: position,
                     lastTriggerDocContext: docContext,
-                    lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                    lastTriggerSelectedCompletionInfo: context?.selectedCompletionInfo,
                     result,
                 }
                 this.lastCandidate = items.length > 0 ? candidate : undefined

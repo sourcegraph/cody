@@ -68,10 +68,20 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     let injectedPrefix = null
     if (context?.selectedCompletionInfo) {
         const { range, text } = context.selectedCompletionInfo
-        completePrefixWithContextCompletion = completePrefix.slice(0, range.start.character - position.character) + text
-        injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
-        if (injectedPrefix === '') {
-            injectedPrefix = null
+        // A selected completion info attempts to replace the specified range with the inserted text
+        //
+        // We assume that the end of the range equals the current position, otherwise this would not
+        // inject a prefix
+        if (range.end.character === position.character && range.end.line === position.line) {
+            const lastLine = lines(completePrefix).at(-1)!
+            const beforeLastLine = completePrefix.slice(0, -lastLine.length)
+            completePrefixWithContextCompletion = beforeLastLine + lastLine.slice(0, range.start.character) + text
+            injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
+            if (injectedPrefix === '') {
+                injectedPrefix = null
+            }
+        } else {
+            console.warn('The selected completion info does not match the current position')
         }
     }
 

@@ -14,12 +14,7 @@ import { InlineCompletionItemWithAnalytics } from './text-processing/process-inl
 
 type ReuseLastCandidateArgument =
     // required fields from InlineCompletionsParams
-    Required<
-        Pick<
-            InlineCompletionsParams,
-            'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate' | 'completeSuggestWidgetSelection'
-        >
-    > &
+    Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate'>> &
         // optional fields from InlineCompletionsParams
         Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem' | 'handleDidPartiallyAcceptCompletionItem'> & {
             // additional fields
@@ -33,10 +28,9 @@ export function reuseLastCandidate({
     document,
     position,
     selectedCompletionInfo,
-    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem },
+    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedCompletionInfo },
     lastCandidate,
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
-    completeSuggestWidgetSelection,
     handleDidAcceptCompletionItem,
     handleDidPartiallyAcceptCompletionItem,
 }: ReuseLastCandidateArgument): InlineCompletionsResult | null {
@@ -44,21 +38,38 @@ export function reuseLastCandidate({
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerDocContext.nextNonEmptyLine === nextNonEmptyLine
 
-    // If completeSuggestWidgetSelection is enabled, we have to compare that a last candidate is
-    // only reused if it is has same completion info selected.
-    const isSameTriggerSelectedInfoItem = completeSuggestWidgetSelection
-        ? lastTriggerSelectedInfoItem === selectedCompletionInfo?.text
+    // When the current request has an selectedCompletionInfo set, we have to compare that a last
+    // candidate is only reused if it is has same completion info selected.
+    //
+    // This will handle cases where the user fully accepts a completion info. In that case, the
+    // lastTriggerSelectedCompletionInfo.text will be set but the selectedCompletionInfo will be
+    // empty, allowing the last candidate to be reused.
+    const isSameSelectedInfoItemOrFullyAccepted = selectedCompletionInfo
+        ? lastTriggerSelectedCompletionInfo?.text === selectedCompletionInfo?.text
         : true
 
-    if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {
+    if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameSelectedInfoItemOrFullyAccepted) {
         return null
     }
 
+    // The currentLinePrefix might have an injected prefix. This is usually expected, since we want
+    // to use eventual suggest widget state to guide the completion, but ofr the last candidate
+    // logic we need to get the line prefix as it appears in the document and there, the prefix is
+    // not present yet.
+    const lastTriggerCurrentLinePrefixInDocument = lastTriggerDocContext.injectedPrefix
+        ? lastTriggerDocContext.currentLinePrefix.slice(
+              0,
+              lastTriggerDocContext.currentLinePrefix.length - lastTriggerDocContext.injectedPrefix.length
+          )
+        : lastTriggerDocContext.currentLinePrefix
+
     // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-    const lastTriggerCurrentLinePrefix = lastTriggerDocContext.currentLinePrefix
-    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerCurrentLinePrefix)
+
+    const isIndentation =
+        isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerCurrentLinePrefixInDocument)
     const isDeindentation =
-        isWhitespace(lastTriggerCurrentLinePrefix) && lastTriggerCurrentLinePrefix.startsWith(currentLinePrefix)
+        isWhitespace(lastTriggerCurrentLinePrefixInDocument) &&
+        lastTriggerCurrentLinePrefixInDocument.startsWith(currentLinePrefix)
     const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
     let didAcceptCompletion = false
 
@@ -67,7 +78,7 @@ export function reuseLastCandidate({
             // Allow reuse if the user is (possibly) typing forward as suggested by the last
             // candidate completion. We still need to filter the candidate items to see which ones
             // the user's typing actually follows.
-            const lastCompletion = lastTriggerCurrentLinePrefix + item.insertText
+            const lastCompletion = lastTriggerCurrentLinePrefixInDocument + item.insertText
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
@@ -86,7 +97,7 @@ export function reuseLastCandidate({
                 }
 
                 // Detect partial acceptance of the last candidate
-                const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefix.length
+                const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefixInDocument.length
                 if (isPartialAcceptance(item.insertText, acceptedLength)) {
                     handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
                 }
@@ -98,7 +109,8 @@ export function reuseLastCandidate({
             if (isIndentationChange) {
                 return {
                     ...item,
-                    insertText: lastTriggerCurrentLinePrefix.slice(currentLinePrefix.length) + item.insertText,
+                    insertText:
+                        lastTriggerCurrentLinePrefixInDocument.slice(currentLinePrefix.length) + item.insertText,
                 }
             }
 
@@ -145,11 +157,6 @@ export function getRequestParamsFromLastCandidate(
         document,
         position: lastCandidate.lastTriggerPosition,
         docContext: lastCandidate.lastTriggerDocContext,
-        selectedCompletionInfo: lastCandidate.lastTriggerSelectedInfoItem
-            ? {
-                  range: new vscode.Range(0, 0, 0, 0),
-                  text: lastCandidate.lastTriggerSelectedInfoItem,
-              }
-            : undefined,
+        selectedCompletionInfo: lastCandidate.lastTriggerSelectedCompletionInfo,
     }
 }

@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, it, vitest } from 'vitest'
+import * as vscode from 'vscode'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
@@ -7,13 +8,16 @@ import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '..
 import { SuggestionID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
-import { getInlineCompletions, params, V } from './helpers'
+import { getInlineCompletions, getInlineCompletionsInsertText, params, V } from './helpers'
 
 describe('[getInlineCompletions] reuseLastCandidate', () => {
     function lastCandidate(
         code: string,
         insertText: string | string[],
-        lastTriggerSelectedInfoItem?: string
+        lastTriggerSelectedCompletionInfo?: {
+            text: string
+            range: vscode.Range
+        }
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
         const lastDocContext = getCurrentDocContext({
@@ -22,11 +26,17 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             maxPrefixLength: 100,
             maxSuffixLength: 100,
             enableExtendedTriggers: true,
+            context: lastTriggerSelectedCompletionInfo
+                ? {
+                      triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                      selectedCompletionInfo: lastTriggerSelectedCompletionInfo,
+                  }
+                : undefined,
         })
         return {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerSelectedInfoItem,
+            lastTriggerSelectedCompletionInfo,
             result: {
                 logId: '1' as SuggestionID,
                 source: InlineCompletionsResultSource.Network,
@@ -290,11 +300,14 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             // ghost text should not be reused as it won't be rendered anyways
             expect(
                 await getInlineCompletions(
-                    params('console█', [], {
-                        lastCandidate: lastCandidate('console█', ' = 1', 'log'),
+                    params('console.█', [], {
+                        lastCandidate: lastCandidate('console.█', ' = 1', {
+                            text: 'log',
+                            range: range(0, 8, 0, 8),
+                        }),
                         selectedCompletionInfo: {
                             text: 'dir',
-                            range: range(0, 0, 0, 0),
+                            range: range(0, 8, 0, 8),
                         },
                         completeSuggestWidgetSelection: true,
                     })
@@ -303,5 +316,36 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 items: [],
                 source: InlineCompletionsResultSource.Network,
             }))
+
+        it('does not repeat injected suffix information when content is inserted', async () =>
+            expect(
+                await getInlineCompletionsInsertText(
+                    params('console.l█', [], {
+                        lastCandidate: lastCandidate('console.█', 'log("hello world")', {
+                            text: 'log',
+                            range: range(0, 8, 0, 8),
+                        }),
+                        selectedCompletionInfo: {
+                            text: 'log',
+                            range: range(0, 8, 0, 9),
+                        },
+                        completeSuggestWidgetSelection: true,
+                    })
+                )
+            ).toEqual(['og("hello world")']))
+
+        it('does not repeat injected suffix information when suggestion item is fully accepted', async () =>
+            expect(
+                await getInlineCompletionsInsertText(
+                    params('console.log█', [], {
+                        lastCandidate: lastCandidate('console.█', 'log("hello world")', {
+                            text: 'log',
+                            range: range(0, 8, 0, 8),
+                        }),
+                        selectedCompletionInfo: undefined,
+                        completeSuggestWidgetSelection: true,
+                    })
+                )
+            ).toEqual(['("hello world")']))
     })
 })
