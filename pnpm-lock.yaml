@@ -140,8 +140,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/shared
       commander:
-        specifier: ^11.0.0
-        version: 11.0.0
+        specifier: ^11.1.0
+        version: 11.1.0
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
@@ -238,8 +238,8 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       commander:
-        specifier: ^10.0.1
-        version: 10.0.1
+        specifier: ^11.1.0
+        version: 11.1.0
       node-fetch:
         specifier: ^3.3.2
         version: 3.3.2
@@ -8255,8 +8255,8 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /commander@11.0.0:
-    resolution: {integrity: sha512-9HMlXtt/BNoYr8ooyjjNRdIilOTkVJXB+GhxMTtOKwk0R4j4lS4NpjuqmRxroBfnfTSHQIHQB7wryHhXarNjmQ==}
+  /commander@11.1.0:
+    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
     dev: false
 
