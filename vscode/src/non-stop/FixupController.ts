@@ -291,7 +291,11 @@ export class FixupController
 
         editor.revealRange(task.selectionRange)
 
-        const editOk = task.insertMode ? await this.insertEdit(editor, task) : await this.replaceEdit(editor, diff)
+        // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
+        const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
+        const editOk = task.insertMode
+            ? await this.insertEdit(editor, task, applyEditOptions)
+            : await this.replaceEdit(editor, diff, applyEditOptions)
 
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
@@ -305,6 +309,34 @@ export class FixupController
             const codeCount = countCode(replacementText)
             const source = task.source
             telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+
+            // format the selected area after applying edits
+            const editedRange = new vscode.Range(
+                new vscode.Position(task.selectionRange.start.line, 0),
+                new vscode.Position(
+                    task.selectionRange.start.line + codeCount.lineCount,
+                    task.selectionRange.end.character
+                )
+            )
+
+            const formattingChanges = (
+                await vscode.commands.executeCommand<vscode.TextEdit[]>(
+                    'vscode.executeFormatDocumentProvider',
+                    editor.document.uri,
+                    {}
+                )
+            ).filter(change => editedRange.contains(change.range))
+
+            await editor.edit(
+                editBuilder => {
+                    for (const change of formattingChanges) {
+                        editBuilder.replace(change.range, change.newText)
+                    }
+                },
+                // Add the missing undo stop after this change.
+                // Now when the user hits 'undo', the entire format and edit will be undone at once.
+                { undoStopBefore: false, undoStopAfter: true }
+            )
         }
 
         // TODO: is this the right transition for being all done?
@@ -315,7 +347,11 @@ export class FixupController
     }
 
     // Replace edit returned by Cody at task selection range
-    private async replaceEdit(editor: vscode.TextEditor, diff: Diff): Promise<boolean> {
+    private async replaceEdit(
+        editor: vscode.TextEditor,
+        diff: Diff,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+    ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
         const editOk = await editor.edit(editBuilder => {
             for (const edit of diff.edits) {
@@ -327,12 +363,16 @@ export class FixupController
                     edit.text
                 )
             }
-        })
+        }, options)
         return editOk
     }
 
     // Insert edit returned by Cody at task selection range
-    private async insertEdit(editor: vscode.TextEditor, task: FixupTask): Promise<boolean> {
+    private async insertEdit(
+        editor: vscode.TextEditor,
+        task: FixupTask,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+    ): Promise<boolean> {
         logDebug('FixupController:edit', 'inserting')
         const text = task.replacement
         const range = task.selectionRange
@@ -349,7 +389,7 @@ export class FixupController
         // Insert updated text at selection range
         const editOk = await editor.edit(editBuilder => {
             editBuilder.insert(range.start, replacementText)
-        })
+        }, options)
         return editOk
     }
 

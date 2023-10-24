@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.1.0",
-    "@sourcegraph/eslint-config": "0.35.0",
+    "@sourcegraph/eslint-config": "0.37.1",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^7.0.26",
