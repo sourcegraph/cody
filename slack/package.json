@@ -24,7 +24,7 @@
     "langchain": "^0.0.105",
     "lodash": "^4.17.21",
     "octokit": "^2.1.0",
-    "openai": "^3.2.1",
+    "openai": "^3.3.0",
     "slackify-markdown": "^4.3.1"
   },
   "devDependencies": {

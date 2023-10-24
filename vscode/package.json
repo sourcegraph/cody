@@ -987,7 +987,7 @@
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "mock-require": "^3.0.3",
-    "openai": "^3.2.1",
+    "openai": "^3.3.0",
     "os-browserify": "^0.3.0",
     "socks-proxy-agent": "^8.0.1",
     "stream-json": "^1.8.0",
