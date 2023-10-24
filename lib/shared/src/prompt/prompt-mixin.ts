@@ -56,7 +56,8 @@ export function languagePromptMixin(languageCode: string): PromptMixin {
  */
 export function defaultPromptMixin(): PromptMixin {
     const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
-    const hallucinate = 'Never make any assumptions nor provide any misleading or hypothetical examples.'
+    const hallucinate =
+        'If context is available: never make any assumptions nor provide any misleading or hypothetical examples.'
     return new PromptMixin(`(${identity} ${hallucinate})`)
 }
 
