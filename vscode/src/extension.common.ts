@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { defaultPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
@@ -39,7 +38,6 @@ export interface PlatformContext {
 
 export function activate(context: vscode.ExtensionContext, platformContext: PlatformContext): ExtensionApi {
     const api = new ExtensionApi()
-    PromptMixin.add(defaultPromptMixin())
 
     start(context, platformContext)
         .then(disposable => {

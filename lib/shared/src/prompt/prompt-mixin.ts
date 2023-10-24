@@ -1,5 +1,8 @@
 import { InteractionMessage } from '../chat/transcript/messages'
 
+const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
+const hallucinate = 'Never make any assumptions nor provide any misleading or hypothetical examples.'
+
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
  * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple recipes.
@@ -7,6 +10,8 @@ import { InteractionMessage } from '../chat/transcript/messages'
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
     private static customMixin: PromptMixin[] = []
+    // The default prompt mixin that instructs Cody to identify itself and avoid hallucinations.
+    private static defaultMixin: PromptMixin = new PromptMixin(`(${identity} ${hallucinate})`)
 
     /**
      * Adds a prompt mixin to the global set.
@@ -27,7 +32,8 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
-        const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
+        // Default Maxin is added at the end so that it cannot be overriden by a custom mixin.
+        const mixins = [...this.mixins, ...this.customMixin, this.defaultMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
@@ -47,17 +53,8 @@ export class PromptMixin {
  * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
-    const languagePrompt = languageCode ? `, in the language with RFC5646/ISO language code "${languageCode}"` : ''
-    return new PromptMixin(`(Reply as Cody, a coding assistant developed by Sourcegraph${languagePrompt}) `)
-}
-
-/**
- * Creates a default prompt mixin that instructs Cody to identify itself and avoid hallucinations.
- */
-export function defaultPromptMixin(): PromptMixin {
-    const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
-    const hallucinate = 'Never make any assumptions nor provide any misleading or hypothetical examples.'
-    return new PromptMixin(`(${identity} ${hallucinate})`)
+    const languagePrompt = `Reply in the language with RFC5646/ISO language code "${languageCode}".`
+    return new PromptMixin(languageCode ? languagePrompt : '')
 }
 
 export function newPromptMixin(text: string): PromptMixin {
