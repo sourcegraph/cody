@@ -410,7 +410,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
             telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' }, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked', { privateMetadata: { page: 'welcome' } })
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -434,9 +434,7 @@ const register = async (
                 { page: 'showExplain' },
                 { hasV2Event: true }
             )
-            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked', {
-                privateMetadata: { page: 'showExplain' },
-            })
+            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
@@ -445,9 +443,7 @@ const register = async (
                 { page: 'enableInlineChat' },
                 { hasV2Event: true }
             )
-            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked', {
-                privateMetadata: { page: 'enableInlineChat' },
-            })
+            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked')
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
