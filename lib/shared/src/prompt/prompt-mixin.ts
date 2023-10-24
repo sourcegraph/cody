@@ -2,6 +2,8 @@ import { InteractionMessage } from '../chat/transcript/messages'
 
 const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
 const hallucinate = 'Never make any assumptions nor provide any misleading or hypothetical examples.'
+// The prompt that instructs Cody to identify itself and avoid hallucinations.
+export const CODY_INTRO_PROMPT = `(${identity} ${hallucinate})`
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -10,8 +12,6 @@ const hallucinate = 'Never make any assumptions nor provide any misleading or hy
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
     private static customMixin: PromptMixin[] = []
-    // The default prompt mixin that instructs Cody to identify itself and avoid hallucinations.
-    private static defaultMixin: PromptMixin = new PromptMixin(`(${identity} ${hallucinate})`)
 
     /**
      * Adds a prompt mixin to the global set.
@@ -33,13 +33,13 @@ export class PromptMixin {
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
         // Default Maxin is added at the end so that it cannot be overriden by a custom mixin.
-        const mixins = [...this.mixins, ...this.customMixin, this.defaultMixin].map(mixin => mixin.prompt).join('\n\n')
+        const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
-            return { ...humanMessage, text: `${mixins}\n\n${humanMessage.text}` }
+            return { ...humanMessage, text: `${mixins}\n\n${CODY_INTRO_PROMPT}${humanMessage.text}` }
         }
-        return humanMessage
+        return { ...humanMessage, text: `${CODY_INTRO_PROMPT}${humanMessage.text}` }
     }
 
     /**
