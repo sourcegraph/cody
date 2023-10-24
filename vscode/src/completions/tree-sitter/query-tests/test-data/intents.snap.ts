@@ -110,7 +110,7 @@
 
 // ------------------------------------
 
-  function returnStatementValue() {
+  function returnStatementValue(value: string, flag?: boolean) {
       return "asd"
 //           ^^^^^ string[1]
 //           █
@@ -140,4 +140,31 @@
 
 // Nodes types:
 // type_declaration.body[1]: object_type
+
+// ------------------------------------
+
+  returnStatementValue("value")
+//                     ^^^^^^^ string[1]
+//                     █
+
+// Nodes types:
+// string[1]: string
+
+// ------------------------------------
+
+  returnStatementValue("value", false)
+//                              ^^^^^ argument[1]
+//                              █
+
+// Nodes types:
+// argument[1]: false
+
+// ------------------------------------
+
+  returnStatementValue()
+//                    ^^ arguments[1]
+//                    █
+
+// Nodes types:
+// arguments[1]: arguments
 

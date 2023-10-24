@@ -21,9 +21,11 @@ export const intentPriority = [
     'function.body',
     'type_declaration.name',
     'type_declaration.body',
+    'arguments',
     'block_statement',
     'import.source',
     'comment',
+    'argument',
     'parameters',
     'return_statement',
     'string',
@@ -67,6 +69,7 @@ const JS_INTENTS_QUERY = dedent`
         body: (statement_block ("{") @function.body.cursor) @function.body)
 
     (_ ("{") @block_statement.cursor) @block_statement
+    (arguments ("(") @arguments.cursor) @arguments
 
     ; Atomic intents
     ;--------------------------------
@@ -75,6 +78,7 @@ const JS_INTENTS_QUERY = dedent`
         source: (string) @import.source!)
 
     (comment) @comment!
+    (arguments (_) @argument!)
     (formal_parameters) @parameters!
     (return_statement) @return_statement!
     [(string) (string_fragment) (template_string)] @string!
