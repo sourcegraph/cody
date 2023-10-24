@@ -19,7 +19,7 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  * Recorder for recording telemetry events in the new telemetry framework:
  * https://docs.sourcegraph.com/dev/background-information/telemetry
  *
- * DEPRECATED: Callsites should ALSO record an event using services/telemetryV2
+ * DEPRECATED: Callsites should ALSO record an event using services/telemetry-v2
  * as well and indicate this has happened, for example:
  *
  *   logEvent(name, properties, { hasV2Event: true })
@@ -33,7 +33,7 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  */
 export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
     new CallbackTelemetryProcessor(() => {
-        throw new Error('telemetryV2: recorder used before initialization')
+        throw new Error('telemetry-v2: recorder used before initialization')
     }),
 ])
 
@@ -50,6 +50,8 @@ export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvi
  */
 const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
+const debugLogLabel = 'telemetry-v2'
+
 function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void {
     telemetryRecorderProvider?.complete()
     telemetryRecorderProvider = updatedProvider
@@ -57,7 +59,7 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void
         // Log all events in debug for reference.
         new CallbackTelemetryProcessor(event => {
             logDebug(
-                'telemetryV2',
+                debugLogLabel,
                 `recordEvent: ${event.feature}/${event.action}: ${JSON.stringify({
                     parameters: event.parameters,
                 })}`
@@ -91,10 +93,10 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * In testing, send events to the mock server.
      */
     if (process.env.CODY_TESTING === 'true') {
-        logDebug('telemetryV2', 'using mock exporter')
+        logDebug(debugLogLabel, 'using mock exporter')
         updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
     } else if (isExtensionModeDevOrTest) {
-        logDebug('telemetryV2', 'using no-op exports')
+        logDebug(debugLogLabel, 'using no-op exports')
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
     } else {
         updateGlobalInstances(

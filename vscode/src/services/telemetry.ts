@@ -50,11 +50,11 @@ export async function createOrUpdateEventLogger(
         eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
         if (created) {
             logEvent('CodyInstalled', undefined, {
-                hasV2Event: true, // Created in src/services/telemetryV2.ts
+                hasV2Event: true, // Created in src/services/telemetry-v2.ts
             })
         } else {
             logEvent('CodyVSCodeExtension:CodySavedLogin:executed', undefined, {
-                hasV2Event: true, // Created in src/services/telemetryV2.ts
+                hasV2Event: true, // Created in src/services/telemetry-v2.ts
             })
         }
         return
@@ -65,7 +65,7 @@ export async function createOrUpdateEventLogger(
 /**
  * Log a telemetry event using the legacy event-logging mutations.
  *
- * DEPRECATED: Callsites should ALSO record an event using services/telemetryV2
+ * DEPRECATED: Callsites should ALSO record an event using services/telemetry-v2
  * as well and indicate this has happened, for example:
  *
  *   logEvent(name, properties, { hasV2Event: true })
@@ -102,7 +102,7 @@ function logEvent(eventName: string, properties?: TelemetryEventProperties, opts
 /**
  * telemetryService logs events using the legacy event-logging mutations.
  *
- * DEPRECATED: Callsites should ALSO record an event using services/telemetryV2
+ * DEPRECATED: Callsites should ALSO record an event using services/telemetry-v2
  * as well and indicate this has happened, for example:
  *
  *   telemetryService.logEvent(name, properties, { hasV2Event: true })

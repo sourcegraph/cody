@@ -31,7 +31,7 @@ import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider } from './services/telemetryV2'
+import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { TestSupport } from './test-support'
 
 /**

@@ -108,7 +108,7 @@ We don't keep these modules in .git tree, but instead we load them manually from
 In order to do it you can run `./scripts/download-wasm-modules.ts` or just `pnpm download-wasm` before
 running you vscode locally.
 
-## Debugging with dedicated Node DevTools
+### Debugging with dedicated Node DevTools
 
 1. **Initialize the Build Watcher**: Run the following command from the monorepo root to start the build watcher:
 
@@ -127,8 +127,55 @@ pnpm --filter cody-ai run start:dev:desktop
 5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
 6. **Start Debugging Like a PRO**: yay!
 
-## Running the autocomplete test suite
+### Running the autocomplete test suite
 
 We have a list of test cases that you can easily automate to validate autocomplete quality when making prompt changes. The database for this lives in `vscode/test/completions/completions-dataset.ts` and should be updated when new cases are added or removed.
 
 For more information, see [Cody quality tools](../doc/dev/quality/index.md)
+
+## Telemetry events
+
+Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://docs.sourcegraph.com/dev/background-information/telemetry).
+For now, all events should be instrumented using both the legacy event clients and the new clients, for example:
+
+```ts
+// Legacy events client
+import { telemetryService } from '../services/telemetry'
+// New events client
+import { telemetryRecorder } from '../services/telemetry-v2'
+
+// Legacy instrumentation
+telemetryService.log(
+  'CodyVSCodeExtension:fixup:applied',
+  { ...codeCount, source },
+  // Indicate the legacy instrumentation has a coexisting v2 instrumentation
+  { hasV2Event: true }
+)
+// New instrumentation, alonsgide the legacy instrumentation
+telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+  metadata: {
+    /**
+     * metadata, exported by default, must be numeric.
+     */
+    lineCount: codeCount.lineCount,
+    charCount: codeCount.charCount,
+  },
+  privateMetadata: {
+    /**
+     * privateMetadata is NOT exported by default, because it can accidentally
+     * contain data considered sensitive. Export of privateMetadata can be
+     * enabled serverside on an allowlist basis, but requires a Sourcegraph
+     * release.
+     *
+     * Where possible, convert the data into a number representing a known
+     * enumeration of categorized values instead, so that it can be included
+     * in the exported-by-default metadata field instead.
+     *
+     * Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry#sensitive-attributes
+     */
+    source,
+  },
+})
+```
+
+Allowed values for various fields are declared and tracked in [`lib/shared/src/telemetry-v2`](../lib/shared/src/telemetry-v2).

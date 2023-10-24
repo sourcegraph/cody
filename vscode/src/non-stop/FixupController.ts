@@ -10,7 +10,7 @@ import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetryV2'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
