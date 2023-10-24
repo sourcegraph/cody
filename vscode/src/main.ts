@@ -258,7 +258,9 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', { hasV2Event: true })
+            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', undefined, {
+                hasV2Event: true,
+            })
             telemetryRecorder.recordEvent('cody.comment.delete', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
@@ -275,7 +277,9 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () => {
             void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', { hasV2Event: true })
+            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', undefined, {
+                hasV2Event: true,
+            })
             telemetryRecorder.recordEvent('cody.comment.collapse-all', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
@@ -286,7 +290,9 @@ const register = async (
             await sidebarChatProvider.setWebviewView('chat')
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', { hasV2Event: true })
+            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
+                hasV2Event: true,
+            })
             telemetryRecorder.recordEvent('cody.comment.open-in-sidebar', 'clicked')
         }),
         vscode.commands.registerCommand(
