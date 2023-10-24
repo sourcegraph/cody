@@ -33,7 +33,7 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
-        // Default Maxin is added at the end so that it cannot be overriden by a custom mixin.
+        // Default Mixin is added at the end so that it cannot be overriden by a custom mixin.
         const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
