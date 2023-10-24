@@ -17,11 +17,11 @@ jobs:
           cache: "gradle"
       # See note about QEMU and binfmt requirement here https://github.com/vercel/pkg#targets
       - name: Set up QEMU
-         id: qemu
-         uses: docker/setup-qemu-action@v1
-         with:
-           image: tonistiigi/binfmt:latest
-           platforms: all
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1.1.0
       - run: ./scripts/install-ldid.sh
