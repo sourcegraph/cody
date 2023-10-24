@@ -41,7 +41,7 @@ const MAX_RESPONSE_TOKENS = 256
 export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
-    private instructions: string = `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code do not include anything else beyond the code.`
+    private instructions = `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code do not include anything else beyond the code.`
 
     constructor(options: ProviderOptions, { maxContextTokens, client }: Required<UnstableOpenAIOptions>) {
         super(options)
@@ -90,7 +90,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
                     ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
                     : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
             ]
-            const numSnippetChars = snippetMessages.join(`\n\n`).length + 1
+            const numSnippetChars = snippetMessages.join('\n\n').length + 1
             if (numSnippetChars > remainingChars) {
                 break
             }
