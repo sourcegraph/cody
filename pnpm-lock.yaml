@@ -453,8 +453,8 @@ importers:
         specifier: ^0.20.8
         version: 0.20.8
       wink-eng-lite-web-model:
-        specifier: ^1.5.0
-        version: 1.5.0(wink-nlp@1.13.1)
+        specifier: ^1.5.2
+        version: 1.5.2(wink-nlp@1.13.1)
       wink-nlp:
         specifier: ^1.13.1
         version: 1.13.1
@@ -17701,8 +17701,8 @@ packages:
       wink-jaro-distance: 2.0.0
     dev: false
 
-  /wink-eng-lite-web-model@1.5.0(wink-nlp@1.13.1):
-    resolution: {integrity: sha512-5t27uqKRpQVyjb+ztIabmD2m76ct+5NP9e3TVxla4GBQzgPJnAHCynPw4KQa42BNn5xxi7b7E9P3akSFiYWHbg==}
+  /wink-eng-lite-web-model@1.5.2(wink-nlp@1.13.1):
+    resolution: {integrity: sha512-qYxAtJi0DuF0mVNr3wwdNj5u+jG9xH8BH45MbNLGzwQrUUpgKs87GfBLup0+ZfuXcpunw6AsgL7xtdl5vtUd2w==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       wink-nlp: '>1.8.1'
@@ -17722,7 +17722,7 @@ packages:
     resolution: {integrity: sha512-b7PcRhEBNxQmsmht70jLOkwYUyie3da4/cgEXL+CumYO5b/nwV+W7fuMXToh5BtGq1RABznmc2TGTp1Qf/JUXg==}
     dependencies:
       wink-distance: 2.0.2
-      wink-eng-lite-web-model: 1.5.0(wink-nlp@1.13.1)
+      wink-eng-lite-web-model: 1.5.2(wink-nlp@1.13.1)
       wink-helpers: 2.0.0
       wink-nlp: 1.13.1
       wink-porter2-stemmer: 2.0.1
