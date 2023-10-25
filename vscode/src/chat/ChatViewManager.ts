@@ -75,7 +75,7 @@ export class ChatViewManager implements vscode.Disposable {
                 return
             }
 
-            if (!this.chatPanelProviders) {
+            if (!this.chatPanelProviders.size) {
                 await this.createWebviewPanel()
             }
 
@@ -99,9 +99,13 @@ export class ChatViewManager implements vscode.Disposable {
      * If not set, defaults to sidebarViewProvider.
      * Sets currentProvider to the returned provider.
      */
-    private getChatProvider(): ChatViewProvider | ChatPanelProvider {
+    private async getChatProvider(): Promise<ChatViewProvider | ChatPanelProvider> {
         if (!this.isPanelViewEnabled) {
             return this.sidebarChat
+        }
+
+        if (!this.chatPanelProviders.size) {
+            await this.createWebviewPanel()
         }
         const provider = this.currentProvider || this.sidebarChat
         this.currentProvider = provider
@@ -186,7 +190,6 @@ export class ChatViewManager implements vscode.Disposable {
         }
 
         await this.createWebviewPanel(chatID)
-        this.getChatProvider().webviewPanel?.reveal()
     }
 
     /**
@@ -203,7 +206,7 @@ export class ChatViewManager implements vscode.Disposable {
             await this.clearAndRestartSession()
         }
         // Run command in a new webview to avoid conflicts with context from previous chat
-        const chatProvider = this.getChatProvider()
+        const chatProvider = await this.getChatProvider()
 
         await chatProvider.executeRecipe(recipeId, humanChatInput)
     }
@@ -216,7 +219,7 @@ export class ChatViewManager implements vscode.Disposable {
      */
     public async setWebviewView(view: View): Promise<void> {
         // Always start command in a new chat session
-        const chatProvider = this.getChatProvider()
+        const chatProvider = await this.getChatProvider()
         await chatProvider.setWebviewView(view)
     }
 
@@ -230,7 +233,7 @@ export class ChatViewManager implements vscode.Disposable {
      * @param type - Optional type for the custom command.
      */
     public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
-        const chatProvider = this.getChatProvider()
+        const chatProvider = await this.getChatProvider()
         const customPromptActions = ['add', 'get', 'menu']
         if (!customPromptActions.includes(title)) {
             await chatProvider.setWebviewView('chat')
@@ -247,7 +250,8 @@ export class ChatViewManager implements vscode.Disposable {
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
         const chatID = treeItem?.id
         if (chatID) {
-            await this.getChatProvider()?.clearChatHistory(chatID)
+            const provider = await this.getChatProvider()
+            await provider?.clearChatHistory(chatID)
             this.removeProvider(chatID)
         }
 
@@ -282,7 +286,7 @@ export class ChatViewManager implements vscode.Disposable {
      * Clears the current chat session and restarts it, creating a new chat ID.
      */
     public async clearAndRestartSession(): Promise<void> {
-        const chatProvider = this.getChatProvider()
+        const chatProvider = await this.getChatProvider()
         await chatProvider.clearAndRestartSession()
     }
 
@@ -293,7 +297,7 @@ export class ChatViewManager implements vscode.Disposable {
      * to restore the session with the provided chatID.
      */
     public async restoreSession(chatID: string): Promise<void> {
-        const chatProvider = this.getChatProvider()
+        const chatProvider = await this.getChatProvider()
         await chatProvider.restoreSession(chatID)
     }
 
@@ -311,7 +315,7 @@ export class ChatViewManager implements vscode.Disposable {
     }
 
     public triggerNotice(notice: { key: string }): void {
-        const chatProvider = this.getChatProvider()
+        const chatProvider = this.currentProvider || this.sidebarChat
         chatProvider.triggerNotice(notice)
         return
     }
