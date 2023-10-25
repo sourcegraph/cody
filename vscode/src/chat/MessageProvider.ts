@@ -145,6 +145,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.transcript = new Transcript()
         await this.clearAndRestartSession()
         telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked')
+        this.sendHistory()
     }
 
     /**

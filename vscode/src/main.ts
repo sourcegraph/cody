@@ -174,14 +174,7 @@ const register = async (
     disposables.push(chatViewProvider)
 
     // Register tree views
-    disposables.push(
-        // Placeholder for search panel command
-        vscode.commands.registerCommand('cody.search.panel', () =>
-            vscode.window.showInformationMessage('Coming soon...')
-        ),
-        vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support')),
-        vscode.window.registerTreeDataProvider('cody.search.tree.view', new TreeViewProvider('search'))
-    )
+    disposables.push(vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support')))
 
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatViewProvider.sidebarChat, {

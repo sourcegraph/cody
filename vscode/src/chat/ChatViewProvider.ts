@@ -395,15 +395,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * If no chatID is provided, clears all chat history.
      */
     public async clearChatHistory(chatID?: string): Promise<void> {
-        // If the given chatID matches the current chat session, restarts the current session.
-        if (chatID === this.currentChatID) {
+        if (!chatID) {
             await this.clearAndRestartSession()
-        }
-        if (chatID) {
-            await this.deleteHistory(chatID)
+            await this.clearHistory()
             return
         }
-        await this.clearHistory()
+        await this.deleteHistory(chatID)
+        return
     }
 
     /**

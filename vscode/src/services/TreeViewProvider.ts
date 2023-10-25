@@ -17,6 +17,20 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     /**
+     * Gets the parent tree item for the given tree item.
+     * @param treeItem - The tree item to get the parent for.
+     * @returns The parent tree item, or undefined if the given item is a root item.
+     */
+    public getParent(treeItem: vscode.TreeItem): vscode.TreeItem | undefined {
+        // Return undefine for root items
+        if (!treeItem?.contextValue) {
+            return undefined
+        }
+        // TODO implement getParent method for non-root items
+        return undefined
+    }
+
+    /**
      * Gets the tree view items to display based on the provided type.
      */
     private getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] {
@@ -69,8 +83,15 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     /**
      * Get individual tree item
      */
-    public getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-        return element
+    public getTreeItem(treeItem: vscode.TreeItem): vscode.TreeItem {
+        return treeItem
+    }
+
+    /**
+     * Get individual tree item by chatID
+     */
+    public getTreeItemByID(chatID: string): vscode.TreeItem | undefined {
+        return this.treeNodes.find(node => node.id === chatID)
     }
 
     /**
@@ -102,16 +123,12 @@ interface CodySidebarTreeItem {
         command: string
         args?: string[] | { [key: string]: string }[]
     }
+    isNestedItem?: string
 }
 
 const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Extension Settings',
-        icon: 'gear',
-        command: { command: 'cody.settings.extension' },
-    },
-    {
-        title: 'Feature Settings',
         icon: 'cody-logo',
         command: { command: 'cody.status-bar.interacted' },
     },
@@ -123,7 +140,7 @@ const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
-        command: { command: 'workbench.action.openGlobalKeybindings' },
+        command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
     },
     {
         title: 'Sign Out',
@@ -166,7 +183,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     {
         title: 'Custom',
         icon: 'tools',
-        command: { command: 'cody.action.commands.menu' },
+        command: { command: 'cody.action.commands.custom.menu' },
         description: 'Custom commands',
     },
 ]
@@ -175,14 +192,13 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory.chat)]
     chatHistoryEntries.forEach(([id, entry]) => {
-        const lastHumanMessage = entry.interactions.findLast(interaction => interaction.humanMessage)
+        const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
             chatTreeItems.push({
                 id,
                 title: lastHumanMessage.humanMessage.displayText.split('\n')[0],
                 icon: 'comment',
                 command: { command: 'cody.chat.panel.restore', args: [id] },
-                description: entry.lastInteractionTimestamp,
             })
         }
     })

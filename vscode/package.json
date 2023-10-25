@@ -239,11 +239,6 @@
           "when": "cody.activated && config.cody.experimental.chatPanel"
         },
         {
-          "id": "cody.search.tree.view",
-          "name": "Search",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
-        },
-        {
           "id": "cody.chat.tree.view",
           "name": "Chats",
           "when": "cody.activated && config.cody.experimental.chatPanel"
@@ -264,11 +259,6 @@
       {
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try out different LLM providers.\n[New Chat](command:cody.chat.panel.new)\nTo learn more about chat, [read the docs](https://docs.sourcegraph.com/).",
-        "when": "cody.activated"
-      },
-      {
-        "view": "cody.search.tree.view",
-        "contents": "Search code using natural language queries, such as 'Password hashing' or 'Authentication redirects'.\n[Enable Search Indexing](command:cody.search.panel)\nTo learn more about AI search, [read the docs](https://docs.sourcegraph.com/).",
         "when": "cody.activated"
       }
     ],
@@ -489,7 +479,14 @@
       {
         "command": "cody.chat.history.clear",
         "category": "Cody",
-        "title": "Clear Chat History",
+        "title": "Delete All Chats",
+        "group": "Cody",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "cody.chat.history.delete",
+        "category": "Cody",
+        "title": "Delete Chat",
         "group": "Cody",
         "icon": "$(trash)"
       },
@@ -801,7 +798,7 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.chat.history.clear",
+          "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated",
           "group": "inline"
         },
@@ -1039,7 +1036,7 @@
           "order": 100,
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
-          "default": true
+          "default": false
         }
       }
     },

@@ -362,11 +362,7 @@ export class ChatPanelProvider extends MessageProvider {
         // If so, returns early to avoid creating a duplicate.
         // Otherwise, reveals the existing panel or creates a new one.
         if (this.webviewPanel) {
-            if (this.webviewPanel.visible && this.transcript.isEmpty) {
-                return
-            }
-            this.webviewPanel.reveal(vscode.ViewColumn.Two)
-            return
+            return this.webviewPanel
         }
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
@@ -406,11 +402,9 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     public async clearChatHistory(chatID?: string): Promise<void> {
-        if (chatID === this.currentChatID) {
-            await this.clearAndRestartSession()
-        }
         if (chatID) {
             await this.deleteHistory(chatID)
+            this.webviewPanel?.dispose()
             return
         }
         await this.clearHistory()
