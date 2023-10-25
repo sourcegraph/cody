@@ -110,7 +110,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
-                telemetryRecorder.recordEvent(message.eventName as EventFeature, 'executed', message.properties)
                 break
             case 'history':
                 if (message.action === 'clear') {
