@@ -36,6 +36,37 @@ export type EventFeature =
     | 'cody.app:download'
     | 'cody.app:connect'
     | 'cody.authReloadButton'
+    // message-provider-related events
+    | 'cody.messageProvider.chatReset'
+    | 'cody.messageProvider.clearChatHistoryButton'
+    | 'cody.messageProvider.restoreChatHistoryButton'
+    | 'cody.messageProvider.chatResponse'
+    | 'cody.recipe.chat-question'
+    | 'cody.recipe.code-question'
+    | 'cody.recipe.context-search'
+    | 'cody.recipe.local-indexed-keyword-search'
+    | 'cody.recipe.explain-code-detailed'
+    | 'cody.recipe.explain-code-high-level'
+    | 'cody.recipe.inline-touch'
+    | 'cody.recipe.find-code-smells'
+    | 'cody.recipe.fixup'
+    | 'cody.recipe.generate-docstring'
+    | 'cody.recipe.generate-unit-test'
+    | 'cody.recipe.git-history'
+    | 'cody.recipe.improve-variable-names'
+    | 'cody.recipe.inline-chat'
+    | 'cody.recipe.custom-prompt'
+    | 'cody.recipe.next-questions'
+    | 'cody.recipe.pr-description'
+    | 'cody.recipe.release-notes'
+    | 'cody.recipe.translate-to-language'
+    | 'cody.guardrails.annotate'
+    | 'cody.addCommandButton'
+    | 'cody.sidebar.commandConfigMenuButton'
+    | 'cody.command.openFile'
+    | 'cody.command.resetChat'
+    | 'cody.deleteChatHistoryButton'
+    | 'cody.exportChatHistoryButton'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
@@ -51,12 +82,13 @@ export type EventAction =
     | 'clicked'
     | 'opened'
     | 'closed'
+    | 'hasCode'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
  * Where possible, reuse an existing key.
  */
-export type MetadataKey = 'durationMs' | 'lineCount' | 'charCount'
+export type MetadataKey = 'durationMs' | 'lineCount' | 'charCount' | 'codeBlocks'
 
 /**
  * Events accept metadata for ease of categorization in analytics pipelines -
