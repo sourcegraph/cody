@@ -1,6 +1,7 @@
 package com.sourcegraph.website
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.sourcegraph.config.ConfigUtil
 
 class URLBuilderTest : BasePlatformTestCase() {
 
@@ -12,10 +13,12 @@ class URLBuilderTest : BasePlatformTestCase() {
             "https://github.com/sourcegraph/sourcegraph-jetbrains.git",
             "intellij",
             "1.1")
+
+    val version = ConfigUtil.getPluginVersion()
     assertEquals(
         "https://www.sourcegraph.com/github.com/sourcegraph/sourcegraph-jetbrains.git/-/commit/1fa8d5d6286c24924b55c15ed4d1a0b85c44b4d5?" +
             "editor=JetBrains&" +
-            "version=v5.2.1715-nightly&" +
+            "version=v$version&" +
             "utm_product_name=intellij&" +
             "utm_product_version=1.1",
         url)
