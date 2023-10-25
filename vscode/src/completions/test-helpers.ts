@@ -12,6 +12,7 @@ import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 import { SupportedLanguage } from './tree-sitter/grammars'
 import { createParser } from './tree-sitter/parser'
+import { DocumentQuerySDK, getDocumentQuerySDK } from './tree-sitter/query-sdk'
 
 /**
  * A tag function for creating a {@link CompletionResponse}, for use in tests only.
@@ -66,11 +67,28 @@ export function documentAndPosition(
 
 export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')
 
+/**
+ * Should be used in tests only.
+ */
 export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
     })
+}
+
+/**
+ * Should be used in tests only.
+ */
+export async function initTreeSitterSDK(language = SupportedLanguage.TypeScript): Promise<DocumentQuerySDK> {
+    await initTreeSitterParser(language)
+    const sdk = getDocumentQuerySDK(language)
+
+    if (!sdk) {
+        throw new Error('Document query SDK is not initialized')
+    }
+
+    return sdk
 }
 
 interface FormattedMatch {

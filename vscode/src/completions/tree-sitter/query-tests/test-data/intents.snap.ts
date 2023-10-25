@@ -92,17 +92,6 @@
 
 // ------------------------------------
 
-  function withEmptyBlockStatement() {
-      functionName(); { }
-//                    ^^^ block_statement[1]
-//                    █
-  }
-
-// Nodes types:
-// block_statement[1]: statement_block
-
-// ------------------------------------
-
   function returnStatement() {
       return
 //    ^^^^^^ return_statement[1]
