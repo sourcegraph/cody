@@ -30,6 +30,17 @@
 
 // ------------------------------------
 
+  function testParameter(val) {
+//                       ^^^ parameter[1]
+//                       █
+      wrapper
+  }
+
+// Nodes types:
+// parameter[1]: required_parameter
+
+// ------------------------------------
+
   function arrowWrapper() {
       const arrow = (value: string) => {
 //                                     ^ start function.body[1]
@@ -40,6 +51,17 @@
 
 // Nodes types:
 // function.body[1]: statement_block
+
+// ------------------------------------
+
+  class Agent {
+//            ^ start class.body[1]
+//            █
+  }
+//^ end class.body[1]
+
+// Nodes types:
+// class.body[1]: class_body
 
 // ------------------------------------
 
@@ -70,24 +92,6 @@
 
 // ------------------------------------
 
-  const stringValue = "hello"
-//                     ^^^^^ string[1]
-//                       █
-
-// Nodes types:
-// string[1]: string_fragment
-
-// ------------------------------------
-
-  const templateListeralValue = `world`
-//                              ^^^^^^^ string[1]
-//                               █
-
-// Nodes types:
-// string[1]: template_string
-
-// ------------------------------------
-
   function withEmptyBlockStatement() {
       functionName(); { }
 //                    ^^^ block_statement[1]
@@ -112,12 +116,12 @@
 
   function returnStatementValue(value: string, flag?: boolean) {
       return "asd"
-//           ^^^^^ string[1]
+//           ^^^^^ return_statement.value[1]
 //           █
   }
 
 // Nodes types:
-// string[1]: string
+// return_statement.value[1]: string
 
 // ------------------------------------
 
@@ -144,11 +148,11 @@
 // ------------------------------------
 
   returnStatementValue("value")
-//                     ^^^^^^^ string[1]
+//                     ^^^^^^^ argument[1]
 //                     █
 
 // Nodes types:
-// string[1]: string
+// argument[1]: string
 
 // ------------------------------------
 

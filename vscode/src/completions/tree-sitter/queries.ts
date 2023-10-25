@@ -68,6 +68,10 @@ const JS_INTENTS_QUERY = dedent`
         parameters: (formal_parameters ("(") @function.parameters.cursor) @function.parameters
         body: (statement_block ("{") @function.body.cursor) @function.body)
 
+    (class_declaration
+        name: (_) @class.name!
+        body: (class_body ("{") @class.body.cursor) @class.body)
+
     (_ ("{") @block_statement.cursor) @block_statement
     (arguments ("(") @arguments.cursor) @arguments
 
@@ -80,8 +84,9 @@ const JS_INTENTS_QUERY = dedent`
     (comment) @comment!
     (arguments (_) @argument!)
     (formal_parameters) @parameters!
+    (formal_parameters (_) @parameter!)
     (return_statement) @return_statement!
-    [(string) (string_fragment) (template_string)] @string!
+    (return_statement (_) @return_statement.value!)
 `
 
 const TS_INTENTS_QUERY = dedent`

@@ -14,10 +14,23 @@ function testParams() {
 
 // ------------------------------------
 
+function testParameter(val) {
+    //                 |
+    wrapper
+}
+
+// ------------------------------------
+
 function arrowWrapper() {
     const arrow = (value: string) => {
         //                           |
     }
+}
+
+// ------------------------------------
+
+class Agent {
+    //      |
 }
 
 // ------------------------------------
@@ -34,16 +47,6 @@ function signature()
 
 function functionName() {}
 //                  |
-
-// ------------------------------------
-
-const stringValue = "hello"
-//                     |
-
-// ------------------------------------
-
-const templateListeralValue = `world`
-//                             |
 
 // ------------------------------------
 
