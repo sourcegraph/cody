@@ -202,8 +202,6 @@ export class ChatViewManager implements vscode.Disposable {
         if (openChatView) {
             // This will create a new panel if experimentalChatPanel is enabled
             await this.setWebviewView('chat')
-            // All new commands will start in an empty chat session
-            await this.clearAndRestartSession()
         }
         // Run command in a new webview to avoid conflicts with context from previous chat
         const chatProvider = await this.getChatProvider()
@@ -218,9 +216,12 @@ export class ChatViewManager implements vscode.Disposable {
      * Otherwise it will get the sidebar hat provider and call setWebviewView on it.
      */
     public async setWebviewView(view: View): Promise<void> {
-        // Always start command in a new chat session
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.setWebviewView(view)
+        if (!this.isPanelViewEnabled) {
+            await this.sidebarChat.setWebviewView(view)
+            return
+        }
+        // All new commands will start in an empty chat session
+        this.currentProvider = (await this.createWebviewPanel()) || this.currentProvider
     }
 
     /**
@@ -233,14 +234,12 @@ export class ChatViewManager implements vscode.Disposable {
      * @param type - Optional type for the custom command.
      */
     public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
-        const chatProvider = await this.getChatProvider()
         const customPromptActions = ['add', 'get', 'menu']
         if (!customPromptActions.includes(title)) {
-            await this.setWebviewView('chat')
-            // All new commands will start in an empty chat session
-            await this.clearAndRestartSession()
+            await this.executeRecipe('custom-prompt', title, true)
+            return
         }
-
+        const chatProvider = await this.getChatProvider()
         await chatProvider.executeCustomCommand(title, type)
     }
 

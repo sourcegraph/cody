@@ -67,7 +67,7 @@ export class ChatPanelProvider extends MessageProvider {
                 telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
                 break
             case 'executeRecipe':
-                await this.setWebviewView('chat')
+                this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
@@ -213,7 +213,7 @@ export class ChatPanelProvider extends MessageProvider {
         telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
-            await this.setWebviewView('chat')
+            this.setWebviewView('chat')
         }
         await this.executeCustomCommand(title, commandType)
     }
@@ -339,12 +339,11 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Set webview view
      */
-    public async setWebviewView(view: View): Promise<void> {
+    public setWebviewView(view: View): void {
         if (view !== 'chat') {
             return
         }
-        this.webviewPanel?.reveal(vscode.ViewColumn.Beside, !!view)
-        return Promise.resolve()
+        this.webviewPanel?.reveal()
     }
 
     /**
