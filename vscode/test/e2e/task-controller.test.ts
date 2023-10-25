@@ -87,11 +87,5 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.getByRole('button', { name: 'Fixups Section' }).click()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
-    await expect
-        .poll(() => loggedV2Events)
-        .toEqual([
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions/executed',
-            'cody.command.edit/executed',
-            'cody.fixup.apply/succeeded',
-        ])
+    await expect.poll(() => loggedV2Events).toEqual(['cody.command.edit/executed', 'cody.fixup.apply/succeeded'])
 })
