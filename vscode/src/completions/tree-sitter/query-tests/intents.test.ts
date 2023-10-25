@@ -6,7 +6,7 @@ import { getDocumentQuerySDK } from '../query-sdk'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
-describe('getFirstMultilineBlockForTruncation', () => {
+describe('getIntent', () => {
     it('typescript', async () => {
         await initTreeSitterParser(SupportedLanguage.TypeScript)
         const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
@@ -14,20 +14,20 @@ describe('getFirstMultilineBlockForTruncation', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getFirstMultilineBlockForTruncation,
-            sourcesPath: 'test-data/blocks.ts',
+            captures: queries.getCompletionIntent,
+            sourcesPath: 'test-data/intents.ts',
         })
     })
 
-    it('go', async () => {
-        await initTreeSitterParser(SupportedLanguage.Go)
-        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.Go)!
+    it('typescript incomplete code', async () => {
+        await initTreeSitterParser(SupportedLanguage.TypeScript)
+        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
 
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getFirstMultilineBlockForTruncation,
-            sourcesPath: 'test-data/blocks.go',
+            captures: queries.getCompletionIntent,
+            sourcesPath: 'test-data/intents-partial.ts',
         })
     })
 })

@@ -165,7 +165,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
         providerConfig,
         graphContextFetcher,
         contextFetcher,
@@ -236,6 +236,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerIdentifier: providerConfig.identifier,
         providerModel: providerConfig.model,
         languageId: document.languageId,
+        completionIntent,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
