@@ -236,8 +236,9 @@ export class ChatViewManager implements vscode.Disposable {
         const chatProvider = await this.getChatProvider()
         const customPromptActions = ['add', 'get', 'menu']
         if (!customPromptActions.includes(title)) {
-            await chatProvider.setWebviewView('chat')
-            return
+            await this.setWebviewView('chat')
+            // All new commands will start in an empty chat session
+            await this.clearAndRestartSession()
         }
 
         await chatProvider.executeCustomCommand(title, type)
