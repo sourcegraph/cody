@@ -67,6 +67,8 @@ export type EventFeature =
     | 'cody.command.resetChat'
     | 'cody.deleteChatHistoryButton'
     | 'cody.exportChatHistoryButton'
+    | 'cody.auth'
+    | 'cody.auth.app'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
@@ -83,6 +85,8 @@ export type EventAction =
     | 'opened'
     | 'closed'
     | 'hasCode'
+    | 'disconnected'
+    | 'connected'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
