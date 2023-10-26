@@ -1,15 +1,13 @@
 import { describe, it } from 'vitest'
 
-import { initTreeSitterParser } from '../../test-helpers'
+import { initTreeSitterSDK } from '../../test-helpers'
 import { SupportedLanguage } from '../grammars'
-import { getDocumentQuerySDK } from '../query-sdk'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('getIntent', () => {
     it('typescript', async () => {
-        await initTreeSitterParser(SupportedLanguage.TypeScript)
-        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TypeScript)
 
         await annotateAndMatchSnapshot({
             parser,
@@ -20,14 +18,35 @@ describe('getIntent', () => {
     })
 
     it('typescript incomplete code', async () => {
-        await initTreeSitterParser(SupportedLanguage.TypeScript)
-        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TypeScript)
 
         await annotateAndMatchSnapshot({
             parser,
             language,
             captures: queries.getCompletionIntent,
             sourcesPath: 'test-data/intents-partial.ts',
+        })
+    })
+
+    it('javascriptreact', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.JSX)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getCompletionIntent,
+            sourcesPath: 'test-data/intents.jsx',
+        })
+    })
+
+    it('typescriptreact', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TSX)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getCompletionIntent,
+            sourcesPath: 'test-data/intents.tsx',
         })
     })
 })

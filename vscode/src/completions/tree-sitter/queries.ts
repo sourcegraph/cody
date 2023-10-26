@@ -22,11 +22,13 @@ export const intentPriority = [
     'type_declaration.name',
     'type_declaration.body',
     'arguments',
-    'block_statement',
     'import.source',
     'comment',
     'argument',
+    'parameter',
     'parameters',
+    'jsx_attribute.value',
+    'return_statement.value',
     'return_statement',
     'string',
 ] as const
@@ -72,7 +74,6 @@ const JS_INTENTS_QUERY = dedent`
         name: (_) @class.name!
         body: (class_body ("{") @class.body.cursor) @class.body)
 
-    (_ ("{") @block_statement.cursor) @block_statement
     (arguments ("(") @arguments.cursor) @arguments
 
     ; Atomic intents
@@ -87,6 +88,12 @@ const JS_INTENTS_QUERY = dedent`
     (formal_parameters (_) @parameter!)
     (return_statement) @return_statement!
     (return_statement (_) @return_statement.value!)
+`
+
+const JSX_INTENTS_QUERY = dedent`
+    ${JS_INTENTS_QUERY}
+
+    (jsx_attribute (_) @jsx_attribute.value!)
 `
 
 const TS_INTENTS_QUERY = dedent`
@@ -108,6 +115,12 @@ const TS_INTENTS_QUERY = dedent`
         value: (object_type ("{") @type_declaration.body.cursor) @type_declaration.body)
 `
 
+const TSX_INTENTS_QUERY = dedent`
+    ${TS_INTENTS_QUERY}
+
+    (jsx_attribute (_) @jsx_attribute.value!)
+`
+
 const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
     (interface_declaration (object_type ("{") @block_start)) @trigger
     (type_alias_declaration (object_type ("{") @block_start)) @trigger
@@ -122,7 +135,7 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     [SupportedLanguage.JSX]: {
         blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: '',
-        intents: JS_INTENTS_QUERY,
+        intents: JSX_INTENTS_QUERY,
     },
     [SupportedLanguage.TypeScript]: {
         blocks: JS_BLOCKS_QUERY,
@@ -132,7 +145,7 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     [SupportedLanguage.TSX]: {
         blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
-        intents: TS_INTENTS_QUERY,
+        intents: TSX_INTENTS_QUERY,
     },
     [SupportedLanguage.Go]: {
         blocks: dedent`

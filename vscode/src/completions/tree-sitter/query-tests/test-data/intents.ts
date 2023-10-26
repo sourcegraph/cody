@@ -50,13 +50,6 @@ function functionName() {}
 
 // ------------------------------------
 
-function withEmptyBlockStatement() {
-    functionName(); { }
-    //              |
-}
-
-// ------------------------------------
-
 function returnStatement() {
     return
     //   |
