@@ -8,7 +8,12 @@ import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    ChatEventSource,
+    ChatHistory,
+    ChatMessage,
+    UserLocalHistory,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
@@ -304,7 +309,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
+    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', source?: ChatEventSource): Promise<void> {
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -312,7 +317,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
-        const command = await this.chatCommandsFilter(humanChatInput, recipeId)
+        const command = await this.chatCommandsFilter(humanChatInput, recipeId, source)
         if (!command) {
             return
         }
@@ -518,13 +523,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        return this.executeRecipe('custom-prompt', title)
+        return this.executeRecipe('custom-prompt', title, 'custom-commands')
     }
 
     protected async chatCommandsFilter(
         text: string,
-        recipeId: RecipeID
-    ): Promise<{ text: string; recipeId: RecipeID } | null> {
+        recipeId: RecipeID,
+        source?: ChatEventSource
+    ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | null> {
         // Inline chat has its own filter for slash commands
         if (recipeId === 'inline-chat') {
             return { text, recipeId }
@@ -564,11 +570,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!question) {
                     question = await showAskQuestionQuickPick()
                 }
-                await vscode.commands.executeCommand('cody.action.chat', question)
+                await vscode.commands.executeCommand('cody.action.chat', question, 'menu')
                 return null
             }
             case /^\/edit(\s)?/.test(text):
-                await vscode.commands.executeCommand('cody.command.edit-code', { instruction: text }, 'sidebar')
+                await vscode.commands.executeCommand('cody.command.edit-code', { instruction: text }, source)
                 return null
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
@@ -583,7 +589,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     // If no command found, send error message to view
                     await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
                 }
-                return { text: commandRunnerID, recipeId: 'custom-prompt' }
+                return { text: commandRunnerID, recipeId: 'custom-prompt', source }
             }
         }
     }

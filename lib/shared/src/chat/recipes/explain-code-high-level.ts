@@ -10,6 +10,7 @@ export class ExplainCodeHighLevel implements Recipe {
     public title = 'Explain Selected Code (High Level)'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -25,8 +26,8 @@ export class ExplainCodeHighLevel implements Recipe {
         const displayText = `Explain the following code at a high level:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
-            { speaker: 'assistant' },
+            { speaker: 'human', text: promptMessage, displayText, source },
+            { speaker: 'assistant', source },
             getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,

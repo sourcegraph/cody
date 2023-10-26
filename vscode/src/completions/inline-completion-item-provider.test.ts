@@ -132,6 +132,7 @@ describe('InlineCompletionItemProvider', () => {
         expect(provider.lastCandidate).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
+              "completionIntent": undefined,
               "contextRange": Range {
                 "end": Position {
                   "character": 14,
