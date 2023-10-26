@@ -14,12 +14,43 @@ export type EventFeature =
     // fixup-related events
     | 'cody.fixup'
     | 'cody.fixup.apply'
+    // command-related events
+    | 'cody.command'
+    | 'cody.command.edit'
+    // inline-assistant-related events
+    | 'cody.comment'
+    | 'cody.comment.delete'
+    | 'cody.comment.stop'
+    | 'cody.comment.collapse-all'
+    | 'cody.comment.open-in-sidebar'
+    | 'cody.interactive.clear'
+    | 'cody.history'
+    | 'cody.history.clear'
+    // walkthrough/support-related events
+    | 'cody.walkthrough'
+    | 'cody.walkthrough.showExplain'
+    | 'cody.walkthrough.enableInlineChat'
+    // chat-related events
+    | 'cody.editChatButton'
+    | 'cody.sidebar.abortButton'
+    | 'cody.app:download'
+    | 'cody.app:connect'
+    | 'cody.authReloadButton'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
  * possible, reuse an existing action.
  */
-export type EventAction = 'succeeded' | 'failed' | 'installed' | 'savedLogin' | 'executed' | 'created'
+export type EventAction =
+    | 'succeeded'
+    | 'failed'
+    | 'installed'
+    | 'savedLogin'
+    | 'executed'
+    | 'created'
+    | 'clicked'
+    | 'opened'
+    | 'closed'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.

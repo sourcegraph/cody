@@ -33,7 +33,7 @@ import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
+import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { TreeViewProvider } from './services/TreeViewProvider'
 import { TestSupport } from './test-support'
 
@@ -208,7 +208,8 @@ const register = async (
         } = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
-        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
+        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
         const document = args.document || getActiveEditor()?.document
         if (!document) {
             return
@@ -260,16 +261,29 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.delete', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
             await inlineChatProvider.abortChat()
-            telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'inline-chat' })
+            telemetryService.log(
+                'CodyVSCodeExtension:abortButton:clicked',
+                { source: 'inline-chat' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.comment.stop', 'clicked', {
+                privateMetadata: { source: 'inline-chat' },
+            })
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () => {
             void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.collapse-all', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
@@ -279,7 +293,10 @@ const register = async (
             await chatViewProvider.restoreSession(inlineChatProvider.currentChatID)
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.open-in-sidebar', 'clicked')
         }),
         vscode.commands.registerCommand(
             'cody.command.edit-code',
@@ -326,7 +343,8 @@ const register = async (
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatViewProvider.clearAndRestartSession()
             await chatViewProvider.setWebviewView('chat')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' })
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'reset' } })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
@@ -334,7 +352,12 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.history', async () => {
             await chatViewProvider.setWebviewView('history')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'history' })
+            telemetryService.log(
+                'CodyVSCodeExtension:chatTitleButton:clicked',
+                { name: 'history' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.history', 'clicked', { privateMetadata: { name: 'history' } })
         }),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await chatViewProvider.clearHistory()
@@ -389,7 +412,8 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' })
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -408,11 +432,21 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatViewProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatViewProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'showExplain' })
+            telemetryService.log(
+                'CodyVSCodeExtension:walkthrough:clicked',
+                { page: 'showExplain' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatViewProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'enableInlineChat' })
+            telemetryService.log(
+                'CodyVSCodeExtension:walkthrough:clicked',
+                { page: 'enableInlineChat' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked')
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
