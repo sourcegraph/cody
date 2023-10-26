@@ -128,8 +128,8 @@ interface CodySidebarTreeItem {
 
 const supportItems: CodySidebarTreeItem[] = [
     {
-        title: 'Extension Settings',
-        icon: 'cody-logo',
+        title: 'Settings',
+        icon: 'gear',
         command: { command: 'cody.status-bar.interacted' },
     },
     {
@@ -184,7 +184,7 @@ const commandsItems: CodySidebarTreeItem[] = [
         title: 'Custom',
         icon: 'tools',
         command: { command: 'cody.action.commands.custom.menu' },
-        description: 'Custom commands',
+        description: 'Beta',
     },
 ]
 
