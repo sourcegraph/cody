@@ -129,7 +129,7 @@ interface CodySidebarTreeItem {
 const supportItems: CodySidebarTreeItem[] = [
     {
         title: 'Settings',
-        icon: 'gear',
+        icon: 'settings-gear',
         command: { command: 'cody.status-bar.interacted' },
     },
     {
