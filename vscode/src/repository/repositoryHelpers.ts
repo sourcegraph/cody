@@ -1,5 +1,3 @@
-import * as path from 'path'
-
 import * as vscode from 'vscode'
 
 import { API, GitExtension } from './builtinGitExtension'
@@ -9,13 +7,7 @@ export function repositoryRemoteUrl(uri: vscode.Uri): string | undefined {
 }
 
 export function gitDirectoryUri(uri: vscode.Uri): vscode.Uri | undefined {
-    const git = gitAPI()
-    const rootPath = git?.getRepository(uri)?.rootUri?.fsPath
-    if (!rootPath) {
-        return undefined
-    }
-
-    return vscode.Uri.from({ scheme: 'file', path: path.join(rootPath, '.git') })
+    return gitAPI()?.getRepository(uri)?.rootUri
 }
 
 function gitRepositoryRemoteUrl(uri: vscode.Uri): string | undefined {
