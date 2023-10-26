@@ -134,6 +134,17 @@ export type EventFeature =
     | 'cody.sidebar.commandConfigMenuButton.explain'
     | 'cody.sidebar.commandConfigMenuButton.smell'
     | 'cody.sidebar.commandConfigMenuButton.reset'
+    // auth-provider-related events
+    | 'cody.auth.login'
+    | 'cody.auth.selectSigninMenu'
+    | 'cody.auth.selectSigninMenu.enterprise'
+    | 'cody.auth.selectSigninMenu.dotcom'
+    | 'cody.auth.selectSigninMenu.token'
+    | 'cody.auth.selectSigninMenu.app'
+    | 'cody.auth.fromToken'
+    | 'cody.auth.logout'
+    | 'cody.auth.fromCallback.app'
+    | 'cody.auth.fromCallback.web'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
