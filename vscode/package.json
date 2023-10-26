@@ -495,7 +495,7 @@
         "category": "Cody",
         "title": "Export Chat History",
         "group": "Cody",
-        "icon": "$(export)"
+        "icon": "$(save)"
       }
     ],
     "keybindings": [
