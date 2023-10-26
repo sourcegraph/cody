@@ -4,6 +4,8 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 
 import { CODY_DOC_URL } from '../chat/protocol'
 
+import { envInit } from './LocalAppDetector'
+
 type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private treeNodes: vscode.TreeItem[] = []
@@ -142,6 +144,14 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
         command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
+    },
+    {
+        title: `Version ${envInit.extensionVersion}`,
+        icon: 'github',
+        command: {
+            command: 'vscode.open',
+            args: [`https://github.com/sourcegraph/cody/releases/tag/vscode-v${envInit.extensionVersion}`],
+        },
     },
     {
         title: 'Sign Out',
