@@ -154,12 +154,16 @@ export class InlineController implements VsCodeInlineController {
                 const op = 'paste'
                 const eventType = eventName.startsWith('inlineChat') ? 'inlineChat' : 'keyDown'
                 // 'CodyVSCodeExtension:inlineChat:Paste:clicked' or 'CodyVSCodeExtension:keyDown:Paste:clicked'
-                telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
-                    op,
-                    lineCount,
-                    charCount,
-                    source,
-                })
+                telemetryService.log(
+                    `CodyVSCodeExtension:${eventType}:Paste:clicked`,
+                    {
+                        op,
+                        lineCount,
+                        charCount,
+                        source,
+                    },
+                    { hasV2Event: true }
+                )
                 telemetryRecorder.recordEvent(`cody.${eventType}.paste`, 'clicked', {
                     privateMetadata: { op, lineCount, charCount, source },
                 })
@@ -343,7 +347,7 @@ export class InlineController implements VsCodeInlineController {
         const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
 
         const args = { op, charCount, lineCount, source }
-        telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
+        telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.${op}`, 'clicked', { privateMetadata: { ...args } })
         return codeCount
     }
@@ -444,7 +448,7 @@ export class InlineController implements VsCodeInlineController {
             this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup')
+        telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup', undefined, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.inlineChat.fixup', 'stopped')
         if (!error) {
             await vscode.commands.executeCommand('workbench.action.collapseAllComments')
@@ -534,7 +538,7 @@ export class InlineController implements VsCodeInlineController {
             lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
             await this.stopEditMode(false, newRange)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:replaced')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:replaced', undefined, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.inlineChat.fixup', 'replaced')
         } catch (error) {
             await this.stopEditMode(true)
