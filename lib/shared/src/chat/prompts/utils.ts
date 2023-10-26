@@ -6,6 +6,7 @@ import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS }
 import { truncateText } from '../../prompt/truncation'
 import { getFileExtension, getNormalizedLanguageName } from '../recipes/helpers'
 import { Interaction } from '../transcript/interaction'
+import { ChatEventSource } from '../transcript/messages'
 
 import { CodyPromptContext } from '.'
 import { prompts } from './templates'
@@ -19,7 +20,7 @@ export async function newInteraction(args: {
     contextMessages?: Promise<ContextMessage[]>
     assistantText?: string
     assistantDisplayText?: string
-    source?: string
+    source?: ChatEventSource
 }): Promise<Interaction> {
     const { text, displayText, contextMessages, assistantText, assistantDisplayText, source } = args
     return Promise.resolve(
@@ -34,7 +35,6 @@ export async function newInteraction(args: {
 
 /**
  * Returns a Promise resolving to an Interaction object representing an error response from the assistant.
- *
  * @param errorMsg - The error message text to include in the assistant response.
  * @param displayText - Optional human-readable display text for the request.
  * @returns A Promise resolving to the Interaction object.
@@ -52,7 +52,6 @@ export async function newInteractionWithError(errorMsg: string, displayText = ''
 
 /**
  * Generates a prompt text string with the provided prompt and code
- *
  * @param prompt - The prompt text to include after the code snippet.
  * @param selection - The ActiveTextEditorSelection containing the code snippet.
  * @returns The constructed prompt text string, or null if no selection provided.
@@ -80,9 +79,7 @@ export function promptTextWithCodeSelection(
 
 /**
  * Checks if only the code selection context is required for the prompt.
- *
  * @param contextConfig - The context configuration object.
- *
  * @returns True if only the code selection is required based on the contextConfig, false otherwise.
  *
  * This checks if the contextConfig only contains the "selection" property, or if it contains no properties.
@@ -95,9 +92,7 @@ export function isOnlySelectionRequired(contextConfig: CodyPromptContext): boole
 
 /**
  * Extracts the test type from the given text.
- *
  * @param text - The text to extract the test type from.
- *
  * @returns The extracted test type, which will be "unit", "e2e", or "integration" if found.
  * Returns an empty string if no match is found.
  */
@@ -109,10 +104,8 @@ export function extractTestType(text: string): string {
 
 /**
  * Generates the prompt text to send to the human LLM model.
- *
  * @param commandInstructions - The human's instructions for the command. This will be inserted into the prompt template.
  * @param currentFileName - Optional current file name. If provided, will insert the normalized language name.
- *
  * @returns The constructed prompt text string.
  */
 export function getHumanLLMText(commandInstructions: string, currentFileName?: string): string {
@@ -142,7 +135,6 @@ export function toSlashCommand(command: string): string {
 
 /**
  * Creates a VS Code search pattern to find files matching the given file path.
- *
  * @param fsPath - The file system path of the file to generate a search pattern for.
  * @param fromRoot - Whether to search from the root directory. Default false.
  * @returns A search pattern string to find matching files.
@@ -183,7 +175,6 @@ export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boo
 /**
  * Creates an object containing the start line and line range
  * of the given editor selection.
- *
  * @param selection - The active text editor selection
  * @returns An object with the following properties:
  * - range: The line range of the selection as a string, e.g. "5-10"
@@ -203,9 +194,7 @@ export function createSelectionDisplayText(selection: ActiveTextEditorSelection)
 
 /**
  * Checks if the given file path is a valid test file name.
- *
  * @param fsPath - The file system path to check
- *
  * @returns boolean - True if the path is a valid test file name, false otherwise.
  *
  * Removes file extension and checks if file name starts with 'test' or
