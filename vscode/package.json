@@ -297,13 +297,13 @@
         "category": "Ask Cody",
         "title": "Custom Commands",
         "icon": "$(tools)",
-        "when": "cody.activated && editorFocus"
+        "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.command.context-search",
         "category": "Ask Cody",
         "title": "Codebase Context Search",
-        "when": "cody.activated && config.cody.inlineChat.enabled"
+        "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.auth.signout",
@@ -333,7 +333,8 @@
         "category": "Cody",
         "title": "Start a New Chat Session",
         "group": "Cody",
-        "icon": "$(add)"
+        "icon": "$(add)",
+        "when": "cody.activated"
       },
       {
         "command": "cody.history",
@@ -509,6 +510,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "cody.command.edit-code",
+          "when": "cody.activated && editorTextFocusd"
+        },
+        {
           "command": "cody.command.explain-code",
           "when": "false"
         },
@@ -531,6 +536,10 @@
         {
           "command": "cody.command.document-code",
           "when": "false"
+        },
+        {
+          "command": "cody.action.commands.custom.menu",
+          "when": "cody.activated"
         },
         {
           "command": "cody.focus",
@@ -580,10 +589,6 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
-          "command": "cody.action.commands.custom.menu",
-          "when": "cody.activated"
         }
       ],
       "editor/context": [
