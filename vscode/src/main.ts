@@ -192,13 +192,9 @@ const register = async (
     const executeRecipeInSidebar = async (
         recipe: RecipeID,
         openChatView = true,
-        humanInput?: string,
+        humanInput = '',
         source: ChatEventSource = 'editor'
     ): Promise<void> => {
-        if (openChatView) {
-            await chatViewProvider.setWebviewView('chat')
-        }
-
         await chatViewProvider.executeRecipe(recipe, humanInput, openChatView, source)
     }
 
@@ -373,7 +369,9 @@ const register = async (
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
-        vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.context-search', () =>
+            executeRecipeInSidebar('context-search', true)
+        ),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({

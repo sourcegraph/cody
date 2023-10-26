@@ -77,13 +77,10 @@ export class ChatViewManager implements vscode.Disposable {
             // Remove provider  that doesn't have webPanel anymore
             this.chatPanelProviders.forEach((provider, id) => {
                 if (!provider.webviewPanel) {
+                    provider.dispose()
                     this.chatPanelProviders.delete(id)
                 }
             })
-
-            if (!this.chatPanelProviders.size) {
-                await this.createWebviewPanel()
-            }
         })
     }
 
@@ -206,8 +203,8 @@ export class ChatViewManager implements vscode.Disposable {
      */
     public async executeRecipe(
         recipeId: RecipeID,
-        humanChatInput = '',
-        openChatView?: boolean,
+        humanChatInput: string,
+        openChatView = true,
         source?: ChatEventSource
     ): Promise<void> {
         if (openChatView) {
@@ -216,7 +213,6 @@ export class ChatViewManager implements vscode.Disposable {
         }
         // Run command in a new webview to avoid conflicts with context from previous chat
         const chatProvider = await this.getChatProvider()
-
         await chatProvider.executeRecipe(recipeId, humanChatInput, source)
     }
 
@@ -241,8 +237,6 @@ export class ChatViewManager implements vscode.Disposable {
      * Checks if the title matches a valid custom command action.
      * If not, opens the chat view.
      * Otherwise retrieves the chat provider and executes the custom command.
-     * @param title - The title of the custom command action.
-     * @param type - Optional type for the custom command.
      */
     public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
         const customPromptActions = ['add', 'get', 'menu']
