@@ -9,6 +9,7 @@ import { CodyTaskState } from '../non-stop/utils'
 import { CodeLensProvider } from './CodeLensProvider'
 import { countCode, editDocByUri, getIconPath, matchCodeSnippets, updateRangeOnDocChange } from './InlineAssist'
 import { telemetryService } from './telemetry'
+import { telemetryRecorder } from './telemetry-v2'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
@@ -158,6 +159,9 @@ export class InlineController implements VsCodeInlineController {
                     lineCount,
                     charCount,
                     source,
+                })
+                telemetryRecorder.recordEvent(`cody.${eventType}.paste`, 'clicked', {
+                    privateMetadata: { op, lineCount, charCount, source },
                 })
             }
         })
@@ -340,6 +344,7 @@ export class InlineController implements VsCodeInlineController {
 
         const args = { op, charCount, lineCount, source }
         telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
+        telemetryRecorder.recordEvent(`cody.${op}`, 'clicked', { privateMetadata: { ...args } })
         return codeCount
     }
 
@@ -440,6 +445,7 @@ export class InlineController implements VsCodeInlineController {
         }
         this.currentTaskId = ''
         telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup')
+        telemetryRecorder.recordEvent('cody.inlineChat.fixup', 'stopped')
         if (!error) {
             await vscode.commands.executeCommand('workbench.action.collapseAllComments')
         }
@@ -529,6 +535,7 @@ export class InlineController implements VsCodeInlineController {
 
             await this.stopEditMode(false, newRange)
             telemetryService.log('CodyVSCodeExtension:inline-assist:replaced')
+            telemetryRecorder.recordEvent('cody.inlineChat.fixup', 'replaced')
         } catch (error) {
             await this.stopEditMode(true)
             console.error(error)

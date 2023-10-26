@@ -137,6 +137,13 @@ export type EventFeature =
     // context-provider-related events
     | 'cody.auth'
     | 'cody.auth.app'
+    // inline-controller-related events
+    | 'cody.inlineChat.fixup'
+    | 'cody.inlineChat.paste'
+    | 'cody.keyDown.paste'
+    | 'cody.copy'
+    | 'cody.insert'
+    | 'cody.save'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
@@ -155,6 +162,8 @@ export type EventAction =
     | 'hasCode'
     | 'disconnected'
     | 'connected'
+    | 'stopped'
+    | 'replaced'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
