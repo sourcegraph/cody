@@ -13,6 +13,7 @@ import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Panel
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.auth.SsoAuthMethod
 import java.util.concurrent.CompletableFuture
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -95,7 +96,8 @@ class CodyLoginPanel(
   }
 
   fun acquireDetailsAndToken(
-      progressIndicator: ProgressIndicator
+      progressIndicator: ProgressIndicator,
+      authMethod: SsoAuthMethod
   ): CompletableFuture<Pair<CodyAccountDetails, String>> {
     setBusy(true)
     tokenAcquisitionError = null
@@ -104,7 +106,9 @@ class CodyLoginPanel(
     val executor = currentUi.createExecutor()
 
     return service<ProgressManager>()
-        .submitIOTask(progressIndicator) { currentUi.acquireDetailsAndToken(server, executor, it) }
+        .submitIOTask(progressIndicator) {
+          currentUi.acquireDetailsAndToken(server, executor, it, authMethod)
+        }
         .completionOnEdt(progressIndicator.modalityState) { setBusy(false) }
         .errorOnEdt(progressIndicator.modalityState) { setError(it) }
   }

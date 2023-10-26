@@ -16,6 +16,7 @@ import com.intellij.ui.components.AnActionLink
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.Icons
+import com.sourcegraph.cody.auth.SsoAuthMethod.*
 import com.sourcegraph.cody.auth.ui.SignInWithEnterpriseInstanceAction
 import com.sourcegraph.cody.config.CodyAccountsHost
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
@@ -25,15 +26,21 @@ import com.sourcegraph.cody.ui.UnderlinedActionLink
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.GridBagLayout
-import java.awt.event.ActionListener
+import java.awt.event.ActionEvent
 import javax.swing.BoxLayout
+import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.Border
 
 class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
 
-  private val mainButton = UIComponents.createMainButton("Sign in for free with Sourcegraph.com")
+  private val signInWithGithubButton =
+      UIComponents.createMainButton(GITHUB.value, Icons.SignIn.Github)
+  private val signInWithGitlabButton =
+      UIComponents.createMainButton(GITLAB.value, Icons.SignIn.Gitlab)
+  private val signInWithGoogleButton =
+      UIComponents.createMainButton(GOOGLE.value, Icons.SignIn.Google)
 
   init {
     val jEditorPane = createHtmlViewer(UIUtil.getPanelBackground())
@@ -41,26 +48,21 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
         ("<html><body><h2>Welcome to Cody</h2>" +
             "<p>Understand and write code faster with an AI assistant</p>" +
             "</body></html>")
-    val signInWithSourcegraphButton = mainButton
-    signInWithSourcegraphButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+    val signInWithGithubButton = signInWithGithubButton
+    val signInWithGitlabButton = signInWithGitlabButton
+    val signInWithGoogleButton = signInWithGoogleButton
+    signInWithGithubButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+    signInWithGitlabButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+    signInWithGoogleButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
     val logInToSourcegraphAction = LogInToSourcegraphAction()
-    signInWithSourcegraphButton.addActionListener {
-      val dataContext = DataManager.getInstance().getDataContext(signInWithSourcegraphButton)
-      val dataContextWrapper = DataContextWrapper(dataContext)
-      val accountsHost: CodyAccountsHost = CodyPersistentAccountsHost(project)
-      dataContextWrapper.putUserData(CodyAccountsHost.KEY, accountsHost)
-      val event =
-          AnActionEvent(
-              null,
-              dataContext,
-              ActionPlaces.POPUP,
-              Presentation(),
-              ActionManager.getInstance(),
-              it.modifiers)
-      if (ActionUtil.lastUpdateAndCheckDumb(logInToSourcegraphAction, event, false)) {
-        ActionUtil.performActionDumbAwareWithCallbacks(logInToSourcegraphAction, event)
-      }
-    }
+
+    signInWithGithubButton.addActionListener(
+        getSignInAction(signInWithGithubButton, logInToSourcegraphAction))
+    signInWithGitlabButton.addActionListener(
+        getSignInAction(signInWithGitlabButton, logInToSourcegraphAction))
+    signInWithGoogleButton.addActionListener(
+        getSignInAction(signInWithGoogleButton, logInToSourcegraphAction))
+
     val panelWithTheMessage = JPanel()
     panelWithTheMessage.setLayout(BoxLayout(panelWithTheMessage, BoxLayout.Y_AXIS))
     jEditorPane.setMargin(JBUI.emptyInsets())
@@ -79,18 +81,43 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
             3, ColorUtil.brighter(UIUtil.getPanelBackground(), 3), UIUtil.getPanelBackground())
     separatorPanel.add(separatorComponent)
     panelWithTheMessage.add(separatorPanel)
-    val buttonPanel = JPanel(BorderLayout())
-    buttonPanel.add(signInWithSourcegraphButton, BorderLayout.CENTER)
-    buttonPanel.setOpaque(false)
-    panelWithTheMessage.add(buttonPanel)
+    val buttonPanelGithub = JPanel(BorderLayout())
+    val buttonPanelGitlab = JPanel(BorderLayout())
+    val buttonPanelGoogle = JPanel(BorderLayout())
+    buttonPanelGithub.add(signInWithGithubButton, BorderLayout.CENTER)
+    buttonPanelGitlab.add(signInWithGitlabButton, BorderLayout.CENTER)
+    buttonPanelGoogle.add(signInWithGoogleButton, BorderLayout.CENTER)
+    panelWithTheMessage.add(buttonPanelGithub)
+    panelWithTheMessage.add(buttonPanelGitlab)
+    panelWithTheMessage.add(buttonPanelGoogle)
     setLayout(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false))
     setBorder(JBUI.Borders.empty(PADDING))
     this.add(panelWithTheMessage)
     this.add(createPanelWithSignInWithAnEnterpriseInstance())
   }
 
-  fun addMainButtonActionListener(actionListener: ActionListener) {
-    mainButton.addActionListener(actionListener)
+  private fun getSignInAction(
+      signInWithGithubButton: JButton,
+      logInToSourcegraphAction: LogInToSourcegraphAction
+  ): (e: ActionEvent) -> Unit {
+    val functionGithub: (e: ActionEvent) -> Unit = {
+      val dataContext = DataManager.getInstance().getDataContext(signInWithGithubButton)
+      val dataContextWrapper = DataContextWrapper(dataContext)
+      val accountsHost: CodyAccountsHost = CodyPersistentAccountsHost(project)
+      dataContextWrapper.putUserData(CodyAccountsHost.KEY, accountsHost)
+      val event =
+          AnActionEvent(
+              null,
+              dataContext,
+              ActionPlaces.POPUP,
+              Presentation(),
+              ActionManager.getInstance(),
+              it.modifiers)
+      if (ActionUtil.lastUpdateAndCheckDumb(logInToSourcegraphAction, event, false)) {
+        ActionUtil.performActionDumbAwareWithCallbacks(logInToSourcegraphAction, event)
+      }
+    }
+    return functionGithub
   }
 
   private fun createPanelWithSignInWithAnEnterpriseInstance(): JPanel {

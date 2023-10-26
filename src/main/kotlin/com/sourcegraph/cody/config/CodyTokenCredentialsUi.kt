@@ -14,6 +14,7 @@ import com.intellij.ui.layout.enteredTextSatisfies
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.auth.SsoAuthMethod
 import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import com.sourcegraph.common.AuthorizationUtil
@@ -107,7 +108,8 @@ internal class CodyTokenCredentialsUi(
   override fun acquireDetailsAndToken(
       server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
-      indicator: ProgressIndicator
+      indicator: ProgressIndicator,
+      authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String> {
     val details = acquireDetails(server, executor, indicator, isAccountUnique, fixedLogin)
     return details to tokenTextField.text

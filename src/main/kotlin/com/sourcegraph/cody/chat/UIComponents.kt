@@ -3,6 +3,7 @@ package com.sourcegraph.cody.chat
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import java.awt.Component
 import java.awt.Dimension
+import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.plaf.ButtonUI
 
@@ -15,6 +16,13 @@ object UIComponents {
     button.setAlignmentX(Component.CENTER_ALIGNMENT)
     val buttonUI = DarculaButtonUI.createUI(button) as ButtonUI
     button.setUI(buttonUI)
+    return button
+  }
+
+  @JvmStatic
+  fun createMainButton(text: String, icon: Icon): JButton {
+    val button = createMainButton(text)
+    button.icon = icon
     return button
   }
 }

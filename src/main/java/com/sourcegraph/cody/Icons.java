@@ -35,4 +35,10 @@ public interface Icons {
     Icon Chat = IconLoader.getIcon("/icons/onboarding/chat.svg", Icons.class);
     Icon Commands = IconLoader.getIcon("/icons/onboarding/commands.svg", Icons.class);
   }
+
+  interface SignIn {
+    Icon Github = IconLoader.getIcon("/icons/signIn/sign-in-logo-github.svg", Icons.class);
+    Icon Gitlab = IconLoader.getIcon("/icons/signIn/sign-in-logo-gitlab.svg", Icons.class);
+    Icon Google = IconLoader.getIcon("/icons/signIn/sign-in-logo-google.svg", Icons.class);
+  }
 }

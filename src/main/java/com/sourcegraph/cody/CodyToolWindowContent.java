@@ -224,7 +224,6 @@ public class CodyToolWindowContent implements UpdatableChat {
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
     SignInWithSourcegraphPanel singInWithSourcegraphPanel = new SignInWithSourcegraphPanel(project);
-    singInWithSourcegraphPanel.addMainButtonActionListener(e -> updateVisibilityOfContentPanels());
     allContentPanel.add(tabbedPane, "tabbedPane", CHAT_PANEL_INDEX);
     allContentPanel.add(
         singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL, SIGN_IN_PANEL_INDEX);

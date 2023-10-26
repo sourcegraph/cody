@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.auth.SsoAuthMethod
 import git4idea.DialogManager
 import java.awt.Component
 
@@ -18,7 +19,9 @@ internal fun CodyLoginRequest.loginWithToken(
     project: Project?,
     parentComponent: Component?
 ): CodyAuthData? {
-  val dialog = SourcegraphTokenLoginDialog(project, parentComponent, isLoginUniqueChecker)
+  val dialog =
+      SourcegraphTokenLoginDialog(
+          project, parentComponent, isLoginUniqueChecker, SsoAuthMethod.DEFAULT)
   configure(dialog)
 
   return dialog.getAuthData()

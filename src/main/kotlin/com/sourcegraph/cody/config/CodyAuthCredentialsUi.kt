@@ -10,6 +10,7 @@ import com.intellij.ui.dsl.builder.Panel
 import com.intellij.util.ui.UIUtil.getInactiveTextColor
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.auth.SourcegraphAuthService
+import com.sourcegraph.cody.auth.SsoAuthMethod
 import javax.swing.JComponent
 
 class CodyAuthCredentialsUi(
@@ -26,9 +27,10 @@ class CodyAuthCredentialsUi(
   override fun acquireDetailsAndToken(
       server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
-      indicator: ProgressIndicator
+      indicator: ProgressIndicator,
+      authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String> {
-    val token = acquireToken(indicator)
+    val token = acquireToken(indicator, authMethod)
     val withTokenAuth = executor as SourcegraphApiRequestExecutor.WithTokenAuth
     withTokenAuth.token = token
 
@@ -54,8 +56,8 @@ class CodyAuthCredentialsUi(
     }
   }
 
-  private fun acquireToken(indicator: ProgressIndicator): String {
-    val credentialsFuture = SourcegraphAuthService.instance.authorize()
+  private fun acquireToken(indicator: ProgressIndicator, authMethod: SsoAuthMethod): String {
+    val credentialsFuture = SourcegraphAuthService.instance.authorize(authMethod)
     try {
       return ProgressIndicatorUtils.awaitWithCheckCanceled(credentialsFuture, indicator)
     } catch (pce: ProcessCanceledException) {

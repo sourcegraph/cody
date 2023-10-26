@@ -7,6 +7,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBEmptyBorder
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.auth.SsoAuthMethod
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -20,7 +21,8 @@ abstract class CodyCredentialsUi {
   abstract fun acquireDetailsAndToken(
       server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
-      indicator: ProgressIndicator
+      indicator: ProgressIndicator,
+      authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String>
 
   abstract fun handleAcquireError(error: Throwable): ValidationInfo
