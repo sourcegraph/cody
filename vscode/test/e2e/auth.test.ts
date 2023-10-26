@@ -4,7 +4,7 @@ import { loggedEvents, resetLoggedEvents, SERVER_URL, VALID_TOKEN } from '../fix
 
 import { signOut, test } from './helpers'
 
-const expectedOrderedEvents = ['CodyVSCodeExtension:logout:clicked']
+const expectedOrderedEvents = ['CodyVSCodeExtension:logout:clicked', 'CodyVSCodeExtension:Auth:disconnected']
 
 test.beforeEach(() => {
     void resetLoggedEvents()

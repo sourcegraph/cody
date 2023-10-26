@@ -25,7 +25,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -146,8 +146,10 @@ export class ContextProvider implements vscode.Disposable {
      * Save, verify, and sync authStatus between extension host and webview
      * activate extension when user has valid login
      */
-    public async syncAuthStatus(): Promise<void> {
-        const authStatus = this.authProvider.getAuthStatus()
+    public async syncAuthStatus(authStatus?: AuthStatus): Promise<void> {
+        if (!authStatus) {
+            authStatus = this.authProvider.getAuthStatus()
+        }
         // Update config to the latest one and fire configure change event to update external services
         const newConfig = await getFullConfig()
         if (authStatus.siteVersion) {
@@ -168,7 +170,7 @@ export class ContextProvider implements vscode.Disposable {
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
-        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint && !authStatus.showInvalidAccessTokenError
         const isAppEvent = isLocalApp(authStatus.endpoint || '') ? '.app' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         // e.g. auth:app:connected, auth:app:disconnected, auth:failed

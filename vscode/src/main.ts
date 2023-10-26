@@ -512,7 +512,7 @@ const register = async (
      *  NOTE: This is executed whenever auth status changes
      */
     authProvider.addChangeListener((authStatus: AuthStatus) => {
-        void contextProvider.syncAuthStatus()
+        void contextProvider.syncAuthStatus(authStatus)
         void featureFlagProvider.syncAuthStatus()
         void setupAutocomplete()
         updateAuthStatusBarIndicator(authStatus)
