@@ -91,7 +91,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
         .poll(() => loggedV2Events)
         .toEqual([
             'cody.auth/failed',
-            'cody.auth.lognin/clicked',
+            'cody.auth.login/clicked',
             'cody.auth.selectSigninMenu/clicked',
             'cody.auth/connected',
             'cody.auth.fromToken/succeeded',
