@@ -251,7 +251,7 @@ export class AuthProvider {
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
         await this.storeAuthInfo(endpoint, token)
-        await this.syncAuthStatus(authStatus)
+        this.syncAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
@@ -263,22 +263,21 @@ export class AuthProvider {
     }
 
     // Set auth status and share it with chatview
-    private async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+    private syncAuthStatus(authStatus: AuthStatus): void {
         if (this.authStatus === authStatus) {
             return
         }
         this.authStatus = authStatus
-        await this.announceNewAuthStatus()
+        this.announceNewAuthStatus()
     }
 
-    public async announceNewAuthStatus(): Promise<void> {
+    public announceNewAuthStatus(): void {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
         }
         for (const listener of this.listeners) {
             listener(this.getAuthStatus())
         }
-        await vscode.commands.executeCommand('cody.auth.sync')
     }
     /**
      * Display app state in webview view that is used during Signin flow

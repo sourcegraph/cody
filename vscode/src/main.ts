@@ -321,13 +321,6 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.sync', () => {
-            // NOTE: This is executed whenever auth status changes
-            const result = contextProvider.syncAuthStatus()
-            // Important that we return a promise here to allow `AuthProvider`
-            // to `await` on the auth config changes to propagate.
-            return result
-        }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
@@ -516,8 +509,10 @@ const register = async (
 
     /**
      *  Update services that rely on auth status changes
+     *  NOTE: This is executed whenever auth status changes
      */
     authProvider.addChangeListener((authStatus: AuthStatus) => {
+        void contextProvider.syncAuthStatus()
         void featureFlagProvider.syncAuthStatus()
         void setupAutocomplete()
         updateAuthStatusBarIndicator(authStatus)
