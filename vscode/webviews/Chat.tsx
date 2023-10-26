@@ -7,6 +7,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { TelemetryRecorder } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import {
     ChatButtonProps,
     Chat as ChatUI,
@@ -41,6 +42,7 @@ interface ChatboxProps {
     setInputHistory: (history: string[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyPrompt][]
@@ -64,6 +66,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setInputHistory,
     vscodeAPI,
     telemetryService,
+    telemetryRecorder,
     suggestions,
     setSuggestions,
     chatCommands,
@@ -94,14 +97,27 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, {
-                value: text,
-                lastChatUsedEmbeddings: Boolean(
-                    transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
-                ),
+            const feedbackType = text === 'thumbsUp' ? 'thumbsUp' : 'thumbsDown'
+            telemetryService.log(
+                `CodyVSCodeExtension:codyFeedback:${text}`,
+                {
+                    value: text,
+                    lastChatUsedEmbeddings: Boolean(
+                        transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
+                    ),
+                },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent(`cody.feedback.${feedbackType}`, 'sent', {
+                privateMetadata: {
+                    value: text,
+                    lastChatUsedEmbeddings: Boolean(
+                        transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
+                    ),
+                },
             })
         },
-        [telemetryService, transcript]
+        [telemetryService, telemetryRecorder, transcript]
     )
 
     const onCopyBtnClick = useCallback(

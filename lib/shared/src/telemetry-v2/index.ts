@@ -144,6 +144,9 @@ export type EventFeature =
     | 'cody.copy'
     | 'cody.insert'
     | 'cody.save'
+    // feedback-related events
+    | 'cody.feedback.thumbsUp'
+    | 'cody.feedback.thumbsDown'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
@@ -164,6 +167,7 @@ export type EventAction =
     | 'connected'
     | 'stopped'
     | 'replaced'
+    | 'sent'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
