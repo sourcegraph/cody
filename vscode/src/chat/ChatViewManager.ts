@@ -33,9 +33,8 @@ export class ChatViewManager implements vscode.Disposable {
 
     private isPanelViewEnabled = false
 
-    private messageProviderOptions: MessageProviderOptions
-    private extensionUri: vscode.Uri
-    private configurationChangeListener: vscode.Disposable
+    private options: ChatViewProviderOptions
+    private onConfigurationChange: vscode.Disposable
 
     // Tree view for chat history
     public treeViewProvider = new TreeViewProvider('chat')
@@ -44,12 +43,11 @@ export class ChatViewManager implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = []
 
     constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
+        this.options = { extensionUri, ...options }
         this.isPanelViewEnabled = options.contextProvider.config.experimentalChatPanel
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
             treeDataProvider: this.treeViewProvider,
         })
-        this.messageProviderOptions = options
-        this.extensionUri = extensionUri
         this.sidebarViewProvider = new ChatViewProvider({ extensionUri, ...options })
         this.currentProvider = this.sidebarChat
 
@@ -64,7 +62,7 @@ export class ChatViewManager implements vscode.Disposable {
         )
 
         // Register config change listener
-        this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(async () => {
+        this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
             this.isPanelViewEnabled = isChatPanelEnabled
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
@@ -75,21 +73,29 @@ export class ChatViewManager implements vscode.Disposable {
                 return
             }
 
-            if (!this.chatPanelProviders.size) {
-                await this.createWebviewPanel()
-            }
-
             // Remove provider  that doesn't have webPanel anymore
             this.chatPanelProviders.forEach((provider, id) => {
                 if (!provider.webviewPanel) {
                     this.chatPanelProviders.delete(id)
                 }
             })
+
+            if (!this.chatPanelProviders.size) {
+                await this.createWebviewPanel()
+            }
         })
     }
 
     public get sidebarChat(): ChatViewProvider {
         return this.sidebarViewProvider
+    }
+
+    public async syncAuthStatus(): Promise<void> {
+        const authStatus = this.options.authProvider.getAuthStatus()
+        if (!authStatus.isLoggedIn) {
+            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
+            this.disposePanels()
+        }
     }
 
     /**
@@ -133,8 +139,7 @@ export class ChatViewManager implements vscode.Disposable {
 
         const options = {
             treeView: this.treeViewProvider,
-            extensionUri: this.extensionUri,
-            ...this.messageProviderOptions,
+            ...this.options,
         }
         const provider = new ChatPanelProvider(options)
         if (chatID) {
@@ -328,11 +333,10 @@ export class ChatViewManager implements vscode.Disposable {
             provider.dispose()
         })
         this.chatPanelProviders.clear()
-        this.disposables.forEach(d => d.dispose())
     }
 
     public dispose(): void {
-        this.configurationChangeListener.dispose()
+        this.onConfigurationChange.dispose()
         this.disposables.forEach(d => d.dispose())
     }
 }

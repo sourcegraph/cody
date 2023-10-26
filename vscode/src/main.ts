@@ -315,6 +315,7 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.sync', () => {
             const result = contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
+            void chatViewProvider.syncAuthStatus()
             // Important that we return a promise here to allow `AuthProvider`
             // to `await` on the auth config changes to propagate.
             return result

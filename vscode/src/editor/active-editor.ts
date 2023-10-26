@@ -22,7 +22,7 @@ export function getActiveEditor(): vscode.TextEditor | undefined {
     if (activeEditor?.document.uri.scheme === 'file') {
         lastTrackedTextEditor = activeEditor
     }
-    
+
     return activeEditor || lastTrackedTextEditor
 }
 
