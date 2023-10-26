@@ -13,6 +13,7 @@ export class PrDescription implements Recipe {
     public title = 'Generate PR Description'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return Promise.resolve(null)
@@ -52,11 +53,12 @@ export class PrDescription implements Recipe {
         if (!gitCommitOutput) {
             const emptyGitCommitMessage = 'No commits history found in the current branch.'
             return new Interaction(
-                { speaker: 'human', displayText: rawDisplayText },
+                { speaker: 'human', displayText: rawDisplayText, source },
                 {
                     speaker: 'assistant',
                     prefix: emptyGitCommitMessage,
                     text: emptyGitCommitMessage,
+                    source,
                 },
                 Promise.resolve([]),
                 []

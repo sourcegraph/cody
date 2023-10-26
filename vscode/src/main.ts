@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
@@ -186,13 +187,14 @@ const register = async (
     const executeRecipeInSidebar = async (
         recipe: RecipeID,
         openChatView = true,
-        humanInput?: string
+        humanInput?: string,
+        source: ChatEventSource = 'editor'
     ): Promise<void> => {
         if (openChatView) {
             await sidebarChatProvider.setWebviewView('chat')
         }
 
-        await sidebarChatProvider.executeRecipe(recipe, humanInput)
+        await sidebarChatProvider.executeRecipe(recipe, humanInput, source)
     }
 
     const executeFixup = async (
@@ -203,7 +205,7 @@ const register = async (
             auto?: boolean
             insertMode?: boolean
         } = {},
-        source = 'editor' // where the command was triggered from
+        source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
         const document = args.document || vscode.window.activeTextEditor?.document
@@ -216,7 +218,7 @@ const register = async (
             return
         }
 
-        const task = args.instruction?.replace('/edit', '').trim()
+        const task = args.instruction?.replace(/^\/edit/, '').trim()
             ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -288,7 +290,7 @@ const register = async (
                     auto?: boolean
                     insertMode?: boolean
                 },
-                source?: string
+                source?: ChatEventSource
             ) => executeFixup(args, source)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
@@ -336,8 +338,8 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
-            await executeRecipeInSidebar('chat-question', true, input)
+        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
+            await executeRecipeInSidebar('chat-question', true, input, source)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')

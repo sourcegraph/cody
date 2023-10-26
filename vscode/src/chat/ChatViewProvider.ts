@@ -213,7 +213,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeRecipe('chat-question', text)
+        await this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**
@@ -309,7 +309,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     /**
      * Handles copying code and detecting a paste event.
-     *
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */

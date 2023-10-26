@@ -12,6 +12,7 @@ export class GitHistory implements Recipe {
     public title = 'Summarize Recent Code Changes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
@@ -80,11 +81,12 @@ export class GitHistory implements Recipe {
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
+            { speaker: 'human', text: promptMessage, displayText: rawDisplayText, source },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
+                source,
             },
             Promise.resolve([]),
             []
