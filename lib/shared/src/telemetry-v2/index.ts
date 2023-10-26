@@ -91,12 +91,6 @@ export type EventAction =
 export type MetadataKey = 'durationMs' | 'lineCount' | 'charCount' | 'codeBlocks'
 
 /**
- * Events accept metadata for ease of categorization in analytics pipelines -
- * this type enumerates known keys.
- */
-export type TelemetryEventMetadataInput<MetadataKey> = 'location'
-
-/**
  * Events accept billing metadata for ease of categorization in analytics
  * pipelines - this type enumerates known categories.
  */

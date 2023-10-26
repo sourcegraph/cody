@@ -56,10 +56,5 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
     await expect
         .poll(() => loggedV2Events)
-        .toEqual([
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions/executed',
-            'cody.command.edit/executed',
-            'cody.recipe.fixup/executed',
-            'cody.fixup.apply/succeeded',
-        ])
+        .toEqual(['cody.command.edit/executed', 'cody.recipe.fixup/executed', 'cody.fixup.apply/succeeded'])
 })

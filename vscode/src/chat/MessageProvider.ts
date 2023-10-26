@@ -479,7 +479,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 { hasV2Event: true }
             )
             telemetryRecorder.recordEvent('cody.guardrails.annotate', 'executed', {
-                metadata: { codeBlocks: result.codeBlocks, durationMs: result.duration },
+                // Convert nanoseconds to milliseconds to match other telemetry.
+                metadata: { codeBlocks: result.codeBlocks, durationMs: result.duration / 1000000 },
             })
         }
 
