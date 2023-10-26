@@ -18,6 +18,17 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
         ).toBeUndefined()
     })
 
+    it('no adjustment if completion does not match current line suffix', () => {
+        const item: InlineCompletionItem = { insertText: '"argument1", true' }
+        const { position } = documentAndPosition('myFunction(█)')
+        expect(
+            getRangeAdjustedForOverlappingCharacters(item, {
+                position,
+                currentLineSuffix: ')',
+            })
+        ).toBeUndefined()
+    })
+
     it('handles non-empty currentLineSuffix', () => {
         const item: InlineCompletionItem = { insertText: 'array) {' }
         const { position } = documentAndPosition('function sort(█)')

@@ -4,6 +4,7 @@ import { Tree } from 'web-tree-sitter'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
+import { completionMatchesSuffix } from '../inline-completion-item-provider'
 import { ItemPostProcessingInfo } from '../logger'
 import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
@@ -141,7 +142,7 @@ export function getRangeAdjustedForOverlappingCharacters(
     // TODO(sqs): This is a very naive implementation that will not work for many cases. It always
     // just clobbers the rest of the line.
 
-    if (!item.range && currentLineSuffix !== '') {
+    if (!item.range && currentLineSuffix !== '' && completionMatchesSuffix(item, currentLineSuffix)) {
         return { start: position, end: position.translate(undefined, currentLineSuffix.length) }
     }
 
