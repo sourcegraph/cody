@@ -10,6 +10,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+- Smart selection not working on the first line of code. [pull/1508](https://github.com/sourcegraph/cody/pull/1508)
+
 ### Changed
 
 - Start prompt mixin by default. [pull/1479](https://github.com/sourcegraph/cody/pull/1479)
