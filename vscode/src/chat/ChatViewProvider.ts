@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { EventFeature } from '@sourcegraph/cody-shared/src/telemetry-v2'
 
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
@@ -110,7 +109,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
-                telemetryRecorder.recordEvent(message.eventName as EventFeature, 'executed', message.properties)
                 break
             case 'history':
                 if (message.action === 'clear') {
