@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
 import { TreeViewProvider } from '../services/TreeViewProvider'
@@ -203,7 +204,12 @@ export class ChatViewManager implements vscode.Disposable {
      * @param humanChatInput - Optional human chat input to provide to the recipe.
      * @param openChatView - Whether to open the chat view before executing the recipe.
      */
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', openChatView?: boolean): Promise<void> {
+    public async executeRecipe(
+        recipeId: RecipeID,
+        humanChatInput = '',
+        openChatView?: boolean,
+        source?: ChatEventSource
+    ): Promise<void> {
         if (openChatView) {
             // This will create a new panel if experimentalChatPanel is enabled
             await this.setWebviewView('chat')
@@ -211,7 +217,7 @@ export class ChatViewManager implements vscode.Disposable {
         // Run command in a new webview to avoid conflicts with context from previous chat
         const chatProvider = await this.getChatProvider()
 
-        await chatProvider.executeRecipe(recipeId, humanChatInput)
+        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
     }
 
     /**

@@ -10,6 +10,7 @@ export class FindCodeSmells implements Recipe {
     public title = 'Smell Code'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -34,11 +35,12 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
 
         const assistantResponsePrefix = ''
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
+            { speaker: 'human', text: promptMessage, displayText, source },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
+                source,
             },
             new Promise(resolve => resolve([])),
             []
