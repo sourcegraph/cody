@@ -134,6 +134,9 @@ export type EventFeature =
     | 'cody.sidebar.commandConfigMenuButton.explain'
     | 'cody.sidebar.commandConfigMenuButton.smell'
     | 'cody.sidebar.commandConfigMenuButton.reset'
+    // context-provider-related events
+    | 'cody.auth'
+    | 'cody.auth.app'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
@@ -150,6 +153,8 @@ export type EventAction =
     | 'opened'
     | 'closed'
     | 'hasCode'
+    | 'disconnected'
+    | 'connected'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
