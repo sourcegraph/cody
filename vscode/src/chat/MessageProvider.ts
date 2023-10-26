@@ -223,12 +223,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         { ...codeCount, source },
                         { hasV2Event: true }
                     )
-                    telemetryRecorder.recordEvent('cody.messageProvider.chatResponse', 'hasCode', {
+                    telemetryRecorder.recordEvent(`cody.messageProvider.chatResponse.${source}`, 'hasCode', {
                         metadata: {
                             ...codeCount,
-                        },
-                        privateMetadata: {
-                            source,
                         },
                     })
                 }
@@ -396,7 +393,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             { contextSummary },
             { hasV2Event: true }
         )
-        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { privateMetadata: { contextSummary } })
+        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -549,7 +546,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     { source: 'sidebar' },
                     { hasV2Event: true }
                 )
-                telemetryRecorder.recordEvent('cody.sidebar.commandConfigMenuButton', 'clicked')
+                telemetryRecorder.recordEvent(`cody.sidebar.commandConfigMenuButton.${source}`, 'clicked')
                 return vscode.commands.executeCommand('cody.settings.commands')
             case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
