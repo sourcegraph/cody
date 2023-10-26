@@ -89,5 +89,11 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
     await expect
         .poll(() => loggedV2Events)
-        .toEqual(['cody.command.edit/executed', 'cody.recipe.fixup/executed', 'cody.fixup.apply/succeeded'])
+        .toEqual([
+            'cody.auth/failed',
+            'cody.auth/connected',
+            'cody.command.edit/executed',
+            'cody.recipe.fixup/executed',
+            'cody.fixup.apply/succeeded',
+        ])
 })
