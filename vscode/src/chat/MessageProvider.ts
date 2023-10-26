@@ -122,12 +122,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
     }
 
-    protected async init(): Promise<void> {
+    protected async init(chatID?: string): Promise<void> {
         this.loadChatHistory()
         this.sendTranscript()
         this.sendHistory()
         await this.contextProvider.init()
         await this.sendCodyCommands()
+
+        if (chatID) {
+            await this.restoreSession(chatID)
+        }
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -157,12 +161,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Restores a session from a chatID
      */
     public async restoreSession(chatID: string): Promise<void> {
-        await this.saveTranscriptToChatHistory()
-
         if (chatID === this.currentChatID) {
             return
         }
 
+        await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])

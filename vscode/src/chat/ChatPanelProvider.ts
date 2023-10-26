@@ -52,7 +52,7 @@ export class ChatPanelProvider extends MessageProvider {
                 break
             case 'initialized':
                 logDebug('ChatViewProvider:onDidReceiveMessage:initialized', '')
-                await this.init()
+                await this.init(this.startUpChatID)
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -68,7 +68,7 @@ export class ChatPanelProvider extends MessageProvider {
                 break
             case 'executeRecipe':
                 this.setWebviewView('chat')
-                await this.executeRecipe(message.recipe)
+                await this.executeRecipe(message.recipe, '', 'chat')
                 break
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
@@ -346,16 +346,20 @@ export class ChatPanelProvider extends MessageProvider {
         this.webviewPanel?.reveal()
     }
 
+    private startUpChatID?: string = undefined
+
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(): Promise<vscode.WebviewPanel | undefined> {
+    public async createWebviewPanel(chatID?: string): Promise<vscode.WebviewPanel | undefined> {
         // Create the webview panel only if the user is logged in.
         // Allows users to login via the sidebar webview.
         if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
             await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
             return
         }
+
+        this.startUpChatID = chatID
 
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.

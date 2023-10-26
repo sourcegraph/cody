@@ -67,7 +67,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      */
     public refresh(): void {
         if (this.type === 'chat') {
-            void vscode.commands.executeCommand('setContext', 'cody.chat.history.isEmpty', this.treeNodes.length === 0)
+            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
         }
         this._onDidChangeTreeData.fire()
     }
@@ -98,6 +98,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Empty the tree view
      */
     public reset(): void {
+        void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', false)
         this.treeNodes = []
         this.refresh()
     }
@@ -188,6 +189,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     },
 ]
 
+// functon to create chat tree items from user chat history
 export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySidebarTreeItem[] {
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory.chat)]

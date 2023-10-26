@@ -5,7 +5,8 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
-import { TreeViewProvider } from '../services/TreeViewProvider'
+import { localStorage } from '../services/LocalStorageProvider'
+import { createCodyChatTreeItems, TreeViewProvider } from '../services/TreeViewProvider'
 
 import { ChatPanelProvider } from './ChatPanelProvider'
 import { ChatViewProvider } from './ChatViewProvider'
@@ -46,11 +47,13 @@ export class ChatViewManager implements vscode.Disposable {
     constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         this.options = { extensionUri, ...options }
         this.isPanelViewEnabled = options.contextProvider.config.experimentalChatPanel
+
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
             treeDataProvider: this.treeViewProvider,
         })
+
         this.sidebarViewProvider = new ChatViewProvider({ extensionUri, ...options })
-        this.currentProvider = this.sidebarChat
+        this.currentProvider = this.sidebarViewProvider
 
         // Register Commands
         this.disposables.push(
@@ -61,6 +64,16 @@ export class ChatViewManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeViewProvider)
         )
+
+        const localHistory = localStorage.getChatHistory()
+        if (localHistory && this.isPanelViewEnabled) {
+            this.treeViewProvider.updateTree(
+                createCodyChatTreeItems({
+                    chat: localHistory?.chat,
+                    input: localHistory.input,
+                })
+            )
+        }
 
         // Register config change listener
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
@@ -103,14 +116,16 @@ export class ChatViewManager implements vscode.Disposable {
      * If not set, defaults to sidebarViewProvider.
      * Sets currentProvider to the returned provider.
      */
-    private async getChatProvider(): Promise<ChatViewProvider | ChatPanelProvider> {
+    private async getChatProvider(isChatViewRequired = false): Promise<ChatViewProvider | ChatPanelProvider> {
         if (!this.isPanelViewEnabled) {
             return this.sidebarChat
         }
 
-        if (!this.chatPanelProviders.size) {
+        // Create a panel only if chat view is required and no panels exist
+        if (isChatViewRequired && !this.chatPanelProviders.size) {
             await this.createWebviewPanel()
         }
+
         const provider = this.currentProvider || this.sidebarChat
         this.currentProvider = provider
         return this.currentProvider
@@ -140,11 +155,8 @@ export class ChatViewManager implements vscode.Disposable {
             ...this.options,
         }
         const provider = new ChatPanelProvider(options)
-        if (chatID) {
-            await provider.restoreSession(chatID)
-        }
 
-        const webviewPanel = await provider.createWebviewPanel()
+        const webviewPanel = await provider.createWebviewPanel(chatID)
         if (!webviewPanel) {
             provider.dispose()
             return
@@ -173,33 +185,21 @@ export class ChatViewManager implements vscode.Disposable {
         return provider
     }
 
-    /**
-     * Restores the webview panel for the given chat ID.
-     *
-     * If the webview panel does not exist yet, it will be created first.
-     * Then reveals the panel and restores the chat session for the given ID.
-     */
-    private async restorePanel(chatID: string): Promise<void> {
+    public async setWebviewView(view: View): Promise<void> {
         if (!this.isPanelViewEnabled) {
-            await this.sidebarChat.restoreSession(chatID)
+            await this.sidebarChat.setWebviewView(view)
             return
         }
 
-        const provider = this.chatPanelProviders.get(chatID)
-        if (provider) {
-            // Panel already exists, just reveal it
-            provider.webviewPanel?.reveal()
-            return
+        // All new commands will start in an empty chat session
+        // NOTE: webview panel does not have views other than 'chat'
+        if (view === 'chat') {
+            await this.createWebviewPanel()
         }
-
-        await this.createWebviewPanel(chatID)
     }
 
     /**
      * Executes a recipe in the chat view.
-     * @param recipeId - The ID of the recipe to execute.
-     * @param humanChatInput - Optional human chat input to provide to the recipe.
-     * @param openChatView - Whether to open the chat view before executing the recipe.
      */
     public async executeRecipe(
         recipeId: RecipeID,
@@ -211,24 +211,16 @@ export class ChatViewManager implements vscode.Disposable {
             // This will create a new panel if experimentalChatPanel is enabled
             await this.setWebviewView('chat')
         }
-        // Run command in a new webview to avoid conflicts with context from previous chat
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
-    }
 
-    /**
-     * Sets the current webview view.
-     *
-     * If experimental chat panel is enabled, it will create a new webview panel as it only supports chat view.
-     * Otherwise it will get the sidebar hat provider and call setWebviewView on it.
-     */
-    public async setWebviewView(view: View): Promise<void> {
         if (!this.isPanelViewEnabled) {
-            await this.sidebarChat.setWebviewView(view)
+            await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
             return
         }
-        // All new commands will start in an empty chat session
-        this.currentProvider = (await this.createWebviewPanel()) || this.currentProvider
+
+        // Run command in a new webview to avoid conflicts with context from exisiting chat
+        // Only applies when commands are run outside of chat input box
+        const chatProvider = await this.getChatProvider(openChatView)
+        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
     }
 
     /**
@@ -244,6 +236,7 @@ export class ChatViewManager implements vscode.Disposable {
             await this.executeRecipe('custom-prompt', title, true)
             return
         }
+
         const chatProvider = await this.getChatProvider()
         await chatProvider.executeCustomCommand(title, type)
     }
@@ -253,11 +246,16 @@ export class ChatViewManager implements vscode.Disposable {
      * If no ID is provided, clears all chat history and resets the tree view.
      */
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
+        if (!this.isPanelViewEnabled) {
+            await this.sidebarChat.clearHistory()
+            return
+        }
+
         const chatID = treeItem?.id
         if (chatID) {
             const provider = await this.getChatProvider()
             await provider?.clearChatHistory(chatID)
-            this.removeProvider(chatID)
+            this.disposeProvider(chatID)
         }
 
         if (!treeItem && this.isPanelViewEnabled) {
@@ -268,23 +266,16 @@ export class ChatViewManager implements vscode.Disposable {
                 'Yes',
                 'No'
             )
+
             if (!userConfirmation) {
                 return
             }
+
             this.disposePanels()
+            await this.sidebarChat.clearHistory()
             this.treeViewProvider.reset()
             return
         }
-    }
-
-    private removeProvider(chatID: string): void {
-        const provider = this.chatPanelProviders.get(chatID)
-        if (!provider) {
-            return
-        }
-        provider.webviewPanel?.dispose()
-        provider.dispose()
-        this.chatPanelProviders.delete(chatID)
     }
 
     /**
@@ -296,14 +287,40 @@ export class ChatViewManager implements vscode.Disposable {
     }
 
     /**
+     * Restores the webview panel for the given chat ID.
+     *
+     * If the webview panel does not exist yet, it will be created first.
+     * Then reveals the panel and restores the chat session for the given ID.
+     */
+    private async restorePanel(chatID: string): Promise<void> {
+        if (!this.isPanelViewEnabled) {
+            await this.sidebarChat.restoreSession(chatID)
+            return
+        }
+
+        // Panel already exists, just reveal it
+        const provider = this.chatPanelProviders.get(chatID)
+        if (provider) {
+            provider.webviewPanel?.reveal()
+            return
+        }
+
+        await this.createWebviewPanel(chatID)
+    }
+
+    /**
      * Restores a chat session from a given chat ID.
      *
      * Retrieves the chat provider instance, and calls its restoreSession() method
      * to restore the session with the provided chatID.
      */
     public async restoreSession(chatID: string): Promise<void> {
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.restoreSession(chatID)
+        if (!this.isPanelViewEnabled) {
+            await this.sidebarChat.restoreSession(chatID)
+            return
+        }
+
+        await this.currentProvider.restoreSession(chatID)
     }
 
     /**
@@ -320,9 +337,25 @@ export class ChatViewManager implements vscode.Disposable {
     }
 
     public triggerNotice(notice: { key: string }): void {
+        if (!this.isPanelViewEnabled) {
+            this.sidebarChat.triggerNotice(notice)
+            return
+        }
+
         const chatProvider = this.currentProvider || this.sidebarChat
         chatProvider.triggerNotice(notice)
         return
+    }
+
+    private disposeProvider(chatID: string): void {
+        const provider = this.chatPanelProviders.get(chatID)
+        if (!provider) {
+            return
+        }
+
+        provider.webviewPanel?.dispose()
+        provider.dispose()
+        this.chatPanelProviders.delete(chatID)
     }
 
     private disposePanels(): void {
@@ -336,6 +369,7 @@ export class ChatViewManager implements vscode.Disposable {
     }
 
     public dispose(): void {
+        this.disposePanels()
         this.onConfigurationChange.dispose()
         this.disposables.forEach(d => d.dispose())
     }

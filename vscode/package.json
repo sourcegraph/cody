@@ -472,7 +472,7 @@
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "Start a New Chat Session",
-        "when": "cody.activated",
+        "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
         "icon": "$(add)"
       },
@@ -481,21 +481,24 @@
         "category": "Cody",
         "title": "Delete All Chats",
         "group": "Cody",
-        "icon": "$(trash)"
+        "icon": "$(trash)",
+        "when": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.delete",
         "category": "Cody",
         "title": "Delete Chat",
         "group": "Cody",
-        "icon": "$(trash)"
+        "icon": "$(trash)",
+        "when": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.export",
         "category": "Cody",
         "title": "Export Chat History",
         "group": "Cody",
-        "icon": "$(save)"
+        "icon": "$(save)",
+        "when": "cody.activated && cody.hasChatHistory"
       }
     ],
     "keybindings": [
@@ -726,14 +729,14 @@
         },
         {
           "command": "cody.chat.history.clear",
-          "when": "view == cody.chat.tree.view && cody.activated",
-          "enablement": "!cody.chat.history.isEmpty",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
           "group": "navigation@2"
         },
         {
           "command": "cody.chat.history.export",
-          "when": "view == cody.chat.tree.view && cody.activated",
-          "enablement": "!cody.chat.history.isEmpty",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
           "group": "navigation@3"
         },
         {
@@ -799,7 +802,7 @@
       "view/item/context": [
         {
           "command": "cody.chat.history.delete",
-          "when": "view == cody.chat.tree.view && cody.activated",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
           "group": "inline"
         },
         {
