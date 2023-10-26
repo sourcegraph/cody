@@ -116,15 +116,6 @@ const register = async (
     await authProvider.init()
 
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
-    if (symfRunner) {
-        authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-            if (authStatus.isLoggedIn) {
-                symfRunner.setSourcegraphAuth(authStatus.endpoint, await getAccessToken())
-            } else {
-                symfRunner.setSourcegraphAuth(null, null)
-            }
-        })
-    }
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
@@ -331,8 +322,8 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.sync', () => {
+            // NOTE: This is executed whenever auth status changes
             const result = contextProvider.syncAuthStatus()
-            void featureFlagProvider.syncAuthStatus()
             // Important that we return a promise here to allow `AuthProvider`
             // to `await` on the auth config changes to propagate.
             return result
@@ -459,15 +450,15 @@ const register = async (
     )
 
     /**
-     * Signed out status bar indicator
+     * Manage auth state for status bar indicator
      */
     let removeAuthStatusBarError: undefined | (() => void)
-    function updateAuthStatusBarIndicator(): void {
+    function updateAuthStatusBarIndicator(authStatus: AuthStatus): void {
         if (removeAuthStatusBarError) {
             removeAuthStatusBarError()
             removeAuthStatusBarError = undefined
         }
-        if (!authProvider.getAuthStatus().isLoggedIn) {
+        if (!authStatus.isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
                 title: 'Sign In To Use Cody',
                 description: 'You need to sign in to use Cody.',
@@ -477,9 +468,10 @@ const register = async (
             })
         }
     }
-    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
-    updateAuthStatusBarIndicator()
 
+    /**
+     * Set up code completions provider
+     */
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
     const setupAutocomplete = async (): Promise<void> => {
@@ -521,10 +513,28 @@ const register = async (
             void setupAutocomplete()
         }
     })
-    authProvider.addChangeListener(() => {
+
+    /**
+     *  Update services that rely on auth status changes
+     */
+    authProvider.addChangeListener((authStatus: AuthStatus) => {
+        void featureFlagProvider.syncAuthStatus()
         void setupAutocomplete()
+        updateAuthStatusBarIndicator(authStatus)
+
+        if (symfRunner) {
+            if (authStatus.isLoggedIn) {
+                getAccessToken()
+                    .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
+                    .catch(error => console.error(error))
+            } else {
+                symfRunner.setSourcegraphAuth(null, null)
+            }
+        }
     })
+
     await setupAutocomplete()
+    updateAuthStatusBarIndicator(authProvider.getAuthStatus())
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
