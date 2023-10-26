@@ -15,6 +15,7 @@ import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
+import { CompletionIntent } from './tree-sitter/query-sdk'
 import { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
@@ -41,6 +42,8 @@ export interface CompletionEvent {
         source?: InlineCompletionsResultSource
         lineCount?: number
         charCount?: number
+        // Mapping to a higher level abstractions of syntax nodes (e.g., function declaration body)
+        completionIntent?: CompletionIntent
     }
     // The timestamp when the completion request started
     startedAt: number

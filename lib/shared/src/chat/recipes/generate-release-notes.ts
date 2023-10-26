@@ -11,6 +11,7 @@ export class ReleaseNotes implements Recipe {
     public title = 'Generate Release Notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
@@ -66,11 +67,12 @@ export class ReleaseNotes implements Recipe {
         if (!gitLogOutput) {
             const emptyGitLogMessage = 'No recent changes found to generate release notes.'
             return new Interaction(
-                { speaker: 'human', displayText: rawDisplayText },
+                { speaker: 'human', displayText: rawDisplayText, source },
                 {
                     speaker: 'assistant',
                     prefix: emptyGitLogMessage,
                     text: emptyGitLogMessage,
+                    source,
                 },
                 Promise.resolve([]),
                 []

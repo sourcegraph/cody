@@ -1,5 +1,7 @@
 import { ContextFile, PreciseContext } from '../../codebase-context/messages'
 import { Message } from '../../sourcegraph-api'
+import { CodyDefaultCommands } from '../prompts'
+import { RecipeID } from '../recipes/recipe'
 
 import { TranscriptJSON } from '.'
 
@@ -15,14 +17,14 @@ export interface ChatMessage extends Message {
     preciseContext?: PreciseContext[]
     buttons?: ChatButton[]
     data?: any
-    source?: string
+    source?: ChatEventSource
 }
 
 export interface InteractionMessage extends Message {
     displayText?: string
     prefix?: string
     error?: string
-    source?: string
+    source?: ChatEventSource
 }
 
 export interface UserLocalHistory {
@@ -37,3 +39,15 @@ export interface ChatHistory {
 export interface OldChatHistory {
     [chatID: string]: ChatMessage[]
 }
+
+export type ChatEventSource =
+    | 'chat'
+    | 'inline-chat'
+    | 'editor'
+    | 'menu'
+    | 'code-action'
+    | 'custom-commands'
+    | 'test'
+    | 'code-lens'
+    | CodyDefaultCommands
+    | RecipeID

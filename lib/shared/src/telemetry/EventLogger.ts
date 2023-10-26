@@ -63,8 +63,8 @@ export class EventLogger {
      * DEPRECATED: Callsites should ALSO record an event using services/telemetryV2
      * as well and indicate this has happened, for example:
      *
-     *   logEvent(name, properties, { hasV2Event: true })
-     *   telemetryRecorder.recordEvent(...)
+     * logEvent(name, properties, { hasV2Event: true })
+     * telemetryRecorder.recordEvent(...)
      *
      * In the future, all usages of TelemetryService will be removed in
      * favour of the new libraries. For more information, see:
@@ -73,7 +73,6 @@ export class EventLogger {
      * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
      * properties may get sent to analytics tools, so must not include private information, such as
      * search queries or repository names.
-     *
      * @param eventName The name of the event.
      * @param anonymousUserID The randomly generated unique user ID.
      * @param properties Event properties. Do NOT include any private information, such as full
@@ -83,8 +82,15 @@ export class EventLogger {
         eventName: string,
         anonymousUserID: string,
         properties?: TelemetryEventProperties,
-        { hasV2Event }: { hasV2Event: boolean } = { hasV2Event: false }
+        opts: { hasV2Event: boolean } = { hasV2Event: false }
     ): void {
+        /**
+         * hasV2Event can be set via properties or opts, as it's unlikely to be
+         * collide with a real property and it's easy to accidentally put opts
+         * in the properties field.
+         */
+        const hasV2Event = opts.hasV2Event || properties?.hasV2Event
+
         const publicArgument = {
             ...properties,
             serverEndpoint: this.serverEndpoint,
@@ -97,6 +103,7 @@ export class EventLogger {
                 guardrails: this.config.experimentalGuardrails,
             },
             version: this.extensionDetails.version, // for backcompat
+            hasV2Event,
         }
         this.gqlAPIClient
             .logEvent(

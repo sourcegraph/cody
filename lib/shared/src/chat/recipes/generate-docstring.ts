@@ -15,6 +15,7 @@ export class GenerateDocstring implements Recipe {
     public title = 'Generate Docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -49,11 +50,12 @@ export class GenerateDocstring implements Recipe {
 
         const assistantResponsePrefix = `Here is the generated documentation:\n\`\`\`${extension}\n${docStart}`
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
+            { speaker: 'human', text: promptMessage, displayText, source },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
+                source,
             },
             getContextMessagesFromSelection(
                 truncatedSelectedText,

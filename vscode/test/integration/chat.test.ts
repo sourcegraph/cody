@@ -19,7 +19,7 @@ suite('Chat', function () {
     test('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.focus')
         const chatView = await getChatViewProvider()
-        await chatView.executeRecipe('chat-question', 'hello from the human')
+        await chatView.executeRecipe('chat-question', 'hello from the human', 'test')
 
         assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
         await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
