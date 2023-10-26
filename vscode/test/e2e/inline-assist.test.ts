@@ -58,7 +58,10 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
         .poll(() => loggedV2Events)
         .toEqual([
             'cody.auth/failed',
+            'cody.auth.lognin/clicked',
+            'cody.auth.selectSigninMenu/clicked',
             'cody.auth/connected',
+            'cody.auth.fromToken/succeeded',
             'cody.command.edit/executed',
             'cody.recipe.fixup/executed',
             'cody.fixup.apply/succeeded',
