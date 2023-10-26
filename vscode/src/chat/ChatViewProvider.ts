@@ -48,7 +48,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'ready':
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
+                this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
                 logDebug('ChatViewProvider:onDidReceiveMessage:initialized', '')
