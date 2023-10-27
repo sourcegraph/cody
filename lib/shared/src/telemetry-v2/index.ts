@@ -147,6 +147,8 @@ export type EventFeature =
     // feedback-related events
     | 'cody.feedback.thumbsUp'
     | 'cody.feedback.thumbsDown'
+    // onboarding-experiment-related events
+    | 'cody.auth.otherSignInOptions'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where

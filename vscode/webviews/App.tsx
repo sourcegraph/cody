@@ -15,7 +15,7 @@ import { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { UserHistory } from './UserHistory'
-import { createWebviewTelemetryService } from './utils/telemetry'
+import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -152,6 +152,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
         return <LoadingPage />
@@ -163,6 +164,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <LoginSimplified
                     simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     uiKindIsWeb={config?.uiKindIsWeb}
                     vscodeAPI={vscodeAPI}
                 />
@@ -197,6 +199,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             suggestions={suggestions}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             chatCommands={myPrompts || undefined}
                             isTranscriptError={isTranscriptError}
                             applessOnboarding={{
