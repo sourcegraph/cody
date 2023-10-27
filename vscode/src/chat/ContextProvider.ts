@@ -98,16 +98,12 @@ export class ContextProvider implements vscode.Disposable {
     public onConfigurationChange(newConfig: Config): void {
         logDebug('ContextProvider:onConfigurationChange', 'using codebase', newConfig.codebase)
         this.config = newConfig
-        const authStatus = this.authProvider.getAuthStatus()
-        if (authStatus.endpoint) {
-            this.config.serverEndpoint = authStatus.endpoint
-        }
         this.configurationChangeEvent.fire()
     }
 
-    public async forceUpdateCodebaseContext(): Promise<void> {
+    public async forceUpdateCodebaseContext(authStatus: AuthStatus): Promise<void> {
         this.currentWorkspaceRoot = ''
-        return this.syncAuthStatus()
+        return this.onAuthStatusChange(authStatus)
     }
 
     private async updateCodebaseContext(): Promise<void> {
@@ -146,10 +142,7 @@ export class ContextProvider implements vscode.Disposable {
      * Save, verify, and sync authStatus between extension host and webview
      * activate extension when user has valid login
      */
-    public async syncAuthStatus(authStatus?: AuthStatus): Promise<void> {
-        if (!authStatus) {
-            authStatus = this.authProvider.getAuthStatus()
-        }
+    public async onAuthStatusChange(authStatus: AuthStatus): Promise<void> {
         // Update config to the latest one and fire configure change event to update external services
         const newConfig = await getFullConfig()
         if (authStatus.siteVersion) {
@@ -167,12 +160,25 @@ export class ContextProvider implements vscode.Disposable {
                 this.codebaseContext = codebaseContext
             }
         }
+
+        if (authStatus.endpoint) {
+            this.config.serverEndpoint = authStatus.endpoint
+        }
+
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
+
+        const hasAuthError = authStatus.showInvalidAccessTokenError || authStatus.showNetworkError
+        // This means user has cancelled login or logged out after entering endpoint
+        if (!hasAuthError && authStatus.endpoint) {
+            return
+        }
+
         // When logged out, user's endpoint will be set to null
-        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint && !authStatus.showInvalidAccessTokenError
+        // So if user is not logged in but endpoint is set, it means the attempted login has failed
+        const eventValue = authStatus.isLoggedIn ? 'connected' : hasAuthError ? 'failed' : 'disconnected'
         const isAppEvent = isLocalApp(authStatus.endpoint || '') ? '.app' : ''
-        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+
         // e.g. auth:app:connected, auth:app:disconnected, auth:failed
         // this.sendEvent(ContextEvent.Auth, isAppEvent, eventValue)
         switch (ContextEvent.Auth) {
@@ -292,7 +298,11 @@ export class ContextProvider implements vscode.Disposable {
  * Gets codebase context for the current workspace.
  * @param config Cody configuration
  * @param rgPath Path to rg (ripgrep) executable
+ * @param symf Indexed keyword context fetcher
  * @param editor Editor instance
+ * @param chatClient Chat client instance
+ * @param platform Platform context
+ * @param embeddingsClientCandidates Sourcegraph API clients to check for embeddings
  * @returns CodebaseContext if a codebase can be determined, else null
  */
 async function getCodebaseContext(

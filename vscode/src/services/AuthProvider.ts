@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -251,7 +252,7 @@ export class AuthProvider {
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
         await this.storeAuthInfo(endpoint, token)
-        this.syncAuthStatus(authStatus)
+        this.updateAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
@@ -262,8 +263,8 @@ export class AuthProvider {
         await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
     }
 
-    // Set auth status and share it with chatview
-    private syncAuthStatus(authStatus: AuthStatus): void {
+    // Update auth status then share it with listeners
+    private updateAuthStatus(authStatus: AuthStatus): void {
         if (this.authStatus === authStatus) {
             return
         }
@@ -275,6 +276,7 @@ export class AuthProvider {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
         }
+        featureFlagProvider.onAuthStatusChange()
         for (const listener of this.listeners) {
             listener(this.getAuthStatus())
         }

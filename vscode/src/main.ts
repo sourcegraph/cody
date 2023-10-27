@@ -4,7 +4,6 @@ import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
@@ -118,7 +117,6 @@ const register = async (
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
 
     graphqlClient.onConfigurationChange(initialConfig)
-    void featureFlagProvider.syncAuthStatus()
 
     const {
         intentDetector,
@@ -512,8 +510,7 @@ const register = async (
      *  NOTE: This is executed whenever auth status changes
      */
     authProvider.addChangeListener((authStatus: AuthStatus) => {
-        void contextProvider.syncAuthStatus(authStatus)
-        void featureFlagProvider.syncAuthStatus()
+        void contextProvider.onAuthStatusChange(authStatus)
         void setupAutocomplete()
         updateAuthStatusBarIndicator(authStatus)
 
@@ -529,7 +526,6 @@ const register = async (
     })
 
     await setupAutocomplete()
-    updateAuthStatusBarIndicator(authProvider.getAuthStatus())
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {

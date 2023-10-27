@@ -60,7 +60,7 @@ export class FeatureFlagProvider {
         return this.featureFlags[flagName]
     }
 
-    public syncAuthStatus(): void {
+    public onAuthStatusChange(): void {
         void this.refreshFeatureFlags()
     }
 

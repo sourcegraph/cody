@@ -195,7 +195,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
-        await this.contextProvider.forceUpdateCodebaseContext()
+        await this.contextProvider.forceUpdateCodebaseContext(this.authProvider.getAuthStatus())
     }
 
     private appWatcherChanged(appWatcher: LocalAppWatcher): void {
