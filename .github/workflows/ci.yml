@@ -108,15 +108,10 @@ jobs:
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner == 'windows' || matrix.runner == 'macos'
       - uses: actions/upload-artifact@v3
-        if: ${{ always() }}
+        if: ${{ failure() }}
         with:
           name: playwright-recordings ${{ matrix.runner }}
-          path: playwright/**
-      - uses: actions/upload-artifact@v3
-        if: ${{ always() }}
-        with:
-          name: test-results ${{ matrix.runner }}
-          path: test-results/**
+          path: playwright/**/*.webm
 
   build:
     runs-on: ubuntu-latest
