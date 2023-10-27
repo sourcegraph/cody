@@ -1,4 +1,4 @@
-import { expect, Page } from '@playwright/test'
+import { expect, Locator, Page } from '@playwright/test'
 
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
@@ -13,6 +13,8 @@ test('shows chat sidebar completion onboarding notice on first completion accept
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
         'CodyVSCodeExtension:completion:suggested',
+        'CodyVSCodeExtension:completion:accepted',
+        'CodyVSCodeExtension:completion:suggested',
     ]
 
     const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
@@ -21,7 +23,9 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     const noticeCloseButton = notice.locator('div[class^="_notice-close"] vscode-button')
 
     const firstAcceptedCompletion = editor.getByText('myFirstCompletion')
-    const otherAcceptedCompletion = editor.getByText('myNotFirstCompletion')
+    // Use .first() to ignore additional instances of this text if inline completion shows
+    // up again after completing.
+    const otherAcceptedCompletion = editor.getByText('myNotFirstCompletion').first()
 
     // Sign into Cody.
     await sidebarSignin(page, sidebar)
@@ -31,7 +35,7 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     await indexFile.dblclick()
 
     // Trigger inline-completion and ensure no notice (yet).
-    await triggerInlineCompletionInBody(page)
+    await triggerInlineCompletionAfter(page, page.getByText('<body>'))
     await expect(notice).not.toBeVisible()
 
     // Accept the completion and expect the text to be added and
@@ -45,7 +49,7 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     await expect(notice).not.toBeVisible()
 
     // Trigger/accept another completion, but don't expect the notification.
-    await triggerInlineCompletionInBody(page)
+    await triggerInlineCompletionAfter(page, firstAcceptedCompletion)
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(notice).not.toBeVisible()
@@ -54,10 +58,12 @@ test('shows chat sidebar completion onboarding notice on first completion accept
 
 test('inline completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
     const expectedOrderedEvents = [
-        'CodyVSCodeExtension:completion:suggested',
-        'CodyVSCodeExtension:completion:accepted',
-        'CodyVSCodeExtension:completion:suggested', // Extra trigger from pressing 'a' to test hiding.
-        'CodyVSCodeExtension:completion:suggested',
+        'CodyVSCodeExtension:completion:suggested', // First suggestion
+        'CodyVSCodeExtension:completion:accepted', // First accept
+        'CodyVSCodeExtension:completion:suggested', // Suggestion that appears immediately after accepting
+        'CodyVSCodeExtension:completion:suggested', // Second suggestion after typing "a" to test hiding
+        'CodyVSCodeExtension:completion:accepted', // Second accept
+        'CodyVSCodeExtension:completion:suggested', // Suggestion that appears immediately after accepting
     ]
 
     const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
@@ -69,7 +75,9 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     const decoration = editor.locator('css=span[class*="TextEditorDecorationType"]')
 
     const firstAcceptedCompletion = editor.getByText('myFirstCompletion')
-    const otherAcceptedCompletion = editor.getByText('myNotFirstCompletion')
+    // Use .first() to ignore additional instances of this text if inline completion shows
+    // up again after completing.
+    const otherAcceptedCompletion = editor.getByText('myNotFirstCompletion').first()
 
     // Sign into Cody.
     await sidebarSignin(page, sidebar)
@@ -79,7 +87,7 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     await indexFile.dblclick()
 
     // Trigger inline-completion and ensure no notice (yet).
-    await triggerInlineCompletionInBody(page)
+    await triggerInlineCompletionAfter(page, page.getByText('<body>'))
     await expect(decoration).not.toBeVisible()
 
     // Accept the completion and expect the text to be added and
@@ -93,15 +101,15 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     await expect(decoration).not.toBeVisible()
 
     // Trigger/accept another completion, but don't expect the notification.
-    await triggerInlineCompletionInBody(page)
+    await triggerInlineCompletionAfter(page, firstAcceptedCompletion)
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(decoration).not.toBeVisible()
     await expect.poll(() => loggedEvents.sort()).toEqual(expectedOrderedEvents.sort())
 })
 
-async function triggerInlineCompletionInBody(page: Page): Promise<void> {
-    await page.getByText('<body>').click()
+async function triggerInlineCompletionAfter(page: Page, afterElement: Locator): Promise<void> {
+    await afterElement.click()
     await page.keyboard.press('End')
     await page.keyboard.press('Enter')
     await new Promise(resolve => setTimeout(resolve, 200))
