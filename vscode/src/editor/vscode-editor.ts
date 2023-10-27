@@ -28,6 +28,11 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             CommandsController
         >
     ) {
+        /**
+         * Callback function that calls getActiveEditor() whenever the visible text editors change in VS Code.
+         * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
+         */
+        vscode.window.onDidChangeActiveTextEditor(() => getActiveEditor())
         new EditorCodeLenses()
     }
 
@@ -64,6 +69,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return {
             content: documentText,
             filePath: documentUri.fsPath,
+            fileUri: documentUri,
             selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
         }
     }

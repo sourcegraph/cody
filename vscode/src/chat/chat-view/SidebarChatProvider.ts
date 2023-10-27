@@ -4,16 +4,14 @@ import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { View } from '../../webviews/NavBar'
-import { getActiveEditor } from '../editor/active-editor'
-import { logDebug } from '../log'
-import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
-import { LocalAppWatcher } from '../services/LocalAppWatcher'
-import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
-
-import { addWebviewViewHTML } from './chat-view/ChatManager'
-import { MessageProvider, MessageProviderOptions } from './MessageProvider'
+import { View } from '../../../webviews/NavBar'
+import { getActiveEditor } from '../../editor/active-editor'
+import { logDebug } from '../../log'
+import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
+import { LocalAppWatcher } from '../../services/LocalAppWatcher'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
+import { MessageProvider, MessageProviderOptions } from '../MessageProvider'
 import {
     APP_LANDING_URL,
     APP_REPOSITORIES_URL,
@@ -21,22 +19,24 @@ import {
     ExtensionMessage,
     isOsSupportedByApp,
     WebviewMessage,
-} from './protocol'
+} from '../protocol'
 
-export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+import { addWebviewViewHTML } from './ChatManager'
+
+export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-interface ChatViewProviderOptions extends MessageProviderOptions {
+export interface SidebarChatOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
 }
 
-export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
+export class SidebarChatProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
 
-    constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
+    constructor({ extensionUri, ...options }: SidebarChatOptions) {
         super(options)
         this.extensionUri = extensionUri
 
@@ -54,7 +54,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
-                logDebug('ChatViewProvider:onDidReceiveMessage:initialized', '')
+                logDebug('ChatViewProvider:onDidReceiveMessage', 'initialized')
                 await this.init()
                 break
             case 'submit':

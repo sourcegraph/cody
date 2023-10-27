@@ -8,7 +8,7 @@ import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { ChatViewManager } from './chat/ChatViewManager'
+import { ChatManager } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
@@ -34,7 +34,6 @@ import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/S
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
-import { TreeViewProvider } from './services/TreeViewProvider'
 import { TestSupport } from './test-support'
 
 /**
@@ -118,15 +117,6 @@ const register = async (
     await authProvider.init()
 
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
-    if (symfRunner) {
-        authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-            if (authStatus.isLoggedIn) {
-                symfRunner.setSourcegraphAuth(authStatus.endpoint, await getAccessToken())
-            } else {
-                symfRunner.setSourcegraphAuth(null, null)
-            }
-        })
-    }
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
@@ -167,18 +157,15 @@ const register = async (
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
-    const chatViewProvider = new ChatViewManager({
+    const chatManager = new ChatManager({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
     })
 
-    disposables.push(chatViewProvider)
-
     // Register tree views
-    disposables.push(vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support')))
-
     disposables.push(
-        vscode.window.registerWebviewViewProvider('cody.chat', chatViewProvider.sidebarChat, {
+        chatManager,
+        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarChat, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
@@ -189,13 +176,27 @@ const register = async (
         })
     )
 
-    const executeRecipeInSidebar = async (
+    // Adds a change listener to the auth provider that syncs the auth status
+    authProvider.addChangeListener((authStatus: AuthStatus) => {
+        void chatManager.syncAuthStatus(authStatus)
+        if (symfRunner && authStatus.isLoggedIn) {
+            getAccessToken()
+                .then(token => {
+                    symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
+                })
+                .catch(() => {})
+        } else {
+            symfRunner?.setSourcegraphAuth(null, null)
+        }
+    })
+
+    const executeRecipeInChatView = async (
         recipe: RecipeID,
         openChatView = true,
         humanInput = '',
         source: ChatEventSource = 'editor'
     ): Promise<void> => {
-        await chatViewProvider.executeRecipe(recipe, humanInput, openChatView, source)
+        await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
     }
 
     const executeFixup = async (
@@ -288,9 +289,9 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
             // Ensure that the sidebar view is open if not already
-            await chatViewProvider.setWebviewView('chat')
+            await chatManager.setWebviewView('chat')
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-            await chatViewProvider.restoreSession(inlineChatProvider.currentChatID)
+            await chatManager.restoreSession(inlineChatProvider.currentChatID)
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
             telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
@@ -334,15 +335,14 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.sync', () => {
             const result = contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
-            void chatViewProvider.syncAuthStatus()
             // Important that we return a promise here to allow `AuthProvider`
             // to `await` on the auth config changes to propagate.
             return result
         }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await chatViewProvider.clearAndRestartSession()
-            await chatViewProvider.setWebviewView('chat')
+            await chatManager.clearAndRestartSession()
+            await chatManager.setWebviewView('chat')
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'reset' } })
         }),
@@ -351,7 +351,7 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
         vscode.commands.registerCommand('cody.history', async () => {
-            await chatViewProvider.setWebviewView('history')
+            await chatManager.setWebviewView('history')
             telemetryService.log(
                 'CodyVSCodeExtension:chatTitleButton:clicked',
                 { name: 'history' },
@@ -360,11 +360,11 @@ const register = async (
             telemetryRecorder.recordEvent('cody.history', 'clicked', { privateMetadata: { name: 'history' } })
         }),
         vscode.commands.registerCommand('cody.history.clear', async () => {
-            await chatViewProvider.clearHistory()
+            await chatManager.clearHistory()
         }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
-            await executeRecipeInSidebar('chat-question', true, input, source)
+            await executeRecipeInChatView('chat-question', true, input, source)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
@@ -375,32 +375,32 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
-            await chatViewProvider.executeCustomCommand(title)
+            await chatManager.executeCustomCommand(title)
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/explain')
+            await executeRecipeInChatView('custom-prompt', true, '/explain')
         }),
         vscode.commands.registerCommand('cody.command.generate-tests', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/test')
+            await executeRecipeInChatView('custom-prompt', true, '/test')
         }),
         vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', false, '/doc')
+            await executeRecipeInChatView('custom-prompt', false, '/doc')
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/smell')
+            await executeRecipeInChatView('custom-prompt', true, '/smell')
         }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
-            executeRecipeInSidebar('inline-touch', false)
+            executeRecipeInChatView('inline-touch', false)
         ),
         vscode.commands.registerCommand('cody.command.context-search', () =>
-            executeRecipeInSidebar('context-search', true)
+            executeRecipeInChatView('context-search', true)
         ),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 if (uri.path === '/app-done') {
-                    await chatViewProvider.simplifiedOnboardingReloadEmbeddingsState()
+                    await chatManager.simplifiedOnboardingReloadEmbeddingsState()
                 } else {
                     await authProvider.tokenCallbackHandler(uri, config.customHeaders)
                 }
@@ -429,8 +429,8 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
-        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatViewProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatViewProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatManager.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatManager.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
             telemetryService.log(
                 'CodyVSCodeExtension:walkthrough:clicked',
@@ -438,7 +438,7 @@ const register = async (
                 { hasV2Event: true }
             )
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
-            await chatViewProvider.setWebviewView('chat')
+            await chatManager.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
             telemetryService.log(
@@ -473,7 +473,7 @@ const register = async (
                 title: 'Sign In To Use Cody',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
-                    void chatViewProvider.setWebviewView('chat')
+                    void chatManager.setWebviewView('chat')
                 },
             })
         }
@@ -510,7 +510,7 @@ const register = async (
                 statusBar,
                 contextProvider,
                 authProvider,
-                triggerNotice: notice => chatViewProvider.triggerNotice(notice),
+                triggerNotice: notice => chatManager.triggerNotice(notice),
             },
             context,
             platform

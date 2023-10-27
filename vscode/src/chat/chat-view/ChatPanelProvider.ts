@@ -2,31 +2,24 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { View } from '../../webviews/NavBar'
-import { getActiveEditor } from '../editor/active-editor'
-import { logDebug } from '../log'
-import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
-import { telemetryService } from '../services/telemetry'
-import { createCodyChatTreeItems, TreeViewProvider } from '../services/TreeViewProvider'
+import { View } from '../../../webviews/NavBar'
+import { getActiveEditor } from '../../editor/active-editor'
+import { logDebug } from '../../log'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
+import { createCodyChatTreeItems } from '../../services/treeViewItems'
+import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { MessageProvider, MessageProviderOptions } from '../MessageProvider'
+import { ExtensionMessage, WebviewMessage } from '../protocol'
 
-import { addWebviewViewHTML } from './ChatViewManager'
-import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import {
-    APP_LANDING_URL,
-    APP_REPOSITORIES_URL,
-    archConvertor,
-    ExtensionMessage,
-    isOsSupportedByApp,
-    WebviewMessage,
-} from './protocol'
+import { addWebviewViewHTML } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-interface ChatPanelProviderOptions extends MessageProviderOptions {
+export interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
 }
@@ -51,7 +44,7 @@ export class ChatPanelProvider extends MessageProvider {
                 await this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
-                logDebug('ChatViewProvider:onDidReceiveMessage:initialized', '')
+                logDebug('ChatViewProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
                 break
             case 'submit':
@@ -60,36 +53,21 @@ export class ChatPanelProvider extends MessageProvider {
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
-                telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
+                telemetryService.log(
+                    'CodyVSCodeExtension:abortButton:clicked',
+                    { source: 'sidebar' },
+                    { hasV2Event: true }
+                )
+                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'executeRecipe':
                 this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe, '', 'chat')
-                break
-            case 'auth':
-                if (message.type === 'app' && message.endpoint) {
-                    await this.authProvider.appAuth(message.endpoint)
-                    // Log app button click events: e.g. app:download:clicked or app:connect:clicked
-                    const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
-                    break
-                }
-                if (message.type === 'callback' && message.endpoint) {
-                    this.authProvider.redirectToEndpointLogin(message.endpoint)
-                    break
-                }
-                if (message.type === 'simplified-onboarding') {
-                    const authProviderSimplified = new AuthProviderSimplified()
-                    const authMethod = message.authMethod || 'dotcom'
-                    void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
-                    break
-                }
-                // cody.auth.signin or cody.auth.signout
-                await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'insert':
                 await this.handleInsertAtCursor(message.text, message.source)
@@ -111,21 +89,11 @@ export class ChatPanelProvider extends MessageProvider {
                     await this.exportHistory()
                 }
                 break
-            case 'restoreHistory':
-                await this.restoreSession(message.chatID)
-                break
-            case 'deleteHistory':
-                await this.deleteHistory(message.chatID)
-                break
             case 'links':
                 void this.openExternalLinks(message.value)
                 break
             case 'custom-prompt':
                 await this.onCustomPromptClicked(message.title, message.value)
-                break
-            case 'reload':
-                await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
                 break
             case 'openFile':
                 await this.openFilePath(message.filePath)
@@ -143,57 +111,15 @@ export class ChatPanelProvider extends MessageProvider {
                         : undefined
                 )
                 break
-            case 'simplified-onboarding':
-                if (message.type === 'install-app') {
-                    void this.simplifiedOnboardingInstallApp()
-                    break
-                }
-                if (message.type === 'open-app') {
-                    void this.openExternalLinks(APP_REPOSITORIES_URL.href)
-                    break
-                }
-                if (message.type === 'reload-state') {
-                    void this.simplifiedOnboardingReloadEmbeddingsState()
-                    break
-                }
-                if (message.type === 'web-sign-in-token') {
-                    void vscode.window.showInputBox({ prompt: 'Enter web sign-in token' }).then(async token => {
-                        if (!token) {
-                            return
-                        }
-                        const authStatus = await this.authProvider.auth(DOTCOM_URL.href, token)
-                        if (!authStatus?.isLoggedIn) {
-                            void vscode.window.showErrorMessage(
-                                'Authentication failed. Please check your token and try again.'
-                            )
-                        }
-                    })
-                    break
-                }
-                break
             default:
                 this.handleError('Invalid request type from Webview')
         }
     }
 
-    private async simplifiedOnboardingInstallApp(): Promise<void> {
-        const os = process.platform
-        const arch = process.arch
-        const DOWNLOAD_URL =
-            os && arch && isOsSupportedByApp(os, arch)
-                ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
-                : APP_LANDING_URL.href
-        await this.openExternalLinks(DOWNLOAD_URL)
-    }
-
-    public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
-        await this.contextProvider.forceUpdateCodebaseContext()
-    }
-
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
         if (text === '/') {
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
@@ -203,6 +129,9 @@ export class ChatPanelProvider extends MessageProvider {
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
+        if (this.webviewPanel) {
+            this.webviewPanel.title = `Cody: ${text}`
+        }
         await this.executeRecipe('chat-question', text)
     }
 
@@ -210,7 +139,7 @@ export class ChatPanelProvider extends MessageProvider {
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
+        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             this.setWebviewView('chat')
@@ -322,14 +251,6 @@ export class ChatPanelProvider extends MessageProvider {
      * @param notice.key The key of the notice to display.
      */
     public triggerNotice(notice: { key: string }): void {
-        // They may not have chat open, and given the current notices are
-        // designed to be triggered once only during onboarding, we open the
-        // chat view. If we have other notices and this feels too aggressive, we
-        // can make it be conditional on the type of notice being triggered.
-        void vscode.commands.executeCommand('cody.chat.focus', {
-            // Notices are not meant to steal focus from the editor
-            preserveFocus: true,
-        })
         void this.webview?.postMessage({
             type: 'notice',
             notice,
@@ -351,15 +272,13 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(chatID?: string): Promise<vscode.WebviewPanel | undefined> {
+    public async createWebviewPanel(chatID?: string, lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
         // Create the webview panel only if the user is logged in.
         // Allows users to login via the sidebar webview.
         if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
             await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
             return
         }
-
-        this.startUpChatID = chatID
 
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
@@ -368,10 +287,16 @@ export class ChatPanelProvider extends MessageProvider {
             return this.webviewPanel
         }
 
+        this.startUpChatID = chatID
+
+        const viewType = chatID || 'cody.newChat'
+        // truncate firstQuestion to first 10 chars
+        const panelTitle = lastQuestion ? `${lastQuestion?.slice(0, 20)}...` : 'New Chat'
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+
         const panel = vscode.window.createWebviewPanel(
-            this.currentChatID,
-            'Cody Chat',
+            viewType,
+            panelTitle,
             { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
             {
                 enableScripts: true,
@@ -386,20 +311,22 @@ export class ChatPanelProvider extends MessageProvider {
         await addWebviewViewHTML(this.extensionUri, panel)
 
         // Register webview
-        this.authProvider.webview = panel.webview
-        this.contextProvider.webview = panel.webview
         this.webviewPanel = panel
         this.webview = panel.webview
+        this.authProvider.webview = panel.webview
+        this.contextProvider.webview = panel.webview
 
+        // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
             this.webviewPanel = undefined
             panel.dispose()
         })
 
+        this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', 'cody.chatPanel', true)
-
-        this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
 
         return panel
     }
@@ -411,6 +338,7 @@ export class ChatPanelProvider extends MessageProvider {
             return
         }
         await this.clearHistory()
+        this.webviewPanel?.dispose()
     }
 
     /**
