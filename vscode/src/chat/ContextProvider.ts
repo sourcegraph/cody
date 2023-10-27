@@ -21,6 +21,7 @@ import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
 import { GraphContextProvider } from './GraphContextProvider'
@@ -169,10 +170,16 @@ export class ContextProvider implements vscode.Disposable {
         this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
+        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? '.app' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         // e.g. auth:app:connected, auth:app:disconnected, auth:failed
-        this.sendEvent(ContextEvent.Auth, isAppEvent + eventValue)
+        // this.sendEvent(ContextEvent.Auth, isAppEvent, eventValue)
+        switch (ContextEvent.Auth) {
+            case 'auth':
+                telemetryService.log(`CodyVSCodeExtension:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`)
+                telemetryRecorder.recordEvent(`cody.auth${isAppEvent}`, eventValue)
+                break
+        }
     }
 
     /**
@@ -226,17 +233,6 @@ export class ContextProvider implements vscode.Disposable {
         }
 
         await send()
-    }
-
-    /**
-     * Log Events - naming convention: source:feature:action
-     */
-    private sendEvent(event: ContextEvent, value: string): void {
-        switch (event) {
-            case 'auth':
-                telemetryService.log(`CodyVSCodeExtension:Auth:${value}`)
-                break
-        }
     }
 
     public dispose(): void {

@@ -13,6 +13,7 @@ export function getOSArch(): {
         arm64: 'aarch64',
         aarch64: 'aarch64',
         x86_64: 'x86_64',
+        x64: 'x86_64',
         i386: 'x86',
         i686: 'x86',
     }

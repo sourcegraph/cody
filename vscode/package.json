@@ -281,32 +281,49 @@
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
         "title": "Edit Code",
-        "icon": "$(sparkle)"
+        "when": "cody.activated && editorTextFocus",
+        "icon": "$(wand)"
       },
       {
         "command": "cody.command.explain-code",
         "category": "Ask Cody",
-        "title": "Explain Code"
+        "title": "Explain Code",
+        "icon": "$(output)",
+        "when": "cody.activated && editorFocus"
       },
       {
         "command": "cody.command.generate-tests",
         "category": "Ask Cody",
-        "title": "Generate Unit Tests"
+        "title": "Generate Unit Tests",
+        "icon": "$(package)",
+        "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.document-code",
         "category": "Ask Cody",
-        "title": "Document Code"
+        "title": "Document Code",
+        "icon": "$(book)",
+        "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.smell-code",
         "category": "Ask Cody",
-        "title": "Find Code Smells"
+        "title": "Find Code Smells",
+        "icon": "$(symbol-keyword)",
+        "when": "cody.activated && editorFocus"
+      },
+      {
+        "command": "cody.action.commands.custom.menu",
+        "category": "Ask Cody",
+        "title": "Custom Commands",
+        "icon": "$(tools)",
+        "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.command.context-search",
         "category": "Ask Cody",
-        "title": "Codebase Context Search"
+        "title": "Codebase Context Search",
+        "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.auth.signout",
@@ -336,7 +353,8 @@
         "category": "Cody",
         "title": "Start a New Chat Session",
         "group": "Cody",
-        "icon": "$(add)"
+        "icon": "$(add)",
+        "when": "cody.activated"
       },
       {
         "command": "cody.history",
@@ -449,13 +467,6 @@
         "icon": "$(diff)"
       },
       {
-        "command": "cody.action.commands.custom.menu",
-        "category": "Ask Cody",
-        "title": "Custom Commands",
-        "when": "cody.activated",
-        "icon": "$(bookmark)"
-      },
-      {
         "command": "cody.action.commands.menu",
         "category": "Cody",
         "title": "Commands",
@@ -551,6 +562,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "cody.command.edit-code",
+          "when": "cody.activated && editorTextFocus"
+        },
+        {
           "command": "cody.command.explain-code",
           "when": "false"
         },
@@ -573,6 +588,10 @@
         {
           "command": "cody.command.document-code",
           "when": "false"
+        },
+        {
+          "command": "cody.action.commands.custom.menu",
+          "when": "cody.activated"
         },
         {
           "command": "cody.focus",
@@ -622,10 +641,6 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
-          "command": "cody.action.commands.custom.menu",
-          "when": "cody.activated"
         }
       ],
       "editor/context": [

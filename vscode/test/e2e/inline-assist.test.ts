@@ -54,5 +54,13 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await page.getByRole('button', { name: 'Apply Edits' }).click()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
-    await expect.poll(() => loggedV2Events).toEqual(['cody.command.edit/executed', 'cody.fixup.apply/succeeded'])
+    await expect
+        .poll(() => loggedV2Events)
+        .toEqual([
+            'cody.auth/failed',
+            'cody.auth/connected',
+            'cody.command.edit/executed',
+            'cody.recipe.fixup/executed',
+            'cody.fixup.apply/succeeded',
+        ])
 })
