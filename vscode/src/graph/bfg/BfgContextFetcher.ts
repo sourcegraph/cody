@@ -5,11 +5,18 @@ import * as vscode from 'vscode'
 import { GraphContextFetcher } from '../../completions/context/context-graph'
 import { ContextSnippet } from '../../completions/types'
 import { MessageHandler } from '../../jsonrpc/jsonrpc'
-import { logDebug } from '../../log'
+import { logDebug, logError } from '../../log'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 
 import { downloadBfg } from './download-bfg'
 
 const isTesting = process.env.CODY_TESTING === 'true'
+
+enum ErrorCode {
+    OK = 0,
+    INVALID_RESULT = 1,
+    OTHER_FAILURE = 2,
+}
 
 async function doLoadBFG(context: vscode.ExtensionContext, reject: (reason?: any) => void): Promise<MessageHandler> {
     const bfg = new MessageHandler()
@@ -79,9 +86,33 @@ export class BfgContextFetcher implements GraphContextFetcher {
             if (gitdir && !indexedGitDirectories.has(gitdir)) {
                 indexedGitDirectories.add(gitdir)
                 const bfg = await this.loadedBFG
+
                 const indexingStartTime = Date.now()
-                await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: gitdir })
-                logDebug('BFG', `indexing time ${Date.now() - indexingStartTime}ms`)
+
+                try {
+                    await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: gitdir })
+
+                    telemetryRecorder.recordEvent('cody.bfg.gitRevision.didChange', 'succeeded', {
+                        metadata: {
+                            durationMs: Date.now() - indexingStartTime,
+                            error: ErrorCode.OK,
+                        },
+                    })
+
+                    logDebug('BFG', `indexing succeeded in ${Date.now() - indexingStartTime}ms`)
+                } catch (error) {
+                    telemetryRecorder.recordEvent('cody.bfg.gitRevision.didChange', 'failed', {
+                        metadata: {
+                            durationMs: Date.now() - indexingStartTime,
+                            error: ErrorCode.OTHER_FAILURE,
+                        },
+                        privateMetadata: {
+                            errorMessage: error,
+                        },
+                    })
+
+                    logError('BFG', `indexing failed in ${Date.now() - indexingStartTime}ms: ${error}`)
+                }
             }
         }
         this.latestRepoIndexing = Promise.all(
@@ -105,20 +136,63 @@ export class BfgContextFetcher implements GraphContextFetcher {
             return []
         }
         await this.latestRepoIndexing
-        const responses = await bfg.request('bfg/contextAtPosition', {
-            uri: document.uri.toString(),
-            content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
-            position: { line: position.line, character: position.character },
-            maxChars: 1337, // ignored by BFG server for now
-            contextRange,
-        })
+        const contextStartTime = Date.now()
 
-        // Just in case, handle non-object results
-        if (typeof responses !== 'object') {
+        try {
+            const responses = await bfg.request('bfg/contextAtPosition', {
+                uri: document.uri.toString(),
+                content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
+                position: { line: position.line, character: position.character },
+                maxChars: 1337, // ignored by BFG server for now
+                contextRange,
+            })
+
+            // Just in case, handle non-object results
+            if (typeof responses !== 'object') {
+                telemetryRecorder.recordEvent('cody.bfg.contextAtPosition', 'failed', {
+                    metadata: {
+                        durationMs: Date.now() - contextStartTime,
+                        symbols: 0,
+                        files: 0,
+                        error: ErrorCode.INVALID_RESULT,
+                    },
+                    privateMetadata: {
+                        errorMessage: 'non-object result',
+                    },
+                })
+                return []
+            }
+
+            const symbols = responses?.symbols || []
+            const files = responses?.files || []
+
+            telemetryRecorder.recordEvent('cody.bfg.contextAtPosition', 'succeeded', {
+                metadata: {
+                    durationMs: Date.now() - contextStartTime,
+                    symbols: symbols.length,
+                    files: files.length,
+                    error: ErrorCode.OK,
+                },
+            })
+
+            return [...symbols, ...files]
+        } catch (error) {
+            telemetryRecorder.recordEvent('cody.bfg.contextAtPosition', 'failed', {
+                metadata: {
+                    durationMs: Date.now() - contextStartTime,
+                    symbols: 0,
+                    files: 0,
+                    error: ErrorCode.OTHER_FAILURE,
+                },
+                privateMetadata: {
+                    errorMessage: error,
+                },
+            })
+
+            logError('BFG', `context fetching failed in ${Date.now() - contextStartTime}ms: ${error}`)
+
             return []
         }
-
-        return [...(responses?.symbols || []), ...(responses?.files || [])]
     }
 
     public dispose(): void {

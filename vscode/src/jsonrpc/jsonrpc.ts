@@ -213,6 +213,19 @@ type RequestCallback<M extends RequestMethodName> = (
 ) => Promise<ResultOf<M>>
 type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void
 
+class JsonRpcError<T> extends Error {
+    public name = 'JsonRpcError'
+    public message: string
+    public data: T
+
+    constructor(info: ErrorInfo<any>) {
+        super()
+
+        this.message = info.message
+        this.data = info.data
+    }
+}
+
 /**
  * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
  * that can be piped with ReadStream/WriteStream.
@@ -228,7 +241,7 @@ export class MessageHandler {
         Id,
         {
             resolve: (params: any) => void
-            reject: (params: Error) => void
+            reject: (params: Error | JsonRpcError<any>) => void
         }
     > = new Map()
     public isAlive(): boolean {
@@ -297,7 +310,11 @@ export class MessageHandler {
             // Responses have ids
             const handler = this.responseHandlers.get(msg.id)
             if (handler) {
-                handler.resolve(msg.result)
+                if (msg.error) {
+                    handler.reject(new JsonRpcError(msg.error))
+                } else {
+                    handler.resolve(msg.result)
+                }
                 this.responseHandlers.delete(msg.id)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
