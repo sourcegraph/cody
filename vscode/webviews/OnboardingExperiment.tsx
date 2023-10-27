@@ -71,8 +71,8 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     vscodeAPI,
 }) => {
     const otherSignInClick = (): void => {
-        telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions', undefined, { hasV2Event: true })
-        telemetryRecorder.recordEvent('cody.auth.otherSignInOptions', 'clicked')
+        telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
+        // telemetryRecorder.recordEvent('cody.auth.otherSignInOptions', 'clicked')
         vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
     }
     return (
