@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { EventFeature } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
@@ -72,16 +73,15 @@ export class AuthProvider {
             return
         }
         const menuID = type || item?.id
-        telemetryService.log('CodyVSCodeExtension:auth:selectSigninMenu', { menuID }, { hasV2Event: true })
+        let eventName: EventFeature
+        eventName = 'cody.auth.selectSigninMenu'
         if (type) {
-            telemetryRecorder.recordEvent(`cody.auth.selectSigninMenu.${type ?? ''}`, 'clicked', {
-                privateMetadata: { menuID },
-            })
-        } else {
-            telemetryRecorder.recordEvent(`cody.auth.selectSigninMenu${type ?? ''}`, 'clicked', {
-                privateMetadata: { menuID },
-            })
+            eventName = `${eventName}.${type}`
         }
+        telemetryService.log('CodyVSCodeExtension:auth:selectSigninMenu', { menuID }, { hasV2Event: true })
+        telemetryRecorder.recordEvent(eventName, 'clicked', {
+            privateMetadata: { menuID },
+        })
 
         switch (menuID) {
             case 'enterprise': {
@@ -139,11 +139,7 @@ export class AuthProvider {
             },
             { hasV2Event: true }
         )
-        if (authState?.isLoggedIn) {
-            telemetryRecorder.recordEvent('cody.auth.fromToken', 'succeeded')
-        } else {
-            telemetryRecorder.recordEvent('cody.auth.fromToken', 'failed')
-        }
+        telemetryRecorder.recordEvent('cody.auth.fromToken', authState?.isLoggedIn ? 'succeeded' : 'failed')
         await showAuthResultMessage(instanceUrl, authState?.authStatus)
     }
 
