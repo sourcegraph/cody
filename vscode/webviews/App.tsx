@@ -8,6 +8,7 @@ import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/tran
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
+import { telemetryRecorder } from '../src/services/telemetry-v2'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
@@ -197,6 +198,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             suggestions={suggestions}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             chatCommands={myPrompts || undefined}
                             isTranscriptError={isTranscriptError}
                             applessOnboarding={{
