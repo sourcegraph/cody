@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { Range } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
 import { documentAndPosition } from '../test-helpers'
 import { InlineCompletionItem } from '../types'
@@ -38,6 +39,17 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
                 currentLineSuffix: ')',
             })
         ).toEqual<InlineCompletionItem['range']>(range(0, 14, 0, 15))
+    })
+
+    it('handles partial currentLineSuffix match', () => {
+        const item: InlineCompletionItem = { insertText: 'array) {' }
+        const { document, position } = documentAndPosition('function sort(█) {}')
+        const replaceRange = getRangeAdjustedForOverlappingCharacters(item, {
+            position,
+            currentLineSuffix: ') {}',
+        })
+
+        expect(document.getText(replaceRange as Range)).toEqual(') {')
     })
 
     it('handles whitespace in currentLineSuffix', () => {

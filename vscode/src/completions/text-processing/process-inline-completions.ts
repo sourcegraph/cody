@@ -4,7 +4,6 @@ import { Tree } from 'web-tree-sitter'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { completionMatchesSuffix } from '../inline-completion-item-provider'
 import { ItemPostProcessingInfo } from '../logger'
 import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
@@ -139,14 +138,26 @@ export function getRangeAdjustedForOverlappingCharacters(
     item: InlineCompletionItem,
     { position, currentLineSuffix }: AdjustRangeToOverwriteOverlappingCharactersParams
 ): InlineCompletionItem['range'] {
-    // TODO(sqs): This is a very naive implementation that will not work for many cases. It always
-    // just clobbers the rest of the line.
+    const matchinSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
 
-    if (!item.range && currentLineSuffix !== '' && completionMatchesSuffix(item, currentLineSuffix)) {
-        return { start: position, end: position.translate(undefined, currentLineSuffix.length) }
+    if (!item.range && currentLineSuffix !== '' && matchinSuffixLength !== 0) {
+        return { start: position, end: position.translate(undefined, matchinSuffixLength) }
     }
 
     return undefined
+}
+
+export function getMatchingSuffixLength(insertText: string, currentLineSuffix: string): number {
+    let j = 0
+
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < insertText.length; i++) {
+        if (insertText[i] === currentLineSuffix[j]) {
+            j++
+        }
+    }
+
+    return j
 }
 
 function rankCompletions(completions: ParsedCompletion[]): ParsedCompletion[] {

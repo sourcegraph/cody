@@ -354,7 +354,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             // A completion that won't be visible in VS Code will not be returned and not be logged.
             if (visibleItems.length === 0) {
-                console.log('Invisible completions!')
                 // Returning null will clear any existing suggestions, thus we need to reset the
                 // last candidate.
                 this.lastCandidate = undefined
@@ -507,9 +506,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // come in.
             const start = currentLine.range.start
 
-            // The completion will always exclude the same line suffix, so it has to overwrite the
-            // current same line suffix and reach to the end of the line.
-            const end = currentLine.range.end
+            // If the completion does not have a range set it will always exclude the same line suffix,
+            // so it has to overwrite the current same line suffix and reach to the end of the line.
+            const end = (completion.range?.end || currentLine.range.end) as vscode.Position
 
             const vscodeInsertRange = new vscode.Range(start, end)
             const trackedRange = new vscode.Range(
