@@ -495,9 +495,9 @@
       {
         "command": "cody.chat.history.export",
         "category": "Cody",
-        "title": "Export Chat History",
+        "title": "Export Chats as JSON",
         "group": "Cody",
-        "icon": "$(save)",
+        "icon": "$(arrow-circle-down)",
         "when": "cody.activated && cody.hasChatHistory"
       }
     ],

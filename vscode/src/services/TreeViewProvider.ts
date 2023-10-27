@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { CODY_DOC_URL } from '../chat/protocol'
+import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
 
@@ -136,22 +136,33 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.status-bar.interacted' },
     },
     {
-        title: 'Documentation & Help',
-        icon: 'question',
-        command: { command: 'vscode.open', args: [CODY_DOC_URL.href] },
-    },
-    {
         title: 'Keyboard Shortcuts',
         icon: 'keyboard',
         command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
     },
     {
-        title: `Version ${envInit.extensionVersion}`,
+        title: 'Release Notes',
+        description: `v${envInit.extensionVersion}`,
         icon: 'github',
         command: {
             command: 'vscode.open',
             args: [`https://github.com/sourcegraph/cody/releases/tag/vscode-v${envInit.extensionVersion}`],
         },
+    },
+    {
+        title: 'Documentation',
+        icon: 'book',
+        command: { command: 'vscode.open', args: [CODY_DOC_URL.href] },
+    },
+    {
+        title: 'Feedback',
+        icon: 'feedback',
+        command: { command: 'vscode.open', args: [CODY_FEEDBACK_URL.href] },
+    },
+    {
+        title: 'Discord',
+        icon: 'organization',
+        command: { command: 'vscode.open', args: [DISCORD_URL.href] },
     },
     {
         title: 'Sign Out',
@@ -195,7 +206,7 @@ const commandsItems: CodySidebarTreeItem[] = [
         title: 'Custom',
         icon: 'tools',
         command: { command: 'cody.action.commands.custom.menu' },
-        description: 'Beta',
+        description: 'Custom commands',
     },
 ]
 
@@ -209,7 +220,7 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
             chatTreeItems.push({
                 id,
                 title: lastHumanMessage.humanMessage.displayText.split('\n')[0],
-                icon: 'comment',
+                icon: 'comment-discussion',
                 command: { command: 'cody.chat.panel.restore', args: [id] },
             })
         }

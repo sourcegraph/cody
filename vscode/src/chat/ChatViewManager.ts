@@ -261,10 +261,9 @@ export class ChatViewManager implements vscode.Disposable {
         if (!treeItem && this.isPanelViewEnabled) {
             // Show warning to users and get confirmation if they want to clear all history
             const userConfirmation = await vscode.window.showWarningMessage(
-                'Are you sure you want to delete your chat history?',
+                'Are you sure you want to delete all of your chats?',
                 { modal: true },
-                'Yes',
-                'No'
+                'Delete All Chats'
             )
 
             if (!userConfirmation) {
