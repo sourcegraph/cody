@@ -79,7 +79,7 @@ export interface LastInlineCompletionCandidate {
     lastTriggerPosition: vscode.Position
 
     /** The selected info item. */
-    lastTriggerSelectedInfoItem: string | undefined
+    lastTriggerSelectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
     /** The previously suggested result. */
     result: InlineCompletionsResult
@@ -165,7 +165,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
         providerConfig,
         graphContextFetcher,
         contextFetcher,
@@ -177,7 +177,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         setIsLoading,
         abortSignal,
         tracer,
-        completeSuggestWidgetSelection = true,
         disableStreamingTruncation = false,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
@@ -218,7 +217,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   lastCandidate,
                   docContext,
                   selectedCompletionInfo,
-                  completeSuggestWidgetSelection,
                   handleDidAcceptCompletionItem,
                   handleDidPartiallyAcceptCompletionItem,
               })
@@ -238,6 +236,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerIdentifier: providerConfig.identifier,
         providerModel: providerConfig.model,
         languageId: document.languageId,
+        completionIntent,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.

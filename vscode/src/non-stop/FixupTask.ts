@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+
 import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
@@ -31,10 +33,9 @@ export class FixupTask {
         // insert mode means insert replacement at selection, otherwise replace selection contents with replacement
         public insertMode?: boolean,
         // the source of the instruction, e.g. 'code-action', 'doc', etc
-        public source?: string
+        public source?: ChatEventSource
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
-        this.source = source?.replace('/', '')
     }
 
     /**

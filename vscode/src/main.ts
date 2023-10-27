@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
@@ -31,6 +32,7 @@ import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { TestSupport } from './test-support'
 
 /**
@@ -78,7 +80,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
+    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
@@ -113,13 +115,13 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
-    const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
+    const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
     if (symfRunner) {
         authProvider.addChangeListener(async (authStatus: AuthStatus) => {
             if (authStatus.isLoggedIn) {
-                symfRunner.setAuthToken(await getAccessToken())
+                symfRunner.setSourcegraphAuth(authStatus.endpoint, await getAccessToken())
             } else {
-                symfRunner.setAuthToken(null)
+                symfRunner.setSourcegraphAuth(null, null)
             }
         })
     }
@@ -178,20 +180,21 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         })
     )
 
     const executeRecipeInSidebar = async (
         recipe: RecipeID,
         openChatView = true,
-        humanInput?: string
+        humanInput?: string,
+        source: ChatEventSource = 'editor'
     ): Promise<void> => {
         if (openChatView) {
             await sidebarChatProvider.setWebviewView('chat')
         }
 
-        await sidebarChatProvider.executeRecipe(recipe, humanInput)
+        await sidebarChatProvider.executeRecipe(recipe, humanInput, source)
     }
 
     const executeFixup = async (
@@ -202,9 +205,10 @@ const register = async (
             auto?: boolean
             insertMode?: boolean
         } = {},
-        source = 'editor' // where the command was triggered from
+        source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
-        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
+        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
         const document = args.document || vscode.window.activeTextEditor?.document
         if (!document) {
             return
@@ -215,7 +219,7 @@ const register = async (
             return
         }
 
-        const task = args.instruction?.replace('/edit', '').trim()
+        const task = args.instruction?.replace(/^\/edit/, '').trim()
             ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -256,16 +260,29 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.delete', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
             await inlineChatProvider.abortChat()
-            telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'inline-chat' })
+            telemetryService.log(
+                'CodyVSCodeExtension:abortButton:clicked',
+                { source: 'inline-chat' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.comment.stop', 'clicked', {
+                privateMetadata: { source: 'inline-chat' },
+            })
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () => {
             void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.collapse-all', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
@@ -275,7 +292,10 @@ const register = async (
             await sidebarChatProvider.setWebviewView('chat')
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.open-in-sidebar', 'clicked')
         }),
         vscode.commands.registerCommand(
             'cody.command.edit-code',
@@ -287,7 +307,7 @@ const register = async (
                     auto?: boolean
                     insertMode?: boolean
                 },
-                source?: string
+                source?: ChatEventSource
             ) => executeFixup(args, source)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
@@ -321,7 +341,8 @@ const register = async (
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
             await sidebarChatProvider.setWebviewView('chat')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' })
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'reset' } })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
@@ -329,14 +350,19 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.history', async () => {
             await sidebarChatProvider.setWebviewView('history')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'history' })
+            telemetryService.log(
+                'CodyVSCodeExtension:chatTitleButton:clicked',
+                { name: 'history' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.history', 'clicked', { privateMetadata: { name: 'history' } })
         }),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
-            await executeRecipeInSidebar('chat-question', true, input)
+        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
+            await executeRecipeInSidebar('chat-question', true, input, source)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
@@ -385,7 +411,8 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' })
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -404,11 +431,21 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'showExplain' })
+            telemetryService.log(
+                'CodyVSCodeExtension:walkthrough:clicked',
+                { page: 'showExplain' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'enableInlineChat' })
+            telemetryService.log(
+                'CodyVSCodeExtension:walkthrough:clicked',
+                { page: 'enableInlineChat' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked')
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -521,9 +558,21 @@ const register = async (
             graphqlClient.onConfigurationChange(newConfig)
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
-            symfRunner?.setAuthToken(newConfig.accessToken)
+            symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
+}
+
+/**
+ * Create or update events infrastructure, both legacy (telemetryService) and
+ * new (telemetryRecorder)
+ */
+async function configureEventsInfra(
+    config: ConfigurationWithAccessToken,
+    isExtensionModeDevOrTest: boolean
+): Promise<void> {
+    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
 }

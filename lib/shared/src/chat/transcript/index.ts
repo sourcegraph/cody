@@ -132,7 +132,6 @@ export class Transcript {
     /**
      * Adds a error div to the assistant response. If the assistant has collected
      * some response before, we will add the error message after it.
-     *
      * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
      */
     public addErrorAsAssistantResponse(errorText: string): void {
