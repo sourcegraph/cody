@@ -149,6 +149,10 @@ export type EventFeature =
     | 'cody.feedback.thumbsDown'
     // onboarding-experiment-related events
     | 'cody.auth.otherSignInOptions'
+    | 'cody.auth.simplifiedSignInGitHub'
+    | 'cody.auth.simplifiedSignInGitLab'
+    | 'cody.auth.simplifiedSignInGoogle'
+    | 'cody.auth.signInWeb'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
