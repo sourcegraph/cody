@@ -261,7 +261,7 @@
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
         "title": "Edit Code",
-        "when": "cody.activated && editorTextFocusd",
+        "when": "cody.activated && editorTextFocus",
         "icon": "$(wand)"
       },
       {
@@ -276,7 +276,7 @@
         "category": "Ask Cody",
         "title": "Generate Unit Tests",
         "icon": "$(package)",
-        "when": "cody.activated && editorTextFocusd"
+        "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.document-code",
@@ -511,7 +511,7 @@
       "commandPalette": [
         {
           "command": "cody.command.edit-code",
-          "when": "cody.activated && editorTextFocusd"
+          "when": "cody.activated && editorTextFocus"
         },
         {
           "command": "cody.command.explain-code",
