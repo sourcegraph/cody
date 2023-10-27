@@ -137,6 +137,8 @@ export type EventFeature =
     // context-provider-related events
     | 'cody.auth'
     | 'cody.auth.app'
+    // chat-related events
+    | 'cody.feedback'
 
 /**
  * Actions should denote a generic action within the scope of a feature. Where
@@ -155,6 +157,8 @@ export type EventAction =
     | 'hasCode'
     | 'disconnected'
     | 'connected'
+    | 'thumbsUp'
+    | 'thumbsDown'
 
 /**
  * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
