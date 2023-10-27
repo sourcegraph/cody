@@ -5,6 +5,14 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import type {
+    BillingCategory,
+    BillingProduct,
+    EventAction,
+    EventFeature,
+    MetadataKey,
+} from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { View } from '../../webviews/NavBar'
 
@@ -19,6 +27,12 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
+    | {
+          command: 'telemetryEvent'
+          feature: EventFeature | undefined
+          action: EventAction | undefined
+          parameters?: TelemetryEventParameters<MetadataKey, BillingProduct, BillingCategory> | undefined
+      }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }

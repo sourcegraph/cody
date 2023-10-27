@@ -1,4 +1,4 @@
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { TelemetryRecorder } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 
 import { VSCodeWrapper } from './VSCodeApi'
@@ -19,8 +19,13 @@ export function createWebviewTelemetryService(vscodeAPI: VSCodeWrapper): Telemet
  */
 export function createWebviewTelemetryRecorder(vscodeAPI: VSCodeWrapper): TelemetryRecorder {
     return {
-        recordEvent: (eventName, properties) => {
-            vscodeAPI.postMessage({ command: 'event', eventName, properties: { properties } })
+        recordEvent: (feature, action, parameters?: TelemetryEventProperties) => {
+            vscodeAPI.postMessage({
+                command: 'telemetryEvent',
+                feature,
+                action,
+                parameters,
+            })
         },
     }
 }
