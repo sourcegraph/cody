@@ -135,9 +135,3 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
         )
     }
 }
-
-export const NOOP_TELEMETRY_RECORDER_SERVICE: TelemetryRecorder = {
-    recordEvent() {
-        /* noop */
-    },
-}
