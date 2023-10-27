@@ -7,7 +7,6 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
-import { EventAction } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { TelemetryRecorder } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import {
     ChatButtonProps,
@@ -96,15 +95,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    type Feedback = 'thumbsUp' | 'thumbsDown'
+
     const onFeedbackBtnClick = useCallback(
-        (text: EventAction) => {
+        (text: string) => {
             telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, {
                 value: text,
                 lastChatUsedEmbeddings: Boolean(
                     transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
                 ),
             })
-            telemetryRecorder.recordEvent('cody.feedback', text, {
+            telemetryRecorder.recordEvent('cody.feedback', text as Feedback, {
                 privateMetadata: {
                     value: text,
                     lastChatUsedEmbeddings: Boolean(
