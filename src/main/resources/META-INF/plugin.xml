@@ -66,8 +66,6 @@
         <!-- autocomplete -->
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
-        <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
-
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>

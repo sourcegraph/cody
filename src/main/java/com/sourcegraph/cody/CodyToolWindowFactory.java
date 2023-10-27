@@ -22,7 +22,7 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
   @Override
   public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-    CodyToolWindowContent toolWindowContent = CodyToolWindowContent.getInstance(project);
+    CodyToolWindowContent toolWindowContent = CodyToolWindowContent.Companion.getInstance(project);
     Content content =
         // ContentFactory.SERVICE.getInstance() has been deprecated in recent versions
         ApplicationManager.getApplication()
