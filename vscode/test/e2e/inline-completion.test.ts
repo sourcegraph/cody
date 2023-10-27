@@ -105,6 +105,9 @@ async function triggerInlineCompletionInBody(page: Page): Promise<void> {
     await page.keyboard.press('End')
     await page.keyboard.press('Enter')
     await new Promise(resolve => setTimeout(resolve, 200))
+
+    // Wait for ghost text to become visible.
+    await page.locator('.ghost-text-decoration').waitFor({ state: 'visible' })
 }
 
 async function acceptInlineCompletion(page: Page): Promise<void> {
