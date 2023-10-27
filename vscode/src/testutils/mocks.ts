@@ -632,6 +632,7 @@ export const vsCodeMocks = {
     EventEmitter,
     EndOfLine,
     CancellationTokenSource,
+    ThemeColor,
     WorkspaceEdit,
     Uri,
     languages,
@@ -648,6 +649,7 @@ export const vsCodeMocks = {
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
         onDidChangeActiveTextEditor() {},
+        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
     },
     workspace: {
         fs: workspaceFs,
