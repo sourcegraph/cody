@@ -12,7 +12,7 @@ import { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
-import { BillingCategory, BillingProduct, EventAction, EventFeature, MetadataKey } from '.'
+import { BillingCategory, BillingProduct } from '.'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -25,13 +25,7 @@ export interface ExtensionDetails {
 /**
  * TelemetryRecorderProvider is the default provider implementation.
  */
-export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    EventFeature,
-    EventAction,
-    MetadataKey,
-    BillingCategory,
-    BillingProduct
-> {
+export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
     constructor(
         extensionDetails: ExtensionDetails,
         config: ConfigurationWithAccessToken,
@@ -63,13 +57,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
  */
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
-export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    EventFeature,
-    EventAction,
-    MetadataKey,
-    BillingCategory,
-    BillingProduct
-> {
+export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
     constructor() {
         super({ client: '' }, new NoOpTelemetryExporter(), [])
     }
@@ -82,9 +70,6 @@ export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getReco
  * events.
  */
 export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    EventFeature,
-    EventAction,
-    MetadataKey,
     BillingCategory,
     BillingProduct
 > {
