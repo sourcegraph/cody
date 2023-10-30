@@ -10,7 +10,7 @@ import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
-import { MessageProvider, MessageProviderOptions } from '../MessageProvider'
+import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
 import { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
@@ -104,7 +104,7 @@ export class ChatPanelProvider extends MessageProvider {
                 )
                 break
             default:
-                this.handleError('Invalid request type from Webview')
+                this.handleError('Invalid request type from Webview Panel', 'system')
         }
     }
 
@@ -179,10 +179,15 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     /**
-     * Display error message in webview view as banner in chat view
-     * It does not display error message as assistant response
+     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string): void {
+    public handleError(errorMsg: string, type: MessageErrorType): void {
+        if (type === 'transcript') {
+            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
@@ -195,7 +200,7 @@ export class ChatPanelProvider extends MessageProvider {
         const selectionRange = getActiveEditor()?.selection
         const editor = getActiveEditor()
         if (!editor || !selectionRange) {
-            this.handleError('No editor or selection found to insert text')
+            this.handleError('No editor or selection found to insert text', 'system')
             return
         }
 
@@ -293,7 +298,7 @@ export class ChatPanelProvider extends MessageProvider {
     protected async openFilePath(filePath: string): Promise<void> {
         const rootUri = this.editor.getWorkspaceRootUri()
         if (!rootUri) {
-            this.handleError('Failed to open file: missing rootUri')
+            this.handleError('Failed to open file: missing rootUri', 'system')
             return
         }
         try {
