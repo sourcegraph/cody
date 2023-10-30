@@ -80,7 +80,7 @@ export class FixupProvider extends MessageProvider {
     }
 
     public async startFix(): Promise<void> {
-        await this.executeRecipe('fixup', this.task.id)
+        await this.executeRecipe('fixup', this.task.id, this.task.source)
     }
 
     public async abortFix(): Promise<void> {

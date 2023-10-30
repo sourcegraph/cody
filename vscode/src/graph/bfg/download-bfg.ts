@@ -44,7 +44,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     // https://docs.google.com/document/d/11cw-7dAp93JmasITNSNCtx31xrQsNB1L2OoxVE6zrTc/edit
     const archRenames = new Map([
         ['aarch64', 'arm64'],
-        ['x86_64', 'x86'],
+        ['x86_64', 'x64'],
     ])
     const rfc795Arch = archRenames.get(arch ?? '') ?? arch
 

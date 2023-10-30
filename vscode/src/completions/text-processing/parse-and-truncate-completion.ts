@@ -29,7 +29,7 @@ export function parseAndTruncateCompletion(
         useTreeSitter = true,
     } = params
 
-    const insertTextBeforeTruncation = normalizeStartLine(completion, prefix)
+    const insertTextBeforeTruncation = multiline ? normalizeStartLine(completion, prefix) : completion
 
     const parsed = parseCompletion({
         completion: { insertText: insertTextBeforeTruncation },

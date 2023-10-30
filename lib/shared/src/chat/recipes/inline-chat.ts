@@ -18,6 +18,7 @@ export class InlineChat implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         // Check if this is a touch request
         if (commandRegex.touch.test(humanChatInput)) {
             return new InlineTouch(this.debug).getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)
@@ -47,7 +48,7 @@ export class InlineChat implements Recipe {
 
         // Text display in UI fpr human that includes the selected code
         const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
-        const source = this.id
+
         return Promise.resolve(
             new Interaction(
                 {

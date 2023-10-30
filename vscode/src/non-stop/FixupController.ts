@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { FixupIntent, FixupIntentClassification } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -10,6 +11,7 @@ import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -114,7 +116,7 @@ export class FixupController
         selectionRange: vscode.Range,
         autoApply = false,
         insertMode?: boolean,
-        source?: string
+        source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange, autoApply, insertMode, source)
@@ -185,16 +187,12 @@ export class FixupController
 
     /**
      * Retrieves the intent for a specific task based on the selected text and other contextual information.
-     *
      * @param taskId - The ID of the task for which the intent is to be determined.
      * @param intentDetector - The detector used to classify the intent from available options.
-     *
      * @returns A promise that resolves to a `FixupIntent` which can be one of the intents like 'add', 'edit', etc.
-     *
      * @throws
      * - Will throw an error if no code is selected for fixup.
      * - Will throw an error if the selected text exceeds the defined maximum limit.
-     *
      * @todo (umpox): Explore shorter and more efficient ways to detect intent.
      * Possible methods:
      * - Input -> Match first word against update|fix|add|delete verbs
@@ -235,7 +233,6 @@ export class FixupController
      * 1. Finds the document URI from it's fileName
      * 2. If the selection starts in a folding range, moves the selection start position back to the start of that folding range.
      * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
-     *
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      */
     private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
@@ -296,7 +293,9 @@ export class FixupController
             : await this.replaceEdit(editor, diff, applyEditOptions)
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return
@@ -306,7 +305,19 @@ export class FixupController
         if (replacementText) {
             const codeCount = countCode(replacementText)
             const source = task.source
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+                metadata: {
+                    lineCount: codeCount.lineCount,
+                    charCount: codeCount.charCount,
+                },
+                privateMetadata: {
+                    // TODO: generate numeric ID representing source so that it
+                    // can be included in metadata for default export.
+                    source,
+                },
+            })
 
             // format the selected area after applying edits
             const editedRange = new vscode.Range(
@@ -666,7 +677,7 @@ export class FixupController
             return
         }
         const diff = this.applicableDiffOrRespin(task, editor.document)
-        if (!diff || diff.mergedText === undefined) {
+        if (diff?.mergedText === undefined) {
             return
         }
         // show diff view between the current document and replacement
@@ -708,7 +719,7 @@ export class FixupController
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Remove the previous task and code lenses
         this.cancel(id)
-        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction, document }, 'regenerate')
+        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction, document }, 'code-lens')
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {

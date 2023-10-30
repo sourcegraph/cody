@@ -94,9 +94,9 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
             `
 ## Params
 
-- ${markdownInlineCode(data.params.document.fileName)} @ ${data.params.position.line + 1}:${
-                data.params.position.character + 1
-            }
+- ${markdownInlineCode(vscode.workspace.asRelativePath(data.params.document.fileName))} @ ${
+                data.params.position.line + 1
+            }:${data.params.position.character + 1}
 - triggerKind: ${data.params.triggerKind}
 - selectedCompletionInfo: ${
                 data.params.selectedCompletionInfo
@@ -109,14 +109,14 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 ## Completers
 
 ${data.completers?.map(
-    ({ id, docContext: { prefix, suffix }, position, document, ...otherOptions }) =>
+    ({ id, docContext: { prefix, suffix, completionIntent }, position, document, ...otherOptions }) =>
         `
 ### ${id}
 
 ${codeDetailsWithSummary('Prefix', prefix, 'end')}
 ${codeDetailsWithSummary('Suffix', suffix, 'start')}
 
-${markdownList(otherOptions)}
+${markdownList({ ...otherOptions, completionIntent: completionIntent || 'unknown' })}
 `
 )}`,
         data?.context === undefined

@@ -52,7 +52,7 @@ export class AgentEditor implements Editor {
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const document = this.activeDocument()
-        if (document === undefined || document.content === undefined || document.selection === undefined) {
+        if (document?.content === undefined || document.selection === undefined) {
             return null
         }
         const offsets = new DocumentOffsets(document)
