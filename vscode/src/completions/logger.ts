@@ -142,6 +142,7 @@ let persistenceTracker: PersistenceTracker | null = null
 let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
+    // TODO: Clean up this name mismatch when we move to TelemetryV2
     const prefix = isRunningInsideAgent() ? 'CodyAgent' : 'CodyVSCodeExtension'
     telemetryService.log(`${prefix}:completion:${name}`, params, { agent: true })
 }
