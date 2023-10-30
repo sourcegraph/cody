@@ -164,10 +164,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Restores a session from a chatID
      */
     public async restoreSession(chatID: string): Promise<void> {
-        if (chatID === this.currentChatID) {
-            return
-        }
-
         await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
         this.currentChatID = chatID
@@ -329,11 +325,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         humanChatInput = command?.text
         recipeId = command?.recipeId
 
-        logDebug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
+        logDebug('MessageProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
-            logDebug('ChatViewProvider:executeRecipe', 'no recipe found')
+            logDebug('MessageProvider:executeRecipe', 'no recipe found')
             return
         }
 
@@ -647,6 +643,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
+        this.loadChatHistory()
         const userHistory = {
             chat: MessageProvider.chatHistory,
             input: MessageProvider.inputHistory,

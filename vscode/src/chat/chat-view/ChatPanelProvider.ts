@@ -44,7 +44,7 @@ export class ChatPanelProvider extends MessageProvider {
                 await this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
-                logDebug('ChatViewProvider:onDidReceiveMessage', 'initialized')
+                logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
                 break
             case 'submit':
@@ -66,7 +66,7 @@ export class ChatPanelProvider extends MessageProvider {
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'executeRecipe':
-                this.setWebviewView('chat')
+                await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe, '', 'chat')
                 break
             case 'insert':
@@ -80,14 +80,6 @@ export class ChatPanelProvider extends MessageProvider {
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
-                break
-            case 'history':
-                if (message.action === 'clear') {
-                    await this.clearHistory()
-                }
-                if (message.action === 'export') {
-                    await this.exportHistory()
-                }
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -117,7 +109,7 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
@@ -129,10 +121,7 @@ export class ChatPanelProvider extends MessageProvider {
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        if (this.webviewPanel) {
-            this.webviewPanel.title = `Cody: ${text}`
-        }
-        await this.executeRecipe('chat-question', text)
+        await this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**
@@ -140,9 +129,9 @@ export class ChatPanelProvider extends MessageProvider {
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
-        logDebug('ChatViewProvider:onCustomPromptClicked', title)
+        logDebug('ChatPanelProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
-            this.setWebviewView('chat')
+            await this.setWebviewView('chat')
         }
         await this.executeCustomCommand(title, commandType)
     }
@@ -156,6 +145,12 @@ export class ChatPanelProvider extends MessageProvider {
             messages: transcript,
             isMessageInProgress,
         })
+
+        // Update webview panel title
+        const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText
+        if (text && this.webviewPanel) {
+            this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
+        }
     }
 
     /**
@@ -176,7 +171,17 @@ export class ChatPanelProvider extends MessageProvider {
      * Update chat history in Tree View
      */
     protected handleHistory(history: UserLocalHistory): void {
-        this.treeView.updateTree(createCodyChatTreeItems(history))
+        // this.treeView.updateTree(createCodyChatTreeItems(history))
+        if (history) {
+            console.log('hi')
+        }
+
+        this.treeView.updateTree(
+            createCodyChatTreeItems({
+                chat: MessageProvider.chatHistory,
+                input: MessageProvider.inputHistory,
+            })
+        )
     }
 
     /**
@@ -259,10 +264,20 @@ export class ChatPanelProvider extends MessageProvider {
 
     /**
      * Set webview view
+     * NOTE: Panel doesn't support view other than 'chat' currently
      */
-    public setWebviewView(view: View): void {
+    public async setWebviewView(view: View): Promise<void> {
+        await this.webview?.postMessage({
+            type: 'view',
+            messages: view,
+        })
+
         if (view !== 'chat') {
             return
+        }
+
+        if (!this.webviewPanel) {
+            await this.createWebviewPanel(this.currentChatID)
         }
         this.webviewPanel?.reveal()
     }
@@ -272,7 +287,6 @@ export class ChatPanelProvider extends MessageProvider {
     public async clearChatHistory(chatID?: string): Promise<void> {
         if (chatID) {
             await this.deleteHistory(chatID)
-            this.webviewPanel?.dispose()
             return
         }
         await this.clearHistory()
@@ -364,8 +378,8 @@ export class ChatPanelProvider extends MessageProvider {
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
-        this.authProvider.webview = panel.webview
         this.contextProvider.webview = panel.webview
+        this.authProvider.webview = panel.webview
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {

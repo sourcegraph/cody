@@ -54,7 +54,8 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
-                logDebug('ChatViewProvider:onDidReceiveMessage', 'initialized')
+                logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')
+                await this.setWebviewView('chat')
                 await this.init()
                 break
             case 'submit':
@@ -213,7 +214,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
+        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
@@ -233,7 +234,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
-        logDebug('ChatViewProvider:onCustomPromptClicked', title)
+        logDebug('SidebarChatProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }
