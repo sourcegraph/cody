@@ -39,10 +39,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     /**
      * Returns the list of results from symf
      */
-    public async getResults(query: string, scopeDir: string): Promise<Result[]> {
+    public async getResults(
+        query: string,
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+    ): Promise<Result[]> {
         while (true) {
             await this.getIndexLock(scopeDir).withWrite(async () => {
-                await this.unsafeEnsureIndex(scopeDir)
+                await this.unsafeEnsureIndex(scopeDir, showIndexProgress)
             })
 
             let indexNotFound = false
@@ -68,9 +72,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         })
     }
 
-    public async ensureIndex(scopeDir: string): Promise<void> {
+    public async ensureIndex(
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+    ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
-            await this.unsafeEnsureIndex(scopeDir)
+            await this.unsafeEnsureIndex(scopeDir, showIndexProgress)
         })
     }
 
@@ -146,7 +153,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         return fileExists(path.join(indexDir, 'index.json'))
     }
 
-    private async unsafeEnsureIndex(scopeDir: string): Promise<void> {
+    private async unsafeEnsureIndex(
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+    ): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
         if (indexExists) {
             return
@@ -154,7 +164,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
         const { indexDir, tmpDir } = this.getIndexDir(scopeDir)
         try {
-            await this.unsafeUpsertIndex(indexDir, tmpDir, scopeDir)
+            await this.unsafeUpsertIndex(indexDir, tmpDir, scopeDir, showIndexProgress)
         } catch (error) {
             logDebug('symf', 'symf index creation failed', error)
             throw error
@@ -169,7 +179,19 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         }
     }
 
-    private async unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
+    private unsafeUpsertIndex(
+        indexDir: string,
+        tmpIndexDir: string,
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+    ): Promise<void> {
+        if (showIndexProgress) {
+            return showIndexProgress(scopeDir, this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir))
+        }
+        return this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir)
+    }
+
+    private async _unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
         const symfPath = await getSymfPath(this.context)
         if (!symfPath) {
             return

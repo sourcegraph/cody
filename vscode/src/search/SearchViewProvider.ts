@@ -47,26 +47,27 @@ class IndexManager {
             this.currentlyRefreshing.add(scopeDir)
 
             await this.symf.deleteIndex(scopeDir)
-            await this.ensureIndex(scopeDir)
+            await this.symf.ensureIndex(scopeDir, showIndexProgress)
         } finally {
             this.currentlyRefreshing.delete(scopeDir)
         }
     }
+}
 
-    private async ensureIndex(scopeDir: string): Promise<void> {
-        const { base, dir, wsName } = getRenderableComponents(scopeDir)
-        const prettyScopeDir = wsName ? path.join(wsName, dir, base) : path.join(dir, base)
-        await vscode.window.withProgress(
-            {
-                location: vscode.ProgressLocation.Notification,
-                title: `Cody: building search index for ${prettyScopeDir}`,
-                cancellable: false,
-            },
-            async () => {
-                await this.symf.ensureIndex(scopeDir)
-            }
-        )
-    }
+async function showIndexProgress(scopeDir: string, indexDone: Promise<void>): Promise<void> {
+    const { base, dir, wsName } = getRenderableComponents(scopeDir)
+    const prettyScopeDir = wsName ? path.join(wsName, dir, base) : path.join(dir, base)
+
+    await vscode.window.withProgress(
+        {
+            location: vscode.ProgressLocation.Notification,
+            title: `Cody: building search index for ${prettyScopeDir}`,
+            cancellable: false,
+        },
+        async () => {
+            await indexDone
+        }
+    )
 }
 
 export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -201,7 +202,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         }
 
         const panelResults = await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
-            const results = await symf.getResults(query, scopeDir)
+            const results = await symf.getResults(query, scopeDir, showIndexProgress)
             const groupedResults = groupByFile(results)
 
             // fetch file contents to send to webview
