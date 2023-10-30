@@ -210,16 +210,12 @@ export class FixupController
 
     /**
      * Retrieves the intent for a specific task based on the selected text and other contextual information.
-     *
      * @param taskId - The ID of the task for which the intent is to be determined.
      * @param intentDetector - The detector used to classify the intent from available options.
-     *
      * @returns A promise that resolves to a `FixupIntent` which can be one of the intents like 'add', 'edit', etc.
-     *
      * @throws
      * - Will throw an error if no code is selected for fixup.
      * - Will throw an error if the selected text exceeds the defined maximum limit.
-     *
      * @todo (umpox): Explore shorter and more efficient ways to detect intent.
      * Possible methods:
      * - Input -> Match first word against update|fix|add|delete verbs
@@ -260,7 +256,6 @@ export class FixupController
      * 1. Finds the document URI from it's fileName
      * 2. If the selection starts in a folding range, moves the selection start position back to the start of that folding range.
      * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
-     *
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      */
     private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
@@ -461,29 +456,30 @@ export class FixupController
             return false
         }
 
-        const formattingChanges = (
-            await vscode.commands.executeCommand<vscode.TextEdit[]>(
+        const formattingChanges =
+            (await vscode.commands.executeCommand<vscode.TextEdit[]>(
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
                 {}
-            )
-        ).filter(change => rangeToFormat.contains(change.range))
+            )) || []
 
-        if (formattingChanges.length === 0) {
+        const formattingChangesInRange = formattingChanges.filter(change => rangeToFormat.contains(change.range))
+
+        if (formattingChangesInRange.length === 0) {
             return false
         }
 
         logDebug('FixupController:edit', 'formatting')
 
         if (edit instanceof vscode.WorkspaceEdit) {
-            for (const change of formattingChanges) {
+            for (const change of formattingChangesInRange) {
                 edit.replace(task.fixupFile.uri, change.range, change.newText)
             }
             return vscode.workspace.applyEdit(edit)
         }
 
         return edit(editBuilder => {
-            for (const change of formattingChanges) {
+            for (const change of formattingChangesInRange) {
                 editBuilder.replace(change.range, change.newText)
             }
         }, options)
@@ -801,7 +797,7 @@ export class FixupController
             return
         }
         const diff = task.diff
-        if (!diff || diff.mergedText === undefined) {
+        if (diff?.mergedText === undefined) {
             return
         }
         // show diff view between the current document and replacement
