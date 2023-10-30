@@ -34,7 +34,7 @@ suite.skip('Cody Fixup Task Controller', function () {
 
         // Brings up the vscode input box
         const fixups = await getFixupController()
-        fixups.createTask(textEditor.document.uri, 'Replace hello with goodbye', textEditor.selection)
+        fixups.createTask(textEditor.document, 'Replace hello with goodbye', textEditor.selection)
 
         // Check the chat transcript contains markdown
         await new Promise(resolve => setTimeout(resolve, 250)) // HACK: fix flakiness

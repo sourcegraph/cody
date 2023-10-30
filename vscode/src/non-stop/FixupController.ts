@@ -133,14 +133,23 @@ export class FixupController
     }
 
     public createTask(
-        documentUri: vscode.Uri,
+        document: vscode.TextDocument,
         instruction: string,
         selectionRange: vscode.Range,
         insertMode?: boolean,
         source?: string
     ): FixupTask {
-        const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode, source)
+        const fixupFile = this.files.forUri(document.uri)
+        const selectionLines = document
+            .getText(selectionRange)
+            .split('\n')
+            .reduce((acc, lineContent, index) => {
+                const lineNumber = selectionRange.start.line + index
+                acc.set(lineNumber, lineContent)
+                return acc
+            }, new Map())
+
+        const task = new FixupTask(fixupFile, instruction, selectionRange, selectionLines, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -210,16 +219,12 @@ export class FixupController
 
     /**
      * Retrieves the intent for a specific task based on the selected text and other contextual information.
-     *
      * @param taskId - The ID of the task for which the intent is to be determined.
      * @param intentDetector - The detector used to classify the intent from available options.
-     *
      * @returns A promise that resolves to a `FixupIntent` which can be one of the intents like 'add', 'edit', etc.
-     *
      * @throws
      * - Will throw an error if no code is selected for fixup.
      * - Will throw an error if the selected text exceeds the defined maximum limit.
-     *
      * @todo (umpox): Explore shorter and more efficient ways to detect intent.
      * Possible methods:
      * - Input -> Match first word against update|fix|add|delete verbs
@@ -260,7 +265,6 @@ export class FixupController
      * 1. Finds the document URI from it's fileName
      * 2. If the selection starts in a folding range, moves the selection start position back to the start of that folding range.
      * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
-     *
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      */
     private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
@@ -636,6 +640,94 @@ export class FixupController
         }
     }
 
+    /**
+     * Speculatively attempt to match the incoming line from the LLM with
+     * an existing line already in the document.
+     *
+     * If found, this will update the current active line for the fixup task.
+     */
+    public updateActiveLine(task: FixupTask, activeContent: string): number {
+        let matchingLine
+
+        for (let i = task.activeLine; i < task.selectionRange.end.line; i++) {
+            const selectionLine = task.selectionLines.get(i)
+            if (selectionLine === activeContent) {
+                matchingLine = i
+                break
+            }
+        }
+
+        if (matchingLine === undefined) {
+            console.log('No match. We will expand the selection range only.', {
+                current: task.selectionLines.get(task.activeLine),
+                new: activeContent,
+            })
+            // No match, this means we are potentially adding new content.
+            // We need to keep the existing active line, but expand the selection range
+            task.selectionRange = new vscode.Range(
+                task.selectionRange.start.with(task.selectionRange.start.line + 1, 0),
+                task.selectionRange.end.with(task.selectionRange.end.line + 1, 0)
+            )
+        } else {
+            // Found a new active line, update where we believe the LLM is changing
+            console.log('We got a match! We will update the active line to the new match', {
+                current: task.selectionLines.get(matchingLine + task.activeLine),
+                new: activeContent,
+            })
+            task.activeLine = matchingLine
+        }
+
+        return task.activeLine
+    }
+
+    public async didReceiveFixupLine(id: string, line: string): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return Promise.resolve()
+        }
+
+        this.updateActiveLine(task, line)
+        task.replacementLine = line
+        console.log('Start of selection:', task.selectionRange.start.line)
+        console.log('Active line:', task.activeLine)
+        console.log('End of selection:', task.selectionRange.end.line)
+
+        // return this.applyTaskLine(task)
+    }
+
+    // private async applyTaskLine(task: FixupTask): Promise<void> {
+    //     let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+    //     if (!editor) {
+    //         editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+    //     }
+
+    //     const existingLine = task.selectionLines.get(task.activeLine)
+    //     const incomingLine = task.replacementLine || ''
+
+    //     let editOk: boolean
+
+    //     if (existingLine) {
+    //         // We have a line that needs updating
+    //         const diff = computeDiff(existingLine, incomingLine, existingLine, new vscode.Position(task.activeLine, 0))
+    //         if (!diff) {
+    //             console.log('NO DIFF, DOING NOTHING')
+    //             return
+    //         }
+    //         editOk = await this.replaceEdit(editor, diff)
+    //     } else {
+    //         // Adding a new line, insert it and bump the active line by one
+    //         editOk = await editor.edit(editBuilder => {
+    //             editBuilder.insert(new vscode.Position(task.activeLine, 0), incomingLine)
+    //         })
+    //         task.activeLine = task.activeLine + 1
+    //     }
+
+    //     if (!editOk) {
+    //         console.log('EDIT NOT OK!!')
+    //         return
+    //     }
+    // }
+
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
@@ -801,7 +893,7 @@ export class FixupController
             return
         }
         const diff = task.diff
-        if (!diff || diff.mergedText === undefined) {
+        if (diff?.mergedText === undefined) {
             return
         }
         // show diff view between the current document and replacement

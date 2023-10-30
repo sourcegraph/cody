@@ -215,7 +215,7 @@ const register = async (
         }
 
         const task = args.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode, source)
+            ? fixup.createTask(document, args.instruction, range, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return

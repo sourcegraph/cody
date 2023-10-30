@@ -6,6 +6,8 @@ import { CodyTaskState } from './utils'
 
 export type taskID = string
 
+export type TaskLines = Map<number, string>
+
 export class FixupTask {
     public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle
@@ -24,16 +26,24 @@ export class FixupTask {
     // The edited range of the applied replacement
     public editedRange: vscode.Range | undefined
 
+    // The active line of the task.
+    public activeLine: number
+
+    // The text of the streaming turn of the LLM, if any, for the line
+    public replacementLine: string | undefined
+
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
         public selectionRange: vscode.Range,
+        public selectionLines: TaskLines,
         // insert mode means insert replacement at selection, otherwise replace selection contents with replacement
         public insertMode?: boolean,
         // the source of the instruction, e.g. 'code-action', 'doc', etc
         public source?: string
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
+        this.activeLine = selectionRange.start.line
         this.source = source?.replace('/', '')
     }
 
