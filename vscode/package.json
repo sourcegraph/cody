@@ -225,6 +225,12 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search",
+          "visibility": "visible"
+        },
+        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -516,6 +522,22 @@
         "group": "Cody",
         "icon": "$(arrow-circle-down)",
         "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.search.index-update",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search index for current workspace folder",
+        "icon": "$(refresh)",
+        "when": "cody.activated && config.cody.experimental.new-search"
+      },
+      {
+        "command": "cody.search.index-update-all",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search indices for all workspace folders",
+        "icon": "$(sync)",
+        "when": "cody.activated && config.cody.experimental.new-search"
       }
     ],
     "keybindings": [
@@ -784,6 +806,16 @@
           "command": "cody.auth.signin",
           "when": "view == cody.support.tree.view && cody.activated",
           "group": "9_cody@0"
+        },
+        {
+          "command": "cody.search.index-update",
+          "when": "view == cody.search && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.search.index-update-all",
+          "when": "view == cody.search && cody.activated",
+          "group": "navigation@2"
         }
       ],
       "editor/title": [
@@ -981,6 +1013,12 @@
           "type": "boolean",
           "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
+        },
+        "cody.experimental.new-search": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "New search UI",
+          "default": false
         },
         "cody.experimental.symf.path": {
           "order": 99,
