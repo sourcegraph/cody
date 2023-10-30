@@ -60,28 +60,44 @@ describe('PersistenceTracker', () => {
         }
 
         vi.advanceTimersByTime(30 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 30,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 30,
+            },
+            { agent: true }
+        )
 
         vi.advanceTimersByTime(90 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 120,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 120,
+            },
+            { agent: true }
+        )
 
         vi.advanceTimersByTime(3 * 60 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 300,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 300,
+            },
+            { agent: true }
+        )
 
         vi.advanceTimersByTime(5 * 60 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 600,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 600,
+            },
+            { agent: true }
+        )
     })
 
     it('tracks changes to the document', () => {
@@ -103,11 +119,15 @@ describe('PersistenceTracker', () => {
         }
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 30,
-            difference: 0,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 30,
+                difference: 0,
+            },
+            { agent: true }
+        )
 
         vi.spyOn(doc, 'getText').mockImplementationOnce(() => 'fo0')
         onDidChangeTextDocument({
@@ -124,11 +144,15 @@ describe('PersistenceTracker', () => {
         })
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 120,
-            difference: 1 / 3,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 120,
+                difference: 1 / 3,
+            },
+            { agent: true }
+        )
     })
 
     it('tracks changes after renaming a document', () => {
@@ -168,13 +192,17 @@ describe('PersistenceTracker', () => {
         })
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            afterSec: 30,
-            charCount: 3,
-            difference: 1 / 3,
-            id: '123',
-            lineCount: 1,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                afterSec: 30,
+                charCount: 3,
+                difference: 1 / 3,
+                id: '123',
+                lineCount: 1,
+            },
+            { agent: true }
+        )
     })
 
     it('gracefully handles file deletions', () => {
@@ -208,8 +236,12 @@ describe('PersistenceTracker', () => {
         })
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:removed', {
-            id: '123',
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:removed',
+            {
+                id: '123',
+            },
+            { agent: true }
+        )
     })
 })

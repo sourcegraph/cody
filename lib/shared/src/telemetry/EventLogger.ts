@@ -5,7 +5,7 @@ import { isError } from '../utils'
 import { TelemetryEventProperties } from '.'
 
 export interface ExtensionDetails {
-    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | 'Agent'
     ideExtensionType: 'Cody' | 'CodeSearch'
     platform: string
     arch?: string
@@ -82,7 +82,7 @@ export class EventLogger {
         eventName: string,
         anonymousUserID: string,
         properties?: TelemetryEventProperties,
-        opts: { hasV2Event: boolean } = { hasV2Event: false }
+        opts: { hasV2Event?: boolean } = { hasV2Event: false }
     ): void {
         /**
          * hasV2Event can be set via properties or opts, as it's unlikely to be

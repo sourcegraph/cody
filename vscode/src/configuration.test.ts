@@ -30,6 +30,7 @@ describe('getConfiguration', () => {
             inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIDE: undefined,
             experimentalNonStop: false,
             debugEnable: false,
             debugVerbose: false,
@@ -110,6 +111,8 @@ describe('getConfiguration', () => {
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.agent.ide':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -138,6 +141,7 @@ describe('getConfiguration', () => {
             inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIde: undefined,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,

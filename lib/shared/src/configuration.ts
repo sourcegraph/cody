@@ -41,6 +41,7 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null
     isRunningInsideAgent?: boolean
+    agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

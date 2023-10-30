@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { telemetryService } from '../services/telemetry'
 
@@ -141,7 +142,8 @@ let persistenceTracker: PersistenceTracker | null = null
 let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
+    const prefix = isRunningInsideAgent() ? 'CodyAgent' : 'CodyVSCodeExtension'
+    telemetryService.log(`${prefix}:completion:${name}`, params, { agent: true })
 }
 
 export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): CompletionLogID {
@@ -323,7 +325,7 @@ export function accepted(
     })
     statistics.logAccepted()
 
-    if (trackedRange === undefined) {
+    if (trackedRange === undefined || isRunningInsideAgent()) {
         return
     }
     if (persistenceTracker === null) {
@@ -526,4 +528,9 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+function isRunningInsideAgent(): boolean {
+    const config = getConfiguration(vscode.workspace.getConfiguration())
+    return !!config.isRunningInsideAgent
 }

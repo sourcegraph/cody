@@ -1,3 +1,5 @@
+import { cachedDataVersionTag } from 'node:v8'
+
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 

@@ -10,7 +10,7 @@ import {
     NetworkError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { vscodeExtensionDetails } from '../telemetry'
+import { extensionDetails } from '../telemetry'
 
 export * from '@sentry/core'
 export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
@@ -35,7 +35,7 @@ export abstract class SentryService {
 
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
-                release: vscodeExtensionDetails.version,
+                release: extensionDetails.version,
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'

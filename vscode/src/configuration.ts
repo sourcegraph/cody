@@ -106,6 +106,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
+        agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
     }
 }
 

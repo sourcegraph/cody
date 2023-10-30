@@ -5,18 +5,21 @@ import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-sh
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
+import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 
 import { localStorage } from './LocalStorageProvider'
 
 export let eventLogger: EventLogger | null = null
+let telemetryLevel: 'all' | 'off' | 'agent' = 'off'
 let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-export const vscodeExtensionDetails: ExtensionDetails = {
-    ide: 'VSCode',
+const config = getConfiguration(vscode.workspace.getConfiguration())
+export const extensionDetails: ExtensionDetails = {
+    ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
     arch,
@@ -37,9 +40,12 @@ export async function createOrUpdateEventLogger(
         // check that CODY_TESTING is not true, because we want to log events when we are testing
         if (process.env.CODY_TESTING !== 'true') {
             eventLogger = null
+            telemetryLevel = 'off'
             return
         }
     }
+
+    telemetryLevel = config.telemetryLevel
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
     globalAnonymousUserID = anonymousUserID
@@ -47,7 +53,7 @@ export async function createOrUpdateEventLogger(
     const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
-        eventLogger = new EventLogger(serverEndpoint, vscodeExtensionDetails, config)
+        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
         if (created) {
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
@@ -59,7 +65,7 @@ export async function createOrUpdateEventLogger(
         }
         return
     }
-    eventLogger?.onConfigurationChange(serverEndpoint, vscodeExtensionDetails, config)
+    eventLogger?.onConfigurationChange(serverEndpoint, extensionDetails, config)
 }
 
 /**
@@ -82,10 +88,19 @@ export async function createOrUpdateEventLogger(
  * @param properties Event properties. Do NOT include any private information, such as full URLs
  * that may contain private repository names or search queries.
  */
-function logEvent(eventName: string, properties?: TelemetryEventProperties, opts?: { hasV2Event: boolean }): void {
+function logEvent(
+    eventName: string,
+    properties?: TelemetryEventProperties,
+    opts?: { hasV2Event?: boolean; agent?: boolean }
+): void {
+    if (telemetryLevel === 'agent' && !opts?.agent) {
+        return
+    }
+
     logDebug(
         `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
         eventName,
+        extensionDetails.ide,
         JSON.stringify({ properties, opts })
     )
     if (!eventLogger || !globalAnonymousUserID) {

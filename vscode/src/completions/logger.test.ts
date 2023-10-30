@@ -83,26 +83,34 @@ describe('logger', () => {
             ],
         }
 
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:suggested', {
-            ...shared,
-            accepted: true,
-            completionsStartedSinceLastSuggestion: 1,
-            displayDuration: expect.any(Number),
-            read: true,
-            latency: expect.any(Number),
-        })
-
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:accepted', {
-            ...shared,
-            acceptedItem: {
-                charCount: 3,
-                lineCount: 1,
-                lineTruncatedCount: undefined,
-                nodeTypes: undefined,
-                parseErrorCount: undefined,
-                truncatedWith: undefined,
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:suggested',
+            {
+                ...shared,
+                accepted: true,
+                completionsStartedSinceLastSuggestion: 1,
+                displayDuration: expect.any(Number),
+                read: true,
+                latency: expect.any(Number),
             },
-        })
+            { agent: true }
+        )
+
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:accepted',
+            {
+                ...shared,
+                acceptedItem: {
+                    charCount: 3,
+                    lineCount: 1,
+                    lineTruncatedCount: undefined,
+                    nodeTypes: undefined,
+                    parseErrorCount: undefined,
+                    truncatedWith: undefined,
+                },
+            },
+            { agent: true }
+        )
     })
 
     it('reuses the completion ID for the same completion', () => {
@@ -133,7 +141,8 @@ describe('logger', () => {
             expect.objectContaining({
                 id: loggerItem?.params.id,
                 source: 'Network',
-            })
+            }),
+            { agent: true }
         )
 
         expect(logSpy).toHaveBeenCalledWith(
@@ -141,13 +150,15 @@ describe('logger', () => {
             expect.objectContaining({
                 id: loggerItem?.params.id,
                 source: 'Cache',
-            })
+            }),
+            { agent: true }
         )
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
             expect.objectContaining({
                 id: loggerItem?.params.id,
-            })
+            }),
+            { agent: true }
         )
 
         // After accepting the completion, the ID won't be reused a third time
