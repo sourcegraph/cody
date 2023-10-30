@@ -578,8 +578,6 @@ export class FixupController
         }
 
         const revertRange = task.editedRange || task.selectionRange
-        const diff = computeDiff(task.replacement || '', task.original, task.replacement || '', revertRange.start)
-        console.log('Revert diff', diff)
 
         editor.revealRange(revertRange)
         const editOk = await editor.edit(editBuilder => {
