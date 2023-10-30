@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { FixupIntent, FixupIntentClassification } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -10,6 +11,7 @@ import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -76,6 +78,10 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
                 return this.accept(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error' })
+                return this.showError(id)
             })
         )
         // Observe file renaming and deletion
@@ -137,7 +143,7 @@ export class FixupController
         instruction: string,
         selectionRange: vscode.Range,
         insertMode?: boolean,
-        source?: string
+        source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode, source)
@@ -198,10 +204,7 @@ export class FixupController
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
             telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
-            // TODO: Report an error message
-            // task.error = `Cody tried ${task.spinCount} times but failed to edit the file`
-            this.setTaskState(task, CodyTaskState.error)
-            return
+            return this.error(task.id, `Cody tried ${task.spinCount} times but failed to edit the file`)
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
@@ -326,7 +329,9 @@ export class FixupController
             : await this.replaceEdit(edit, diff, task, applyEditOptions)
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return
@@ -336,7 +341,19 @@ export class FixupController
         if (replacementText) {
             const codeCount = countCode(replacementText.trim())
             const source = task.source
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+                metadata: {
+                    lineCount: codeCount.lineCount,
+                    charCount: codeCount.charCount,
+                },
+                privateMetadata: {
+                    // TODO: generate numeric ID representing source so that it
+                    // can be included in metadata for default export.
+                    source,
+                },
+            })
 
             task.editedRange = new vscode.Range(
                 new vscode.Position(task.selectionRange.start.line, 0),
@@ -578,6 +595,25 @@ export class FixupController
         telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
 
         this.setTaskState(task, CodyTaskState.finished)
+    }
+
+    public error(id: taskID, message: string): void {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        task.error = message
+        this.setTaskState(task, CodyTaskState.error)
+    }
+
+    private showError(id: taskID): void {
+        const task = this.tasks.get(id)
+        if (!task?.error) {
+            return
+        }
+
+        void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
     }
 
     private discard(task: FixupTask): void {
@@ -846,7 +882,7 @@ export class FixupController
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
             { range: previousRange, instruction, document },
-            'regenerate'
+            'code-lens'
         )
     }
 

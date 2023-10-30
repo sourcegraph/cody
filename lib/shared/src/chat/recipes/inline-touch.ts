@@ -12,9 +12,11 @@ import { ChatQuestion } from './chat-question'
 import { commandRegex, contentSanitizer } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-/** ======================================================
+/**
+ * ======================================================
  * Recipe for Generating a New File
-====================================================== **/
+====================================================== *
+ */
 export class InlineTouch implements Recipe {
     public id: RecipeID = 'inline-touch'
     public title = 'Inline Touch'
@@ -117,9 +119,11 @@ export class InlineTouch implements Recipe {
         await vscode.window.showTextDocument(filePath)
     }
 
-    /** ======================================================
+    /**
+     * ======================================================
      * Prompt Template for New File
-     * ====================================================== */
+     * ======================================================
+     */
 
     public static readonly newFilePrompt = `
     I am currently looking at this selected code from {fileName}:

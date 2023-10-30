@@ -85,7 +85,7 @@ describe('getCurrentDocContext', () => {
         })
     })
 
-    it('injects the selected item from the suggestions widget into the prompt', () => {
+    it('injects the selected item from the suggestions widget into the prompt when it overlaps', () => {
         const result = testGetCurrentDocContext(
             dedent`
                 console.a█
@@ -93,8 +93,8 @@ describe('getCurrentDocContext', () => {
             {
                 triggerKind: 0,
                 selectedCompletionInfo: {
-                    range: range(0, 8, 0, 10),
-                    text: 'assert',
+                    range: range(0, 7, 0, 9),
+                    text: '.assert',
                 },
             }
         )
@@ -109,6 +109,34 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: 'ssert',
+        })
+    })
+
+    it('injects the selected item from the suggestions widget into the prompt when it does not overlap', () => {
+        const result = testGetCurrentDocContext(
+            dedent`
+                // some line before
+                console.█
+            `,
+            {
+                triggerKind: 0,
+                selectedCompletionInfo: {
+                    range: range(1, 8, 1, 8),
+                    text: 'log',
+                },
+            }
+        )
+
+        expect(result).toEqual({
+            prefix: '// some line before\nconsole.log',
+            suffix: '',
+            contextRange: expect.any(Object),
+            currentLinePrefix: 'console.log',
+            currentLineSuffix: '',
+            prevNonEmptyLine: '// some line before',
+            nextNonEmptyLine: '',
+            multilineTrigger: null,
+            injectedPrefix: 'log',
         })
     })
 

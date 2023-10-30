@@ -14,7 +14,7 @@ describe('getFirstMultilineBlockForTruncation', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.blocks.getFirstMultilineBlockForTruncation,
+            captures: queries.getFirstMultilineBlockForTruncation,
             sourcesPath: 'test-data/blocks.ts',
         })
     })
@@ -26,7 +26,7 @@ describe('getFirstMultilineBlockForTruncation', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.blocks.getFirstMultilineBlockForTruncation,
+            captures: queries.getFirstMultilineBlockForTruncation,
             sourcesPath: 'test-data/blocks.go',
         })
     })

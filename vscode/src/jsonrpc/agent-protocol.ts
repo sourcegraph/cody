@@ -44,6 +44,8 @@ export type Requests = {
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
 
+    'git/codebaseName': [{ url: string }, string | null]
+
     // ================
     // Server -> Client
     // ================

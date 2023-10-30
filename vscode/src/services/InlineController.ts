@@ -17,12 +17,12 @@ const initRange = new vscode.Range(initPost, initPost)
  * We map Cody's response status to a string that is used to add context to comments.
  * We can then use this to update the UI in VS Code accordingly (e.g. comments/comment/title set in package.json)
  */
-enum CodyInlineStateContextValue {
-    loading = 'cody-inline-loading',
-    complete = 'cody-inline-complete',
-    streaming = 'cody-inline-loading',
-    error = 'cody-inline-complete',
-}
+const CodyInlineStateContextValue = {
+    loading: 'cody-inline-loading',
+    complete: 'cody-inline-complete',
+    streaming: 'cody-inline-loading',
+    error: 'cody-inline-complete',
+} as const
 
 export class InlineController implements VsCodeInlineController {
     // Controller init

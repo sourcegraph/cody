@@ -5,7 +5,7 @@ import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
+import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
 import {
     extractTestType,
     getHumanLLMText,
@@ -30,10 +30,12 @@ import { Interaction } from '../transcript/interaction'
 import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-/** ======================================================
+/**
+ * ======================================================
  * Recipe for running custom prompts from the cody.json files
  * Works with VS Code only
-====================================================== **/
+====================================================== *
+ */
 export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
     public title = 'Custom Prompt'
@@ -62,7 +64,7 @@ export class CustomPrompt implements Recipe {
         const commandName = command?.slashCommand || command?.description || promptText
 
         // Log all custom commands under 'custom'
-        const source = command?.type === 'default' ? command?.slashCommand.replace('/', '') : 'custom'
+        const source = getCommandEventSource(command)
 
         if (!promptText || !commandName) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import { Position, TextDocument } from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
 import { getLanguageConfig } from './language'
@@ -8,44 +8,25 @@ import {
     indentation,
     OPENING_BRACKET_REGEX,
 } from './text-processing'
-import { getCachedParseTreeForDocument } from './tree-sitter/parse-tree-cache'
-import { getDocumentQuerySDK } from './tree-sitter/query-sdk'
+import { execQueryWrapper } from './tree-sitter/query-sdk'
 
 interface DetectMultilineParams {
     docContext: Omit<DocumentContext, 'multilineTrigger'>
-    document: vscode.TextDocument
+    document: TextDocument
     enableExtendedTriggers: boolean
     syntacticTriggers?: boolean
+    cursorPosition: Pick<Position, 'line' | 'character'>
 }
 
 export function detectMultiline(params: DetectMultilineParams): string | null {
-    const { syntacticTriggers, docContext, document, enableExtendedTriggers } = params
+    const { syntacticTriggers, docContext, document, enableExtendedTriggers, cursorPosition } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
-    const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
     const blockStart = getLanguageConfig(document.languageId)?.blockStart
     const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
 
-    if (syntacticTriggers && parseTreeCache && documentQuerySDK && isBlockStartActive) {
-        const triggerPosition = document.positionAt(docContext.prefix.lastIndexOf(blockStart))
-
-        const queryStartPoint = {
-            row: triggerPosition.line,
-            column: triggerPosition.character,
-        }
-
-        const queryEndPoint = {
-            row: triggerPosition.line,
-            // Querying around one character after trigger position.
-            column: triggerPosition.character + 1,
-        }
-
-        const singleLineTriggers = documentQuerySDK.queries.singlelineTriggers.getEnclosingTrigger(
-            parseTreeCache.tree.rootNode,
-            queryStartPoint,
-            queryEndPoint
-        )
+    if (syntacticTriggers && isBlockStartActive) {
+        const singleLineTriggers = execQueryWrapper(document, cursorPosition, 'getSinglelineTrigger')
 
         // Don't trigger multiline completion if single line trigger is found.
         if (singleLineTriggers.length > 0) {

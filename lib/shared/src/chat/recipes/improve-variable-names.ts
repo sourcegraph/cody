@@ -15,6 +15,7 @@ export class ImproveVariableNames implements Recipe {
     public title = 'Improve Variable Names'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -33,11 +34,12 @@ export class ImproveVariableNames implements Recipe {
         const assistantResponsePrefix = `Here is the improved code:\n\`\`\`${extension}\n`
 
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
+            { speaker: 'human', text: promptMessage, displayText, source },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
+                source,
             },
             getContextMessagesFromSelection(
                 truncatedSelectedText,

@@ -91,7 +91,7 @@ export class InlineChatViewProvider extends MessageProvider {
          */
         await this.editor.controllers.inline?.chat(reply, this.thread, isEditMode)
         this.editor.controllers.inline?.setResponsePending(true)
-        await this.executeRecipe('inline-chat', reply.trimStart())
+        await this.executeRecipe('inline-chat', reply.trimStart(), 'inline-chat')
     }
 
     public removeChat(): void {
@@ -148,9 +148,5 @@ export class InlineChatViewProvider extends MessageProvider {
 
     protected handleCodyCommands(): void {
         // my prompts not yet implemented for inline chat
-    }
-
-    protected handleTranscriptErrors(): void {
-        // handle transcript errors not yet implemented for inline chat
     }
 }

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, loggedV2Events, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -87,4 +87,13 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.getByRole('button', { name: 'Fixups Section' }).click()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
+    await expect
+        .poll(() => loggedV2Events)
+        .toEqual([
+            'cody.auth/failed',
+            'cody.auth/connected',
+            'cody.command.edit/executed',
+            'cody.recipe.fixup/executed',
+            'cody.fixup.apply/succeeded',
+        ])
 })

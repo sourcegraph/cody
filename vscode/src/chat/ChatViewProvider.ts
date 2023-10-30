@@ -9,8 +9,9 @@ import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { MessageProvider, MessageProviderOptions } from './MessageProvider'
+import { MessageErrorType, MessageProvider, MessageProviderOptions } from './MessageProvider'
 import {
     APP_LANDING_URL,
     APP_REPOSITORIES_URL,
@@ -59,11 +60,17 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
-                telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
+                telemetryService.log(
+                    'CodyVSCodeExtension:abortButton:clicked',
+                    { source: 'sidebar' },
+                    { hasV2Event: true }
+                )
+                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
@@ -74,7 +81,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
                     const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
+                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`, undefined, { hasV2Event: true }) // TODO(sqs): remove when new events are working
+                    telemetryRecorder.recordEvent(`cody.${value}`, 'clicked')
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -124,7 +132,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
                 break
             case 'openFile':
                 await this.openFilePath(message.filePath)
@@ -171,7 +180,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 }
                 break
             default:
-                this.handleError('Invalid request type from Webview')
+                this.handleError('Invalid request type from Webview', 'system')
         }
     }
 
@@ -203,7 +212,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
         if (text === '/') {
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
@@ -213,14 +222,14 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeRecipe('chat-question', text)
+        await this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
+        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
@@ -237,13 +246,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             messages: transcript,
             isMessageInProgress,
         })
-    }
-
-    /**
-     * Send transcript error to webview
-     */
-    protected handleTranscriptErrors(transcriptError: boolean): void {
-        void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: transcriptError })
     }
 
     protected handleSuggestions(suggestions: string[]): void {
@@ -264,10 +266,15 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Display error message in webview view as banner in chat view
-     * It does not display error message as assistant response
+     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string): void {
+    public handleError(errorMsg: string, type: MessageErrorType): void {
+        if (type === 'transcript') {
+            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
@@ -280,7 +287,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
-            this.handleError('No editor or selection found to insert text')
+            this.handleError('No editor or selection found to insert text', 'system')
             return
         }
 
@@ -309,7 +316,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     /**
      * Handles copying code and detecting a paste event.
-     *
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */
@@ -407,7 +413,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     protected async openFilePath(filePath: string): Promise<void> {
         const rootUri = this.editor.getWorkspaceRootUri()
         if (!rootUri) {
-            this.handleError('Failed to open file: missing rootUri')
+            this.handleError('Failed to open file: missing rootUri', 'system')
             return
         }
         try {
