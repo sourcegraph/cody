@@ -11,7 +11,7 @@ import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { MessageProvider, MessageProviderOptions } from './MessageProvider'
+import { MessageErrorType, MessageProvider, MessageProviderOptions } from './MessageProvider'
 import {
     APP_LANDING_URL,
     APP_REPOSITORIES_URL,
@@ -180,7 +180,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 }
                 break
             default:
-                this.handleError('Invalid request type from Webview')
+                this.handleError('Invalid request type from Webview', 'system')
         }
     }
 
@@ -248,13 +248,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         })
     }
 
-    /**
-     * Send transcript error to webview
-     */
-    protected handleTranscriptErrors(transcriptError: boolean): void {
-        void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: transcriptError })
-    }
-
     protected handleSuggestions(suggestions: string[]): void {
         void this.webview?.postMessage({
             type: 'suggestions',
@@ -273,10 +266,15 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Display error message in webview view as banner in chat view
-     * It does not display error message as assistant response
+     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string): void {
+    public handleError(errorMsg: string, type: MessageErrorType): void {
+        if (type === 'transcript') {
+            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
@@ -289,7 +287,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
-            this.handleError('No editor or selection found to insert text')
+            this.handleError('No editor or selection found to insert text', 'system')
             return
         }
 
@@ -415,7 +413,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     protected async openFilePath(filePath: string): Promise<void> {
         const rootUri = this.editor.getWorkspaceRootUri()
         if (!rootUri) {
-            this.handleError('Failed to open file: missing rootUri')
+            this.handleError('Failed to open file: missing rootUri', 'system')
             return
         }
         try {
