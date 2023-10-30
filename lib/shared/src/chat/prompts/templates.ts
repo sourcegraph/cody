@@ -1,8 +1,7 @@
-const instruction_prompt = `Please follow these rules when answering my questions:
-- Your answers and suggestions should based on the shared context only.
-- Do not suggest anything that would break the working code.
-- Do not make any assumptions and provide any misleading or hypothetical examples.
-- All generated code should be full workable code.
+const instruction_prompt = `Follow these rules when answering my questions:
+- Your response should based on the shared context only.
+- Do not suggest anything that would break any shared code.
+- All generated code must be full workable code.
 
 <questions>{humanInput}</questions>
 `

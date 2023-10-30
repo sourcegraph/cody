@@ -1,5 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
+import { TelemetryEventInput } from '@sourcegraph/telemetry'
+
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
@@ -20,6 +22,7 @@ import {
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
@@ -212,6 +215,7 @@ export function setUserAgent(newUseragent: string): void {
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
+    public anonymousUserID: string | undefined
 
     /**
      * Should be set on extension activation via `localStorage.onConfigurationChange(config)`
@@ -236,6 +240,14 @@ export class SourcegraphGraphQLAPIClient {
         this._config = newConfig
     }
 
+    /**
+     * If set, anonymousUID is trasmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
+     * which is automatically picked up by Sourcegraph backends 5.2+
+     */
+    public setAnonymousUserID(anonymousUID: string): void {
+        this.anonymousUserID = anonymousUID
+    }
+
     public isDotCom(): boolean {
         return isDotCom(this.config.serverEndpoint)
     }
@@ -253,12 +265,7 @@ export class SourcegraphGraphQLAPIClient {
     public async getSiteVersion(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
             response =>
-                extractDataOrError(
-                    response,
-                    data =>
-                        // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
-                        data.site?.productVersion ?? new Error('site version not found')
-                )
+                extractDataOrError(response, data => data.site?.productVersion ?? new Error('site version not found'))
         )
     }
 
@@ -416,16 +423,61 @@ export class SourcegraphGraphQLAPIClient {
         return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
-    public async logEvent(event: event): Promise<LogEventResponse | Error> {
+    /**
+     * recordTelemetryEvents uses the new Telemetry API to record events that
+     * gets exported: https://docs.sourcegraph.com/dev/background-information/telemetry
+     *
+     * Only available on Sourcegraph 5.2.0 and later.
+     */
+    public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
+            events,
+        })
+        return extractDataOrError(initialResponse, data => data)
+    }
+
+    /**
+     * logEvent is the legacy event-logging mechanism.
+     */
+    public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
         if (this.config?.telemetryLevel === 'off') {
             return {}
         }
+        /**
+         * If connected to dotcom, just log events to the instance, as it means
+         * the same thing.
+         */
         if (this.isDotCom()) {
             return this.sendEventLogRequestToAPI(event)
         }
+
+        switch (mode) {
+            /**
+             * Only log events to dotcom, not the connected instance. Used when
+             * another mechanism delivers event logs the instance (i.e. the
+             * new telemetry clients)
+             */
+            case 'dotcom-only':
+                return this.sendEventLogRequestToDotComAPI(event)
+
+            /**
+             * Only log events to the connected instance, not dotcom. Used when
+             * another mechanism handles reporting to dotcom (i.e. the old
+             * client and/or the new telemetry framework, which exports events
+             * from all instances: https://docs.sourcegraph.com/dev/background-information/telemetry)
+             */
+            case 'connected-instance-only':
+                return this.sendEventLogRequestToAPI(event)
+
+            case 'all': // continue to default handling
+        }
+
+        /**
+         * Otherwise, send events to the connected instance AND to dotcom (default)
+         */
         const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
             this.sendEventLogRequestToDotComAPI(event),
@@ -555,6 +607,8 @@ export class SourcegraphGraphQLAPIClient {
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
+        } else if (this.anonymousUserID) {
+            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
         addCustomUserAgent(headers)
 
@@ -566,7 +620,9 @@ export class SourcegraphGraphQLAPIClient {
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
-            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`))
+            .catch(error => {
+                return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
+            })
     }
 
     // make an anonymous request to the dotcom API
@@ -609,12 +665,18 @@ export class SourcegraphGraphQLAPIClient {
  */
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
-function verifyResponseCode(response: Response): Response {
+async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {
-        throw new Error(`HTTP status code: ${response.status}`)
+        const body = await response.text()
+        throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)
     }
     return response
 }
 
 class RepoNotFoundError extends Error {}
 export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
+
+export type LogEventMode =
+    | 'dotcom-only' // only log to dotcom
+    | 'connected-instance-only' // only log to the connected instance
+    | 'all' // log to both dotcom AND the connected instance

@@ -12,6 +12,7 @@ export class TranslateToLanguage implements Recipe {
     public static options = languageNames
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -34,11 +35,12 @@ export class TranslateToLanguage implements Recipe {
         const assistantResponsePrefix = `Here is the code translated to ${toLanguage}:\n\`\`\`${markdownID}\n`
 
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
+            { speaker: 'human', text: promptMessage, displayText, source },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
+                source,
             },
             Promise.resolve([]),
             []

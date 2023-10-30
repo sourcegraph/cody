@@ -130,7 +130,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
      * Otherwise tries to get the folding range containing the cursor position.
      *
      * Returns null if no selection can be determined.
-     *
      * @returns The smart selection for the active editor, or null if none can be determined.
      */
     public async getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
@@ -139,7 +138,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             return null
         }
         const selection = activeEditor.selection
-        if (!selection?.start.line) {
+        if (!selection.start) {
             return null
         }
 

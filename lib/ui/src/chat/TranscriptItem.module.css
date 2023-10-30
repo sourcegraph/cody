@@ -53,6 +53,30 @@
     overflow-x: auto;
 }
 
+.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
+    margin: 1.2em 0;
+}
+
+.content h1 {
+    font-size: 1.15em;
+    font-weight: 700;
+}
+
+.content h2 {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.content h3 {
+    font-size: inherit;
+    font-weight: 700;
+}
+
+.content h4, .content h5, .content h6 {
+    font-size: inherit;
+    font-weight: 600;
+}
+
 .content > div:first-child > *:first-child {
     margin-top: 0;
 }

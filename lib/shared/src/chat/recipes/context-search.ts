@@ -30,6 +30,7 @@ export class ContextSearch implements Recipe {
     public title = 'Codebase Context Search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const query =
             humanChatInput?.replace(/^\/s(earch)?(\s)?/i, '') ||
             (await context.editor.showInputBox('Enter your search query here...')) ||
@@ -39,7 +40,6 @@ export class ContextSearch implements Recipe {
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
         const workspaceRootUri = context.editor.getWorkspaceRootUri()
-        const source = this.id
         return new Interaction(
             {
                 speaker: 'human',

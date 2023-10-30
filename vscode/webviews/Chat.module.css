@@ -27,16 +27,16 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     background-color: var(--vscode-sideBar-foreground, currentColor);
 }
 
+.transcript-item code, .transcript-item pre {
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+}
+
 .transcript-item pre,
-.transcript-item span > code,
-.transcript-item p > code,
 .transcript-item pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--vscode-editor-background);
     color: var(--vscode-editor-foreground);
-    font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
-
     margin-bottom: 0;
 }
 
@@ -44,29 +44,14 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     border-style: solid;
     border-width: 1px;
     border-color: var(--vscode-sideBarSectionHeader-border);
-
     border-bottom: none;
 }
 
 body[data-vscode-theme-kind='vscode-light'] .transcript-item pre,
-body[data-vscode-theme-kind='vscode-light'] .transcript-item span > code,
-body[data-vscode-theme-kind='vscode-light'] .transcript-item p > code,
 body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
     color: var(--code-foreground);
-    font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
-
-    margin-bottom: 0;
-}
-
-body[data-vscode-theme-kind='vscode-light'] .transcript-item pre {
-    border-style: solid;
-    border-width: 1px;
-    border-color: var(--vscode-sideBarSectionHeader-border);
-
-    border-bottom: none;
 }
 
 .transcript-item ul:not(.transcript-action *),
