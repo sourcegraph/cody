@@ -55,7 +55,8 @@ export class AutocompleteItem extends vscode.InlineCompletionItem {
 
     /**
      * The range needed for tracking the completion after inserting. This is needed because the
-     * insert range might overlap with content that is already in the document.
+     * actual insert range might overlap with content that is already in the document since we set
+     * it to always start with the current line beginning in VS Code.
      *
      * TODO: Remove the need for making having this typed as undefined.
      */
@@ -98,7 +99,7 @@ interface AutocompleteInlineAcceptedCommandArgs {
 // request ID that this completion was associated with and allows our agent backend to track
 // completions with a single ID (VS Code uses the completion result item object reference as an ID
 // but since the agent uses a JSON RPC bridge, the object reference is no longer known later).
-const suggestedCompletionItemIDs = new LRUCache<CompletionItemID, CompletionLogID>({
+const suggestedCompletionItemIDs = new LRUCache<CompletionItemID, AutocompleteItem>({
     max: 60,
 })
 
@@ -459,7 +460,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // Store the log ID for each completion item so that we can later map to the selected
             // item from the ID alone
             for (const item of items) {
-                suggestedCompletionItemIDs.set(item.id, result.logId)
+                suggestedCompletionItemIDs.set(item.id, item)
             }
 
             if (items.length > 0) {
@@ -492,8 +493,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * action inside the `AutocompleteItem`. Agent needs to call this callback manually.
      */
     public handleDidAcceptCompletionItem(
-        completion: Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
+        completionOrItemId:
+            | Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
+            | CompletionItemID
     ): void {
+        const completion =
+            typeof completionOrItemId === 'string'
+                ? suggestedCompletionItemIDs.get(completionOrItemId)
+                : completionOrItemId
+        if (!completion) {
+            return
+        }
+
         resetLatency()
 
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
@@ -545,7 +556,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * Called when a suggestion is shown. This API is inspired by the proposed VS Code API of the
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
-    public unstable_handleDidShowCompletionItem(completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>): void {
+    public unstable_handleDidShowCompletionItem(
+        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem'> | CompletionItemID
+    ): void {
+        const completion =
+            typeof completionOrItemId === 'string'
+                ? suggestedCompletionItemIDs.get(completionOrItemId)
+                : completionOrItemId
+        if (!completion) {
+            return
+        }
         CompletionLogger.suggested(completion.logId, completion.analyticsItem)
     }
 
@@ -554,7 +574,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * Code API of the same name, it's prefixed with `unstable_` to avoid a clash when the new API
      * goes GA.
      */
-    public unstable_handleDidPartiallyAcceptCompletionItem(
+    private unstable_handleDidPartiallyAcceptCompletionItem(
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
