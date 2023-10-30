@@ -297,13 +297,6 @@ tasks {
             .joinToString("\n")
             .run { markdownToHTML(this) },
     )
-
-    // Get the latest available change notes from the changelog file
-    changeNotes.set(
-        provider {
-          changelog.run { getOrNull(properties("pluginVersion")) ?: getLatest() }.toHTML()
-        },
-    )
   }
 
   buildPlugin {
@@ -367,7 +360,6 @@ tasks {
   }
 
   publishPlugin {
-    dependsOn("patchChangelog")
     token.set(System.getenv("PUBLISH_TOKEN"))
     // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels,
     // like 2.1.7-nightly

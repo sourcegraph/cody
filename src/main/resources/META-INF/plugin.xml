@@ -2,6 +2,7 @@
     <id>com.sourcegraph.jetbrains</id>
     <name>Sourcegraph Cody + Code Search</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
+    <change-notes><![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
 
     <!--
         See https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html
