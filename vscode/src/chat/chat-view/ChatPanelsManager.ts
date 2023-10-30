@@ -128,12 +128,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string, source?: ChatEventSource): Promise<void> {
         logDebug('ChatPanelsManager:executeRecipe', recipeId)
 
-        if (!vscode.window.visibleTextEditors.length) {
-            // display a error notification
-            void vscode.window.showErrorMessage('Please open a file before executing a command.')
-            return
-        }
-
         // Run command in a new webview to avoid conflicts with context from exisiting chat
         // Only applies when commands are run outside of chat input box
         const chatProvider = await this.getChatPanel()

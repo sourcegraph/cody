@@ -170,18 +170,12 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Update chat history in Tree View
      */
-    protected handleHistory(history: UserLocalHistory): void {
-        // this.treeView.updateTree(createCodyChatTreeItems(history))
-        if (history) {
-            console.log('hi')
+    protected handleHistory(userHistory?: UserLocalHistory): void {
+        const history = userHistory || {
+            chat: MessageProvider.chatHistory,
+            input: MessageProvider.inputHistory,
         }
-
-        this.treeView.updateTree(
-            createCodyChatTreeItems({
-                chat: MessageProvider.chatHistory,
-                input: MessageProvider.inputHistory,
-            })
-        )
+        this.treeView.updateTree(createCodyChatTreeItems(history))
     }
 
     /**

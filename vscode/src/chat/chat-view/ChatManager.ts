@@ -89,12 +89,21 @@ export class ChatManager implements vscode.Disposable {
         source?: ChatEventSource
     ): Promise<void> {
         logDebug('ChatManager:executeRecipe:called', recipeId)
-        if (openChatView) {
-            await this.sidebarChat.setWebviewView('chat')
+        if (!this.chatPanelsManager) {
+            if (openChatView) {
+                await this.sidebarChat.setWebviewView('chat')
+            }
+            await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
+            return
+        }
+
+        if (!vscode.window.visibleTextEditors.length) {
+            void vscode.window.showErrorMessage('Please open a file before running a command.')
+            return
         }
 
         // If chat view is not needed, run the recipe via sidebar chat
-        if (!openChatView || !this.chatPanelsManager) {
+        if (!openChatView) {
             await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
             return
         }
