@@ -23,6 +23,7 @@ import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
@@ -176,6 +177,17 @@ const register = async (
         })
     )
 
+    if (symfRunner) {
+        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        searchViewProvider.registerCommands()
+        disposables.push(searchViewProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+    }
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener((authStatus: AuthStatus) => {
         void chatManager.syncAuthStatus(authStatus)
@@ -184,7 +196,7 @@ const register = async (
                 .then(token => {
                     symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
                 })
-                .catch(() => {})
+                .catch(() => { })
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
@@ -492,7 +504,7 @@ const register = async (
                     if (config.isRunningInsideAgent) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                            'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                         )
                     }
                     return

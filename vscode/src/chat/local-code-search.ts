@@ -82,13 +82,6 @@ export class LocalIndexedKeywordSearch implements Recipe {
             return 'Open a workspace folder to determine the search scope'
         }
 
-        const whenReady = (): void => {
-            void vscode.window.showInformationMessage('Cody local index ready. Type "/symf" in the sidebar.')
-        }
-        if (!(await symf.getIndexReady(scopeDir, whenReady))) {
-            return 'Index is still building, try again in a few minutes. An alert will notify when the index is ready.'
-        }
-
         const results = await symf.getResults(text, scopeDir)
         const groupedResults = groupByFile(results)
         const resultsHTML = await htmlForResultGroups(groupedResults)
