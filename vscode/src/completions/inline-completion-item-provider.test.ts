@@ -9,13 +9,11 @@ import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
-import { getCurrentDocContext } from './get-current-doc-context'
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { CompletionLogID } from './logger'
 import { createProviderConfig } from './providers/anthropic'
-import { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
 
@@ -83,19 +81,16 @@ describe('InlineCompletionItemProvider', () => {
         const provider = new MockableInlineCompletionItemProvider(fn)
         const result = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
         expect(result).not.toBeNull()
-        expect(result!.items).toMatchInlineSnapshot(`
+        expect(result!.items.map(item => item.range)).toMatchInlineSnapshot(`
           [
-            InlineCompletionItem {
-              "insertText": "const foo = test",
-              "range": Range {
-                "end": Position {
-                  "character": 12,
-                  "line": 0,
-                },
-                "start": Position {
-                  "character": 0,
-                  "line": 0,
-                },
+            Range {
+              "end": Position {
+                "character": 12,
+                "line": 0,
+              },
+              "start": Position {
+                "character": 0,
+                "line": 0,
               },
             },
           ]
@@ -205,20 +200,8 @@ describe('InlineCompletionItemProvider', () => {
             localStorageData = {}
         })
 
-        it('triggers notice the first time an inline complation is accepted', async () => {
+        it('triggers notice the first time an inline completion is accepted', async () => {
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
-            const requestParams: RequestParams = {
-                document,
-                position,
-                docContext: getCurrentDocContext({
-                    document,
-                    position,
-                    maxSuffixLength: 100,
-                    maxPrefixLength: 100,
-                    enableExtendedTriggers: true,
-                }),
-                selectedCompletionInfo: undefined,
-            }
 
             const logId = '1' as CompletionLogID
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
@@ -235,16 +218,16 @@ describe('InlineCompletionItemProvider', () => {
             expect(completions).not.toBeNull()
             expect(completions?.items).not.toHaveLength(0)
 
-            // Shuldn't have been called yet.
+            // Shouldn't have been called yet.
             expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
-            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
             expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
-            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
         })
 
@@ -255,18 +238,6 @@ describe('InlineCompletionItemProvider', () => {
             })
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
-            const requestParams: RequestParams = {
-                document,
-                position,
-                docContext: getCurrentDocContext({
-                    document,
-                    position,
-                    maxSuffixLength: 100,
-                    maxPrefixLength: 100,
-                    enableExtendedTriggers: true,
-                }),
-                selectedCompletionInfo: undefined,
-            }
 
             const logId = '1' as CompletionLogID
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
@@ -284,7 +255,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(completions?.items).not.toHaveLength(0)
 
             // Accepting completion should not have triggered the notice.
-            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).not.toHaveBeenCalled()
         })
     })
@@ -488,17 +459,17 @@ describe('InlineCompletionItemProvider', () => {
                     }),
                 })
             )
-            expect(items?.items).toMatchInlineSnapshot(`
+            expect(items?.items.map(item => item.analyticsItem)).toMatchInlineSnapshot(`
               [
-                InlineCompletionItem {
-                  "insertText": "    console.log('hello world!')",
+                {
+                  "insertText": "log('hello world!')",
                   "range": Range {
                     "end": Position {
                       "character": 12,
                       "line": 1,
                     },
                     "start": Position {
-                      "character": 0,
+                      "character": 12,
                       "line": 1,
                     },
                   },

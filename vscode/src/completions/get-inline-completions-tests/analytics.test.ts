@@ -135,6 +135,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-infill",
+                  "source": "Network",
                   "triggerKind": "Automatic",
                   "type": "inline",
                 },

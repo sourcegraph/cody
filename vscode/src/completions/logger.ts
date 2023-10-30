@@ -107,7 +107,6 @@ export interface ItemPostProcessingInfo {
 }
 
 interface CompletionItemInfo extends ItemPostProcessingInfo {
-    id: CompletionItemID
     lineCount: number
     charCount: number
     stopReason?: string

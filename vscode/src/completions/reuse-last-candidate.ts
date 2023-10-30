@@ -88,18 +88,24 @@ export function reuseLastCandidate({
                 // completion. We mark this as an accepted completion.
                 if (remaining.length === 0) {
                     didAcceptCompletion = true
-                    handleDidAcceptCompletionItem?.(
-                        lastCandidate.result.logId,
-                        item,
-                        getRequestParamsFromLastCandidate(document, lastCandidate)
-                    )
+                    handleDidAcceptCompletionItem?.({
+                        requestParams: getRequestParamsFromLastCandidate(document, lastCandidate),
+                        logId: lastCandidate.result.logId,
+                        analyticsItem: item,
+                    })
                     return undefined
                 }
 
                 // Detect partial acceptance of the last candidate
                 const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefixInDocument.length
                 if (isPartialAcceptance(item.insertText, acceptedLength)) {
-                    handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
+                    handleDidPartiallyAcceptCompletionItem?.(
+                        {
+                            logId: lastCandidate.result.logId,
+                            analyticsItem: item,
+                        },
+                        acceptedLength
+                    )
                 }
 
                 return { ...item, insertText: remaining }

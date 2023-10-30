@@ -465,7 +465,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(result.logId, result.items[0])
+                    this.unstable_handleDidShowCompletionItem(items[0])
                 }
             } else {
                 CompletionLogger.noResponse(result.logId)
@@ -501,7 +501,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Remove the completion from the network cache
         this.requestManager.removeFromCache(completion.requestParams)
 
-        this.handleFirstCompletionOnboardingNotices(request)
+        this.handleFirstCompletionOnboardingNotices(completion.requestParams)
 
         CompletionLogger.accepted(completion.logId, completion.requestParams.document, completion.analyticsItem)
     }
