@@ -92,6 +92,7 @@ export function reuseLastCandidate({
                         requestParams: getRequestParamsFromLastCandidate(document, lastCandidate),
                         logId: lastCandidate.result.logId,
                         analyticsItem: item,
+                        trackedRange: item.range,
                     })
                     return undefined
                 }

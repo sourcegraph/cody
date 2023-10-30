@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { telemetryService } from '../services/telemetry'
+import { range } from '../testutils/textDocument'
 
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -50,7 +51,7 @@ describe('logger', () => {
         CompletionLogger.networkRequestStarted(id, { strategy: 'fake', duration: 0.1337 })
         CompletionLogger.loaded(id, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
         CompletionLogger.suggested(id, item)
-        CompletionLogger.accepted(id, document, item)
+        CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0))
 
         const shared = {
             id: expect.any(String),
@@ -122,7 +123,7 @@ describe('logger', () => {
         CompletionLogger.networkRequestStarted(id2, { strategy: 'fake', duration: 0 })
         CompletionLogger.loaded(id2, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
         CompletionLogger.suggested(id2, item)
-        CompletionLogger.accepted(id2, document, item)
+        CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0))
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)

@@ -56,8 +56,10 @@ export class AutocompleteItem extends vscode.InlineCompletionItem {
     /**
      * The range needed for tracking the completion after inserting. This is needed because the
      * insert range might overlap with content that is already in the document.
+     *
+     * TODO: Remove the need for making having this typed as undefined.
      */
-    public trackedRange: vscode.Range
+    public trackedRange: vscode.Range | undefined
 
     /**
      * The request params used to fetch the completion item.
@@ -490,7 +492,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * action inside the `AutocompleteItem`. Agent needs to call this callback manually.
      */
     public handleDidAcceptCompletionItem(
-        completion: Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem'>
+        completion: Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
     ): void {
         resetLatency()
 
@@ -503,7 +505,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         this.handleFirstCompletionOnboardingNotices(completion.requestParams)
 
-        CompletionLogger.accepted(completion.logId, completion.requestParams.document, completion.analyticsItem)
+        CompletionLogger.accepted(
+            completion.logId,
+            completion.requestParams.document,
+            completion.analyticsItem,
+            completion.trackedRange
+        )
     }
 
     /**

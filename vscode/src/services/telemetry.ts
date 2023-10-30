@@ -15,7 +15,7 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-export const extensionDetails: ExtensionDetails = {
+export const vscodeExtensionDetails: ExtensionDetails = {
     ide: 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
@@ -47,7 +47,7 @@ export async function createOrUpdateEventLogger(
     const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
-        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
+        eventLogger = new EventLogger(serverEndpoint, vscodeExtensionDetails, config)
         if (created) {
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
@@ -59,7 +59,7 @@ export async function createOrUpdateEventLogger(
         }
         return
     }
-    eventLogger?.onConfigurationChange(serverEndpoint, extensionDetails, config)
+    eventLogger?.onConfigurationChange(serverEndpoint, vscodeExtensionDetails, config)
 }
 
 /**
@@ -68,8 +68,8 @@ export async function createOrUpdateEventLogger(
  * DEPRECATED: Callsites should ALSO record an event using services/telemetry-v2
  * as well and indicate this has happened, for example:
  *
- *   logEvent(name, properties, { hasV2Event: true })
- *   telemetryRecorder.recordEvent(...)
+ * logEvent(name, properties, { hasV2Event: true })
+ * telemetryRecorder.recordEvent(...)
  *
  * In the future, all usages of TelemetryService will be removed in
  * favour of the new libraries. For more information, see:
@@ -78,7 +78,6 @@ export async function createOrUpdateEventLogger(
  * PRIVACY: Do NOT include any potentially private information in `properties`. These properties may
  * get sent to analytics tools, so must not include private information, such as search queries or
  * repository names.
- *
  * @param eventName The name of the event.
  * @param properties Event properties. Do NOT include any private information, such as full URLs
  * that may contain private repository names or search queries.

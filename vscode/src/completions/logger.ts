@@ -263,7 +263,8 @@ export function suggested(id: CompletionLogID, completion: InlineCompletionItem)
 export function accepted(
     id: CompletionLogID,
     document: vscode.TextDocument,
-    completion: InlineCompletionItemWithAnalytics
+    completion: InlineCompletionItemWithAnalytics,
+    trackedRange: vscode.Range | undefined
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
@@ -322,10 +323,19 @@ export function accepted(
     })
     statistics.logAccepted()
 
+    if (trackedRange === undefined) {
+        return
+    }
     if (persistenceTracker === null) {
         persistenceTracker = new PersistenceTracker()
     }
-    persistenceTracker.track({ id: completionEvent.params.id, insertedAt: Date.now(), completion, document })
+    persistenceTracker.track({
+        id: completionEvent.params.id,
+        insertedAt: Date.now(),
+        insertText: completion.insertText,
+        insertRange: trackedRange,
+        document,
+    })
 }
 
 export function partiallyAccept(

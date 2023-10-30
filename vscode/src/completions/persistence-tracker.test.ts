@@ -41,14 +41,16 @@ describe('PersistenceTracker', () => {
     })
 
     it('tracks completions over time when there are no document changes', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         const sharedArgs = {
             id: '123',
@@ -83,14 +85,16 @@ describe('PersistenceTracker', () => {
     })
 
     it('tracks changes to the document', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         const sharedArgs = {
             id: '123',
@@ -128,14 +132,16 @@ describe('PersistenceTracker', () => {
     })
 
     it('tracks changes after renaming a document', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         const renamedDoc = document('fo0', 'typescript', 'file:///test2.ts')
         onDidRenameFiles({
@@ -172,14 +178,16 @@ describe('PersistenceTracker', () => {
     })
 
     it('gracefully handles file deletions', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         onDidDeleteFiles({ files: [doc.uri] })
 
@@ -188,14 +196,16 @@ describe('PersistenceTracker', () => {
     })
 
     it('tracks the deletion of a range', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         vi.advanceTimersToNextTimer()
         expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:removed', {

@@ -11,7 +11,7 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 import { logDebug } from '../log'
 
 import { localStorage } from './LocalStorageProvider'
-import { extensionDetails } from './telemetry'
+import { vscodeExtensionDetails } from './telemetry'
 
 let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
@@ -94,13 +94,13 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
+        updateGlobalInstances(new MockServerTelemetryRecorderProvider(vscodeExtensionDetails, config, anonymousUserID))
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
     } else {
         updateGlobalInstances(
-            new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
+            new TelemetryRecorderProvider(vscodeExtensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
         )
     }
 

@@ -55,7 +55,7 @@ export interface InlineCompletionsParams {
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
-        completion: Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem'>
+        completion: Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
     ) => void
     handleDidPartiallyAcceptCompletionItem?: (
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
@@ -120,13 +120,13 @@ export enum InlineCompletionsResultSource {
  * via the keyboard shortcut and invoking a completion via hovering over ghost text.
  */
 export enum TriggerKind {
-    /** Completion was triggered explicitly by a user hovering over ghost text. **/
+    /** Completion was triggered explicitly by a user hovering over ghost text. */
     Hover = 'Hover',
 
-    /** Completion was triggered automatically while editing. **/
+    /** Completion was triggered automatically while editing. */
     Automatic = 'Automatic',
 
-    /** Completion was triggered manually by the user invoking the keyboard shortcut. **/
+    /** Completion was triggered manually by the user invoking the keyboard shortcut. */
     Manual = 'Manual',
 
     /** When the user uses the suggest widget to cycle through different completions. */
