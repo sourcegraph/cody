@@ -424,10 +424,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 context
             )
 
-            // A completion that won't be visible in VS Code will not be returned and not be logged.
-            if (
-                !isCompletionVisible(
-                    items,
+            const visibleItems = items.filter(item =>
+                isCompletionVisible(
+                    item,
                     document,
                     position,
                     docContext,
@@ -435,7 +434,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     takeSuggestWidgetSelectionIntoAccount,
                     abortController.signal
                 )
-            ) {
+            )
+
+            // A completion that won't be visible in VS Code will not be returned and not be logged.
+            if (visibleItems.length === 0) {
                 // Returning null will clear any existing suggestions, thus we need to reset the
                 // last candidate.
                 this.lastCandidate = undefined
@@ -454,21 +456,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     lastTriggerSelectedCompletionInfo: context?.selectedCompletionInfo,
                     result,
                 }
-                this.lastCandidate = items.length > 0 ? candidate : undefined
+                this.lastCandidate = visibleItems.length > 0 ? candidate : undefined
             }
 
-            // Store the log ID for each completion item so that we can later map to the selected
-            // item from the ID alone
-            for (const item of items) {
-                suggestedCompletionItemIDs.set(item.id, item)
-            }
+            if (visibleItems.length > 0) {
+                // Store the log ID for each completion item so that we can later map to the selected
+                // item from the ID alone
+                for (const item of visibleItems) {
+                    suggestedCompletionItemIDs.set(item.id, item)
+                }
 
-            if (items.length > 0) {
                 if (!this.config.isRunningInsideAgent) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(items[0])
+                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
                 }
             } else {
                 CompletionLogger.noResponse(result.logId)
@@ -477,7 +479,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
             const completionResult: AutocompleteResult = {
                 logId: result.logId,
-                items,
+                items: visibleItems,
                 completionEvent: CompletionLogger.getCompletionEvent(result.logId),
             }
 
@@ -703,9 +705,9 @@ function processInlineCompletionsForVSCode(
         // come in.
         const start = currentLine.range.start
 
-        // The completion will always exclude the same line suffix, so it has to overwrite the
-        // current same line suffix and reach to the end of the line.
-        const end = currentLine.range.end
+        // If the completion does not have a range set it will always exclude the same line suffix,
+        // so it has to overwrite the current same line suffix and reach to the end of the line.
+        const end = completion.range?.end || currentLine.range.end
 
         const vscodeInsertRange = new vscode.Range(start, end)
         const trackedRange = new vscode.Range(
@@ -745,7 +747,7 @@ function processInlineCompletionsForVSCode(
 }
 
 function isCompletionVisible(
-    completions: AutocompleteItem[],
+    completion: AutocompleteItem,
     document: vscode.TextDocument,
     position: vscode.Position,
     docContext: DocumentContext,
@@ -776,8 +778,8 @@ function isCompletionVisible(
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
-        : completionMatchesPopupItem(completions, position, document, context)
-    const isMatchingSuffix = completionMatchesSuffix(completions, docContext)
+        : completionMatchesPopupItem(completion, position, document, context)
+    const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
 
     return isVisible
@@ -815,7 +817,7 @@ function currentEditorContentMatchesPopupItem(
 //
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
-    completions: AutocompleteItem[],
+    completion: AutocompleteItem,
     position: vscode.Position,
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
@@ -824,44 +826,41 @@ function completionMatchesPopupItem(
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
 
-        if (completions.length > 0) {
-            const visibleCompletion = completions[0]
-            const insertText = visibleCompletion.insertText
-            if (typeof insertText !== 'string') {
-                return true
-            }
+        const insertText = completion.insertText
+        if (typeof insertText !== 'string') {
+            return true
+        }
 
-            // To ensure a good experience, the VS Code insertion might have the range start at the
-            // beginning of the line. When this happens, the insertText needs to be adjusted to only
-            // contain the insertion after the current position.
-            const offset = position.character - (visibleCompletion.range?.start.character ?? position.character)
-            const correctInsertText = insertText.slice(offset)
-            if (!(currentText + correctInsertText).startsWith(selectedText)) {
-                return false
-            }
+        // To ensure a good experience, the VS Code insertion might have the range start at the
+        // beginning of the line. When this happens, the insertText needs to be adjusted to only
+        // contain the insertion after the current position.
+        const offset = position.character - (completion.range?.start.character ?? position.character)
+        const correctInsertText = insertText.slice(offset)
+        if (!(currentText + correctInsertText).startsWith(selectedText)) {
+            return false
         }
     }
     return true
 }
 
-function completionMatchesSuffix(completions: AutocompleteItem[], docContext: DocumentContext): boolean {
-    const suffix = docContext.currentLineSuffix
+export function completionMatchesSuffix(
+    completion: Pick<AutocompleteItem, 'insertText'>,
+    currentLineSuffix: string
+): boolean {
+    if (typeof completion.insertText !== 'string') {
+        return false
+    }
 
-    for (const completion of completions) {
-        if (typeof completion.insertText !== 'string') {
-            continue
+    const insertion = completion.insertText
+    let j = 0
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < insertion.length; i++) {
+        if (insertion[i] === currentLineSuffix[j]) {
+            j++
         }
-        const insertion = completion.insertText
-        let j = 0
-        // eslint-disable-next-line @typescript-eslint/prefer-for-of
-        for (let i = 0; i < insertion.length; i++) {
-            if (insertion[i] === suffix[j]) {
-                j++
-            }
-        }
-        if (j === suffix.length) {
-            return true
-        }
+    }
+    if (j === currentLineSuffix.length) {
+        return true
     }
 
     return false

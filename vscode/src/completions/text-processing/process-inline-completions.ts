@@ -138,14 +138,26 @@ export function getRangeAdjustedForOverlappingCharacters(
     item: InlineCompletionItem,
     { position, currentLineSuffix }: AdjustRangeToOverwriteOverlappingCharactersParams
 ): InlineCompletionItem['range'] {
-    // TODO(sqs): This is a very naive implementation that will not work for many cases. It always
-    // just clobbers the rest of the line.
+    const matchinSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
 
-    if (!item.range && currentLineSuffix !== '') {
-        return new Range(position, position.translate(undefined, currentLineSuffix.length))
+    if (!item.range && currentLineSuffix !== '' && matchinSuffixLength !== 0) {
+        return new Range(position, position.translate(undefined, matchinSuffixLength))
     }
 
     return undefined
+}
+
+export function getMatchingSuffixLength(insertText: string, currentLineSuffix: string): number {
+    let j = 0
+
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < insertText.length; i++) {
+        if (insertText[i] === currentLineSuffix[j]) {
+            j++
+        }
+    }
+
+    return j
 }
 
 function rankCompletions(completions: ParsedCompletion[]): ParsedCompletion[] {

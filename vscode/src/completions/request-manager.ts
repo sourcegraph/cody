@@ -1,5 +1,3 @@
-import { cachedDataVersionTag } from 'node:v8'
-
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
@@ -16,19 +14,19 @@ import { ContextSnippet } from './types'
 import { forkSignal } from './utils'
 
 export interface RequestParams {
-    /** The request's document **/
+    /** The request's document */
     document: vscode.TextDocument
 
-    /** The request's document context **/
+    /** The request's document context */
     docContext: DocumentContext
 
-    /** The state of the completion info box **/
+    /** The state of the completion info box */
     selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
-    /** The cursor position in the source file where the completion request was triggered. **/
+    /** The cursor position in the source file where the completion request was triggered. */
     position: vscode.Position
 
-    /** The abort signal for the request. **/
+    /** The abort signal for the request. */
     abortSignal?: AbortSignal
 }
 

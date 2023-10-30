@@ -5,7 +5,7 @@ import { isError } from '../utils'
 import { TelemetryEventProperties } from '.'
 
 export interface ExtensionDetails {
-    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | 'Agent'
+    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     ideExtensionType: 'Cody' | 'CodeSearch'
     platform: string
     arch?: string

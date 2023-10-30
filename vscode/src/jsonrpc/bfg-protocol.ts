@@ -11,7 +11,7 @@ export type Requests = {
     'bfg/initialize': [{ clientName: string }, { serverVersion: string }]
     'bfg/contextAtPosition': [
         { uri: string; content: string; position: Position; maxChars: number; contextRange?: Range },
-        { symbols: SymbolContextSnippet[]; files: FileContextSnippet[] },
+        { symbols?: SymbolContextSnippet[]; files?: FileContextSnippet[] },
     ]
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]
     'bfg/shutdown': [null, void]
