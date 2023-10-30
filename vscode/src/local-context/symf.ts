@@ -21,11 +21,6 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     // The root of all symf index directories
     private indexRoot: string
 
-    // Which indexes have already been built. Omission does not mean that the index hasn't been built;
-    // it just means we haven't yet checked whether the index directory exists on disk.
-    // Keyed by scope directory (the directory that the index covers).
-    private indicesReady: Map<string, boolean> = new Map()
-
     private indexLocks: Map<string, RWLock> = new Map()
 
     constructor(
@@ -53,7 +48,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             let indexNotFound = false
             const stdout = await this.getIndexLock(scopeDir).withRead(async () => {
                 // Check again if index exists after we have the read lock
-                if (!this.indicesReady.get(scopeDir)) {
+                if (!(await this.unsafeIndexExists(scopeDir))) {
                     indexNotFound = true
                     return ''
                 }
@@ -142,27 +137,24 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             throw new Error(`could not delete index ${indexDir}: target trash directory ${trashDir} already exists`)
         }
 
-        this.indicesReady.set(scopeDir, false)
         await rename(indexDir, trashDir)
         void rm(trashDir, { recursive: true, force: true }) // delete in background
     }
 
+    private async unsafeIndexExists(scopeDir: string): Promise<boolean> {
+        const { indexDir } = this.getIndexDir(scopeDir)
+        return fileExists(path.join(indexDir, 'index.json'))
+    }
+
     private async unsafeEnsureIndex(scopeDir: string): Promise<void> {
-        const readyAlready = this.indicesReady.get(scopeDir)
-        if (readyAlready) {
+        const indexExists = await this.unsafeIndexExists(scopeDir)
+        if (indexExists) {
             return
         }
+
         const { indexDir, tmpDir } = this.getIndexDir(scopeDir)
-
-        const indexFileExists = await fileExists(path.join(indexDir, 'index.json'))
-        if (indexFileExists) {
-            this.indicesReady.set(scopeDir, true)
-            return
-        }
-
         try {
             await this.unsafeUpsertIndex(indexDir, tmpDir, scopeDir)
-            this.indicesReady.set(scopeDir, true)
         } catch (error) {
             logDebug('symf', 'symf index creation failed', error)
             throw error
