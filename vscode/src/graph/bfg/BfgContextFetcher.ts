@@ -113,7 +113,12 @@ export class BfgContextFetcher implements GraphContextFetcher {
             contextRange,
         })
 
-        return [...responses.symbols, ...responses.files]
+        // Just in case, handle non-object results
+        if (typeof responses !== 'object') {
+            return []
+        }
+
+        return [...(responses?.symbols || []), ...(responses?.files || [])]
     }
 
     public dispose(): void {
