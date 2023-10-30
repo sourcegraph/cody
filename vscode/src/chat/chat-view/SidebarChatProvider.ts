@@ -4,14 +4,14 @@ import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { View } from '../../webviews/NavBar'
-import { logDebug } from '../log'
-import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
-import { LocalAppWatcher } from '../services/LocalAppWatcher'
-import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
-
-import { MessageErrorType, MessageProvider, MessageProviderOptions } from './MessageProvider'
+import { View } from '../../../webviews/NavBar'
+import { getActiveEditor } from '../../editor/active-editor'
+import { logDebug } from '../../log'
+import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
+import { LocalAppWatcher } from '../../services/LocalAppWatcher'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
+import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
 import {
     APP_LANDING_URL,
     APP_REPOSITORIES_URL,
@@ -19,21 +19,24 @@ import {
     ExtensionMessage,
     isOsSupportedByApp,
     WebviewMessage,
-} from './protocol'
+} from '../protocol'
 
-export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+import { addWebviewViewHTML } from './ChatManager'
+
+export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-interface ChatViewProviderOptions extends MessageProviderOptions {
+export interface SidebarChatOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
 }
 
-export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
+export class SidebarChatProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
+    public webviewPanel: vscode.WebviewPanel | undefined = undefined
 
-    constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
+    constructor({ extensionUri, ...options }: SidebarChatOptions) {
         super(options)
         this.extensionUri = extensionUri
 
@@ -51,7 +54,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
-                logDebug('ChatViewProvider:onDidReceiveMessage:initialized', '')
+                logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')
+                await this.setWebviewView('chat')
                 await this.init()
                 break
             case 'submit':
@@ -210,7 +214,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
+        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
@@ -230,7 +234,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
-        logDebug('ChatViewProvider:onCustomPromptClicked', title)
+        logDebug('SidebarChatProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }
@@ -284,8 +288,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
     private async handleInsertAtCursor(text: string, source?: string): Promise<void> {
-        const selectionRange = vscode.window.activeTextEditor?.selection
-        const editor = vscode.window.activeTextEditor
+        const selectionRange = getActiveEditor()?.selection
+        const editor = getActiveEditor()
         if (!editor || !selectionRange) {
             this.handleError('No editor or selection found to insert text', 'system')
             return
@@ -382,29 +386,30 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [webviewPath],
             enableCommandUris: true,
         }
 
-        // Create Webview using vscode/index.html
-        const root = vscode.Uri.joinPath(webviewPath, 'index.html')
-        const bytes = await vscode.workspace.fs.readFile(root)
-        const decoded = new TextDecoder('utf-8').decode(bytes)
-        const resources = webviewView.webview.asWebviewUri(webviewPath)
-
-        // Set HTML for webview
-        // This replace variables from the vscode/dist/index.html with webview info
-        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-        // 2. Update URIs for content security policy to only allow specific scripts to be run
-        webviewView.webview.html = decoded
-            .replaceAll('./', `${resources.toString()}/`)
-            .replaceAll('{cspSource}', webviewView.webview.cspSource)
+        await addWebviewViewHTML(this.extensionUri, webviewView)
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Clears the chat history for the given chatID.
+     * If no chatID is provided, clears all chat history.
+     */
+    public async clearChatHistory(chatID?: string): Promise<void> {
+        if (!chatID) {
+            await this.clearAndRestartSession()
+            await this.clearHistory()
+            return
+        }
+        await this.deleteHistory(chatID)
+        return
     }
 
     /**

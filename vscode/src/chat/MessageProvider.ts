@@ -129,13 +129,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
     }
 
-    protected async init(): Promise<void> {
+    protected async init(chatID?: string): Promise<void> {
         this.loadChatHistory()
         this.sendTranscript()
         this.sendHistory()
-        await this.loadRecentChat()
         await this.contextProvider.init()
         await this.sendCodyCommands()
+
+        if (chatID) {
+            await this.restoreSession(chatID)
+        }
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -158,6 +161,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Reset the current transcript
         this.transcript = new Transcript()
         await this.clearAndRestartSession()
+        this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked', undefined, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.messageProvider.clearChatHistoryButton', 'clicked')
     }
@@ -327,11 +331,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         humanChatInput = command?.text
         recipeId = command?.recipeId
 
-        logDebug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
+        logDebug('MessageProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
-            logDebug('ChatViewProvider:executeRecipe', 'no recipe found')
+            logDebug('MessageProvider:executeRecipe', 'no recipe found')
             return
         }
 
@@ -652,6 +656,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
+        this.loadChatHistory()
         const userHistory = {
             chat: MessageProvider.chatHistory,
             input: MessageProvider.inputHistory,
@@ -703,23 +708,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             })
         } catch (error) {
             logError('MessageProvider:exportHistory', 'Failed to export chat history', error)
-        }
-    }
-
-    /**
-     * Loads the most recent chat
-     */
-    private async loadRecentChat(): Promise<void> {
-        const localHistory = localStorage.getChatHistory()
-        if (localHistory) {
-            const chats = localHistory.chat
-            const sortedChats = Object.entries(chats).sort(
-                (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
-            )
-            const chatID = sortedChats[0][0]
-            if (chatID !== this.currentChatID) {
-                await this.restoreSession(chatID)
-            }
         }
     }
 

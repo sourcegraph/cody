@@ -224,14 +224,29 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "visibility": "visible"
+          "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
-          "when": "cody.nonstop.fixups.enabled && cody.activated",
+          "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
           "icon": "cody.svg",
           "contextualTitle": "Fixups"
+        },
+        {
+          "id": "cody.commands.tree.view",
+          "name": "Commands",
+          "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chats",
+          "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "id": "cody.support.tree.view",
+          "name": "Settings & Support",
+          "when": "cody.activated && config.cody.experimental.chatPanel"
         }
       ]
     },
@@ -240,6 +255,11 @@
         "view": "cody.fixup.tree.view",
         "contents": "No pending Cody fixups",
         "when": "cody.nonstop.fixups.enabled && cody.activated"
+      },
+      {
+        "view": "cody.chat.tree.view",
+        "contents": "Chat alongside your code, attach files, add additional context, and try out different LLM providers.\n[New Chat](command:cody.chat.panel.new)\nTo learn more about chat, [read the docs](https://docs.sourcegraph.com/).",
+        "when": "cody.activated"
       }
     ],
     "commands": [
@@ -458,6 +478,38 @@
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
         "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.chat.panel.new",
+        "category": "Cody",
+        "title": "Start a New Chat Session",
+        "when": "cody.activated && config.cody.experimental.chatPanel",
+        "group": "Cody",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cody.chat.history.clear",
+        "category": "Cody",
+        "title": "Delete All Chats",
+        "group": "Cody",
+        "icon": "$(trash)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.delete",
+        "category": "Cody",
+        "title": "Delete Chat",
+        "group": "Cody",
+        "icon": "$(trash)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.export",
+        "category": "Cody",
+        "title": "Export Chats as JSON",
+        "group": "Cody",
+        "icon": "$(arrow-circle-down)",
+        "when": "cody.activated && cody.hasChatHistory"
       }
     ],
     "keybindings": [
@@ -684,6 +736,38 @@
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
+        },
+        {
+          "command": "cody.chat.panel.new",
+          "when": "view == cody.chat.tree.view && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.history.clear",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cody.chat.history.export",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cody.feedback",
+          "when": "view == cody.support.tree.view",
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.welcome",
+          "when": "view == cody.support.tree.view",
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.auth.signin",
+          "when": "view == cody.support.tree.view && cody.activated",
+          "group": "9_cody@0"
         }
       ],
       "editor/title": [
@@ -731,6 +815,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "cody.chat.history.delete",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "group": "inline"
+        },
         {
           "command": "cody.fixup.apply-by-file",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == fsPath",
@@ -960,6 +1049,12 @@
             "bfg"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.experimental.chatPanel": {
+          "order": 100,
+          "type": "boolean",
+          "markdownDescription": "Experimental feature for internal use.",
+          "default": false
         }
       }
     },

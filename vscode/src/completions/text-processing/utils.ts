@@ -18,7 +18,6 @@ export const MULTILINE_STOP_SEQUENCE = '\n\n'
  * Any trailing whitespace is trimmed, but leading whitespace is preserved. Trailing whitespace
  * seems irrelevant to the user experience. Leading whitespace is important, as leading newlines and
  * indentation are relevant.
- *
  * @param completion The raw completion result received from Anthropic
  * @returns the extracted code block
  */
