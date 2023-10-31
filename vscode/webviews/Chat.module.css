@@ -27,7 +27,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     background-color: var(--vscode-sideBar-foreground, currentColor);
 }
 
-.transcript-item code, .transcript-item pre {
+.transcript-item code,
+.transcript-item pre {
     font-family: var(--vscode-editor-font-family);
     font-size: var(--vscode-editor-font-size);
 }
@@ -132,14 +133,6 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .chat-input:focus-within {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
-}
-
-.chat-input-actions {
-    position: absolute;
-    bottom: 6px;
-    left: 4px;
-    /* This is a small detail, but we always want clicks to fall through the textarea if buttons are disabled */
-    pointer-events: none;
 }
 
 .chat-input-actions > * {

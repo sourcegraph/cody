@@ -245,13 +245,6 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         [inputRef, onKeyDown]
     )
 
-    const onTextAreaCommandButtonClick = useCallback((): void => {
-        if (setValue && inputRef?.current?.value === '') {
-            setValue('/')
-            inputRef.current?.focus()
-        }
-    }, [inputRef, setValue])
-
     return (
         <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
             <textarea
@@ -266,18 +259,6 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
             />
-            <div className={styles.chatInputActions}>
-                <VSCodeButton
-                    appearance="icon"
-                    type="button"
-                    className={styles.chatInputCommandButton}
-                    onClick={onTextAreaCommandButtonClick}
-                    disabled={!!value}
-                    title="Commands"
-                >
-                    <i className="codicon codicon-terminal" />
-                </VSCodeButton>
-            </div>
         </div>
     )
 }
@@ -289,7 +270,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
         type="button"
         disabled={disabled}
         onClick={onClick}
-        title="Send Message"
+        title="Submit Message"
     >
         <SubmitSvg />
     </VSCodeButton>
