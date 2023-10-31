@@ -33,7 +33,8 @@ export class ChatQuestion implements Recipe {
                     context.firstInteraction,
                     context.intentDetector,
                     context.codebaseContext,
-                    context.editor.getActiveTextEditorSelection() || null
+                    context.editor.getActiveTextEditorSelection() || null,
+                    context.interactionID
                 ),
                 []
             )
@@ -46,7 +47,8 @@ export class ChatQuestion implements Recipe {
         firstInteraction: boolean,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
-        selection: ActiveTextEditorSelection | null
+        selection: ActiveTextEditorSelection | null,
+        interactionID?: string
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
@@ -60,7 +62,8 @@ export class ChatQuestion implements Recipe {
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
+            const options = { ...numResults, interactionID }
+            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, options)
             contextMessages.push(...codebaseContextMessages)
         }
 

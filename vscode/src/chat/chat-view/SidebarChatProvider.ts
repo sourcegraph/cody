@@ -9,7 +9,6 @@ import { getActiveEditor } from '../../editor/active-editor'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
-import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
 import {
@@ -64,16 +63,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                this.logTelemetryService('CodyVSCodeExtension:editChatButton:clicked')
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
-                telemetryService.log(
-                    'CodyVSCodeExtension:abortButton:clicked',
-                    { source: 'sidebar' },
-                    { hasV2Event: true }
-                )
+                this.logTelemetryService('CodyVSCodeExtension:abortButton:clicked')
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'executeRecipe':
@@ -85,7 +80,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
                     const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`, undefined, { hasV2Event: true }) // TODO(sqs): remove when new events are working
+                    this.logTelemetryService(`CodyVSCodeExtension:${value}:clicked`)
                     telemetryRecorder.recordEvent(`cody.${value}`, 'clicked')
                     break
                 }
@@ -112,7 +107,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.handleCopiedCode(message.text, message.eventType, message.source)
                 break
             case 'event':
-                telemetryService.log(message.eventName, message.properties)
+                this.logTelemetryService(message.eventName, message.properties)
                 break
             case 'history':
                 if (message.action === 'clear') {
@@ -136,7 +131,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, { hasV2Event: true })
+                this.logTelemetryService('CodyVSCodeExtension:authReloadButton:clicked')
                 telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
                 break
             case 'openFile':
@@ -214,27 +209,21 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
-        if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
-        }
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (text === '/') {
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }
         MessageProvider.inputHistory.push(text)
-        if (this.contextProvider.config.experimentalChatPredictions) {
-            void this.runRecipeForSuggestion('next-questions', text)
-        }
-        await this.executeRecipe('chat-question', text, 'chat')
+        const source = submitType === 'suggestion' ? 'suggestion' : 'chat'
+        await this.executeRecipe('chat-question', text, source)
     }
 
     /**
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
-        logDebug('SidebarChatProvider:onCustomPromptClicked', title)
+        this.logTelemetryService('CodyVSCodeExtension:command:customMenu:clicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }

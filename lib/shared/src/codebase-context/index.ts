@@ -23,6 +23,7 @@ import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithRe
 export interface ContextSearchOptions {
     numCodeResults: number
     numTextResults: number
+    interactionID?: string
 }
 
 export class CodebaseContext {
@@ -226,7 +227,11 @@ export class CodebaseContext {
         if (!this.keywords) {
             return []
         }
-        const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
+        const results = await this.keywords.getContext(
+            query,
+            options.numCodeResults + options.numTextResults,
+            options.interactionID
+        )
         return results
     }
 
@@ -234,7 +239,11 @@ export class CodebaseContext {
         if (!this.filenames) {
             return []
         }
-        const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
+        const results = await this.filenames.getContext(
+            query,
+            options.numCodeResults + options.numTextResults,
+            options.interactionID
+        )
         return results
     }
 

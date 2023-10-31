@@ -6,12 +6,12 @@ export interface ContextResult {
 }
 
 export interface KeywordContextFetcher {
-    getContext(query: string, numResults: number): Promise<ContextResult[]>
-    getSearchContext(query: string, numResults: number): Promise<ContextResult[]>
+    getContext(query: string, numResults: number, interactionID?: string): Promise<ContextResult[]>
+    getSearchContext(query: string, numResults: number, interactionID?: string): Promise<ContextResult[]>
 }
 
 export interface FilenameContextFetcher {
-    getContext(query: string, numResults: number): Promise<ContextResult[]>
+    getContext(query: string, numResults: number, interactionID?: string): Promise<ContextResult[]>
 }
 
 export interface Point {

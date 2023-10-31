@@ -6,7 +6,6 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { View } from '../../../webviews/NavBar'
 import { getActiveEditor } from '../../editor/active-editor'
 import { logDebug } from '../../log'
-import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
@@ -53,16 +52,12 @@ export class ChatPanelProvider extends MessageProvider {
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                this.logTelemetryService('CodyVSCodeExtension:editChatButton:clicked')
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
-                telemetryService.log(
-                    'CodyVSCodeExtension:abortButton:clicked',
-                    { source: 'sidebar' },
-                    { hasV2Event: true }
-                )
+                this.logTelemetryService('CodyVSCodeExtension:abortButton:clicked')
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'executeRecipe':
@@ -79,7 +74,7 @@ export class ChatPanelProvider extends MessageProvider {
                 await this.handleCopiedCode(message.text, message.eventType, message.source)
                 break
             case 'event':
-                telemetryService.log(message.eventName, message.properties)
+                this.logTelemetryService(message.eventName, message.properties, false)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -110,25 +105,20 @@ export class ChatPanelProvider extends MessageProvider {
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
-        if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
-        }
         if (text === '/') {
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }
         MessageProvider.inputHistory.push(text)
-        if (this.contextProvider.config.experimentalChatPredictions) {
-            void this.runRecipeForSuggestion('next-questions', text)
-        }
-        await this.executeRecipe('chat-question', text, 'chat')
+        const source = submitType === 'suggestion' ? 'suggestion' : 'chat'
+        await this.executeRecipe('chat-question', text, source)
     }
 
     /**
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked', undefined, { hasV2Event: true })
+        this.logTelemetryService('CodyVSCodeExtension:command:customMenu:clicked')
         logDebug('ChatPanelProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
@@ -390,7 +380,8 @@ export class ChatPanelProvider extends MessageProvider {
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', 'cody.chatPanel', true)
-        telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
+
+        this.logTelemetryService('CodyVSCodeExtension:createWebviewPanel:clicked')
 
         return panel
     }

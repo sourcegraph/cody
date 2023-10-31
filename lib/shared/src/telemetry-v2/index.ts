@@ -68,6 +68,7 @@ export type EventFeature =
     | 'cody.messageProvider.chatResponse.edit'
     | 'cody.messageProvider.chatResponse.explain'
     | 'cody.messageProvider.chatResponse.smell'
+    | 'cody.messageProvider.chatResponse.suggestion'
     | 'cody.messageProvider.chatResponse.reset'
     | 'cody.messageProvider.chatReset'
     | 'cody.messageProvider.clearChatHistoryButton'

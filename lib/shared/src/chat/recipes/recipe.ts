@@ -11,6 +11,7 @@ export interface RecipeContext {
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
     firstInteraction: boolean
+    interactionID?: string
 }
 
 export type RecipeID =

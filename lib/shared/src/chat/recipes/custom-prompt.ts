@@ -107,7 +107,8 @@ export class CustomPrompt implements Recipe {
         codebaseContext: CodebaseContext,
         promptContext: CodyPromptContext,
         selection?: ActiveTextEditorSelection | null,
-        commandOutput?: string | null
+        commandOutput?: string | null,
+        interactionID?: string
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         const workspaceRootUri = editor.getWorkspaceRootUri()
@@ -118,7 +119,8 @@ export class CustomPrompt implements Recipe {
         }
 
         if (promptContext.codebase) {
-            const codebaseMessages = await codebaseContext.getContextMessages(text, numResults)
+            const options = { ...numResults, interactionID }
+            const codebaseMessages = await codebaseContext.getCombinedContextMessages(text, options)
             contextMessages.push(...codebaseMessages)
         }
         if (promptContext.openTabs) {

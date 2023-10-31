@@ -98,13 +98,12 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     /**
      * Returns pieces of context relevant for the given query. Uses a keyword-search-based
      * approach.
-     *
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
      * the most important result appears at the bottom)
      */
-    public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
+    public async getContext(query: string, numResults: number, request_id?: string): Promise<ContextResult[]> {
         const startTime = performance.now()
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
@@ -128,7 +127,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         const searchDuration = performance.now() - startTime
-        telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
+        telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration, request_id })
         logDebug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()
