@@ -229,7 +229,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeRecipe('chat-question', text, 'chat')
+        await this.executeRecipe('custom-prompt', text, 'chat')
     }
 
     /**

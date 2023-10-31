@@ -50,7 +50,7 @@ export class CustomPrompt implements Recipe {
         if (commandRunnerID.startsWith('/ask ')) {
             const text = commandRunnerID.replace('/ask ', '')
             const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
-            const selection = context.editor.getActiveTextEditorSelectionOrVisibleContent()
+            const selection = context.editor.getActiveTextEditorSelection()
             const displayText = getHumanDisplayTextWithFileName(text, selection, workspaceRootUri)
             const contextMessages = this.getAskQuestionContextMessages(
                 truncatedText,
@@ -132,10 +132,6 @@ export class CustomPrompt implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
-        if (!firstInteraction) {
-            return contextMessages
-        }
-
         // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
         // e,g. "hey", "hi", "why", "explain" etc.
         const isTextTooShort = isSingleWord(text)
@@ -160,7 +156,8 @@ export class CustomPrompt implements Recipe {
             }
         }
 
-        if (firstInteraction) {
+        // If no file paths were found, add codebase context
+        if (firstInteraction && !filePaths.length) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
