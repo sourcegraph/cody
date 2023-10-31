@@ -33,7 +33,7 @@ describe('[getInlineCompletions] completion event', () => {
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
         const suggestionId: CompletionLogger.SuggestionID = spy.mock.calls[0][0]
-        const completionEvent = CompletionLogger.getCompletionEvent(suggestionId!)
+        const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)
 
         return omit(completionEvent, [
             'acceptedAt',
@@ -88,7 +88,7 @@ describe('[getInlineCompletions] completion event', () => {
               "multiline": true,
               "multilineMode": "block",
               "providerIdentifier": "anthropic",
-              "providerModel": "claude-instant-infill",
+              "providerModel": "claude-instant-1.2",
               "triggerKind": "Automatic",
               "type": "inline",
             },
@@ -133,7 +133,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multiline": false,
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
-                  "providerModel": "claude-instant-infill",
+                  "providerModel": "claude-instant-1.2",
                   "triggerKind": "Automatic",
                   "type": "inline",
                 },
