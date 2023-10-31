@@ -353,12 +353,12 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes))
     }
 
-    public async getRepoId(repoName: string): Promise<string | Error> {
+    public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
         }).then(response =>
             extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
+                data.repository ? data.repository.id : null
             )
         )
     }
