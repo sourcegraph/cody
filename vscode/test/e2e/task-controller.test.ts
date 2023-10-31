@@ -10,8 +10,6 @@ const expectedOrderedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
-    'CodyVSCodeExtension:fixup:codeLens:clicked',
-    'CodyVSCodeExtension:fixup:codeLens:clicked',
     'CodyVSCodeExtension:fixup:applied',
 ]
 test.beforeEach(() => {
@@ -53,7 +51,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.keyboard.press('Enter')
 
     // Expect to see the fixup instruction in the task tree view
-    await expect(page.getByText('1 fixup, 1 ready')).toBeVisible()
+    await expect(page.getByText('1 fixup, 1 applied')).toBeVisible()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
 
     // Close the file tab and then clicking on the tree item again should open the file again
@@ -69,19 +67,10 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.getByRole('button', { name: 'Show diff for fixup' }).click()
     await expect(page.getByText(/^Cody Fixup Diff View.*/)).toBeVisible()
 
-    // Apply fixup button on Click
+    // Accept fixup button on Click
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
-    await expect(page.getByText('<title>Hello Cody</title>')).toBeVisible()
-    await page.getByRole('button', { name: 'Apply fixup' }).click()
+    await page.getByRole('button', { name: 'Accept fixup' }).click()
     await expect(page.getByText('No pending Cody fixups')).toBeVisible()
-
-    // Close the diff view
-    await page
-        .getByRole('tab', { name: 'index.html, preview' })
-        .getByRole('button', { name: /^Close.*/ })
-        .click()
-    await expect(page.getByText('<title>Hello Cody</title>')).not.toBeVisible()
-    await expect(page.locator('a').filter({ hasText: 'replace hello with goodbye' })).not.toBeVisible()
 
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()

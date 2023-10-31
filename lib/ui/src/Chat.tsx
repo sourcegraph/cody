@@ -290,10 +290,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     const commandsLength = displayCommands?.length
-                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
-                    const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
-                    setSelectedChatCommand(newCommandIndex)
-                    const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
+                    const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex >= commandsLength - 1 ? 0 : curIndex
+                    setSelectedChatCommand(newIndex)
+                    const newInput = displayCommands?.[newIndex]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
                 }
                 // close the chat command suggestions on escape key

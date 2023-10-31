@@ -307,6 +307,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     protected async abortCompletion(): Promise<void> {
+        await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
         await this.multiplexer.notifyTurnComplete()
         await this.onCompletionEnd()

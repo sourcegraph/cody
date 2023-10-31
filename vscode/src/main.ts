@@ -204,7 +204,6 @@ const register = async (
             document?: vscode.TextDocument
             instruction?: string
             range?: vscode.Range
-            auto?: boolean
             insertMode?: boolean
         } = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
@@ -222,7 +221,7 @@ const register = async (
         }
 
         const task = args.instruction?.replace(/^\/edit/, '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode, source)
+            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -306,7 +305,6 @@ const register = async (
                     range?: vscode.Range
                     instruction?: string
                     document?: vscode.TextDocument
-                    auto?: boolean
                     insertMode?: boolean
                 },
                 source?: ChatEventSource
