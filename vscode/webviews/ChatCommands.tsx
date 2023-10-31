@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -15,6 +15,23 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     setSelectedChatCommand,
     onSubmit,
 }) => {
+    const commandRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        const container = commandRef.current?.parentElement
+
+        // If selected command is first, scroll to top. Otherwise, scroll to bottom
+        if (container) {
+            if (selectedChatCommand === chatCommands?.length || selectedChatCommand === 0) {
+                container.scrollTop = 0
+            } else {
+                container.scrollTop = container.scrollHeight - container.clientHeight
+            }
+        }
+
+        commandRef.current?.focus()
+    }, [chatCommands, chatCommands?.length, selectedChatCommand, setFormInput])
+
     const onCommandClick = (slashCommand: string): void => {
         if (!slashCommand) {
             return
@@ -28,6 +45,8 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     if (!commands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
+
+    const currentIndex = selectedChatCommand === chatCommands?.length ? 0 : selectedChatCommand
 
     return (
         <div className={classNames(styles.container)}>
@@ -52,9 +71,10 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                             return (
                                 <React.Fragment key={prompt.slashCommand}>
                                     <button
+                                        ref={currentIndex === i ? commandRef : null}
                                         className={classNames(
                                             styles.commandItem,
-                                            selectedChatCommand === i && styles.selected
+                                            currentIndex === i && styles.selected
                                         )}
                                         onClick={() => onCommandClick(prompt.slashCommand)}
                                         type="button"
