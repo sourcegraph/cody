@@ -10,7 +10,8 @@ import { fileExists } from '../../local-context/download-symf'
 import { logDebug } from '../../log'
 import { getOSArch } from '../../os'
 
-const defaultBfgVersion = '0.1.0'
+// Available releases: https://github.com/sourcegraph/bfg/releases
+const defaultBfgVersion = '5.2.4257'
 
 export async function downloadBfg(context: vscode.ExtensionContext): Promise<string | null> {
     const config = vscode.workspace.getConfiguration()

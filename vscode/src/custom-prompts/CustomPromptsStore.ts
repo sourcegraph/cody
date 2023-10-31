@@ -161,7 +161,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             if (type === 'user') {
                 this.myPromptsJSON = json
             }
-            this.promptSize[type] = this.myPromptsMap.size - 1
+            this.promptSize[type] = this.myPromptsMap.size
         } catch (error) {
             logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
         }

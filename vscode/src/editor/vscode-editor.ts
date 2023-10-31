@@ -16,6 +16,7 @@ import { CommandsController } from '../custom-prompts/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
+import { getActiveEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
@@ -27,11 +28,16 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             CommandsController
         >
     ) {
+        /**
+         * Callback function that calls getActiveEditor() whenever the visible text editors change in VS Code.
+         * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
+         */
+        vscode.window.onDidChangeActiveTextEditor(() => getActiveEditor())
         new EditorCodeLenses()
     }
 
     public get fileName(): string {
-        return vscode.window.activeTextEditor?.document.fileName ?? ''
+        return getActiveEditor()?.document.fileName ?? ''
     }
 
     /** @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead. */
@@ -41,7 +47,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     public getWorkspaceRootUri(): vscode.Uri | null {
-        const uri = vscode.window.activeTextEditor?.document?.uri
+        const uri = getActiveEditor()?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
@@ -63,6 +69,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return {
             content: documentText,
             filePath: documentUri.fsPath,
+            fileUri: documentUri,
             selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
         }
     }
@@ -103,7 +110,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
-        const activeEditor = vscode.window.activeTextEditor
+        const activeEditor = getActiveEditor()
         return activeEditor ?? null
     }
 
