@@ -15,6 +15,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Smart selection not working on the first line of code. [pull/1508](https://github.com/sourcegraph/cody/pull/1508)
 - Adjust a completion range if it does not match the current line suffix. [pull/1507](https://github.com/sourcegraph/cody/pull/1507)
+- Custom Commands: Fix custom command menu not showing for a single custom command. [pull/1532](https://github.com/sourcegraph/cody/pull/1532)
 
 ### Changed
 
