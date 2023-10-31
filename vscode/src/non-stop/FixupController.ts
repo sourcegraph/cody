@@ -62,7 +62,8 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => this.regenerate(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => this.regenerate(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.error', id => this.showError(id))
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -177,10 +178,7 @@ export class FixupController
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
             telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
-            // TODO: Report an error message
-            // task.error = `Cody tried ${task.spinCount} times but failed to edit the file`
-            this.setTaskState(task, CodyTaskState.error)
-            return
+            return this.error(task.id, `Cody tried ${task.spinCount} times but failed to edit the file`)
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
@@ -443,8 +441,28 @@ export class FixupController
         if (!task) {
             return
         }
-        this.setTaskState(task, task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.fixed)
+        this.setTaskState(task, CodyTaskState.fixed)
         this.discard(task)
+    }
+
+    public error(id: taskID, message: string): void {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        task.error = message
+        this.setTaskState(task, CodyTaskState.error)
+    }
+
+    private showError(id: taskID): void {
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error' })
+        const task = this.tasks.get(id)
+        if (!task?.error) {
+            return
+        }
+
+        void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
     }
 
     private discard(task: FixupTask): void {

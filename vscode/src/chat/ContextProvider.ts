@@ -23,7 +23,7 @@ import { secretStorage } from '../services/SecretStorageProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { ChatViewProviderWebview } from './ChatViewProvider'
+import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
 import { GraphContextProvider } from './GraphContextProvider'
 import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
@@ -38,6 +38,7 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
+    | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
@@ -53,7 +54,7 @@ export enum ContextEvent {
 export class ContextProvider implements vscode.Disposable {
     // We fire messages from ContextProvider to the sidebar webview.
     // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
 
     // Fire event to let subscribers know that the configuration has changed
     public configurationChangeEvent = new vscode.EventEmitter<void>()
@@ -196,7 +197,7 @@ export class ContextProvider implements vscode.Disposable {
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selectionRange: editorContext ? editorContext.selectionRange : undefined,
+                    selectionRange: editorContext?.selectionRange,
                     supportsKeyword: true,
                 },
             })

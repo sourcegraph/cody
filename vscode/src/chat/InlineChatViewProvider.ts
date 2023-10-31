@@ -149,8 +149,4 @@ export class InlineChatViewProvider extends MessageProvider {
     protected handleCodyCommands(): void {
         // my prompts not yet implemented for inline chat
     }
-
-    protected handleTranscriptErrors(): void {
-        // handle transcript errors not yet implemented for inline chat
-    }
 }

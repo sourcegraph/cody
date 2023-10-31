@@ -8,7 +8,13 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- [Internal] New experimental Chat View that appears in the editor panel instead of the sidebar when `cody.experimental.chatPanel` is enabled. [pull/1509](https://github.com/sourcegraph/cody/pull/1509)
+- Add completion intent to analytics events. [pull/1457](https://github.com/sourcegraph/cody/pull/1457)
+
 ### Fixed
+
+- Smart selection not working on the first line of code. [pull/1508](https://github.com/sourcegraph/cody/pull/1508)
+- Adjust a completion range if it does not match the current line suffix. [pull/1507](https://github.com/sourcegraph/cody/pull/1507)
 
 ### Changed
 

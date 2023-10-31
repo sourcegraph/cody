@@ -23,6 +23,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteLanguages: { '*': true, scminput: false },
     experimentalCommandLenses: false,
     experimentalEditorTitleCommandIcon: false,
+    experimentalChatPanel: false,
     experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
