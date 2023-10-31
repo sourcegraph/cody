@@ -841,7 +841,6 @@ export class FixupController
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
-        console.log('EXECUTING COMMAND')
         // Show diff between current document and replacement content
         await vscode.commands.executeCommand(
             'vscode.diff',
