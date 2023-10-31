@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '../../codebase-context'
@@ -56,6 +57,7 @@ export class CustomPrompt implements Recipe {
                 truncatedText,
                 context.firstInteraction,
                 context.codebaseContext,
+                workspaceRootUri,
                 selection
             )
 
@@ -110,6 +112,7 @@ export class CustomPrompt implements Recipe {
                       truncatedText,
                       context.firstInteraction,
                       context.codebaseContext,
+                      workspaceRootUri,
                       selection
                   )
                 : this.getContextMessages(
@@ -128,6 +131,7 @@ export class CustomPrompt implements Recipe {
         text: string,
         firstInteraction: boolean,
         codebaseContext: CodebaseContext,
+        workspaceRootUri?: vscode.Uri | null,
         selection?: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
@@ -143,9 +147,9 @@ export class CustomPrompt implements Recipe {
         // Extract file paths from text
         const tags = text.match(/@\S+/g)
         const filePaths: string[] = []
-        if (tags) {
+        if (tags && workspaceRootUri) {
             tags.map(tag => {
-                filePaths.push(tag.slice(1))
+                filePaths.push(vscode.Uri.joinPath(workspaceRootUri, tag.slice(1)).fsPath)
             })
         }
 
