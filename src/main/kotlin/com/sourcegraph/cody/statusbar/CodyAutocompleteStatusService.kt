@@ -6,6 +6,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.config.CodyAccountManager
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.config.ConfigUtil
 import javax.annotation.concurrent.GuardedBy
@@ -39,6 +40,12 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
         synchronized(this) {
           val oldStatus = status
           ApplicationManager.getApplication()
+          val service =
+              ApplicationManager.getApplication().getService(CodyAccountManager::class.java)
+          val token =
+              CodyAuthenticationManager.instance
+                  .getActiveAccount(project)
+                  ?.let(service::findCredentials)
           status =
               if (!ConfigUtil.isCodyEnabled()) {
                 CodyAutocompleteStatus.CodyDisabled
@@ -46,7 +53,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
                 CodyAutocompleteStatus.AutocompleteDisabled
               } else if (!CodyAgent.isConnected(project)) {
                 CodyAutocompleteStatus.CodyAgentNotRunning
-              } else if (CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
+              } else if (token == null) {
                 CodyAutocompleteStatus.CodyNotSignedIn
               } else {
                 CodyAutocompleteStatus.Ready
