@@ -94,14 +94,12 @@ describe('LSPLightGraphCache', () => {
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(0, 0, 0, 19),
-            expect.anything(),
-            0 // no recursion
+            expect.anything()
         )
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(1, 0, 1, 11),
-            expect.anything(),
-            1 // recurse 1 layer
+            expect.anything()
         )
     })
 
@@ -116,14 +114,12 @@ describe('LSPLightGraphCache', () => {
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(0, 0, 0, 19),
-            expect.anything(),
-            0 // no recursion
+            expect.anything()
         )
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(1, 0, 1, 11),
-            expect.anything(),
-            1 // recurse 1 layer
+            expect.anything()
         )
 
         getGraphContextFromRange.mockClear()
@@ -152,14 +148,12 @@ describe('LSPLightGraphCache', () => {
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(0, 0, 0, 19),
-            expect.anything(),
-            0 // no recursion
+            expect.anything()
         )
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(1, 0, 1, 11),
-            expect.anything(),
-            1 // recurse 1 layer
+            expect.anything()
         )
         getGraphContextFromRange.mockClear()
 
@@ -182,8 +176,7 @@ describe('LSPLightGraphCache', () => {
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(0, 0, 0, 19),
-            expect.anything(),
-            0 // no recursion
+            expect.anything()
         )
     })
 
@@ -204,14 +197,12 @@ describe('LSPLightGraphCache', () => {
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(0, 0, 0, 19),
-            expect.anything(),
-            0 // no recursion
+            expect.anything()
         )
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
             range(1, 0, 1, 11),
-            expect.anything(),
-            1 // recurse 1 layer
+            expect.anything()
         )
         getGraphContextFromRange.mockClear()
 
