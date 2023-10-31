@@ -34,6 +34,7 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
+    | { command: 'fileMatch'; text: string }
     | { command: 'insert'; text: string; source?: string }
     | { command: 'newFile'; text: string; source?: string }
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string }
@@ -75,6 +76,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    | { type: 'fileContextMatches'; matches: string[] }
 
 /**
  * The subset of configuration that is visible to the webview.

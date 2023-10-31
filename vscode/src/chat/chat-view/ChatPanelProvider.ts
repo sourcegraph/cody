@@ -47,6 +47,9 @@ export class ChatPanelProvider extends MessageProvider {
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
                 break
+            case 'fileMatch':
+                await this.handleFileMatchFinder(message.text)
+                break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
@@ -121,7 +124,7 @@ export class ChatPanelProvider extends MessageProvider {
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeRecipe('chat-question', text, 'chat')
+        await this.executeRecipe('custom-prompt', text, 'chat')
     }
 
     /**
@@ -151,6 +154,14 @@ export class ChatPanelProvider extends MessageProvider {
         if (text && this.webviewPanel) {
             this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
         }
+    }
+
+    private async handleFileMatchFinder(text: string): Promise<void> {
+        const matches = await this.findFileMatches(text)
+        void this.webview?.postMessage({
+            type: 'fileContextMatches',
+            matches,
+        })
     }
 
     /**

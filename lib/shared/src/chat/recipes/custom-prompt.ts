@@ -27,7 +27,7 @@ import {
 } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
-import { getFileExtension, numResults } from './helpers'
+import { getFileExtension, isSingleWord, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /**
@@ -45,13 +45,28 @@ export class CustomPrompt implements Recipe {
      * The Interaction object contains messages from both the human and the assistant, as well as context information.
      */
     public async getInteraction(commandRunnerID: string, context: RecipeContext): Promise<Interaction | null> {
+        const workspaceRootUri = context.editor.getWorkspaceRootUri()
+
+        if (commandRunnerID.startsWith('/ask ')) {
+            const text = commandRunnerID.replace('/ask ', '')
+            const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
+            const selection = context.editor.getActiveTextEditorSelectionOrVisibleContent()
+            const displayText = getHumanDisplayTextWithFileName(text, selection, workspaceRootUri)
+            const contextMessages = this.getAskQuestionContextMessages(
+                truncatedText,
+                context.firstInteraction,
+                context.codebaseContext,
+                selection
+            )
+
+            return newInteraction({ text: truncatedText, displayText, contextMessages, source: 'chat' })
+        }
+
         const command = context.editor.controllers?.command?.getCommand(commandRunnerID)
         if (!command) {
             const errorMessage = 'Invalid command -- command not found.'
             return newInteractionWithError(errorMessage)
         }
-
-        const workspaceRootUri = context.editor.getWorkspaceRootUri()
 
         const contextConfig = command?.context || defaultCodyPromptContext
         // If selection is required, ensure not to accept visible content as selection
@@ -89,16 +104,75 @@ export class CustomPrompt implements Recipe {
         const commandOutput = command.context?.output
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
-        const contextMessages = this.getContextMessages(
-            truncatedText,
-            context.editor,
-            context.codebaseContext,
-            contextConfig,
-            selection,
-            commandOutput
-        )
+        const contextMessages =
+            commandName === '/ask'
+                ? this.getAskQuestionContextMessages(
+                      truncatedText,
+                      context.firstInteraction,
+                      context.codebaseContext,
+                      selection
+                  )
+                : this.getContextMessages(
+                      truncatedText,
+                      context.editor,
+                      context.codebaseContext,
+                      contextConfig,
+                      selection,
+                      commandOutput
+                  )
 
         return newInteraction({ text: truncatedText, displayText, contextMessages, source })
+    }
+
+    private async getAskQuestionContextMessages(
+        text: string,
+        firstInteraction: boolean,
+        codebaseContext: CodebaseContext,
+        selection?: ActiveTextEditorSelection | null
+    ): Promise<ContextMessage[]> {
+        const contextMessages: ContextMessage[] = []
+
+        if (!firstInteraction) {
+            return contextMessages
+        }
+
+        // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
+        // e,g. "hey", "hi", "why", "explain" etc.
+        const isTextTooShort = isSingleWord(text)
+        if (isTextTooShort) {
+            return contextMessages
+        }
+
+        // Create filePaths from text, get all '@foo/bar' tags from text
+        // Extract file paths from text
+        const tags = text.match(/@\S+/g)
+        const filePaths: string[] = []
+        if (tags) {
+            tags.map(tag => {
+                filePaths.push(tag.slice(1))
+            })
+        }
+
+        if (filePaths) {
+            for (const filePath of filePaths) {
+                const fileMessages = await getFilePathContext(filePath)
+                contextMessages.push(...fileMessages)
+            }
+        }
+
+        if (firstInteraction) {
+            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
+            contextMessages.push(...codebaseContextMessages)
+        }
+
+        if (selection) {
+            const currentFileMessages = getCurrentFileContextFromEditorSelection(selection)
+            contextMessages.push(...currentFileMessages)
+        }
+
+        // Return sliced results
+        const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
+        return contextMessages.slice(-maxResults * 2)
     }
 
     private async getContextMessages(

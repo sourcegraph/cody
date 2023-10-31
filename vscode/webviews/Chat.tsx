@@ -21,6 +21,7 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
+import { ChatInputContextComponent } from './ChatFileSelector'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { FileLink } from './FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
@@ -44,6 +45,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyPrompt][]
+    fileMatches?: string[]
     isTranscriptError: boolean
     applessOnboarding: {
         endpoint: string | null
@@ -67,6 +69,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     chatCommands,
+    fileMatches,
     isTranscriptError,
     applessOnboarding,
 }) => {
@@ -175,6 +178,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
+            ChatInputContextComponent={ChatInputContextComponent}
+            fileMatches={fileMatches}
             contextStatusComponent={ChatInputContextSimplified}
             contextStatusComponentProps={{
                 contextStatus,
@@ -216,7 +221,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     onKeyDown,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = "Ask a question or type '/' for commands"
+    const placeholder = 'Message (type @ to attach files)'
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat

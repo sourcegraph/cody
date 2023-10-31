@@ -39,6 +39,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
+    const [fileMatches, setFileMatches] = useState<string[]>([])
 
     useEffect(
         () =>
@@ -71,6 +72,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
+                        break
+                    case 'fileContextMatches':
+                        setFileMatches(message.matches)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -127,6 +131,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
         }
     }, [view, vscodeAPI])
+
+    useEffect(() => {
+        // Reset file matches on input change
+        if (formInput.endsWith('@') && contextStatus?.filePath) {
+            setFileMatches([contextStatus?.filePath])
+            return
+        }
+
+        if (formInput.endsWith(' ') || formInput?.trim().length < 5) {
+            setFileMatches([])
+            return
+        }
+
+        const fileMatchRegex = /@\S+$/
+        // Get the string after the '@' symbol
+        const fileMatch = formInput.match(fileMatchRegex)?.[0].slice(1)
+        if (fileMatch) {
+            vscodeAPI.postMessage({ command: 'fileMatch', text: fileMatch })
+        }
+    }, [formInput, vscodeAPI, contextStatus?.filePath])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
@@ -198,6 +222,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
                             chatCommands={myPrompts || undefined}
+                            fileMatches={fileMatches || undefined}
                             isTranscriptError={isTranscriptError}
                             applessOnboarding={{
                                 endpoint,

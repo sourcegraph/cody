@@ -552,8 +552,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return { text, recipeId }
         }
         text = text.trim()
-        if (!text?.startsWith('/')) {
+        if (!text?.startsWith('/') && recipeId !== 'custom-prompt') {
             return { text, recipeId }
+        }
+        if (!text?.startsWith('/') && recipeId === 'custom-prompt') {
+            return { text: `/ask ${text}`, recipeId }
         }
         switch (true) {
             case text === '/':
@@ -581,23 +584,27 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
-            case /^\/ask(\s)?/.test(text): {
-                let question = text.replace('/ask', '').trim()
-                if (!question) {
-                    question = await showAskQuestionQuickPick()
-                }
-                await vscode.commands.executeCommand('cody.action.chat', question, 'menu')
-                return null
-            }
             case /^\/edit(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.command.edit-code', { instruction: text }, source)
                 return null
+            case /^\/ask(\s)?/.test(text): {
+                const question = text.replace('/ask', '').trim() || (await showAskQuestionQuickPick())
+                if (question) {
+                    return { text, recipeId: 'custom-prompt', source }
+                }
+
+                return null
+            }
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
                     return null
                 }
-                const commandRunnerID = await this.editor.controllers.command?.addCommand(text)
+                const commandKey = text.split(' ')[0]
+                const commandRunnerID = await this.editor.controllers.command?.addCommand(
+                    commandKey,
+                    text.replace(commandKey, '')
+                )
                 if (!commandRunnerID) {
                     return null
                 }
@@ -753,6 +760,20 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             throw new Error('no fixup controller')
         }
         return this.editor.controllers.fixups.getTasks()
+    }
+
+    public async findFileMatches(text: string): Promise<string[]> {
+        if (!text.trim() || text.trim().length < 5) {
+            return []
+        }
+        const searchPattern = `**/**${text}*`
+        const excludePattern = '**/*{.git,out,dist,bin,snap,node_modules,env}*/**'
+        // Find a list of files that match the text
+        const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, 15)
+        // sort by having less '/' in path to prioritize top-level matches
+        return matches
+            .map(uri => vscode.workspace.asRelativePath(uri.fsPath))
+            ?.sort((a, b) => a.split('/').length - b.split('/').length)
     }
 
     public dispose(): void {

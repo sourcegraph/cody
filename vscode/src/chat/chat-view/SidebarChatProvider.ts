@@ -58,6 +58,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.setWebviewView('chat')
                 await this.init()
                 break
+            case 'fileMatch':
+                await this.handleFileMatchFinder(message.text)
+                break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
@@ -337,6 +340,14 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         void this.webview?.postMessage({
             type: 'custom-prompts',
             prompts,
+        })
+    }
+
+    private async handleFileMatchFinder(text: string): Promise<void> {
+        const matches = await this.findFileMatches(text)
+        void this.webview?.postMessage({
+            type: 'fileContextMatches',
+            matches,
         })
     }
 

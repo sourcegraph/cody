@@ -54,6 +54,8 @@ interface ChatProps extends ChatClassNames {
     chatCommands?: [string, CodyPrompt][] | null
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
+    ChatInputContextComponent?: React.FunctionComponent<ChatInputContextProps>
+    fileMatches?: string[]
     isTranscriptError?: boolean
 }
 
@@ -117,6 +119,15 @@ export interface ChatCommandsProps {
     selectedChatCommand?: number
     onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
+
+export interface ChatInputContextProps {
+    formInput: string
+    setFormInput: (input: string) => void
+    setSelectedFileContext: (index: number) => void
+    filePaths?: string[]
+    selectedFileMatch?: number
+    onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
+}
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -171,6 +182,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatCommands,
     filterChatCommands,
     ChatCommandsComponent,
+    ChatInputContextComponent,
+    fileMatches,
     isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(1)
@@ -178,10 +191,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         chatCommands || null
     )
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
+    const [selectedFileMatch, setSelectedFileMatch] = useState(0)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // Handles selecting a chat command when the user types a slash in the chat input.
-    const chatCommentSelectionHandler = useCallback(
+    const chatCommandSelectionHandler = useCallback(
         (inputValue: string): void => {
             if (!chatCommands || !ChatCommandsComponent) {
                 return
@@ -207,7 +221,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
-            chatCommentSelectionHandler(inputValue)
+            chatCommandSelectionHandler(inputValue)
             const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
             setInputRows(rowsCount > 25 ? 25 : rowsCount)
             setFormInput(inputValue)
@@ -215,7 +229,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setHistoryIndex(inputHistory.length)
             }
         },
-        [chatCommentSelectionHandler, historyIndex, inputHistory, setFormInput]
+        [chatCommandSelectionHandler, historyIndex, inputHistory, setFormInput]
     )
 
     const submitInput = useCallback(
@@ -309,6 +323,39 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
 
+            if (fileMatches) {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    const matchesLength = fileMatches?.length
+                    const newIndex = event.key === 'ArrowUp' ? selectedFileMatch - 1 : selectedFileMatch + 1
+                    const newMatchIndex = newIndex < 0 ? matchesLength : newIndex > matchesLength ? 0 : newIndex
+                    setSelectedFileMatch(newMatchIndex)
+                }
+
+                if (event.key === 'Escape') {
+                    const lastAtIndex = formInput.lastIndexOf('@')
+                    if (lastAtIndex >= 0) {
+                        const inputWithoutFileInput = formInput.slice(0, lastAtIndex)
+                        // Remove @ from input
+                        setFormInput(inputWithoutFileInput)
+                    }
+                    setSelectedFileMatch(0)
+                }
+
+                // tab/enter to complete
+                if ((event.key === 'Tab' || event.key === 'Enter') && fileMatches?.length) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    const selectedFilePath = fileMatches[selectedFileMatch]
+                    const lastAtIndex = formInput.lastIndexOf('@')
+                    if (lastAtIndex >= 0 && selectedFilePath) {
+                        const inputWithoutFileInput = formInput.slice(0, lastAtIndex + 1)
+                        // Add empty space at the end to end the file matching process
+                        setFormInput(`${inputWithoutFileInput}${selectedFilePath} `)
+                        setSelectedFileMatch(0)
+                    }
+                }
+            }
+
             // Loop through input history on up arrow press
             if (!inputHistory.length) {
                 return
@@ -335,13 +382,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         },
         [
             formInput,
-            selectedChatCommand,
             displayCommands,
+            fileMatches,
             inputHistory,
             historyIndex,
             setMessageBeingEdited,
             onChatSubmit,
+            selectedChatCommand,
             setFormInput,
+            selectedFileMatch,
             onSubmit,
         ]
     )
@@ -423,6 +472,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         selectedChatCommand={selectedChatCommand}
                         setFormInput={setFormInput}
                         setSelectedChatCommand={setSelectedChatCommand}
+                        onSubmit={onSubmit}
+                    />
+                )}
+                {fileMatches && ChatInputContextComponent && formInput && (
+                    <ChatInputContextComponent
+                        filePaths={fileMatches}
+                        selectedFileMatch={selectedFileMatch}
+                        formInput={formInput}
+                        setFormInput={setFormInput}
+                        setSelectedFileContext={setSelectedChatCommand}
                         onSubmit={onSubmit}
                     />
                 )}
