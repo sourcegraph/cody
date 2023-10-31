@@ -215,8 +215,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 typewriter.close()
                 typewriter.stop()
 
-                const formattedBotMessage = reformatBotMessage(text, responsePrefix)
-                if (!formattedBotMessage) {
+                if (!text) {
                     // Cody either didn't provide any text, or didn't use the correct topic.
                     // Emit an error so we can handle it rather than leaving the UI in a pending or empty state.
                     return this.handleError('Cody did not respond with any text', 'system')
