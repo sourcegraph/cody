@@ -315,6 +315,9 @@ export class FixupController
             edit = new vscode.WorkspaceEdit()
         }
 
+        // Always ensure that any scheduled diffs have ran before applying edits
+        this.updateDiffs()
+
         const diff = this.applicableDiffOrRespin(task, document)
         if (!diff) {
             return
@@ -764,9 +767,7 @@ export class FixupController
     }
 
     private updateDiffs(): void {
-        const deadlineMsec = Date.now() + 500
-
-        while (this.needsDiffUpdate_.size && Date.now() < deadlineMsec) {
+        while (this.needsDiffUpdate_.size) {
             const task = this.needsDiffUpdate_.keys().next().value as FixupTask
             this.needsDiffUpdate_.delete(task)
             const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
@@ -788,11 +789,6 @@ export class FixupController
             const newLine = task.insertMode ? '\n' : ''
             task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
-        }
-
-        if (this.needsDiffUpdate_.size) {
-            // We did not get through the work; schedule more later.
-            void this.scheduler.scheduleIdle(() => this.updateDiffs())
         }
     }
 
@@ -831,7 +827,7 @@ export class FixupController
             return
         }
         const diff = task.diff
-        if (diff?.mergedText === undefined) {
+        if (!diff) {
             return
         }
         // show diff view between the current document and replacement
@@ -845,6 +841,7 @@ export class FixupController
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
+        console.log('EXECUTING COMMAND')
         // Show diff between current document and replacement content
         await vscode.commands.executeCommand(
             'vscode.diff',

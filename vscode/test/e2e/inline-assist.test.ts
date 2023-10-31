@@ -10,8 +10,8 @@ const expectedOrderedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
-    'CodyVSCodeExtension:fixup:codeLens:clicked',
     'CodyVSCodeExtension:fixup:applied',
+    'CodyVSCodeExtension:fixup:codeLens:clicked',
 ]
 
 test.beforeEach(() => {
@@ -49,9 +49,10 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
 
-    // Click apply to apply the fixup
-    await page.getByRole('button', { name: 'Done' }).click()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
+    // Click 'Done' to complete the fixup
+    await page.getByRole('button', { name: 'Done' }).click()
+
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
     await expect
         .poll(() => loggedV2Events)
