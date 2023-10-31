@@ -185,7 +185,7 @@ export class Fixup implements Recipe {
 - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
 - You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
 - You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
-- Enclose your response in <eeee></eeeee> XML tags. Do not provide anything else.
+- Enclose your response in <fixup></fixup> XML tags. Do not provide anything else.
 
 This is part of the file {fileName}.
 
@@ -205,7 +205,7 @@ Provide your generated code using the following instructions:
 - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
 - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
 - You will be provided with instructions on what to do, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
-- Enclose your response in <eeee></eeee> XML tags. Do not provide anything else.
+- Enclose your response in <fixup></fixup> XML tags. Do not provide anything else.
 
 The user is currently in the file: {fileName}
 
