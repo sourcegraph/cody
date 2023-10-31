@@ -1,6 +1,5 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '../../editor'
-import { IntentClassificationOption } from '../../intent-detector'
+import { VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
@@ -13,33 +12,10 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
  * The intent classification.
  * This is either provided by the user, or inferred from their instructions
  */
-export type FixupIntent = 'add' | 'edit' | 'document'
-export const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
-    {
-        id: 'edit',
-        rawCommand: '/edit',
-        description: 'Fix a problem or edit part of the selected code',
-        examplePrompts: [
-            'Edit this code',
-            'Change this code',
-            'Update this code',
-            'Implement this TODO',
-            'Fix this code',
-        ],
-    },
-    {
-        id: 'document',
-        rawCommand: '/document',
-        description: 'Generate documentation for parts of the selected code.',
-        examplePrompts: ['Add a docstring for this function', 'Write comments to explain this code'],
-    },
-]
+export type FixupIntent = 'add' | 'edit'
 
-const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
-    edit: 'The user wants you to replace parts of the selected code or correct a problem by following their instructions.',
-    document:
-        'The user wants you to add documentation or comments to the selected code by following their instructions.',
-}
+const editIntentInstruction =
+    'The user wants you to replace parts of the selected code or correct a problem by following their instructions.'
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
@@ -52,7 +28,7 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const intent = await this.fetchRecipeIntent(fixupController, taskId, context)
+        const intent = await fixupController.getTaskIntent(taskId)
         const enableSmartSelection = intent === 'edit'
         const fixupTask = await fixupController.getTaskRecipeData(taskId, { enableSmartSelection })
 
@@ -78,14 +54,6 @@ export class Fixup implements Recipe {
         )
     }
 
-    public async fetchRecipeIntent(
-        fixupController: VsCodeFixupController,
-        taskId: string,
-        context: RecipeContext
-    ): Promise<FixupIntent | null> {
-        return fixupController.getTaskIntent(taskId, context.intentDetector)
-    }
-
     public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {
         if (intent === 'add') {
             return Fixup.addPrompt
@@ -98,7 +66,7 @@ export class Fixup implements Recipe {
 
         return Fixup.editPrompt
             .replace('{humanInput}', promptInstruction)
-            .replace('{intent}', PromptIntentInstruction[intent])
+            .replace('{intent}', editIntentInstruction)
             .replace('{selectedText}', task.selectedText)
             .replace('{fileName}', task.fileName)
     }
@@ -160,16 +128,6 @@ export class Fixup implements Recipe {
                                 task
                             )
                         )
-                    )
-                )
-            /**
-             * Intents that are focused primarily on updating code within the current file and selection.
-             * Providing a much more focused context window here seems to provide better quality responses.
-             */
-            case 'document':
-                return Promise.resolve(
-                    [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
-                        getContextMessageWithResponse(populateCodeContextTemplate(text, task.fileName), task)
                     )
                 )
         }

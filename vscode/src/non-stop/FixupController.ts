@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent, FixupIntentClassification } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
@@ -214,17 +213,11 @@ export class FixupController
     /**
      * Retrieves the intent for a specific task based on the selected text and other contextual information.
      * @param taskId - The ID of the task for which the intent is to be determined.
-     * @param intentDetector - The detector used to classify the intent from available options.
-     * @returns A promise that resolves to a `FixupIntent` which can be one of the intents like 'add', 'edit', etc.
+     * @returns A promise that resolves to a `FixupIntent` which can be one of the intents 'add' or 'edit'.
      * @throws
-     * - Will throw an error if no code is selected for fixup.
      * - Will throw an error if the selected text exceeds the defined maximum limit.
-     * @todo (umpox): Explore shorter and more efficient ways to detect intent.
-     * Possible methods:
-     * - Input -> Match first word against update|fix|add|delete verbs
-     * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
      */
-    public async getTaskIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent> {
+    public async getTaskIntent(taskId: string): Promise<FixupIntent> {
         const task = this.tasks.get(taskId)
         if (!task) {
             throw new Error('Select some code to fixup.')
@@ -241,12 +234,7 @@ export class FixupController
             return 'add'
         }
 
-        const intent = await intentDetector.classifyIntentFromOptions(
-            task.instruction,
-            FixupIntentClassification,
-            'edit'
-        )
-        return intent
+        return 'edit'
     }
 
     /**

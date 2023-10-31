@@ -2,7 +2,6 @@ import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
 import { FixupIntent } from '../chat/recipes/fixup'
-import { IntentDetector } from '../intent-detector'
 
 export interface ActiveTextEditor {
     content: string
@@ -72,7 +71,7 @@ export interface VsCodeFixupController {
         taskId: string,
         options: { enableSmartSelection?: boolean }
     ): Promise<VsCodeFixupTaskRecipeData | undefined>
-    getTaskIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent>
+    getTaskIntent(taskId: string): Promise<FixupIntent>
 }
 
 export interface VsCodeCommandsController {
@@ -100,7 +99,6 @@ export interface Editor<
 
     /**
      * The path of the workspace root if on the file system, otherwise `null`.
-     *
      * @deprecated Use {@link Editor.getWorkspaceRootUri} instead.
      */
     getWorkspaceRootPath(): string | null
