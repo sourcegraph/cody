@@ -218,6 +218,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = "Ask a question or type '/' for commands"
 
+    useEffect(() => {
+        if (autoFocus) {
+            inputRef.current?.focus()
+        }
+    }, [autoFocus, value])
+
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
     // View` with the keyboard.
