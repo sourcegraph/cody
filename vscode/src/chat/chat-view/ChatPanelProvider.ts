@@ -15,7 +15,7 @@ import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../Me
 import { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
-import { getFileMatches } from './utils'
+import { getFileMatches, getSymbolsForChat } from './utils'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -159,10 +159,11 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async handleFileMatchFinder(input: string): Promise<void> {
-        const matches = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
-        // TODO bee add symbols
-        // const symbols = (await getSymbolsForChat(input))?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
-        // const matches = [...files, ...symbols].slice(0, 15)
+        const files = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
+        const symbols = (await getSymbolsForChat(input))
+            ?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
+            .slice(0, 10)
+        const matches = [...files, ...symbols].slice(0, 20)
         void this.webview?.postMessage({
             type: 'editorContextMatches',
             matches,

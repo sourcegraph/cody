@@ -761,8 +761,9 @@ function getRangeFromFilePath(fsPath: string): vscode.Range | undefined {
         return undefined
     }
 
-    const startLine = parseInt(rangeMatch[1] + 1, 10)
-    const endLine = parseInt(rangeMatch[2] + 1, 10)
+    // turn string into number
+    const startLine = Number(rangeMatch[1]) + 1
+    const endLine = Number(rangeMatch[2]) + 1
 
     return new vscode.Range(startLine, 0, endLine, 0)
 }
@@ -771,6 +772,7 @@ export async function getFileUriContext(uri: vscode.Uri, range?: vscode.Range): 
     const fileName = createVSCodeRelativePath(uri.fsPath)
     try {
         const decoded = await getContextFromFileUri(uri, range)
+        console.log(uri.fsPath, decoded, range)
         const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
         // Make sure the truncatedContent is in JSON format
         return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {

@@ -347,8 +347,10 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
 
     private async handleFileMatchFinder(input: string): Promise<void> {
         const files = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
-        const symbols = (await getSymbolsForChat(input))?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
-        const matches = [...files, ...symbols].filter(m => m).slice(0, 15)
+        const symbols = (await getSymbolsForChat(input))
+            ?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
+            .slice(0, 10)
+        const matches = [...files, ...symbols].slice(0, 20)
         void this.webview?.postMessage({
             type: 'editorContextMatches',
             matches,

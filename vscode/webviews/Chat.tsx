@@ -276,7 +276,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
         type="button"
         disabled={disabled}
         onClick={onClick}
-        title="Submit Message"
+        title="Send Message"
     >
         <SubmitSvg />
     </VSCodeButton>
