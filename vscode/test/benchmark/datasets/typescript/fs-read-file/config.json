@@ -1,6 +1,6 @@
 {
   "entryFile": "generate.ts",
-  "openFiles": ["server.ts"],
+  "openFiles": [],
   "closedFiles": [],
   "solutionFile": "solution.ts",
   "testFile": "test.ts",
