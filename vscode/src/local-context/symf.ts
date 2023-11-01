@@ -23,6 +23,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     private indexLocks: Map<string, RWLock> = new Map()
 
+    private inProgressIndexing: Map<string, Promise<void>> = new Map()
+
     constructor(
         private context: vscode.ExtensionContext,
         private sourcegraphServerEndpoint: string | null,
@@ -84,6 +86,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
         // Run in a loop in case the index is deleted before we can query it
         for (let i = 0; i < maxRetries; i++) {
+            // Redisplay progress if indexing is already underway
+            if (showIndexProgress) {
+                const inProgressUpsert = this.inProgressIndexing.get(scopeDir)
+                if (inProgressUpsert) {
+                    void showIndexProgress(scopeDir, inProgressUpsert)
+                }
+            }
             await this.getIndexLock(scopeDir).withWrite(async () => {
                 await this.unsafeEnsureIndex(scopeDir, showIndexProgress, { hard: i === 0 })
             })
@@ -206,7 +215,6 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             await this.markIndexFailed(scopeDir)
             throw error
         }
-
         await this.clearIndexFailure(scopeDir)
     }
 
@@ -224,10 +232,15 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         scopeDir: string,
         showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
     ): Promise<void> {
+        const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir)
+        this.inProgressIndexing.set(scopeDir, upsert)
+        void upsert.finally(() => {
+            this.inProgressIndexing.delete(scopeDir)
+        })
         if (showIndexProgress) {
-            return showIndexProgress(scopeDir, this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir))
+            void showIndexProgress(scopeDir, upsert)
         }
-        return this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir)
+        return upsert
     }
 
     private async _unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
