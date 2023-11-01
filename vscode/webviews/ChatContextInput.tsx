@@ -6,7 +6,7 @@ import { ChatInputContextProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './ChatCommands.module.css'
 
-export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithChildren<ChatInputContextProps>> = ({
+export const ChatContextInputComponent: React.FunctionComponent<React.PropsWithChildren<ChatInputContextProps>> = ({
     filePaths,
     formInput,
     setFormInput,
@@ -25,7 +25,7 @@ export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithC
         }
     }, [filePaths?.length, selectedFileMatch])
 
-    const onFileSelected = (path: string): void => {
+    const onSelectionClick = (path: string): void => {
         if (!filePaths) {
             return
         }
@@ -38,7 +38,7 @@ export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithC
         }
     }
 
-    if (filePaths?.length === undefined) {
+    if (!filePaths?.length) {
         return
     }
 
@@ -54,7 +54,7 @@ export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithC
                             <button
                                 ref={selectedFileMatch === i ? selectionRef : null}
                                 className={classNames(styles.commandItem, selectedFileMatch === i && styles.selected)}
-                                onClick={() => onFileSelected(path)}
+                                onClick={() => onSelectionClick(path)}
                                 type="button"
                             >
                                 <p className={styles.commandTitle}>{path}</p>

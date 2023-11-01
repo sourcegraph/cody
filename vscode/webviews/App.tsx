@@ -133,17 +133,17 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [view, vscodeAPI])
 
     useEffect(() => {
+        const addFileRegex = /@(\S+)?$/
+        // Get the string after the '@' symbol
+        const addFileInput = formInput.match(addFileRegex)?.[0]
         // Reset file matches on input change
-        if (formInput.endsWith(' ')) {
+        if (formInput.endsWith(' ') || !addFileInput) {
             setFileMatches([])
             return
         }
 
-        const addFileRegex = /@\S+$/
-        // Get the string after the '@' symbol
-        const addFileInput = formInput.match(addFileRegex)?.[0].slice(1)
-        if (addFileInput || formInput.endsWith('@')) {
-            vscodeAPI.postMessage({ command: 'fileMatch', text: addFileInput || '' })
+        if (addFileInput) {
+            vscodeAPI.postMessage({ command: 'fileMatch', text: addFileInput.slice(1) || '' })
         }
     }, [formInput, vscodeAPI, contextStatus?.filePath])
 

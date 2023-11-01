@@ -16,7 +16,7 @@ export async function getFileMatches(query: string): Promise<string[]> {
         return []
     }
     const searchPattern = `**/*${query}{/**,*}*`
-    const excludePattern = '**/*{.git,out,dist,bin,snap,node_modules,env}*/**'
+    const excludePattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules}**'
     // Find a list of files that match the text
     const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, maxResults)
     // sort by having less '/' in path to prioritize top-level matches

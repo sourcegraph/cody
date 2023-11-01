@@ -21,7 +21,7 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
-import { ChatInputContextComponent } from './ChatFileSelector'
+import { ChatContextInputComponent } from './ChatContextInput'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { FileLink } from './FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
@@ -178,7 +178,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            ChatInputContextComponent={ChatInputContextComponent}
+            ChatInputContextComponent={ChatContextInputComponent}
             fileMatches={fileMatches}
             contextStatusComponent={ChatInputContextSimplified}
             contextStatusComponentProps={{

@@ -304,7 +304,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
 
-            if (fileMatches) {
+            if (fileMatches?.length !== undefined) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     event.stopPropagation()
@@ -312,10 +312,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const newIndex = event.key === 'ArrowUp' ? selectedFileMatch - 1 : selectedFileMatch + 1
                     const newMatchIndex = newIndex < 0 ? matchesLength : newIndex > matchesLength ? 0 : newIndex
                     setSelectedFileMatch(newMatchIndex)
+                    return
                 }
 
                 if (event.key === 'Backspace') {
                     setSelectedFileMatch(0)
+                    return
                 }
 
                 if (event.key === 'Escape') {
@@ -328,6 +330,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         setFormInput(inputWithoutFileInput)
                     }
                     setSelectedFileMatch(0)
+                    return
                 }
 
                 // tab/enter to complete
