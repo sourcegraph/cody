@@ -6,6 +6,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 
 import { View } from '../../../webviews/NavBar'
 import { getActiveEditor } from '../../editor/active-editor'
+import { getOpenTabsRelativePaths } from '../../editor/utils/open-tabs'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
@@ -22,6 +23,7 @@ import {
 } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
+import { getFileMatches, getSymbolsForChat } from './utils'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -343,10 +345,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         })
     }
 
-    private async handleFileMatchFinder(text: string): Promise<void> {
-        const matches = await this.findFileMatches(text)
+    private async handleFileMatchFinder(input: string): Promise<void> {
+        const files = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
+        const symbols = (await getSymbolsForChat(input))?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
+        const matches = [...files, ...symbols].filter(m => m).slice(0, 15)
         void this.webview?.postMessage({
-            type: 'fileContextMatches',
+            type: 'editorContextMatches',
             matches,
         })
     }

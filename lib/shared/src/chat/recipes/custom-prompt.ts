@@ -15,13 +15,17 @@ import {
     newInteractionWithError,
 } from '../prompts/utils'
 import {
+    createVSCodeRelativePath,
+    extractFileUrisFromTags,
     getCurrentDirContext,
     getCurrentFileContextFromEditorSelection,
     getCurrentFileImportsContext,
     getDirectoryFileListContext,
+    getDisplayTextForFileUri,
     getEditorDirContext,
     getEditorOpenTabsContext,
     getFilePathContext,
+    getFileUriContext,
     getHumanDisplayTextWithFileName,
     getPackageJsonContext,
     getTerminalOutputContext,
@@ -47,29 +51,39 @@ export class CustomPrompt implements Recipe {
      */
     public async getInteraction(commandRunnerID: string, context: RecipeContext): Promise<Interaction | null> {
         const workspaceRootUri = context.editor.getWorkspaceRootUri()
+        const command = context.editor.controllers?.command?.getCommand(commandRunnerID)
 
-        if (commandRunnerID.startsWith('/ask ')) {
+        // Chat Question
+        if (commandRunnerID.startsWith('/ask ') || command?.slashCommand === '/ask') {
             const text = commandRunnerID.replace('/ask ', '')
             const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
             const selection = context.editor.getActiveTextEditorSelection()
-            const displayText = getHumanDisplayTextWithFileName(text, selection, workspaceRootUri)
-            const contextMessages = this.getAskQuestionContextMessages(
+            const filePaths = extractFileUrisFromTags(text, workspaceRootUri)
+            let displayText = filePaths ? text : getHumanDisplayTextWithFileName(text, selection, workspaceRootUri)
+            filePaths?.map(file => {
+                displayText = displayText.replace(
+                    `@${createVSCodeRelativePath(file.uri.fsPath)}`,
+                    getDisplayTextForFileUri(file.uri)
+                )
+            })
+
+            const contextMessages = this.getChatQuestionContextMessages(
                 truncatedText,
                 context.firstInteraction,
                 context.codebaseContext,
-                workspaceRootUri,
-                selection
+                selection,
+                filePaths
             )
 
             return newInteraction({ text: truncatedText, displayText, contextMessages, source: 'chat' })
         }
 
-        const command = context.editor.controllers?.command?.getCommand(commandRunnerID)
         if (!command) {
             const errorMessage = 'Invalid command -- command not found.'
             return newInteractionWithError(errorMessage)
         }
 
+        // Default or Custom Commands
         const contextConfig = command?.context || defaultCodyPromptContext
         // If selection is required, ensure not to accept visible content as selection
         const selection = contextConfig?.selection
@@ -106,33 +120,24 @@ export class CustomPrompt implements Recipe {
         const commandOutput = command.context?.output
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
-        const contextMessages =
-            commandName === '/ask'
-                ? this.getAskQuestionContextMessages(
-                      truncatedText,
-                      context.firstInteraction,
-                      context.codebaseContext,
-                      workspaceRootUri,
-                      selection
-                  )
-                : this.getContextMessages(
-                      truncatedText,
-                      context.editor,
-                      context.codebaseContext,
-                      contextConfig,
-                      selection,
-                      commandOutput
-                  )
+        const contextMessages = this.getContextMessages(
+            truncatedText,
+            context.editor,
+            context.codebaseContext,
+            contextConfig,
+            selection,
+            commandOutput
+        )
 
         return newInteraction({ text: truncatedText, displayText, contextMessages, source })
     }
 
-    private async getAskQuestionContextMessages(
+    private async getChatQuestionContextMessages(
         text: string,
         firstInteraction: boolean,
         codebaseContext: CodebaseContext,
-        workspaceRootUri?: vscode.Uri | null,
-        selection?: ActiveTextEditorSelection | null
+        selection?: ActiveTextEditorSelection | null,
+        fileUris?: { uri: vscode.Uri; range?: vscode.Range }[]
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
@@ -143,25 +148,15 @@ export class CustomPrompt implements Recipe {
             return contextMessages
         }
 
-        // Create filePaths from text, get all '@foo/bar' tags from text
-        // Extract file paths from text
-        const tags = text.match(/@\S+/g)
-        const filePaths: string[] = []
-        if (tags && workspaceRootUri) {
-            tags.map(tag => {
-                filePaths.push(vscode.Uri.joinPath(workspaceRootUri, tag.slice(1)).fsPath)
-            })
-        }
-
-        if (filePaths) {
-            for (const filePath of filePaths) {
-                const fileMessages = await getFilePathContext(filePath)
+        if (fileUris) {
+            for (const fileUri of fileUris) {
+                const fileMessages = await getFileUriContext(fileUri.uri, fileUri.range)
                 contextMessages.push(...fileMessages)
             }
         }
 
         // If no file paths were found, add codebase context
-        if (firstInteraction && !filePaths.length) {
+        if (firstInteraction && !fileUris?.length) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }

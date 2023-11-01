@@ -73,7 +73,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
                         break
-                    case 'fileContextMatches':
+                    case 'editorContextMatches':
                         setFileMatches(message.matches)
                         break
                     case 'errors':
@@ -134,12 +134,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     useEffect(() => {
         // Reset file matches on input change
-        if (formInput.endsWith('@') && contextStatus?.filePath) {
-            setFileMatches([contextStatus?.filePath])
+        if (formInput.endsWith('@')) {
+            if (contextStatus?.filePath) {
+                setFileMatches([contextStatus?.filePath])
+            }
+            vscodeAPI.postMessage({ command: 'fileMatch', text: formInput })
             return
         }
 
-        if (formInput.endsWith(' ') || formInput?.trim().length < 5) {
+        // Reset file matches on input change
+        if (formInput.endsWith(' ')) {
             setFileMatches([])
             return
         }

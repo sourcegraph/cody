@@ -5,6 +5,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../../webviews/NavBar'
 import { getActiveEditor } from '../../editor/active-editor'
+import { getOpenTabsRelativePaths } from '../../editor/utils/open-tabs'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -14,6 +15,7 @@ import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../Me
 import { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
+import { getFileMatches } from './utils'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -156,10 +158,13 @@ export class ChatPanelProvider extends MessageProvider {
         }
     }
 
-    private async handleFileMatchFinder(text: string): Promise<void> {
-        const matches = await this.findFileMatches(text)
+    private async handleFileMatchFinder(input: string): Promise<void> {
+        const matches = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
+        // TODO bee add symbols
+        // const symbols = (await getSymbolsForChat(input))?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
+        // const matches = [...files, ...symbols].slice(0, 15)
         void this.webview?.postMessage({
-            type: 'fileContextMatches',
+            type: 'editorContextMatches',
             matches,
         })
     }

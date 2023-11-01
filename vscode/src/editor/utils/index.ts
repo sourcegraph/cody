@@ -16,13 +16,15 @@ import { getSelectionAroundLine } from './document-sections'
  * manual selection truly reflects the user's intent and should be preferred when possible. Smart
  * selection can be unreliable in some cases. Callers needing the true selection range should always
  * use the manual selection method to ensure accuracy.
- *
  * @param uri - The document URI.
  * @param target - The target position in the document.
- *
  * @returns The folding range containing the target position, if one exists. Otherwise returns
  * undefined.
  */
 export async function getSmartSelection(uri: vscode.Uri, target: number): Promise<vscode.Selection | undefined> {
     return getSelectionAroundLine(await vscode.workspace.openTextDocument(uri), target)
+}
+
+export async function getWorkspaceSymbols(query = ''): Promise<vscode.SymbolInformation[]> {
+    return vscode.commands.executeCommand('vscode.executeWorkspaceSymbolProvider', query)
 }

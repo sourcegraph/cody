@@ -76,7 +76,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'fileContextMatches'; matches: string[] }
+    | { type: 'editorContextMatches'; matches: string[] }
 
 /**
  * The subset of configuration that is visible to the webview.

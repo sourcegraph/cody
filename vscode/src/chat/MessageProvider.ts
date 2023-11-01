@@ -763,20 +763,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.editor.controllers.fixups.getTasks()
     }
 
-    public async findFileMatches(text: string): Promise<string[]> {
-        if (!text.trim() || text.trim().length < 5) {
-            return []
-        }
-        const searchPattern = `**/**${text}*`
-        const excludePattern = '**/*{.git,out,dist,bin,snap,node_modules,env}*/**'
-        // Find a list of files that match the text
-        const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, 15)
-        // sort by having less '/' in path to prioritize top-level matches
-        return matches
-            .map(uri => vscode.workspace.asRelativePath(uri.fsPath))
-            ?.sort((a, b) => a.split('/').length - b.split('/').length)
-    }
-
     public dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose()
