@@ -21,7 +21,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         const container = commandRef.current?.parentElement
 
         // If selected command is first, scroll to top. Otherwise, scroll to bottom
-        if (container) {
+        if (container && chatCommands?.length !== undefined) {
             if (selectedChatCommand === chatCommands?.length || selectedChatCommand === 0) {
                 container.scrollTop = 0
             } else {

@@ -265,30 +265,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
-            // Submit input on Enter press (without shift) and
-            // trim the formInput to make sure input value is not empty.
-            if (
-                event.key === 'Enter' &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                formInput?.trim() &&
-                !displayCommands?.length
-            ) {
-                event.preventDefault()
-                event.stopPropagation()
-                setMessageBeingEdited(false)
-                onChatSubmit()
-            }
-
-            // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
-            if (event.altKey && event.key === 'c') {
-                event.preventDefault()
-                event.stopPropagation()
-            }
-
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    event.stopPropagation()
                     const commandsLength = displayCommands?.length
                     const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
                     const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex >= commandsLength - 1 ? 0 : curIndex
@@ -325,6 +306,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             if (fileMatches) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    event.stopPropagation()
                     const matchesLength = fileMatches?.length - 1
                     const newIndex = event.key === 'ArrowUp' ? selectedFileMatch - 1 : selectedFileMatch + 1
                     const newMatchIndex = newIndex < 0 ? matchesLength : newIndex > matchesLength ? 0 : newIndex
@@ -336,6 +319,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
 
                 if (event.key === 'Escape') {
+                    event.preventDefault()
+                    event.stopPropagation()
                     const lastAtIndex = formInput.lastIndexOf('@')
                     if (lastAtIndex >= 0) {
                         const inputWithoutFileInput = formInput.slice(0, lastAtIndex)
@@ -346,18 +331,40 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
 
                 // tab/enter to complete
-                if ((event.key === 'Tab' || event.key === 'Enter') && fileMatches?.length) {
+                if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
                     event.stopPropagation()
                     const selectedFilePath = fileMatches[selectedFileMatch]
                     const lastAtIndex = formInput.lastIndexOf('@')
                     if (lastAtIndex >= 0 && selectedFilePath) {
                         const inputWithoutFileInput = formInput.slice(0, lastAtIndex + 1)
+                        setSelectedFileMatch(0)
                         // Add empty space at the end to end the file matching process
                         setFormInput(`${inputWithoutFileInput}${selectedFilePath} `)
-                        setSelectedFileMatch(0)
                     }
+                    return
                 }
+            }
+
+            // Submit input on Enter press (without shift) and
+            // trim the formInput to make sure input value is not empty.
+            if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                formInput?.trim() &&
+                !displayCommands?.length
+            ) {
+                event.preventDefault()
+                event.stopPropagation()
+                setMessageBeingEdited(false)
+                onChatSubmit()
+            }
+
+            // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
+            if (event.altKey && event.key === 'c') {
+                event.preventDefault()
+                event.stopPropagation()
             }
 
             // Loop through input history on up arrow press
