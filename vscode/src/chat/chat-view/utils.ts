@@ -12,10 +12,10 @@ export interface ChatSymbolMatch {
 const maxResults = 15
 
 export async function getFileMatches(query: string): Promise<string[]> {
-    if (!query.trim() || query.trim().length < 5) {
+    if (!query.trim()) {
         return []
     }
-    const searchPattern = `**/**${query}*`
+    const searchPattern = `**/*${query}{/**,*}*`
     const excludePattern = '**/*{.git,out,dist,bin,snap,node_modules,env}*/**'
     // Find a list of files that match the text
     const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, maxResults)
