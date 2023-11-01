@@ -783,7 +783,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return DEFAULT_MAX_TOKENS - solutionLimit
     }
 
-    public logTelemetryService(eventName: string, properties?: any, hasVSEvent = true): void {
+    public logTelemetryService(eventName: string, properties?: Record<string, unknown>, hasVSEvent = true): void {
         const request_id = this.currentInteractionID
         telemetryService.log(eventName, { ...properties, request_id }, { hasV2Event: hasVSEvent })
     }
