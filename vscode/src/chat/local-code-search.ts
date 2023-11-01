@@ -82,8 +82,11 @@ export class LocalIndexedKeywordSearch implements Recipe {
             return 'Open a workspace folder to determine the search scope'
         }
 
-        const results = await symf.getResults(text, scopeDir)
-        const groupedResults = groupByFile(results)
+        const resultSets = await symf.getResults(text, [scopeDir])
+        if (resultSets.length === 0) {
+            return 'Open a workspace folder to determine the search scope'
+        }
+        const groupedResults = groupByFile(await resultSets[0])
         const resultsHTML = await htmlForResultGroups(groupedResults)
         return resultsHTML
     }

@@ -94,12 +94,12 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
     public registerCommands(): void {
         this.disposables.push(
             vscode.commands.registerCommand('cody.search.index-update', async () => {
-                const scopeDir = getCurrentWorkspaceRoot()
-                if (!scopeDir) {
+                const scopeDirs = getScopeDirs()
+                if (scopeDirs.length === 0) {
                     void vscode.window.showWarningMessage('Open a workspace folder to index')
                     return
                 }
-                await this.indexManager.refreshIndex(scopeDir)
+                await this.indexManager.refreshIndex(scopeDirs[0])
             }),
             vscode.commands.registerCommand('cody.search.index-update-all', async () => {
                 const folders = vscode.workspace.workspaceFolders
@@ -190,8 +190,8 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
             throw new Error('this.symfRunner is undefined')
         }
 
-        const scopeDir = getCurrentWorkspaceRoot()
-        if (!scopeDir) {
+        const scopeDirs = getScopeDirs()
+        if (scopeDirs.length === 0) {
             void vscode.window.showErrorMessage('Open a workspace folder to determine the search scope')
             return
         }
@@ -201,52 +201,22 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
             return
         }
 
-        const panelResults = await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
-            const results = await symf.getResults(query, scopeDir, showIndexProgress)
-            const groupedResults = groupByFile(results)
-
-            // fetch file contents to send to webview
-            const textDecoder = new TextDecoder('utf-8')
-            const rawPanelResults: (SearchPanelFile | null)[] = await Promise.all(
-                groupedResults.map(async group => {
-                    const uri = vscode.Uri.file(group.file)
-                    try {
-                        const contents = await vscode.workspace.fs.readFile(uri)
-                        const { base, dir, wsName } = getRenderableComponents(group.file)
-                        return {
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                            uriJSON: uri.toJSON(),
-                            uriString: uri.toString(),
-                            basename: base,
-                            dirname: dir,
-                            wsname: wsName,
-                            snippets: group.results.map((result: Result): SearchPanelSnippet => {
-                                return {
-                                    contents: textDecoder.decode(
-                                        contents.subarray(result.range.startByte, result.range.endByte)
-                                    ),
-                                    range: {
-                                        start: {
-                                            line: result.range.startPoint.row,
-                                            character: result.range.startPoint.col,
-                                        },
-                                        end: {
-                                            line: result.range.endPoint.row,
-                                            character: result.range.endPoint.col,
-                                        },
-                                    },
-                                }
-                            }),
-                        }
-                    } catch {
-                        return null
-                    }
-                })
-            )
-            return rawPanelResults.filter(result => result !== null) as SearchPanelFile[]
+        await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
+            const cumulativeResults: SearchPanelFile[] = []
+            const resultSets = await symf.getResultsMulti(query, scopeDirs, showIndexProgress)
+            for (const resultSet of resultSets) {
+                try {
+                    cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
+                    await this.webview?.postMessage({
+                        type: 'update-search-results',
+                        results: cumulativeResults,
+                        query,
+                    })
+                } catch (error) {
+                    void vscode.window.showErrorMessage(`Error fetching results for query: ${query}: ${error}`)
+                }
+            }
         })
-
-        await this.webview?.postMessage({ type: 'update-search-results', results: panelResults, query })
     }
 }
 
@@ -275,15 +245,27 @@ function getRenderableComponents(filename: string): { base: string; dir: string;
     return { base, dir: absdir }
 }
 
-function getCurrentWorkspaceRoot(): string | null {
-    const uri = vscode.window.activeTextEditor?.document?.uri
-    if (uri) {
-        const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
-        if (wsFolder) {
-            return wsFolder.uri.fsPath
-        }
+/**
+ * @returns the list of workspace folders to search. The first folder is the active file's folder.
+ */
+function getScopeDirs(): string[] {
+    const folders = vscode.workspace.workspaceFolders
+    if (!folders) {
+        return []
     }
-    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null
+    const uri = vscode.window.activeTextEditor?.document?.uri
+    if (!uri) {
+        return folders.map(f => f.uri.fsPath)
+    }
+    const currentFolder = vscode.workspace.getWorkspaceFolder(uri)
+    if (!currentFolder) {
+        return folders.map(f => f.uri.fsPath)
+    }
+
+    return [
+        currentFolder.uri.fsPath,
+        ...folders.filter(folder => folder.uri.toString() !== currentFolder.uri.toString()).map(f => f.uri.fsPath),
+    ]
 }
 
 function groupByFile(results: Result[]): { file: string; results: Result[] }[] {
@@ -301,4 +283,47 @@ function groupByFile(results: Result[]): { file: string; results: Result[] }[] {
         }
     }
     return groups
+}
+
+async function resultsToDisplayResults(results: Result[]): Promise<SearchPanelFile[]> {
+    const textDecoder = new TextDecoder('utf-8')
+    const groupedResults = groupByFile(results)
+    return (
+        await Promise.all(
+            groupedResults.map(async group => {
+                const uri = vscode.Uri.file(group.file)
+                try {
+                    const contents = await vscode.workspace.fs.readFile(uri)
+                    const { base, dir, wsName } = getRenderableComponents(group.file)
+                    return {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                        uriJSON: uri.toJSON(),
+                        uriString: uri.toString(),
+                        basename: base,
+                        dirname: dir,
+                        wsname: wsName,
+                        snippets: group.results.map((result: Result): SearchPanelSnippet => {
+                            return {
+                                contents: textDecoder.decode(
+                                    contents.subarray(result.range.startByte, result.range.endByte)
+                                ),
+                                range: {
+                                    start: {
+                                        line: result.range.startPoint.row,
+                                        character: result.range.startPoint.col,
+                                    },
+                                    end: {
+                                        line: result.range.endPoint.row,
+                                        character: result.range.endPoint.col,
+                                    },
+                                },
+                            }
+                        }),
+                    }
+                } catch {
+                    return null
+                }
+            })
+        )
+    ).filter(result => result !== null) as SearchPanelFile[]
 }

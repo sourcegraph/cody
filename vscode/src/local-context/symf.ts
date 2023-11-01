@@ -36,15 +36,53 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         this.authToken = authToken
     }
 
-    /**
-     * Returns the list of results from symf
-     */
+    private async getSymfInfo(): Promise<{ symfPath: string; serverEndpoint: string; accessToken: string }> {
+        const accessToken = this.authToken
+        if (!accessToken) {
+            throw new Error('SymfRunner.getResults: No access token')
+        }
+        const serverEndpoint = this.sourcegraphServerEndpoint
+        if (!serverEndpoint) {
+            throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
+        }
+        const symfPath = await getSymfPath(this.context)
+        if (!symfPath) {
+            throw new Error('No symf executable')
+        }
+        return { accessToken, serverEndpoint, symfPath }
+    }
+
     public async getResults(
-        query: string,
+        userQuery: string,
+        scopeDirs: string[],
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+    ): Promise<Promise<Result[]>[]> {
+        const { symfPath, serverEndpoint, accessToken } = await this.getSymfInfo()
+        const expandedQuery = execFile(symfPath, ['expand-query', userQuery], {
+            env: {
+                SOURCEGRAPH_TOKEN: accessToken,
+                SOURCEGRAPH_URL: serverEndpoint,
+            },
+            maxBuffer: 1024 * 1024 * 1024,
+            timeout: 1000 * 30, // timeout in 30secs
+        }).then(({ stdout }) => stdout.trim())
+
+        return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir, showIndexProgress))
+    }
+
+    /**
+     * Returns the list of results from symf for a single directory scope.
+     * @param keywordQuery is a promise, because query expansion might be an expensive
+     * operation that is best done concurrently with querying and (re)building the index.
+     */
+    private async getResultsForScopeDir(
+        keywordQuery: Promise<string>,
         scopeDir: string,
         showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
     ): Promise<Result[]> {
-        while (true) {
+        const maxRetries = 10
+
+        for (let i = 0; i < maxRetries; i++) {
             await this.getIndexLock(scopeDir).withWrite(async () => {
                 await this.unsafeEnsureIndex(scopeDir, showIndexProgress)
             })
@@ -56,7 +94,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                     indexNotFound = true
                     return ''
                 }
-                return this.unsafeRunQuery(query, scopeDir)
+                return this.unsafeRunQuery(await keywordQuery, scopeDir)
             })
             if (indexNotFound) {
                 continue
@@ -64,6 +102,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             const results = parseSymfStdout(stdout)
             return results
         }
+        throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
     }
 
     public async deleteIndex(scopeDir: string): Promise<void> {
@@ -92,24 +131,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         return lock
     }
 
-    private async unsafeRunQuery(query: string, scopeDir: string): Promise<string> {
+    private async unsafeRunQuery(keywordQuery: string, scopeDir: string): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
-        const accessToken = this.authToken
-        if (!accessToken) {
-            throw new Error('SymfRunner.getResults: No access token')
-        }
-        const serverEndpoint = this.sourcegraphServerEndpoint
-        if (!serverEndpoint) {
-            throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
-        }
-        const symfPath = await getSymfPath(this.context)
-        if (!symfPath) {
-            throw new Error('No symf executable')
-        }
+        const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
         try {
             const { stdout } = await execFile(
                 symfPath,
-                ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', '--natural', query],
+                ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', keywordQuery],
                 {
                     env: {
                         SOURCEGRAPH_TOKEN: accessToken,
