@@ -157,6 +157,11 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 })
             })
         )
+        this.disposables.push(
+            this.symfRunner.registerIndexListener(scopeDir => {
+                void this.webview?.postMessage({ type: 'index-updated', scopeDir })
+            })
+        )
     }
 
     public async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
@@ -221,8 +226,8 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
 
     // TODO(beyang): support cancellation through symf
-    // TODO(beyang): caching
     private async onDidReceiveQuery(query: string): Promise<void> {
+        console.log('# onDidReceiveQuery', query)
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
 
         if (query.trim().length === 0) {

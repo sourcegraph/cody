@@ -84,6 +84,7 @@ export type ExtensionMessage =
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | { type: 'index-updated'; scopeDir: string }
 
 /**
  * The subset of configuration that is visible to the webview.

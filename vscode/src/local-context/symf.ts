@@ -36,6 +36,23 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         this.authToken = authToken
     }
 
+    private indexListeners: Set<(scopeDir: string) => void> = new Set()
+
+    public registerIndexListener(onIndexChange: (scopeDir: string) => void): vscode.Disposable {
+        this.indexListeners.add(onIndexChange)
+        return {
+            dispose: () => {
+                this.indexListeners.delete(onIndexChange)
+            },
+        }
+    }
+
+    private fireIndexListeners(scopeDir: string): void {
+        for (const listener of this.indexListeners) {
+            listener(scopeDir)
+        }
+    }
+
     private async getSymfInfo(): Promise<{ symfPath: string; serverEndpoint: string; accessToken: string }> {
         const accessToken = this.authToken
         if (!accessToken) {
@@ -224,6 +241,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
     ): Promise<void> {
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir)
+        void upsert.then(() => this.fireIndexListeners(scopeDir))
         if (showIndexProgress) {
             showIndexProgress(scopeDir, upsert)
         }

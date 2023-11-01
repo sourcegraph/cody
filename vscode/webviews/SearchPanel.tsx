@@ -3,9 +3,10 @@
  * panel, which does not support tabbing through list items and requires using the arrow keys.
  */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import { debounce } from 'lodash'
+import { LRUCache } from 'lru-cache'
 
 import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 
@@ -13,12 +14,49 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './SearchPanel.module.css'
 
-const SEARCH_DEBOUNCE_MS = 500
+const SEARCH_DEBOUNCE_MS = 400
 
-function doSearch(vscodeAPI: VSCodeWrapper, query: string): void {
-    if (query.length > 0) {
-        vscodeAPI.postMessage({ command: 'search', query })
+class ResultsCache {
+    private cache = new LRUCache<string, SearchPanelFile[]>({
+        max: 100,
+        ttl: 1000 * 60 * 60, // 1 hour
+    })
+    private lastReset = 0
+
+    public set(query: string, results: SearchPanelFile[], afterReset: number): void {
+        const curTime = Date.now()
+        if (curTime - this.lastReset > afterReset) {
+            this.cache.set(query, results)
+        }
     }
+
+    public get(query: string): SearchPanelFile[] | undefined {
+        return this.cache.get(query)
+    }
+
+    public clear(): void {
+        this.cache.clear()
+        this.lastReset = Date.now()
+    }
+}
+
+function doSearch(
+    vscodeAPI: VSCodeWrapper,
+    query: string,
+    cache?: ResultsCache,
+    cacheCallback?: (results: SearchPanelFile[]) => void
+): void {
+    if (query.length === 0) {
+        return
+    }
+    if (cache) {
+        const cachedResults = cache.get(query)
+        if (cachedResults && cacheCallback) {
+            cacheCallback(cachedResults)
+            return
+        }
+    }
+    vscodeAPI.postMessage({ command: 'search', query })
 }
 
 const debouncedDoSearch = debounce(doSearch, SEARCH_DEBOUNCE_MS)
@@ -30,6 +68,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
     const [collapsedFileResults, setCollapsedFileResults] = React.useState<{ [key: number]: boolean }>({})
     const outerContainerRef = useRef<HTMLDivElement>(null)
     const queryInputRef = useRef<HTMLTextAreaElement>(null)
+    const resultsCache = useMemo(() => new ResultsCache(), [])
 
     // Update search results when query changes
     useEffect(() => {
@@ -38,8 +77,10 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             setSelectedResult([-1, -1])
             return
         }
-        debouncedDoSearch(vscodeAPI, query)
-    }, [vscodeAPI, query])
+        debouncedDoSearch(vscodeAPI, query, resultsCache, cachedResults => {
+            setResults(cachedResults)
+        })
+    }, [vscodeAPI, resultsCache, query])
 
     // update the search results when we get results from the extension backend
     useEffect(() => {
@@ -49,12 +90,21 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     if (message.query === query) {
                         setResults(message.results)
                         setSelectedResult([-1, -1])
-                        break
                     }
+                    // hack: there is a chance the user request predates
+                    // the last index update, so we add a 5 sec delay before
+                    // we accept new entries into the cache
+                    resultsCache.set(message.query, message.results, 5 * 1000)
+                    break
+                }
+                case 'index-updated': {
+                    console.log('### clearing cache because index updated for:', message.scopeDir)
+                    resultsCache.clear()
+                    break
                 }
             }
         })
-    }, [vscodeAPI, query])
+    }, [vscodeAPI, resultsCache, query])
 
     // When selection changes, send a message to the extension indicating the file and range
     useEffect(() => {
@@ -79,15 +129,18 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
     }, [])
 
     const onInputChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setQuery(e.target.value)
+        setQuery(e.target.value.trim())
     }, [])
 
     const onInputKeyDown = React.useCallback(
         (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
             if (e.key === 'Enter') {
                 e.preventDefault()
-                debouncedDoSearch.cancel()
-                doSearch(vscodeAPI, query)
+                if (e.metaKey || !resultsCache.get(query)) {
+                    // bust cache, send new request immediately
+                    debouncedDoSearch.cancel()
+                    doSearch(vscodeAPI, query)
+                }
             } else if (e.key === 'ArrowDown') {
                 // detect if command key is selected
                 if (e.metaKey && results.length > 0) {
@@ -102,7 +155,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                 e.stopPropagation()
             }
         },
-        [vscodeAPI, query, results.length, selectedResult]
+        [vscodeAPI, resultsCache, query, results.length, selectedResult]
     )
 
     const onKeyDownUpdateSelection = React.useCallback(
