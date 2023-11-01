@@ -480,50 +480,54 @@ const register = async (
     updateAuthStatusBarIndicator()
 
     let completionsProvider: vscode.Disposable | null = null
+    let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = async (): Promise<void> => {
-        const config = getConfiguration(vscode.workspace.getConfiguration())
-        if (!config.autocomplete) {
-            completionsProvider?.dispose()
-            completionsProvider = null
-            if (config.isRunningInsideAgent) {
-                throw new Error(
-                    'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
-                )
+    const setupAutocomplete = (): void => {
+        setupAutocompleteQueue = setupAutocompleteQueue.then(async () => {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
+            if (!config.autocomplete) {
+                completionsProvider?.dispose()
+                completionsProvider = null
+                if (config.isRunningInsideAgent) {
+                    throw new Error(
+                        'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                            'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                    )
+                }
+                return
             }
-            return
-        }
 
-        if (completionsProvider !== null) {
-            // If completions are already initialized and still enabled, we
-            // need to reset the completion provider.
-            completionsProvider.dispose()
-        }
+            if (completionsProvider !== null) {
+                // If completions are already initialized and still enabled, we
+                // need to reset the completion provider.
+                completionsProvider.dispose()
+            }
 
-        completionsProvider = await createInlineCompletionItemProvider(
-            {
-                config,
-                client: codeCompletionsClient,
-                statusBar,
-                contextProvider,
-                authProvider,
-                triggerNotice: notice => chatManager.triggerNotice(notice),
-            },
-            context,
-            platform
-        )
+            completionsProvider = await createInlineCompletionItemProvider(
+                {
+                    config,
+                    client: codeCompletionsClient,
+                    statusBar,
+                    contextProvider,
+                    authProvider,
+                    triggerNotice: notice => chatManager.triggerNotice(notice),
+                },
+                context,
+                platform
+            )
+        })
     }
+
     // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            void setupAutocomplete()
+            setupAutocomplete()
         }
     })
     authProvider.addChangeListener(() => {
-        void setupAutocomplete()
+        setupAutocomplete()
     })
-    await setupAutocomplete()
+    setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
