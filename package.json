@@ -29,7 +29,7 @@
     "test:e2e": "pnpm -C vscode test:e2e"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.1.0",
+    "@ianvs/prettier-plugin-sort-imports": "^4.1.1",
     "@sourcegraph/eslint-config": "0.37.1",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/tsconfig": "^4.0.1",
