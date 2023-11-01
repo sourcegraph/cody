@@ -93,7 +93,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         this.disposables = []
     }
 
-    public registerCommands(): void {
+    public initialize(): void {
         this.disposables.push(
             vscode.commands.registerCommand('cody.search.index-update', async () => {
                 const scopeDirs = getScopeDirs()
@@ -112,6 +112,17 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 for (const folder of folders) {
                     await this.indexManager.refreshIndex(folder.uri.fsPath)
                 }
+            })
+        )
+        // Kick off search index creation for all workspace folders
+        vscode.workspace.workspaceFolders?.forEach(folder => {
+            void this.symfRunner.ensureIndex(folder.uri.fsPath, showIndexProgress, { hard: false })
+        })
+        this.disposables.push(
+            vscode.workspace.onDidChangeWorkspaceFolders(event => {
+                event.added.forEach(folder => {
+                    void this.symfRunner.ensureIndex(folder.uri.fsPath, showIndexProgress, { hard: false })
+                })
             })
         )
     }

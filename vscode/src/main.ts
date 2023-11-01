@@ -179,7 +179,7 @@ const register = async (
 
     if (symfRunner) {
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
-        searchViewProvider.registerCommands()
+        searchViewProvider.initialize()
         disposables.push(searchViewProvider)
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
