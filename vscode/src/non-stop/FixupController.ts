@@ -188,6 +188,7 @@ export class FixupController
         const bufferText = document.getText(task.selectionRange)
         let diff = task.diff
         if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
+            console.log('Calling from applicable')
             // The buffer changed since we last computed the diff.
             task.diff = diff = computeDiff(task.original, task.replacement, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
@@ -339,6 +340,8 @@ export class FixupController
             void vscode.window.showWarningMessage('edit did not apply')
             return
         }
+
+        console.log('Applied the change!')
 
         const replacementText = task.replacement
         if (replacementText) {
@@ -707,6 +710,7 @@ export class FixupController
         // Note: This will also apply if the user attempts to undo the applied change.
         if (task.state === CodyTaskState.applied) {
             this.accept(task.id)
+            return
         }
         if (task.state === CodyTaskState.finished) {
             this.needsDiffUpdate_.delete(task)
@@ -787,6 +791,7 @@ export class FixupController
 
             // Add new line at the end of bot text when running insert mode
             const newLine = task.insertMode ? '\n' : ''
+            console.log('Calling from update diffs')
             task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
