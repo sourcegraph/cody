@@ -325,10 +325,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             if (fileMatches) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                    const matchesLength = fileMatches?.length
+                    const matchesLength = fileMatches?.length - 1
                     const newIndex = event.key === 'ArrowUp' ? selectedFileMatch - 1 : selectedFileMatch + 1
                     const newMatchIndex = newIndex < 0 ? matchesLength : newIndex > matchesLength ? 0 : newIndex
                     setSelectedFileMatch(newMatchIndex)
+                }
+
+                if (event.key === 'Backspace') {
+                    setSelectedFileMatch(0)
                 }
 
                 if (event.key === 'Escape') {

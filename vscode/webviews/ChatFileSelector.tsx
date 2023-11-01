@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -12,6 +12,20 @@ export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithC
     setFormInput,
     selectedFileMatch,
 }) => {
+    const buttonRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        const container = buttonRef.current?.parentElement
+
+        if (container) {
+            if (!selectedFileMatch || selectedFileMatch === filePaths?.length) {
+                container.scrollTop = 0
+            } else {
+                container.scrollTop = container.scrollHeight - container.clientHeight
+            }
+        }
+    }, [filePaths?.length, selectedFileMatch, setFormInput])
+
     const onFileSelected = (path: string): void => {
         if (!filePaths) {
             return
@@ -39,6 +53,7 @@ export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithC
                     return (
                         <React.Fragment key={path}>
                             <button
+                                ref={selectedFileMatch && selectedFileMatch === i ? buttonRef : null}
                                 className={classNames(styles.commandItem, selectedFileMatch === i && styles.selected)}
                                 onClick={() => onFileSelected(path)}
                                 type="button"
