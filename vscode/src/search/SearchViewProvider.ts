@@ -47,7 +47,9 @@ class IndexManager {
             this.currentlyRefreshing.add(scopeDir)
 
             await this.symf.deleteIndex(scopeDir)
-            await this.symf.ensureIndex(scopeDir, showIndexProgress)
+            await this.symf.ensureIndex(scopeDir, showIndexProgress, { hard: true })
+        } catch (error) {
+            void vscode.window.showErrorMessage(`Error refreshing search index for ${scopeDir}: ${error}`)
         } finally {
             this.currentlyRefreshing.delete(scopeDir)
         }
@@ -203,7 +205,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
         await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
             const cumulativeResults: SearchPanelFile[] = []
-            const resultSets = await symf.getResultsMulti(query, scopeDirs, showIndexProgress)
+            const resultSets = await symf.getResults(query, scopeDirs, showIndexProgress)
             for (const resultSet of resultSets) {
                 try {
                     cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))

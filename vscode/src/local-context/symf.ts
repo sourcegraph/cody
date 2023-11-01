@@ -1,6 +1,6 @@
 import { execFile as _execFile, spawn } from 'node:child_process'
 import fs from 'node:fs'
-import { rename, rm } from 'node:fs/promises'
+import { rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -64,7 +64,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                 SOURCEGRAPH_URL: serverEndpoint,
             },
             maxBuffer: 1024 * 1024 * 1024,
-            timeout: 1000 * 30, // timeout in 30secs
+            timeout: 1000 * 10, // timeout in 10 seconds
         }).then(({ stdout }) => stdout.trim())
 
         return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir, showIndexProgress))
@@ -82,9 +82,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     ): Promise<Result[]> {
         const maxRetries = 10
 
+        // Run in a loop in case the index is deleted before we can query it
         for (let i = 0; i < maxRetries; i++) {
             await this.getIndexLock(scopeDir).withWrite(async () => {
-                await this.unsafeEnsureIndex(scopeDir, showIndexProgress)
+                await this.unsafeEnsureIndex(scopeDir, showIndexProgress, { hard: i === 0 })
             })
 
             let indexNotFound = false
@@ -113,10 +114,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     public async ensureIndex(
         scopeDir: string,
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>,
+        options: { hard: boolean } = { hard: false }
     ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
-            await this.unsafeEnsureIndex(scopeDir, showIndexProgress)
+            await this.unsafeEnsureIndex(scopeDir, showIndexProgress, options)
         })
     }
 
@@ -145,13 +147,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                         HOME: process.env.HOME,
                     },
                     maxBuffer: 1024 * 1024 * 1024,
-                    timeout: 1000 * 30, // timeout in 30secs
+                    timeout: 1000 * 30, // timeout in 30 seconds
                 }
             )
             return stdout
         } catch (error) {
-            showSymfError(error)
-            throw error
+            throw toSymfError(error)
         }
     }
 
@@ -183,10 +184,17 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     private async unsafeEnsureIndex(
         scopeDir: string,
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>,
+        options: { hard: boolean } = { hard: false }
     ): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
         if (indexExists) {
+            return
+        }
+
+        if (!options.hard && (await this.didIndexFail(scopeDir))) {
+            // Index build previous failed, so don't try to rebuild
+            logDebug('symf', 'index build previously failed and `hard` === false, not rebuilding')
             return
         }
 
@@ -195,8 +203,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             await this.unsafeUpsertIndex(indexDir, tmpDir, scopeDir, showIndexProgress)
         } catch (error) {
             logDebug('symf', 'symf index creation failed', error)
+            await this.markIndexFailed(scopeDir)
             throw error
         }
+
+        await this.clearIndexFailure(scopeDir)
     }
 
     private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
@@ -234,6 +245,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         try {
             const proc = spawn(symfPath, args, {
                 stdio: ['ignore', 'ignore', 'ignore'],
+                timeout: 1000 * 60 * 10, // timeout in 10 minutes
             })
             // wait for proc to finish
             await new Promise<void>((resolve, reject) => {
@@ -249,8 +261,38 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             await mkdirp(path.dirname(indexDir))
             await rename(tmpIndexDir, indexDir)
         } catch (error) {
-            showSymfError(error)
+            throw toSymfError(error)
+        } finally {
+            await rm(tmpIndexDir, { recursive: true, force: true })
         }
+    }
+
+    /**
+     * Helpers for tracking index failure
+     */
+
+    private async markIndexFailed(scopeDir: string): Promise<void> {
+        const failureRoot = path.join(this.indexRoot, '.failed')
+        await mkdirp(failureRoot)
+
+        const absIndexedDir = path.resolve(scopeDir)
+        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+
+        await writeFile(failureSentinelFile, '')
+    }
+
+    private async didIndexFail(scopeDir: string): Promise<boolean> {
+        const failureRoot = path.join(this.indexRoot, '.failed')
+        const absIndexedDir = path.resolve(scopeDir)
+        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+        return fileExists(failureSentinelFile)
+    }
+
+    private async clearIndexFailure(scopeDir: string): Promise<void> {
+        const failureRoot = path.join(this.indexRoot, '.failed')
+        const absIndexedDir = path.resolve(scopeDir)
+        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+        await rm(failureSentinelFile, { force: true })
     }
 }
 
@@ -347,7 +389,7 @@ class RWLock {
     }
 }
 
-function showSymfError(error: unknown): void {
+function toSymfError(error: unknown): Error {
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
@@ -357,5 +399,5 @@ function showSymfError(error: unknown): void {
     } else {
         errorMessage = `symf index creation failed: ${error}`
     }
-    void vscode.window.showErrorMessage(errorMessage)
+    return new EvalError(errorMessage)
 }
