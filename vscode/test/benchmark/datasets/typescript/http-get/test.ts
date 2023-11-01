@@ -1,5 +1,5 @@
+import { fetchCurrentUser } from './generate'
 import { server } from './server'
-import { fetchCurrentUser } from './solution'
 
 const serverInstance = server.listen(3000, async () => {
     try {
