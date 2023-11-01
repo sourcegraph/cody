@@ -73,7 +73,9 @@ export class Fixup implements Recipe {
                     speaker: 'assistant',
                 },
                 this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
-                []
+                [],
+                [],
+                context.interactionID
             )
         )
     }
@@ -127,6 +129,7 @@ export class Fixup implements Recipe {
                     .getContextMessages(task.instruction, {
                         numCodeResults: 4,
                         numTextResults: 0,
+                        interactionID: context.interactionID,
                     })
                     .then(messages =>
                         messages.concat(

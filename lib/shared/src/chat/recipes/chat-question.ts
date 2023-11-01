@@ -36,7 +36,9 @@ export class ChatQuestion implements Recipe {
                     context.editor.getActiveTextEditorSelection() || null,
                     context.interactionID
                 ),
-                []
+                [],
+                [],
+                context.interactionID
             )
         )
     }

@@ -21,8 +21,12 @@ export class Interaction {
         private fullContext: Promise<ContextMessage[]>,
         private usedContextFiles: ContextFile[],
         private usedPreciseContext: PreciseContext[] = [],
+        private readonly request_id?: string,
         public readonly timestamp: string = new Date().toISOString()
-    ) {}
+    ) {
+        this.humanMessage.request_id = this.request_id
+        this.assistantMessage.request_id = this.request_id
+    }
 
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }

@@ -34,9 +34,9 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string; source?: string }
-    | { command: 'newFile'; text: string; source?: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string }
+    | { command: 'insert'; text: string; source?: string; request_id?: string }
+    | { command: 'newFile'; text: string; source?: string; request_id?: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string; request_id?: string }
     | {
           command: 'auth'
           type:

@@ -21,14 +21,17 @@ export async function newInteraction(args: {
     assistantText?: string
     assistantDisplayText?: string
     source?: ChatEventSource
+    request_id?: string
 }): Promise<Interaction> {
-    const { text, displayText, contextMessages, assistantText, assistantDisplayText, source } = args
+    const { text, displayText, contextMessages, assistantText, assistantDisplayText, source, request_id } = args
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', text, displayText, source },
             { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText, source },
             Promise.resolve(contextMessages || []),
-            []
+            [],
+            [],
+            request_id
         )
     )
 }

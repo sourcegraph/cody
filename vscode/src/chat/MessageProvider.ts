@@ -623,6 +623,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const customInteraction = await newInteraction({
             displayText: humanInput,
             assistantDisplayText: assistantResponse,
+            request_id: this.currentInteractionID,
         })
         this.transcript.addInteraction(interaction || customInteraction)
         this.sendTranscript()

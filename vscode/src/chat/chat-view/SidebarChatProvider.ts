@@ -98,13 +98,13 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'insert':
-                await this.handleInsertAtCursor(message.text, message.source)
+                await this.handleInsertAtCursor(message.text, message.source, message.request_id)
                 break
             case 'newFile':
-                await this.handleSaveToNewFile(message.text, message.source)
+                await this.handleSaveToNewFile(message.text, message.source, message.request_id)
                 break
             case 'copy':
-                await this.handleCopiedCode(message.text, message.eventType, message.source)
+                await this.handleCopiedCode(message.text, message.eventType, message.source, message.request_id)
                 break
             case 'event':
                 this.logTelemetryService(message.eventName, message.properties)
@@ -276,9 +276,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
      * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
-    private async handleInsertAtCursor(text: string, source?: string): Promise<void> {
-        const selectionRange = getActiveEditor()?.selection
+    private async handleInsertAtCursor(text: string, source?: string, request_id?: string): Promise<void> {
         const editor = getActiveEditor()
+        const selectionRange = editor?.selection
         if (!editor || !selectionRange) {
             this.handleError('No editor or selection found to insert text', 'system')
             return
@@ -292,17 +292,17 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         // Log insert event
         const op = 'insert'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source, request_id)
     }
 
     /**
      * Handles insert event to insert text from code block to new file
      */
-    private async handleSaveToNewFile(text: string, source?: string): Promise<void> {
+    private async handleSaveToNewFile(text: string, source?: string, request_id?: string): Promise<void> {
         // Log insert event
         const op = 'save'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source, request_id)
 
         await this.editor.createWorkspaceFile(text)
     }
@@ -312,13 +312,18 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */
-    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown', source?: string): Promise<void> {
+    private async handleCopiedCode(
+        text: string,
+        eventType: 'Button' | 'Keydown',
+        source?: string,
+        request_id?: string
+    ): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
         const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
         // Send to Inline Controller for tracking
         if (copiedCode) {
-            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, source)
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, source, request_id)
         }
     }
 

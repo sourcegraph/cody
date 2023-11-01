@@ -24,6 +24,7 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     source?: string // the name of the executed command that generated the code
+    request_id?: string // the id of the request that generated the code
 }
 
 function createButtons(
@@ -32,7 +33,8 @@ function createButtons(
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonClassName?: string,
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
-    source?: string
+    source?: string,
+    request_id?: string
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -57,7 +59,8 @@ function createButtons(
         CopyCodeBlockIcon,
         codeBlockActions,
         copyButtonClassName,
-        source
+        source,
+        request_id
     )
     buttons.append(copyButton)
 
@@ -71,7 +74,8 @@ function createButtons(
                 InsertCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName,
-                source
+                source,
+                request_id
             )
         )
 
@@ -83,7 +87,8 @@ function createButtons(
                 SaveCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName,
-                source
+                source,
+                request_id
             )
         )
     }
@@ -95,7 +100,6 @@ function createButtons(
 
 /**
  * Creates a button to perform an action on a code block.
- *
  * @returns The button element.
  */
 function createCodeBlockActionButton(
@@ -108,7 +112,8 @@ function createCodeBlockActionButton(
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
     },
     className?: string,
-    source?: string
+    source?: string,
+    request_id?: string
 ): HTMLElement {
     const button = document.createElement('button')
 
@@ -123,7 +128,7 @@ function createCodeBlockActionButton(
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
-            codeBlockActions.copy(text, 'Button', source)
+            codeBlockActions.copy(text, 'Button', source, request_id)
             setTimeout(() => (button.innerHTML = iconSvg), 5000)
         })
     }
@@ -135,10 +140,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => insertOnSubmit(text, false, source))
+            button.addEventListener('click', () => insertOnSubmit(text, false, source, request_id))
             break
         case 'new':
-            button.addEventListener('click', () => insertOnSubmit(text, true, source))
+            button.addEventListener('click', () => insertOnSubmit(text, true, source, request_id))
             break
     }
 
@@ -152,6 +157,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonClassName,
     insertButtonOnSubmit,
     source,
+    request_id,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -170,7 +176,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     copyButtonOnSubmit,
                     insertButtonClassName,
                     insertButtonOnSubmit,
-                    source
+                    source,
+                    request_id
                 )
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
@@ -192,6 +199,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         source,
+        request_id,
     ])
 
     return useMemo(

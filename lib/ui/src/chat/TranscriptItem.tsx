@@ -181,6 +181,7 @@ export const TranscriptItem: React.FunctionComponent<
                             insertButtonClassName={codeBlocksInsertButtonClassName}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             source={message.source}
+                            request_id={message.request_id}
                         />
                     )
                 ) : inProgress ? (
