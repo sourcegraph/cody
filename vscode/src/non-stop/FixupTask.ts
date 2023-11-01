@@ -30,6 +30,7 @@ export class FixupTask {
     public spinCount = 0
     // The edited range of the applied replacement
     public editedRange: vscode.Range | undefined
+    public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
         public readonly fixupFile: FixupFile,
