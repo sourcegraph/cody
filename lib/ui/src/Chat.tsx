@@ -275,6 +275,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    event.stopPropagation()
                     const commandsLength = displayCommands?.length
                     const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
                     const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex >= commandsLength - 1 ? 0 : curIndex
