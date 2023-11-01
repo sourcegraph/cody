@@ -84,7 +84,13 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
                 ? responses.fixup
                 : responses.chat
-        res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+
+        // TODO: Fix racey tests and remove this delay
+        void new Promise(resolve => setTimeout(resolve, 100)).then(() => {
+            res.send(
+                `event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`
+            )
+        })
     })
 
     let isFirstCompletion = true

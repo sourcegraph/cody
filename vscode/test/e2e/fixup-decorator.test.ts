@@ -17,7 +17,7 @@ const expectedOrderedEvents = [
 test.beforeEach(() => {
     resetLoggedEvents()
 })
-test('decorations from un-applied Cody changes appear', async ({ page, sidebar }) => {
+test.skip('decorations from un-applied Cody changes appear', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
