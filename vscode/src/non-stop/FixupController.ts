@@ -707,6 +707,7 @@ export class FixupController
         // Note: This will also apply if the user attempts to undo the applied change.
         if (task.state === CodyTaskState.applied) {
             this.accept(task.id)
+            return
         }
         if (task.state === CodyTaskState.finished) {
             this.needsDiffUpdate_.delete(task)
