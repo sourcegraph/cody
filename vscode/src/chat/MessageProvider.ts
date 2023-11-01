@@ -423,7 +423,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const args = { ...contextSummary, ...{ request_id } }
+        const args = { ...contextSummary, request_id }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, args, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...args } })
     }
