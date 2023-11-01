@@ -40,6 +40,7 @@ export class CommandRunner implements vscode.Disposable {
             mode: command.mode || 'ask',
             useCodebaseContex: !!command.context?.codebase,
             useShellCommand: !!command.context?.command,
+            request_id: command.request_id,
         })
 
         logDebug('CommandRunner:init', this.kind)

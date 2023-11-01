@@ -18,6 +18,7 @@ export interface ChatMessage extends Message {
     buttons?: ChatButton[]
     data?: any
     source?: ChatEventSource
+    request_id?: string
 }
 
 export interface InteractionMessage extends Message {
@@ -25,6 +26,7 @@ export interface InteractionMessage extends Message {
     prefix?: string
     error?: string
     source?: ChatEventSource
+    request_id?: string
 }
 
 export interface UserLocalHistory {

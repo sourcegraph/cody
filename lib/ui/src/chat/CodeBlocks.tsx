@@ -24,6 +24,7 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     source?: string // the name of the executed command that generated the code
+    requestID?: string // id of the request that generated the code
 }
 
 function createButtons(
@@ -32,7 +33,8 @@ function createButtons(
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonClassName?: string,
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
-    source?: string
+    source?: string,
+    requestID?: string
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -71,7 +73,8 @@ function createButtons(
                 InsertCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName,
-                source
+                source,
+                requestID
             )
         )
 
@@ -83,7 +86,8 @@ function createButtons(
                 SaveCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName,
-                source
+                source,
+                requestID
             )
         )
     }
@@ -95,7 +99,6 @@ function createButtons(
 
 /**
  * Creates a button to perform an action on a code block.
- *
  * @returns The button element.
  */
 function createCodeBlockActionButton(
@@ -108,7 +111,8 @@ function createCodeBlockActionButton(
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
     },
     className?: string,
-    source?: string
+    source?: string,
+    requestID?: string
 ): HTMLElement {
     const button = document.createElement('button')
 
@@ -152,6 +156,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonClassName,
     insertButtonOnSubmit,
     source,
+    requestID,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -170,7 +175,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     copyButtonOnSubmit,
                     insertButtonClassName,
                     insertButtonOnSubmit,
-                    source
+                    source,
+                    requestID
                 )
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
@@ -192,6 +198,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         source,
+        requestID,
     ])
 
     return useMemo(

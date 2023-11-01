@@ -70,13 +70,13 @@ export class ChatPanelProvider extends MessageProvider {
                 await this.executeRecipe(message.recipe, '', 'chat')
                 break
             case 'insert':
-                await this.handleInsertAtCursor(message.text, message.source)
+                await this.handleInsertAtCursor(message.text, message.source, message.requestID)
                 break
             case 'newFile':
-                await this.handleSaveToNewFile(message.text, message.source)
+                await this.handleSaveToNewFile(message.text, message.source, message.requestID)
                 break
             case 'copy':
-                await this.handleCopiedCode(message.text, message.eventType, message.source)
+                await this.handleCopiedCode(message.text, message.eventType, message.source, message.requestID)
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
@@ -109,19 +109,12 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        MessageProvider.inputHistory.push(text)
+        await this.executeRecipe('chat-question', text, 'chat')
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
-        if (text === '/') {
-            void vscode.commands.executeCommand('cody.action.commands.menu', true)
-            return
-        }
-        MessageProvider.inputHistory.push(text)
-        if (this.contextProvider.config.experimentalChatPredictions) {
-            void this.runRecipeForSuggestion('next-questions', text)
-        }
-        await this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**
@@ -196,7 +189,7 @@ export class ChatPanelProvider extends MessageProvider {
      * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
-    private async handleInsertAtCursor(text: string, source?: string): Promise<void> {
+    private async handleInsertAtCursor(text: string, source?: string, requestID?: string): Promise<void> {
         const selectionRange = getActiveEditor()?.selection
         const editor = getActiveEditor()
         if (!editor || !selectionRange) {
@@ -212,17 +205,17 @@ export class ChatPanelProvider extends MessageProvider {
         // Log insert event
         const op = 'insert'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source, requestID)
     }
 
     /**
      * Handles insert event to insert text from code block to new file
      */
-    private async handleSaveToNewFile(text: string, source?: string): Promise<void> {
+    private async handleSaveToNewFile(text: string, source?: string, requestID?: string): Promise<void> {
         // Log insert event
         const op = 'save'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source, requestID)
 
         await this.editor.createWorkspaceFile(text)
     }
@@ -232,13 +225,18 @@ export class ChatPanelProvider extends MessageProvider {
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */
-    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown', source?: string): Promise<void> {
+    private async handleCopiedCode(
+        text: string,
+        eventType: 'Button' | 'Keydown',
+        source?: string,
+        requestID?: string
+    ): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
         const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
         // Send to Inline Controller for tracking
         if (copiedCode) {
-            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, source)
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, source, requestID)
         }
     }
 
@@ -276,7 +274,7 @@ export class ChatPanelProvider extends MessageProvider {
         }
 
         if (!this.webviewPanel) {
-            await this.createWebviewPanel(this.currentChatID)
+            await this.createWebviewPanel(this.sessionID)
         }
         this.webviewPanel?.reveal()
     }

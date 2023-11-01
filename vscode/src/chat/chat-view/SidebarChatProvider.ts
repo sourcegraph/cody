@@ -214,19 +214,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
+        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        MessageProvider.inputHistory.push(text)
+        await this.executeRecipe('chat-question', text, 'chat')
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
-        if (text === '/') {
-            void vscode.commands.executeCommand('cody.action.commands.menu', true)
-            return
-        }
-        MessageProvider.inputHistory.push(text)
-        if (this.contextProvider.config.experimentalChatPredictions) {
-            void this.runRecipeForSuggestion('next-questions', text)
-        }
-        await this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**

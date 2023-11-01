@@ -24,13 +24,21 @@ export class Interaction {
         public readonly timestamp: string = new Date().toISOString()
     ) {}
 
+    public request_id: string | undefined = undefined
+
+    public setRequestId(request_id: string): void {
+        this.request_id = request_id
+        this.humanMessage.request_id = request_id
+        this.assistantMessage.request_id = request_id
+    }
+
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
         const source = assistantMessage.source || this.assistantMessage.source
-        this.assistantMessage = { ...assistantMessage, source }
+        this.assistantMessage = { ...assistantMessage, source, request_id: this.request_id }
     }
 
     public getHumanMessage(): InteractionMessage {

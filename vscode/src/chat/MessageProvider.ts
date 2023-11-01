@@ -1,3 +1,4 @@
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
@@ -84,7 +85,9 @@ export interface MessageProviderOptions {
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable {
-    public currentChatID = ''
+    // chat id is used to identify chat session
+    public sessionID = new Date(Date.now()).toUTCString()
+    public currentRequestID: string | undefined = undefined
 
     // input and chat history are shared across all MessageProvider instances
     protected static inputHistory: string[] = []
@@ -121,9 +124,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.platform = options.platform
-
-        // chat id is used to identify chat session
-        this.createNewChatID()
 
         // Listen to configuration changes to possibly enable Custom Commands
         this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
@@ -172,7 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     public async restoreSession(chatID: string): Promise<void> {
         await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
-        this.currentChatID = chatID
+        this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
         await this.transcript.toJSON()
         this.sendTranscript()
@@ -181,15 +181,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         telemetryRecorder.recordEvent('cody.messageProvider.restoreChatHistoryButton', 'clicked')
     }
 
-    private createNewChatID(): void {
-        this.currentChatID = new Date(Date.now()).toUTCString()
+    private createNewChatID(chatID?: string): void {
+        this.sessionID = chatID || new Date(Date.now()).toUTCString()
     }
 
     private sendPrompt(
         promptMessages: Message[],
         responsePrefix = '',
         multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC,
-        recipeId: RecipeID
+        recipeId: RecipeID,
+        request_id: string
     ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
@@ -230,7 +231,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     const source = lastInteraction?.getHumanMessage().source || recipeId
                     telemetryService.log(
                         'CodyVSCodeExtension:chatResponse:hasCode',
-                        { ...codeCount, source },
+                        { ...codeCount, source, request_id },
                         { hasV2Event: true }
                     )
                     telemetryRecorder.recordEvent(`cody.messageProvider.chatResponse.${source}`, 'hasCode', {
@@ -239,6 +240,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         },
                     })
                 }
+                this.currentRequestID = undefined
             },
         })
 
@@ -290,11 +292,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     protected cancelCompletion(): void {
+        this.currentRequestID = undefined
         this.cancelCompletionCallback?.()
         this.cancelCompletionCallback = null
     }
 
     protected async onCompletionEnd(ignoreEmbeddingsError: boolean = false): Promise<void> {
+        this.currentRequestID = undefined
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
@@ -307,6 +311,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     protected async abortCompletion(): Promise<void> {
+        this.currentRequestID = undefined
         await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
         await this.multiplexer.notifyTurnComplete()
@@ -319,8 +324,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput = '', source?: ChatEventSource): Promise<void> {
         if (this.isMessageInProgress) {
-            this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.', 'system')
+            this.handleError('Cannot execute multiple actions. Please wait for the current action to finish.', 'system')
             return
+        }
+
+        const request_id = uuid.v4()
+        this.currentRequestID = request_id
+
+        if (source === 'chat' && this.contextProvider.config.experimentalChatPredictions) {
+            void this.runRecipeForSuggestion('next-questions', humanChatInput)
         }
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
@@ -366,7 +378,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             await this.addCustomInteraction(errorMsg, '', interaction)
             return
         }
+
         this.isMessageInProgress = true
+        interaction.setRequestId(request_id)
         this.transcript.addInteraction(interaction)
 
         const contextSummary = {
@@ -394,7 +408,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     prompt,
                     interaction.getAssistantMessage().prefix ?? '',
                     recipe.multiplexerTopic,
-                    recipeId
+                    recipeId,
+                    request_id
                 )
                 await this.saveTranscriptToChatHistory()
 
@@ -407,12 +422,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 })
             }
         }
-        telemetryService.log(
-            `CodyVSCodeExtension:recipe:${recipe.id}:executed`,
-            { contextSummary },
-            { hasV2Event: true }
-        )
-        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
+
+        const args = { ...contextSummary, ...{ request_id } }
+        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, args, { hasV2Event: true })
+        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...args } })
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -442,7 +455,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, undefined, { hasV2Event: true })
+        const args = { request_id: this.currentRequestID }
+        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, args, { hasV2Event: true })
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -556,29 +570,27 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!text?.startsWith('/')) {
             return { text, recipeId }
         }
+        const args = { source, request_id: this.currentRequestID }
         switch (true) {
             case text === '/':
-                return vscode.commands.executeCommand('cody.action.commands.menu', 'sidebar')
+                return vscode.commands.executeCommand('cody.action.commands.menu', source)
             case text === '/commands-settings':
-                telemetryService.log(
-                    'CodyVSCodeExtension:commandConfigMenuButton:clicked',
-                    { source: 'sidebar' },
-                    { hasV2Event: true }
-                )
+                telemetryService.log('CodyVSCodeExtension:commandConfigMenuButton:clicked', args, { hasV2Event: true })
                 telemetryRecorder.recordEvent(`cody.sidebar.commandConfigMenuButton.${source}`, 'clicked')
                 return vscode.commands.executeCommand('cody.settings.commands')
             case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
                 await this.editor.controllers.command?.open(text.split(' ')[1])
-                telemetryService.log('CodyVSCodeExtension:command:openFile:executed', undefined, { hasV2Event: true })
+                telemetryService.log('CodyVSCodeExtension:command:openFile:executed', args, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.command.openFile', 'executed')
                 return null
             case /^\/r(eset)?$/.test(text):
                 await this.clearAndRestartSession()
-                telemetryService.log('CodyVSCodeExtension:command:resetChat:executed', undefined, { hasV2Event: true })
+                telemetryService.log('CodyVSCodeExtension:command:resetChat:executed', args, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.command.resetChat', 'executed')
                 return null
             case /^\/symf(?:\s|$)/.test(text):
+                telemetryService.log('CodyVSCodeExtension:command:symf:executed', args, { hasV2Event: true })
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
@@ -587,7 +599,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!question) {
                     question = await showAskQuestionQuickPick()
                 }
-                await vscode.commands.executeCommand('cody.action.chat', question, 'menu')
+                await vscode.commands.executeCommand('cody.action.chat', question, source)
                 return null
             }
             case /^\/edit(\s)?/.test(text):
@@ -598,7 +610,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
                     return null
                 }
-                const commandRunnerID = await this.editor.controllers.command?.addCommand(text)
+                const commandRunnerID = await this.editor.controllers.command?.addCommand(text, this.currentRequestID)
                 if (!commandRunnerID) {
                     return null
                 }
@@ -626,7 +638,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             displayText: humanInput,
             assistantDisplayText: assistantResponse,
         })
-        this.transcript.addInteraction(interaction || customInteraction)
+        const updatedInteraction = interaction || customInteraction
+        updatedInteraction.setRequestId(this.sessionID)
+        this.transcript.addInteraction(updatedInteraction)
         this.sendTranscript()
         await this.saveTranscriptToChatHistory()
     }
@@ -648,7 +662,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        MessageProvider.chatHistory[this.sessionID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()
     }

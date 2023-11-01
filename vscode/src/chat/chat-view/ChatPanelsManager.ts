@@ -95,7 +95,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
         const provider = new ChatPanelProvider(this.options)
         const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
-        const sessionID = chatID || provider.currentChatID
+        const sessionID = chatID || provider.sessionID
         this.activePanelProvider = provider
         this.panelProvidersMap.set(sessionID, provider)
 
@@ -103,7 +103,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             if (e.webviewPanel.visible && e.webviewPanel.active) {
                 this.activePanelProvider = provider
                 this.options.contextProvider.webview = provider.webview
-                void this.selectTreeItem(provider.currentChatID)
+                void this.selectTreeItem(provider.sessionID)
             }
         })
 
@@ -195,7 +195,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private disposeProvider(chatID: string): void {
-        if (chatID === this.activePanelProvider?.currentChatID) {
+        if (chatID === this.activePanelProvider?.sessionID) {
             this.activePanelProvider.webviewPanel?.dispose()
             this.activePanelProvider.dispose()
             this.activePanelProvider = undefined
