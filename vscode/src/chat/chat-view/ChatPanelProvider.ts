@@ -159,10 +159,10 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async handleFileMatchFinder(input: string): Promise<void> {
-        const files = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
+        const files = input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatches(input)
         const symbols = (await getSymbolsForChat(input))
             ?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
-            .slice(0, 10)
+            .slice(0, 5)
         const matches = [...files, ...symbols].slice(0, 20)
         void this.webview?.postMessage({
             type: 'editorContextMatches',

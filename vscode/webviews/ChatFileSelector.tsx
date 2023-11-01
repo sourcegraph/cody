@@ -32,7 +32,7 @@ export const ChatInputContextComponent: React.FunctionComponent<React.PropsWithC
     return (
         <div className={classNames(styles.container)}>
             <div className={classNames(styles.headingContainer)}>
-                <h3 className={styles.heading}>Select a file to add as context...</h3>
+                <h3 className={styles.heading}>Add selected file as context...</h3>
             </div>
             <div className={classNames(styles.commandsContainer)}>
                 {filePaths?.map((path, i) => {
