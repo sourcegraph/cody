@@ -356,11 +356,7 @@ export class SourcegraphGraphQLAPIClient {
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
-        }).then(response =>
-            extractDataOrError(response, data =>
-                data.repository ? data.repository.id : null
-            )
-        )
+        }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
     }
 
     public async getRepoNames(first: number): Promise<string[] | Error> {
