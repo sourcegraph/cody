@@ -23,8 +23,6 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     private indexLocks: Map<string, RWLock> = new Map()
 
-    private inProgressIndexing: Map<string, Promise<void>> = new Map()
-
     constructor(
         private context: vscode.ExtensionContext,
         private sourcegraphServerEndpoint: string | null,
@@ -57,7 +55,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     public async getResults(
         userQuery: string,
         scopeDirs: string[],
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
     ): Promise<Promise<Result[]>[]> {
         const { symfPath, serverEndpoint, accessToken } = await this.getSymfInfo()
         const expandedQuery = execFile(symfPath, ['expand-query', userQuery], {
@@ -80,19 +78,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     private async getResultsForScopeDir(
         keywordQuery: Promise<string>,
         scopeDir: string,
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
     ): Promise<Result[]> {
         const maxRetries = 10
 
         // Run in a loop in case the index is deleted before we can query it
         for (let i = 0; i < maxRetries; i++) {
-            // Redisplay progress if indexing is already underway
-            if (showIndexProgress) {
-                const inProgressUpsert = this.inProgressIndexing.get(scopeDir)
-                if (inProgressUpsert) {
-                    void showIndexProgress(scopeDir, inProgressUpsert)
-                }
-            }
             await this.getIndexLock(scopeDir).withWrite(async () => {
                 await this.unsafeEnsureIndex(scopeDir, showIndexProgress, { hard: i === 0 })
             })
@@ -123,7 +114,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     public async ensureIndex(
         scopeDir: string,
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void,
         options: { hard: boolean } = { hard: false }
     ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
@@ -193,7 +184,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     private async unsafeEnsureIndex(
         scopeDir: string,
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void,
         options: { hard: boolean } = { hard: false }
     ): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
@@ -230,15 +221,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         indexDir: string,
         tmpIndexDir: string,
         scopeDir: string,
-        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => Promise<void>
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
     ): Promise<void> {
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir)
-        this.inProgressIndexing.set(scopeDir, upsert)
-        void upsert.finally(() => {
-            this.inProgressIndexing.delete(scopeDir)
-        })
         if (showIndexProgress) {
-            void showIndexProgress(scopeDir, upsert)
+            showIndexProgress(scopeDir, upsert)
         }
         return upsert
     }
