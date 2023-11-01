@@ -59,7 +59,8 @@ function createButtons(
         CopyCodeBlockIcon,
         codeBlockActions,
         copyButtonClassName,
-        source
+        source,
+        requestID
     )
     buttons.append(copyButton)
 
@@ -127,7 +128,7 @@ function createCodeBlockActionButton(
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
-            codeBlockActions.copy(text, 'Button', source)
+            codeBlockActions.copy(text, 'Button', source, requestID)
             setTimeout(() => (button.innerHTML = iconSvg), 5000)
         })
     }
@@ -139,10 +140,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => insertOnSubmit(text, false, source))
+            button.addEventListener('click', () => insertOnSubmit(text, false, source, requestID))
             break
         case 'new':
-            button.addEventListener('click', () => insertOnSubmit(text, true, source))
+            button.addEventListener('click', () => insertOnSubmit(text, true, source, requestID))
             break
     }
 
@@ -185,7 +186,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
                     if (copyButtonOnSubmit) {
-                        copyButtonOnSubmit(preText, 'Keydown')
+                        copyButtonOnSubmit(preText, 'Keydown', source, requestID)
                     }
                 })
             }

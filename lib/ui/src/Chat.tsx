@@ -106,8 +106,8 @@ export interface FeedbackButtonsProps {
 }
 
 export interface CodeBlockActionsProps {
-    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', source?: string) => void
-    insertButtonOnSubmit: (text: string, newFile?: boolean, source?: string) => void
+    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', source?: string, requestID?: string) => void
+    insertButtonOnSubmit: (text: string, newFile?: boolean, source?: string, requestID?: string) => void
 }
 
 export interface ChatCommandsProps {
