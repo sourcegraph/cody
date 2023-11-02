@@ -1,6 +1,6 @@
 ---
 name: PRD Issue
-about: User story for completing items on the PRD
+description: User story for completing items on the PRD
 title: 'PRD-Issue: Example user story from PRD'
 labels: prd-issue
 assignees: ''
@@ -12,11 +12,13 @@ assignees: ''
 
 <!-- Example Title: Redesign Chat Window for Improved User Experience -->
 
+[PRD: Your-Title]()
+
 **Description:**
 
 <!-- What is the problem we are trying to solve? -->
 
-<!-- As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat.
+<!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat.
 
 The new chat window should be fast and responsive, with the ability to let the user choose the type of context used for the LLM. I should be given the option to choose whether or not I want Cody to find the context, or let me choose it myself. I want more control on what is fed into the LLM for answers. I should easily be able to distinguish what my last question was versus what was displayed from commands.
 
@@ -26,11 +28,11 @@ The new chat window should have a clean, modern interface with plenty of white s
 
 <!-- What is the end goal? -->
 
-<!-- The goal is to create an intuitive, uncluttered chat experience that delights users and facilitates seamless communication. It needs to be as fast as existing AI chatbots, and give the user control of what is used as context. The redesigned chat should increase lovability by removing the complication of context mixing and making it lightning fast for users. -->
+<!-- Example: The goal is to create an intuitive, uncluttered chat experience that delights users and facilitates seamless communication. It needs to be as fast as existing AI chatbots, and give the user control of what is used as context. The redesigned chat should increase lovability by removing the complication of context mixing and making it lightning fast for users. -->
 
 **Acceptance Criteria:**
 
-<!--
+<!-- Example:
 - The chat window has a clean, uncluttered interface with plenty of white space
 - The user should have the option to select whether Cody or the user chooses the context
 - The user should be able to use "@ commands" to select files or symbols for context
@@ -52,4 +54,4 @@ The new chat window should have a clean, modern interface with plenty of white s
 - [ ] Add a draft title or issue reference here
 ```
 
-- [PRD: Your-Title]()
+
