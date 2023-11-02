@@ -877,7 +877,7 @@ export class FixupController
             return
         }
         const previousRange = task.selectionRange
-        const previousInstruction = task.instruction
+        const previousInstruction = task.instruction.replace(/^\/edit/, '')
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
         // Prompt the user for a new instruction, and create a new fixup
