@@ -12,6 +12,16 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+## [0.14.4]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed an issue where multiple action buttons were appended to each Code Block per chat message. [pull/1617](https://github.com/sourcegraph/cody/pull/1617)
+
+### Changed
+
 ## [0.14.3]
 
 ### Added
