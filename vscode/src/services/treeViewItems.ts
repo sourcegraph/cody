@@ -95,6 +95,12 @@ const supportItems: CodySidebarTreeItem[] = [
 
 const commandsItems: CodySidebarTreeItem[] = [
     {
+        title: 'Chat',
+        icon: 'comment',
+        description: 'Start new chat',
+        command: { command: 'cody.chat.panel.new' },
+    },
+    {
         title: 'Document',
         icon: 'book',
         description: 'Add code documentation',
