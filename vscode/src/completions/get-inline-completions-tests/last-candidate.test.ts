@@ -219,15 +219,15 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             expect(handleDidPartiallyAcceptCompletionItem).not.toHaveBeenCalled()
 
             // Now we did
-            await getInlineCompletions(params('console█', [], args))
-            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), expect.anything(), 7)
+            await getInlineCompletions(params('console.█', [], args))
+            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), expect.anything(), 8)
 
             // Subsequent keystrokes should continue updating the partial acceptance
-            await getInlineCompletions(params('console.log█', [], args))
+            await getInlineCompletions(params('console.log(█', [], args))
             expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.anything(),
-                11
+                12
             )
         })
     })
