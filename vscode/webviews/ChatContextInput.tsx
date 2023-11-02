@@ -38,7 +38,7 @@ export const ChatContextInputComponent: React.FunctionComponent<React.PropsWithC
         }
     }
 
-    if (!filePaths?.length) {
+    if (!filePaths?.length || formInput.endsWith(' ')) {
         return
     }
 

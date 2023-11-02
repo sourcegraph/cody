@@ -304,7 +304,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
 
-            if (fileMatches?.length !== undefined) {
+            if (fileMatches?.length && !formInput.endsWith(' ')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     event.stopPropagation()
@@ -344,24 +344,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         setSelectedFileMatch(0)
                         // Add empty space at the end to end the file matching process
                         setFormInput(`${inputWithoutFileInput}${selectedFilePath.title} `)
+                        return
                     }
-                    return
                 }
             }
 
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (
-                event.key === 'Enter' &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                formInput?.trim() &&
-                !displayCommands?.length
-            ) {
+            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
                 event.preventDefault()
                 event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
+                return
             }
 
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
@@ -504,6 +499,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
+                {ContextStatusComponent ? (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                ) : (
+                    contextStatus && (
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                    )
+                )}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
@@ -524,13 +526,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         }
                     />
                 </div>
-                {ContextStatusComponent ? (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                ) : (
-                    contextStatus && (
-                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                    )
-                )}
             </form>
         </div>
     )

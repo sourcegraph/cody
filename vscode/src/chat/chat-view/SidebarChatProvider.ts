@@ -23,7 +23,7 @@ import {
 } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
-import { getFileMatchesForChat } from './utils'
+import { getFileMatchesForChat, getSymbolsForChat } from './utils'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -347,12 +347,23 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
 
     private async handleFileMatchFinder(input: string): Promise<void> {
         // Get files and symbols asynchronously
-        const matches = input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatchesForChat(input)
+        const [files, symbols] = await Promise.all([
+            input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatchesForChat(input),
+            getSymbolsForChat(input, 5),
+        ])
 
         void this.webview?.postMessage({
             type: 'inputContextMatches',
-            kind: 'files',
-            matches,
+            kind: 'file',
+            matches: files,
+        })
+
+        void this.webview?.postMessage({
+            type: 'inputContextMatches',
+            kind: 'symbol',
+            matches: symbols
+                ?.slice(0, 5)
+                .map(symbol => ({ title: symbol.name, fsPath: symbol.uri.fsPath, kind: 'symbol' })),
         })
     }
 
@@ -385,33 +396,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             type: 'view',
             messages: view,
         })
-    }
-
-    /**
-     * create webview resources
-     */
-    public async resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _context: vscode.WebviewViewResolveContext<unknown>,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _token: vscode.CancellationToken
-    ): Promise<void> {
-        this.webview = webviewView.webview
-        this.authProvider.webview = webviewView.webview
-        this.contextProvider.webview = webviewView.webview
-
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [webviewPath],
-            enableCommandUris: true,
-        }
-
-        await addWebviewViewHTML(this.extensionUri, webviewView)
-
-        // Register webview
-        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 
     /**
@@ -467,5 +451,32 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         } catch (error) {
             throw new Error(`Failed to open file: ${error}`)
         }
+    }
+
+    /**
+     * create webview resources
+     */
+    public async resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _context: vscode.WebviewViewResolveContext<unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _token: vscode.CancellationToken
+    ): Promise<void> {
+        this.webview = webviewView.webview
+        this.authProvider.webview = webviewView.webview
+        this.contextProvider.webview = webviewView.webview
+
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [webviewPath],
+            enableCommandUris: true,
+        }
+
+        await addWebviewViewHTML(this.extensionUri, webviewView)
+
+        // Register webview
+        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 }

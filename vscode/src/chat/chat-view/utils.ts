@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { ChatInputFileContext } from '@sourcegraph/cody-shared/src/chat/context'
+
 import { getWorkspaceSymbols } from '../../editor/utils'
 
 export interface ChatSymbolMatch {
@@ -9,7 +11,7 @@ export interface ChatSymbolMatch {
     range: vscode.Range
 }
 
-export async function getFileMatchesForChat(query: string): Promise<{ title: string; fsPath: string }[]> {
+export async function getFileMatchesForChat(query: string): Promise<ChatInputFileContext[]> {
     const maxResults = 15
     if (!query.trim()) {
         return []
@@ -20,7 +22,7 @@ export async function getFileMatchesForChat(query: string): Promise<{ title: str
     const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, maxResults)
     // sort by having less '/' in path to prioritize top-level matches
     return matches
-        .map(uri => ({ title: vscode.workspace.asRelativePath(uri.fsPath), fsPath: uri.fsPath }))
+        .map(uri => ({ title: vscode.workspace.asRelativePath(uri.fsPath), fsPath: uri.fsPath, kind: 'file' }))
         ?.sort((a, b) => a.title.split('/').length - b.title.split('/').length)
 }
 

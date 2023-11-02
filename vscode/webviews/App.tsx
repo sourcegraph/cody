@@ -133,19 +133,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [view, vscodeAPI])
 
     useEffect(() => {
-        const addFileRegex = /@(\S+)?$/
-        // Get the string after the '@' symbol
-        const addFileInput = formInput.match(addFileRegex)?.[0]
-        // Reset file matches on input change
-        if (formInput.endsWith(' ') || !addFileInput) {
+        // Reset file matches if forminput ends with space using regex
+        const trailingSpaceRegex = / *$/
+        if (!trailingSpaceRegex.test(formInput)) {
             setFileMatches([])
             return
         }
 
+        const addFileRegex = /@(\S+)?$/
+        // Get the string after the '@' symbol
+        const addFileInput = formInput.match(addFileRegex)?.[0]
         if (addFileInput) {
             vscodeAPI.postMessage({ command: 'fileMatch', text: addFileInput.slice(1) || '' })
         }
-    }, [formInput, vscodeAPI, contextStatus?.filePath])
+    }, [formInput, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {

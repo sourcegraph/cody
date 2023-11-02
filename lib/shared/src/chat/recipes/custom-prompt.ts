@@ -156,7 +156,7 @@ export class CustomPrompt implements Recipe {
         }
 
         // If no file paths were found, add codebase context
-        if (firstInteraction && !fileUris?.length) {
+        if (firstInteraction) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }

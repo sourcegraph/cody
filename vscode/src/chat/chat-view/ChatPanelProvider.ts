@@ -165,25 +165,16 @@ export class ChatPanelProvider extends MessageProvider {
             getSymbolsForChat(input, 5),
         ])
 
-        const matches = [...symbols?.map(symbol => ({ title: symbol.name, fsPath: symbol.uri.fsPath })), ...files]
+        const matches = [
+            ...symbols?.map(symbol => ({ title: symbol.name, fsPath: symbol.uri.fsPath, kind: 'symbol' })),
+            ...files,
+        ]
 
         void this.webview?.postMessage({
             type: 'inputContextMatches',
-            kind: 'files',
+            kind: 'file',
             matches,
         })
-
-        // void this.webview?.postMessage({
-        //     type: 'inputContextMatches',
-        //     kind: 'files',
-        //     matches: files.slice(0, 20),
-        // })
-
-        // void this.webview?.postMessage({
-        //     type: 'inputContextMatches',
-        //     kind: 'symbols',
-        //     matches: symbols?.slice(0, 20).map(symbol => ({ title: symbol.name, fsPath: symbol.uri.fsPath })),
-        // })
     }
 
     /**
