@@ -2,9 +2,10 @@ export enum CodyTaskState {
     'idle' = 1,
     'working' = 2,
     'applying' = 3,
-    'applied' = 4,
-    'finished' = 5,
-    'error' = 6,
+    'formatting' = 4,
+    'applied' = 5,
+    'finished' = 6,
+    'error' = 7,
 }
 
 export type CodyTaskList = {
@@ -33,6 +34,11 @@ export const fixupTaskList: CodyTaskList = {
         id: 'applying',
         icon: 'pencil',
         description: 'The edit is being applied to the document',
+    },
+    [CodyTaskState.formatting]: {
+        id: 'formatting',
+        icon: 'pencil',
+        description: 'The edit is being formatted in the document',
     },
     [CodyTaskState.applied]: {
         id: 'applied',

@@ -81,6 +81,10 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error' })
                 return this.showError(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.skip-formatting', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'skip_formatting' })
+                return this.skipFormatting(id)
             })
         )
         // Observe file renaming and deletion
@@ -357,12 +361,19 @@ export class FixupController
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
-            await this.formatEdit(
-                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                document,
-                task,
-                formatEditOptions
-            )
+            this.setTaskState(task, CodyTaskState.formatting)
+            await new Promise((resolve, reject) => {
+                task.formattingResolver = resolve
+                this.formatEdit(
+                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                    document,
+                    task,
+                    formatEditOptions
+                )
+                    .then(resolve)
+                    .catch(reject)
+                    .finally(() => (task.formattingResolver = null))
+            })
         }
 
         // TODO: See if we can discard a FixupFile now.
@@ -603,6 +614,19 @@ export class FixupController
         }
 
         void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
+    }
+
+    private skipFormatting(id: taskID): void {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        if (!task.formattingResolver) {
+            return
+        }
+
+        return task.formattingResolver(false)
     }
 
     private discard(task: FixupTask): void {
