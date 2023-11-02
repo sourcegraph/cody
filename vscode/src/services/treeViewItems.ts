@@ -97,7 +97,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     {
         title: 'Chat',
         icon: 'comment',
-        description: 'Start new chat',
+        description: 'Ask Cody a question',
         command: { command: 'cody.chat.panel.new' },
     },
     {
@@ -114,7 +114,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Explain',
-        icon: 'output',
+        icon: 'file-binary',
         command: { command: 'cody.command.explain-code' },
         description: 'Explain code',
     },
