@@ -3,13 +3,13 @@ import { expect, Locator, Page } from '@playwright/test'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
 
 test.beforeEach(() => {
     resetLoggedEvents()
 })
 test('shows chat sidebar completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
-    const expectedOrderedEvents = [
+    const expectedEvents = [
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
         'CodyVSCodeExtension:completion:suggested',
@@ -53,11 +53,11 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(notice).not.toBeVisible()
-    await expect.poll(() => loggedEvents.sort()).toEqual(expectedOrderedEvents.sort())
+    await assertEvents(loggedEvents, expectedEvents)
 })
 
 test('inline completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
-    const expectedOrderedEvents = [
+    const expectedEvents = [
         'CodyVSCodeExtension:completion:suggested', // First suggestion
         'CodyVSCodeExtension:completion:accepted', // First accept
         'CodyVSCodeExtension:completion:suggested', // Suggestion that appears immediately after accepting
@@ -105,7 +105,7 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(decoration).not.toBeVisible()
-    await expect.poll(() => loggedEvents.sort()).toEqual(expectedOrderedEvents.sort())
+    await assertEvents(loggedEvents, expectedEvents)
 })
 
 async function triggerInlineCompletionAfter(page: Page, afterElement: Locator): Promise<void> {
