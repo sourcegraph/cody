@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
-import { DocumentContext } from './get-current-doc-context'
+import { DocumentContext, getCurrentLinePrefixWithoutInjectedPrefix } from './get-current-doc-context'
 import {
     InlineCompletionsParams,
     InlineCompletionsResult,
@@ -31,6 +31,7 @@ export function reuseLastCandidate({
     lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedCompletionInfo },
     lastCandidate,
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
+    docContext,
     handleDidAcceptCompletionItem,
     handleDidPartiallyAcceptCompletionItem,
 }: ReuseLastCandidateArgument): InlineCompletionsResult | null {
@@ -38,15 +39,21 @@ export function reuseLastCandidate({
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerDocContext.nextNonEmptyLine === nextNonEmptyLine
 
+    const lastTriggerCurrentLinePrefixWithoutInject = getCurrentLinePrefixWithoutInjectedPrefix(lastTriggerDocContext)
+    const currentLinePrefixWithoutInject = getCurrentLinePrefixWithoutInjectedPrefix(docContext)
+
     // When the current request has an selectedCompletionInfo set, we have to compare that a last
     // candidate is only reused if it is has same completion info selected.
     //
     // This will handle cases where the user fully accepts a completion info. In that case, the
     // lastTriggerSelectedCompletionInfo.text will be set but the selectedCompletionInfo will be
     // empty, allowing the last candidate to be reused.
-    const isSameSelectedInfoItemOrFullyAccepted = selectedCompletionInfo
-        ? lastTriggerSelectedCompletionInfo?.text === selectedCompletionInfo?.text
-        : true
+    const isSameSelectedInfoItemOrFullyAccepted =
+        // The `selectedCompletionInfo` might change if user types forward as suggested, so we can reuse the
+        // last candidate in that case.
+        selectedCompletionInfo && lastTriggerCurrentLinePrefixWithoutInject === currentLinePrefixWithoutInject
+            ? lastTriggerSelectedCompletionInfo?.text === selectedCompletionInfo?.text
+            : true
 
     if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameSelectedInfoItemOrFullyAccepted) {
         return null
