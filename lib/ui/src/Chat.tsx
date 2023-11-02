@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
 
+import { CodeBlockMeta } from './chat/CodeBlocks'
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { SymbolLinkProps } from './chat/PreciseContext'
@@ -106,8 +107,8 @@ export interface FeedbackButtonsProps {
 }
 
 export interface CodeBlockActionsProps {
-    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', source?: string, requestID?: string) => void
-    insertButtonOnSubmit: (text: string, newFile?: boolean, source?: string, requestID?: string) => void
+    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', metadata?: CodeBlockMeta) => void
+    insertButtonOnSubmit: (text: string, newFile?: boolean, metadata?: CodeBlockMeta) => void
 }
 
 export interface ChatCommandsProps {

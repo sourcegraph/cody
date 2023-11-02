@@ -3,6 +3,7 @@ import { VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection } from './helpers'
@@ -39,19 +40,11 @@ export class Fixup implements Recipe {
         const promptText = this.getPrompt(fixupTask, intent)
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
 
-        return Promise.resolve(
-            new Interaction(
-                {
-                    speaker: 'human',
-                    text: promptText,
-                },
-                {
-                    speaker: 'assistant',
-                },
-                this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
-                []
-            )
-        )
+        return newInteraction({
+            text: promptText,
+            source: this.id,
+            contextMessages: this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
+        })
     }
 
     public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {

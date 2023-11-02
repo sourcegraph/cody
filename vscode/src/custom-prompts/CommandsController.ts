@@ -83,12 +83,12 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * If found, creates a new Cody command runner instance for that prompt and input.
      * Returns the ID of the created runner, or 'invalid' if not found.
      */
-    public async addCommand(key: string, input = '', request_id?: string): Promise<string> {
+    public async addCommand(key: string, input = '', requestID?: string): Promise<string> {
         const command = this.default.get(key)
         if (!command) {
             return 'invalid'
         }
-        command.request_id = request_id
+        command.requestID = requestID
         return this.createCodyCommand(command, input)
     }
 

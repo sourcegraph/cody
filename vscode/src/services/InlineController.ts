@@ -57,7 +57,7 @@ export class InlineController implements VsCodeInlineController {
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
     // Track acceptance of generated code by Cody in Inline Chat
-    private lastCopiedCode = { code: 'init', lineCount: 0, charCount: 0, eventName: '', source: '', request_id: '' }
+    private lastCopiedCode = { code: 'init', lineCount: 0, charCount: 0, eventName: '', source: '', requestID: '' }
     private insertInProgress = false
     private lastClipboardText = ''
 
@@ -138,7 +138,7 @@ export class InlineController implements VsCodeInlineController {
         // Track paste event - it checks if the copied text is part of the text string
         vscode.workspace.onDidChangeTextDocument(async e => {
             const changedText = e.contentChanges[0]?.text
-            const { code, lineCount, charCount, eventName, source, request_id } = this.lastCopiedCode
+            const { code, lineCount, charCount, eventName, source, requestID } = this.lastCopiedCode
             const clipboardText = await vscode.env.clipboard.readText()
             // Skip if the document is not a file or if the copied text is from insert
             if (!code || !changedText || e.document.uri.scheme !== 'file') {
@@ -159,7 +159,7 @@ export class InlineController implements VsCodeInlineController {
                     lineCount,
                     charCount,
                     source,
-                    request_id,
+                    requestID,
                 })
             }
         })
@@ -328,18 +328,18 @@ export class InlineController implements VsCodeInlineController {
         code: string,
         eventName: string,
         source = '',
-        request_id = ''
-    ): { code: string; lineCount: number; charCount: number; eventName: string; source?: string; request_id?: string } {
+        requestID = ''
+    ): { code: string; lineCount: number; charCount: number; eventName: string; source?: string; requestID?: string } {
         // All non-copy events are considered as insertions since we don't need to listen for paste events
         this.insertInProgress = !eventName.startsWith('copy')
         const { lineCount, charCount } = countCode(code)
-        const codeCount = { code, lineCount, charCount, eventName, source, request_id }
+        const codeCount = { code, lineCount, charCount, eventName, source, requestID }
         this.lastCopiedCode = codeCount
 
         // Currently supported events are: copy, insert, save
         const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
 
-        const args = { op, charCount, lineCount, source, request_id }
+        const args = { op, charCount, lineCount, source, requestID }
         telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
         return codeCount
     }

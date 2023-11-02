@@ -45,13 +45,13 @@ export class ContextSearch implements Recipe {
                 speaker: 'human',
                 text: '',
                 displayText: query,
-                source,
+                metadata: { source },
             },
             {
                 speaker: 'assistant',
                 text: '',
                 displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, workspaceRootUri),
-                source,
+                metadata: { source },
             },
             new Promise(resolve => resolve([])),
             []
