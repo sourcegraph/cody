@@ -664,7 +664,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        this.loadChatHistory()
         const userHistory = {
             chat: MessageProvider.chatHistory,
             input: MessageProvider.inputHistory,

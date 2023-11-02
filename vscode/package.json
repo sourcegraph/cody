@@ -35,8 +35,6 @@
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
-    "test:benchmark": "BENCHMARK_DISABLE_FEATURE_FLAGS=true tsc --build ./test/benchmark && pnpm run -s build:dev:desktop && ./benchmark.sh",
-    "test:benchmark:copilot": "BENCHMARK_COMPARE_WITH=github.copilot pnpm run test:benchmark",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
@@ -482,10 +480,18 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "Start a New Chat Session",
+        "title": "Start a New Chat Panel",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
-        "icon": "$(empty-window)"
+        "icon": "$(comment)"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
+        "category": "Cody",
+        "title": "Open Cody Sidebar",
+        "group": "Cody",
+        "icon": "$(layout-sidebar-left)",
+        "when": "config.cody.experimental.chatPanel"
       },
       {
         "command": "cody.chat.history.clear",
@@ -516,7 +522,17 @@
       {
         "command": "cody.chat.focus",
         "key": "alt+/",
-        "mac": "alt+/"
+        "when": "!config.cody.experimental.chatPanel"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
+        "key": "alt+f1",
+        "enablement": "cody.activated && config.cody.experimental.chatPanel"
+      },
+      {
+        "command": "cody.chat.panel.new",
+        "key": "alt+/",
+        "enablement": "cody.activated && config.cody.experimental.chatPanel"
       },
       {
         "command": "cody.command.edit-code",
@@ -1089,7 +1105,7 @@
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.9.0",
+    "@sourcegraph/telemetry": "^0.11.0",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
@@ -1124,7 +1140,7 @@
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
     "@types/glob": "^8.0.0",
-    "@types/isomorphic-fetch": "^0.0.36",
+    "@types/isomorphic-fetch": "^0.0.38",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
@@ -1138,7 +1154,6 @@
     "@vscode/test-electron": "^2.3.2",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.19.0",
-    "chalk": "^4.1.2",
     "cody-icons-font": "workspace:^",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",

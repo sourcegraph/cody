@@ -95,6 +95,12 @@ const supportItems: CodySidebarTreeItem[] = [
 
 const commandsItems: CodySidebarTreeItem[] = [
     {
+        title: 'Chat',
+        icon: 'comment',
+        description: 'Ask Cody a question',
+        command: { command: 'cody.chat.panel.new' },
+    },
+    {
         title: 'Document',
         icon: 'book',
         description: 'Add code documentation',
@@ -108,7 +114,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Explain',
-        icon: 'output',
+        icon: 'file-binary',
         command: { command: 'cody.command.explain-code' },
         description: 'Explain code',
     },

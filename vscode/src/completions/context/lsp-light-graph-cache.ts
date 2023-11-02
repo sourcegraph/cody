@@ -71,13 +71,8 @@ export class LspLightGraphCache implements GraphContextFetcher {
         const currentLine = position.line
 
         const [prevLineContext, currentLineContext, sectionHistory] = await Promise.all([
-            this.getLspContextForLine({ document, line: prevLine, recursion: 0, abortSignal: abortController.signal }),
-            this.getLspContextForLine({
-                document,
-                line: currentLine,
-                recursion: 1,
-                abortSignal: abortController.signal,
-            }),
+            this.getLspContextForLine({ document, line: prevLine, abortSignal: abortController.signal }),
+            this.getLspContextForLine({ document, line: currentLine, abortSignal: abortController.signal }),
             this.sectionObserver?.getLastVisitedSections(document, position, contextRange),
         ])
 
@@ -136,18 +131,15 @@ export class LspLightGraphCache implements GraphContextFetcher {
     private getLspContextForLine({
         document,
         line,
-        recursion,
         abortSignal,
     }: {
         document: vscode.TextDocument
         line: number
-        recursion: number
         abortSignal: CustomAbortSignal
     }): Promise<HoverContext[]> {
         const request = {
             document,
             line,
-            recursion,
         }
 
         const res = this.cache.get(request)
@@ -159,7 +151,7 @@ export class LspLightGraphCache implements GraphContextFetcher {
 
         let finished = false
 
-        const promise = this.getGraphContextFromRange(document, range, abortSignal, recursion).then(response => {
+        const promise = this.getGraphContextFromRange(document, range, abortSignal).then(response => {
             finished = true
             return response
         })
@@ -209,7 +201,6 @@ export class LspLightGraphCache implements GraphContextFetcher {
 interface GraphCacheParams {
     document: vscode.TextDocument
     line: number
-    recursion: number
 }
 const MAX_CACHED_DOCUMENTS = 10
 const MAX_CACHED_LINES = 100
@@ -219,7 +210,7 @@ class GraphCache {
     private cache = new LRUCache<string, LRUCache<string, Promise<HoverContext[]>>>({ max: MAX_CACHED_DOCUMENTS })
 
     private toCacheKeys(key: GraphCacheParams): [string, string] {
-        return [key.document.uri.toString(), `${key.line}█${key.document.lineAt(key.line).text}█${key.recursion}`]
+        return [key.document.uri.toString(), `${key.line}█${key.document.lineAt(key.line).text}`]
     }
 
     public get(key: GraphCacheParams): Promise<HoverContext[]> | undefined {

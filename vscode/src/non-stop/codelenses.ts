@@ -18,6 +18,11 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const title = getApplyingLens(codeLensRange)
             return [title]
         }
+        case CodyTaskState.formatting: {
+            const title = getFormattingLens(codeLensRange)
+            const skip = getFormattingSkipLens(codeLensRange, task.id)
+            return [title, skip]
+        }
         case CodyTaskState.applied: {
             const title = getAppliedLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
@@ -60,6 +65,25 @@ function getApplyingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     lens.command = {
         title: '$(sync~spin) Applying...',
         command: 'cody.focus',
+    }
+    return lens
+}
+
+function getFormattingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Formatting...',
+        command: 'cody.focus',
+    }
+    return lens
+}
+
+function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Skip',
+        command: 'cody.fixup.codelens.skip-formatting',
+        arguments: [id],
     }
     return lens
 }
