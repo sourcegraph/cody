@@ -169,20 +169,22 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         }
 
         const preElements = rootRef.current?.querySelectorAll('pre')
-        if (!preElements?.length) {
+        if (!preElements?.length || !copyButtonOnSubmit) {
             return
         }
 
         for (const preElement of preElements) {
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
+                const eventMetadata = { requestID: metadata?.requestID, source: metadata?.source }
+
                 const buttons = createButtons(
                     preText,
                     copyButtonClassName,
                     copyButtonOnSubmit,
                     insertButtonClassName,
                     insertButtonOnSubmit,
-                    metadata
+                    eventMetadata
                 )
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
@@ -191,7 +193,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
                     if (copyButtonOnSubmit) {
-                        copyButtonOnSubmit(preText, 'Keydown', metadata)
+                        copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
                     }
                 })
             }
@@ -203,7 +205,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         rootRef,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
-        metadata,
+        metadata?.requestID,
+        metadata?.source,
         inProgress,
     ])
 
