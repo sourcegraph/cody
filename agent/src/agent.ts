@@ -197,6 +197,14 @@ export class Agent extends MessageHandler {
                 return { items: [] }
             }
 
+            if (params.lookupElement !== undefined && document.content !== undefined && params.position !== undefined) {
+                const lookup = params.lookupElement
+                const lastPart = document.content.slice(params.offset, document.content.length)
+                const firstPart = document.content.slice(0, params.offset)
+                document.content = firstPart + lookup + lastPart
+                params.position.character = params.position.character + lookup.length
+            }
+
             const textDocument = new AgentTextDocument(document)
 
             try {
@@ -218,6 +226,21 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
+
+                if (
+                    params.lookupElement !== undefined &&
+                    document.content !== undefined &&
+                    params.offset !== undefined &&
+                    params.position !== undefined
+                ) {
+                    const lastPart = document.content.slice(
+                        params.offset + params.lookupElement.length,
+                        document.content.length
+                    )
+                    const firstPart = document.content.slice(0, params.offset)
+                    document.content = firstPart + lastPart
+                }
+
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)

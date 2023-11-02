@@ -115,6 +115,8 @@ export interface AutocompleteParams {
     // Defaults to 'Automatic' for autocompletions which were not explicitly
     // triggered.
     triggerKind?: 'Automatic' | 'Invoke'
+    lookupElement?: string
+    offset?: number
 }
 
 export interface AutocompleteResult {
