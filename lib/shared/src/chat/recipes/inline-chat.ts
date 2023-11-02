@@ -3,6 +3,7 @@ import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
@@ -49,19 +50,12 @@ export class InlineChat implements Recipe {
         // Text display in UI fpr human that includes the selected code
         const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
 
-        return Promise.resolve(
-            new Interaction(
-                {
-                    speaker: 'human',
-                    text: promptText,
-                    displayText,
-                    source,
-                },
-                { speaker: 'assistant', source },
-                this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
-                []
-            )
-        )
+        return newInteraction({
+            text: promptText,
+            displayText,
+            source,
+            contextMessages: this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
+        })
     }
 
     // Prompt Templates
