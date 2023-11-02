@@ -656,7 +656,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     ): Promise<void> {
         const customInteraction = await newInteraction(args)
         const updatedInteraction = interaction || customInteraction
-        updatedInteraction.setMetadata({ requestID: this.sessionID, source: args.source })
+        updatedInteraction.setMetadata({ requestID: this.currentRequestID, source: args.source })
         this.transcript.addInteraction(updatedInteraction)
         this.sendTranscript()
         await this.saveTranscriptToChatHistory()
