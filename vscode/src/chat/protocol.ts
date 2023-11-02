@@ -1,4 +1,4 @@
-import { ChatContextStatus, ChatInputContext } from '@sourcegraph/cody-shared/src/chat/context'
+import { ChatContextStatus, ChatUserContext } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -19,7 +19,12 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
+    | {
+          command: 'submit'
+          text: string
+          submitType: 'user' | 'suggestion' | 'example'
+          inputContext?: ChatUserContext[]
+      }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
@@ -76,7 +81,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'inputContextMatches'; kind: 'file' | 'symbol'; matches: ChatInputContext[] }
+    | { type: 'inputContextMatches'; kind: 'file' | 'symbol'; matches: ChatUserContext[] }
 
 /**
  * The subset of configuration that is visible to the webview.

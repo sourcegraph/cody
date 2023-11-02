@@ -14,8 +14,10 @@ export interface ChatContextStatus {
     supportsKeyword?: boolean
 }
 
-export interface ChatInputContext {
+export interface ChatUserContext {
     title: string
+    relativePath: string
+    description: string
     fsPath: string
     lines?: {
         start: number

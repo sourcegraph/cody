@@ -5,7 +5,6 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../../webviews/NavBar'
 import { getActiveEditor } from '../../editor/active-editor'
-import { getOpenTabsRelativePaths } from '../../editor/utils/open-tabs'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -15,7 +14,7 @@ import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../Me
 import { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
-import { getFileMatchesForChat, getSymbolsForChat } from './utils'
+import { getFileMatchesForChat, getOpenTabsRelativePaths, getSymbolsForChat } from './utils'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>

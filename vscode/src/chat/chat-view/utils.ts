@@ -1,6 +1,8 @@
+import { basename, dirname } from 'path'
+
 import * as vscode from 'vscode'
 
-import { ChatInputContext } from '@sourcegraph/cody-shared/src/chat/context'
+import { ChatUserContext } from '@sourcegraph/cody-shared/src/chat/context'
 
 import { getWorkspaceSymbols } from '../../editor/utils'
 
@@ -12,7 +14,7 @@ export interface ChatSymbolMatch {
     kind: string
 }
 
-export async function getFileMatchesForChat(query: string): Promise<ChatInputContext[]> {
+export async function getFileMatchesForChat(query: string): Promise<ChatUserContext[]> {
     const maxResults = 15
     if (!query.trim()) {
         return []
@@ -27,11 +29,17 @@ export async function getFileMatchesForChat(query: string): Promise<ChatInputCon
     }
     // sort by having less '/' in path to prioritize top-level matches
     return matches
-        .map(uri => ({ title: vscode.workspace.asRelativePath(uri?.fsPath), fsPath: uri?.fsPath, kind: 'file' }))
+        .map(uri => ({
+            title: basename(uri?.fsPath),
+            fsPath: uri?.fsPath,
+            kind: 'file',
+            relativePath: vscode.workspace.asRelativePath(uri?.fsPath),
+            description: dirname(uri?.fsPath),
+        }))
         ?.sort((a, b) => a.title.split('/').length - b.title.split('/').length)
 }
 
-export async function getSymbolsForChat(query: string, maxResults = 10): Promise<ChatInputContext[]> {
+export async function getSymbolsForChat(query: string, maxResults = 10): Promise<ChatUserContext[]> {
     if (!query.trim() || query.trim().length < 3) {
         return []
     }
@@ -53,18 +61,45 @@ export async function getSymbolsForChat(query: string, maxResults = 10): Promise
     const matches = []
 
     for (const symbol of symbols) {
+        const kind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
         matches.push({
-            name: symbol.name,
+            title: symbol.name,
+            relativePath: vscode.workspace.asRelativePath(symbol.location?.uri?.fsPath),
             fsPath: symbol.location.uri.fsPath,
-            title: vscode.workspace.asRelativePath(
+            description: vscode.workspace.asRelativePath(
                 `${symbol.location.uri.fsPath}:${symbol.location.range.start.line}-${symbol.location.range.end.line}`
             ),
             lines: {
                 start: symbol.location.range.start.line,
                 end: symbol.location.range.end.line,
             },
-            kind: 'function', // TODO bee match symbol kind
+            kind,
         })
     }
     return matches
+}
+
+export function getOpenTabsUris(): vscode.Uri[] {
+    const uris = []
+    // Get open tabs
+    const tabGroups = vscode.window.tabGroups.all
+    const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+
+    for (const tab of openTabs) {
+        // Skip non-file URIs
+        if (tab?.uri?.scheme === 'file') {
+            uris.push(tab.uri)
+        }
+    }
+    return uris
+}
+
+export function getOpenTabsRelativePaths(): ChatUserContext[] {
+    return getOpenTabsUris()?.map(uri => ({
+        title: basename(uri?.fsPath),
+        fsPath: uri.fsPath,
+        kind: 'file',
+        relativePath: vscode.workspace.asRelativePath(uri.fsPath),
+        description: dirname(uri?.fsPath),
+    }))
 }

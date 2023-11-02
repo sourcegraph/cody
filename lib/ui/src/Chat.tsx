@@ -2,7 +2,14 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
+import {
+    ChatButton,
+    ChatContextStatus,
+    ChatMessage,
+    ChatUserContext,
+    CodyPrompt,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
@@ -54,8 +61,8 @@ interface ChatProps extends ChatClassNames {
     chatCommands?: [string, CodyPrompt][] | null
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
-    ChatInputContextComponent?: React.FunctionComponent<ChatInputContextProps>
-    fileMatches?: { title: string; fsPath: string }[]
+    ChatContextFromInputComponent?: React.FunctionComponent<ChatContextFromInputProps>
+    inputContextMatches?: ChatUserContext[]
     isTranscriptError?: boolean
 }
 
@@ -120,13 +127,13 @@ export interface ChatCommandsProps {
     onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
 
-export interface ChatInputContextProps {
+export interface ChatContextFromInputProps {
     formInput: string
     setFormInput: (input: string) => void
-    setSelectedFileContext: (index: number) => void
-    filePaths?: { title: string; fsPath: string }[]
-    selectedFileMatch?: number
-    onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
+    setSelectedContextMatch: (index: number) => void
+    inputContextMatches?: ChatUserContext[]
+    selectedContextMatch?: number
+    onSubmit: (input: string, inputType: 'user') => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -182,8 +189,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatCommands,
     filterChatCommands,
     ChatCommandsComponent,
-    ChatInputContextComponent,
-    fileMatches,
+    ChatContextFromInputComponent,
+    inputContextMatches,
     isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(1)
@@ -191,7 +198,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         chatCommands || null
     )
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
-    const [selectedFileMatch, setSelectedFileMatch] = useState(0)
+    const [selectedContextMatch, setSelectedContextMatch] = useState(0)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // Handles selecting a chat command when the user types a slash in the chat input.
@@ -304,19 +311,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
 
-            if (fileMatches?.length && !formInput.endsWith(' ')) {
+            if (inputContextMatches?.length && !formInput.endsWith(' ')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     event.stopPropagation()
-                    const matchesLength = fileMatches?.length - 1
-                    const newIndex = event.key === 'ArrowUp' ? selectedFileMatch - 1 : selectedFileMatch + 1
+                    const matchesLength = inputContextMatches?.length - 1
+                    const newIndex = event.key === 'ArrowUp' ? selectedContextMatch - 1 : selectedContextMatch + 1
                     const newMatchIndex = newIndex < 0 ? matchesLength : newIndex > matchesLength ? 0 : newIndex
-                    setSelectedFileMatch(newMatchIndex)
+                    setSelectedContextMatch(newMatchIndex)
                     return
                 }
 
                 if (event.key === 'Backspace') {
-                    setSelectedFileMatch(0)
+                    setSelectedContextMatch(0)
                     return
                 }
 
@@ -329,7 +336,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         // Remove @ from input
                         setFormInput(inputWithoutFileInput)
                     }
-                    setSelectedFileMatch(0)
+                    setSelectedContextMatch(0)
                     return
                 }
 
@@ -337,11 +344,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
                     event.stopPropagation()
-                    const selectedFilePath = fileMatches[selectedFileMatch]
+                    const selectedFilePath = inputContextMatches[selectedContextMatch]
                     const lastAtIndex = formInput.lastIndexOf('@')
                     if (lastAtIndex >= 0 && selectedFilePath) {
                         const inputWithoutFileInput = formInput.slice(0, lastAtIndex + 1)
-                        setSelectedFileMatch(0)
+                        setSelectedContextMatch(0)
                         // Add empty space at the end to end the file matching process
                         setFormInput(`${inputWithoutFileInput}${selectedFilePath.title} `)
                         return
@@ -392,14 +399,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [
             formInput,
             displayCommands,
-            fileMatches,
+            inputContextMatches,
             inputHistory,
             historyIndex,
             setMessageBeingEdited,
             onChatSubmit,
             selectedChatCommand,
             setFormInput,
-            selectedFileMatch,
+            selectedContextMatch,
             onSubmit,
         ]
     )
@@ -484,13 +491,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         onSubmit={onSubmit}
                     />
                 )}
-                {fileMatches && ChatInputContextComponent && formInput && (
-                    <ChatInputContextComponent
-                        filePaths={fileMatches}
-                        selectedFileMatch={selectedFileMatch}
+                {inputContextMatches && ChatContextFromInputComponent && formInput && (
+                    <ChatContextFromInputComponent
+                        inputContextMatches={inputContextMatches}
+                        selectedContextMatch={selectedContextMatch}
                         formInput={formInput}
                         setFormInput={setFormInput}
-                        setSelectedFileContext={setSelectedChatCommand}
+                        setSelectedContextMatch={setSelectedContextMatch}
                         onSubmit={onSubmit}
                     />
                 )}
@@ -499,7 +506,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                {!(displayCommands?.length && fileMatches?.length) &&
+                {!(displayCommands?.length && inputContextMatches?.length) &&
                     (ContextStatusComponent ? (
                         <ContextStatusComponent {...contextStatusComponentProps} />
                     ) : (

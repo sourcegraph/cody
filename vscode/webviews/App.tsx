@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { ChatContextStatus, ChatUserContext } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -39,7 +39,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
-    const [fileMatches, setFileMatches] = useState<{ title: string; fsPath: string }[]>([])
+    const [inputContextMatches, setInputContextMatches] = useState<ChatUserContext[]>([])
 
     useEffect(
         () =>
@@ -74,7 +74,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setContextStatus(message.contextStatus)
                         break
                     case 'inputContextMatches':
-                        setFileMatches(message.matches)
+                        setInputContextMatches(message.matches)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -142,7 +142,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         if (addFileInput || formInput.endsWith('@')) {
             vscodeAPI.postMessage({ command: 'fileMatch', text: addFileInput?.slice(1) || '' })
         } else {
-            setFileMatches([])
+            setInputContextMatches([])
         }
     }, [formInput, vscodeAPI])
 
@@ -216,7 +216,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
                             chatCommands={myPrompts || undefined}
-                            fileMatches={fileMatches || undefined}
+                            inputContextMatches={inputContextMatches}
                             isTranscriptError={isTranscriptError}
                             applessOnboarding={{
                                 endpoint,

@@ -42,7 +42,7 @@
 
 .command-item {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     font-size: inherit;
     width: 100%;
     cursor: pointer;
@@ -56,6 +56,8 @@
 
 .command-title,
 .command-description {
+    display: flex;
+    justify-items: center;
     margin: 0;
 }
 

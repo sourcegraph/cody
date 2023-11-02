@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { ChatContextStatus, ChatUserContext } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
@@ -21,7 +21,7 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
-import { ChatInputContextComponent } from './ChatInputContext'
+import { ChatContextFromInputComponent } from './ChatContextFromInput'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { FileLink } from './FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
@@ -45,7 +45,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyPrompt][]
-    fileMatches?: { title: string; fsPath: string }[]
+    inputContextMatches?: ChatUserContext[]
     isTranscriptError: boolean
     applessOnboarding: {
         endpoint: string | null
@@ -69,7 +69,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     chatCommands,
-    fileMatches,
+    inputContextMatches,
     isTranscriptError,
     applessOnboarding,
 }) => {
@@ -82,8 +82,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (text: string, submitType: 'user' | 'suggestion' | 'example') => {
-            vscodeAPI.postMessage({ command: 'submit', text, submitType })
+        (text: string, submitType: 'user' | 'suggestion' | 'example', inputContext?: ChatUserContext[]) => {
+            vscodeAPI.postMessage({ command: 'submit', text, submitType, inputContext })
         },
         [vscodeAPI]
     )
@@ -178,8 +178,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            ChatInputContextComponent={ChatInputContextComponent}
-            fileMatches={fileMatches}
+            ChatContextFromInputComponent={ChatContextFromInputComponent}
+            inputContextMatches={inputContextMatches}
             contextStatusComponent={ChatInputContextSimplified}
             contextStatusComponentProps={{
                 contextStatus,

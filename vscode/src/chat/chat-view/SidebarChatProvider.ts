@@ -6,7 +6,6 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 
 import { View } from '../../../webviews/NavBar'
 import { getActiveEditor } from '../../editor/active-editor'
-import { getOpenTabsRelativePaths } from '../../editor/utils/open-tabs'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
@@ -23,7 +22,7 @@ import {
 } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
-import { getFileMatchesForChat, getSymbolsForChat } from './utils'
+import { getFileMatchesForChat, getOpenTabsRelativePaths, getSymbolsForChat } from './utils'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
