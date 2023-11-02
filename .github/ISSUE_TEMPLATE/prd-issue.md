@@ -53,5 +53,3 @@ The new chat window should have a clean, modern interface with plenty of white s
 ### Engineering Tasks
 - [ ] Add a draft title or issue reference here
 ```
-
-
