@@ -116,6 +116,7 @@ export interface AutocompleteParams {
     // triggered.
     triggerKind?: 'Automatic' | 'Invoke'
     lookupElement?: string
+    // Offset from the beginning of the document to caret position
     offset?: number
 }
 

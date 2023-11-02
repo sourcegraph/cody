@@ -198,11 +198,10 @@ export class Agent extends MessageHandler {
             }
 
             if (params.lookupElement !== undefined && document.content !== undefined && params.position !== undefined) {
-                const lookup = params.lookupElement
-                const lastPart = document.content.slice(params.offset, document.content.length)
-                const firstPart = document.content.slice(0, params.offset)
-                document.content = firstPart + lookup + lastPart
-                params.position.character = params.position.character + lookup.length
+                const documentContentBeforeLookupElement = document.content.slice(0, params.offset)
+                const documentContentAfterLookupElement = document.content.slice(params.offset, document.content.length)
+                document.content = documentContentBeforeLookupElement + params.lookupElement + documentContentAfterLookupElement
+                params.position.character = params.position.character + params.lookupElement.length
             }
 
             const textDocument = new AgentTextDocument(document)
