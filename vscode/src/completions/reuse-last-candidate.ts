@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
-import { DocumentContext, getCurrentLinePrefixWithoutInjectedPrefix } from './get-current-doc-context'
+import { DocumentContext } from './get-current-doc-context'
 import {
     InlineCompletionsParams,
     InlineCompletionsResult,
