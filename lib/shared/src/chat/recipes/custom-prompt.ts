@@ -58,6 +58,7 @@ export class CustomPrompt implements Recipe {
             const text = commandRunnerID.replace('/ask ', '')
             const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
             const selection = context.editor.getActiveTextEditorSelection()
+            // TODO bee Pass input context from context as object instead of manually extracting them
             const filePaths = extractFileUrisFromTags(text, workspaceRootUri)
             let displayText = filePaths ? text : getHumanDisplayTextWithFileName(text, selection, workspaceRootUri)
             filePaths?.map(file => {
@@ -148,17 +149,17 @@ export class CustomPrompt implements Recipe {
             return contextMessages
         }
 
+        // TODO bee Add codebase context if transcript does not have any context after first interaction?
+        if (firstInteraction) {
+            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
+            contextMessages.push(...codebaseContextMessages)
+        }
+
         if (fileUris) {
             for (const fileUri of fileUris) {
                 const fileMessages = await getFileUriContext(fileUri.uri, fileUri.range)
                 contextMessages.push(...fileMessages)
             }
-        }
-
-        // If no file paths were found, add codebase context
-        if (firstInteraction) {
-            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
-            contextMessages.push(...codebaseContextMessages)
         }
 
         if (selection) {

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ChatInputFileContext } from '@sourcegraph/cody-shared/src/chat/context'
+import { ChatInputContext } from '@sourcegraph/cody-shared/src/chat/context'
 
 export function getOpenTabsUris(): vscode.Uri[] {
     const uris = []
@@ -17,7 +17,7 @@ export function getOpenTabsUris(): vscode.Uri[] {
     return uris
 }
 
-export function getOpenTabsRelativePaths(): ChatInputFileContext[] {
+export function getOpenTabsRelativePaths(): ChatInputContext[] {
     return getOpenTabsUris()?.map(uri => ({
         title: vscode.workspace.asRelativePath(uri.fsPath),
         fsPath: uri.fsPath,

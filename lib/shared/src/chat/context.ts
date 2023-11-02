@@ -14,8 +14,12 @@ export interface ChatContextStatus {
     supportsKeyword?: boolean
 }
 
-export interface ChatInputFileContext {
+export interface ChatInputContext {
     title: string
     fsPath: string
-    kind: string // file or symbol
+    lines?: {
+        start: number
+        end: number
+    }
+    kind: string
 }

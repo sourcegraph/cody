@@ -165,10 +165,7 @@ export class ChatPanelProvider extends MessageProvider {
             getSymbolsForChat(input, 5),
         ])
 
-        const matches = [
-            ...symbols?.map(symbol => ({ title: symbol.name, fsPath: symbol.uri.fsPath, kind: 'symbol' })),
-            ...files,
-        ]
+        const matches = [...symbols, ...files]
 
         void this.webview?.postMessage({
             type: 'inputContextMatches',

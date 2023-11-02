@@ -1,4 +1,4 @@
-import { ChatContextStatus, ChatInputFileContext } from '@sourcegraph/cody-shared/src/chat/context'
+import { ChatContextStatus, ChatInputContext } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -76,7 +76,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'inputContextMatches'; kind: 'file' | 'symbol'; matches: ChatInputFileContext[] }
+    | { type: 'inputContextMatches'; kind: 'file' | 'symbol'; matches: ChatInputContext[] }
 
 /**
  * The subset of configuration that is visible to the webview.

@@ -156,7 +156,7 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                     {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
                 </p>
             ) : (
-                <p className={styles.file}>No file selected</p>
+                <p className={styles.file}>Highlight file to include selection</p>
             )}
         </div>
     )

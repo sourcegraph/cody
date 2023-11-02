@@ -352,18 +352,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             getSymbolsForChat(input, 5),
         ])
 
-        void this.webview?.postMessage({
-            type: 'inputContextMatches',
-            kind: 'file',
-            matches: files,
-        })
+        const matches = [...symbols, ...files]
 
         void this.webview?.postMessage({
             type: 'inputContextMatches',
-            kind: 'symbol',
-            matches: symbols
-                ?.slice(0, 5)
-                .map(symbol => ({ title: symbol.name, fsPath: symbol.uri.fsPath, kind: 'symbol' })),
+            kind: 'file',
+            matches,
         })
     }
 

@@ -133,18 +133,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [view, vscodeAPI])
 
     useEffect(() => {
-        // Reset file matches if forminput ends with space using regex
-        const trailingSpaceRegex = / *$/
-        if (!trailingSpaceRegex.test(formInput)) {
-            setFileMatches([])
-            return
-        }
-
-        const addFileRegex = /@(\S+)?$/
-        // Get the string after the '@' symbol
+        // Regex to check if input ends with the '@' tag format, always get the last @tag
+        // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
+        // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '
+        const addFileRegex = /@\S+$/
+        // Get the string after the last '@' symbol
         const addFileInput = formInput.match(addFileRegex)?.[0]
-        if (addFileInput) {
-            vscodeAPI.postMessage({ command: 'fileMatch', text: addFileInput.slice(1) || '' })
+        if (addFileInput || formInput.endsWith('@')) {
+            vscodeAPI.postMessage({ command: 'fileMatch', text: addFileInput?.slice(1) || '' })
+        } else {
+            setFileMatches([])
         }
     }, [formInput, vscodeAPI])
 

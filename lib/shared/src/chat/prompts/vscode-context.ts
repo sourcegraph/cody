@@ -743,6 +743,7 @@ export function createHumanDisplayTextWithDocLink(
 export function getDisplayTextForFileUri(fileUri: URI): string {
     const fileName = createVSCodeRelativePath(fileUri.fsPath)
     const fileLink = `vscode://file${fileUri.fsPath}`
+    console.log(`vscode://file${fileUri.fsPath}`, `vscode://file${fileUri.path}`)
 
     // Create markdown link to the file
     return `[_@${fileName}_](${fileLink})`
@@ -772,7 +773,6 @@ export async function getFileUriContext(uri: vscode.Uri, range?: vscode.Range): 
     const fileName = createVSCodeRelativePath(uri.fsPath)
     try {
         const decoded = await getContextFromFileUri(uri, range)
-        console.log(uri.fsPath, decoded, range)
         const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
         // Make sure the truncatedContent is in JSON format
         return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
