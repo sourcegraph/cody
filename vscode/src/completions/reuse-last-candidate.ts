@@ -147,8 +147,11 @@ function isWhitespace(s: string): boolean {
 }
 
 // Count a completion as partially accepted, when at least one word of the completion was typed
+// To avoid sending partial completion events on every keystroke after the first word, we only
+// return true here after every completed word.
 function isPartialAcceptance(insertText: string, insertedLength: number): boolean {
-    const match = insertText.match(/(\w+)/)
+    const insertedText = insertText.slice(0, insertedLength)
+    const match = insertedText.match(/(\w+)\W+$/)
     const endOfFirstWord = match?.index === undefined ? null : match.index + match[0]!.length
     if (endOfFirstWord === null) {
         return false
