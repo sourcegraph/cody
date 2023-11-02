@@ -480,10 +480,18 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "Start a New Chat Session",
+        "title": "Start a New Chat Panel",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
-        "icon": "$(empty-window)"
+        "icon": "$(comment)"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
+        "category": "Cody",
+        "title": "Open Cody Sidebar",
+        "group": "Cody",
+        "icon": "$(layout-sidebar-left)",
+        "when": "config.cody.experimental.chatPanel"
       },
       {
         "command": "cody.chat.history.clear",
@@ -514,7 +522,17 @@
       {
         "command": "cody.chat.focus",
         "key": "alt+/",
-        "mac": "alt+/"
+        "when": "!config.cody.experimental.chatPanel"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
+        "key": "alt+f1",
+        "enablement": "cody.activated && config.cody.experimental.chatPanel"
+      },
+      {
+        "command": "cody.chat.panel.new",
+        "key": "alt+/",
+        "enablement": "cody.activated && config.cody.experimental.chatPanel"
       },
       {
         "command": "cody.command.edit-code",
