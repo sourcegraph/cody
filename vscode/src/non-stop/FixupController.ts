@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent, FixupIntentClassification } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
@@ -82,6 +81,10 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error' })
                 return this.showError(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.skip-formatting', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'skip_formatting' })
+                return this.skipFormatting(id)
             })
         )
         // Observe file renaming and deletion
@@ -214,17 +217,11 @@ export class FixupController
     /**
      * Retrieves the intent for a specific task based on the selected text and other contextual information.
      * @param taskId - The ID of the task for which the intent is to be determined.
-     * @param intentDetector - The detector used to classify the intent from available options.
-     * @returns A promise that resolves to a `FixupIntent` which can be one of the intents like 'add', 'edit', etc.
+     * @returns A promise that resolves to a `FixupIntent` which can be one of the intents 'add' or 'edit'.
      * @throws
-     * - Will throw an error if no code is selected for fixup.
      * - Will throw an error if the selected text exceeds the defined maximum limit.
-     * @todo (umpox): Explore shorter and more efficient ways to detect intent.
-     * Possible methods:
-     * - Input -> Match first word against update|fix|add|delete verbs
-     * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
      */
-    public async getTaskIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent> {
+    public async getTaskIntent(taskId: string): Promise<FixupIntent> {
         const task = this.tasks.get(taskId)
         if (!task) {
             throw new Error('Select some code to fixup.')
@@ -241,12 +238,7 @@ export class FixupController
             return 'add'
         }
 
-        const intent = await intentDetector.classifyIntentFromOptions(
-            task.instruction,
-            FixupIntentClassification,
-            'edit'
-        )
-        return intent
+        return 'edit'
     }
 
     /**
@@ -369,12 +361,19 @@ export class FixupController
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
-            await this.formatEdit(
-                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                document,
-                task,
-                formatEditOptions
-            )
+            this.setTaskState(task, CodyTaskState.formatting)
+            await new Promise((resolve, reject) => {
+                task.formattingResolver = resolve
+                this.formatEdit(
+                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                    document,
+                    task,
+                    formatEditOptions
+                )
+                    .then(resolve)
+                    .catch(reject)
+                    .finally(() => (task.formattingResolver = null))
+            })
         }
 
         // TODO: See if we can discard a FixupFile now.
@@ -617,6 +616,19 @@ export class FixupController
         void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
     }
 
+    private skipFormatting(id: taskID): void {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        if (!task.formattingResolver) {
+            return
+        }
+
+        return task.formattingResolver(false)
+    }
+
     private discard(task: FixupTask): void {
         this.needsDiffUpdate_.delete(task)
         this.codelenses.didDeleteTask(task)
@@ -707,6 +719,7 @@ export class FixupController
         // Note: This will also apply if the user attempts to undo the applied change.
         if (task.state === CodyTaskState.applied) {
             this.accept(task.id)
+            return
         }
         if (task.state === CodyTaskState.finished) {
             this.needsDiffUpdate_.delete(task)

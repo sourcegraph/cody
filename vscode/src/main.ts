@@ -290,7 +290,7 @@ const register = async (
             // Ensure that the sidebar view is open if not already
             await chatManager.setWebviewView('chat')
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-            await chatManager.restoreSession(inlineChatProvider.currentChatID)
+            await chatManager.restoreSession(inlineChatProvider.sessionID)
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
             telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {

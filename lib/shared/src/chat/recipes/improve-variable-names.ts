@@ -1,5 +1,6 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -32,23 +33,19 @@ export class ImproveVariableNames implements Recipe {
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptMessage = `Improve the variable names in this ${languageName} code by replacing the variable names with new identifiers which succinctly capture the purpose of the variable. We want the new code to be a drop-in replacement, so do not change names bound outside the scope of this code, like function names or members defined elsewhere. Only change the names of local variables and parameters:\n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `Here is the improved code:\n\`\`\`${extension}\n`
-
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText, source },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-                source,
-            },
-            getContextMessagesFromSelection(
+        return newInteraction({
+            text: promptMessage,
+            displayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+            contextMessages: getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
             ),
-            []
-        )
+        })
     }
 }

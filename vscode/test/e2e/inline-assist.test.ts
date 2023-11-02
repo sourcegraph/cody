@@ -3,9 +3,9 @@ import { expect } from '@playwright/test'
 import { loggedEvents, loggedV2Events, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
 
-const expectedOrderedEvents = [
+const expectedEvents = [
     'CodyVSCodeExtension:command:edit:executed',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
@@ -53,14 +53,12 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     // Click 'Done' to complete the fixup
     await page.getByRole('button', { name: 'Done' }).click()
 
-    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
-    await expect
-        .poll(() => loggedV2Events)
-        .toEqual([
-            'cody.auth/failed',
-            'cody.auth/connected',
-            'cody.command.edit/executed',
-            'cody.recipe.fixup/executed',
-            'cody.fixup.apply/succeeded',
-        ])
+    await assertEvents(loggedEvents, expectedEvents)
+    await assertEvents(loggedV2Events, [
+        'cody.auth/failed',
+        'cody.auth/connected',
+        'cody.command.edit/executed',
+        'cody.recipe.fixup/executed',
+        'cody.fixup.apply/succeeded',
+    ])
 })

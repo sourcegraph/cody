@@ -87,7 +87,7 @@ export class InlineChatViewProvider extends MessageProvider {
         /**
          * TODO(umpox):
          * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
-         * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
+         * We should detect intent here (through regex and other fast alternatives) and run the correct recipe/controller instead.
          */
         await this.editor.controllers.inline?.chat(reply, this.thread, isEditMode)
         this.editor.controllers.inline?.setResponsePending(true)

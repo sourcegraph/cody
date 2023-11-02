@@ -5,6 +5,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../webviews/NavBar'
 
@@ -40,9 +41,9 @@ export type WebviewMessage =
       }
     | { command: 'edit'; text: string }
     | { command: 'fileMatch'; text: string }
-    | { command: 'insert'; text: string; source?: string }
-    | { command: 'newFile'; text: string; source?: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string }
+    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
     | {
           command: 'auth'
           type:

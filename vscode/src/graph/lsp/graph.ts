@@ -1,4 +1,3 @@
-import { last } from 'lodash'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -66,7 +65,6 @@ export const getGraphContextFromRange = async (
     document: vscode.TextDocument,
     range: vscode.Range,
     abortSignal?: CustomAbortSignal,
-    recursionLimit: number = 0,
     contentMap: Map<string, string[]> = new Map()
 ): Promise<HoverContext[]> => {
     const uri = document.uri
@@ -84,43 +82,11 @@ export const getGraphContextFromRange = async (
     const requestCandidates = gatherDefinitionRequestCandidates(locations, contentMap).slice(0, 50)
 
     // Extract hover text related to all of the request candidates
-    const resolvedHoverText = await gatherHoverText(requestCandidates, abortSignal, recursionLimit > 0)
+    const resolvedHoverText = await gatherHoverText(requestCandidates, abortSignal)
 
     const contexts = resolvedHoverText.flatMap(hoverContextFromResolvedHoverText)
 
-    if (recursionLimit > 0) {
-        const locationsForRecursion = dedupeWith(resolvedHoverText.map(r => r.definition).filter(isDefined), item =>
-            locationKeyFn(item)
-        )
-
-        // Open all documents needed for the recursion and ensure contentMap is up to date
-        const uniqueUris = dedupeWith(locationsForRecursion, l => l.uri.toString()).map(l => l.uri)
-        const documents = await Promise.all(
-            uniqueUris.map(async (uri: vscode.Uri) => {
-                const document = await vscode.workspace.openTextDocument(uri)
-                if (!contentMap.has(uri.fsPath)) {
-                    contentMap.set(uri.fsPath, document.getText().split('\n'))
-                }
-                return [uri.toString(), document] as const
-            })
-        )
-        const documentsMap: Map<string, vscode.TextDocument> = new Map(documents)
-
-        const recursiveContexts = await Promise.all(
-            locationsForRecursion.map(async location => {
-                const document = documentsMap.get(location.uri.toString())
-                if (!document) {
-                    throw new Error('Document not found')
-                }
-
-                return getGraphContextFromRange(document, location.range, abortSignal, recursionLimit - 1, contentMap)
-            })
-        )
-
-        contexts.push(...recursiveContexts.flat())
-    } else {
-        performance.mark(label)
-    }
+    performance.mark(label)
 
     return contexts
 }
@@ -417,7 +383,6 @@ interface ResolvedHoverText {
     symbolName: string
     symbolLocation: vscode.Location
     symbol: ResolvedHoverElement
-    definition?: vscode.Location
 }
 
 interface ResolvedHoverElement {
@@ -458,12 +423,7 @@ const hoverContextFromElement = (
         sourceSymbolName,
         content,
         uri: element.location.uri.toString(),
-        range: {
-            startLine: element.location.range.start.line,
-            startCharacter: element.location.range.start.character,
-            endLine: element.location.range.end.line,
-            endCharacter: element.location.range.end.character,
-        },
+        range: undefined,
     }
 }
 
@@ -492,9 +452,7 @@ function extractMarkdownCodeBlock(string: string): string {
 const gatherHoverText = async (
     requests: Request[],
     abortSignal?: CustomAbortSignal,
-    includeDefinition: boolean = false,
-    getHover: typeof defaultGetHover = defaultGetHover,
-    getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
+    getHover: typeof defaultGetHover = defaultGetHover
 ): Promise<ResolvedHoverText[]> => {
     const symbolLocations = requests.map(({ symbolName, uri, position }) => ({
         symbolName,
@@ -506,9 +464,6 @@ const gatherHoverText = async (
     return Promise.all(
         dedupedSymbolLocations.map(async ({ symbolName, symbolLocation }) => {
             const hoverPromise = limiter(() => getHover(symbolLocation.uri, symbolLocation.range.start), abortSignal)
-            const definitionsPromise = includeDefinition
-                ? limiter(() => getDefinitions(symbolLocation.uri, symbolLocation.range.start), abortSignal)
-                : undefined
 
             return {
                 symbolName,
@@ -518,7 +473,6 @@ const gatherHoverText = async (
                     location: symbolLocation,
                     hover: await hoverPromise,
                 },
-                definition: definitionsPromise ? last(await definitionsPromise) : undefined,
             }
         })
     )

@@ -57,6 +57,7 @@ export interface MyPromptsJSON {
 
 // The blueprint of a Cody Command
 export interface CodyPrompt {
+    requestID?: string
     description?: string
     prompt: string
     context?: CodyPromptContext
