@@ -13,3 +13,9 @@ export interface ChatContextStatus {
     selectionRange?: ActiveTextEditorSelectionRange
     supportsKeyword?: boolean
 }
+
+export interface ChatInputFileContext {
+    title: string
+    fsPath: string
+    kind: string // file or symbol
+}

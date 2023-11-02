@@ -55,7 +55,7 @@ interface ChatProps extends ChatClassNames {
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     ChatInputContextComponent?: React.FunctionComponent<ChatInputContextProps>
-    fileMatches?: string[]
+    fileMatches?: { title: string; fsPath: string }[]
     isTranscriptError?: boolean
 }
 
@@ -124,7 +124,7 @@ export interface ChatInputContextProps {
     formInput: string
     setFormInput: (input: string) => void
     setSelectedFileContext: (index: number) => void
-    filePaths?: string[]
+    filePaths?: { title: string; fsPath: string }[]
     selectedFileMatch?: number
     onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
@@ -343,7 +343,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         const inputWithoutFileInput = formInput.slice(0, lastAtIndex + 1)
                         setSelectedFileMatch(0)
                         // Add empty space at the end to end the file matching process
-                        setFormInput(`${inputWithoutFileInput}${selectedFilePath} `)
+                        setFormInput(`${inputWithoutFileInput}${selectedFilePath.title} `)
                     }
                     return
                 }

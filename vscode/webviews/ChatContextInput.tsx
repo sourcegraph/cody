@@ -50,14 +50,14 @@ export const ChatContextInputComponent: React.FunctionComponent<React.PropsWithC
             <div className={classNames(styles.commandsContainer)}>
                 {filePaths?.map((path, i) => {
                     return (
-                        <React.Fragment key={path}>
+                        <React.Fragment key={path.fsPath}>
                             <button
                                 ref={selectedFileMatch === i ? selectionRef : null}
                                 className={classNames(styles.commandItem, selectedFileMatch === i && styles.selected)}
-                                onClick={() => onSelectionClick(path)}
+                                onClick={() => onSelectionClick(path.fsPath)}
                                 type="button"
                             >
-                                <p className={styles.commandTitle}>{path}</p>
+                                <p className={styles.commandTitle}>{path.title}</p>
                             </button>
                         </React.Fragment>
                     )

@@ -39,7 +39,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
-    const [fileMatches, setFileMatches] = useState<string[]>([])
+    const [fileMatches, setFileMatches] = useState<{ title: string; fsPath: string }[]>([])
 
     useEffect(
         () =>
@@ -73,7 +73,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
                         break
-                    case 'editorContextMatches':
+                    case 'inputContextMatches':
                         setFileMatches(message.matches)
                         break
                     case 'errors':

@@ -23,7 +23,7 @@ import {
 } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
-import { getFileMatches, getSymbolsForChat } from './utils'
+import { getFileMatchesForChat } from './utils'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -346,13 +346,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async handleFileMatchFinder(input: string): Promise<void> {
-        const files = input.length < 5 ? getOpenTabsRelativePaths() : await getFileMatches(input)
-        const symbols = (await getSymbolsForChat(input))
-            ?.map(symbol => symbol.relativePath + ' - ' + symbol.name)
-            .slice(0, 10)
-        const matches = [...files, ...symbols].slice(0, 20)
+        // Get files and symbols asynchronously
+        const matches = input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatchesForChat(input)
+
         void this.webview?.postMessage({
-            type: 'editorContextMatches',
+            type: 'inputContextMatches',
+            kind: 'files',
             matches,
         })
     }

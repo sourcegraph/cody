@@ -9,9 +9,8 @@ export interface ChatSymbolMatch {
     range: vscode.Range
 }
 
-const maxResults = 15
-
-export async function getFileMatches(query: string): Promise<string[]> {
+export async function getFileMatchesForChat(query: string): Promise<{ title: string; fsPath: string }[]> {
+    const maxResults = 15
     if (!query.trim()) {
         return []
     }
@@ -21,11 +20,11 @@ export async function getFileMatches(query: string): Promise<string[]> {
     const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, maxResults)
     // sort by having less '/' in path to prioritize top-level matches
     return matches
-        .map(uri => vscode.workspace.asRelativePath(uri.fsPath))
-        ?.sort((a, b) => a.split('/').length - b.split('/').length)
+        .map(uri => ({ title: vscode.workspace.asRelativePath(uri.fsPath), fsPath: uri.fsPath }))
+        ?.sort((a, b) => a.title.split('/').length - b.title.split('/').length)
 }
 
-export async function getSymbolsForChat(query: string): Promise<ChatSymbolMatch[]> {
+export async function getSymbolsForChat(query: string, maxResults = 10): Promise<ChatSymbolMatch[]> {
     if (!query.trim() || query.trim().length < 3) {
         return []
     }

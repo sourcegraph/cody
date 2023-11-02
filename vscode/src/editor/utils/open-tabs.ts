@@ -15,6 +15,9 @@ export function getOpenTabsUris(): vscode.Uri[] {
     return uris
 }
 
-export function getOpenTabsRelativePaths(): string[] {
-    return getOpenTabsUris()?.map(uri => vscode.workspace.asRelativePath(uri.fsPath))
+export function getOpenTabsRelativePaths(): { title: string; fsPath: string }[] {
+    return getOpenTabsUris()?.map(uri => ({
+        title: vscode.workspace.asRelativePath(uri.fsPath),
+        fsPath: uri.fsPath,
+    }))
 }

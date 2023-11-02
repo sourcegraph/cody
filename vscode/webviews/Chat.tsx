@@ -45,7 +45,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyPrompt][]
-    fileMatches?: string[]
+    fileMatches?: { title: string; fsPath: string }[]
     isTranscriptError: boolean
     applessOnboarding: {
         endpoint: string | null
