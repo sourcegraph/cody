@@ -95,9 +95,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
         // Extract the code from the last message.
         let completionPrefix = request.body.messages.at(-1)?.text
-        if (completionPrefix?.startsWith(OPENING_CODE_TAG)) {
-            completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length)
+        if (!completionPrefix?.startsWith(OPENING_CODE_TAG)) {
+            throw new Error(`Last completion message did not contain code starting with ${OPENING_CODE_TAG}`)
         }
+        completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length)
+
         // Trim to the last word since our mock responses are just triggered by a word.
         completionPrefix = completionPrefix?.split(/\s/g).at(-1)
 
