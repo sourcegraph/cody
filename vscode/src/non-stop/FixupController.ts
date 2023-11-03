@@ -149,8 +149,7 @@ export class FixupController
         source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const fixupInstruction = instruction.replace(/^\/edit/, '').trim()
-        const task = new FixupTask(fixupFile, fixupInstruction, selectionRange, insertMode, source)
+        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
