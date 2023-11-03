@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../../webviews/NavBar'
@@ -49,8 +51,7 @@ export class ChatPanelProvider extends MessageProvider {
                 await this.init(this.startUpChatID)
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text, message.submitType)
-                break
+                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
@@ -69,6 +70,9 @@ export class ChatPanelProvider extends MessageProvider {
             case 'executeRecipe':
                 await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe, '', 'chat')
+                break
+            case 'getUserContext':
+                await this.handleContextFiles(message.query)
                 break
             case 'insert':
                 await this.handleInsertAtCursor(message.text, message.metadata)
@@ -109,13 +113,27 @@ export class ChatPanelProvider extends MessageProvider {
         }
     }
 
-    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
+    private async onHumanMessageSubmitted(
+        text: string,
+        submitType: ChatSubmitType,
+        contextFiles?: ContextFile[]
+    ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+
         MessageProvider.inputHistory.push(text)
-        await this.executeRecipe('chat-question', text, 'chat')
+
         if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
+            const args = { requestID: this.currentRequestID }
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
+
+        // Add text and context to a command for custom-prompt recipe to run as ask command
+        if (contextFiles?.length) {
+            this.userContextFiles = contextFiles
+            return this.executeRecipe('custom-prompt', `/ask ${text}`, 'chat')
+        }
+
+        return this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**
@@ -240,6 +258,14 @@ export class ChatPanelProvider extends MessageProvider {
         void this.webview?.postMessage({
             type: 'custom-prompts',
             prompts,
+        })
+    }
+
+    private async handleContextFiles(query: string): Promise<void> {
+        const context = await this.getContextFiles(query)
+        void this.webview?.postMessage({
+            type: 'userContextFiles',
+            context,
         })
     }
 

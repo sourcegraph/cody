@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
@@ -75,21 +76,30 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Adds a new command to the commands map.
      * @param key - The unique key for the command. e.g. /test
-     * @param input - Optional input text from the user.
-     * @returns A promise resolving to the command ID string if successful,
      * or 'invalid' if the command is not found.
      *
      * Looks up the command prompt using the given key in the default prompts map.
      * If found, creates a new Cody command runner instance for that prompt and input.
      * Returns the ID of the created runner, or 'invalid' if not found.
      */
-    public async addCommand(key: string, input = '', requestID?: string): Promise<string> {
+    public async addCommand(
+        key: string,
+        input = '',
+        requestID?: string,
+        contextFiles?: ContextFile[]
+    ): Promise<string> {
         const command = this.default.get(key)
         if (!command) {
             return 'invalid'
         }
+
+        if (command.slashCommand === '/ask') {
+            command.prompt = input
+        }
+
         command.requestID = requestID
-        return this.createCodyCommand(command, input)
+        command.contextFiles = contextFiles
+        return this.createCodyCommandRunner(command, input)
     }
 
     /**
@@ -103,12 +113,12 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      *
      * Finally, it returns the unique ID for the created CommandRunner instance.
      */
-    private async createCodyCommand(command: CodyPrompt, input = ''): Promise<string> {
+    private async createCodyCommandRunner(command: CodyPrompt, input = ''): Promise<string> {
         const commandKey = command.slashCommand
         const defaultEditCommands = new Set(['/edit', '/fix', '/doc'])
         const isFixupRequest = defaultEditCommands.has(commandKey) || command.prompt.startsWith('/edit')
 
-        logDebug('CommandsController:createCodyCommand:creating', commandKey)
+        logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
 
         // Start the command runner
         const codyCommand = new CommandRunner(command, input, isFixupRequest)
