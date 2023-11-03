@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 export enum CodyTaskState {
     'idle' = 1,
     'working' = 2,
@@ -66,4 +68,38 @@ export function getFileNameAfterLastDash(filePath: string): string {
         return filePath
     }
     return filePath.slice(lastDashIndex + 1)
+}
+
+export function getEditorInsertSpaces(): boolean {
+    if (!vscode.window.activeTextEditor) {
+        // Default to the same as VS Code default
+        return true
+    }
+
+    const { insertSpaces } = vscode.window.activeTextEditor.options
+
+    // This should never happen: "When getting a text editor's options, this property will always be a boolean (resolved)."
+    if (typeof insertSpaces === 'string' || insertSpaces === undefined) {
+        console.error('Unexpected value when getting "insertSpaces" for the current editor.')
+        return true
+    }
+
+    return insertSpaces
+}
+
+export function getEditorTabSize(): number {
+    if (!vscode.window.activeTextEditor) {
+        // Default to the same as VS Code default
+        return 4
+    }
+
+    const { tabSize } = vscode.window.activeTextEditor.options
+
+    // This should never happen: "When getting a text editor's options, this property will always be a number (resolved)."
+    if (typeof tabSize === 'string' || tabSize === undefined) {
+        console.error('Unexpected value when getting "tabSize" for the current editor.')
+        return 4
+    }
+
+    return tabSize
 }
