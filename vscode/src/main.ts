@@ -196,7 +196,7 @@ const register = async (
                 .then(token => {
                     symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
                 })
-                .catch(() => { })
+                .catch(() => {})
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
@@ -504,7 +504,7 @@ const register = async (
                     if (config.isRunningInsideAgent) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                            'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                         )
                     }
                     return
