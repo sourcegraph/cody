@@ -1122,7 +1122,7 @@
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
     "os-browserify": "^0.3.0",
-    "socks-proxy-agent": "^8.0.1",
+    "socks-proxy-agent": "^8.0.2",
     "stream-json": "^1.8.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
