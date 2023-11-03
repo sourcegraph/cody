@@ -54,6 +54,10 @@
     white-space: nowrap;
 }
 
+.item-title {
+    margin-left: 0.2em;
+}
+
 .command-title,
 .command-description {
     display: flex;
@@ -90,6 +94,6 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
 
 .separator {
     all: unset;
-    margin: 0 0.5rem;
+    margin: 0.5rem;
     border-bottom: 1px solid var(--vscode-dropdown-border);
 }

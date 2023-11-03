@@ -13,6 +13,7 @@ import {
     populateCurrentEditorContextTemplate,
     populateCurrentFileFromEditorSelectionContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
+    populateEditorContextTemplate,
     populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
@@ -743,7 +744,6 @@ export function createHumanDisplayTextWithDocLink(
 export function getDisplayTextForFileUri(fileUri: URI): string {
     const fileName = createVSCodeRelativePath(fileUri.fsPath)
     const fileLink = `vscode://file${fileUri.fsPath}`
-    console.log(`vscode://file${fileUri.fsPath}`, `vscode://file${fileUri.path}`)
 
     // Create markdown link to the file
     return `[_@${fileName}_](${fileLink})`
@@ -757,14 +757,17 @@ export async function getContextFromFileUri(uri: vscode.Uri, range?: vscode.Rang
 
 // Get the range from the end of fsPath, eg. get 10 and 20 from fs/path:10-20
 function getRangeFromFilePath(fsPath: string): vscode.Range | undefined {
-    const rangeMatch = fsPath.match(/:(\d+)-(\d+)$/)
+    const rangeMatch = fsPath.match(/:(\d+)-(\d+)/)
     if (!rangeMatch) {
         return undefined
     }
 
     // turn string into number
     const startLine = Number(rangeMatch[1]) + 1
-    const endLine = Number(rangeMatch[2]) + 1
+    let endLine = Number(rangeMatch[2]) + 1
+    if (startLine === endLine) {
+        endLine++
+    }
 
     return new vscode.Range(startLine, 0, endLine, 0)
 }
@@ -775,7 +778,7 @@ export async function getFileUriContext(uri: vscode.Uri, range?: vscode.Range): 
         const decoded = await getContextFromFileUri(uri, range)
         const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
         // Make sure the truncatedContent is in JSON format
-        return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
+        return getContextMessageWithResponse(populateEditorContextTemplate(truncatedContent, fileName), {
             fileName,
         })
     } catch (error) {
@@ -787,16 +790,19 @@ export async function getFileUriContext(uri: vscode.Uri, range?: vscode.Range): 
 export function extractFileUrisFromTags(
     input: string,
     workspaceRootUri?: vscode.Uri | null
-): { uri: vscode.Uri; range?: vscode.Range }[] {
+): { tag: string; uri: vscode.Uri; range?: vscode.Range }[] {
     // Extract file paths from text: get all '@foo/bar' tags
-    const tags = input.match(/@\S+/g)
-    const filePaths: { uri: vscode.Uri; range?: vscode.Range }[] = []
+    const tags = input.match(/@[\w./-]+(?::\d+-\d+)?(?:\$\w+)?/g)
+    const filePaths: { tag: string; uri: vscode.Uri; range?: vscode.Range }[] = []
     if (tags && workspaceRootUri) {
         tags.map(tag => {
-            const rangeMatch = /:(\d+)-(\d+)$/
+            const rangeMatchRegex = /:(\d+)-(\d+)/
+            // symbol match is everything at the end that's after $ sign
+            const symbolMatchRegex = /\$(\w+)$/
             // remove the rangeMatch from tag to get filePath
-            const filePath = tag.replace(rangeMatch, '')
+            const filePath = tag.replace(rangeMatchRegex, '').replace(symbolMatchRegex, '')
             filePaths.push({
+                tag,
                 uri: vscode.Uri.joinPath(workspaceRootUri, filePath.slice(1)),
                 range: getRangeFromFilePath(tag),
             })

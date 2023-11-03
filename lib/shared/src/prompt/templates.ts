@@ -187,3 +187,14 @@ const FILE_IMPORTS_TEMPLATE = '{fileName} has imported the folowing: '
 export function populateImportListContextTemplate(importList: string, fileName: string): string {
     return FILE_IMPORTS_TEMPLATE.replace('{fileName}', fileName) + importList
 }
+
+const FILE_CONTEXT_TEMPLATE = `Code context from file path @{filePath} in XML tags:
+<file-context>
+{code}
+</file-context>`
+
+export function populateEditorContextTemplate(code: string, filePath: string): string {
+    return FILE_CONTEXT_TEMPLATE.replace('{filePath}', filePath)
+        .replace('{language}', getExtension(filePath))
+        .replace('{code}', code)
+}

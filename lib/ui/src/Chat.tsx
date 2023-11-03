@@ -30,7 +30,7 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
+    onSubmit: (text: string, submitType: OnSubmitType, addedContext?: ChatUserContext[]) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
@@ -102,6 +102,8 @@ export interface ChatUISuggestionButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
+export type OnSubmitType = 'user' | 'suggestion' | 'example'
+
 export interface EditButtonProps {
     className: string
     disabled?: boolean
@@ -129,11 +131,20 @@ export interface ChatCommandsProps {
 }
 
 export interface ChatContextFromInputProps {
+    onSelected: (context: ChatUserContext, input: string) => void
     formInput: string
-    setFormInput: (input: string) => void
     setSelectedContextMatch: (index: number) => void
     inputContextMatches?: ChatUserContext[]
-    selectedContextMatch?: number
+    selected?: number
+    onSubmit: (input: string, inputType: 'user') => void
+}
+
+export interface ChatInputActionSelectorProps {
+    formInput: string
+    setFormInput: (input: string) => void
+    setSelections: (index: number) => void
+    selections: ChatUserContext[]
+    selected?: number
     onSubmit: (input: string, inputType: 'user') => void
 }
 /**
@@ -199,7 +210,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         chatCommands || null
     )
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
-    const [selectedContextMatch, setSelectedContextMatch] = useState(0)
+    const [userInputSelectedIndex, setUserInputSelectedIndex] = useState(0)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // Handles selecting a chat command when the user types a slash in the chat input.
@@ -271,6 +282,24 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         }
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
+    const onChatUserContextSelected = useCallback(
+        (selected: ChatUserContext, input: string): void => {
+            const lastAtIndex = input.lastIndexOf('@')
+            if (lastAtIndex >= 0 && selected) {
+                const inputWithoutFileInput = input.slice(0, lastAtIndex + 1)
+                setUserInputSelectedIndex(0)
+                if (selected.kind !== 'file') {
+                    setFormInput(`${inputWithoutFileInput}${selected.description}$${selected.title} `)
+                    return
+                }
+                // Add empty space at the end to end the file matching process
+                setFormInput(`${inputWithoutFileInput}${selected.title} `)
+                return
+            }
+        },
+        [setFormInput]
+    )
+
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Handles cycling through chat command suggestions using the up and down arrow keys
@@ -311,20 +340,20 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     }
                 }
             }
-
+            // Handles cycling through context matches on key presses
             if (inputContextMatches?.length && !formInput.endsWith(' ')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
                     event.stopPropagation()
                     const matchesLength = inputContextMatches?.length - 1
-                    const newIndex = event.key === 'ArrowUp' ? selectedContextMatch - 1 : selectedContextMatch + 1
+                    const newIndex = event.key === 'ArrowUp' ? userInputSelectedIndex - 1 : userInputSelectedIndex + 1
                     const newMatchIndex = newIndex < 0 ? matchesLength : newIndex > matchesLength ? 0 : newIndex
-                    setSelectedContextMatch(newMatchIndex)
+                    setUserInputSelectedIndex(newMatchIndex)
                     return
                 }
 
                 if (event.key === 'Backspace') {
-                    setSelectedContextMatch(0)
+                    setUserInputSelectedIndex(0)
                     return
                 }
 
@@ -337,7 +366,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         // Remove @ from input
                         setFormInput(inputWithoutFileInput)
                     }
-                    setSelectedContextMatch(0)
+                    setUserInputSelectedIndex(0)
                     return
                 }
 
@@ -345,15 +374,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
                     event.stopPropagation()
-                    const selectedFilePath = inputContextMatches[selectedContextMatch]
-                    const lastAtIndex = formInput.lastIndexOf('@')
-                    if (lastAtIndex >= 0 && selectedFilePath) {
-                        const inputWithoutFileInput = formInput.slice(0, lastAtIndex + 1)
-                        setSelectedContextMatch(0)
-                        // Add empty space at the end to end the file matching process
-                        setFormInput(`${inputWithoutFileInput}${selectedFilePath.title} `)
-                        return
-                    }
+                    const selected = inputContextMatches[userInputSelectedIndex]
+                    onChatUserContextSelected(selected, formInput)
+                    return
                 }
             }
 
@@ -398,16 +421,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
         },
         [
-            formInput,
             displayCommands,
+            formInput,
             inputContextMatches,
             inputHistory,
             historyIndex,
-            setMessageBeingEdited,
-            onChatSubmit,
             selectedChatCommand,
             setFormInput,
-            selectedContextMatch,
+            setMessageBeingEdited,
+            onChatSubmit,
+            userInputSelectedIndex,
+            onChatUserContextSelected,
             onSubmit,
         ]
     )
@@ -494,11 +518,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 )}
                 {inputContextMatches && ChatContextFromInputComponent && formInput && (
                     <ChatContextFromInputComponent
+                        onSelected={onChatUserContextSelected}
                         inputContextMatches={inputContextMatches}
-                        selectedContextMatch={selectedContextMatch}
+                        selected={userInputSelectedIndex}
                         formInput={formInput}
-                        setFormInput={setFormInput}
-                        setSelectedContextMatch={setSelectedContextMatch}
+                        setSelectedContextMatch={setUserInputSelectedIndex}
                         onSubmit={onSubmit}
                     />
                 )}
@@ -507,14 +531,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                {!(displayCommands?.length && inputContextMatches?.length) &&
-                    (ContextStatusComponent ? (
-                        <ContextStatusComponent {...contextStatusComponentProps} />
-                    ) : (
-                        contextStatus && (
-                            <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                        )
-                    ))}
+                {displayCommands?.length || inputContextMatches?.length ? null : ContextStatusComponent ? (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                ) : (
+                    contextStatus && (
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                    )
+                )}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}

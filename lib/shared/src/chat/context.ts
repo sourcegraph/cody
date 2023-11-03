@@ -16,9 +16,9 @@ export interface ChatContextStatus {
 
 export interface ChatUserContext {
     title: string
-    relativePath: string
-    description: string
-    fsPath: string
+    relativePath?: string
+    description?: string
+    fsPath?: string
     lines?: {
         start: number
         end: number

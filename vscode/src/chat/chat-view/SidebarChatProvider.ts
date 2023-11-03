@@ -221,7 +221,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
         MessageProvider.inputHistory.push(text)
-        await this.executeRecipe('chat-question', text, 'chat')
+        await this.executeRecipe('custom-prompt', text, 'chat')
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
@@ -344,8 +344,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatchesForChat(input),
             getSymbolsForChat(input, 5),
         ])
-
-        const matches = [...symbols, ...files]
+        const separator = { kind: 'separator', title: 'separator' }
+        // Putting symbols to the back because it takes longer to load
+        const matches = [...new Set([...files, separator, ...symbols])]
 
         void this.webview?.postMessage({
             type: 'inputContextMatches',

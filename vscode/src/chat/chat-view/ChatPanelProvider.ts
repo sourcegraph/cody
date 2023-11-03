@@ -116,7 +116,7 @@ export class ChatPanelProvider extends MessageProvider {
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
         MessageProvider.inputHistory.push(text)
-        await this.executeRecipe('chat-question', text, 'chat')
+        await this.executeRecipe('custom-prompt', text, 'chat')
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
@@ -152,13 +152,11 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async handleFileMatchFinder(input: string): Promise<void> {
-        // Get files and symbols asynchronously
-        const [files, symbols] = await Promise.all([
-            input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatchesForChat(input),
-            getSymbolsForChat(input, 5),
-        ])
+        const files = input.length < 3 ? getOpenTabsRelativePaths() : await getFileMatchesForChat(input)
+        const symbols = await getSymbolsForChat(input, 10)
+        const separator = { kind: 'separator', title: 'separator' }
 
-        const matches = [...symbols, ...files]
+        const matches = [...files, separator, ...symbols]
 
         void this.webview?.postMessage({
             type: 'inputContextMatches',

@@ -15,7 +15,6 @@ import {
     newInteractionWithError,
 } from '../prompts/utils'
 import {
-    createVSCodeRelativePath,
     extractFileUrisFromTags,
     getCurrentDirContext,
     getCurrentFileContextFromEditorSelection,
@@ -62,12 +61,9 @@ export class CustomPrompt implements Recipe {
             const filePaths = extractFileUrisFromTags(text, workspaceRootUri)
             let displayText = filePaths ? text : getHumanDisplayTextWithFileName(text, selection, workspaceRootUri)
             filePaths?.map(file => {
-                displayText = displayText.replace(
-                    `@${createVSCodeRelativePath(file.uri.fsPath)}`,
-                    getDisplayTextForFileUri(file.uri)
-                )
+                displayText = displayText.replace(file.tag, getDisplayTextForFileUri(file.uri))
             })
-
+            console.log(filePaths)
             const contextMessages = this.getChatQuestionContextMessages(
                 truncatedText,
                 context.firstInteraction,
@@ -142,14 +138,14 @@ export class CustomPrompt implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
-        // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
-        // e,g. "hey", "hi", "why", "explain" etc.
+        //  If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
+        //  e,g. "hey", "hi", "why", "explain" etc.
         const isTextTooShort = isSingleWord(text)
         if (isTextTooShort) {
             return contextMessages
         }
 
-        // TODO bee Add codebase context if transcript does not have any context after first interaction?
+        //  TODO bee Add codebase context if transcript does not have any context after first interaction?
         if (firstInteraction) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
@@ -167,7 +163,7 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...currentFileMessages)
         }
 
-        // Return sliced results
+        //  Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
     }
@@ -209,7 +205,7 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...fileMessages)
         }
 
-        // Context for unit tests requests
+        //  Context for unit tests requests
         if (isUnitTestRequest && contextMessages.length === 0) {
             if (selection?.fileName) {
                 const importsContext = await this.getUnitTestContextMessages(selection, workspaceRootUri)
@@ -227,7 +223,7 @@ export class CustomPrompt implements Recipe {
             const outputMessages = getTerminalOutputContext(commandOutput)
             contextMessages.push(...outputMessages)
         }
-        // Return sliced results
+        //  Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
     }
@@ -242,12 +238,12 @@ export class CustomPrompt implements Recipe {
             const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, true)
             contextMessages.push(...rootFileNames)
         }
-        // Add package.json content only if files matches the ts/js extension regex
+        //  Add package.json content only if files matches the ts/js extension regex
         if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
             const packageJson = await getPackageJsonContext(selection?.fileName)
             contextMessages.push(...packageJson)
         }
-        // Try adding import statements from current file as context
+        //  Try adding import statements from current file as context
         if (selection?.fileName) {
             const importsContext = await getCurrentFileImportsContext()
             contextMessages.push(...importsContext)

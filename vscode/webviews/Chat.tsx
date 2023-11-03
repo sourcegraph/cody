@@ -15,6 +15,7 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    OnSubmitType,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -83,7 +84,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (text: string, submitType: 'user' | 'suggestion' | 'example', inputContext?: ChatUserContext[]) => {
+        (text: string, submitType: OnSubmitType, inputContext?: ChatUserContext[]) => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType, inputContext })
         },
         [vscodeAPI]

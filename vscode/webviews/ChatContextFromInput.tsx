@@ -2,18 +2,17 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatUserContext } from '@sourcegraph/cody-shared'
 import { ChatContextFromInputProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './ChatCommands.module.css'
 
 export const ChatContextFromInputComponent: React.FunctionComponent<
     React.PropsWithChildren<ChatContextFromInputProps>
-> = ({ inputContextMatches, formInput, setFormInput, selectedContextMatch }) => {
+> = ({ onSelected, inputContextMatches, formInput, selected }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
-        if (selectedContextMatch === undefined || !inputContextMatches?.length) {
+        if (selected === undefined || !inputContextMatches?.length) {
             return
         }
 
@@ -21,20 +20,7 @@ export const ChatContextFromInputComponent: React.FunctionComponent<
         if (container) {
             container.scrollIntoView({ block: 'nearest' })
         }
-    }, [inputContextMatches?.length, selectedContextMatch])
-
-    const onSelectionClick = (match: ChatUserContext): void => {
-        if (!inputContextMatches) {
-            return
-        }
-        // remove everything from the last '@' in formInput
-        const lastAtIndex = formInput.lastIndexOf('@')
-        if (lastAtIndex >= 0) {
-            const inputWithoutFileInput = formInput.slice(0, lastAtIndex + 1)
-            // Add empty space at the end to end the file matching process
-            setFormInput(`${inputWithoutFileInput}${match.title} `)
-        }
-    }
+    }, [inputContextMatches?.length, selected])
 
     if (!inputContextMatches?.length || formInput.endsWith(' ')) {
         return
@@ -43,25 +29,28 @@ export const ChatContextFromInputComponent: React.FunctionComponent<
     return (
         <div className={classNames(styles.container)}>
             <div className={classNames(styles.headingContainer)}>
-                <h3 className={styles.heading}>Select file as context</h3>
+                <h3 className={styles.heading}>Add selection as context</h3>
             </div>
             <div className={classNames(styles.commandsContainer)}>
                 {inputContextMatches?.map((match, i) => {
+                    if (match.kind === 'separator') {
+                        return <hr key="separator" className={styles.separator} />
+                    }
+
                     const icon =
-                        match.kind === 'file' ? 'file' : match.kind === 'class' ? 'symbol-class' : 'symbol-method'
+                        match.kind === 'file' ? 'file' : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
                     return (
                         <React.Fragment key={match.fsPath}>
                             <button
-                                ref={selectedContextMatch === i ? selectionRef : null}
-                                className={classNames(
-                                    styles.commandItem,
-                                    selectedContextMatch === i && styles.selected
-                                )}
-                                onClick={() => onSelectionClick(match)}
+                                ref={selected === i ? selectionRef : null}
+                                className={classNames(styles.commandItem, selected === i && styles.selected)}
+                                onClick={() => onSelected(match, formInput)}
                                 type="button"
+                                title={`${match.kind} - ${match.description}`}
                             >
                                 <p className={styles.commandTitle}>
-                                    <i className={`codicon codicon-${icon}`} /> <span>{match.title}</span>
+                                    <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
+                                    <span className={styles.itemTitle}>{match.title}</span>
                                 </p>
                                 <p className={styles.commandDescription}>{match.description}</p>
                             </button>

@@ -5,6 +5,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { OnSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../webviews/NavBar'
@@ -23,7 +24,7 @@ export type WebviewMessage =
     | {
           command: 'submit'
           text: string
-          submitType: 'user' | 'suggestion' | 'example'
+          submitType: OnSubmitType
           inputContext?: ChatUserContext[]
       }
     | { command: 'executeRecipe'; recipe: RecipeID }

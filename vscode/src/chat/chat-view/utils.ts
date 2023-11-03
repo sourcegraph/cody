@@ -29,6 +29,7 @@ export async function getFileMatchesForChat(query: string): Promise<ChatUserCont
     }
     // sort by having less '/' in path to prioritize top-level matches
     return matches
+        ?.sort((a, b) => a.fsPath.split('/').length - b.fsPath.split('/').length)
         .map(uri => ({
             title: basename(uri?.fsPath),
             fsPath: uri?.fsPath,
@@ -36,7 +37,6 @@ export async function getFileMatchesForChat(query: string): Promise<ChatUserCont
             relativePath: vscode.workspace.asRelativePath(uri?.fsPath),
             description: dirname(uri?.fsPath),
         }))
-        ?.sort((a, b) => a.title.split('/').length - b.title.split('/').length)
 }
 
 export async function getSymbolsForChat(query: string, maxResults = 10): Promise<ChatUserContext[]> {
