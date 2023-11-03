@@ -1,40 +1,46 @@
 import * as vscode from 'vscode'
 
-import { CODY_IGNORE_FILENAME, setCodyIgnoreList } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import {
+    CODY_IGNORE_FILENAME,
+    deleteCodyIgnoreList,
+    setCodyIgnoreList,
+} from '@sourcegraph/cody-shared/src/chat/context-filter'
+
+import { logDebug } from '../log'
 
 /**
- * Gets a file system watcher for the .codyignore file in the workspace.
+ * Gets a file system watcher for the .cody/.ignore file in the workspace.
  *
  * The watcher will update the ignored file list on changes and re-create itself if the workspace changes.
- *
  * @returns The codyignore file watcher, or null if no workspace is open.
  */
 export async function getCodyignoreFileWatcher(): Promise<vscode.FileSystemWatcher | null> {
-    let workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
     let codyIgnoreFileUri: vscode.Uri | null = null
     let codyignoreFileWatcher: vscode.FileSystemWatcher | null = null
 
     const getWatcher = async (): Promise<vscode.FileSystemWatcher | null> => {
-        const foundUri = await getCodyIgnoreFileUri()
-        // If the gitignore file exists, get the content of the file
-        if (!workspacePath || !foundUri?.fsPath) {
+        if (!hasWorkspaceFolder()) {
             return null
         }
-        if (codyIgnoreFileUri?.fsPath === foundUri.fsPath) {
+        const newCodyIgnoreFileUri = await getCodyIgnoreFileUri()
+        // If the .cody/.ignore file exists, get the content of the file
+        if (!newCodyIgnoreFileUri?.fsPath) {
+            return null
+        }
+        if (codyIgnoreFileUri?.fsPath === newCodyIgnoreFileUri.fsPath) {
             return codyignoreFileWatcher
         }
-        codyIgnoreFileUri = foundUri
-        await update(foundUri)
-        return create(foundUri)
+        codyIgnoreFileUri = newCodyIgnoreFileUri
+        await update(newCodyIgnoreFileUri)
+        return create(newCodyIgnoreFileUri)
     }
 
     // Update watcher and workspace path on workspace change
-    vscode.workspace.onDidChangeWorkspaceFolders(async event => {
-        workspacePath = event.added[0].uri.fsPath
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
         await getWatcher()
     })
 
-    // Create watcher and start watching on codyignore file change
+    // Create watcher and start watching on .cody/.ignore file change
     const create = (ignoreFileUri: vscode.Uri): vscode.FileSystemWatcher => {
         // remove existing watcher if any
         if (codyignoreFileWatcher) {
@@ -47,36 +53,40 @@ export async function getCodyignoreFileWatcher(): Promise<vscode.FileSystemWatch
         watcher.onDidChange(async () => {
             await update(ignoreFileUri)
         })
-        watcher.onDidChange(async () => {
+        watcher.onDidCreate(async () => {
             await update(ignoreFileUri)
         })
         watcher.onDidDelete(() => {
-            setCodyIgnoreList('')
+            deleteCodyIgnoreList()
         })
         codyignoreFileWatcher = watcher
         return watcher
     }
 
     const update = async (fileUri: vscode.Uri): Promise<void> => {
-        if (!workspacePath) {
+        if (!hasWorkspaceFolder()) {
             return
         }
         try {
             const bytes = await vscode.workspace.fs.readFile(fileUri)
             const decoded = new TextDecoder('utf-8').decode(bytes)
-            setCodyIgnoreList(decoded)
+            setCodyIgnoreList(fileUri.fsPath, decoded)
         } catch {
             console.error('Failed to read codyignore file')
         }
     }
+
+    // Check if workspace is open before starting watcher
+    const hasWorkspaceFolder = (): boolean => !!vscode.workspace.workspaceFolders?.length
 
     return getWatcher()
 }
 
 // Find the .cody/.ignore file location using the vs code api
 async function getCodyIgnoreFileUri(): Promise<vscode.Uri | undefined> {
-    const codyIgnoreFile = await vscode.workspace.findFiles(CODY_IGNORE_FILENAME)
+    const codyIgnoreFile = await vscode.workspace.findFiles(CODY_IGNORE_FILENAME, undefined, 1)
     if (!codyIgnoreFile.length) {
+        logDebug('getCodyIgnoreFileUri', 'cannot find .cody/.ignore file')
         return undefined
     }
     return codyIgnoreFile[0]

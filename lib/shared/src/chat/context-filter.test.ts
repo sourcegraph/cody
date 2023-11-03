@@ -13,10 +13,10 @@ describe('isCodyIgnoredFile', () => {
         barz/*
         .git
         `
-    setCodyIgnoreList(codyignoreFileContent)
+    setCodyIgnoreList('', codyignoreFileContent)
 
     it('returns false for no file name', () => {
-        expect(isCodyIgnoredFile()).toBe(false)
+        expect(isCodyIgnoredFile('')).toBe(false)
     })
 
     it('returns true for .env file even if it is not in the ignore list', () => {
@@ -52,14 +52,14 @@ describe('isCodyIgnoredFile', () => {
         node_modules
         cody/
         `
-        setCodyIgnoreList(beforeModifiedCodyIgnoreFileContent)
+        setCodyIgnoreList('', beforeModifiedCodyIgnoreFileContent)
 
         expect(isCodyIgnoredFile('cody/index.html')).toBe(true)
 
         const afterModifiedCodyIgnoreFileContent = `
         node_modules
         `
-        setCodyIgnoreList(afterModifiedCodyIgnoreFileContent)
+        setCodyIgnoreList('', afterModifiedCodyIgnoreFileContent)
         expect(isCodyIgnoredFile('cody/index.html')).toBe(false)
     })
 })
