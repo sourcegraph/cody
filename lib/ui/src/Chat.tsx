@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
 
+import { CodeBlockMeta } from './chat/CodeBlocks'
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { SymbolLinkProps } from './chat/PreciseContext'
@@ -106,8 +107,8 @@ export interface FeedbackButtonsProps {
 }
 
 export interface CodeBlockActionsProps {
-    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', source?: string) => void
-    insertButtonOnSubmit: (text: string, newFile?: boolean, source?: string) => void
+    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', metadata?: CodeBlockMeta) => void
+    insertButtonOnSubmit: (text: string, newFile?: boolean, metadata?: CodeBlockMeta) => void
 }
 
 export interface ChatCommandsProps {
@@ -275,11 +276,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    event.stopPropagation()
                     const commandsLength = displayCommands?.length
-                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
-                    const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
-                    setSelectedChatCommand(newCommandIndex)
-                    const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
+                    const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex >= commandsLength - 1 ? 0 : curIndex
+                    setSelectedChatCommand(newIndex)
+                    const newInput = displayCommands?.[newIndex]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
                 }
                 // close the chat command suggestions on escape key

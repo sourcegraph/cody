@@ -71,7 +71,7 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
             return false
         }
         transcript = await getExtensionAPI().exports.testing?.chatTranscript()
-        return transcript !== undefined && transcript.length > index && Boolean(transcript[index].displayText)
+        return transcript !== undefined && transcript.length > index && Boolean(transcript[index].text)
     })
     assert.ok(transcript)
     return transcript[index]

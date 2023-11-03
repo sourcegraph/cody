@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { EDIT_COMMAND, menu_buttons } from '../custom-prompts/utils/menu'
+import { getActiveEditor } from '../editor/active-editor'
 
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
@@ -11,7 +12,7 @@ import { FixupTaskFactory } from './roles'
 export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
-    private async getInstructionFromQuickPick({
+    public async getInstructionFromQuickPick({
         title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
         placeholder = 'Your instructions',
         value = '',
@@ -50,7 +51,7 @@ export class FixupTypingUI {
     }
 
     public async show(): Promise<FixupTask | null> {
-        const editor = vscode.window.activeTextEditor
+        const editor = getActiveEditor()
         if (!editor) {
             return null
         }

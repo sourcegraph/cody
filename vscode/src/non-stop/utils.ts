@@ -1,10 +1,11 @@
 export enum CodyTaskState {
     'idle' = 1,
     'working' = 2,
-    'ready' = 3,
-    'applying' = 4,
-    'fixed' = 5,
-    'error' = 6,
+    'applying' = 3,
+    'formatting' = 4,
+    'applied' = 5,
+    'finished' = 6,
+    'error' = 7,
 }
 
 export type CodyTaskList = {
@@ -29,20 +30,25 @@ export const fixupTaskList: CodyTaskList = {
         icon: 'sync~spin',
         description: 'Cody is preparing a response',
     },
-    [CodyTaskState.ready]: {
-        id: 'ready',
-        icon: 'pencil',
-        description: 'Cody has responsed with suggestions and is ready to apply them',
-    },
     [CodyTaskState.applying]: {
         id: 'applying',
         icon: 'pencil',
-        description: 'The fixup is being applied to the document',
+        description: 'The edit is being applied to the document',
     },
-    [CodyTaskState.fixed]: {
-        id: 'fixed',
+    [CodyTaskState.formatting]: {
+        id: 'formatting',
+        icon: 'pencil',
+        description: 'The edit is being formatted in the document',
+    },
+    [CodyTaskState.applied]: {
+        id: 'applied',
         icon: 'pass-filled',
-        description: 'Suggestions from Cody have been applied or discarded',
+        description: 'Suggestions from Cody have been applied',
+    },
+    [CodyTaskState.finished]: {
+        id: 'finished',
+        icon: 'pass-filled',
+        description: 'The edit has been resolved and is no longer visible in the document',
     },
     [CodyTaskState.error]: {
         id: 'error',

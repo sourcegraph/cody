@@ -98,25 +98,26 @@ export class FixupProvider extends MessageProvider {
             return
         }
 
+        // Error state: The transcript finished but we didn't receive any text
+        if (!lastMessage.text && !isMessageInProgress) {
+            this.handleError('Error: Cody did not respond with any text')
+        }
+
         if (lastMessage.text) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                isMessageInProgress ? lastMessage.text : contentSanitizer(lastMessage.text),
+                contentSanitizer(lastMessage.text),
                 isMessageInProgress ? 'streaming' : 'complete'
             )
         }
     }
 
     /**
-     * TODO: How should we handle errors for fixups?
-     * Should we create a new inline chat with the message?
+     * Display an erred codelens to the user on failed fixup apply.
+     * Will allow the user to view the error in more detail if needed.
      */
     protected handleError(errorMsg: string): void {
-        void this.editor.controllers.inline?.error(errorMsg)
-    }
-
-    protected handleTranscriptErrors(): void {
-        // not implemented
+        this.editor.controllers.fixups?.error(this.task.id, errorMsg)
     }
 
     protected handleCodyCommands(): void {

@@ -27,6 +27,7 @@ export interface Configuration {
     autocompleteLanguages: Record<string, boolean>
     inlineChat: boolean
     codeActions: boolean
+    experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
     experimentalCommandLenses: boolean
     experimentalEditorTitleCommandIcon: boolean

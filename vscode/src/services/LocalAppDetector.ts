@@ -183,7 +183,7 @@ async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
     }
 }
 
-const envInit: LocalEnv = {
+export const envInit: LocalEnv = {
     os: process.platform,
     arch: process.arch,
     homeDir: process.env.HOME,
