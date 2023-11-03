@@ -1,6 +1,5 @@
 name: PRD Feature Request (Internal Only)
-description: |
-  User story for completing items on the PRD.
+description: User story for completing items on the PRD.
 title: 'PRD-Issue: Example user story from PRD'
 labels:
   - prd-issue
