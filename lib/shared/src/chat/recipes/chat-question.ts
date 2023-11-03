@@ -20,12 +20,13 @@ export class ChatQuestion implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
-                { speaker: 'assistant' },
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput, metadata: { source } },
+                { speaker: 'assistant', metadata: { source } },
                 this.getContextMessages(
                     truncatedText,
                     context.editor,

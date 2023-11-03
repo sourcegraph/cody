@@ -77,8 +77,8 @@ export class CustomPromptsStore implements vscode.Disposable {
                 if (this.homeDir) {
                     await this.build('user')
                 }
-                // workspace prompts
-                if (this.workspaceRoot) {
+                // only build workspace prompts if the workspace is trusted
+                if (this.workspaceRoot && vscode.workspace.isTrusted) {
                     await this.build('workspace')
                 }
             }
@@ -99,6 +99,11 @@ export class CustomPromptsStore implements vscode.Disposable {
      * Build the map of prompts using the json string
      */
     public async build(type: CustomCommandType): Promise<Map<string, CodyPrompt> | null> {
+        // Make sure workspace is trusted when trying to build commands from workspace config
+        if (type === 'workspace' && !vscode.workspace.isTrusted) {
+            return null
+        }
+
         try {
             const content = await this.getPromptsFromFileSystem(type)
             if (!content) {
@@ -156,7 +161,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             if (type === 'user') {
                 this.myPromptsJSON = json
             }
-            this.promptSize[type] = this.myPromptsMap.size - 1
+            this.promptSize[type] = this.myPromptsMap.size
         } catch (error) {
             logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
         }

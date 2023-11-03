@@ -4,7 +4,7 @@ import type * as vscode from 'vscode'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
-import { TextDocument } from './protocol'
+import { TextDocument } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
@@ -41,7 +41,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public getDocument(filePath: string): TextDocument | undefined {
         return this.documents.get(filePath)
     }
-    public setDocument(document: TextDocument): void {
+    public addDocument(document: TextDocument): void {
         this.documents.set(document.filePath, this.loadedDocument(document))
         const tabs: readonly vscode.Tab[] = this.allFilePaths().map(filePath => this.vscodeTab(filePath))
         vscode_shim.tabGroups.all = [

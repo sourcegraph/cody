@@ -9,6 +9,10 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
         private web: boolean = false
     ) {}
 
+    public get endpoint(): string {
+        return this.client.endpoint
+    }
+
     public async search(
         query: string,
         codeResultsCount: number,

@@ -2,6 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
@@ -13,13 +14,13 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
-import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol'
+import { MessageHandler } from './jsonrpc-alias'
+import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-function initializeVscodeExtension(): void {
+export function initializeVscodeExtension(): void {
     activate({
         asAbsolutePath(relativePath) {
             return path.resolve(process.cwd(), relativePath)
@@ -123,14 +124,14 @@ export class Agent extends MessageHandler {
             this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
         })
         this.registerNotification('textDocument/didOpen', document => {
-            this.workspace.setDocument(document)
+            this.workspace.addDocument(document)
             const textDocument = this.workspace.agentTextDocument(document)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
             const textDocument = this.workspace.agentTextDocument(document)
-            this.workspace.setDocument(document)
+            this.workspace.addDocument(document)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
@@ -245,7 +246,9 @@ export class Agent extends MessageHandler {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
 
-            await client?.graphqlClient.logEvent(event)
+            // TODO: Add support for new telemetry recorder, e.g.
+            // https://github.com/sourcegraph/cody/pull/1192
+            await client?.graphqlClient.logEvent(event, 'all')
             return null
         })
 
@@ -265,6 +268,11 @@ export class Agent extends MessageHandler {
                 console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
+        })
+
+        this.registerRequest('git/codebaseName', ({ url }) => {
+            const result = convertGitCloneURLToCodebaseName(url)
+            return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
@@ -311,7 +319,11 @@ export class Agent extends MessageHandler {
         return client
     }
 
-    private async recordEvent(feature: string, name: string): Promise<null> {
+    /**
+     * TODO: feature, action should require lib/shared/src/telemetry-v2 types,
+     * i.e. EventFeature and EventAction.
+     */
+    private async recordEvent(feature: string, action: string): Promise<null> {
         const client = await this.client
         if (!client) {
             return null
@@ -332,22 +344,27 @@ export class Agent extends MessageHandler {
             return null
         }
 
-        const event = `${eventProperties.prefix}:${feature}:${name}`
-        await client.graphqlClient.logEvent({
-            event,
-            url: '',
-            client: eventProperties.client,
-            userCookieID: eventProperties.anonymousUserID,
-            source: eventProperties.source,
-            publicArgument: JSON.stringify({
-                serverEndpoint: extensionConfiguration.serverEndpoint,
-                extensionDetails: {
-                    ide: clientInfo.name,
-                    ideExtensionType: 'Cody',
-                    version: clientInfo.version,
-                },
-            }),
-        })
+        // TODO: Add support for new telemetry recorder, e.g.
+        // https://github.com/sourcegraph/cody/pull/1192
+        const event = `${eventProperties.prefix}:${feature}:${action}`
+        await client.graphqlClient.logEvent(
+            {
+                event,
+                url: '',
+                client: eventProperties.client,
+                userCookieID: eventProperties.anonymousUserID,
+                source: eventProperties.source,
+                publicArgument: JSON.stringify({
+                    serverEndpoint: extensionConfiguration.serverEndpoint,
+                    extensionDetails: {
+                        ide: clientInfo.name,
+                        ideExtensionType: 'Cody',
+                        version: clientInfo.version,
+                    },
+                }),
+            },
+            'all'
+        )
 
         return null
     }

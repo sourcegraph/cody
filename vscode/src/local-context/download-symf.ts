@@ -74,7 +74,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     return symfPath
 }
 
-async function fileExists(path: string): Promise<boolean> {
+export async function fileExists(path: string): Promise<boolean> {
     try {
         await fspromises.access(path)
         return true

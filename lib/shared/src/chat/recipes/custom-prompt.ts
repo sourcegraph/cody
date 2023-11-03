@@ -5,7 +5,7 @@ import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
+import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
 import {
     extractTestType,
     getHumanLLMText,
@@ -30,10 +30,12 @@ import { Interaction } from '../transcript/interaction'
 import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-/** ======================================================
+/**
+ * ======================================================
  * Recipe for running custom prompts from the cody.json files
  * Works with VS Code only
-====================================================== **/
+====================================================== *
+ */
 export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
     public title = 'Custom Prompt'
@@ -61,6 +63,9 @@ export class CustomPrompt implements Recipe {
         const promptText = command.prompt
         const commandName = command?.slashCommand || command?.description || promptText
 
+        // Log all custom commands under 'custom'
+        const source = getCommandEventSource(command)
+
         if (!promptText || !commandName) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
             return newInteractionWithError(errorMessage, promptText || '')
@@ -78,7 +83,7 @@ export class CustomPrompt implements Recipe {
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
             const contextMessages = Promise.resolve(getCurrentFileContextFromEditorSelection(selection))
-            return newInteraction({ text, displayText, contextMessages })
+            return newInteraction({ text, displayText, contextMessages, source })
         }
 
         const commandOutput = command.context?.output
@@ -93,7 +98,7 @@ export class CustomPrompt implements Recipe {
             commandOutput
         )
 
-        return newInteraction({ text: truncatedText, displayText, contextMessages })
+        return newInteraction({ text: truncatedText, displayText, contextMessages, source })
     }
 
     private async getContextMessages(
@@ -124,17 +129,13 @@ export class CustomPrompt implements Recipe {
             const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
             contextMessages.push(...currentDirMessages)
         }
-        if (!promptContext.directoryPath) {
-            if (promptContext.directoryPath) {
-                const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
-                contextMessages.push(...dirMessages)
-            }
+        if (promptContext.directoryPath) {
+            const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
+            contextMessages.push(...dirMessages)
         }
-        if (!promptContext.filePath) {
-            if (promptContext.filePath) {
-                const fileMessages = await getFilePathContext(promptContext.filePath)
-                contextMessages.push(...fileMessages)
-            }
+        if (promptContext.filePath) {
+            const fileMessages = await getFilePathContext(promptContext.filePath)
+            contextMessages.push(...fileMessages)
         }
 
         // Context for unit tests requests

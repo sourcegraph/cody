@@ -1,8 +1,12 @@
+import { ChatEventSource } from '../transcript/messages'
+
 import * as defaultPrompts from './cody.json'
 import { toSlashCommand } from './utils'
 
 // A list of default cody commands
-export const defaultCodyCommands = ['ask', 'doc', 'edit', 'smell', 'test', 'reset']
+export type CodyDefaultCommands = 'ask' | 'doc' | 'edit' | 'explain' | 'smell' | 'test' | 'reset'
+
+export const defaultChatCommands = new Set(['explain', 'doc', 'edit', 'smell', 'test'])
 
 export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()
@@ -28,6 +32,16 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
     return map
 }
 
+export function getCommandEventSource(command: CodyPrompt): ChatEventSource {
+    if (command?.type === 'default') {
+        const commandName = command.slashCommand.replace(/^\//, '')
+        if (defaultChatCommands.has(commandName)) {
+            return commandName as CodyDefaultCommands
+        }
+    }
+    return 'custom-commands'
+}
+
 export interface MyPrompts {
     // A set of reusable commands where instructions (prompts) and context can be configured.
     commands: Map<string, CodyPrompt>
@@ -43,6 +57,7 @@ export interface MyPromptsJSON {
 
 // The blueprint of a Cody Command
 export interface CodyPrompt {
+    requestID?: string
     description?: string
     prompt: string
     context?: CodyPromptContext

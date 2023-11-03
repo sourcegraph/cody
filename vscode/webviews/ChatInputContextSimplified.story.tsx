@@ -21,6 +21,23 @@ const onboardingCallbacks = {
     reloadStatus: () => alert('reload'),
 }
 
+export const ChatInputContextNoRepoOpen: StoryObj<typeof ChatInputContextSimplified> = {
+    render: () => {
+        const contextStatus: ChatContextStatus = {
+            connection: false,
+        }
+        return (
+            <div className={styles.testDarkSidebarBottom}>
+                <ChatInputContextSimplified
+                    isAppInstalled={false}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
+            </div>
+        )
+    },
+}
+
 export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSimplified> = {
     render: () => {
         const contextStatus: ChatContextStatus = {
@@ -57,13 +74,56 @@ export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimpl
     },
 }
 
-export const ChatInputContextHasEmbeddings: StoryObj<typeof ChatInputContextSimplified> = {
+export const ChatInputContextHasLocalEmbeddings: StoryObj<typeof ChatInputContextSimplified> = {
     render: () => {
         const contextStatus: ChatContextStatus = {
             codebase: 'github.com/sourcegraph/example',
             filePath: 'foo/bar.js',
             mode: 'embeddings',
             connection: true,
+            embeddingsEndpoint: 'http://localhost:3080/',
+        }
+        return (
+            <div className={styles.testDarkSidebarBottom}>
+                <ChatInputContextSimplified
+                    isAppInstalled={true}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
+            </div>
+        )
+    },
+}
+
+export const ChatInputContextHasDotcomEmbeddings: StoryObj<typeof ChatInputContextSimplified> = {
+    render: () => {
+        const contextStatus: ChatContextStatus = {
+            codebase: 'github.com/sourcegraph/example',
+            filePath: 'foo/bar.js',
+            mode: 'embeddings',
+            connection: true,
+            embeddingsEndpoint: 'https://sourcegraph.com/',
+        }
+        return (
+            <div className={styles.testDarkSidebarBottom}>
+                <ChatInputContextSimplified
+                    isAppInstalled={true}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
+            </div>
+        )
+    },
+}
+
+export const ChatInputContextHasEnterpriseEmbeddings: StoryObj<typeof ChatInputContextSimplified> = {
+    render: () => {
+        const contextStatus: ChatContextStatus = {
+            codebase: 'github.com/sourcegraph/example',
+            filePath: 'foo/bar.js',
+            mode: 'embeddings',
+            connection: true,
+            embeddingsEndpoint: 'https://sourcegraph.sourcegraph.com/',
         }
         return (
             <div className={styles.testDarkSidebarBottom}>

@@ -1,18 +1,17 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, loggedV2Events, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
 
-const expectedOrderedEvents = [
+const expectedEvents = [
     'CodyVSCodeExtension:command:edit:executed',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
-    'CodyVSCodeExtension:chatResponse:noCode',
-    'CodyVSCodeExtension:fixup:codeLens:clicked',
     'CodyVSCodeExtension:fixup:applied',
+    'CodyVSCodeExtension:fixup:codeLens:clicked',
 ]
 
 test.beforeEach(() => {
@@ -45,9 +44,21 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     // Wait for the code lens to show up to ensure that the fixup has been applied
     // await expect(page.getByText('Processing by Cody')).toBeVisible()
 
-    // Ensures Code Lens is added
-    await expect(page.getByRole('button', { name: 'Apply Edits' })).toBeVisible()
-    await page.getByRole('button', { name: 'Apply Edits' }).click()
+    // Ensures Code Lenses are added
+    await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
-    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
+    // Click 'Done' to complete the fixup
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    await assertEvents(loggedEvents, expectedEvents)
+    await assertEvents(loggedV2Events, [
+        'cody.auth/failed',
+        'cody.auth/connected',
+        'cody.command.edit/executed',
+        'cody.recipe.fixup/executed',
+        'cody.fixup.apply/succeeded',
+    ])
 })

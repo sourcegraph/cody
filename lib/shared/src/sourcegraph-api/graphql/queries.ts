@@ -206,6 +206,16 @@ mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!
 	}
 }`
 
+export const RECORD_TELEMETRY_EVENTS_MUTATION = `
+mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+	telemetry {
+		recordEvents(events: $events) {
+			alwaysNil
+		}
+	}
+}
+`
+
 export const CURRENT_SITE_IDENTIFICATION = `
 query SiteIdentification {
 	site {

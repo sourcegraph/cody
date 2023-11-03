@@ -30,6 +30,7 @@ export class ContextSearch implements Recipe {
     public title = 'Codebase Context Search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const query =
             humanChatInput?.replace(/^\/s(earch)?(\s)?/i, '') ||
             (await context.editor.showInputBox('Enter your search query here...')) ||
@@ -44,11 +45,13 @@ export class ContextSearch implements Recipe {
                 speaker: 'human',
                 text: '',
                 displayText: query,
+                metadata: { source },
             },
             {
                 speaker: 'assistant',
                 text: '',
                 displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, workspaceRootUri),
+                metadata: { source },
             },
             new Promise(resolve => resolve([])),
             []

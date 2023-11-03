@@ -65,6 +65,7 @@ export function params(
     }
     const providerConfig = createProviderConfig({
         client,
+        model: null,
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
@@ -99,7 +100,6 @@ export function params(
         triggerKind,
         selectedCompletionInfo,
         providerConfig,
-        toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
         ...params,
     }

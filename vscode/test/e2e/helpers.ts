@@ -2,13 +2,13 @@ import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
-import { test as base, Frame, Page } from '@playwright/test'
+import { test as base, expect, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
 import { run, sendTestInfo } from '../fixtures/mock-server'
 
-import { installDeps } from './install-deps'
+import { installVsCode } from './install-deps'
 
 export const test = base
     .extend<{}>({
@@ -17,7 +17,7 @@ export const test = base
 
             const vscodeRoot = path.resolve(__dirname, '..', '..')
 
-            const vscodeExecutablePath = await installDeps()
+            const vscodeExecutablePath = await installVsCode()
             const extensionDevelopmentPath = vscodeRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
@@ -134,7 +134,6 @@ export async function buildWorkSpaceSettings(workspaceDirectory: string): Promis
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.experimental.commandLenses': true,
         'cody.experimental.editorTitleCommandIcon': true,
-        'testing.simplified-onboarding': false,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
@@ -158,4 +157,13 @@ export async function signOut(page: Page): Promise<void> {
     await page.keyboard.press('Enter')
     await page.waitForTimeout(1000)
     await page.keyboard.press('Enter')
+}
+
+export async function submitChat(sidebar: Frame, text: string): Promise<void> {
+    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill(text)
+    await sidebar.getByTitle('Send Message').click()
+}
+
+export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
+    await expect.poll(() => loggedEvents.slice().sort()).toEqual(expectedEvents.slice().sort())
 }

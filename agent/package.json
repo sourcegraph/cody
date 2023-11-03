@@ -27,7 +27,8 @@
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
+    "@types/vscode": "^1.80.0",
     "pkg": "^5.8.1",
-    "@types/vscode": "^1.80.0"
+    "rimraf": "^5.0.5"
   }
 }

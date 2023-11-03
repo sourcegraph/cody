@@ -21,14 +21,15 @@ import {
     LastInlineCompletionCandidate,
     TriggerKind,
 } from './get-inline-completions'
-import { getLatency, LatencyFeatureFlags, resetLatency } from './latency'
+import { getLatency, LatencyFeatureFlags, lowPerformanceLanguageIds, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
-import { CompletionEvent, SuggestionID } from './logger'
+import { CompletionEvent, READ_TIMEOUT_MS, SuggestionID } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import { InlineCompletionItem } from './types'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionEvent
@@ -40,10 +41,14 @@ export interface CodyCompletionItemProviderConfig {
     statusBar: CodyStatusBar
     getCodebaseContext: () => CodebaseContext
     graphContextFetcher?: GraphContextFetcher | null
-    completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     triggerNotice: ((notice: { key: string }) => void) | null
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
+    disableNetworkCache?: boolean
+    disableRecyclingOfPreviousRequests?: boolean
 }
 
 interface CompletionRequest {
@@ -73,9 +78,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     private isProbablyNewInstall = true
 
+    private firstCompletionDecoration = new FirstCompletionDecorationHandler()
+
     constructor({
         graphContextFetcher = null,
-        completeSuggestWidgetSelection = false,
+        completeSuggestWidgetSelection = true,
+        disableNetworkCache = false,
+        disableRecyclingOfPreviousRequests = false,
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
@@ -83,6 +92,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             graphContextFetcher,
             completeSuggestWidgetSelection,
+            disableNetworkCache,
+            disableRecyclingOfPreviousRequests,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
         }
@@ -103,7 +114,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         this.requestManager = new RequestManager({
-            completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
+            disableNetworkCache: this.config.disableNetworkCache,
+            disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
 
         const chatHistory = localStorage.getChatHistory()?.chat
@@ -119,6 +131,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     public setTracer(value: ProvideInlineCompletionItemsTracer | null): void {
         this.config.tracer = value
     }
+
+    private lastCompletionRequestTimestamp = 0
 
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
@@ -139,12 +153,24 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         const start = performance.now()
 
+        if (!this.lastCompletionRequestTimestamp) {
+            this.lastCompletionRequestTimestamp = start
+        }
+
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise] = [
+        const [
+            isIncreasedDebounceTimeEnabledPromise,
+            syntacticTriggersPromise,
+            lowPerformanceDebouncePromise,
+            disableStreamingTruncation,
+        ] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLowPerformanceDebounce),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableStreamingTruncation),
         ]
+
         const minLatencyFlagsPromises = {
             user: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
             language: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
@@ -209,7 +235,23 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
 
+        const isLowPerformanceLanguage =
+            triggerKind === TriggerKind.Automatic && lowPerformanceLanguageIds.has(document.languageId)
+
         const isIncreasedDebounceTimeEnabled = await isIncreasedDebounceTimeEnabledPromise
+        const isLowPerformanceDebounceTimeEnabled =
+            (await lowPerformanceDebouncePromise) && !(await minLatencyFlagsPromises.language)
+
+        const debounceInterval =
+            isLowPerformanceDebounceTimeEnabled && isLowPerformanceLanguage
+                ? {
+                      singleLine: 1000,
+                      multiLine: 1500,
+                  }
+                : {
+                      singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25,
+                      multiLine: 125,
+                  }
 
         try {
             const result = await this.getInlineCompletions({
@@ -219,19 +261,20 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 selectedCompletionInfo: context.selectedCompletionInfo,
                 docContext,
                 providerConfig: this.config.providerConfig,
+                disableStreamingTruncation: await disableStreamingTruncation,
                 graphContextFetcher,
-                toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,
                 getCodebaseContext: this.config.getCodebaseContext,
                 documentHistory: this.config.history,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,
-                debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
+                debounceInterval,
                 setIsLoading,
                 abortSignal: abortController.signal,
                 tracer,
                 handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                 handleDidPartiallyAcceptCompletionItem: this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
+                completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
             })
 
             // Avoid any further work if the completion is invalidated already.
@@ -266,13 +309,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const latencyFeatureFlags: LatencyFeatureFlags = {
                     user: await minLatencyFlagsPromises.user,
-                    language: await minLatencyFlagsPromises.language,
+                    language: (await minLatencyFlagsPromises.language) && !(await lowPerformanceDebouncePromise), // only one language flag should be enabled at a time
                     provider: await minLatencyFlagsPromises.provider,
                 }
-
+                // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
+                const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > READ_TIMEOUT_MS
+                this.lastCompletionRequestTimestamp = start
                 const isMinLatencyEnabled =
                     latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
-                if (triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
+                if (isLastSuggestionRead && triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
                     const minimumLatency = getLatency(
                         latencyFeatureFlags,
                         this.config.providerConfig.identifier,
@@ -303,10 +348,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 context
             )
 
-            // A completion that won't be visible in VS Code will not be returned and not be logged.
-            if (
-                !isCompletionVisible(
-                    items,
+            const visibleItems = items.filter(item =>
+                isCompletionVisible(
+                    item,
                     document,
                     position,
                     docContext,
@@ -314,7 +358,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     takeSuggestWidgetSelectionIntoAccount,
                     abortController.signal
                 )
-            ) {
+            )
+
+            // A completion that won't be visible in VS Code will not be returned and not be logged.
+            if (visibleItems.length === 0) {
                 // Returning null will clear any existing suggestions, thus we need to reset the
                 // last candidate.
                 this.lastCandidate = undefined
@@ -330,21 +377,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     uri: document.uri,
                     lastTriggerPosition: position,
                     lastTriggerDocContext: docContext,
-                    lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                    lastTriggerSelectedCompletionInfo: context?.selectedCompletionInfo,
                     result,
                 }
-                this.lastCandidate = items.length > 0 ? candidate : undefined
+                this.lastCandidate = visibleItems.length > 0 ? candidate : undefined
             }
 
-            if (items.length > 0) {
-                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
+            if (visibleItems.length > 0) {
+                CompletionLogger.suggested(
+                    result.logId,
+                    InlineCompletionsResultSource[result.source],
+                    visibleItems[0] as InlineCompletionItem
+                )
             } else {
                 CompletionLogger.noResponse(result.logId)
             }
 
             // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
             const completionResult: AutocompleteResult = {
-                items,
+                items: visibleItems,
                 completionEvent: CompletionLogger.getCompletionEvent(result.logId),
             }
 
@@ -368,19 +419,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Remove the completion from the network cache
         this.requestManager.removeFromCache(request)
 
-        this.handleFirstCompletionOnboardingNotice()
+        this.handleFirstCompletionOnboardingNotices(request)
 
-        CompletionLogger.accept(logId, completion)
+        CompletionLogger.accept(logId, request.document, completion)
     }
 
     /**
      * Handles showing a notification on the first completion acceptance.
      */
-    private handleFirstCompletionOnboardingNotice(): void {
-        if (!this.config.triggerNotice) {
-            return // no trigger handler.
-        }
-
+    private handleFirstCompletionOnboardingNotices(request: RequestParams): void {
         const key = 'completion.inline.hasAcceptedFirstCompletion'
         if (localStorage.get(key)) {
             return // Already seen notice.
@@ -396,7 +443,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        this.config.triggerNotice({ key: 'onboarding-autocomplete' })
+        // Trigger external notice (chat sidebar)
+        if (this.config.triggerNotice) {
+            this.config.triggerNotice({ key: 'onboarding-autocomplete' })
+        }
+
+        // Show inline decoration.
+        this.firstCompletionDecoration.show(request)
     }
 
     /**
@@ -463,17 +516,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // come in.
             const start = currentLine.range.start
 
-            // The completion will always exclude the same line suffix, so it has to overwrite the
-            // current same line suffix and reach to the end of the line.
-            const end = currentLine.range.end
+            // If the completion does not have a range set it will always exclude the same line suffix,
+            // so it has to overwrite the current same line suffix and reach to the end of the line.
+            const end = (completion.range?.end || currentLine.range.end) as vscode.Position
 
-            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, new vscode.Range(start, end), {
+            const vscodeInsertRange = new vscode.Range(start, end)
+            const trackedRange = new vscode.Range(
+                currentLine.range.start.line,
+                currentLinePrefix.length,
+                end.line,
+                end.character
+            )
+
+            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, vscodeInsertRange, {
                 title: 'Completion accepted',
                 command: 'cody.autocomplete.inline.accepted',
                 arguments: [
                     {
                         codyLogId: logId,
-                        codyCompletion: completion,
+                        codyCompletion: { ...completion, range: trackedRange },
                         codyRequest: {
                             document,
                             docContext,
@@ -549,7 +610,7 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
 }
 
 function isCompletionVisible(
-    completions: vscode.InlineCompletionItem[],
+    completion: vscode.InlineCompletionItem,
     document: vscode.TextDocument,
     position: vscode.Position,
     docContext: DocumentContext,
@@ -580,8 +641,8 @@ function isCompletionVisible(
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
-        : completionMatchesPopupItem(completions, position, document, context)
-    const isMatchingSuffix = completionMatchesSuffix(completions, docContext)
+        : completionMatchesPopupItem(completion, position, document, context)
+    const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
 
     return isVisible
@@ -619,7 +680,7 @@ function currentEditorContentMatchesPopupItem(
 //
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
-    completions: vscode.InlineCompletionItem[],
+    completion: vscode.InlineCompletionItem,
     position: vscode.Position,
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
@@ -628,44 +689,41 @@ function completionMatchesPopupItem(
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
 
-        if (completions.length > 0) {
-            const visibleCompletion = completions[0]
-            const insertText = visibleCompletion.insertText
-            if (typeof insertText !== 'string') {
-                return true
-            }
+        const insertText = completion.insertText
+        if (typeof insertText !== 'string') {
+            return true
+        }
 
-            // To ensure a good experience, the VS Code insertion might have the range start at the
-            // beginning of the line. When this happens, the insertText needs to be adjusted to only
-            // contain the insertion after the current position.
-            const offset = position.character - (visibleCompletion.range?.start.character ?? position.character)
-            const correctInsertText = insertText.slice(offset)
-            if (!(currentText + correctInsertText).startsWith(selectedText)) {
-                return false
-            }
+        // To ensure a good experience, the VS Code insertion might have the range start at the
+        // beginning of the line. When this happens, the insertText needs to be adjusted to only
+        // contain the insertion after the current position.
+        const offset = position.character - (completion.range?.start.character ?? position.character)
+        const correctInsertText = insertText.slice(offset)
+        if (!(currentText + correctInsertText).startsWith(selectedText)) {
+            return false
         }
     }
     return true
 }
 
-function completionMatchesSuffix(completions: vscode.InlineCompletionItem[], docContext: DocumentContext): boolean {
-    const suffix = docContext.currentLineSuffix
+export function completionMatchesSuffix(
+    completion: Pick<vscode.InlineCompletionItem, 'insertText'>,
+    currentLineSuffix: string
+): boolean {
+    if (typeof completion.insertText !== 'string') {
+        return false
+    }
 
-    for (const completion of completions) {
-        if (typeof completion.insertText !== 'string') {
-            continue
+    const insertion = completion.insertText
+    let j = 0
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < insertion.length; i++) {
+        if (insertion[i] === currentLineSuffix[j]) {
+            j++
         }
-        const insertion = completion.insertText
-        let j = 0
-        // eslint-disable-next-line @typescript-eslint/prefer-for-of
-        for (let i = 0; i < insertion.length; i++) {
-            if (insertion[i] === suffix[j]) {
-                j++
-            }
-        }
-        if (j === suffix.length) {
-            return true
-        }
+    }
+    if (j === currentLineSuffix.length) {
+        return true
     }
 
     return false
@@ -700,4 +758,79 @@ function onlyCompletionWidgetSelectionChanged(prev: CompletionRequest, next: Com
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
+}
+
+/**
+ * Handles showing an in-editor decoration when a first completion is accepted.
+ */
+class FirstCompletionDecorationHandler {
+    /**
+     * Duration to show decoration before automatically hiding.
+     *
+     * Modifying the document will also immediately hide.
+     */
+    private static readonly decorationDurationMilliseconds = 10000
+
+    /**
+     * A subscription watching for file changes to automatically hide the decoration.
+     *
+     * This subscription will be cancelled once the decoration is hidden (for any reason).
+     */
+    private editorChangeSubscription: vscode.Disposable | undefined
+
+    /**
+     * A timer to hide the decoration automatically.
+     */
+    private hideTimer: NodeJS.Timeout | undefined
+
+    private readonly decorationType = vscode.window.createTextEditorDecorationType({
+        after: {
+            margin: '0 0 0 40px',
+            contentText: '    🎉 You just accepted your first Cody autocomplete!',
+            color: new vscode.ThemeColor('editorGhostText.foreground'),
+        },
+        isWholeLine: true,
+    })
+
+    /**
+     * Shows the decoration if the editor is still active.
+     */
+    public show(request: RequestParams): void {
+        // We need an editor to show decorations. We don't want to blindly open request.document
+        // if somehow it's no longer active, so check if the current active editor is the right
+        // one. It's almost certainly the case.
+        const editor = vscode.window.activeTextEditor
+        if (editor?.document !== request.document) {
+            return
+        }
+
+        // Show the decoration at the position of the completion request. Because we set isWholeLine=true
+        // it'll always be shown at the end of this line, regardless of the length of the completion.
+        editor.setDecorations(this.decorationType, [new vscode.Range(request.position, request.position)])
+
+        // Hide automatically after a time..
+        this.hideTimer = setTimeout(
+            () => this.hide(editor),
+            FirstCompletionDecorationHandler.decorationDurationMilliseconds
+        )
+
+        // But also listen for changes to automatically hide if the user starts typing so that we're never
+        // in the way.
+        //
+        // We should never be called twice, but just in case dispose any existing sub to ensure we don't leak.
+        this.editorChangeSubscription = vscode.workspace.onDidChangeTextDocument(e => {
+            if (e.document === editor.document) {
+                this.hide(editor)
+            }
+        })
+    }
+
+    /**
+     * Hides the decoration and clears any active subscription/timeout.
+     */
+    private hide(editor: vscode.TextEditor): void {
+        clearTimeout(this.hideTimer)
+        this.editorChangeSubscription?.dispose()
+        editor.setDecorations(this.decorationType, [])
+    }
 }

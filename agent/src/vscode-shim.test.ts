@@ -31,7 +31,7 @@ describe('vscode-shim', () => {
         })
 
         it('with is available', () => {
-            assert.equal(vscode.Uri.file('a.txt').with({ path: 'b.txt' }).path, `${path.sep}b.txt`)
+            assert.equal(vscode.Uri.file('a.txt').with({ path: 'b.txt' }).path, '/b.txt')
         })
 
         it('instanceof can be used', () => {

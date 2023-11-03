@@ -10,15 +10,17 @@ import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import { PersistenceTracker } from './persistence-tracker'
 import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
+import { CompletionIntent } from './tree-sitter/query-sdk'
 import { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
-type CompletionID = string & { _opaque: typeof CompletionID }
+export type CompletionID = string & { _opaque: typeof CompletionID }
 declare const CompletionID: unique symbol
 
 // A suggestion ID is a unique identifier for a suggestion lifecycle.
@@ -40,6 +42,8 @@ export interface CompletionEvent {
         source?: InlineCompletionsResultSource
         lineCount?: number
         charCount?: number
+        // Mapping to a higher level abstractions of syntax nodes (e.g., function declaration body)
+        completionIntent?: CompletionIntent
     }
     // The timestamp when the completion request started
     startedAt: number
@@ -100,7 +104,7 @@ interface CompletionItemInfo extends ItemPostProcessingInfo {
     stopReason?: string
 }
 
-const READ_TIMEOUT_MS = 750
+export const READ_TIMEOUT_MS = 750
 
 // Maintain a cache of active suggestion lifecycle
 const activeSuggestions = new LRUCache<SuggestionID, CompletionEvent>({
@@ -123,6 +127,8 @@ function getRecentCompletionsKey(params: RequestParams, completion: string): str
 const completionIdsMarkedAsSuggested = new LRUCache<CompletionID, true>({
     max: 50,
 })
+
+let persistenceTracker: PersistenceTracker | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -243,7 +249,7 @@ export function suggested(
     }
 }
 
-export function accept(id: SuggestionID, completion: InlineCompletionItem): void {
+export function accept(id: SuggestionID, document: vscode.TextDocument, completion: InlineCompletionItem): void {
     const completionEvent = activeSuggestions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -282,7 +288,6 @@ export function accept(id: SuggestionID, completion: InlineCompletionItem): void
 
     // Ensure the CompletionID is never reused by removing it from the recent completions cache
     let key: string | null = null
-    // eslint-disable-next-line ban/ban
     recentCompletions.forEach((v, k) => {
         if (v === completionEvent.params.id) {
             key = k
@@ -301,6 +306,11 @@ export function accept(id: SuggestionID, completion: InlineCompletionItem): void
         acceptedItem: { ...completionItemToItemInfo(completion) },
     })
     statistics.logAccepted()
+
+    if (persistenceTracker === null) {
+        persistenceTracker = new PersistenceTracker()
+    }
+    persistenceTracker.track({ id: completionEvent.params.id, insertedAt: Date.now(), completion, document })
 }
 
 export function partiallyAccept(id: SuggestionID, completion: InlineCompletionItem, acceptedLength: number): void {
@@ -311,13 +321,20 @@ export function partiallyAccept(id: SuggestionID, completion: InlineCompletionIt
     }
 
     const loggedPartialAcceptedLength = completionEvent.loggedPartialAcceptedLength
+
+    // Do not log partial acceptances if the length of the accepted completion is not increasing
+    if (acceptedLength <= loggedPartialAcceptedLength) {
+        return
+    }
+
+    const acceptedLengthDelta = acceptedLength - loggedPartialAcceptedLength
     completionEvent.loggedPartialAcceptedLength = acceptedLength
 
     logCompletionEvent('partiallyAccepted', {
         ...getSharedParams(completionEvent),
         acceptedItem: { ...completionItemToItemInfo(completion) },
         acceptedLength,
-        acceptedLengthDelta: acceptedLength - loggedPartialAcceptedLength,
+        acceptedLengthDelta,
     })
 }
 
@@ -340,7 +357,6 @@ export function flushActiveSuggestions(): void {
 
 function logSuggestionEvents(): void {
     const now = performance.now()
-    // eslint-disable-next-line ban/ban
     activeSuggestions.forEach(completionEvent => {
         const {
             params,
@@ -444,10 +460,12 @@ export function logError(error: Error): void {
 }
 
 function getSharedParams(event: CompletionEvent): TelemetryEventProperties {
+    const otherCompletionProviders = getOtherCompletionProvider()
     return {
         ...event.params,
         items: event.items.map(i => ({ ...i })),
-        otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+        otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
+        otherCompletionProviders,
     }
 }
 
@@ -477,7 +495,12 @@ const otherCompletionProviders = [
     'CodeComplete.codecomplete-vscode',
     'Venthe.fauxpilot',
     'TabbyML.vscode-tabby',
+    'blackboxapp.blackbox',
+    'devsense.intelli-php-vscode',
+    'aminer.codegeex',
+    'svipas.code-autocomplete',
+    'mutable-ai.mutable-ai',
 ]
-function otherCompletionProviderEnabled(): boolean {
-    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+function getOtherCompletionProvider(): string[] {
+    return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
 }

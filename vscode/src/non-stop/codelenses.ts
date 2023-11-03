@@ -14,18 +14,24 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
-        case CodyTaskState.ready: {
-            const apply = getApplyLens(codeLensRange, task.id)
-            const diff = getDiffLens(codeLensRange, task.id)
-            const discard = getDiscardLens(codeLensRange, task.id)
-            return [apply, diff, discard]
-        }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
             return [title]
         }
+        case CodyTaskState.formatting: {
+            const title = getFormattingLens(codeLensRange)
+            const skip = getFormattingSkipLens(codeLensRange, task.id)
+            return [title, skip]
+        }
+        case CodyTaskState.applied: {
+            const title = getAppliedLens(codeLensRange, task.id)
+            const retry = getRetryLens(codeLensRange, task.id)
+            const undo = getUndoLens(codeLensRange, task.id)
+            const accept = getAcceptLens(codeLensRange, task.id)
+            return [title, retry, undo, accept]
+        }
         case CodyTaskState.error: {
-            const title = getErrorLens(codeLensRange)
+            const title = getErrorLens(codeLensRange, task.id)
             const discard = getDiscardLens(codeLensRange, task.id)
             return [title, discard]
         }
@@ -35,13 +41,12 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 }
 
 // List of lenses
-// TODO: Replace cody.focus with appropriate tasks
-// TODO (bea) send error messages to the chat UI so that they can see the task progress in the chat and chat history
-function getErrorLens(codeLensRange: vscode.Range): vscode.CodeLens {
+function getErrorLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(warning) Applying edits failed',
-        command: 'cody.focus',
+        command: 'cody.fixup.codelens.error',
+        arguments: [id],
     }
     return lens
 }
@@ -60,6 +65,25 @@ function getApplyingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     lens.command = {
         title: '$(sync~spin) Applying...',
         command: 'cody.focus',
+    }
+    return lens
+}
+
+function getFormattingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Formatting...',
+        command: 'cody.focus',
+    }
+    return lens
+}
+
+function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Skip',
+        command: 'cody.fixup.codelens.skip-formatting',
+        arguments: [id],
     }
     return lens
 }
@@ -84,21 +108,41 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
     return lens
 }
 
-function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getAppliedLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Show Diff',
+        title: '$(cody-logo) Edits Applied',
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
     return lens
 }
 
-function getApplyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(pencil) Apply Edits',
-        command: 'cody.fixup.codelens.apply',
+        title: 'Retry',
+        command: 'cody.fixup.codelens.retry',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Undo',
+        command: 'cody.fixup.codelens.undo',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Done',
+        command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
     return lens

@@ -11,6 +11,7 @@ import {
     processInlineCompletions,
 } from './text-processing/process-inline-completions'
 import { ContextSnippet } from './types'
+import { forkSignal } from './utils'
 
 export interface RequestParams {
     /** The request's document **/
@@ -24,6 +25,9 @@ export interface RequestParams {
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
+
+    /** The abort signal for the request. **/
+    abortSignal?: AbortSignal
 }
 
 export interface RequestManagerResult {
@@ -44,14 +48,23 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
-    private completeSuggestWidgetSelection = true
+    private disableNetworkCache = false
+    private disableRecyclingOfPreviousRequests = false
 
     constructor(
-        { completeSuggestWidgetSelection = true }: { completeSuggestWidgetSelection: boolean } = {
-            completeSuggestWidgetSelection: true,
+        {
+            disableNetworkCache = false,
+            disableRecyclingOfPreviousRequests = false,
+        }: {
+            disableNetworkCache?: boolean
+            disableRecyclingOfPreviousRequests?: boolean
+        } = {
+            disableNetworkCache: false,
+            disableRecyclingOfPreviousRequests: false,
         }
     ) {
-        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
+        this.disableNetworkCache = disableNetworkCache
+        this.disableRecyclingOfPreviousRequests = disableRecyclingOfPreviousRequests
     }
 
     public async request(
@@ -60,31 +73,45 @@ export class RequestManager {
         context: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<RequestManagerResult> {
-        const cachedCompletions = this.cache.get(params)
-        if (cachedCompletions) {
-            return { completions: cachedCompletions, cacheHit: 'hit' }
+        if (!this.disableNetworkCache) {
+            const cachedCompletions = this.cache.get(params)
+            if (cachedCompletions) {
+                return { completions: cachedCompletions, cacheHit: 'hit' }
+            }
         }
 
-        const request = new InflightRequest(params)
+        // When request recycling is enabled, we do not pass the original abort signal forward as to
+        // not interrupt requests that are no longer relevant. Instead, we let all previous requests
+        // complete and try to see if their results can be reused for other inflight requests.
+        let abortController: AbortController = new AbortController()
+        if (this.disableRecyclingOfPreviousRequests && params.abortSignal) {
+            abortController = forkSignal(params.abortSignal)
+        }
+
+        const request = new InflightRequest(params, abortController)
         this.inflightRequests.add(request)
 
         Promise.all(
             providers.map(provider => provider.generateCompletions(request.abortController.signal, context, tracer))
         )
             .then(res => res.flat())
-            .then(completions =>
+            .then(completions => {
                 // Shared post-processing logic
-                processInlineCompletions(completions, params)
-            )
+                return processInlineCompletions(completions, params)
+            })
             .then(processedCompletions => {
-                // Cache even if the request was aborted or already fulfilled.
-                this.cache.set(params, processedCompletions)
+                if (!this.disableNetworkCache) {
+                    // Cache even if the request was aborted or already fulfilled.
+                    this.cache.set(params, processedCompletions)
+                }
 
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.
                 request.resolve({ completions: processedCompletions, cacheHit: null })
 
-                this.testIfResultCanBeUsedForInflightRequests(request, processedCompletions)
+                if (!this.disableRecyclingOfPreviousRequests) {
+                    this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                }
 
                 return processedCompletions
             })
@@ -106,7 +133,7 @@ export class RequestManager {
      * Test if the result can be used for inflight requests. This only works
      * if a completion is a forward-typed version of a previous completion.
      */
-    private testIfResultCanBeUsedForInflightRequests(
+    private testIfResultCanBeRecycledForInflightRequests(
         resolvedRequest: InflightRequest,
         items: InlineCompletionItemWithAnalytics[]
     ): void {
@@ -115,7 +142,7 @@ export class RequestManager {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerDocContext: docContext,
-            lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
+            lastTriggerSelectedCompletionInfo: selectedCompletionInfo,
             result: {
                 logId: '' as SuggestionID,
                 source: InlineCompletionsResultSource.Network,
@@ -138,7 +165,6 @@ export class RequestManager {
                 lastCandidate,
                 docContext: request.params.docContext,
                 selectedCompletionInfo: request.params.selectedCompletionInfo,
-                completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 
             if (synthesizedCandidate) {
@@ -157,9 +183,11 @@ class InflightRequest {
     public promise: Promise<RequestManagerResult>
     public resolve: (result: RequestManagerResult) => void
     public reject: (error: Error) => void
-    public abortController: AbortController
 
-    constructor(public params: RequestParams) {
+    constructor(
+        public params: RequestParams,
+        public abortController: AbortController
+    ) {
         // The promise constructor is called synchronously, so this is just to
         // make TS happy
         this.resolve = () => {}
@@ -169,10 +197,6 @@ class InflightRequest {
             this.resolve = res
             this.reject = rej
         })
-        // We forward a different abort controller to the network request so we
-        // can cancel the network request independently of the user cancelling
-        // the completion.
-        this.abortController = new AbortController()
     }
 }
 

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 
 import { detectMultiline } from './detect-multiline'
+import { getLanguageConfig } from './language'
 import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
+import { CompletionIntent, execQueryWrapper } from './tree-sitter/query-sdk'
 
 export interface DocumentContext {
     prefix: string
@@ -25,6 +27,8 @@ export interface DocumentContext {
     injectedPrefix: string | null
 
     multilineTrigger: string | null
+
+    completionIntent?: CompletionIntent
 }
 
 interface GetCurrentDocContextParams {
@@ -68,10 +72,20 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     let injectedPrefix = null
     if (context?.selectedCompletionInfo) {
         const { range, text } = context.selectedCompletionInfo
-        completePrefixWithContextCompletion = completePrefix.slice(0, range.start.character - position.character) + text
-        injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
-        if (injectedPrefix === '') {
-            injectedPrefix = null
+        // A selected completion info attempts to replace the specified range with the inserted text
+        //
+        // We assume that the end of the range equals the current position, otherwise this would not
+        // inject a prefix
+        if (range.end.character === position.character && range.end.line === position.line) {
+            const lastLine = lines(completePrefix).at(-1)!
+            const beforeLastLine = completePrefix.slice(0, -lastLine.length)
+            completePrefixWithContextCompletion = beforeLastLine + lastLine.slice(0, range.start.character) + text
+            injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
+            if (injectedPrefix === '') {
+                injectedPrefix = null
+            }
+        } else {
+            console.warn('The selected completion info does not match the current position')
         }
     }
 
@@ -111,7 +125,19 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    const docContext = {
+    const blockStart = getLanguageConfig(document.languageId)?.blockStart
+    const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
+    // Use `blockStart` for the cursor position if it's active.
+    const positionBeforeCursor = isBlockStartActive
+        ? document.positionAt(prefix.lastIndexOf(blockStart))
+        : {
+              line: position.line,
+              character: Math.max(0, position.character - 1),
+          }
+
+    const [completionItent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
+
+    const docContext: Omit<DocumentContext, 'multilineTrigger'> = {
         prefix,
         suffix,
         contextRange: new vscode.Range(
@@ -123,10 +149,23 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         prevNonEmptyLine,
         nextNonEmptyLine,
         injectedPrefix,
+        completionIntent: completionItent?.name,
     }
 
     return {
         ...docContext,
-        multilineTrigger: detectMultiline({ docContext, document, enableExtendedTriggers, syntacticTriggers }),
+        multilineTrigger: detectMultiline({
+            docContext,
+            document,
+            enableExtendedTriggers,
+            syntacticTriggers,
+            cursorPosition: positionBeforeCursor,
+        }),
     }
+}
+
+export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentContext): string {
+    const { currentLinePrefix, injectedPrefix } = docContext
+
+    return injectedPrefix ? currentLinePrefix.slice(0, -injectedPrefix.length) : currentLinePrefix
 }

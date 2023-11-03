@@ -19,6 +19,10 @@ import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 export class MockEmbeddingsClient implements EmbeddingsSearch {
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
+    public get endpoint(): string {
+        return this.mocks.endpoint || 'https://host.example:3000'
+    }
+
     public search(
         query: string,
         codeResultsCount: number,

@@ -3,6 +3,7 @@ import path from 'path'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -12,6 +13,7 @@ export class GitHistory implements Recipe {
     public title = 'Summarize Recent Code Changes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
@@ -79,15 +81,12 @@ export class GitHistory implements Recipe {
 
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
-            Promise.resolve([]),
-            []
-        )
+        return newInteraction({
+            text: promptMessage,
+            displayText: rawDisplayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+        })
     }
 }

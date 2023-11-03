@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, it, vitest } from 'vitest'
+import * as vscode from 'vscode'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
@@ -7,13 +8,16 @@ import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '..
 import { SuggestionID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
-import { getInlineCompletions, params, V } from './helpers'
+import { getInlineCompletions, getInlineCompletionsInsertText, params, V } from './helpers'
 
 describe('[getInlineCompletions] reuseLastCandidate', () => {
     function lastCandidate(
         code: string,
         insertText: string | string[],
-        lastTriggerSelectedInfoItem?: string
+        lastTriggerSelectedCompletionInfo?: {
+            text: string
+            range: vscode.Range
+        }
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
         const lastDocContext = getCurrentDocContext({
@@ -22,11 +26,17 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             maxPrefixLength: 100,
             maxSuffixLength: 100,
             enableExtendedTriggers: true,
+            context: lastTriggerSelectedCompletionInfo
+                ? {
+                      triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                      selectedCompletionInfo: lastTriggerSelectedCompletionInfo,
+                  }
+                : undefined,
         })
         return {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerSelectedInfoItem,
+            lastTriggerSelectedCompletionInfo,
             result: {
                 logId: '1' as SuggestionID,
                 source: InlineCompletionsResultSource.Network,
@@ -209,15 +219,15 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             expect(handleDidPartiallyAcceptCompletionItem).not.toHaveBeenCalled()
 
             // Now we did
-            await getInlineCompletions(params('console█', [], args))
-            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), expect.anything(), 7)
+            await getInlineCompletions(params('console.█', [], args))
+            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), expect.anything(), 8)
 
             // Subsequent keystrokes should continue updating the partial acceptance
-            await getInlineCompletions(params('console.log█', [], args))
+            await getInlineCompletions(params('console.log(█', [], args))
             expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.anything(),
-                11
+                12
             )
         })
     })
@@ -290,18 +300,78 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             // ghost text should not be reused as it won't be rendered anyways
             expect(
                 await getInlineCompletions(
-                    params('console█', [], {
-                        lastCandidate: lastCandidate('console█', ' = 1', 'log'),
+                    params('console.█', [], {
+                        lastCandidate: lastCandidate('console.█', ' = 1', {
+                            text: 'log',
+                            range: range(0, 8, 0, 8),
+                        }),
                         selectedCompletionInfo: {
                             text: 'dir',
-                            range: range(0, 0, 0, 0),
+                            range: range(0, 8, 0, 8),
                         },
                         completeSuggestWidgetSelection: true,
+                        takeSuggestWidgetSelectionIntoAccount: true,
                     })
                 )
             ).toEqual<V>({
                 items: [],
                 source: InlineCompletionsResultSource.Network,
             }))
+
+        it('is reused when typing forward as suggested and the selected item info differs', async () =>
+            // The user types `export c`, sees the context menu pop up `class` and receives a completion for
+            // the first item. They now type fotward as suggested and reach the next word of the completion `Agent`.
+            // The context menu pop up shows a different suggestion `Agent` but the original ghost text can be
+            // reused because user continues to type as suggested.
+            expect(
+                await getInlineCompletions(
+                    params('export class A█', [], {
+                        lastCandidate: lastCandidate('export c█', 'lass Agent {', {
+                            text: 'class',
+                            range: range(0, 8, 0, 8),
+                        }),
+                        selectedCompletionInfo: {
+                            text: 'Agent',
+                            range: range(0, 8, 0, 8),
+                        },
+                        completeSuggestWidgetSelection: true,
+                        takeSuggestWidgetSelectionIntoAccount: true,
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: 'gent {' }],
+                source: InlineCompletionsResultSource.LastCandidate,
+            }))
+
+        it('does not repeat injected suffix information when content is inserted', async () =>
+            expect(
+                await getInlineCompletionsInsertText(
+                    params('console.l█', [], {
+                        lastCandidate: lastCandidate('console.█', 'log("hello world")', {
+                            text: 'log',
+                            range: range(0, 8, 0, 8),
+                        }),
+                        selectedCompletionInfo: {
+                            text: 'log',
+                            range: range(0, 8, 0, 9),
+                        },
+                        completeSuggestWidgetSelection: true,
+                    })
+                )
+            ).toEqual(['og("hello world")']))
+
+        it('does not repeat injected suffix information when suggestion item is fully accepted', async () =>
+            expect(
+                await getInlineCompletionsInsertText(
+                    params('console.log█', [], {
+                        lastCandidate: lastCandidate('console.█', 'log("hello world")', {
+                            text: 'log',
+                            range: range(0, 8, 0, 8),
+                        }),
+                        selectedCompletionInfo: undefined,
+                        completeSuggestWidgetSelection: true,
+                    })
+                )
+            ).toEqual(['("hello world")']))
     })
 })

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { getLanguageForFileName } from './language'
 import { DocumentOffsets } from './offsets'
-import { TextDocument } from './protocol'
+import { TextDocument } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 // TODO: implement with vscode-languageserver-textdocument The reason we don't

@@ -273,7 +273,11 @@ export const useClient = ({
                 // Here we are passing the current repo & file context based on `options.scope.editor`
                 // if present.
                 const additionalRepoId = await graphqlClient.getRepoId(activeEditor.repoName)
-                if (isError(additionalRepoId)) {
+                if (additionalRepoId === null) {
+                    console.error(
+                        `Cody could not access the ${activeEditor.repoName} repository on your Sourcegraph instance. RepoId is null.`
+                    )
+                } else if (isError(additionalRepoId)) {
                     console.error(
                         `Cody could not access the ${activeEditor.repoName} repository on your Sourcegraph instance. Details: ${additionalRepoId.message}`
                     )

@@ -5,7 +5,7 @@ import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
+import { SidebarChatWebview } from '../chat/chat-view/SidebarChatProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
@@ -34,7 +34,7 @@ export class AuthProvider {
     public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
     private listeners: Set<Listener> = new Set()
 
     constructor(
@@ -103,13 +103,12 @@ export class AuthProvider {
                 const selectedEndpoint = item.uri
                 const tokenKey = isLocalApp(selectedEndpoint) ? 'SOURCEGRAPH_CODY_APP' : selectedEndpoint
                 const token = await secretStorage.get(tokenKey)
-                const authStatus = await this.auth(selectedEndpoint, token || null)
-                this.showIsLoggedIn(authStatus?.authStatus || null)
+                let authStatus = await this.auth(selectedEndpoint, token || null)
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
-                    const authStatusFromToken = await this.auth(selectedEndpoint, newToken || null)
-                    this.showIsLoggedIn(authStatusFromToken?.authStatus || null)
+                    authStatus = await this.auth(selectedEndpoint, newToken || null)
                 }
+                await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
                 logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
         }
@@ -124,14 +123,7 @@ export class AuthProvider {
         telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
             success: Boolean(authState?.isLoggedIn),
         })
-    }
-
-    private showIsLoggedIn(authStatus: AuthStatus | null): void {
-        if (!authStatus?.isLoggedIn || !authStatus.endpoint) {
-            return
-        }
-        const endpointName = isLocalApp(authStatus.endpoint) ? 'Cody App' : authStatus.endpoint
-        void vscode.window.showInformationMessage(`Signed in to ${endpointName}`)
+        await showAuthResultMessage(instanceUrl, authState?.authStatus)
     }
 
     public async appAuth(uri?: string): Promise<void> {
@@ -169,6 +161,7 @@ export class AuthProvider {
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
+        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
@@ -283,8 +276,9 @@ export class AuthProvider {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
         }
+        const authStatus = this.getAuthStatus()
         for (const listener of this.listeners) {
-            listener(this.getAuthStatus())
+            listener(authStatus)
         }
         await vscode.commands.executeCommand('cody.auth.sync')
     }
@@ -323,6 +317,8 @@ export class AuthProvider {
         if (authState?.isLoggedIn) {
             const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
             await vscode.window.showInformationMessage(successMessage)
+        } else {
+            await showAuthFailureMessage(endpoint)
         }
     }
 
@@ -407,4 +403,22 @@ function formatURL(uri: string): string | null {
         console.error('Invalid URL')
     }
     return null
+}
+
+async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
+    if (authStatus?.isLoggedIn) {
+        const authority = vscode.Uri.parse(endpoint).authority
+        const isApp = endpoint === LOCAL_APP_URL.href
+        const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${authority}`
+        await vscode.window.showInformationMessage(successMessage)
+    } else {
+        await showAuthFailureMessage(endpoint)
+    }
+}
+
+async function showAuthFailureMessage(endpoint: string): Promise<void> {
+    const authority = vscode.Uri.parse(endpoint).authority
+    await vscode.window.showErrorMessage(
+        `Authentication failed. Please ensure Cody is enabled for ${authority} and verify your email address if required.`
+    )
 }

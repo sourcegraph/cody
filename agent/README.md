@@ -6,7 +6,7 @@ non-ECMAScript clients such as the JetBrains and NeoVim plugins.
 
 ## Protocol
 
-The protocol is defined in the file [`src/protocol.ts`](src/protocol.ts). The
+The protocol is defined in the file [`protocol.ts`](../vscode/src/jsonrpc/agent-protocol.ts). The
 TypeScript code is the single source of truth of what JSON-RPC methods are
 supported in the protocol.
 

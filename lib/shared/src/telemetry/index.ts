@@ -13,14 +13,34 @@ export interface TelemetryService {
      * @param properties Event properties. Do NOT include any private information, such as full URLs
      * that may contain private repository names or search queries.
      */
-    log(eventName: string, properties?: TelemetryEventProperties): void
+    log(
+        eventName: string,
+        properties?: TelemetryEventProperties,
+        opts?: {
+            /**
+             * Indicates a new event, using telemetryRecorder, is also
+             * recorded, so there's no need to record to the instance,
+             * as telemetryRecorder will handle delivering an event to
+             * the instance.
+             */
+            hasV2Event: boolean
+        }
+    ): void
 }
 
 /**
  * Properties related to a telemetry event.
  */
 export interface TelemetryEventProperties {
-    [key: string]: string | number | boolean | null | undefined | TelemetryEventProperties[] | TelemetryEventProperties
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | TelemetryEventProperties[]
+        | TelemetryEventProperties
 }
 
 /** For testing. */

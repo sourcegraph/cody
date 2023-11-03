@@ -38,9 +38,7 @@ export interface PreciseContext {
 export interface HoverContext {
     symbolName: string
     sourceSymbolName?: string
-    type: 'definition' | 'typeDefinition' | 'implementation'
     content: string[]
-
     uri: string
     range?: {
         startLine: number

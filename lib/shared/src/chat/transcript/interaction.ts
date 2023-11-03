@@ -1,7 +1,7 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
 import { isCodyIgnoredFile } from '../context-filter'
 
-import { ChatMessage, InteractionMessage } from './messages'
+import { ChatMessage, ChatMetadata, InteractionMessage } from './messages'
 
 export interface InteractionJSON {
     humanMessage: InteractionMessage
@@ -40,7 +40,7 @@ export class Interaction {
         for (let i = 0; i < contextMessages.length; i++) {
             const message = contextMessages[i]
             if (message.speaker === 'human' && message.file?.fileName) {
-                // find filesToExclude to see if the filename matches
+                // Skips the assistant message if the human message is ignored
                 if (isCodyIgnoredFile(message.file?.fileName)) {
                     i++
                     continue
@@ -52,12 +52,19 @@ export class Interaction {
         return newMessages
     }
 
+    private metadata?: ChatMetadata
+    public setMetadata(metadata: ChatMetadata): void {
+        this.metadata = metadata
+        this.humanMessage.metadata = this.metadata
+        this.assistantMessage.metadata = this.metadata
+    }
+
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
-        this.assistantMessage = assistantMessage
+        this.assistantMessage = { ...assistantMessage, metadata: this.metadata }
     }
 
     public getHumanMessage(): InteractionMessage {

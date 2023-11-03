@@ -7,7 +7,6 @@ import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
 describe('FeatureFlagProvider', () => {
     it('evaluates the feature flag on dotcom', async () => {
         const apiClient = {
-            isDotCom: () => true,
             getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
             evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
         } as unknown as SourcegraphGraphQLAPIClient
@@ -17,23 +16,8 @@ describe('FeatureFlagProvider', () => {
         expect(await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)).toBe(true)
     })
 
-    it('does not make a network request when not on dotcom', async () => {
-        const apiClient = {
-            isDotCom: () => false,
-            getEvaluatedFeatureFlags: vitest.fn(),
-            evaluateFeatureFlag: vitest.fn(),
-        }
-
-        const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-
-        expect(await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)).toBe(false)
-        expect(apiClient.getEvaluatedFeatureFlags).not.toHaveBeenCalled()
-        expect(apiClient.evaluateFeatureFlag).not.toHaveBeenCalled()
-    })
-
     it('loads all evaluated feature flag on `syncAuthStatus`', async () => {
         const apiClient = {
-            isDotCom: () => true,
             getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
                 [FeatureFlag.TestFlagDoNotUse]: true,
             }),
@@ -53,7 +37,6 @@ describe('FeatureFlagProvider', () => {
 
     it('should handle API errors', async () => {
         const apiClient = {
-            isDotCom: () => true,
             getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue(new Error('API error')),
             evaluateFeatureFlag: vitest.fn().mockResolvedValue(new Error('API error')),
         }
@@ -65,7 +48,6 @@ describe('FeatureFlagProvider', () => {
 
     it('should refresh flags', async () => {
         const apiClient = {
-            isDotCom: () => true,
             getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
                 [FeatureFlag.TestFlagDoNotUse]: true,
             }),
@@ -94,7 +76,6 @@ describe('FeatureFlagProvider', () => {
         try {
             Date.now = () => 0
             const apiClient = {
-                isDotCom: () => true,
                 getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
                     [FeatureFlag.TestFlagDoNotUse]: true,
                 }),

@@ -61,6 +61,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
+                model: null,
             }),
             triggerNotice: null,
 
@@ -132,6 +133,7 @@ describe('InlineCompletionItemProvider', () => {
         expect(provider.lastCandidate).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
+              "completionIntent": undefined,
               "contextRange": Range {
                 "end": Position {
                   "character": 14,
@@ -157,7 +159,7 @@ describe('InlineCompletionItemProvider', () => {
               "character": 12,
               "line": 0,
             },
-            "lastTriggerSelectedInfoItem": undefined,
+            "lastTriggerSelectedCompletionInfo": undefined,
             "result": {
               "items": [
                 {
@@ -450,28 +452,29 @@ describe('InlineCompletionItemProvider', () => {
             const { document, position } = documentAndPosition(
                 dedent`
                     function foo() {
-                        console.l█
+                        console.█
                         console.foo()
                     }
                 `,
                 'typescript'
             )
+
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
                 logId: '1' as SuggestionID,
-                items: [{ insertText: "og('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
+                items: [{ insertText: "log('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 12) }],
                 source: InlineCompletionsResultSource.Network,
             })
-
             const provider = new MockableInlineCompletionItemProvider(fn)
 
             // Ignore the first call, it will not use the selected completion info
             await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 13) },
+                selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 12) },
             })
+
             const items = await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 13) },
+                selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 12) },
             })
 
             expect(fn).toBeCalledWith(
@@ -486,25 +489,22 @@ describe('InlineCompletionItemProvider', () => {
                     }),
                 })
             )
-            expect(items).toMatchInlineSnapshot(`
-              {
-                "completionEvent": undefined,
-                "items": [
-                  InlineCompletionItem {
-                    "insertText": "    console.log('hello world!')",
-                    "range": Range {
-                      "end": Position {
-                        "character": 13,
-                        "line": 1,
-                      },
-                      "start": Position {
-                        "character": 0,
-                        "line": 1,
-                      },
+            expect(items?.items).toMatchInlineSnapshot(`
+              [
+                InlineCompletionItem {
+                  "insertText": "    console.log('hello world!')",
+                  "range": Range {
+                    "end": Position {
+                      "character": 12,
+                      "line": 1,
+                    },
+                    "start": Position {
+                      "character": 0,
+                      "line": 1,
                     },
                   },
-                ],
-              }
+                },
+              ]
             `)
         })
 

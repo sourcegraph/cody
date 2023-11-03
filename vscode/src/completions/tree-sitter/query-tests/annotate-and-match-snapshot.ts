@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import dedent from 'dedent'
+import { findLast } from 'lodash'
 import { expect } from 'vitest'
 import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
@@ -231,6 +232,10 @@ interface AnnotateAndMatchParams {
     captures: Captures
 }
 
+/**
+ * Add "// only", or other comment delimiter for the current language, to
+ * focus on one code sample (similar to `it.only` from `jest`).
+ */
 export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): Promise<void> {
     const { captures, sourcesPath, parser, language } = params
 
@@ -241,13 +246,15 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
     // Queries are used on specific parts of the source code (e.g., range of the inserted multiline completion).
     // Snippets are required to mimick such behavior and test the order of returned captures.
     const snippets = code.split(separator)
+    // Support "// only" to focus on one code sample at a time
+    const onlySnippet = findLast(snippets, snippet => snippet.startsWith(`${delimiter} only`))
 
     const header = dedent`
         ${commentOutLines(DOCUMENTATION_HEADER, delimiter)}
         ${delimiter}
     `.trim()
 
-    const annotated = snippets
+    const annotated = (onlySnippet ? [onlySnippet] : snippets)
         .map(snippet => {
             return annotateSnippets({ code: snippet, language, parser, captures })
         })

@@ -15,6 +15,8 @@ import {
 import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
+    inProgress: boolean
+
     displayText: string
 
     copyButtonClassName?: string
@@ -22,6 +24,13 @@ interface CodeBlocksProps {
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+
+    metadata?: CodeBlockMeta
+}
+
+export interface CodeBlockMeta {
+    source?: string // the name of the executed command that generated the code
+    requestID?: string // id of the request that generated the code
 }
 
 function createButtons(
@@ -29,7 +38,8 @@ function createButtons(
     copyButtonClassName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonClassName?: string,
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
+    metadata?: CodeBlockMeta
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -53,7 +63,8 @@ function createButtons(
         'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions,
-        copyButtonClassName
+        copyButtonClassName,
+        metadata
     )
     buttons.append(copyButton)
 
@@ -66,7 +77,8 @@ function createButtons(
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions,
-                insertButtonClassName
+                insertButtonClassName,
+                metadata
             )
         )
 
@@ -77,7 +89,8 @@ function createButtons(
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions,
-                insertButtonClassName
+                insertButtonClassName,
+                metadata
             )
         )
     }
@@ -89,13 +102,6 @@ function createButtons(
 
 /**
  * Creates a button to perform an action on a code block.
- *
- * @param type - The type of action button: 'copy', 'insert', or 'new'.
- * @param text - The text content of the code block.
- * @param title - The title attribute for the button.
- * @param iconSvg - The SVG icon to display in the button.
- * @param codeBlockActions - The callback actions to perform on click.
- * @param className - Optional additional CSS class names for the button.
  * @returns The button element.
  */
 function createCodeBlockActionButton(
@@ -107,7 +113,8 @@ function createCodeBlockActionButton(
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
     },
-    className?: string
+    className?: string,
+    metadata?: CodeBlockMeta
 ): HTMLElement {
     const button = document.createElement('button')
 
@@ -122,7 +129,7 @@ function createCodeBlockActionButton(
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
-            codeBlockActions.copy(text, 'Button')
+            codeBlockActions.copy(text, 'Button', metadata)
             setTimeout(() => (button.innerHTML = iconSvg), 5000)
         })
     }
@@ -134,10 +141,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => insertOnSubmit(text, false))
+            button.addEventListener('click', () => insertOnSubmit(text, false, metadata))
             break
         case 'new':
-            button.addEventListener('click', () => insertOnSubmit(text, true))
+            button.addEventListener('click', () => insertOnSubmit(text, true, metadata))
             break
     }
 
@@ -150,24 +157,34 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     copyButtonOnSubmit,
     insertButtonClassName,
     insertButtonOnSubmit,
+    metadata,
+    inProgress,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        // Attach code block actions only when the message is completed
+        if (inProgress) {
+            return
+        }
+
         const preElements = rootRef.current?.querySelectorAll('pre')
-        if (!preElements?.length) {
+        if (!preElements?.length || !copyButtonOnSubmit) {
             return
         }
 
         for (const preElement of preElements) {
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
+                const eventMetadata = { requestID: metadata?.requestID, source: metadata?.source }
+
                 const buttons = createButtons(
                     preText,
                     copyButtonClassName,
                     copyButtonOnSubmit,
                     insertButtonClassName,
-                    insertButtonOnSubmit
+                    insertButtonOnSubmit,
+                    eventMetadata
                 )
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
@@ -176,12 +193,22 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
                     if (copyButtonOnSubmit) {
-                        copyButtonOnSubmit(preText, 'Keydown')
+                        copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
                     }
                 })
             }
         }
-    }, [displayText, copyButtonClassName, insertButtonClassName, rootRef, copyButtonOnSubmit, insertButtonOnSubmit])
+    }, [
+        displayText,
+        copyButtonClassName,
+        insertButtonClassName,
+        rootRef,
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+        metadata?.requestID,
+        metadata?.source,
+        inProgress,
+    ])
 
     return useMemo(
         () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,

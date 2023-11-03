@@ -5,3 +5,5 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .env
+.idea/
+playwright/**/*.webm

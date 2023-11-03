@@ -8,6 +8,6 @@
     "allowJs": true,
   },
   "include": ["**/*", ".*", "package.json", "src/language-file-extensions.json"],
-  "exclude": ["dist"],
+  "exclude": ["dist", "src/bfg/__tests__"],
   "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }],
 }

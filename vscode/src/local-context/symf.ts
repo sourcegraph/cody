@@ -29,12 +29,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     constructor(
         private context: vscode.ExtensionContext,
+        private sourcegraphServerEndpoint: string | null,
         private authToken: string | null
     ) {
         this.indexRoot = path.join(os.homedir(), '.cody-symf')
     }
 
-    public setAuthToken(authToken: string | null): void {
+    public setSourcegraphAuth(endpoint: string | null, authToken: string | null): void {
+        this.sourcegraphServerEndpoint = endpoint
         this.authToken = authToken
     }
 
@@ -65,6 +67,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         if (!accessToken) {
             throw new Error('SymfRunner.getResults: No access token')
         }
+        const serverEndpoint = this.sourcegraphServerEndpoint
+        if (!serverEndpoint) {
+            throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
+        }
 
         const indexDir = await this.ensureIndexFor(scopeDir)
         const symfPath = await getSymfPath(this.context)
@@ -78,6 +84,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                 {
                     env: {
                         SOURCEGRAPH_TOKEN: accessToken,
+                        SOURCEGRAPH_URL: serverEndpoint,
                         HOME: process.env.HOME,
                     },
                     maxBuffer: 1024 * 1024 * 1024,

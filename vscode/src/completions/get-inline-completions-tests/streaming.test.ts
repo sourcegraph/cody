@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion, nextTick } from '../test-helpers'
@@ -7,7 +7,7 @@ import { completion, nextTick } from '../test-helpers'
 import { getInlineCompletions, params, V } from './helpers'
 
 describe('[getInlineCompletions] streaming', () => {
-    test('terminates early for a single-line request', async () => {
+    it('terminates early for a single-line request', async () => {
         const abortController = new AbortController()
         expect(
             await getInlineCompletions({
@@ -26,7 +26,7 @@ describe('[getInlineCompletions] streaming', () => {
         })
     })
 
-    test('does not include unfinished lines in results', async () => {
+    it('does not include unfinished lines in results', async () => {
         const abortController = new AbortController()
         expect(
             await getInlineCompletions({
@@ -48,7 +48,7 @@ describe('[getInlineCompletions] streaming', () => {
         })
     })
 
-    test('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {
+    it('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {
         const abortController = new AbortController()
         const result = await getInlineCompletions({
             ...params(
@@ -76,7 +76,8 @@ describe('[getInlineCompletions] streaming', () => {
                         onPartialResponse?.(completion`
                                         ├console.log('what?')
                                     }
-                                    ┤
+
+                                    function never(){}┤
                                 `)
                         await nextTick()
                         expect(abortController.signal.aborted).toBe(true)
@@ -90,7 +91,7 @@ describe('[getInlineCompletions] streaming', () => {
         expect(result?.source).toBe(InlineCompletionsResultSource.Network)
     })
 
-    test('uses the next non-empty line comparison logic to terminate early for multi-line completions', async () => {
+    it('uses the next non-empty line comparison logic to terminate early for multi-line completions', async () => {
         const abortController = new AbortController()
         expect(
             await getInlineCompletions({
@@ -133,5 +134,72 @@ describe('[getInlineCompletions] streaming', () => {
             items: [{ insertText: 'const a = new Array()' }],
             source: InlineCompletionsResultSource.Network,
         })
+    })
+
+    it('uses the multi-line truncation logic to terminate early for multi-line completions with leading new line', async () => {
+        const abortController = new AbortController()
+
+        const result = await getInlineCompletions({
+            ...params(
+                dedent`
+                    function bubbleSort() {
+                        █
+                    }
+                `,
+                [
+                    completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()`,
+                ],
+                {
+                    async onNetworkRequest(_params, onPartialResponse) {
+                        onPartialResponse?.(
+                            completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (`
+                        )
+                        await nextTick()
+                        expect(abortController.signal.aborted).toBe(false)
+                        onPartialResponse?.(
+                            completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()\n`
+                        )
+                        await nextTick()
+                        expect(abortController.signal.aborted).toBe(true)
+                    },
+                }
+            ),
+            abortSignal: abortController.signal,
+        })
+
+        expect(result?.items[0].insertText).toMatchInlineSnapshot(`
+          "const merge = (left, right) => {
+              let arr = [];
+              while (left.length && right.length) {
+                  if (true) {}
+              }"
+        `)
+        expect(result?.source).toBe(InlineCompletionsResultSource.Network)
+    })
+
+    it.skip('cuts-off multlineline compeltions with inconsistent indentation correctly', async () => {
+        const abortController = new AbortController()
+
+        const result = await getInlineCompletions({
+            ...params(
+                dedent`
+                    function bubbleSort() {
+                        █
+                    }
+                `,
+                [completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`],
+                {
+                    async onNetworkRequest(_params, onPartialResponse) {
+                        onPartialResponse?.(completion`// Bubble sort algorithm\nconst numbers = [5, 3, 6, 2, 10];\n`)
+                        await nextTick()
+                        expect(abortController.signal.aborted).toBe(false)
+                    },
+                }
+            ),
+            abortSignal: abortController.signal,
+        })
+
+        expect(result?.items[0].insertText).toMatchInlineSnapshot('"// Bubble sort algorithm"')
+        expect(result?.source).toBe(InlineCompletionsResultSource.Network)
     })
 })

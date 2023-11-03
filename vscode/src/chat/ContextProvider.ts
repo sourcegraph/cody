@@ -19,11 +19,11 @@ import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
-import * as OnboardingExperiment from '../services/OnboardingExperiment'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { ChatViewProviderWebview } from './ChatViewProvider'
+import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
 import { GraphContextProvider } from './GraphContextProvider'
 import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
@@ -38,6 +38,7 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
+    | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
@@ -53,7 +54,7 @@ export enum ContextEvent {
 export class ContextProvider implements vscode.Disposable {
     // We fire messages from ContextProvider to the sidebar webview.
     // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
 
     // Fire event to let subscribers know that the configuration has changed
     public configurationChangeEvent = new vscode.EventEmitter<void>()
@@ -169,10 +170,16 @@ export class ContextProvider implements vscode.Disposable {
         this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
+        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? '.app' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         // e.g. auth:app:connected, auth:app:disconnected, auth:failed
-        this.sendEvent(ContextEvent.Auth, isAppEvent + eventValue)
+        // this.sendEvent(ContextEvent.Auth, isAppEvent, eventValue)
+        switch (ContextEvent.Auth) {
+            case 'auth':
+                telemetryService.log(`CodyVSCodeExtension:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`)
+                telemetryRecorder.recordEvent(`cody.auth${isAppEvent}`, eventValue)
+                break
+        }
     }
 
     /**
@@ -185,10 +192,12 @@ export class ContextProvider implements vscode.Disposable {
                 type: 'contextStatus',
                 contextStatus: {
                     mode: this.config.useContext,
+                    endpoint: this.authProvider.getAuthStatus().endpoint || undefined,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
+                    embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selectionRange: editorContext ? editorContext.selectionRange : undefined,
+                    selectionRange: editorContext?.selectionRange,
                     supportsKeyword: true,
                 },
             })
@@ -215,7 +224,6 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentOnboarding: OnboardingExperiment.pickArm(telemetryService),
             }
 
             // update codebase context on configuration change
@@ -225,17 +233,6 @@ export class ContextProvider implements vscode.Disposable {
         }
 
         await send()
-    }
-
-    /**
-     * Log Events - naming convention: source:feature:action
-     */
-    private sendEvent(event: ContextEvent, value: string): void {
-        switch (event) {
-            case 'auth':
-                telemetryService.log(`CodyVSCodeExtension:Auth:${value}`)
-                break
-        }
     }
 
     public dispose(): void {
@@ -292,7 +289,6 @@ export class ContextProvider implements vscode.Disposable {
 
 /**
  * Gets codebase context for the current workspace.
- *
  * @param config Cody configuration
  * @param rgPath Path to rg (ripgrep) executable
  * @param editor Editor instance

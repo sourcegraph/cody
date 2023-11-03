@@ -632,6 +632,7 @@ export const vsCodeMocks = {
     EventEmitter,
     EndOfLine,
     CancellationTokenSource,
+    ThemeColor,
     WorkspaceEdit,
     Uri,
     languages,
@@ -648,6 +649,7 @@ export const vsCodeMocks = {
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
         onDidChangeActiveTextEditor() {},
+        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
     },
     workspace: {
         fs: workspaceFs,
@@ -673,6 +675,9 @@ export const vsCodeMocks = {
         asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
+        onDidChangeTextDocument() {},
+        onDidRenameFiles() {},
+        onDidDeleteFiles() {},
     },
     ConfigurationTarget: {
         Global: undefined,
@@ -695,4 +700,10 @@ export enum UIKind {
 
 export function emptyEvent<T>(): vscode_types.Event<T> {
     return () => emptyDisposable
+}
+
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15,
 }

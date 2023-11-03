@@ -19,7 +19,7 @@ func greet(name string) {
 
 func printNumbers() {
 	for i := 0; i < 10; i++ {
-		//                      |
+		//                  |
 		fmt.Println(i)
 	}
 }
@@ -28,7 +28,7 @@ func printNumbers() {
 
 func compare(x int) {
 	if x > 5 {
-		//       |
+		//   |
 		fmt.Println("Greater than 5")
 	} else {
 		fmt.Println("Less than or equal to 5")

@@ -2,6 +2,7 @@ import { spawnSync } from 'child_process'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -11,6 +12,7 @@ export class ReleaseNotes implements Recipe {
     public title = 'Generate Release Notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
@@ -65,16 +67,13 @@ export class ReleaseNotes implements Recipe {
 
         if (!gitLogOutput) {
             const emptyGitLogMessage = 'No recent changes found to generate release notes.'
-            return new Interaction(
-                { speaker: 'human', displayText: rawDisplayText },
-                {
-                    speaker: 'assistant',
-                    prefix: emptyGitLogMessage,
-                    text: emptyGitLogMessage,
-                },
-                Promise.resolve([]),
-                []
-            )
+            return newInteraction({
+                text: rawDisplayText,
+                displayText: rawDisplayText,
+                source,
+                assistantPrefix: emptyGitLogMessage,
+                assistantText: emptyGitLogMessage,
+            })
         }
 
         const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
@@ -86,15 +85,12 @@ export class ReleaseNotes implements Recipe {
 
         const promptMessage = `Generate release notes by summarising these commits:\n${truncatedGitLogOutput}\n\nUse proper heading format for the release notes.\n\n${tagsPromptText}.Do not include other changes and dependency updates.`
         const assistantResponsePrefix = `Here is the generated release notes for ${selectedLabel}\n${truncatedLogMessage}`
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
-            Promise.resolve([]),
-            []
-        )
+        return newInteraction({
+            text: promptMessage,
+            displayText: rawDisplayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+        })
     }
 }

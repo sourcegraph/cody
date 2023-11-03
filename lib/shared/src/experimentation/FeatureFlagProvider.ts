@@ -9,17 +9,23 @@ export enum FeatureFlag {
 
     CodyAutocompleteTracing = 'cody-autocomplete-tracing',
     CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
+    CodyAutocompleteAnthropicCyan = 'cody-autocomplete-anthropic-cyan',
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
+    CodyAutocompleteGraphContextBfg = 'cody-autocomplete-graph-context-bfg',
     CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteProviderLatency = 'cody-autocomplete-provider-latency',
+    CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
+    CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
+    CodyAutocompleteDisableStreamingTruncation = 'cody-autocomplete-disable-streaming-truncation',
+    CodyAutocompleteLowPerformanceDebounce = 'cody-autocomplete-low-performance-debounce',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -41,7 +47,7 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        if (!this.apiClient.isDotCom() || process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+        if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
             return false
         }
 
@@ -60,12 +66,8 @@ export class FeatureFlagProvider {
     }
 
     private async refreshFeatureFlags(): Promise<void> {
-        if (this.apiClient.isDotCom()) {
-            const data = await this.apiClient.getEvaluatedFeatureFlags()
-            this.featureFlags = isError(data) ? {} : data
-        } else {
-            this.featureFlags = {}
-        }
+        const data = await this.apiClient.getEvaluatedFeatureFlags()
+        this.featureFlags = isError(data) ? {} : data
         this.lastUpdated = Date.now()
     }
 }

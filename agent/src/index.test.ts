@@ -6,8 +6,8 @@ import { afterAll, describe, it } from 'vitest'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
-import { MessageHandler } from './jsonrpc'
-import { ClientInfo } from './protocol'
+import { MessageHandler } from './jsonrpc-alias'
+import { ClientInfo } from './protocol-alias'
 
 export class TestClient extends MessageHandler {
     public async handshake(clientInfo: ClientInfo) {

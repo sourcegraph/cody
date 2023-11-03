@@ -138,6 +138,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
             const context = {
                 context: sample.context,
                 logSummary: {
+                    strategy: 'fake',
                     duration: 0,
                 },
             }

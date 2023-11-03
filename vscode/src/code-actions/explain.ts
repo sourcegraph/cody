@@ -2,11 +2,6 @@ import * as vscode from 'vscode'
 
 export class ExplainCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
-    private command: string
-
-    constructor(inline: boolean) {
-        this.command = inline ? 'cody.inline.add' : 'cody.action.chat'
-    }
 
     public provideCodeActions(
         document: vscode.TextDocument,
@@ -21,15 +16,15 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         if (diagnostics.length === 0) {
             return []
         }
-        return [this.createCommandCodeAction(diagnostics, range)]
+        return [this.createCommandCodeAction(diagnostics)]
     }
 
-    private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
+    private createCommandCodeAction(diagnostics: vscode.Diagnostic[]): vscode.CodeAction {
         const action = new vscode.CodeAction('Ask Cody to Explain', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
-            command: this.command,
-            arguments: [instruction, range],
+            command: 'cody.action.chat',
+            arguments: [instruction, 'code-action'],
             title: 'Ask Cody to Explain',
         }
         action.diagnostics = diagnostics
@@ -37,7 +32,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
     }
 
     private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string =>
-        `Explain the following error${diagnostics.length > 1 ? 's' : ''}:\n${diagnostics
+        `Explain the following error${diagnostics.length > 1 ? 's' : ''}:\n\n${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
-            .join('\n')}`
+            .join('\n\n')}`
 }

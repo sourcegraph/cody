@@ -1,5 +1,16 @@
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
+/**
+ * Get the numeric ID corresponding to the ConfigurationUseContext mode.
+ */
+export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
+    none: 0,
+    embeddings: 1,
+    keyword: 2,
+    blended: 10,
+    unified: 11,
+}
+
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     serverEndpoint: string
@@ -16,6 +27,7 @@ export interface Configuration {
     autocompleteLanguages: Record<string, boolean>
     inlineChat: boolean
     codeActions: boolean
+    experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
     experimentalCommandLenses: boolean
     experimentalEditorTitleCommandIcon: boolean
@@ -28,7 +40,7 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    autocompleteExperimentalGraphContext?: boolean
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null
     isRunningInsideAgent?: boolean
 }
 

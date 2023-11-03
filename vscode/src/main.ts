@@ -2,12 +2,13 @@ import * as vscode from 'vscode'
 
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
+import { ChatManager } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
@@ -16,6 +17,7 @@ import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
+import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -28,9 +30,11 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
+import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { TestSupport } from './test-support'
 
 /**
@@ -78,7 +82,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
+    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     // Set codyignore list on startup
     const codyIgnoreWatcher = await getCodyignoreFileWatcher()
@@ -119,16 +123,7 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
-    const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
-    if (symfRunner) {
-        authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-            if (authStatus.isLoggedIn) {
-                symfRunner.setAuthToken(await getAccessToken())
-            } else {
-                symfRunner.setAuthToken(null)
-            }
-        })
-    }
+    const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
@@ -169,35 +164,46 @@ const register = async (
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
-    const sidebarChatProvider = new ChatViewProvider({
+    const chatManager = new ChatManager({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
     })
 
-    disposables.push(sidebarChatProvider)
-
+    // Register tree views
     disposables.push(
-        vscode.window.registerWebviewViewProvider('cody.chat', sidebarChatProvider, {
+        chatManager,
+        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarChat, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         })
     )
 
-    const executeRecipeInSidebar = async (
+    // Adds a change listener to the auth provider that syncs the auth status
+    authProvider.addChangeListener((authStatus: AuthStatus) => {
+        void chatManager.syncAuthStatus(authStatus)
+        if (symfRunner && authStatus.isLoggedIn) {
+            getAccessToken()
+                .then(token => {
+                    symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
+                })
+                .catch(() => {})
+        } else {
+            symfRunner?.setSourcegraphAuth(null, null)
+        }
+    })
+
+    const executeRecipeInChatView = async (
         recipe: RecipeID,
         openChatView = true,
-        humanInput?: string
+        humanInput = '',
+        source: ChatEventSource = 'editor'
     ): Promise<void> => {
-        if (openChatView) {
-            await sidebarChatProvider.setWebviewView('chat')
-        }
-
-        await sidebarChatProvider.executeRecipe(recipe, humanInput)
+        await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
     }
 
     const executeFixup = async (
@@ -205,24 +211,24 @@ const register = async (
             document?: vscode.TextDocument
             instruction?: string
             range?: vscode.Range
-            auto?: boolean
             insertMode?: boolean
         } = {},
-        source = 'editor' // where the command was triggered from
+        source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
-        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
-        const document = args.document || vscode.window.activeTextEditor?.document
+        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
+        const document = args.document || getActiveEditor()?.document
         if (!document) {
             return
         }
 
-        const range = args.range || vscode.window.activeTextEditor?.selection
+        const range = args.range || getActiveEditor()?.selection
         if (!range) {
             return
         }
 
-        const task = args.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode)
+        const task = args.instruction?.replace(/^\/edit/, '').trim()
+            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -262,26 +268,42 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.delete', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
             await inlineChatProvider.abortChat()
-            telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'inline-chat' })
+            telemetryService.log(
+                'CodyVSCodeExtension:abortButton:clicked',
+                { source: 'inline-chat' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.comment.stop', 'clicked', {
+                privateMetadata: { source: 'inline-chat' },
+            })
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () => {
             void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.collapse-all', 'clicked')
         }),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
-            // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-            await sidebarChatProvider.restoreSession(inlineChatProvider.currentChatID)
             // Ensure that the sidebar view is open if not already
-            await sidebarChatProvider.setWebviewView('chat')
+            await chatManager.setWebviewView('chat')
+            // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
+            await chatManager.restoreSession(inlineChatProvider.sessionID)
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.comment.open-in-sidebar', 'clicked')
         }),
         vscode.commands.registerCommand(
             'cody.command.edit-code',
@@ -290,10 +312,9 @@ const register = async (
                     range?: vscode.Range
                     instruction?: string
                     document?: vscode.TextDocument
-                    auto?: boolean
                     insertMode?: boolean
                 },
-                source?: string
+                source?: ChatEventSource
             ) => executeFixup(args, source)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
@@ -325,24 +346,30 @@ const register = async (
         }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await sidebarChatProvider.clearAndRestartSession()
-            await sidebarChatProvider.setWebviewView('chat')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' })
+            await chatManager.clearAndRestartSession()
+            await chatManager.setWebviewView('chat')
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'reset' } })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
         vscode.commands.registerCommand('cody.history', async () => {
-            await sidebarChatProvider.setWebviewView('history')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'history' })
+            await chatManager.setWebviewView('history')
+            telemetryService.log(
+                'CodyVSCodeExtension:chatTitleButton:clicked',
+                { name: 'history' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.history', 'clicked', { privateMetadata: { name: 'history' } })
         }),
         vscode.commands.registerCommand('cody.history.clear', async () => {
-            await sidebarChatProvider.clearHistory()
+            await chatManager.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
-            await executeRecipeInSidebar('chat-question', true, input)
+        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
+            await executeRecipeInChatView('chat-question', true, input, source)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
@@ -353,33 +380,32 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
-            if (!sidebarChatProvider.isCustomCommandAction(title)) {
-                await sidebarChatProvider.setWebviewView('chat')
-            }
-            await sidebarChatProvider.executeCustomCommand(title)
+            await chatManager.executeCustomCommand(title)
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/explain')
+            await executeRecipeInChatView('custom-prompt', true, '/explain')
         }),
         vscode.commands.registerCommand('cody.command.generate-tests', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/test')
+            await executeRecipeInChatView('custom-prompt', true, '/test')
         }),
         vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', false, '/doc')
+            await executeRecipeInChatView('custom-prompt', false, '/doc')
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/smell')
+            await executeRecipeInChatView('custom-prompt', true, '/smell')
         }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
-            executeRecipeInSidebar('inline-touch', false)
+            executeRecipeInChatView('inline-touch', false)
         ),
-        vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.context-search', () =>
+            executeRecipeInChatView('context-search', true)
+        ),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 if (uri.path === '/app-done') {
-                    await sidebarChatProvider.simplifiedOnboardingReloadEmbeddingsState()
+                    await chatManager.simplifiedOnboardingReloadEmbeddingsState()
                 } else {
                     await authProvider.tokenCallbackHandler(uri, config.customHeaders)
                 }
@@ -391,7 +417,8 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' })
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -407,14 +434,24 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
-        vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatManager.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatManager.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'showExplain' })
-            await sidebarChatProvider.setWebviewView('chat')
+            telemetryService.log(
+                'CodyVSCodeExtension:walkthrough:clicked',
+                { page: 'showExplain' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
+            await chatManager.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
-            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'enableInlineChat' })
+            telemetryService.log(
+                'CodyVSCodeExtension:walkthrough:clicked',
+                { page: 'enableInlineChat' },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked')
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -441,7 +478,7 @@ const register = async (
                 title: 'Sign In To Use Cody',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
-                    void sidebarChatProvider.setWebviewView('chat')
+                    void chatManager.setWebviewView('chat')
                 },
             })
         }
@@ -450,46 +487,58 @@ const register = async (
     updateAuthStatusBarIndicator()
 
     let completionsProvider: vscode.Disposable | null = null
+    let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = async (): Promise<void> => {
-        const config = getConfiguration(vscode.workspace.getConfiguration())
-        if (!config.autocomplete) {
-            completionsProvider?.dispose()
-            completionsProvider = null
-            if (config.isRunningInsideAgent) {
-                throw new Error(
-                    'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+    const setupAutocomplete = (): void => {
+        setupAutocompleteQueue = setupAutocompleteQueue
+            .then(async () => {
+                const config = getConfiguration(vscode.workspace.getConfiguration())
+                if (!config.autocomplete) {
+                    completionsProvider?.dispose()
+                    completionsProvider = null
+                    if (config.isRunningInsideAgent) {
+                        throw new Error(
+                            'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                        )
+                    }
+                    return
+                }
+
+                if (completionsProvider !== null) {
+                    // If completions are already initialized and still enabled, we
+                    // need to reset the completion provider.
+                    completionsProvider.dispose()
+                }
+
+                completionsProvider = await createInlineCompletionItemProvider(
+                    {
+                        config,
+                        client: codeCompletionsClient,
+                        statusBar,
+                        contextProvider,
+                        authProvider,
+                        triggerNotice: notice => chatManager.triggerNotice(notice),
+                    },
+                    context,
+                    platform
                 )
-            }
-            return
-        }
-
-        if (completionsProvider !== null) {
-            // If completions are already initialized and still enabled, we
-            // need to reset the completion provider.
-            completionsProvider.dispose()
-        }
-
-        completionsProvider = await createInlineCompletionItemProvider({
-            config,
-            client: codeCompletionsClient,
-            statusBar,
-            contextProvider,
-            authProvider,
-            triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
-        })
+            })
+            .catch(error => {
+                console.error('Error creating inline completion item provider:', error)
+            })
     }
+
     // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            void setupAutocomplete()
+            setupAutocomplete()
         }
     })
     authProvider.addChangeListener(() => {
-        void setupAutocomplete()
+        setupAutocomplete()
     })
-    await setupAutocomplete()
+    setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
@@ -513,15 +562,31 @@ const register = async (
     }
 
     await showSetupNotification(initialConfig)
+
+    // Clean up old onboarding experiment state
+    void OnboardingExperiment.cleanUpCachedSelection()
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
             graphqlClient.onConfigurationChange(newConfig)
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
-            symfRunner?.setAuthToken(newConfig.accessToken)
+            symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
+}
+
+/**
+ * Create or update events infrastructure, both legacy (telemetryService) and
+ * new (telemetryRecorder)
+ */
+async function configureEventsInfra(
+    config: ConfigurationWithAccessToken,
+    isExtensionModeDevOrTest: boolean
+): Promise<void> {
+    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
 }

@@ -24,6 +24,7 @@ describe('getConfiguration', () => {
             },
             experimentalCommandLenses: false,
             experimentalEditorTitleCommandIcon: false,
+            experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
@@ -41,7 +42,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
-            autocompleteExperimentalGraphContext: false,
+            autocompleteExperimentalGraphContext: null,
         })
     })
 
@@ -66,6 +67,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.languages':
                         return { '*': true, scminput: false }
+                    case 'cody.experimental.chatPanel':
+                        return true
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.experimental.commandLenses':
@@ -107,7 +110,7 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
                     case 'cody.autocomplete.experimental.graphContext':
-                        return true
+                        return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
                     default:
@@ -130,6 +133,7 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
+            experimentalChatPanel: true,
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
             experimentalEditorTitleCommandIcon: true,
@@ -149,7 +153,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
-            autocompleteExperimentalGraphContext: true,
+            autocompleteExperimentalGraphContext: 'lsp-light',
         })
     })
 })

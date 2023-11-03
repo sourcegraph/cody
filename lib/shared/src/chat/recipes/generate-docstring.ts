@@ -1,5 +1,6 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -15,6 +16,7 @@ export class GenerateDocstring implements Recipe {
     public title = 'Generate Docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -48,21 +50,19 @@ export class GenerateDocstring implements Recipe {
         const displayText = `Generate documentation for the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         const assistantResponsePrefix = `Here is the generated documentation:\n\`\`\`${extension}\n${docStart}`
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
-            getContextMessagesFromSelection(
+        return newInteraction({
+            text: promptMessage,
+            displayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+            contextMessages: getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
             ),
-            []
-        )
+        })
     }
 }

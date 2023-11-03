@@ -2,6 +2,8 @@ import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
 
+import { TelemetryEventInput } from '@sourcegraph/telemetry'
+
 // create interface for the request
 interface MockRequest {
     headers: {
@@ -48,8 +50,25 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
-        void logTestingData(req.body)
+        void logTestingData('legacy', req.body)
         storeLoggedEvents(req.body)
+        res.status(200)
+    })
+
+    // matches @sourcegraph/cody-shared/src/sourcegraph-api/telemetry/MockServerTelemetryExporter
+    // importing const doesn't work, so hardcode it here.
+    app.post('/.api/mockEventRecording', (req, res) => {
+        const events = req.body as TelemetryEventInput[]
+        events.forEach(event => {
+            void logTestingData('new', JSON.stringify(event))
+            if (
+                ![
+                    'cody.extension', // extension setup events can behave differently in test environments
+                ].includes(event.feature)
+            ) {
+                loggedV2Events.push(`${event.feature}/${event.action}`)
+            }
+        })
         res.status(200)
     })
 
@@ -115,8 +134,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-export async function logTestingData(data: string): Promise<void> {
+export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     const message = {
+        type,
         event: data,
         timestamp: new Date().getTime(),
         test_name: currentTestName,
@@ -131,7 +151,7 @@ export async function logTestingData(data: string): Promise<void> {
     const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    console.log('Message published. ID:', messageID, 'TestRunId:', currentTestRunID)
+    console.log(`Message published - Type: ${type}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
 }
 
 let currentTestName: string
@@ -146,8 +166,14 @@ export function sendTestInfo(testName: string, testID: string, testRunID: string
 
 export let loggedEvents: string[] = []
 
+// Events recorded using the new event recorders
+// Needs to be recorded separately from the legacy events to ensure ordering
+// is stable.
+export let loggedV2Events: string[] = []
+
 export function resetLoggedEvents(): void {
     loggedEvents = []
+    loggedV2Events = []
 }
 export function storeLoggedEvents(event: string): void {
     interface ParsedEvent {

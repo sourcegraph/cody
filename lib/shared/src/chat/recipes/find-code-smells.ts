@@ -1,5 +1,6 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { getNormalizedLanguageName } from './helpers'
@@ -10,6 +11,7 @@ export class FindCodeSmells implements Recipe {
     public title = 'Smell Code'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -33,15 +35,12 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
         const displayText = `Find code smells in the following code: \n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         const assistantResponsePrefix = ''
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
-            new Promise(resolve => resolve([])),
-            []
-        )
+        return newInteraction({
+            text: promptMessage,
+            displayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+        })
     }
 }

@@ -53,7 +53,7 @@ export class PromptsProvider {
     public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
         const combinedMap = new Map([...this.defaultPromptsMap])
         combinedMap.set('separator', { prompt: 'separator', slashCommand: '' })
-        this.allCommands = new Map([...combinedMap, ...customCommands])
+        this.allCommands = new Map([...customCommands, ...combinedMap])
     }
 
     // dispose and reset the controller and builder

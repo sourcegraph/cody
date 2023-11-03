@@ -1,5 +1,6 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -15,6 +16,7 @@ export class GenerateTest implements Recipe {
     public title = 'Generate Unit Test'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
@@ -32,21 +34,19 @@ export class GenerateTest implements Recipe {
 
         const displayText = `Generate a unit test for the following code:\n\`\`\`${extension}\n${selection.selectedText}\n\`\`\``
 
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
-            getContextMessagesFromSelection(
+        return newInteraction({
+            text: promptMessage,
+            displayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+            contextMessages: getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
             ),
-            []
-        )
+        })
     }
 }

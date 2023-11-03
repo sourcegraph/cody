@@ -34,13 +34,9 @@ export class InlineChatViewManager implements vscode.Disposable {
             return
         }
 
-        this.codeActionProvider = vscode.languages.registerCodeActionsProvider(
-            '*',
-            new ExplainCodeAction(config.inlineChat),
-            {
-                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
-            }
-        )
+        this.codeActionProvider = vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+            providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
+        })
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
@@ -91,11 +87,11 @@ export class InlineChatViewProvider extends MessageProvider {
         /**
          * TODO(umpox):
          * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
-         * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
+         * We should detect intent here (through regex and other fast alternatives) and run the correct recipe/controller instead.
          */
         await this.editor.controllers.inline?.chat(reply, this.thread, isEditMode)
         this.editor.controllers.inline?.setResponsePending(true)
-        await this.executeRecipe('inline-chat', reply.trimStart())
+        await this.executeRecipe('inline-chat', reply.trimStart(), 'inline-chat')
     }
 
     public removeChat(): void {
@@ -152,9 +148,5 @@ export class InlineChatViewProvider extends MessageProvider {
 
     protected handleCodyCommands(): void {
         // my prompts not yet implemented for inline chat
-    }
-
-    protected handleTranscriptErrors(): void {
-        // handle transcript errors not yet implemented for inline chat
     }
 }

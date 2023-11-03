@@ -53,6 +53,19 @@
       "preLaunchTask": "Build VS Code Extension (Web)",
       "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
       "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Current File with vitest",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      // ${relativeFile} will guarantee the "current" file, but fileBaseNameNoExtension
+      // can be convenient because running with a file like "graph-section-observer.ts"
+      // (the implementation, not the test) will run the correct tests.
+      "args": ["run", "${fileBasenameNoExtension}"],
+      "smartStep": true
     }
   ]
 }

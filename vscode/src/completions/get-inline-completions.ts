@@ -31,9 +31,6 @@ export interface InlineCompletionsParams {
     providerConfig: ProviderConfig
     graphContextFetcher?: GraphContextFetcher
 
-    // Platform
-    toWorkspaceRelativePath: (uri: URI) => string
-
     // Injected
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     getCodebaseContext?: () => CodebaseContext
@@ -53,6 +50,7 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+    disableStreamingTruncation?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -81,7 +79,7 @@ export interface LastInlineCompletionCandidate {
     lastTriggerPosition: vscode.Position
 
     /** The selected info item. */
-    lastTriggerSelectedInfoItem: string | undefined
+    lastTriggerSelectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
     /** The previously suggested result. */
     result: InlineCompletionsResult
@@ -167,10 +165,9 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
         providerConfig,
         graphContextFetcher,
-        toWorkspaceRelativePath,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -180,7 +177,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         setIsLoading,
         abortSignal,
         tracer,
-        completeSuggestWidgetSelection = true,
+        disableStreamingTruncation = false,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
     } = params
@@ -202,7 +199,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         return null
     }
 
-    // Do not trigger when cusor is at the start of the file ending line, and the line above is empty
+    // Do not trigger when cursor is at the start of the file ending line and the line above is empty
     if (triggerKind !== TriggerKind.Manual && position.line !== 0 && position.line === document.lineCount - 1) {
         const lineAbove = Math.max(position.line - 1, 0)
         if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
@@ -220,7 +217,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   lastCandidate,
                   docContext,
                   selectedCompletionInfo,
-                  completeSuggestWidgetSelection,
                   handleDidAcceptCompletionItem,
                   handleDidPartiallyAcceptCompletionItem,
               })
@@ -240,6 +236,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerIdentifier: providerConfig.identifier,
         providerModel: providerConfig.model,
         languageId: document.languageId,
+        completionIntent,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
@@ -275,10 +272,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Completion providers
     const completionProviders = getCompletionProviders({
         document,
+        position,
         triggerKind,
         providerConfig,
         docContext,
-        toWorkspaceRelativePath,
+        disableStreamingTruncation,
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
@@ -289,6 +287,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext,
         position,
         selectedCompletionInfo,
+        abortSignal,
     }
 
     // Get the processed completions from providers
@@ -296,7 +295,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         reqContext,
         completionProviders,
         contextResult?.context ?? [],
-
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
@@ -317,17 +315,21 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<InlineCompletionsParams, 'document' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'> {
+    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
     docContext: DocumentContext
+    disableStreamingTruncation?: boolean
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const { document, triggerKind, providerConfig, docContext, toWorkspaceRelativePath } = params
+    const { document, position, triggerKind, providerConfig, docContext, disableStreamingTruncation } = params
+
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
-        fileName: toWorkspaceRelativePath(document.uri),
-        languageId: document.languageId,
+        document,
+        position,
+        disableStreamingTruncation: Boolean(disableStreamingTruncation),
     }
+
     if (docContext.multilineTrigger) {
         return [
             providerConfig.create({
