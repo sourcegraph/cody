@@ -16,17 +16,35 @@ import { prompts } from './templates'
  */
 export async function newInteraction(args: {
     text?: string
-    displayText: string
+    displayText?: string
     contextMessages?: Promise<ContextMessage[]>
     assistantText?: string
     assistantDisplayText?: string
+    assistantPrefix?: string
     source?: ChatEventSource
+    requestID?: string
 }): Promise<Interaction> {
-    const { text, displayText, contextMessages, assistantText, assistantDisplayText, source } = args
+    const {
+        text,
+        displayText,
+        contextMessages,
+        assistantText,
+        assistantDisplayText,
+        assistantPrefix,
+        source,
+        requestID,
+    } = args
+    const metadata = { source, requestID }
     return Promise.resolve(
         new Interaction(
-            { speaker: 'human', text, displayText, source },
-            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText, source },
+            { speaker: 'human', text, displayText, metadata },
+            {
+                speaker: 'assistant',
+                text: assistantText,
+                displayText: assistantDisplayText,
+                prefix: assistantPrefix,
+                metadata,
+            },
             Promise.resolve(contextMessages || []),
             []
         )

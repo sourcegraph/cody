@@ -1,5 +1,6 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -33,22 +34,19 @@ export class GenerateTest implements Recipe {
 
         const displayText = `Generate a unit test for the following code:\n\`\`\`${extension}\n${selection.selectedText}\n\`\`\``
 
-        return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText, source },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-                source,
-            },
-            getContextMessagesFromSelection(
+        return newInteraction({
+            text: promptMessage,
+            displayText,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+            contextMessages: getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
             ),
-            []
-        )
+        })
     }
 }

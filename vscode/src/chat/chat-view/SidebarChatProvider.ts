@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../../webviews/NavBar'
 import { getActiveEditor } from '../../editor/active-editor'
@@ -103,13 +104,13 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'insert':
-                await this.handleInsertAtCursor(message.text, message.source)
+                await this.handleInsertAtCursor(message.text, message.metadata)
                 break
             case 'newFile':
-                await this.handleSaveToNewFile(message.text, message.source)
+                await this.handleSaveToNewFile(message.text, message.metadata)
                 break
             case 'copy':
-                await this.handleCopiedCode(message.text, message.eventType, message.source)
+                await this.handleCopiedCode(message.text, message.eventType, message.metadata)
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
@@ -214,19 +215,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
+        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        MessageProvider.inputHistory.push(text)
+        await this.executeRecipe('chat-question', text, 'chat')
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
         }
-        if (text === '/') {
-            void vscode.commands.executeCommand('cody.action.commands.menu', true)
-            return
-        }
-        MessageProvider.inputHistory.push(text)
-        if (this.contextProvider.config.experimentalChatPredictions) {
-            void this.runRecipeForSuggestion('next-questions', text)
-        }
-        await this.executeRecipe('chat-question', text, 'chat')
     }
 
     /**
@@ -287,7 +281,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
      * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
-    private async handleInsertAtCursor(text: string, source?: string): Promise<void> {
+    private async handleInsertAtCursor(text: string, meta?: CodeBlockMeta): Promise<void> {
         const selectionRange = getActiveEditor()?.selection
         const editor = getActiveEditor()
         if (!editor || !selectionRange) {
@@ -303,17 +297,17 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         // Log insert event
         const op = 'insert'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, meta?.source, meta?.requestID)
     }
 
     /**
      * Handles insert event to insert text from code block to new file
      */
-    private async handleSaveToNewFile(text: string, source?: string): Promise<void> {
+    private async handleSaveToNewFile(text: string, meta?: CodeBlockMeta): Promise<void> {
         // Log insert event
         const op = 'save'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, meta?.source, meta?.requestID)
 
         await this.editor.createWorkspaceFile(text)
     }
@@ -323,13 +317,13 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */
-    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown', source?: string): Promise<void> {
+    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown', meta?: CodeBlockMeta): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
         const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
         // Send to Inline Controller for tracking
         if (copiedCode) {
-            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, source)
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, meta?.source, meta?.requestID)
         }
     }
 

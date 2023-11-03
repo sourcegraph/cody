@@ -5,6 +5,7 @@ import { IntentDetector } from '../../intent-detector'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
+import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { numResults } from './helpers'
@@ -26,19 +27,19 @@ export class NextQuestions implements Recipe {
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedText}\n\`\`\`\n\n${promptSuffix}`
 
         const assistantResponsePrefix = 'Sure, here are great follow-up discussion topics and learning ideas:\n\n - '
-        return Promise.resolve(
-            new Interaction(
-                { speaker: 'human', text: promptMessage, source },
-                {
-                    speaker: 'assistant',
-                    prefix: assistantResponsePrefix,
-                    text: assistantResponsePrefix,
-                    source,
-                },
-                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext),
-                []
-            )
-        )
+        return newInteraction({
+            text: promptMessage,
+            displayText: promptMessage,
+            source,
+            assistantPrefix: assistantResponsePrefix,
+            assistantText: assistantResponsePrefix,
+            contextMessages: this.getContextMessages(
+                truncatedText,
+                context.editor,
+                context.intentDetector,
+                context.codebaseContext
+            ),
+        })
     }
 
     private async getContextMessages(
