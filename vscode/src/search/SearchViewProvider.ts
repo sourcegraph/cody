@@ -227,7 +227,6 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     // TODO(beyang): support cancellation through symf
     private async onDidReceiveQuery(query: string): Promise<void> {
-        console.log('# onDidReceiveQuery', query)
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
 
         if (query.trim().length === 0) {

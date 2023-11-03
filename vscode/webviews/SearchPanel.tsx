@@ -98,7 +98,6 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     break
                 }
                 case 'index-updated': {
-                    console.log('### clearing cache because index updated for:', message.scopeDir)
                     resultsCache.clear()
                     break
                 }
