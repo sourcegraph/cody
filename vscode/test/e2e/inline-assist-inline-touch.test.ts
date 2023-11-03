@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { loggedEvents, loggedV2Events, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { test } from './helpers'
 
 const expectedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
@@ -47,8 +47,8 @@ test.skip('start a fixup job from inline chat with valid auth', async ({ page, s
 
     // Check if a new file called index.cody.html is created
     await expect(page.getByText('index.cody.html')).toBeVisible()
-    await assertEvents(loggedEvents, expectedEvents)
-    await assertEvents(loggedV2Events, ['cody.fixup.apply/succeeded'])
+    await expect.poll(() => loggedEvents).toEqual(expectedEvents)
+    await expect.poll(() => loggedV2Events).toEqual(['cody.fixup.apply/succeeded'])
 
     // TODO check if content is correct. Currently blocked by ability to highlight in test
 })

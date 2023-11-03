@@ -3,7 +3,7 @@ import { expect, Locator, Page } from '@playwright/test'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { test } from './helpers'
 
 test.beforeEach(() => {
     resetLoggedEvents()
@@ -53,7 +53,7 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(notice).not.toBeVisible()
-    await assertEvents(loggedEvents, expectedEvents)
+    await expect.poll(() => loggedEvents).toEqual(expectedEvents)
 })
 
 test('inline completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
@@ -105,7 +105,7 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(decoration).not.toBeVisible()
-    await assertEvents(loggedEvents, expectedEvents)
+    await expect.poll(() => loggedEvents).toEqual(expectedEvents)
 })
 
 async function triggerInlineCompletionAfter(page: Page, afterElement: Locator): Promise<void> {

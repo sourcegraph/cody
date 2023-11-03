@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import { loggedEvents, resetLoggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
-import { assertEvents, signOut, test } from './helpers'
+import { signOut, test } from './helpers'
 
 const expectedEvents = ['CodyVSCodeExtension:logout:clicked']
 
@@ -41,5 +41,5 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
 
     await expect(sidebar.getByRole('button', { name: 'Sign In to Enterprise Instance' })).toBeVisible()
     await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
-    await assertEvents(loggedEvents, expectedEvents)
+    await expect.poll(() => loggedEvents).toEqual(expectedEvents)
 })

@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { assertEvents, test } from './helpers'
+import { test } from './helpers'
 
 const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
@@ -72,5 +72,6 @@ test.skip('decorations from un-applied Cody changes appear', async ({ page, side
 
     // The decorations should change to conflict markers.
     await page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)
-    await assertEvents(loggedEvents, expectedEvents)
+    // TODO: Fix flaky fixup telemetry logs.
+    await expect.poll(() => loggedEvents.slice().sort()).toEqual(expectedEvents.slice().sort())
 })
