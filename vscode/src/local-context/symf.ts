@@ -264,18 +264,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             maxCPUs = 2
         }
         try {
-            const proc = spawn(
-                symfPath,
-                ['--index-root', tmpIndexDir, 'add', '--langs', 'go,typescript,python', scopeDir],
-                {
-                    env: {
-                        ...process.env,
-                        GOMAXPROCS: `${maxCPUs}`, // use at most one cpu for indexing
-                    },
-                    stdio: ['ignore', 'ignore', 'ignore'],
-                    timeout: 1000 * 60 * 10, // timeout in 10 minutes
-                }
-            )
+            const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
+                env: {
+                    ...process.env,
+                    GOMAXPROCS: `${maxCPUs}`, // use at most one cpu for indexing
+                },
+                stdio: ['ignore', 'ignore', 'ignore'],
+                timeout: 1000 * 60 * 10, // timeout in 10 minutes
+            })
             // wait for proc to finish
             await new Promise<void>((resolve, reject) => {
                 proc.on('error', reject)
