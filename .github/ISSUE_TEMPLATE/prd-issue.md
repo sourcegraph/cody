@@ -1,6 +1,6 @@
 ---
 name: PRD Issue
-description: User story for completing items on the PRD
+about: User story for completing items on the PRD
 title: 'PRD-Issue: Example user story from PRD'
 labels: prd-issue
 assignees: ''
