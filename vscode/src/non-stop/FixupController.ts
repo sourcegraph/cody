@@ -149,7 +149,8 @@ export class FixupController
         source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode, source)
+        const fixupInstruction = instruction.replace(/^\/edit/, '').trim()
+        const task = new FixupTask(fixupFile, fixupInstruction, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -877,11 +878,11 @@ export class FixupController
             return
         }
         const previousRange = task.selectionRange
-        const previousInstruction = task.instruction.replace(/^\/edit/, '')
+        const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
         // Prompt the user for a new instruction, and create a new fixup
-        const instruction = (await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })).trim()
+        const instruction = await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })
 
         // Revert and remove the previous task
         await this.undoTask(task)
