@@ -2,7 +2,7 @@ import path from 'path'
 
 import ignore from 'ignore'
 
-export const CODY_IGNORE_FILENAME = '.cody/.ignore'
+export const CODY_IGNORE_FILENAME = `.cody${path.sep}.ignore`
 
 let codyIgnored = ignore().add(['.env'])
 let currentCodyIgnoreFilePath = CODY_IGNORE_FILENAME
