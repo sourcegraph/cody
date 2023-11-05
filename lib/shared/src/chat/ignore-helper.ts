@@ -1,5 +1,4 @@
 import path from 'path'
-import { inspect } from 'util'
 
 import ignore, { Ignore } from 'ignore'
 
@@ -70,16 +69,10 @@ export class IgnoreHelper {
         }
 
         this.workspaceIgnores.set(workspaceRoot, rules)
-        this.debugPrint()
-    }
-
-    private debugPrint(): void {
-        console.log(inspect(this.workspaceIgnores))
     }
 
     public clearIgnoreFiles(workspaceRoot: string): void {
         this.workspaceIgnores.delete(workspaceRoot)
-        this.debugPrint()
     }
 
     public isIgnored(filePath: string): boolean {
