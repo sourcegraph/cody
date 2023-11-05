@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { CODY_IGNORE_FILENAME_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
+import { CODY_IGNORE_FILENAME_POSIX_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -12,7 +12,7 @@ const utf8 = new TextDecoder('utf-8')
  */
 export function setUpCodyIgnore(): vscode.Disposable {
     // Refresh ignore rules when any ignore file in the workspace changes.
-    const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_GLOB)
+    const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_POSIX_GLOB)
     watcher.onDidChange(refresh)
     watcher.onDidCreate(refresh)
     watcher.onDidDelete(refresh)
@@ -51,7 +51,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         return
     }
 
-    const ignoreFiles = await vscode.workspace.findFiles(new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_GLOB))
+    const ignoreFiles = await vscode.workspace.findFiles(new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB))
     const filesWithContent = await Promise.all(
         ignoreFiles.map(async fileUri => ({
             filePath: fileUri.fsPath,
