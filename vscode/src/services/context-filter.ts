@@ -1,101 +1,91 @@
 import * as vscode from 'vscode'
 
-import {
-    CODY_IGNORE_FILENAME,
-    deleteCodyIgnoreList,
-    setCodyIgnoreList,
-} from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { CODY_IGNORE_FILENAME_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
 
-import { logDebug } from '../log'
+const utf8 = new TextDecoder('utf-8')
 
 /**
- * Gets a file system watcher for the .cody/.ignore file in the workspace.
- *
- * The watcher will update the ignored file list on changes and re-create itself if the workspace changes.
- * @returns The codyignore file watcher, or null if no workspace is open.
+ * Parses `.code/.ignore` files from the workspace and sets up a watcher to refresh
+ * whenever the files change.
+ * @returns A Disposable that should be disposed when the extension unloads.
  */
-export async function getCodyignoreFileWatcher(): Promise<vscode.FileSystemWatcher | null> {
-    let codyIgnoreFileUri: vscode.Uri | null = null
-    let codyignoreFileWatcher: vscode.FileSystemWatcher | null = null
+export function setUpCodyIgnore(): vscode.Disposable {
+    // Refresh ignore rules when any ignore file in the workspace changes.
+    const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_GLOB)
+    watcher.onDidChange(refresh)
+    watcher.onDidCreate(refresh)
+    watcher.onDidDelete(refresh)
 
-    const getWatcher = async (): Promise<vscode.FileSystemWatcher | null> => {
-        if (!hasWorkspaceFolder()) {
-            return null
-        }
-        const newCodyIgnoreFileUri = await getCodyIgnoreFileUri()
-        // If the .cody/.ignore file exists, get the content of the file
-        if (!newCodyIgnoreFileUri?.fsPath) {
-            return null
-        }
-        if (codyIgnoreFileUri?.fsPath === newCodyIgnoreFileUri.fsPath) {
-            return codyignoreFileWatcher
-        }
-        codyIgnoreFileUri = newCodyIgnoreFileUri
-        await update(newCodyIgnoreFileUri)
-        return create(newCodyIgnoreFileUri)
-    }
-
-    // Update watcher and workspace path on workspace change
-    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-        await getWatcher()
+    // Handle any added/removed workspace folders.
+    const didChangeSubscription = vscode.workspace.onDidChangeWorkspaceFolders(e => {
+        e.added.map(wf => refresh(wf.uri))
+        e.removed.map(wf => clear(wf))
     })
 
-    // Create watcher and start watching on .cody/.ignore file change
-    const create = (ignoreFileUri: vscode.Uri): vscode.FileSystemWatcher => {
-        // remove existing watcher if any
-        if (codyignoreFileWatcher) {
-            codyignoreFileWatcher.dispose()
-            codyignoreFileWatcher = null
-        }
-        const watchPattern = getFileWatcherRelativePattern(ignoreFileUri.fsPath)
-        const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
-        // update the ignored list on file change
-        watcher.onDidChange(async () => {
-            await update(ignoreFileUri)
-        })
-        watcher.onDidCreate(async () => {
-            await update(ignoreFileUri)
-        })
-        watcher.onDidDelete(() => {
-            deleteCodyIgnoreList()
-        })
-        codyignoreFileWatcher = watcher
-        return watcher
+    // Handle existing workspace folders.
+    vscode.workspace.workspaceFolders?.map(wf => refresh(wf.uri))
+
+    return {
+        dispose() {
+            watcher.dispose()
+            didChangeSubscription.dispose()
+        },
     }
-
-    const update = async (fileUri: vscode.Uri): Promise<void> => {
-        if (!hasWorkspaceFolder()) {
-            return
-        }
-        try {
-            const bytes = await vscode.workspace.fs.readFile(fileUri)
-            const decoded = new TextDecoder('utf-8').decode(bytes)
-            setCodyIgnoreList(fileUri.fsPath, decoded)
-        } catch {
-            console.error('Failed to read codyignore file')
-        }
-    }
-
-    // Check if workspace is open before starting watcher
-    const hasWorkspaceFolder = (): boolean => !!vscode.workspace.workspaceFolders?.length
-
-    return getWatcher()
 }
 
-// Find the .cody/.ignore file location using the vs code api
-async function getCodyIgnoreFileUri(): Promise<vscode.Uri | undefined> {
-    const codyIgnoreFile = await vscode.workspace.findFiles(CODY_IGNORE_FILENAME, undefined, 1)
-    if (!codyIgnoreFile.length) {
-        logDebug('getCodyIgnoreFileUri', 'cannot find .cody/.ignore file')
-        return undefined
+/**
+ * Rebuilds the ignore files for the workspace containing `uri`.
+ */
+async function refresh(uri: vscode.Uri): Promise<void> {
+    const wf = vscode.workspace.getWorkspaceFolder(uri)
+    if (!wf) {
+        // If this happens, we either have no workspace folder or it was removed before we started
+        // processing the watch event.
+        return
     }
-    return codyIgnoreFile[0]
+
+    // We currently only support file://. To support others, we need to change all file
+    // paths in lots of places to be URIs.
+    if (wf.uri.scheme !== 'file') {
+        return
+    }
+
+    const ignoreFiles = await vscode.workspace.findFiles(new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_GLOB))
+    const filesWithContent = await Promise.all(
+        ignoreFiles.map(async fileUri => ({
+            filePath: fileUri.fsPath,
+            content: await tryReadFile(fileUri),
+        }))
+    )
+
+    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent)
 }
 
-// Use the file as the first arg to RelativePattern because a file watcher will be set up on the
-// first arg given. If this is a directory with many files, such as the user's home directory,
-// it will cause a very large number of watchers to be created, which will exhaust the system.
-// This occurs even if the second arg is a relative file path with no wildcards.
-function getFileWatcherRelativePattern(fsPath: string): vscode.RelativePattern {
-    return new vscode.RelativePattern(fsPath, '*')
+/**
+ * Removes ignore rules for the provided WorkspaceFolder.
+ */
+function clear(wf: vscode.WorkspaceFolder): void {
+    // We currently only support file://. To support others, we need to change all file
+    // paths in lots of places to be URIs.
+    if (wf.uri.scheme !== 'file') {
+        return
+    }
+
+    ignores.clearIgnoreFiles(wf.uri.fsPath)
+}
+
+/**
+ * Read the content of `fileUri`.
+ *
+ * Returns an empty string if the file was not readable (for example it was removed before we read it).
+ */
+async function tryReadFile(fileUri: vscode.Uri): Promise<string> {
+    return vscode.workspace.fs.readFile(fileUri).then(
+        content => utf8.decode(content),
+        error => {
+            console.error(`Skipping unreadable ignore file ${fileUri}: ${error}`)
+            return ''
+        }
+    )
 }

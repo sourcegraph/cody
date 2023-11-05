@@ -2,15 +2,16 @@ import path from 'path'
 
 import ignore, { Ignore } from 'ignore'
 
-import { CODY_IGNORE_FILENAME } from './context-filter'
+export const CODY_IGNORE_FILENAME = path.join('.cody', '.ignore')
+export const CODY_IGNORE_FILENAME_GLOB = path.join('**', CODY_IGNORE_FILENAME)
 
 /**
  * A helper to efficiently check if a file should be ignored from a set
  * of nested ignore files.
  *
- * Callers must call `setIgnoreFiles` for each workspace root with the full set of ignore files
- * from the tree at startup (or when new workspace folders are added) and any time an ignore file is
- * modified/created/deleted.
+ * Callers must call `setIgnoreFiles` for each workspace root with the full set of ignore files (even
+ * if there are zero) at startup (or when new workspace folders are added) and any time an ignore file
+ * is modified/created/deleted.
  *
  * `clearIgnoreFiles` should be called for workspace roots as they are removed.
  */
@@ -67,19 +68,31 @@ export class IgnoreHelper {
         this.workspaceIgnores.delete(workspaceRoot)
     }
 
-    public isIgnored(workspaceRoot: string, filePath: string): boolean {
-        this.ensureAbsolute('workspaceRoot', workspaceRoot)
+    public isIgnored(filePath: string): boolean {
         this.ensureAbsolute('filePath', filePath)
+        const workspaceRoot = this.findWorkspaceRoot(filePath)
 
-        const relativePath = path.relative(workspaceRoot, filePath)
-        if (relativePath.startsWith('..')) {
-            throw new Error(`filePath must be within workspaceRoot:
-                               filePath: ${filePath}
-                               workspaceRoot: ${workspaceRoot}`)
+        // Not in workspace so just use default rules against the filename.
+        // This ensures we'll never send something like `.env` but it won't handle
+        // if default rules include folders like `a/b` because we have nothing to make
+        // a relative path from.
+        if (!workspaceRoot) {
+            return this.getDefaultIgnores().ignores(path.basename(filePath))
         }
 
+        const relativePath = path.relative(workspaceRoot, filePath)
         const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
+    }
+
+    private findWorkspaceRoot(filePath: string): string | undefined {
+        const candidates = Array.from(this.workspaceIgnores.keys()).filter(workspaceRoot =>
+            filePath.toLowerCase().startsWith(workspaceRoot.toLowerCase())
+        )
+        // If this file was inside multiple workspace roots, take the shortest one since it will include
+        // everything the nested one does (plus potentially extra rules).
+        candidates.sort((a, b) => a.length - b.length)
+        return candidates.at(0)
     }
 
     private ensureAbsolute(name: string, filePath: string): void {
