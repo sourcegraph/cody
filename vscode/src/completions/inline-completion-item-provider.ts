@@ -305,7 +305,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             position,
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-            enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
             syntacticTriggers: await syntacticTriggersPromise,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,

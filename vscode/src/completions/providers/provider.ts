@@ -23,11 +23,6 @@ export interface ProviderConfig {
     contextSizeHints: ProviderContextSizeHints
 
     /**
-     * When set, multi-line completions will trigger more often. This is
-     */
-    enableExtendedMultilineTriggers: boolean
-
-    /**
      * A string identifier for the provider config used in event logs.
      */
     identifier: string

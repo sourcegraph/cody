@@ -26,7 +26,6 @@ const defaultRequestParams: RequestParams = {
         position,
         maxPrefixLength: 100,
         maxSuffixLength: 100,
-        enableExtendedTriggers: true,
     }),
     selectedCompletionInfo: undefined,
 }
