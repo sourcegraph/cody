@@ -1,0 +1,28 @@
+name: Sourcegraph
+on:
+  push:
+    paths:
+      - '**.kt'
+      - '**.java'
+      - '**.kts'
+jobs:
+  scip-java:
+    if: github.repository == 'sourcegraph/jetbrains'
+    runs-on: ubuntu-latest
+    name: "Upload SCIP"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: 'zulu:11'
+          apps: scip-java
+      - name: Generate SCIP File
+        run: scip-java index --build-tool=gradle
+
+      - name: Install src
+        run: yarn global add @sourcegraph/src
+
+      - name: Upload SCIP file
+        run: src code-intel upload -github-token $GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
