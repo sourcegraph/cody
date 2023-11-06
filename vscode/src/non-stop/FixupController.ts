@@ -480,8 +480,8 @@ export class FixupController
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
                 {
-                    tabSize: getEditorTabSize(),
-                    insertSpaces: getEditorInsertSpaces(),
+                    tabSize: getEditorTabSize(document.uri),
+                    insertSpaces: getEditorInsertSpaces(document.uri),
                 }
             )) || []
 

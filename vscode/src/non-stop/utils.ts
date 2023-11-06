@@ -70,13 +70,14 @@ export function getFileNameAfterLastDash(filePath: string): string {
     return filePath.slice(lastDashIndex + 1)
 }
 
-export function getEditorInsertSpaces(): boolean {
-    if (!vscode.window.activeTextEditor) {
+export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
+    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
+    if (!editor) {
         // Default to the same as VS Code default
         return true
     }
 
-    const { insertSpaces } = vscode.window.activeTextEditor.options
+    const { insertSpaces } = editor.options
 
     // This should never happen: "When getting a text editor's options, this property will always be a boolean (resolved)."
     if (typeof insertSpaces === 'string' || insertSpaces === undefined) {
@@ -87,13 +88,14 @@ export function getEditorInsertSpaces(): boolean {
     return insertSpaces
 }
 
-export function getEditorTabSize(): number {
-    if (!vscode.window.activeTextEditor) {
+export function getEditorTabSize(uri: vscode.Uri): number {
+    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
+    if (!editor) {
         // Default to the same as VS Code default
         return 4
     }
 
-    const { tabSize } = vscode.window.activeTextEditor.options
+    const { tabSize } = editor.options
 
     // This should never happen: "When getting a text editor's options, this property will always be a number (resolved)."
     if (typeof tabSize === 'string' || tabSize === undefined) {
