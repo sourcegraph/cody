@@ -489,11 +489,16 @@ export async function getDirectoryFileListContext(
         const fileNames = directoryFiles.map(file => file[0])
         const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)
         const fsPath = fileName || 'root'
+        const relativePath = fileName || createVSCodeRelativePath(fileUri.fsPath)
+        const source = 'editor'
+
+        const file: ContextFile = { fileName: relativePath, source }
 
         return [
             {
                 speaker: 'human',
                 text: populateListOfFilesContextTemplate(truncatedFileNames, fsPath),
+                file,
             },
             {
                 speaker: 'assistant',
