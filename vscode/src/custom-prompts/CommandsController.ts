@@ -86,7 +86,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         key: string,
         input = '',
         requestID?: string,
-        contextFiles?: ContextFile[]
+        contextFiles?: ContextFile[],
+        addEnhancedContext?: boolean
     ): Promise<string> {
         const command = this.default.get(key)
         if (!command) {
@@ -95,6 +96,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         if (command.slashCommand === '/ask') {
             command.prompt = input
+        }
+
+        if (!command.context && addEnhancedContext) {
+            command.context = { codebase: addEnhancedContext }
         }
 
         command.requestID = requestID

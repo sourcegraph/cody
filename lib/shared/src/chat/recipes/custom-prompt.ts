@@ -6,7 +6,8 @@ import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
-import { createContextMessagesByContextFile, createDisplayTexWithContextFiles } from '../prompts/context-file-prompt'
+import { createContextMessagesByContextFile } from '../prompts/context-file'
+import { createDisplayTexWithContextFiles } from '../prompts/context-file/get-display-text'
 import {
     extractTestType,
     getHumanLLMText,

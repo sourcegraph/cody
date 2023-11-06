@@ -541,6 +541,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
+                {!displayCommands?.length && !contextSelection?.length && ContextStatusComponent && (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                )}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
@@ -561,12 +564,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         }
                     />
                 </div>
-                {displayCommands?.length || contextSelection?.length ? null : ContextStatusComponent ? (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                ) : (
-                    contextStatus && (
-                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                    )
+                {!ContextStatusComponent && contextStatus && (
+                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
                 )}
             </form>
         </div>
