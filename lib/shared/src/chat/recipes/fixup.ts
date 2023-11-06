@@ -74,8 +74,8 @@ export class Fixup implements Recipe {
         const truncatedPrecedingText = truncateTextStart(task.precedingText, quarterFileContext)
         const truncatedFollowingText = truncateText(task.followingText, quarterFileContext)
 
-        //  Disable no case declarations because we get better type checking with a switch case
-        /*  eslint-disable no-case-declarations */
+        // Disable no case declarations because we get better type checking with a switch case
+        /* eslint-disable no-case-declarations */
         switch (intent) {
             /**
              * Very broad set of possible instructions.
@@ -132,10 +132,10 @@ export class Fixup implements Recipe {
             case 'fix':
                 return []
         }
-        /*  eslint-enable no-case-declarations */
+        /* eslint-enable no-case-declarations */
     }
 
-    //  Prompt Templates
+    // Prompt Templates
     public static readonly editPrompt = `
 - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 - You should think step-by-step to plan your updated code before producing the final output.
