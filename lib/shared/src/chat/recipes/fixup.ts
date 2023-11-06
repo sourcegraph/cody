@@ -86,6 +86,7 @@ export class Fixup implements Recipe {
                 const instructionContext = await context.codebaseContext.getContextMessages(task.instruction, {
                     numCodeResults: 4,
                     numTextResults: 0,
+                    skipRerank: true,
                 })
                 return [
                     ...instructionContext,
@@ -112,7 +113,8 @@ export class Fixup implements Recipe {
                     truncatedPrecedingText,
                     truncatedFollowingText,
                     task,
-                    context.codebaseContext
+                    context.codebaseContext,
+                    { skipRerank: true }
                 )
                 return [
                     ...selectionContext,

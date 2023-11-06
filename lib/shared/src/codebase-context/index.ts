@@ -23,6 +23,7 @@ import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithRe
 export interface ContextSearchOptions {
     numCodeResults: number
     numTextResults: number
+    skipRerank?: boolean
 }
 
 export class CodebaseContext {
@@ -209,7 +210,10 @@ export class CodebaseContext {
             const [keywordResults, filenameResults] = await Promise.all([keywordResultsPromise, filenameResultsPromise])
 
             const combinedResults = this.mergeContextResults(keywordResults, filenameResults)
-            const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
+            const rerankedResults =
+                !options.skipRerank && combinedResults.length > 1 && this.rerank
+                    ? await this.rerank(query, combinedResults)
+                    : combinedResults
             const messages = resultsToMessages(rerankedResults)
 
             this.embeddingResultsError = ''
