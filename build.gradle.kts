@@ -212,6 +212,7 @@ tasks {
     download(url, destination)
     return destination
   }
+
   fun unzipCody(): File {
     val fromEnvironmentVariable = System.getenv("CODY_DIR")
     if (!fromEnvironmentVariable.isNullOrEmpty()) {
@@ -229,6 +230,7 @@ tasks {
     unzip(zipFile, destination.parentFile)
     return destination
   }
+
   val buildCodyDir = buildDir.resolve("sourcegraph").resolve("agent")
   fun buildCody(): File {
     if (!isForceAgentBuild && (buildCodyDir.listFiles()?.size ?: 0) > 0) {
@@ -300,7 +302,7 @@ tasks {
   }
 
   buildPlugin {
-    buildCody()
+    dependsOn(project.tasks.getByPath("buildCody"))
     from(
         fileTree(buildCodyDir) { include("*") },
     ) {
@@ -311,7 +313,7 @@ tasks {
       // Assert that agent binaries are included in the plugin
       val pluginPath = buildPlugin.get().outputs.files.first()
       ZipFile(pluginPath).use { zip ->
-        fun assertExists(name: String): Unit {
+        fun assertExists(name: String) {
           val path = "Sourcegraph/agent/$name"
           if (zip.getEntry(path) == null) {
             throw Error("Agent binary '$path' not found in plugin zip $pluginPath")
@@ -327,6 +329,7 @@ tasks {
   }
 
   runIde {
+    dependsOn(project.tasks.getByPath("buildCody"))
     jvmArgs("-Djdk.module.illegalAccess.silent=true")
     systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
     systemProperty("cody-agent.directory", buildCodyDir.parent)
