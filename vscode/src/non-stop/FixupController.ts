@@ -848,8 +848,11 @@ export class FixupController
         }
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
-        await this.contentStore.set(task.id, task.fixupFile.uri)
-        const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
+
+        // Ensure each diff is fresh so there is no chance of diffing an already diffed file.
+        const diffId = `${task.id}-${Date.now()}`
+        await this.contentStore.set(diffId, task.fixupFile.uri)
+        const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
         const range = task.editedRange || task.selectionRange
