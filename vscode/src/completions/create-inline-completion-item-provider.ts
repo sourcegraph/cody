@@ -66,12 +66,17 @@ export async function createInlineCompletionItemProvider(
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const graphContextFetcher: GraphContextFetcher | undefined =
-            config.autocompleteExperimentalGraphContext === 'lsp-light' || lspGraphContextFlag
-                ? LspLightGraphCache.createInstance()
-                : config.autocompleteExperimentalGraphContext === 'bfg' || bfgGraphContextFlag
-                ? platform.createBfgContextFetcher?.(context, gitDirectoryUri)
-                : undefined
+        let graphContextFetcher: GraphContextFetcher | undefined
+
+        if (config.autocompleteExperimentalGraphContext === 'lsp-light') {
+            graphContextFetcher = LspLightGraphCache.createInstance()
+        } else if (config.autocompleteExperimentalGraphContext === 'bfg') {
+            graphContextFetcher = platform.createBfgContextFetcher?.(context, gitDirectoryUri)
+        } else if (lspGraphContextFlag) {
+            graphContextFetcher = LspLightGraphCache.createInstance()
+        } else if (bfgGraphContextFlag) {
+            graphContextFetcher = platform.createBfgContextFetcher?.(context, gitDirectoryUri)
+        }
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,

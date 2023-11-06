@@ -163,3 +163,9 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         }),
     }
 }
+
+export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentContext): string {
+    const { currentLinePrefix, injectedPrefix } = docContext
+
+    return injectedPrefix ? currentLinePrefix.slice(0, -injectedPrefix.length) : currentLinePrefix
+}

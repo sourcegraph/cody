@@ -106,7 +106,7 @@ export class FixupProvider extends MessageProvider {
         if (lastMessage.text) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                isMessageInProgress ? lastMessage.text : contentSanitizer(lastMessage.text),
+                contentSanitizer(lastMessage.text),
                 isMessageInProgress ? 'streaming' : 'complete'
             )
         }

@@ -171,4 +171,36 @@ describe('logger', () => {
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
         expect(loggerItem3?.params.id).not.toBe(completionId)
     })
+
+    it('does not log partial accept events if the length is not increasing', () => {
+        const item = { insertText: 'export default class Agent' }
+
+        const id = CompletionLogger.create(defaultArgs)
+        CompletionLogger.start(id)
+        CompletionLogger.partiallyAccept(id, item, 5)
+
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:partiallyAccepted',
+            expect.objectContaining({
+                acceptedLength: 5,
+                acceptedLengthDelta: 5,
+            }),
+            { agent: true }
+        )
+
+        CompletionLogger.partiallyAccept(id, item, 10)
+
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:partiallyAccepted',
+            expect.objectContaining({
+                acceptedLength: 10,
+                acceptedLengthDelta: 5,
+            }),
+            { agent: true }
+        )
+
+        CompletionLogger.partiallyAccept(id, item, 5)
+        CompletionLogger.partiallyAccept(id, item, 8)
+        expect(logSpy).toHaveBeenCalledTimes(2)
+    })
 })

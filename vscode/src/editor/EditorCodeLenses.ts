@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { getActiveEditor } from './active-editor'
+
 interface EditorCodeLens {
     name: string
     selection: vscode.Selection
@@ -66,7 +68,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private async onCodeLensClick(lens: EditorCodeLens): Promise<void> {
         // Update selection in active editor to the selection of the clicked code lens
-        const activeEditor = vscode.window.activeTextEditor
+        const activeEditor = getActiveEditor()
         if (activeEditor) {
             activeEditor.selection = lens.selection
         }
@@ -83,7 +85,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
             return []
         }
         token.onCancellationRequested(() => [])
-        const editor = vscode.window.activeTextEditor
+        const editor = getActiveEditor()
         if (!editor || editor.document !== document || document.languageId === 'json') {
             return []
         }

@@ -65,6 +65,7 @@ export function params(
     }
     const providerConfig = createProviderConfig({
         client,
+        model: null,
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())

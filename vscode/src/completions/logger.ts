@@ -353,13 +353,20 @@ export function partiallyAccept(
     }
 
     const loggedPartialAcceptedLength = completionEvent.loggedPartialAcceptedLength
+
+    // Do not log partial acceptances if the length of the accepted completion is not increasing
+    if (acceptedLength <= loggedPartialAcceptedLength) {
+        return
+    }
+
+    const acceptedLengthDelta = acceptedLength - loggedPartialAcceptedLength
     completionEvent.loggedPartialAcceptedLength = acceptedLength
 
     logCompletionEvent('partiallyAccepted', {
         ...getSharedParams(completionEvent),
         acceptedItem: { ...completionItemToItemInfo(completion) },
         acceptedLength,
-        acceptedLengthDelta: acceptedLength - loggedPartialAcceptedLength,
+        acceptedLengthDelta,
     })
 }
 

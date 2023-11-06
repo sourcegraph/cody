@@ -3,9 +3,9 @@ import { expect } from '@playwright/test'
 import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { assertEvents, test } from './helpers'
 
-const expectedOrderedEvents = [
+const expectedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:inline-chat:executed',
 ]
@@ -38,5 +38,5 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
 
     // Make sure the < and > characters were not escaped
     await expect(page.locator('[id="workbench\\.parts\\.editor"]').getByText('what is a <div> tag?``')).toBeVisible()
-    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
+    await assertEvents(loggedEvents, expectedEvents)
 })

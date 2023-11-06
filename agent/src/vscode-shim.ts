@@ -154,6 +154,7 @@ export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationCha
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
 export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
@@ -191,6 +192,7 @@ const _workspace: Partial<typeof vscode.workspace> = {
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
     onDidCloseTextDocument: onDidCloseTextDocument.event,
+    onDidSaveTextDocument: onDidSaveTextDocument.event,
     onDidRenameFiles: onDidRenameFiles.event,
     onDidDeleteFiles: onDidDeleteFiles.event,
     registerTextDocumentContentProvider: () => emptyDisposable,

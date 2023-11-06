@@ -25,11 +25,11 @@ export class CodeQuestion implements Recipe {
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput, source },
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput, metadata: { source } },
                 {
                     speaker: 'assistant',
                     text: `\`\`\`${getFileExtension(context.editor.getActiveTextEditorSelection()?.fileName ?? '')}\n`,
-                    source,
+                    metadata: { source },
                 },
                 this.getContextMessages(
                     truncatedText,

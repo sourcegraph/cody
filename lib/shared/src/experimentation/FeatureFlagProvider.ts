@@ -9,6 +9,7 @@ export enum FeatureFlag {
 
     CodyAutocompleteTracing = 'cody-autocomplete-tracing',
     CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
+    CodyAutocompleteAnthropicCyan = 'cody-autocomplete-anthropic-cyan',
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',

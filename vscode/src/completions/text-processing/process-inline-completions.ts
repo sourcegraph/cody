@@ -56,6 +56,10 @@ function processCompletion(completion: ParsedCompletion, params: ProcessItemPara
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
     let { insertText } = completion
 
+    if (completion.insertText.length === 0) {
+        return completion
+    }
+
     if (docContext.injectedPrefix) {
         insertText = docContext.injectedPrefix + completion.insertText
     }

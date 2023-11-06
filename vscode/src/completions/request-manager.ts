@@ -95,10 +95,10 @@ export class RequestManager {
             providers.map(provider => provider.generateCompletions(request.abortController.signal, context, tracer))
         )
             .then(res => res.flat())
-            .then(completions =>
+            .then(completions => {
                 // Shared post-processing logic
-                processInlineCompletions(completions, params)
-            )
+                return processInlineCompletions(completions, params)
+            })
             .then(processedCompletions => {
                 if (!this.disableNetworkCache) {
                     // Cache even if the request was aborted or already fulfilled.

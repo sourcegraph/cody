@@ -25,8 +25,8 @@ export class ChatQuestion implements Recipe {
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput, source },
-                { speaker: 'assistant', source },
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput, metadata: { source } },
+                { speaker: 'assistant', metadata: { source } },
                 this.getContextMessages(
                     truncatedText,
                     context.editor,
