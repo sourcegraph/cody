@@ -28,11 +28,9 @@ class Chat {
     val isFirstMessage = AtomicBoolean(false)
     client.onFinishedProcessing = Runnable { chat.finishMessageProcessing() }
     client.onChatUpdateMessageInProgress = Consumer { agentChatMessage ->
-      if (agentChatMessage.text == null) {
-        return@Consumer
-      }
+      val agentChatMessageText = agentChatMessage.text ?: return@Consumer
       val chatMessage =
-          ChatMessage(Speaker.ASSISTANT, agentChatMessage.text!!, agentChatMessage.displayText)
+          ChatMessage(Speaker.ASSISTANT, agentChatMessageText, agentChatMessage.displayText)
       if (isFirstMessage.compareAndSet(false, true)) {
         val contextMessages =
             agentChatMessage
@@ -41,7 +39,7 @@ class Chat {
                 .map { contextFile: ContextFile ->
                   ContextMessage(
                       Speaker.ASSISTANT,
-                      agentChatMessage.text!!,
+                      agentChatMessageText,
                       com.sourcegraph.cody.context.ContextFile(
                           contextFile.fileName, contextFile.repoName, contextFile.revision))
                 }
