@@ -30,4 +30,16 @@ describe('getFirstMultilineBlockForTruncation', () => {
             sourcesPath: 'test-data/blocks.go',
         })
     })
+
+    it('python', async () => {
+        await initTreeSitterParser(SupportedLanguage.Python)
+        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.Python)!
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getFirstMultilineBlockForTruncation,
+            sourcesPath: 'test-data/blocks.py',
+        })
+    })
 })
