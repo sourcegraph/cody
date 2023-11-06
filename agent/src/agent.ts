@@ -197,13 +197,6 @@ export class Agent extends MessageHandler {
                 return { items: [] }
             }
 
-            if (params.lookupElement !== undefined && document.content !== undefined && params.position !== undefined) {
-                const documentContentBeforeLookupElement = document.content.slice(0, params.offset)
-                const documentContentAfterLookupElement = document.content.slice(params.offset, document.content.length)
-                document.content = documentContentBeforeLookupElement + params.lookupElement + documentContentAfterLookupElement
-                params.position.character = params.position.character + params.lookupElement.length
-            }
-
             const textDocument = new AgentTextDocument(document)
 
             try {
@@ -215,7 +208,19 @@ export class Agent extends MessageHandler {
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
-                        selectedCompletionInfo: undefined,
+                        selectedCompletionInfo:
+                            params.selectedCompletionInfo?.text === undefined ||
+                            params.selectedCompletionInfo?.text === null
+                                ? undefined
+                                : {
+                                      text: params.selectedCompletionInfo.text,
+                                      range: new vscode.Range(
+                                          params.selectedCompletionInfo.range.start.line,
+                                          params.selectedCompletionInfo.range.start.character,
+                                          params.selectedCompletionInfo.range.end.line,
+                                          params.selectedCompletionInfo.range.end.character
+                                      ),
+                                  },
                     },
                     token
                 )
@@ -225,20 +230,6 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
-
-                if (
-                    params.lookupElement !== undefined &&
-                    document.content !== undefined &&
-                    params.offset !== undefined &&
-                    params.position !== undefined
-                ) {
-                    const lastPart = document.content.slice(
-                        params.offset + params.lookupElement.length,
-                        document.content.length
-                    )
-                    const firstPart = document.content.slice(0, params.offset)
-                    document.content = firstPart + lastPart
-                }
 
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
