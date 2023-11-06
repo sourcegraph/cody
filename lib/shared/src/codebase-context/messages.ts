@@ -5,7 +5,7 @@ import { Message } from '../sourcegraph-api'
 //
 // For now we just track "embeddings" since that is the main driver for
 // understanding if it is being useful.
-export type ContextFileSource = 'embeddings'
+export type ContextFileSource = 'embeddings' | 'keyword' | 'filename' | 'editor'
 
 export interface ContextFile {
     fileName: string

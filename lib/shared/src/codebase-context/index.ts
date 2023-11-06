@@ -227,7 +227,10 @@ export class CodebaseContext {
             return []
         }
         const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
-        return results
+        return results?.map(result => {
+            result.source = 'keyword'
+            return result
+        })
     }
 
     private async getFilenameSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
@@ -235,7 +238,10 @@ export class CodebaseContext {
             return []
         }
         const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
-        return results
+        return results?.map(result => {
+            result.source = 'filename'
+            return result
+        })
     }
 
     public async getGraphContextMessages(): Promise<ContextMessage[]> {

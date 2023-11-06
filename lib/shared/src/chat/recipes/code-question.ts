@@ -1,5 +1,5 @@
 import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
@@ -88,17 +88,21 @@ export class CodeQuestion implements Recipe {
             return []
         }
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
+        const visibleContext: ContextFile = visibleContent
+        visibleContext.source = 'editor'
         return getContextMessageWithResponse(
             populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
-            visibleContent
+            visibleContext
         )
     }
 
     public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
+        const selectionContext: ContextFile = selection
+        selectionContext.source = 'editor'
         return getContextMessageWithResponse(
             populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
-            selection
+            selectionContext
         )
     }
 }

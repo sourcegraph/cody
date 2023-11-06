@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { mdiFileDocumentOutline, mdiMagnify } from '@mdi/js'
-
 import { ContextFile, pluralize } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from './actions/TranscriptAction'
@@ -17,6 +15,10 @@ export const ContextFiles: React.FunctionComponent<{
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
 }> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
+    if (!contextFiles.length) {
+        return
+    }
+
     const uniqueFiles = new Set<string>()
     const filteredFiles = contextFiles.filter(file => {
         if (uniqueFiles.has(file.fileName)) {
@@ -28,13 +30,15 @@ export const ContextFiles: React.FunctionComponent<{
 
     return (
         <TranscriptAction
-            title={{ verb: 'Read', object: `${filteredFiles.length} ${pluralize('file', filteredFiles.length)}` }}
+            title={{
+                verb: 'Enhanced Context',
+                object: `${filteredFiles.length} ${pluralize('file', filteredFiles.length)}`,
+            }}
             steps={[
-                { verb: 'Searched', object: 'entire codebase for relevant files', icon: mdiMagnify },
+                { verb: '✨', object: '' },
                 ...filteredFiles.map(file => ({
                     verb: '',
                     object: <FileLink path={file.fileName} repoName={file.repoName} revision={file.revision} />,
-                    icon: mdiFileDocumentOutline,
                 })),
             ]}
             className={className}

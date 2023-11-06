@@ -15,6 +15,6 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => (
         }}
         title={path}
     >
-        {path}
+        {`@${path}`}
     </button>
 )

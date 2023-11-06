@@ -93,5 +93,5 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
     </button>
 )
 
-const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{`@${path}`}</>
 const SymbolLink: React.FunctionComponent<SymbolLinkProps> = ({ symbol }) => <>{symbol}</>

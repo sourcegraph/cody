@@ -53,12 +53,15 @@ export async function getContextMessagesFromSelection(
         numTextResults: 0,
     })
 
+    const source = 'editor'
+
     return selectedTextContext.concat(
         [precedingText, followingText].flatMap(text =>
             getContextMessageWithResponse(populateCodeContextTemplate(text, fileName, repoName), {
                 fileName,
                 repoName,
                 revision,
+                source,
             })
         )
     )

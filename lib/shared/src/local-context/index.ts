@@ -1,8 +1,12 @@
+import { ContextFileSource } from '../codebase-context/messages'
+
 export interface ContextResult {
     repoName?: string
     revision?: string
     fileName: string
     content: string
+
+    source?: ContextFileSource
 }
 
 export interface KeywordContextFetcher {
