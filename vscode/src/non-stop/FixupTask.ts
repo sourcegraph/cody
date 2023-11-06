@@ -42,7 +42,7 @@ export class FixupTask {
         public source?: ChatEventSource
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
-        this.instruction = instruction.replace(/^\/edit/, '').trim()
+        this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
     }
 
     /**
