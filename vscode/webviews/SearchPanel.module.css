@@ -26,6 +26,16 @@
     font: inherit;
 }
 
+.search-input:placeholder-shown {
+    text-overflow: ellipsis;
+}
+
+.search-input::placeholder {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 .search-input:focus,
 .search-input:focus-visible,
 .search-input:focus-within {

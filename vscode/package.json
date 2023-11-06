@@ -227,8 +227,9 @@
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Search",
-          "visibility": "visible"
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.new-search"
         },
         {
           "id": "cody.fixup.tree.view",
