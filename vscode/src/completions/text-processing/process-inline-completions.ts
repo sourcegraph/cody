@@ -1,4 +1,4 @@
-import { Position, TextDocument } from 'vscode'
+import { Position, Range, TextDocument } from 'vscode'
 import { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
@@ -145,7 +145,7 @@ export function getRangeAdjustedForOverlappingCharacters(
     const matchinSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
 
     if (!item.range && currentLineSuffix !== '' && matchinSuffixLength !== 0) {
-        return { start: position, end: position.translate(undefined, matchinSuffixLength) }
+        return new Range(position, position.translate(undefined, matchinSuffixLength))
     }
 
     return undefined

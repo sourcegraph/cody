@@ -1,4 +1,4 @@
-import { Range } from 'vscode-languageserver-textdocument'
+import type * as vscode from 'vscode'
 
 export interface Completion {
     content: string
@@ -16,7 +16,7 @@ export interface InlineCompletionItem {
      *
      * Prefer replacements over insertions to provide a better experience when the user deletes typed text.
      */
-    range?: Range
+    range?: vscode.Range
 }
 
 /**
