@@ -216,8 +216,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   @RequiresEdt
   private fun setRecipesPanelError() {
     val emptyText = recipesPanel.emptyText
-    emptyText.text
-    "Error fetching recipes. Check your connection. If the problem persists, please contact support."
+    emptyText.text =
+        "Error fetching recipes. Check your connection. If the problem persists, please contact support."
     emptyText.appendLine(
         "Retry",
         SimpleTextAttributes(
