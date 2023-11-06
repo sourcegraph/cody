@@ -26,27 +26,25 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const intent = await fixupController.getTaskIntent(taskId)
-        const enableSmartSelection = intent === 'edit' || intent === 'fix'
-        const fixupTask = await fixupController.getTaskRecipeData(taskId, { enableSmartSelection })
+        const fixupTask = await fixupController.getTaskRecipeData(taskId)
 
-        if (!fixupTask || !intent) {
+        if (!fixupTask) {
             return null
         }
 
-        const promptText = this.getPrompt(fixupTask, intent)
+        const promptText = this.getPrompt(fixupTask)
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
 
         return newInteraction({
             text: promptText,
             source: this.id,
-            contextMessages: this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
+            contextMessages: this.getContextFromIntent(fixupTask.intent, fixupTask, quarterFileContext, context),
         })
     }
 
-    public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {
+    public getPrompt(task: VsCodeFixupTaskRecipeData): string {
         const promptInstruction = truncateText(task.instruction, MAX_HUMAN_INPUT_TOKENS)
-        switch (intent) {
+        switch (task.intent) {
             case 'add':
                 return Fixup.addPrompt
                     .replace('{precedingText}', task.precedingText)
@@ -151,6 +149,7 @@ This is part of the file {fileName}.
 The user has the following code in their selection:
 <selectedCode>{selectedText}</selectedCode>
 
+The user wants you to replace parts of the selected code or correct a problem by following their instructions.
 Provide your generated code using the following instructions:
 <instructions>
 {instruction}
@@ -189,6 +188,7 @@ This is part of the file {fileName}.
 The user has the following code in their selection:
 <selectedCode>{selectedText}</selectedCode>
 
+The user wants you to correct problems in their code by following their instructions.
 Provide your generated code using the following instructions:
 <diagnostics>
 {instruction}

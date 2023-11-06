@@ -41,3 +41,28 @@ Console log text
 </instructions>
 "
 `;
+
+exports[`Fixup > builds prompt correctly for fixing 1`] = `
+"
+- You are an AI programming assistant who is an expert in fixing errors within code.
+- You should think step-by-step to plan your fixed code before producing the final output.
+- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+- Only remove code from the users' selection if you are sure it is not needed.
+- It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
+- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your fixed code.
+- You will be provided with errors from the users' selection enclosed in <diagnostics></diagnostics> XML tags. You must attempt to fix all of these errors.
+- If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
+- Enclose your response in <fixup></fixup> XML tags. Do not provide anything else.
+
+This is part of the file src/file/index.ts.
+
+The user has the following code in their selection:
+<selectedCode>return text</selectedCode>
+
+The user wants you to correct problems in their code by following their instructions.
+Provide your generated code using the following instructions:
+<diagnostics>
+Console log text
+</diagnostics>
+"
+`;
