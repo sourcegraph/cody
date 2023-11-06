@@ -26,7 +26,7 @@ cases.forEach(isTreeSitterEnabled => {
                 resetParsersCache()
             })
 
-            it.only('truncates multiline completions', async () => {
+            it('truncates multiline completions based on tree-sitter query', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
@@ -34,18 +34,56 @@ cases.forEach(isTreeSitterEnabled => {
                                 dedent`
                                     def foo():
                                         █
-                                `,
+                                    `,
                                 [
                                     completion`
-                                        return "foo"
-                                    println("bar")
-                                    `,
-                                ]
+                                    return "foo"
+                            println("bar")
+                                `,
+                                ],
+                                {
+                                    languageId: 'python',
+                                }
                             )
                         )
                     )[0]
                 ).toBe(dedent`
                     return "foo"
+                `)
+            })
+
+            it('truncates multiline completions and keeps full if statements', async () => {
+                expect(
+                    (
+                        await getInlineCompletionsInsertText(
+                            params(
+                                dedent`
+                                    if true:
+                                        █
+                                    `,
+                                [
+                                    completion`
+                                    println(1)
+                                elif false:
+                                    println(2)
+                                else:
+                                    println(3)
+
+                                println(4)
+                                `,
+                                ],
+                                {
+                                    languageId: 'python',
+                                }
+                            )
+                        )
+                    )[0]
+                ).toMatchInlineSnapshot(`
+                  "println(1)
+                  elif false:
+                      println(2)
+                  else:
+                      println(3)"
                 `)
             })
         })
