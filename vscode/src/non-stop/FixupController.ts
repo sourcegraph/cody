@@ -24,7 +24,7 @@ import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
 import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
 import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
-import { CodyTaskState } from './utils'
+import { CodyTaskState, getEditorInsertSpaces, getEditorTabSize } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -479,7 +479,10 @@ export class FixupController
             (await vscode.commands.executeCommand<vscode.TextEdit[]>(
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
-                {}
+                {
+                    tabSize: getEditorTabSize(document.uri),
+                    insertSpaces: getEditorInsertSpaces(document.uri),
+                }
             )) || []
 
         const formattingChangesInRange = formattingChanges.filter(change => rangeToFormat.contains(change.range))
