@@ -38,7 +38,7 @@
     list-style-type: none;
     margin: 0;
     padding: 0;
-    gap: 0.5em;
+    gap: 1em;
 }
 
 .step {
@@ -52,6 +52,7 @@
     margin-right: 0.3rem;
 }
 .step-object {
+    background: rgba(166, 172, 205, 0.3);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

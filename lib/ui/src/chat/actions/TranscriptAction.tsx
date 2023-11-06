@@ -25,6 +25,7 @@ export const TranscriptAction: React.FunctionComponent<{
     return (
         <div className={classNames(className, styles.container, styles.containerOpen)}>
             <div className={styles.steps}>
+                ✨
                 {steps.map((step, index) => (
                     // eslint-disable-next-line react/no-array-index-key
                     <span key={index} className={styles.step}>

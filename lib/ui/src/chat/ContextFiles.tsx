@@ -35,7 +35,6 @@ export const ContextFiles: React.FunctionComponent<{
                 object: `${filteredFiles.length} ${pluralize('file', filteredFiles.length)}`,
             }}
             steps={[
-                { verb: '✨', object: '' },
                 ...filteredFiles.map(file => ({
                     verb: '',
                     object: <FileLink path={file.fileName} repoName={file.repoName} revision={file.revision} />,
