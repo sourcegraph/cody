@@ -887,7 +887,7 @@ export class FixupController
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
         // Prompt the user for a new instruction, and create a new fixup
-        const instruction = (await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })).trim()
+        const instruction = await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })
 
         // Revert and remove the previous task
         await this.undoTask(task)
