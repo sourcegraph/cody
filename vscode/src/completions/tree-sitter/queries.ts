@@ -32,8 +32,8 @@ export const intentPriority = [
  */
 export type CompletionIntent = (typeof intentPriority)[number]
 
-export const languages = {
+export const languages: Partial<Record<SupportedLanguage, Record<QueryName, string>>> = {
     ...javascriptQueries,
     ...goQueries,
     ...pythonQueries,
-} satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
+} as const
