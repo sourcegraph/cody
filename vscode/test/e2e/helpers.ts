@@ -62,9 +62,7 @@ export const test = base
             // Bring the cody sidebar to the foreground
             await page.click('[aria-label="Cody"]')
             // Ensure that we remove the hover from the activity icon
-            await page.getByRole('heading', { name: 'Cody' }).hover()
-            // Minimize the search panel for now
-            await page.getByRole('heading', { name: 'Search' }).click()
+            await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
