@@ -130,6 +130,13 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPanel
                 ),
                 createFeatureToggle(
+                    'New Search UI',
+                    'Experimental',
+                    'Enable new search panel',
+                    'cody.experimental.newSearch',
+                    c => c.experimentalSearchPanel
+                ),
+                createFeatureToggle(
                     'Code Lenses',
                     'Experimental',
                     'Enable Code Lenses in documents for quick access to Cody commands',
