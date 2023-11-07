@@ -212,7 +212,7 @@ export function archConvertor(arch: string): string {
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
-// Only dotcom is supported currently
+// NOTE: Only dotcom is supported currently
 export function getChatModelsForWebview(endpoint?: string | null): ChatModelSelection[] {
     if (endpoint && isDotCom(endpoint)) {
         return defaultChatModels
@@ -221,6 +221,7 @@ export function getChatModelsForWebview(endpoint?: string | null): ChatModelSele
 }
 
 // The allowed chat models for dotcom
+// The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 const defaultChatModels = [
     { title: 'Claude 2', model: 'anthropic/claude-2', provider: 'Anthropic', default: true },
     { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2-cyan', provider: 'Anthropic', default: false },

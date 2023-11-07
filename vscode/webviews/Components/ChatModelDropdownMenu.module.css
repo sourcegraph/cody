@@ -2,11 +2,13 @@
     margin: 0.5rem;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     min-width: calc(100% - 1.1rem);
+    margin-top: 1rem;
 }
 
 .dropdown-container {
-    width: 88%;
+    width: 95%;
     padding: 0.5rem;
 }
 
