@@ -101,7 +101,7 @@ export class CustomPrompt implements Recipe {
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
             const contextMessages = Promise.resolve(getCurrentFileContextFromEditorSelection(selection))
-            return newInteraction({ text, displayText: this.humanFormattedText, contextMessages, source })
+            return newInteraction({ text, displayText, contextMessages, source })
         }
 
         const contextMessages = this.getContextMessages(

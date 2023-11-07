@@ -136,7 +136,7 @@ export interface Editor<
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
 
-    getTextEditorContentForContextFile(contextFile: ContextFile): Promise<string | undefined> | string | undefined
+    getTextEditorContentForContextFile(contextFile: ContextFile): Promise<string | undefined>
 
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>

@@ -23,7 +23,7 @@ export function getDisplayTextForFileUri(
  * Creates display text for the given context files by replacing
  * file names with markdown links.
  */
-export function createDisplayTexWithContextFiles(files: ContextFile[], text: string): string {
+export function createDisplayTextWithContextFiles(files: ContextFile[], text: string): string {
     let formattedText = text
     for (const file of files) {
         if (file?.fileName && file?.fileUri?.fsPath) {
