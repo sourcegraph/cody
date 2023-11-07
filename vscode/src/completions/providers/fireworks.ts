@@ -6,6 +6,7 @@ import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { getLanguageConfig } from '../language'
+import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
@@ -42,6 +43,7 @@ const MODEL_MAP = {
     'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
+    'mistral-7b-instruct-4k': 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k',
 }
 
 type FireworksModel =
@@ -69,6 +71,8 @@ function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow
         case 'llama-code-13b-instruct':
             // Llama Code was trained on 16k context windows, we're constraining it here to better
             // compare the results
+            return 2048
+        case 'mistral-7b-instruct-4k':
             return 2048
         default:
             return 1200
@@ -189,6 +193,19 @@ export class FireworksProvider extends Provider {
         if (isLlamaCode(this.model)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+        }
+        if (this.model === 'mistral-7b-instruct-4k') {
+            // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
+            const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
+            const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
+            const infillSuffix = this.options.docContext.suffix
+            const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
+            const infillPrefix = head.raw
+            return `<s>[INST] Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
+\`\`\`
+${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
+\`\`\`[/INST]
+ ${OPENING_CODE_TAG}${infillBlock}`
         }
 
         console.error('Could not generate infilling prompt for', this.model)
