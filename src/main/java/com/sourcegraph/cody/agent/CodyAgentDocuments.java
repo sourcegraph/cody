@@ -19,27 +19,27 @@ public class CodyAgentDocuments {
   }
 
   private void handleDocument(TextDocument document) {
-    TextDocument old = this.documents.get(document.filePath);
+    TextDocument old = this.documents.get(document.getFilePath());
     if (old == null) {
-      this.documents.put(document.filePath, document);
+      this.documents.put(document.getFilePath(), document);
       return;
     }
-    if (document.content == null) {
-      document.content = old.content;
+    if (document.getContent() == null) {
+      document.setContent(old.getContent());
     }
-    if (document.selection == null) {
-      document.selection = old.selection;
+    if (document.getSelection() == null) {
+      document.setSelection(old.getSelection());
     }
-    this.documents.put(document.filePath, document);
+    this.documents.put(document.getFilePath(), document);
   }
 
   public void didOpen(TextDocument document) {
-    this.documents.put(document.filePath, document);
+    this.documents.put(document.getFilePath(), document);
     underlying.textDocumentDidOpen(document);
   }
 
   public void didFocus(TextDocument document) {
-    this.documents.put(document.filePath, document);
+    this.documents.put(document.getFilePath(), document);
   }
 
   public void didChange(TextDocument document) {}

@@ -43,14 +43,14 @@ public class AutocompleteTelemetry {
 
   @Nullable
   public CompletionEvent.ContextSummary contextSummary() {
-    return (completionEvent != null && completionEvent.params != null)
-        ? completionEvent.params.contextSummary
+    return (completionEvent != null && completionEvent.getParams() != null)
+        ? completionEvent.getParams().getContextSummary()
         : null;
   }
 
   @Nullable
   public CompletionEvent.Params params() {
-    return (completionEvent != null) ? completionEvent.params : null;
+    return (completionEvent != null) ? completionEvent.getParams() : null;
   }
 
   public @NotNull AutocompletionStatus getStatus() {

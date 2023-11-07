@@ -29,8 +29,7 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (client.server == null) {
       return;
     }
-    client.server.textDocumentDidOpen(
-        new TextDocument().setFilePath(file.getPath()).setContent(document.getText()));
+    client.server.textDocumentDidOpen(new TextDocument(file.getPath(), document.getText()));
 
     if (client.codebase == null) {
       return;
@@ -47,6 +46,6 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (server == null) {
       return;
     }
-    server.textDocumentDidClose(new TextDocument().setFilePath(file.getPath()));
+    server.textDocumentDidClose(new TextDocument(file.getPath()));
   }
 }

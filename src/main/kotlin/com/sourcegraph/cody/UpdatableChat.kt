@@ -1,7 +1,7 @@
 package com.sourcegraph.cody
 
-import com.sourcegraph.cody.chat.ChatMessage
-import com.sourcegraph.cody.context.ContextMessage
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ContextMessage
 
 interface UpdatableChat {
   fun addMessageToChat(message: ChatMessage, shouldDisplayBlinkingCursor: Boolean = false)

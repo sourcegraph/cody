@@ -12,7 +12,7 @@ import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.panel
 import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.protocol.GetRepoID
+import com.sourcegraph.cody.agent.protocol.GetRepoIDResponse
 import com.sourcegraph.cody.ui.LoadingLayerUI
 import java.awt.event.ActionEvent
 import java.util.concurrent.TimeUnit
@@ -61,7 +61,8 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
                     loadingLayerUI.startLoading()
                     val server = CodyAgent.getInitializedServer(project).get(1, TimeUnit.SECONDS)
                     val isRepoIdValid =
-                        server?.getRepoId(GetRepoID(repoName))?.get(4, TimeUnit.SECONDS) != null
+                        server?.getRepoId(GetRepoIDResponse(repoName))?.get(4, TimeUnit.SECONDS) !=
+                            null
                     setOKButtonIcon(null)
                     loadingLayerUI.stopLoading()
                     ApplicationManager.getApplication().invokeLater {

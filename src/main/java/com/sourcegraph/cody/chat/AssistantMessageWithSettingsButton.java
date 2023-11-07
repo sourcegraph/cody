@@ -6,7 +6,7 @@ import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
-import com.sourcegraph.cody.api.Speaker;
+import com.sourcegraph.cody.agent.protocol.Speaker;
 import com.sourcegraph.config.GoToPluginSettingsButtonFactory;
 import java.awt.*;
 import javax.swing.*;

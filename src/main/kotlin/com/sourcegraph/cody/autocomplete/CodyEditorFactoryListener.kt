@@ -129,25 +129,16 @@ class CodyEditorFactoryListener : EditorFactoryListener {
       val selectionStartPosition = selectionModel.selectionStartPosition
       val selectionEndPosition = selectionModel.selectionEndPosition
       if (selectionStartPosition != null && selectionEndPosition != null) {
-        return Range()
-            .setStart(
-                Position()
-                    .setLine(selectionStartPosition.line)
-                    .setCharacter(selectionStartPosition.column))
-            .setEnd(
-                Position()
-                    .setLine(selectionEndPosition.line)
-                    .setCharacter(selectionEndPosition.column))
+        return Range(
+            Position(selectionStartPosition.line, selectionStartPosition.column),
+            Position(selectionEndPosition.line, selectionEndPosition.column))
       }
       val carets = editor.caretModel.allCarets
       if (carets.isNotEmpty()) {
         val caret = carets[0]
-        val position =
-            Position()
-                .setLine(caret.logicalPosition.line)
-                .setCharacter(caret.logicalPosition.column)
+        val position = Position(caret.logicalPosition.line, caret.logicalPosition.column)
         // A single-offset caret is a selection where end == start.
-        return Range().setStart(position).setEnd(position)
+        return Range(position, position)
       }
       return null
     }
@@ -162,11 +153,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         return
       }
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-      val document =
-          TextDocument()
-              .setFilePath(file.path)
-              .setContent(editor.document.text)
-              .setSelection(getSelection(editor))
+      val document = TextDocument(file.path, editor.document.text, getSelection(editor))
       client.server!!.textDocumentDidChange(document)
       if (client.codebase == null || skipCodebaseOnFileOpened) {
         return

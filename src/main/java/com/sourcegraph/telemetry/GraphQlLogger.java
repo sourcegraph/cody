@@ -62,16 +62,16 @@ public class GraphQlLogger {
       JsonObject eventParameters, CompletionEvent.@Nullable Params params) {
     var updatedEventParameters = eventParameters.deepCopy();
     if (params != null) {
-      if (params.contextSummary != null) {
-        updatedEventParameters.add("contextSummary", gson.toJsonTree(params.contextSummary));
+      if (params.getContextSummary() != null) {
+        updatedEventParameters.add("contextSummary", gson.toJsonTree(params.getContextSummary()));
       }
-      updatedEventParameters.addProperty("id", params.id);
-      updatedEventParameters.addProperty("languageId", params.languageId);
-      updatedEventParameters.addProperty("source", params.source);
-      updatedEventParameters.addProperty("charCount", params.charCount);
-      updatedEventParameters.addProperty("lineCount", params.lineCount);
-      updatedEventParameters.addProperty("multilineMode", params.multilineMode);
-      updatedEventParameters.addProperty("providerIdentifier", params.providerIdentifier);
+      updatedEventParameters.addProperty("id", params.getId());
+      updatedEventParameters.addProperty("languageId", params.getLanguageId());
+      updatedEventParameters.addProperty("source", params.getSource());
+      updatedEventParameters.addProperty("charCount", params.getCharCount());
+      updatedEventParameters.addProperty("lineCount", params.getLineCount());
+      updatedEventParameters.addProperty("multilineMode", params.getMultiline());
+      updatedEventParameters.addProperty("providerIdentifier", params.getProviderIdentifier());
     }
     return updatedEventParameters;
   }

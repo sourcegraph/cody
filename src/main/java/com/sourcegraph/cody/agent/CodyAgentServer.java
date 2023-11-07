@@ -30,7 +30,7 @@ public interface CodyAgentServer {
   CompletableFuture<Void> recipesExecute(ExecuteRecipeParams params);
 
   @JsonRequest("autocomplete/execute")
-  CompletableFuture<InlineAutocompleteList> autocompleteExecute(AutocompleteExecuteParams params);
+  CompletableFuture<InlineAutocompleteList> autocompleteExecute(AutocompleteParams params);
 
   @JsonRequest("graphql/logEvent")
   CompletableFuture<Void> logEvent(Event event);
@@ -39,10 +39,10 @@ public interface CodyAgentServer {
   CompletableFuture<@Nullable String> currentUserId();
 
   @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
-  CompletableFuture<@Nullable String> getRepoIdIfEmbeddingExists(GetRepoID repoName);
+  CompletableFuture<@Nullable String> getRepoIdIfEmbeddingExists(GetRepoIDResponse repoName);
 
   @JsonRequest("graphql/getRepoId")
-  CompletableFuture<@Nullable String> getRepoId(GetRepoID repoName);
+  CompletableFuture<@Nullable String> getRepoId(GetRepoIDResponse repoName);
 
   @JsonRequest("git/codebaseName")
   CompletableFuture<@Nullable String> convertGitCloneURLToCodebaseName(CloneURL cloneURL);

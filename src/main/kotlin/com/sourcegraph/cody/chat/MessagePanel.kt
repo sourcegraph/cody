@@ -4,7 +4,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
-import com.sourcegraph.cody.api.Speaker
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import java.awt.Color
 import javax.swing.JEditorPane

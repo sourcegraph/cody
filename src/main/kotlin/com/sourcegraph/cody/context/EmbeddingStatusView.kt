@@ -6,7 +6,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentServer
-import com.sourcegraph.cody.agent.protocol.GetRepoID
+import com.sourcegraph.cody.agent.protocol.GetRepoIDResponse
 import com.sourcegraph.cody.auth.ui.EditCodebaseContextAction
 import com.sourcegraph.cody.chat.ChatUIConstants
 import java.awt.Dimension
@@ -59,14 +59,14 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
       CodyAgent.getInitializedServer(project).thenCompose { server: CodyAgentServer? ->
-        server?.getRepoIdIfEmbeddingExists(GetRepoID(repoName))?.thenCompose { repoIdWithEmbeddings
-          ->
+        server?.getRepoIdIfEmbeddingExists(GetRepoIDResponse(repoName))?.thenCompose {
+            repoIdWithEmbeddings ->
           if (repoIdWithEmbeddings != null) {
             CompletableFuture.runAsync {
               setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
             }
           } else {
-            server.getRepoId(GetRepoID(repoName))?.thenAccept { repoId ->
+            server.getRepoId(GetRepoIDResponse(repoName))?.thenAccept { repoId ->
               if (repoId != null) {
                 setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
               } else {

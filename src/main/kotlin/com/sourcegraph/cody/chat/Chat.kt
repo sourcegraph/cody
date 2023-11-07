@@ -4,10 +4,11 @@ import com.sourcegraph.cody.UpdatableChat
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentClient
 import com.sourcegraph.cody.agent.CodyAgentServer
+import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextFile
+import com.sourcegraph.cody.agent.protocol.ContextMessage
 import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams
-import com.sourcegraph.cody.api.Speaker
-import com.sourcegraph.cody.context.ContextMessage
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.vscode.CancellationToken
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
@@ -33,17 +34,13 @@ class Chat {
           ChatMessage(Speaker.ASSISTANT, agentChatMessageText, agentChatMessage.displayText)
       if (isFirstMessage.compareAndSet(false, true)) {
         val contextMessages =
-            agentChatMessage
-                .actualContextFiles()
-                .stream()
-                .map { contextFile: ContextFile ->
-                  ContextMessage(
-                      Speaker.ASSISTANT,
-                      agentChatMessageText,
-                      com.sourcegraph.cody.context.ContextFile(
-                          contextFile.fileName, contextFile.repoName, contextFile.revision))
+            agentChatMessage.contextFiles
+                ?.stream()
+                ?.map { contextFile: ContextFile ->
+                  ContextMessage(Speaker.ASSISTANT, agentChatMessageText, contextFile)
                 }
-                .collect(Collectors.toList())
+                ?.collect(Collectors.toList())
+                ?: emptyList()
         chat.displayUsedContext(contextMessages)
         chat.addMessageToChat(chatMessage)
       } else {
@@ -56,9 +53,7 @@ class Chat {
               try {
                 val recipesExecuteFuture =
                     server!!.recipesExecute(
-                        ExecuteRecipeParams()
-                            .setId(recipeId)
-                            .setHumanChatInput(humanMessage.actualMessage()))
+                        ExecuteRecipeParams(recipeId, humanMessage.actualMessage()))
                 token.onCancellationRequested { recipesExecuteFuture.cancel(true) }
               } catch (ignored: Exception) {
                 // Ignore bugs in the agent when executing recipes

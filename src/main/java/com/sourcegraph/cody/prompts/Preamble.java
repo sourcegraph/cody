@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.prompts;
 
-import com.sourcegraph.cody.api.Message;
-import com.sourcegraph.cody.api.Speaker;
+import com.sourcegraph.cody.agent.protocol.Message;
+import com.sourcegraph.cody.agent.protocol.Speaker;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
@@ -58,8 +58,9 @@ public class Preamble {
 
     // Return this as a list of two items
     List<Message> messages = new ArrayList<>();
-    messages.add(new Message(Speaker.HUMAN, String.join("\n\n", preamble)));
-    messages.add(new Message(Speaker.ASSISTANT, String.join("\n", preambleResponse)));
+    messages.add(Message.Companion.newPrimitive(Speaker.HUMAN, String.join("\n\n", preamble)));
+    messages.add(
+        Message.Companion.newPrimitive(Speaker.ASSISTANT, String.join("\n\n", preambleResponse)));
     return messages;
   }
 }

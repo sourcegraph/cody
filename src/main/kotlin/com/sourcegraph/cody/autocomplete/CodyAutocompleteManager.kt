@@ -16,7 +16,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
-import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams
+import com.sourcegraph.cody.agent.protocol.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
@@ -193,10 +193,7 @@ class CodyAutocompleteManager {
     val virtualFile =
         FileDocumentManager.getInstance().getFile(editor.document)
             ?: return CompletableFuture.completedFuture(null)
-    val params =
-        AutocompleteExecuteParams()
-            .setFilePath(virtualFile.path)
-            .setPosition(Position().setLine(position.line).setCharacter(position.character))
+    val params = AutocompleteParams(virtualFile.path, Position(position.line, position.character))
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
     val completions = server!!.autocompleteExecute(params)
 

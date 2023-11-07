@@ -4,9 +4,9 @@ import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBInsets;
-import com.sourcegraph.cody.api.Speaker;
-import com.sourcegraph.cody.context.ContextFile;
-import com.sourcegraph.cody.context.ContextMessage;
+import com.sourcegraph.cody.agent.protocol.ContextFile;
+import com.sourcegraph.cody.agent.protocol.ContextMessage;
+import com.sourcegraph.cody.agent.protocol.Speaker;
 import com.sourcegraph.cody.ui.AccordionSection;
 import java.awt.*;
 import java.util.List;

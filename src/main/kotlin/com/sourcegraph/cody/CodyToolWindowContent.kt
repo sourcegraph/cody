@@ -25,13 +25,14 @@ import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ContextMessage
 import com.sourcegraph.cody.agent.protocol.RecipeInfo
-import com.sourcegraph.cody.api.Speaker
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.context.ContextMessage
 import com.sourcegraph.cody.context.EmbeddingStatusView
 import com.sourcegraph.cody.ui.AutoGrowingTextArea
 import com.sourcegraph.cody.ui.ChatScrollPane
@@ -246,13 +247,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
     // Loop on recipes and add a button for each item
     for (recipe in recipes) {
-      if (recipe.id == null || recipe.title == null) {
-        continue
-      }
-      val recipeButton = createRecipeButton(recipe.title!!)
+      val recipeButton = createRecipeButton(recipe.title)
       recipeButton.addActionListener {
         GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
-        sendMessage(project, recipe.title!!, recipe.id!!)
+        sendMessage(project, recipe.title, recipe.id)
       }
       recipesPanel.add(recipeButton)
     }
@@ -264,9 +262,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
     // Loop on recipes and create an action for each new item
     for (recipe in recipes) {
-      if (recipe.id == null || recipe.title == null) {
-        continue
-      }
       val actionId = "cody.recipe." + recipe.id
       val existingAction = actionManager.getAction(actionId)
       if (existingAction != null) {
@@ -276,7 +271,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
           object : DumbAwareAction(recipe.title) {
             override fun actionPerformed(e: AnActionEvent) {
               GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
-              sendMessage(project, recipe.title!!, recipe.id!!)
+              sendMessage(project, recipe.title, recipe.id)
             }
           }
       actionManager.registerAction(actionId, action)

@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.api.Message;
+import com.sourcegraph.cody.agent.protocol.Message;
 import java.util.List;
 
 public class Completion {
