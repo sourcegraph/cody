@@ -275,7 +275,6 @@ export function createProviderConfig({
             return new FireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         model: resolvedModel,
     }
