@@ -203,18 +203,33 @@ export class CodebaseContext {
     }
 
     private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        console.log('GETTING LOCAL CONTEXT')
         try {
             const keywordResultsPromise = this.getKeywordSearchResults(query, options)
             const filenameResultsPromise = this.getFilenameSearchResults(query, options)
 
+            console.log('GETTING KEYWORD AND FILE NAME RESULTS')
+            const startTime = performance.now()
             const [keywordResults, filenameResults] = await Promise.all([keywordResultsPromise, filenameResultsPromise])
-
+            console.log('GOT KEYWORD AND FILE NAME RESULTS, TOOK MS:', performance.now() - startTime)
             const combinedResults = this.mergeContextResults(keywordResults, filenameResults)
+
+            let rerankStart = null
+            if (!options.skipRerank && combinedResults.length > 1 && this.rerank) {
+                console.log('GETTING RERANK RESULTS')
+                rerankStart = performance.now()
+            } else {
+                console.log('SKIPPING RERANK RESULTS')
+            }
             const rerankedResults =
                 !options.skipRerank && combinedResults.length > 1 && this.rerank
                     ? await this.rerank(query, combinedResults)
                     : combinedResults
             const messages = resultsToMessages(rerankedResults)
+
+            if (rerankStart) {
+                console.log('RERANK TOOK MS:', performance.now() - rerankStart)
+            }
 
             this.embeddingResultsError = ''
 
