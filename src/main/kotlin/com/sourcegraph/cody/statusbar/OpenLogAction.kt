@@ -10,7 +10,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 
-class OpenLogAction() : DumbAwareAction("Open Log To Troubleshoot Issue") {
+class OpenLogAction : DumbAwareAction("Open Log To Troubleshoot Issue") {
 
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project

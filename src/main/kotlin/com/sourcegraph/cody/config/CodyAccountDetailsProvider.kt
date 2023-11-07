@@ -8,7 +8,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.IconUtil
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
-import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.auth.ui.LoadingAccountsDetailsProvider
 import java.util.concurrent.CompletableFuture
 
@@ -27,13 +27,13 @@ class CodyAccountDetailsProvider(
             ?: return CompletableFuture.completedFuture(noToken())
     val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
     return ProgressManager.getInstance()
-        .submitIOTask(indicator) {
+        .submitIOTask(indicator) { indicator ->
           if (account.isCodyApp()) {
             val details = CodyAccountDetails(account.name, account.name, null)
             DetailsLoadingResult(details, IconUtil.toBufferedImage(defaultIcon), null, false)
           } else {
             val accountDetails =
-                SourcegraphSecurityUtil.loadCurrentUserDetails(executor, it, account.server)
+                SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails(account.server)
             val image =
                 accountDetails.avatarURL?.let { url ->
                   CachingCodyUserAvatarLoader.getInstance().requestAvatar(executor, url).join()

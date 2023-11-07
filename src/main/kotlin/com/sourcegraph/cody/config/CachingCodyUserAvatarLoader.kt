@@ -53,8 +53,7 @@ class CachingCodyUserAvatarLoader : Disposable {
       maximumSize: Int
   ): Image? {
     return try {
-      val image =
-          requestExecutor.execute(indicator, SourcegraphApiRequests.CurrentUser.getAvatar(url))
+      val image = SourcegraphApiRequests.CurrentUser(requestExecutor, indicator).getAvatar(url)
       if (image.getWidth(null) <= maximumSize && image.getHeight(null) <= maximumSize) image
       else ImageLoader.scaleImage(image, maximumSize)
     } catch (e: ProcessCanceledException) {

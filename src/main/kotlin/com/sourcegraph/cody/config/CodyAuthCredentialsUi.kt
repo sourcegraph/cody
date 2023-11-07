@@ -31,12 +31,10 @@ class CodyAuthCredentialsUi(
       authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String> {
     val token = acquireToken(indicator, authMethod)
-    val withTokenAuth = executor as SourcegraphApiRequestExecutor.WithTokenAuth
-    withTokenAuth.token = token
+    executor.token = token
 
     val details =
-        CodyTokenCredentialsUi.acquireDetails(
-            server, withTokenAuth, indicator, isAccountUnique, null)
+        CodyTokenCredentialsUi.acquireDetails(server, executor, indicator, isAccountUnique, null)
     return details to token
   }
 

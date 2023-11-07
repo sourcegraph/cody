@@ -12,8 +12,8 @@ import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.enteredTextSatisfies
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
-import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.auth.SsoAuthMethod
 import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
@@ -140,7 +140,7 @@ internal class CodyTokenCredentialsUi(
         fixedLogin: String?
     ): CodyAccountDetails {
       val accountDetails =
-          SourcegraphSecurityUtil.loadCurrentUserDetails(executor, indicator, server)
+          SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails(server)
 
       val login = accountDetails.username
       if (fixedLogin != null && fixedLogin != login)

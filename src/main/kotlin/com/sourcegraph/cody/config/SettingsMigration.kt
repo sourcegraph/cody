@@ -13,7 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
-import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.AccessTokenStorage
@@ -151,8 +151,9 @@ class SettingsMigration : Activity {
       service<ProgressManager>()
           .submitIOTask(progressIndicator) {
             runCatching {
-              SourcegraphSecurityUtil.loadCurrentUserDetails(
-                  requestExecutorFactory.create(accessToken), progressIndicator, server)
+              SourcegraphApiRequests.CurrentUser(
+                      requestExecutorFactory.create(accessToken), progressIndicator)
+                  .getDetails(server)
             }
           }
           .successOnEdt(progressIndicator.modalityState) { accountDetailsResult ->
