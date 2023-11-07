@@ -73,7 +73,7 @@ function createContextFileFromUri(
 ): ContextFile {
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return {
-        fileName: uri.fsPath,
+        fileName: vscode.workspace.asRelativePath(uri.fsPath),
         fileUri: uri,
         path: createContextFilePath(uri),
         range,

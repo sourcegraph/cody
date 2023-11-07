@@ -6,8 +6,7 @@ import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
-import { createContextMessagesByContextFile } from '../prompts/context-file'
-import { createDisplayTexWithContextFiles } from '../prompts/context-file/get-display-text'
+import { createDisplayTexWithContextFiles } from '../prompts/get-display-text'
 import {
     extractTestType,
     getHumanLLMText,
@@ -29,6 +28,7 @@ import {
 } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
+import { ChatQuestion } from './chat-question'
 import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -110,7 +110,7 @@ export class CustomPrompt implements Recipe {
             context.codebaseContext,
             contextConfig,
             selection,
-            contextFiles,
+            context.userInputContextFiles,
             commandOutput
         )
 
@@ -180,7 +180,7 @@ export class CustomPrompt implements Recipe {
         }
 
         if (contextFiles?.length) {
-            const contextFileMessages = await createContextMessagesByContextFile(contextFiles)
+            const contextFileMessages = await ChatQuestion.getContextFilesContext(editor, contextFiles)
             contextMessages.push(...contextFileMessages)
         }
 

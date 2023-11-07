@@ -130,10 +130,9 @@ export class ChatPanelProvider extends MessageProvider {
         // Add text and context to a command for custom-prompt recipe to run as ask command
         if (contextFiles?.length) {
             this.userContextFiles = contextFiles
-            return this.executeRecipe('custom-prompt', `/ask ${text}`, 'chat')
         }
 
-        return this.executeRecipe('chat-question', text, 'chat')
+        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
     }
 
     /**

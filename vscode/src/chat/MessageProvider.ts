@@ -337,7 +337,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', source?: ChatEventSource): Promise<void> {
+    public async executeRecipe(
+        recipeId: RecipeID,
+        humanChatInput = '',
+        source?: ChatEventSource,
+        userInputContextFiles?: ContextFile[]
+    ): Promise<void> {
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple actions. Please wait for the current action to finish.', 'system')
             return
@@ -379,6 +384,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 codebaseContext: this.contextProvider.context,
                 responseMultiplexer: this.multiplexer,
                 firstInteraction: this.transcript.isEmpty,
+                userInputContextFiles,
             })
         } catch (error) {
             this.handleError('Fail to submit question', 'system')
@@ -578,7 +584,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.executeRecipe('custom-prompt', title, 'custom-commands')
     }
 
-    // TODO bee simplify and refactor this method
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
@@ -587,12 +592,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const source = eventTrace?.source || undefined
         // Inline chat has its own filter for slash commands
         if (recipeId === 'inline-chat') {
-            return { text, recipeId }
+            return { text, recipeId, source }
         }
 
         text = text.trim()
         if (!text?.startsWith('/')) {
-            return { text, recipeId }
+            return { text, recipeId, source }
         }
 
         switch (true) {
@@ -629,18 +634,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
             // TODO bee retire chat-question recipe and run all chat questions in custom-prompt recipe
             case /^\/ask(\s)?/.test(text): {
-                text = text.replace('/ask', '').trimStart() || (await showAskQuestionQuickPick())
-
-                const commandRunnerID = await this.editor.controllers.command?.addCommand(
-                    '/ask',
-                    text,
-                    eventTrace?.requestID,
-                    this.userContextFiles
-                )
-
-                if (commandRunnerID) {
-                    return { text: commandRunnerID, recipeId: 'custom-prompt', source }
-                }
+                const question = text.replace('/ask', '').trimStart() || (await showAskQuestionQuickPick())
+                return { text: question, recipeId: 'chat-question', source }
             }
 
             default: {

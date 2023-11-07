@@ -10,7 +10,7 @@ export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor'
 export type ContextKind = 'symbol' | 'file' | 'function' | 'method' | 'class'
 
 export interface ContextFile {
-    fileName: string
+    fileName: string // the relative path of the file
     fileUri?: URI
 
     displayName?: string

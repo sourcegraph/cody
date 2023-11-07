@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -48,6 +49,15 @@ export class AgentEditor implements Editor {
             filePath: document.filePath,
             content: document.content || '',
         }
+    }
+
+    public getTextEditorContentForContextFile(file: ContextFile): string | undefined {
+        if (!file.fileUri) {
+            return undefined
+        }
+
+        const doc = this.agent.workspace.getDocument(file.fileUri.fsPath)
+        return doc?.content
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {

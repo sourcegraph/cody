@@ -1,4 +1,4 @@
-import { ContextFile } from '../../../codebase-context/messages'
+import { ContextFile } from '../../codebase-context/messages'
 
 /**
  * Replaces a file display name in the given text with a markdown link

@@ -62,8 +62,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.init()
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text, message.submitType)
-                break
+                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
@@ -82,9 +81,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'executeRecipe':
                 await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe)
-                break
-            case 'getUserContext':
-                await this.handleContextFiles(message.query)
                 break
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
@@ -107,6 +103,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
+                break
+            case 'getUserContext':
+                await this.handleContextFiles(message.query)
                 break
             case 'insert':
                 await this.handleInsertAtCursor(message.text, message.metadata)
@@ -236,10 +235,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         // Add text and context to a command for custom-prompt recipe to run as ask command
         if (contextFiles?.length) {
             this.userContextFiles = contextFiles
-            return this.executeRecipe('custom-prompt', `/ask ${text}`, 'chat')
         }
 
-        return this.executeRecipe('chat-question', text, 'chat')
+        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
     }
 
     /**

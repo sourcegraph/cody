@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
 import { FixupIntent } from '../chat/recipes/fixup'
+import { ContextFile } from '../codebase-context/messages'
 
 export interface ActiveTextEditor {
     content: string
@@ -44,6 +45,14 @@ export interface ActiveTextEditorDiagnostic {
 }
 
 export interface ActiveTextEditorVisibleContent {
+    content: string
+    fileName: string
+    fileUri?: URI
+    repoName?: string
+    revision?: string
+}
+
+export interface TextDocumentContent {
     content: string
     fileName: string
     fileUri?: URI
@@ -126,6 +135,9 @@ export interface Editor<
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
+
+    getTextEditorContentForContextFile(contextFile: ContextFile): Promise<string | undefined> | string | undefined
+
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
@@ -183,6 +195,10 @@ export class NoopEditor implements Editor {
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return null
+    }
+
+    public getTextEditorContentForContextFile(_contextFile: ContextFile): Promise<string | undefined> {
+        return Promise.resolve(undefined)
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
