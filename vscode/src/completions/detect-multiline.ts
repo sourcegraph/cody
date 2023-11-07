@@ -13,13 +13,12 @@ import { execQueryWrapper } from './tree-sitter/query-sdk'
 interface DetectMultilineParams {
     docContext: Omit<DocumentContext, 'multilineTrigger'>
     document: TextDocument
-    enableExtendedTriggers: boolean
     syntacticTriggers?: boolean
     cursorPosition: Pick<Position, 'line' | 'character'>
 }
 
 export function detectMultiline(params: DetectMultilineParams): string | null {
-    const { syntacticTriggers, docContext, document, enableExtendedTriggers, cursorPosition } = params
+    const { syntacticTriggers, docContext, document, cursorPosition } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
     const blockStart = getLanguageConfig(document.languageId)?.blockStart
@@ -48,7 +47,6 @@ export function detectMultiline(params: DetectMultilineParams): string | null {
 
     const openingBracketMatch = currentLinePrefix.match(OPENING_BRACKET_REGEX)
     if (
-        enableExtendedTriggers &&
         openingBracketMatch &&
         // Only trigger multiline suggestions when the next non-empty line is indented less
         // than the block start line (the newly created block is empty).
