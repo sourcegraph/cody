@@ -822,7 +822,7 @@
       "editor/title": [
         {
           "command": "cody.action.commands.menu",
-          "when": "cody.activated && config.cody.experimental.editorTitleCommandIcon",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -964,8 +964,14 @@
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
           "default": true
         },
-        "cody.experimental.chatPredictions": {
+        "cody.editorTitleCommandIcon": {
           "order": 7,
+          "type": "boolean",
+          "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
+          "default": true
+        },
+        "cody.experimental.chatPredictions": {
+          "order": 8,
           "type": "boolean",
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
@@ -974,12 +980,6 @@
           "order": 8,
           "type": "boolean",
           "markdownDescription": "[Experimental] Adds code lenses to current file for quick access to Cody commands.",
-          "default": false
-        },
-        "cody.experimental.editorTitleCommandIcon": {
-          "order": 8,
-          "type": "boolean",
-          "markdownDescription": "[Experimental] Adds an editor title menu icon for quick access to Cody commands.",
           "default": false
         },
         "cody.experimental.guardrails": {
