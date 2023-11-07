@@ -23,6 +23,7 @@ import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
@@ -175,6 +176,17 @@ const register = async (
             await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         })
     )
+
+    if (symfRunner) {
+        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        searchViewProvider.initialize()
+        disposables.push(searchViewProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+    }
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener((authStatus: AuthStatus) => {
