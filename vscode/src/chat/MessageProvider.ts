@@ -176,6 +176,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
+        this.chatModel = this.transcript.chatModel
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -440,7 +441,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const properties = { contextSummary, source, requestID }
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }

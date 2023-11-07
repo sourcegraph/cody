@@ -12,7 +12,7 @@ import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import { ExtensionMessage, WebviewMessage } from '../protocol'
+import { ExtensionMessage, getChatModelsForWebview, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 
@@ -47,6 +47,7 @@ export class ChatPanelProvider extends MessageProvider {
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
+                this.handleChatModel()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -68,6 +69,7 @@ export class ChatPanelProvider extends MessageProvider {
                 break
             case 'chatModel':
                 this.chatModel = message.model
+                this.transcript.setChatModel(message.model)
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
@@ -173,6 +175,24 @@ export class ChatPanelProvider extends MessageProvider {
             input: MessageProvider.inputHistory,
         }
         this.treeView.updateTree(createCodyChatTreeItems(history))
+    }
+
+    protected handleChatModel(): void {
+        const endpoint = this.authProvider.getAuthStatus()?.endpoint
+        const allowedModels = getChatModelsForWebview(endpoint)
+        const models = this.chatModel
+            ? allowedModels.map(model => {
+                  return {
+                      ...model,
+                      default: model.model === this.chatModel,
+                  }
+              })
+            : allowedModels
+
+        void this.webview?.postMessage({
+            type: 'chatModels',
+            models,
+        })
     }
 
     /**

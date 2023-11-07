@@ -8,7 +8,7 @@ import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/tran
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
 
-import { AuthMethod, AuthStatus, getChatModelsForWebview, LocalEnv } from '../src/chat/protocol'
+import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
@@ -65,7 +65,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
-                        setChatModels(getChatModelsForWebview(message.authStatus.endpoint))
                         break
                     case 'login':
                         break

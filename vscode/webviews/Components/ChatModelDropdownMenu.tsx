@@ -14,7 +14,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<{
     models: ChatModelSelection[]
     disabled: boolean
 }> = ({ models, disabled }) => {
-    const [currentModel, setCurrentModel] = useState(models.find(model => model.default) || models[0])
+    const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
 
     if (!models.length || models.length < 1) {
         return null
