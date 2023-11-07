@@ -57,8 +57,8 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     let totalChars = 0
     function addMatch(match: ContextSnippet): boolean {
         // TODO(@philipp-spiess): We should de-dupe on the snippet range and not
-        // return early if the file is on ignore list
-        if (isCodyIgnoredFile(match.fileName)) {
+        // TODO: makes sure fileUri is included for all context snippets
+        if (match.fileUri?.fsPath && isCodyIgnoredFile(match.fileUri?.fsPath)) {
             return false
         }
         // the file name to allow for more than one snippet of the same file

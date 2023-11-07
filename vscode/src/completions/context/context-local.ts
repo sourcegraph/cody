@@ -1,6 +1,7 @@
 import path from 'path'
 
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 
@@ -12,6 +13,7 @@ import { baseLanguageId } from './utils'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
+    fileUri: URI
 }
 
 interface Options {
@@ -47,6 +49,7 @@ export async function getContextFromCurrentEditor(options: Options): Promise<Con
             // Use relative path to remove redundant information from the prompts and
             // keep in sync with embeddings search resutls which use relatve to repo root paths.
             fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
+            fileUri: uri,
             ...match,
         })
     }

@@ -181,7 +181,9 @@ describe('InlineCompletionItemProvider', () => {
             },
             "uri": {
               "$mid": 1,
+              "_sep": undefined,
               "external": "file:///test.ts",
+              "fsPath": "/test.ts",
               "path": "/test.ts",
               "scheme": "file",
             },
