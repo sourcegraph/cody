@@ -23,6 +23,7 @@ import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
@@ -175,6 +176,17 @@ const register = async (
             await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         })
     )
+
+    if (symfRunner) {
+        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        searchViewProvider.initialize()
+        disposables.push(searchViewProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+    }
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener((authStatus: AuthStatus) => {
@@ -480,50 +492,58 @@ const register = async (
     updateAuthStatusBarIndicator()
 
     let completionsProvider: vscode.Disposable | null = null
+    let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = async (): Promise<void> => {
-        const config = getConfiguration(vscode.workspace.getConfiguration())
-        if (!config.autocomplete) {
-            completionsProvider?.dispose()
-            completionsProvider = null
-            if (config.isRunningInsideAgent) {
-                throw new Error(
-                    'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+    const setupAutocomplete = (): void => {
+        setupAutocompleteQueue = setupAutocompleteQueue
+            .then(async () => {
+                const config = getConfiguration(vscode.workspace.getConfiguration())
+                if (!config.autocomplete) {
+                    completionsProvider?.dispose()
+                    completionsProvider = null
+                    if (config.isRunningInsideAgent) {
+                        throw new Error(
+                            'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                        )
+                    }
+                    return
+                }
+
+                if (completionsProvider !== null) {
+                    // If completions are already initialized and still enabled, we
+                    // need to reset the completion provider.
+                    completionsProvider.dispose()
+                }
+
+                completionsProvider = await createInlineCompletionItemProvider(
+                    {
+                        config,
+                        client: codeCompletionsClient,
+                        statusBar,
+                        contextProvider,
+                        authProvider,
+                        triggerNotice: notice => chatManager.triggerNotice(notice),
+                    },
+                    context,
+                    platform
                 )
-            }
-            return
-        }
-
-        if (completionsProvider !== null) {
-            // If completions are already initialized and still enabled, we
-            // need to reset the completion provider.
-            completionsProvider.dispose()
-        }
-
-        completionsProvider = await createInlineCompletionItemProvider(
-            {
-                config,
-                client: codeCompletionsClient,
-                statusBar,
-                contextProvider,
-                authProvider,
-                triggerNotice: notice => chatManager.triggerNotice(notice),
-            },
-            context,
-            platform
-        )
+            })
+            .catch(error => {
+                console.error('Error creating inline completion item provider:', error)
+            })
     }
+
     // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            void setupAutocomplete()
+            setupAutocomplete()
         }
     })
     authProvider.addChangeListener(() => {
-        void setupAutocomplete()
+        setupAutocomplete()
     })
-    await setupAutocomplete()
+    setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {

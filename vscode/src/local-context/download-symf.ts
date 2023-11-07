@@ -9,7 +9,7 @@ import * as vscode from 'vscode'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 
-const symfVersion = 'v0.0.1'
+const symfVersion = 'v0.0.2'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.

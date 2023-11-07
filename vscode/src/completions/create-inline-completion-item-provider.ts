@@ -88,6 +88,7 @@ export async function createInlineCompletionItemProvider(
             disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
+            isRunningInsideAgent: config.isRunningInsideAgent,
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
@@ -95,12 +96,6 @@ export async function createInlineCompletionItemProvider(
         disposables.push(
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
                 completionsProvider.manuallyTriggerCompletion()
-            ),
-            vscode.commands.registerCommand(
-                'cody.autocomplete.inline.accepted',
-                ({ codyLogId, codyCompletion, codyRequest }) => {
-                    completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion, codyRequest)
-                }
             ),
             vscode.languages.registerInlineCompletionItemProvider(
                 [{ notebookType: '*' }, ...documentFilters],

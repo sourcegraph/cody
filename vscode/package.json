@@ -225,6 +225,13 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.new-search"
+        },
+        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -516,6 +523,22 @@
         "group": "Cody",
         "icon": "$(arrow-circle-down)",
         "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.search.index-update",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search index for current workspace folder",
+        "icon": "$(refresh)",
+        "when": "cody.activated && config.cody.experimental.new-search"
+      },
+      {
+        "command": "cody.search.index-update-all",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search indices for all workspace folders",
+        "icon": "$(sync)",
+        "when": "cody.activated && config.cody.experimental.new-search"
       }
     ],
     "keybindings": [
@@ -784,6 +807,16 @@
           "command": "cody.auth.signin",
           "when": "view == cody.support.tree.view && cody.activated",
           "group": "9_cody@0"
+        },
+        {
+          "command": "cody.search.index-update",
+          "when": "view == cody.search && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.search.index-update-all",
+          "when": "view == cody.search && cody.activated",
+          "group": "navigation@2"
         }
       ],
       "editor/title": [
@@ -982,6 +1015,12 @@
           "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
         },
+        "cody.experimental.new-search": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "New search UI",
+          "default": false
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
@@ -1109,6 +1148,7 @@
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
+    "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
     "classnames": "^2.3.2",
     "date-fns": "^2.30.0",
@@ -1153,7 +1193,7 @@
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.2",
     "@vscode/test-web": "^0.0.47",
-    "@vscode/vsce": "^2.19.0",
+    "@vscode/vsce": "^2.22.0",
     "cody-icons-font": "workspace:^",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",

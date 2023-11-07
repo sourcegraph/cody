@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
-import { SuggestionID } from '../logger'
+import { CompletionLogID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
 import { getInlineCompletions, getInlineCompletionsInsertText, params, V } from './helpers'
@@ -38,7 +38,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             lastTriggerPosition: position,
             lastTriggerSelectedCompletionInfo,
             result: {
-                logId: '1' as SuggestionID,
+                logId: '1' as CompletionLogID,
                 source: InlineCompletionsResultSource.Network,
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
             },
@@ -220,15 +220,11 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
 
             // Now we did
             await getInlineCompletions(params('console.█', [], args))
-            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), expect.anything(), 8)
+            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), 8)
 
             // Subsequent keystrokes should continue updating the partial acceptance
             await getInlineCompletions(params('console.log(█', [], args))
-            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.anything(),
-                12
-            )
+            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), 12)
         })
     })
 

@@ -413,7 +413,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
 
         await addWebviewViewHTML(this.extensionUri, webviewView)
 
-        // Register webview
+        // Register to receive messages from webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 

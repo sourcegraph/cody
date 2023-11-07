@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { logCompletionEvent, SuggestionID } from './logger'
+import { CompletionLogID, logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
@@ -14,19 +14,19 @@ import { ContextSnippet } from './types'
 import { forkSignal } from './utils'
 
 export interface RequestParams {
-    /** The request's document **/
+    /** The request's document */
     document: vscode.TextDocument
 
-    /** The request's document context **/
+    /** The request's document context */
     docContext: DocumentContext
 
-    /** The state of the completion info box **/
+    /** The state of the completion info box */
     selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
-    /** The cursor position in the source file where the completion request was triggered. **/
+    /** The cursor position in the source file where the completion request was triggered. */
     position: vscode.Position
 
-    /** The abort signal for the request. **/
+    /** The abort signal for the request. */
     abortSignal?: AbortSignal
 }
 
@@ -144,7 +144,7 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedCompletionInfo: selectedCompletionInfo,
             result: {
-                logId: '' as SuggestionID,
+                logId: '' as CompletionLogID,
                 source: InlineCompletionsResultSource.Network,
                 items,
             },
