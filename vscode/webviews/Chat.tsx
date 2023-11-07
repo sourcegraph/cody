@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
@@ -55,7 +56,6 @@ interface ChatboxProps {
     }
     chatModels?: ChatModelSelection[]
 }
-
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     messageBeingEdited,
@@ -99,14 +99,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, {
+            const eventData = {
                 value: text,
                 lastChatUsedEmbeddings: Boolean(
                     transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
                 ),
-            })
+                transcript: '',
+            }
+
+            if (applessOnboarding.endpoint && isDotCom(applessOnboarding.endpoint)) {
+                eventData.transcript = JSON.stringify(transcript)
+            }
+
+            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
         },
-        [telemetryService, transcript]
+        [telemetryService, transcript, applessOnboarding]
     )
 
     const onCopyBtnClick = useCallback(

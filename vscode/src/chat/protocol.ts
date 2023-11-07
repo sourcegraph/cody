@@ -3,6 +3,7 @@ import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
@@ -62,6 +63,12 @@ export type WebviewMessage =
           command: 'simplified-onboarding'
           type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
       }
+    | { command: 'search'; query: string }
+    | {
+          command: 'show-search-result'
+          uriJSON: unknown
+          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -80,6 +87,8 @@ export type ExtensionMessage =
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'chatModels'; models: ChatModelSelection[] }
+    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | { type: 'index-updated'; scopeDir: string }
 
 /**
  * The subset of configuration that is visible to the webview.

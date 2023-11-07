@@ -36,7 +36,6 @@ interface GetCurrentDocContextParams {
     position: vscode.Position
     maxPrefixLength: number
     maxSuffixLength: number
-    enableExtendedTriggers: boolean
     syntacticTriggers?: boolean
     context?: vscode.InlineCompletionContext
 }
@@ -49,17 +48,14 @@ interface GetCurrentDocContextParams {
  * The prefix and suffix are obtained by looking around the current position up to a max length
  * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
  * document content in either direction is smaller than these parameters, the entire content will be used.
- *
  * @param document - A `vscode.TextDocument` object, the document in which to find the context.
  * @param position - A `vscode.Position` object, the position in the document from which to find the context.
  * @param maxPrefixLength - A number representing the maximum length of the prefix to get from the document.
  * @param maxSuffixLength - A number representing the maximum length of the suffix to get from the document.
- *
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context, syntacticTriggers } =
-        params
+    const { document, position, maxPrefixLength, maxSuffixLength, context, syntacticTriggers } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -157,7 +153,6 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         multilineTrigger: detectMultiline({
             docContext,
             document,
-            enableExtendedTriggers,
             syntacticTriggers,
             cursorPosition: positionBeforeCursor,
         }),
