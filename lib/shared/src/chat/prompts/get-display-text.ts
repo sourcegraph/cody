@@ -26,10 +26,10 @@ export function getDisplayTextForFileUri(
 export function createDisplayTexWithContextFiles(files: ContextFile[], text: string): string {
     let formattedText = text
     for (const file of files) {
-        if (file?.displayName && file?.fileUri?.fsPath) {
+        if (file?.fileName && file?.fileUri?.fsPath) {
             formattedText = getDisplayTextForFileUri(
                 formattedText,
-                file?.displayName.trim(),
+                file?.fileName.trim(),
                 file?.fileUri?.fsPath,
                 file.range?.start?.line
             )

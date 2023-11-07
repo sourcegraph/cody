@@ -11,10 +11,8 @@ export type ContextKind = 'symbol' | 'file' | 'function' | 'method' | 'class'
 
 export interface ContextFile {
     fileName: string // the relative path of the file
+
     fileUri?: URI
-
-    displayName?: string
-
     path?: {
         basename?: string
         dirname?: string
