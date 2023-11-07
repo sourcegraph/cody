@@ -65,22 +65,42 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
       Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
       anymore.
 
-## Publishing a new nightly version
+## Publishing a New Release
 
-Run the following script to publish a new **nightly** version
+### 1. Push a Git Tag
+
+First, choose whether to publish a new version of nightly or stable. 
+
+Use the following command for a **nightly** release:
 
 ```shell
-./scripts/push-git-tag-for-next-release.sh
+./scripts/push-git-tag-for-next-release.sh --nightly
+```
+
+Or this one for a **stable** release:
+
+```shell
+./scripts/push-git-tag-for-next-release.sh --stable
 ```
 
 This script runs `verify-release.sh`, which takes a long time to run with a clean cache, which is why we don't run it in
 CI. When you have a local cache of IDEA installations then this script can run decently fast (~1-2min).
 
-## Publishing a new stable version
+After successfully pushing the new tag (for example: `v5.2.4819` or `v5.2.4249-nightly`), we are now able to publish.
 
-This workflow is not automated yet. Our goal is to publish stable releases by promoting nightly releases that have been
-manually tested. What we're missing is a script to download the zip file of a nightly release, correct the version
-to be non-nightly and then upload it to the JetBrains Marketplace.
+### 2. Publish a New Release on GitHub
+
+For every stable release, create a GitHub release summarizing the changes.
+
+Visit [releases page](https://github.com/sourcegraph/jetbrains/releases) and click `Draft a new release`, choose your tag and use `Generate release notes`. Release notes should appear automatically. Be aware that the automatic release are based on the history of commits, so sometimes the titles are not properly formatted, capitalized or grammatically correct. **This may sometimes require manual tweaks.**
+
+Try to maintain a similar style to that of the previous releases, similar to [our first release](https://github.com/sourcegraph/jetbrains/releases/tag/v5.2.2301).
+
+It's also optional create GitHub releases for nightly builds where it makes sense.
+
+### 3. Announce the New Release on our internal Slack channel
+
+It is mandatory to post about both stable and nightly releases on our internal `wg-cody-jetbrains` Slack channel. You can refer to past posts in the channel's history for examples.
 
 ## Enabling web view debugging
 
