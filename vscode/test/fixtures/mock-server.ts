@@ -148,10 +148,7 @@ export async function logTestingData(type: 'legacy' | 'new', data: string): Prom
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
-        console.error('Error publishing message:', error)
-    })
-    console.log(`Message published - Type: ${type}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
+    await topicPublisher.publishMessage({ data: dataBuffer })
 }
 
 let currentTestName: string
