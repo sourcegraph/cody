@@ -43,6 +43,34 @@ export interface Result {
 }
 
 export interface IndexedKeywordContextFetcher {
-    getIndexReady(scopeDir: string, whenReadyFn: () => void): Promise<boolean>
-    getResults(query: string, scopeDir: string): Promise<Result[]>
+    getResults(query: string, scopeDirs: string[]): Promise<Promise<Result[]>[]>
+}
+
+/**
+ * File result that renders in the search panel webview
+ */
+export interface SearchPanelFile {
+    uriString: string
+    uriJSON: unknown
+    basename: string
+    dirname: string
+    wsname?: string
+    snippets: SearchPanelSnippet[]
+}
+
+/**
+ * Snippet result that renders in the search panel webview
+ */
+export interface SearchPanelSnippet {
+    contents: string
+    range: {
+        start: {
+            line: number
+            character: number
+        }
+        end: {
+            line: number
+            character: number
+        }
+    }
 }
