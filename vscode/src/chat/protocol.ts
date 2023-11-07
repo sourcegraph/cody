@@ -3,8 +3,10 @@ import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../webviews/NavBar'
@@ -26,6 +28,7 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
+    | { command: 'chatModel'; model: string }
     | { command: 'openFile'; filePath: string }
     | {
           command: 'openLocalFileWithRange'
@@ -76,6 +79,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    | { type: 'chatModels'; models: ChatModelSelection[] }
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -198,3 +202,19 @@ export function archConvertor(arch: string): string {
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
+// Only dotcom is supported currently
+export function getChatModelsForWebview(endpoint?: string | null): ChatModelSelection[] {
+    if (endpoint && isDotCom(endpoint)) {
+        return defaultChatModels
+    }
+    return []
+}
+
+// The allowed chat models for dotcom
+const defaultChatModels = [
+    { title: 'Claude 2', model: 'anthropic/claude-2', provider: 'Anthropic', default: true },
+    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2-cyan', provider: 'Anthropic', default: false },
+    { title: 'Chat GPT 3.5 Turbo', model: 'openai/gpt-3.5-turbo', provider: 'Open AI', default: false },
+    { title: 'Chat GPT 4 Turbo Preview', model: 'openai/gpt-4-1106-preview', provider: 'Open AI', default: false },
+]

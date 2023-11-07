@@ -1,0 +1,36 @@
+.container {
+    margin: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    min-width: calc(100% - 1.1rem);
+}
+
+.dropdown-container {
+    width: 88%;
+    padding: 0.5rem;
+}
+
+.header-logo {
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0.5em;
+    flex-shrink: 0;
+}
+
+.logo {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5em;
+    flex-shrink: 0;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

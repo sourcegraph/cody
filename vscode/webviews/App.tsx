@@ -6,8 +6,9 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
 
-import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
+import { AuthMethod, AuthStatus, getChatModelsForWebview, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
@@ -40,6 +41,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
+    const [chatModels, setChatModels] = useState<ChatModelSelection[]>()
+
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
@@ -62,6 +65,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        setChatModels(getChatModelsForWebview(message.authStatus.endpoint))
                         break
                     case 'login':
                         break
@@ -111,6 +115,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
+                        break
+                    case 'chatModels':
+                        setChatModels(message.models)
                         break
                 }
             }),
@@ -207,6 +214,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     onboardingPopupProps,
                                 },
                             }}
+                            chatModels={chatModels}
                         />
                     )}
                 </>

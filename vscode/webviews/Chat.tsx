@@ -9,6 +9,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
+    ChatModelSelection,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUISuggestionButtonProps,
@@ -23,7 +24,8 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
-import { FileLink } from './FileLink'
+import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -51,6 +53,7 @@ interface ChatboxProps {
         embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
+    chatModels?: ChatModelSelection[]
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -70,6 +73,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatCommands,
     isTranscriptError,
     applessOnboarding,
+    chatModels,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -181,6 +185,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 contextStatus,
                 ...applessOnboarding.props,
             }}
+            chatModels={chatModels}
+            ChatModelDropdownMenu={ChatModelDropdownMenu}
         />
     )
 }

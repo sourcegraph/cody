@@ -56,6 +56,8 @@ interface ChatProps extends ChatClassNames {
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
+    chatModels?: ChatModelSelection[]
+    ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -118,6 +120,14 @@ export interface ChatCommandsProps {
     selectedChatCommand?: number
     onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
+
+export interface ChatModelSelection {
+    title?: string
+    model: string
+    provider: string
+    default: boolean
+}
+
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -173,6 +183,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     filterChatCommands,
     ChatCommandsComponent,
     isTranscriptError,
+    chatModels,
+    ChatModelDropdownMenu,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -399,6 +411,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     isTranscriptError={isTranscriptError}
+                    chatModels={chatModels}
+                    ChatModelDropdownMenu={ChatModelDropdownMenu}
                 />
             )}
 

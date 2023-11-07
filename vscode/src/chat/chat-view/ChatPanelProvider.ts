@@ -66,6 +66,9 @@ export class ChatPanelProvider extends MessageProvider {
                 )
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
+            case 'chatModel':
+                this.chatModel = message.model
+                break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe, '', 'chat')
