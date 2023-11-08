@@ -133,7 +133,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     return result
 }
-
+let messageSent = false
 export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     const message = {
         type,
@@ -149,6 +149,11 @@ export async function logTestingData(type: 'legacy' | 'new', data: string): Prom
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
     await topicPublisher.publishMessage({ data: dataBuffer })
+
+    if (!messageSent) {
+        console.log(`TestRunId: ${currentTestRunID}`)
+        messageSent = true
+    }
 }
 
 let currentTestName: string
