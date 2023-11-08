@@ -50,7 +50,6 @@ describe('getIntent', () => {
         })
     })
 
-
     it('python', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.Python)
 
