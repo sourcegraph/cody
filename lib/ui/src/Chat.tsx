@@ -273,7 +273,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // to avoid triggering default browser shortcuts and bubbling the event.
             const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
             if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
-                console.log(ctrlKeysAllowList.has(event.code), event.getModifierState('AltGraph'))
                 event.preventDefault()
                 event.stopPropagation()
             }
