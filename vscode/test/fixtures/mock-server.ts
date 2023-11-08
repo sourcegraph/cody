@@ -45,7 +45,7 @@ const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testin
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
-    let testRunIdMessageSent = false
+    let testRunMessageSent = false
     const app = express()
     app.use(express.json())
 
@@ -54,9 +54,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         void logTestingData('legacy', req.body)
         storeLoggedEvents(req.body)
         res.status(200)
-        if (!testRunIdMessageSent) {
-            console.log(`TestRunId: ${currentTestRunID}`)
-            testRunIdMessageSent = true
+        if (!testRunMessageSent) {
+            console.log(`TestName: ${currentTestName} | TestRunId: ${currentTestRunID}`)
+            testRunMessageSent = true
         }
     })
 
