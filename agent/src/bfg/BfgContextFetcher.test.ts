@@ -9,8 +9,9 @@ import * as rimraf from 'rimraf'
 import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
+import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { BfgContextFetcher } from '../../../vscode/src/graph/bfg/BfgContextFetcher'
+import { BfgRetriever } from '../../../vscode/src/graph/bfg/BfgContextFetcher'
 import { Agent, initializeVscodeExtension } from '../agent'
 import { MessageHandler } from '../jsonrpc-alias'
 import * as vscode_shim from '../vscode-shim'
@@ -82,15 +83,17 @@ describe('BfgContextFetcher', async () => {
             content: content.replace(CURSOR, ''),
         })
 
-        const bfg = new BfgContextFetcher(extensionContext as vscode.ExtensionContext, () => gitdirUri)
+        const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext, () => gitdirUri)
 
-        const doc = agent.workspace.agentTextDocument({ filePath })
-        assert(doc.getText().length > 0)
+        const document = agent.workspace.agentTextDocument({ filePath })
+        assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)
-        const position = doc.positionAt(offset)
+        const position = document.positionAt(offset)
+        const docContext = getCurrentDocContext({ document, position, maxPrefixLength: 10_000, maxSuffixLength: 1_000 })
         const maxChars = 1_000
+        const maxMs = 100
 
-        expect(await bfg.getContextAtPosition(doc, position, maxChars, undefined)).toHaveLength(2)
+        expect(await bfg.retrieve({ document, position, docContext, hints: { maxChars, maxMs } })).toHaveLength(2)
     })
 })

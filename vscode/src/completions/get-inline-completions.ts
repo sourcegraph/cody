@@ -5,7 +5,7 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 
 import { logError } from '../log'
 
-import { ContextMixer } from './context/context'
+import { ContextMixer } from './context/context-mixer'
 import { DocumentContext } from './get-current-doc-context'
 import { AutocompleteItem } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'

@@ -68,4 +68,9 @@ export interface ContextRetriever extends vscode.Disposable {
      * triggered, any further work is ignored so you can stop immediately.
      */
     retrieve(options: ContextRetrieverOptions): Promise<ContextSnippet[]>
+
+    /**
+     * Return true if the retriever supports the given languageId.
+     */
+    isSupportedForLanguageId(languageId: string): boolean
 }

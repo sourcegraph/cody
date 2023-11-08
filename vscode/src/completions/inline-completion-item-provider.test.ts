@@ -52,13 +52,15 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             //
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
             statusBar: null as any,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+            extensionContext: null as any,
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
                 model: null,
             }),
             triggerNotice: null,
-
+            contextStrategy: 'none',
             ...superArgs,
         })
         this.getInlineCompletions = mockGetInlineCompletions

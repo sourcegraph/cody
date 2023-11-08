@@ -10,7 +10,7 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { ContextMixer } from './context/context'
+import { ContextMixer } from './context/context-mixer'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -107,6 +107,9 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
+    contextStrategy: 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none'
+    extensionContext: vscode.ExtensionContext
+
     // Feature flags
     completeSuggestWidgetSelection?: boolean
     disableNetworkCache?: boolean
@@ -180,7 +183,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
-        this.contextMixer = new ContextMixer()
+        this.contextMixer = new ContextMixer(config.contextStrategy, config.extensionContext)
 
         const chatHistory = localStorage.getChatHistory()?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0

@@ -49,6 +49,10 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
         return matches
     }
 
+    public isSupportedForLanguageId(): boolean {
+        return true
+    }
+
     public dispose(): void {
         this.history.dispose()
     }

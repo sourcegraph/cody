@@ -11,7 +11,6 @@ import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { GetContextResult } from '../../src/completions/context/context'
 import { InlineCompletionItemProvider } from '../../src/completions/inline-completion-item-provider'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { ProviderConfig } from '../../src/completions/providers/provider'
@@ -32,7 +31,7 @@ let providerConfig: ProviderConfig | null
 initializeNetworkAgent()
 
 // TODO: bring back support for mocked context
-async function initCompletionsProvider(_context: GetContextResult): Promise<InlineCompletionItemProvider> {
+async function initCompletionsProvider(): Promise<InlineCompletionItemProvider> {
     if (secretStorage instanceof VSCodeSecretStorage) {
         secretStorage.setStorage(new InMemorySecretStorage() as any as vscode.SecretStorage)
     }
@@ -77,6 +76,8 @@ async function initCompletionsProvider(_context: GetContextResult): Promise<Inli
             addError: () => () => {},
         },
         triggerNotice: null,
+        extensionContext: null as any,
+        contextStrategy: 'none',
     })
 
     return completionsProvider
@@ -130,15 +131,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
         for (let i = 0; i < iterationsPerCodeSample; i++) {
             const start = Date.now()
 
-            const context = {
-                context: sample.context,
-                logSummary: {
-                    strategy: 'fake',
-                    duration: 0,
-                },
-            }
-
-            const completionsProvider = await initCompletionsProvider(context)
+            const completionsProvider = await initCompletionsProvider()
             const completionItems = await completionsProvider.provideInlineCompletionItems(
                 wrapVSCodeTextDocument(textDocument),
                 position,

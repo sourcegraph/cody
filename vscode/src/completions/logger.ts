@@ -9,7 +9,7 @@ import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { telemetryService } from '../services/telemetry'
 
-import { ContextSummary } from './context/context'
+import { ContextSummary } from './context/context-mixer'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
 import { RequestParams } from './request-manager'

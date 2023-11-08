@@ -18,6 +18,7 @@ interface InlineCompletionItemProviderArgs {
     statusBar: CodyStatusBar
     authProvider: AuthProvider
     triggerNotice: ((notice: { key: string }) => void) | null
+    extensionContext: vscode.ExtensionContext
 }
 
 export async function createInlineCompletionItemProvider({
@@ -26,6 +27,7 @@ export async function createInlineCompletionItemProvider({
     statusBar,
     authProvider,
     triggerNotice,
+    extensionContext,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
@@ -48,8 +50,8 @@ export async function createInlineCompletionItemProvider({
 
     const [
         providerConfig,
-        _lspGraphContextFlag,
-        _bfgGraphContextFlag,
+        lspGraphContextFlag,
+        bfgGraphContextFlag,
         disableNetworkCache,
         disableRecyclingOfPreviousRequests,
     ] = await Promise.all([
@@ -60,6 +62,17 @@ export async function createInlineCompletionItemProvider({
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
     ])
     if (providerConfig) {
+        const contextStrategy =
+            config.autocompleteExperimentalGraphContext === 'lsp-light'
+                ? 'lsp-light'
+                : config.autocompleteExperimentalGraphContext === 'bfg'
+                ? 'bfg'
+                : lspGraphContextFlag
+                ? 'lsp-light'
+                : bfgGraphContextFlag
+                ? 'bfg'
+                : 'jaccard-similarity'
+
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
             statusBar,
@@ -68,6 +81,8 @@ export async function createInlineCompletionItemProvider({
             disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
+            contextStrategy,
+            extensionContext,
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
