@@ -1,6 +1,6 @@
 .container {
     position: absolute;
-    bottom: 100%;
+    bottom: 120%;
     box-sizing: border-box;
     /* 2px above the input */
     transform: translateY(calc(var(--spacing) - 5px));

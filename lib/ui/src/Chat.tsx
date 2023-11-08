@@ -224,6 +224,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const [contextConfig, setContextConfig] = useState({ ...defaultChatContextConfig })
 
+    /**
+     * Callback function called when a chat context file is selected from the context selector.
+     *
+     * Updates the chat input with the selected file context.
+     *
+     * Trims any existing @file text from the input.
+     * Adds the selected file path and range to the input.
+     * Updates contextConfig with the new added context file.
+     *
+     * This allows the user to quickly insert file context into the chat input.
+     */
     const onChatContextSelected = useCallback(
         (selected: ContextFile, input: string): void => {
             const lastAtIndex = input.lastIndexOf('@')
@@ -531,33 +542,31 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
-                {displayCommands && ChatCommandsComponent && formInput && (
-                    <ChatCommandsComponent
-                        chatCommands={displayCommands}
-                        selectedChatCommand={selectedChatCommand}
-                        setFormInput={setFormInput}
-                        setSelectedChatCommand={setSelectedChatCommand}
-                        onSubmit={onSubmit}
-                    />
-                )}
-                {contextSelection && UserContextSelectorComponent && formInput && (
-                    <UserContextSelectorComponent
-                        selected={selectedChatContext}
-                        onSelected={onChatContextSelected}
-                        contextSelection={contextSelection}
-                        formInput={formInput}
-                        onSubmit={onSubmit}
-                    />
-                )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                {!displayCommands?.length && !contextSelection?.length && ContextStatusComponent && (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                )}
+                {ContextStatusComponent && <ContextStatusComponent {...contextStatusComponentProps} />}
                 <div className={styles.textAreaContainer}>
+                    {displayCommands && ChatCommandsComponent && formInput && (
+                        <ChatCommandsComponent
+                            chatCommands={displayCommands}
+                            selectedChatCommand={selectedChatCommand}
+                            setFormInput={setFormInput}
+                            setSelectedChatCommand={setSelectedChatCommand}
+                            onSubmit={onSubmit}
+                        />
+                    )}
+                    {contextSelection && UserContextSelectorComponent && formInput && (
+                        <UserContextSelectorComponent
+                            selected={selectedChatContext}
+                            onSelected={onChatContextSelected}
+                            contextSelection={contextSelection}
+                            formInput={formInput}
+                            onSubmit={onSubmit}
+                        />
+                    )}
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}
