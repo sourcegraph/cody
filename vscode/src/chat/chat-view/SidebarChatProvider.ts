@@ -78,6 +78,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 )
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
+            case 'chatModel':
+                this.chatModel = message.model
+                break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe)

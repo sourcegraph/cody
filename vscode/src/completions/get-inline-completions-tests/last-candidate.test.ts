@@ -25,7 +25,6 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             position,
             maxPrefixLength: 100,
             maxSuffixLength: 100,
-            enableExtendedTriggers: true,
             context: lastTriggerSelectedCompletionInfo
                 ? {
                       triggerKind: vscode.InlineCompletionTriggerKind.Automatic,

@@ -102,12 +102,14 @@ export class ChatManager implements vscode.Disposable {
             return
         }
 
-        // If chat view is not needed, run the recipe via sidebar chat
-        if (!openChatView) {
+        // If chat view is not needed, run the recipe via sidebar chat without creating a new panel
+        const isDefaultEditCommands = ['/doc', '/edit'].includes(humanChatInput)
+        if (!openChatView || isDefaultEditCommands) {
             await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
             return
         }
 
+        // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
         if (!openChatView || !this.chatPanelsManager) {
             await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)

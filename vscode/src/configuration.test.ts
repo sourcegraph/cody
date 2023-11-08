@@ -23,7 +23,7 @@ describe('getConfiguration', () => {
                 scminput: false,
             },
             experimentalCommandLenses: false,
-            experimentalEditorTitleCommandIcon: false,
+            editorTitleCommandIcon: true,
             experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
@@ -74,7 +74,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.commandLenses':
                         return true
-                    case 'cody.experimental.editorTitleCommandIcon':
+                    case 'cody.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -139,7 +139,7 @@ describe('getConfiguration', () => {
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
-            experimentalEditorTitleCommandIcon: true,
+            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
             inlineChat: true,

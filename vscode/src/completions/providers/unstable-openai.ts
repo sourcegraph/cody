@@ -198,7 +198,6 @@ export function createProviderConfig({
             return new UnstableOpenAIProvider(options, { maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         model: model ?? 'gpt-35-turbo',
     }
