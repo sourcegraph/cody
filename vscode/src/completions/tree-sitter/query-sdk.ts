@@ -185,10 +185,8 @@ function getIntentFromCaptures(
     // If we didn't find a multinode intent, use the most nested atomic capture group.
     // Atomic capture groups are matches with one node and `!` at the end the capture group name.
     const atomicCapture = findLast(captures, capture => {
-        const enclosesCursor = (
-            capture.node.startPosition.column <= cursor.column &&
-            cursor.column <= capture.node.endPosition.column
-        )
+        const enclosesCursor =
+            capture.node.startPosition.column <= cursor.column && cursor.column <= capture.node.endPosition.column
 
         return capture.name.endsWith('!') && enclosesCursor
     })
