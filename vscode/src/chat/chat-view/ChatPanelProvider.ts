@@ -297,7 +297,8 @@ export class ChatPanelProvider extends MessageProvider {
         }
         try {
             const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
-            await vscode.window.showTextDocument(doc)
+            // open doc next to current view
+            await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false })
         } catch {
             // Try to open the file in the sourcegraph view
             const sourcegraphSearchURL = new URL(
