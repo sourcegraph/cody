@@ -299,9 +299,7 @@ export class ChatPanelProvider extends MessageProvider {
             const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
             // Check current webview panel location to open the doc side by side
             const viewColumn =
-                this.webviewPanel?.viewColumn === vscode.ViewColumn.One
-                    ? vscode.ViewColumn.Beside
-                    : vscode.ViewColumn.One
+                this.webviewPanel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One
             await vscode.window.showTextDocument(doc, { viewColumn, preserveFocus: false })
         } catch {
             // Try to open the file in the sourcegraph view
