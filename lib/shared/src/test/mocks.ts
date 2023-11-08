@@ -3,7 +3,6 @@ import { URI } from 'vscode-uri'
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ContextFile } from '../codebase-context/messages'
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -139,8 +138,11 @@ export class MockEditor implements Editor {
         return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
     }
 
-    public async getTextEditorContentForContextFile(file: ContextFile): Promise<string | undefined> {
-        return this.mocks.getTextEditorContentForContextFile?.(file) ?? Promise.resolve(undefined)
+    public async getTextEditorContentForFile(
+        uri: URI,
+        range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve(undefined)
     }
 }
 

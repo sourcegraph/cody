@@ -2,7 +2,6 @@ import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
 import { FixupIntent } from '../chat/recipes/fixup'
-import { ContextFile } from '../codebase-context/messages'
 
 export interface ActiveTextEditor {
     content: string
@@ -136,7 +135,7 @@ export interface Editor<
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
 
-    getTextEditorContentForContextFile(contextFile: ContextFile): Promise<string | undefined>
+    getTextEditorContentForFile(uri: URI, range?: ActiveTextEditorSelectionRange): Promise<string | undefined>
 
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
@@ -197,7 +196,10 @@ export class NoopEditor implements Editor {
         return null
     }
 
-    public getTextEditorContentForContextFile(_contextFile: ContextFile): Promise<string | undefined> {
+    public getTextEditorContentForFile(
+        _uri: URI,
+        _range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
         return Promise.resolve(undefined)
     }
 

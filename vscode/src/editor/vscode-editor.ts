@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
 import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -203,15 +202,18 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
-    public async getTextEditorContentForContextFile(file: ContextFile): Promise<string | undefined> {
-        if (!file.fileUri) {
+    public async getTextEditorContentForFile(
+        fileUri: vscode.Uri,
+        selectionRange?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        if (!fileUri) {
             return undefined
         }
 
         let range: vscode.Range | undefined
-        if (file.range) {
-            const startLine = file?.range?.start?.line
-            let endLine = file?.range.end?.line
+        if (selectionRange) {
+            const startLine = selectionRange?.start?.line
+            let endLine = selectionRange?.end?.line
             if (startLine === endLine) {
                 endLine++
             }
@@ -219,7 +221,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
 
         // Get the text from document by file Uri
-        const vscodeUri = vscode.Uri.parse(file.fileUri.fsPath)
+        const vscodeUri = vscode.Uri.parse(fileUri.fsPath)
         const doc = await vscode.workspace.openTextDocument(vscodeUri)
         return doc.getText(range)
     }

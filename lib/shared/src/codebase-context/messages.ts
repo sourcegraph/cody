@@ -12,7 +12,7 @@ export type ContextKind = 'symbol' | 'file' | 'function' | 'method' | 'class'
 export interface ContextFile {
     fileName: string // the relative path of the file
 
-    fileUri?: URI
+    uri?: URI
     path?: {
         basename?: string
         dirname?: string
@@ -84,7 +84,7 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
     }
 
     const fileMessage = `Context from file path @${file.fileName}:\n${code}`
-    const symbolMessage = `$${file.fileName} is a ${file.kind} symbol from file path @${file.fileUri?.fsPath}:\n${code}`
+    const symbolMessage = `$${file.fileName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`
     const text = file.kind === 'file' ? fileMessage : symbolMessage
 
     return [

@@ -6,7 +6,7 @@ import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
-import { createDisplayTexWithContextFiles } from '../prompts/get-display-text'
+import { createDisplayTextWithContextFiles } from '../prompts/get-display-text'
 import {
     extractTestType,
     getHumanLLMText,
@@ -42,14 +42,11 @@ export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
     public title = 'Custom Prompt'
 
-    private humanFormattedText = ''
-
     /**
      * Retrieves an Interaction object based on the humanChatInput and RecipeContext provided.
      * The Interaction object contains messages from both the human and the assistant, as well as context information.
      */
     public async getInteraction(commandRunnerID: string, context: RecipeContext): Promise<Interaction | null> {
-        this.humanFormattedText = '' // reset
         const command = context.editor.controllers?.command?.getCommand(commandRunnerID)
         if (!command) {
             const errorMessage = 'Invalid command -- command not found.'
@@ -93,7 +90,7 @@ export class CustomPrompt implements Recipe {
             : getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
 
         if (contextFiles?.length) {
-            displayText = createDisplayTexWithContextFiles(contextFiles, promptText)
+            displayText = createDisplayTextWithContextFiles(contextFiles, promptText)
         }
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
