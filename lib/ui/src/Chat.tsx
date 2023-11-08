@@ -232,7 +232,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 const inputWithoutAtFileInput = input.slice(0, lastAtIndex)
                 setSelectedChatContext(0)
 
-                const isFileType = selected.kind === 'file'
+                const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
                 const symbolName = isFileType ? '' : `$${selected.fileName}`
                 // Add empty space at the end to end the file matching process

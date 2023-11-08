@@ -3,7 +3,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ContextKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -95,7 +95,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[]; kind?: ContextKind }
+    | { type: 'userContextFiles'; context: ContextFile[]; kind?: ContextFileType }
     | { type: 'chatModels'; models: ChatModelSelection[] }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }

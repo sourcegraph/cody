@@ -3,30 +3,41 @@ import { URI } from 'vscode-uri'
 import { ActiveTextEditorSelectionRange } from '../editor'
 import { Message } from '../sourcegraph-api'
 
-// tracked for telemetry purposes. Which context source provided this context
-// file.
+// tracked for telemetry purposes. Which context source provided this context file.
+// embeddings: context file returned by the embeddings client
+// user: context file provided by the user explicitly via chat input
+// keyword: the context file returned from local keyword search
+// editor: context file retrieved from the current editor
 export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor'
 
-export type ContextKind = 'symbol' | 'file' | 'function' | 'method' | 'class'
+export type ContextFileType = 'file' | 'symbol'
+
+export type SymbolKind = 'class' | 'function' | 'method'
 
 export interface ContextFile {
-    fileName: string // the relative path of the file
+    // Name of the context
+    // for file, this is usually the relative path
+    // for symbol, this is usually the fuzzy name of the symbol
+    fileName: string
 
+    content?: string
+
+    repoName?: string
+    revision?: string
+
+    // Location
     uri?: URI
     path?: {
         basename?: string
         dirname?: string
         relative?: string
     }
-
     range?: ActiveTextEditorSelectionRange
-    content?: string
 
-    repoName?: string
-    revision?: string
-
-    kind?: ContextKind
+    // metadata
     source?: ContextFileSource
+    type?: ContextFileType
+    kind?: SymbolKind
 }
 
 export interface ContextMessage extends Message {
@@ -85,7 +96,7 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
 
     const fileMessage = `Context from file path @${file.fileName}:\n${code}`
     const symbolMessage = `$${file.fileName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`
-    const text = file.kind === 'file' ? fileMessage : symbolMessage
+    const text = file.type === 'file' ? fileMessage : symbolMessage
 
     return [
         { speaker: 'human', text, file },
