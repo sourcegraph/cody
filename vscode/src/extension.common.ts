@@ -26,7 +26,7 @@ export interface PlatformContext {
     createCommandsController?: Constructor<typeof CommandsController>
     createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
     createSymfRunner?: Constructor<typeof SymfRunner>
-    createBfgContextFetcher?: Constructor<typeof BfgRetriever>
+    createBfgRetriever?: () => BfgRetriever
     createFilenameContextFetcher?: Constructor<typeof FilenameContextFetcher>
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>

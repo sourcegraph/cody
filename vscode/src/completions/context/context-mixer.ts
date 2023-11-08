@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { BfgRetriever } from '../../graph/bfg/BfgContextFetcher'
 import { logDebug } from '../../log'
-import { gitDirectoryUri } from '../../repository/repositoryHelpers'
 import { DocumentContext } from '../get-current-doc-context'
 import { ContextRetriever, ContextSnippet } from '../types'
 
@@ -38,15 +37,15 @@ export class ContextMixer implements vscode.Disposable {
 
     constructor(
         contextStrategy: 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none',
-        extensionContext: vscode.ExtensionContext
+        createBfgRetriever?: () => BfgRetriever
     ) {
         if (contextStrategy !== 'none') {
             this.localRetriever = new JaccardSimilarityRetriever()
             this.disposables.push(this.localRetriever)
         }
 
-        if (contextStrategy === 'bfg') {
-            this.graphRetriever = new BfgRetriever(extensionContext, gitDirectoryUri)
+        if (contextStrategy === 'bfg' && createBfgRetriever) {
+            this.graphRetriever = createBfgRetriever()
             this.disposables.push(this.graphRetriever)
         } else if (contextStrategy === 'lsp-light') {
             this.graphRetriever = LspLightGraphCache.createInstance()

@@ -76,7 +76,6 @@ async function initCompletionsProvider(): Promise<InlineCompletionItemProvider> 
             addError: () => () => {},
         },
         triggerNotice: null,
-        extensionContext: null as any,
         contextStrategy: 'none',
     })
 

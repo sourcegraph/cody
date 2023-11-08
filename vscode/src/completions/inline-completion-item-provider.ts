@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
+import type { BfgRetriever } from '../graph/bfg/BfgContextFetcher'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -108,7 +109,7 @@ export interface CodyCompletionItemProviderConfig {
     isRunningInsideAgent?: boolean
 
     contextStrategy: 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none'
-    extensionContext: vscode.ExtensionContext
+    createBfgRetriever?: () => BfgRetriever
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -131,7 +132,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     // private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
-    private readonly config: Required<CodyCompletionItemProviderConfig>
+    private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
@@ -153,6 +154,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         disableNetworkCache = false,
         disableRecyclingOfPreviousRequests = false,
         tracer = null,
+        createBfgRetriever,
         ...config
     }: CodyCompletionItemProviderConfig) {
         this.config = {
@@ -183,7 +185,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
-        this.contextMixer = new ContextMixer(config.contextStrategy, config.extensionContext)
+        this.contextMixer = new ContextMixer(config.contextStrategy, createBfgRetriever)
 
         const chatHistory = localStorage.getChatHistory()?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0

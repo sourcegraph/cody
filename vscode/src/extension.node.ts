@@ -16,6 +16,7 @@ import { BfgRetriever } from './graph/bfg/BfgContextFetcher'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { SymfRunner } from './local-context/symf'
+import { gitDirectoryUri } from './repository/repositoryHelpers'
 import { getRgPath } from './rg'
 import { NodeSentryService } from './services/sentry/sentry.node'
 
@@ -33,7 +34,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createSymfRunner: (...args) => new SymfRunner(...args),
-        createBfgContextFetcher: (...args) => new BfgRetriever(...args),
+        createBfgRetriever: () => new BfgRetriever(context, gitDirectoryUri),
         createSentryService: (...args) => new NodeSentryService(...args),
 
         // Include additional recipes that require Node packages (such as `child_process`).

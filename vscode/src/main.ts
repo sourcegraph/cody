@@ -522,7 +522,7 @@ const register = async (
                     statusBar,
                     authProvider,
                     triggerNotice: notice => chatManager.triggerNotice(notice),
-                    extensionContext: context,
+                    createBfgRetriever: platform.createBfgRetriever,
                 })
             })
             .catch(error => {

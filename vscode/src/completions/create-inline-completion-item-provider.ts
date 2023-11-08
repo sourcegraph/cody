@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
+import type { BfgRetriever } from '../graph/bfg/BfgContextFetcher'
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -18,7 +19,7 @@ interface InlineCompletionItemProviderArgs {
     statusBar: CodyStatusBar
     authProvider: AuthProvider
     triggerNotice: ((notice: { key: string }) => void) | null
-    extensionContext: vscode.ExtensionContext
+    createBfgRetriever?: () => BfgRetriever
 }
 
 export async function createInlineCompletionItemProvider({
@@ -27,7 +28,7 @@ export async function createInlineCompletionItemProvider({
     statusBar,
     authProvider,
     triggerNotice,
-    extensionContext,
+    createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
@@ -82,7 +83,7 @@ export async function createInlineCompletionItemProvider({
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,
-            extensionContext,
+            createBfgRetriever,
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
