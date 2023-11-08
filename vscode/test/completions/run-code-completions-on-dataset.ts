@@ -12,7 +12,6 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { GetContextResult } from '../../src/completions/context/context'
-import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 import { InlineCompletionItemProvider } from '../../src/completions/inline-completion-item-provider'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { ProviderConfig } from '../../src/completions/providers/provider'
@@ -32,7 +31,8 @@ let providerConfig: ProviderConfig | null
 
 initializeNetworkAgent()
 
-async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
+// TODO: bring back support for mocked context
+async function initCompletionsProvider(_context: GetContextResult): Promise<InlineCompletionItemProvider> {
     if (secretStorage instanceof VSCodeSecretStorage) {
         secretStorage.setStorage(new InMemorySecretStorage() as any as vscode.SecretStorage)
     }
@@ -56,15 +56,13 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     }
 
     graphqlClient.onConfigurationChange(initialConfig)
-    const { codeCompletionsClient, codebaseContext } = await configureExternalServices(
+    const { codeCompletionsClient } = await configureExternalServices(
         initialConfig,
         'rg',
         undefined,
         new NoopEditor(),
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
-
-    const history = new VSCodeDocumentHistory()
 
     providerConfig = await createProviderConfig(initialConfig, codeCompletionsClient)
     if (!providerConfig) {
@@ -78,9 +76,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
             dispose: () => {},
             addError: () => () => {},
         },
-        history,
-        getCodebaseContext: () => codebaseContext,
-        contextFetcher: () => Promise.resolve(context),
         triggerNotice: null,
     })
 

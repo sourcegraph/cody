@@ -3,17 +3,11 @@ import * as vscode from 'vscode'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { ContextProvider } from '../chat/ContextProvider'
-import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
-import { gitDirectoryUri } from '../repository/repositoryHelpers'
 import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
-import { GraphContextFetcher } from './context/context-graph'
-import { VSCodeDocumentHistory } from './context/history'
-import { LspLightGraphCache } from './context/lsp-light-graph-cache'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
@@ -22,16 +16,17 @@ interface InlineCompletionItemProviderArgs {
     config: Configuration
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
-    contextProvider: ContextProvider
     authProvider: AuthProvider
     triggerNotice: ((notice: { key: string }) => void) | null
 }
 
-export async function createInlineCompletionItemProvider(
-    { config, client, statusBar, contextProvider, authProvider, triggerNotice }: InlineCompletionItemProviderArgs,
-    context: vscode.ExtensionContext,
-    platform: Omit<PlatformContext, 'getRgPath'>
-): Promise<vscode.Disposable> {
+export async function createInlineCompletionItemProvider({
+    config,
+    client,
+    statusBar,
+    authProvider,
+    triggerNotice,
+}: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
@@ -53,37 +48,21 @@ export async function createInlineCompletionItemProvider(
 
     const [
         providerConfig,
-        lspGraphContextFlag,
-        bfgGraphContextFlag,
+        _lspGraphContextFlag,
+        _bfgGraphContextFlag,
         disableNetworkCache,
         disableRecyclingOfPreviousRequests,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContextBfg),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContextBfg),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
     ])
     if (providerConfig) {
-        const history = new VSCodeDocumentHistory()
-        let graphContextFetcher: GraphContextFetcher | undefined
-
-        if (config.autocompleteExperimentalGraphContext === 'lsp-light') {
-            graphContextFetcher = LspLightGraphCache.createInstance()
-        } else if (config.autocompleteExperimentalGraphContext === 'bfg') {
-            graphContextFetcher = platform.createBfgContextFetcher?.(context, gitDirectoryUri)
-        } else if (lspGraphContextFlag) {
-            graphContextFetcher = LspLightGraphCache.createInstance()
-        } else if (bfgGraphContextFlag) {
-            graphContextFetcher = platform.createBfgContextFetcher?.(context, gitDirectoryUri)
-        }
-
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
-            history,
             statusBar,
-            getCodebaseContext: () => contextProvider.context,
-            graphContextFetcher,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             disableNetworkCache,
             disableRecyclingOfPreviousRequests,
@@ -103,9 +82,6 @@ export async function createInlineCompletionItemProvider(
             ),
             registerAutocompleteTraceView(completionsProvider)
         )
-        if (graphContextFetcher) {
-            disposables.push(graphContextFetcher)
-        }
     } else if (config.isRunningInsideAgent) {
         throw new Error(
             "Can't register completion provider because `providerConfig` evaluated to `null`. " +
