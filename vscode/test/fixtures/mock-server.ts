@@ -54,7 +54,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         void logTestingData('legacy', req.body)
         storeLoggedEvents(req.body)
         res.status(200)
-        if (!messageSent) {
+        if (!testRunIdMessageSent) {
             console.log(`TestRunId: ${currentTestRunID}`)
             testRunIdMessageSent = true
         }
