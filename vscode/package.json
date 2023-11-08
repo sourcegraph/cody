@@ -229,7 +229,7 @@
           "id": "cody.search",
           "name": "Search (experimental)",
           "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.new-search"
+          "when": "cody.activated && config.cody.experimental.newSearch"
         },
         {
           "id": "cody.fixup.tree.view",
@@ -530,7 +530,7 @@
         "group": "Cody",
         "title": "Update search index for current workspace folder",
         "icon": "$(refresh)",
-        "when": "cody.activated && config.cody.experimental.new-search"
+        "when": "cody.activated && config.cody.experimental.newSearch"
       },
       {
         "command": "cody.search.index-update-all",
@@ -538,7 +538,7 @@
         "group": "Cody",
         "title": "Update search indices for all workspace folders",
         "icon": "$(sync)",
-        "when": "cody.activated && config.cody.experimental.new-search"
+        "when": "cody.activated && config.cody.experimental.newSearch"
       }
     ],
     "keybindings": [
@@ -1015,7 +1015,7 @@
           "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
         },
-        "cody.experimental.new-search": {
+        "cody.experimental.newSearch": {
           "order": 99,
           "type": "boolean",
           "markdownDescription": "New search UI",
