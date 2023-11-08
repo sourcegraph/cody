@@ -45,11 +45,11 @@ const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testin
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
-    let testRunMessageSent = false
     const app = express()
     app.use(express.json())
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
+    let testRunMessageSent = false
     app.post('/.api/testLogging', (req, res) => {
         void logTestingData('legacy', req.body)
         storeLoggedEvents(req.body)
