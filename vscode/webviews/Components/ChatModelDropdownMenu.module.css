@@ -20,8 +20,8 @@
 }
 
 .logo {
-    width: 1rem;
-    height: 1rem;
+    width: 0.8rem;
+    height: 0.8rem;
     margin-right: 0.5em;
     flex-shrink: 0;
 }
