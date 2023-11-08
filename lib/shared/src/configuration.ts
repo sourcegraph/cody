@@ -19,7 +19,7 @@ export interface Configuration {
     debugEnable: boolean
     debugFilter: RegExp | null
     debugVerbose: boolean
-    telemetryLevel: 'all' | 'off'
+    telemetryLevel: 'all' | 'off' | 'agent'
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: string
@@ -30,7 +30,7 @@ export interface Configuration {
     experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
     experimentalCommandLenses: boolean
-    experimentalEditorTitleCommandIcon: boolean
+    editorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
@@ -42,6 +42,7 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null
     isRunningInsideAgent?: boolean
+    agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

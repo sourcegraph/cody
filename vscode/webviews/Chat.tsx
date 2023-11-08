@@ -6,9 +6,11 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
+    ChatModelSelection,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUISuggestionButtonProps,
@@ -23,7 +25,8 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
-import { FileLink } from './FileLink'
+import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -51,8 +54,8 @@ interface ChatboxProps {
         embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
+    chatModels?: ChatModelSelection[]
 }
-
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     messageBeingEdited,
@@ -70,6 +73,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatCommands,
     isTranscriptError,
     applessOnboarding,
+    chatModels,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -95,14 +99,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, {
+            const eventData = {
                 value: text,
                 lastChatUsedEmbeddings: Boolean(
                     transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
                 ),
-            })
+                transcript: '',
+            }
+
+            if (applessOnboarding.endpoint && isDotCom(applessOnboarding.endpoint)) {
+                eventData.transcript = JSON.stringify(transcript)
+            }
+
+            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
         },
-        [telemetryService, transcript]
+        [telemetryService, transcript, applessOnboarding]
     )
 
     const onCopyBtnClick = useCallback(
@@ -181,6 +192,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 contextStatus,
                 ...applessOnboarding.props,
             }}
+            chatModels={chatModels}
+            ChatModelDropdownMenu={ChatModelDropdownMenu}
         />
     )
 }
