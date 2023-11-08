@@ -274,13 +274,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
             if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
                 event.preventDefault()
-                event.stopPropagation()
             }
 
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
-            if (event.altKey && event.key === 'c') {
+            const vscodeCodyShortcuts = new Set(['Slash', 'KeyC'])
+            if (event.altKey && vscodeCodyShortcuts.has(event.code)) {
                 event.preventDefault()
-                event.stopPropagation()
             }
 
             // Handles cycling through chat command suggestions using the up and down arrow keys
