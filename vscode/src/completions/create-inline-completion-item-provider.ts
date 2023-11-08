@@ -95,7 +95,8 @@ export async function createInlineCompletionItemProvider({
                 [{ notebookType: '*' }, ...documentFilters],
                 completionsProvider
             ),
-            registerAutocompleteTraceView(completionsProvider)
+            registerAutocompleteTraceView(completionsProvider),
+            completionsProvider
         )
     } else if (config.isRunningInsideAgent) {
         throw new Error(
