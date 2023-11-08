@@ -45,6 +45,7 @@ const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testin
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
+    let testRunIdMessageSent = false
     const app = express()
     app.use(express.json())
 
@@ -53,6 +54,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         void logTestingData('legacy', req.body)
         storeLoggedEvents(req.body)
         res.status(200)
+        if (!messageSent) {
+            console.log(`TestRunId: ${currentTestRunID}`)
+            testRunIdMessageSent = true
+        }
     })
 
     // matches @sourcegraph/cody-shared/src/sourcegraph-api/telemetry/MockServerTelemetryExporter
@@ -133,7 +138,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     return result
 }
-let messageSent = false
 export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     const message = {
         type,
@@ -149,11 +153,6 @@ export async function logTestingData(type: 'legacy' | 'new', data: string): Prom
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
     await topicPublisher.publishMessage({ data: dataBuffer })
-
-    if (!messageSent) {
-        console.log(`TestRunId: ${currentTestRunID}`)
-        messageSent = true
-    }
 }
 
 let currentTestName: string
