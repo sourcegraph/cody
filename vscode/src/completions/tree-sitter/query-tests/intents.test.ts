@@ -49,4 +49,16 @@ describe('getIntent', () => {
             sourcesPath: 'test-data/intents.tsx',
         })
     })
+
+
+    it('python', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.Python)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getCompletionIntent,
+            sourcesPath: 'test-data/intents.py',
+        })
+    })
 })

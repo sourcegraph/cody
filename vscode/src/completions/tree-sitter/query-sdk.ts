@@ -173,16 +173,9 @@ function getIntentFromCaptures(
         })
     )
 
-    const cursorCaptureIndex = captures.findIndex(capture => capture.node === cursorCapture?.node)
-
     // Find the corresponding preceding intent capture that matches the cursor capture name.
-    const intentCapture = findLast(captures.slice(0, cursorCaptureIndex), capture => {
-        const { name, node } = capture
-
-        const matchesCursorPosition =
-            node.startPosition.column === cursor.column && node.startPosition.row === cursor.row
-
-        return name === withoutCursorSuffix(cursorCapture?.name) && matchesCursorPosition
+    const intentCapture = findLast(captures, capture => {
+        return capture.name === withoutCursorSuffix(cursorCapture?.name)
     })
 
     if (cursorCapture && intentCapture) {
@@ -192,7 +185,12 @@ function getIntentFromCaptures(
     // If we didn't find a multinode intent, use the most nested atomic capture group.
     // Atomic capture groups are matches with one node and `!` at the end the capture group name.
     const atomicCapture = findLast(captures, capture => {
-        return capture.name.endsWith('!')
+        const enclosesCursor = (
+            capture.node.startPosition.column <= cursor.column &&
+            cursor.column <= capture.node.endPosition.column
+        )
+
+        return capture.name.endsWith('!') && enclosesCursor
     })
 
     if (atomicCapture) {
