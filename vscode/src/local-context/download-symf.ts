@@ -38,7 +38,11 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
         return symfPath
     }
 
-    const symfURL = `https://github.com/sourcegraph/symf/releases/download/${symfVersion}/symf-${arch}-${platform}.zip`
+    // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
+    // identifier (linux-musl, windows-gnu, macos).
+    const zigPlatform = platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
+
+    const symfURL = `https://github.com/sourcegraph/symf/releases/download/${symfVersion}/symf-${arch}-${zigPlatform}.zip`
     logDebug('symf', `downloading symf from ${symfURL}`)
 
     // Download symf binary with vscode progress api
@@ -57,7 +61,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
                 await downloadFile(symfURL, symfTmpDir)
                 logDebug('symf', `downloaded symf to ${symfTmpDir}`)
 
-                const tmpFile = path.join(symfTmpDir, `symf-${arch}-${platform}`)
+                const tmpFile = path.join(symfTmpDir, `symf-${arch}-${zigPlatform}`)
                 await fspromises.chmod(tmpFile, 0o755)
                 await fspromises.rename(tmpFile, symfPath)
                 await fspromises.rmdir(symfTmpDir, { recursive: true })
