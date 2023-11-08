@@ -265,6 +265,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
+                return
+            }
+
+            // Handles keyboard shortcuts with Ctrl key.
+            // Checks if the Ctrl key is pressed with a key not in the allow list
+            // to avoid triggering default browser shortcuts and bubbling the event.
+            const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
+            if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
+                console.log(ctrlKeysAllowList.has(event.code), event.getModifierState('AltGraph'))
+                event.preventDefault()
+                event.stopPropagation()
             }
 
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
