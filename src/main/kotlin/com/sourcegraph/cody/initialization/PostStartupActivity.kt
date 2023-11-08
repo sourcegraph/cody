@@ -5,6 +5,7 @@ import com.intellij.openapi.startup.StartupActivity
 import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
 import com.sourcegraph.cody.config.SettingsMigration
+import com.sourcegraph.cody.config.ui.CheckUpdatesTask
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
@@ -22,6 +23,7 @@ class PostStartupActivity : StartupActivity.DumbAware {
     SettingsMigration().runActivity(project)
     SelectOneOfTheAccountsAsActive().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)
+    CheckUpdatesTask(project).queue()
     if (ConfigUtil.isCodyEnabled()) CodyAgentManager.startAgent(project)
     CodyAutocompleteStatusService.resetApplication(project)
   }

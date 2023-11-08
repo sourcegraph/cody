@@ -20,6 +20,7 @@ data class CodyApplicationSettings(
     var blacklistedLanguageIds: List<String> = listOf(),
     var isOnboardingGuidanceDismissed: Boolean = false,
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
+    var shouldCheckForUpdates: Boolean = true
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 

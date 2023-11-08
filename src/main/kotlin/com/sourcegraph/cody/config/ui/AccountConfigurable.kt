@@ -10,18 +10,13 @@ import com.intellij.openapi.updateSettings.impl.UpdateSettings
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.cody.auth.ui.customAccountsPanel
-import com.sourcegraph.cody.config.CodyAccountDetailsProvider
-import com.sourcegraph.cody.config.CodyAccountListModel
-import com.sourcegraph.cody.config.CodyAccountManager
-import com.sourcegraph.cody.config.CodyAccountsHost
-import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.config.CodyProjectActiveAccountHolder
-import com.sourcegraph.cody.config.getFirstAccountOrNull
+import com.sourcegraph.cody.config.*
 import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
 import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
 import com.sourcegraph.config.ConfigUtil
@@ -34,6 +29,9 @@ class AccountConfigurable(val project: Project) :
   private val activeAccountHolder = project.service<CodyProjectActiveAccountHolder>()
   private lateinit var dialogPanel: DialogPanel
   private var channel: UpdateChannel = findConfiguredChannel()
+  private val codyApplicationSettings = service<CodyApplicationSettings>()
+  private val settingsModel =
+      SettingsModel(shouldCheckForUpdates = codyApplicationSettings.shouldCheckForUpdates)
 
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
@@ -71,6 +69,10 @@ class AccountConfigurable(val project: Project) :
                   SimpleListCellRenderer.create("") { it.presentableText })
               .bindItem({ channel }, { channel = it!! })
         }
+        row {
+          checkBox("Automatically check for plugin updates")
+              .bindSelected(settingsModel::shouldCheckForUpdates)
+        }
       }
     }
     return dialogPanel
@@ -78,6 +80,7 @@ class AccountConfigurable(val project: Project) :
 
   override fun reset() {
     dialogPanel.reset()
+    codyApplicationSettings.shouldCheckForUpdates = settingsModel.shouldCheckForUpdates
   }
 
   override fun apply() {
@@ -107,6 +110,11 @@ class AccountConfigurable(val project: Project) :
     CodyAuthenticationManager.instance.setActiveAccount(project, activeAccount)
     accountsModel.activeAccount = activeAccount
     publisher.afterAction(context)
+
+    codyApplicationSettings.shouldCheckForUpdates = settingsModel.shouldCheckForUpdates
+    if (codyApplicationSettings.shouldCheckForUpdates) {
+      CheckUpdatesTask(project).queue()
+    }
 
     applyChannelConfiguration()
   }
