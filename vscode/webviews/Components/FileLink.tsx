@@ -2,7 +2,7 @@ import React from 'react'
 
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 
-import { getVSCodeAPI } from './utils/VSCodeApi'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import styles from './FileLink.module.css'
 
