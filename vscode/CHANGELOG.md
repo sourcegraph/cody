@@ -12,6 +12,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Added support to test a Sourcegraph specific StarCoder setup for dotcom. [pull/1670]
+
 ## [0.14.4]
 
 ### Added

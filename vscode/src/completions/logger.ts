@@ -210,7 +210,7 @@ export function loaded(id: SuggestionID, params: RequestParams, items: InlineCom
 export function suggested(
     id: SuggestionID,
     source: InlineCompletionsResultSource,
-    completion: InlineCompletionItem
+    completion: InlineCompletionItemWithAnalytics
 ): void {
     const event = activeSuggestions.get(id)
     if (!event) {
