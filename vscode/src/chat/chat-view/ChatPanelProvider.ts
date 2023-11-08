@@ -177,6 +177,10 @@ export class ChatPanelProvider extends MessageProvider {
         this.treeView.updateTree(createCodyChatTreeItems(history))
     }
 
+    /**
+     * Sends the available chat models to the webview based on the authenticated endpoint.
+     * Maps over the allowed models, adding a 'default' property if the model matches the currently selected chatModel.
+     */
     protected handleChatModel(): void {
         const endpoint = this.authProvider.getAuthStatus()?.endpoint
         const allowedModels = getChatModelsForWebview(endpoint)

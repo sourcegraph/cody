@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -16,21 +16,13 @@ export const ChatModelDropdownMenu: React.FunctionComponent<{
 }> = ({ models, disabled }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
 
-    if (!models.length || models.length < 1) {
-        return null
-    }
-
-    const handleClick = (model: ChatModelSelection): void => {
+    const handleClick = useCallback((model: ChatModelSelection): void => {
         getVSCodeAPI().postMessage({ command: 'chatModel', model: model.model })
         setCurrentModel(model)
-    }
+    }, [])
 
-    const getProviderIcon = (model: string, className: string): JSX.Element => {
-        return model.startsWith('openai/') ? (
-            <OpenAILogo className={className} />
-        ) : (
-            <AnthropicLogo className={className} />
-        )
+    if (!models.length || models.length < 1) {
+        return null
     }
 
     return (
@@ -39,7 +31,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<{
             title={disabled ? 'Start a new chat to use a different model' : currentModel.title}
         >
             <span className={classNames(styles.title, disabled && styles.disabled)}>
-                {getProviderIcon(currentModel.model, styles.headerLogo)}{' '}
+                <ProviderIcon model={currentModel.model} className={styles.headerLogo} />
             </span>
             <VSCodeDropdown disabled={disabled} className={styles.dropdownContainer}>
                 {models?.map((option, index) => (
@@ -50,10 +42,15 @@ export const ChatModelDropdownMenu: React.FunctionComponent<{
                         selected={currentModel.model === option.model}
                         onClick={() => handleClick(option)}
                     >
-                        {getProviderIcon(option.model, styles.logo)} {option.title} by {option.provider}
+                        <ProviderIcon model={option.model} className={styles.logo} />
+                        {`${option.title} by ${option.provider}`}
                     </VSCodeOption>
                 ))}
             </VSCodeDropdown>
         </div>
     )
+}
+
+export const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
+    return model.startsWith('openai/') ? <OpenAILogo className={className} /> : <AnthropicLogo className={className} />
 }
