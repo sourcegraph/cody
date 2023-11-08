@@ -12,7 +12,7 @@ export type ContextFileSource = 'embeddings'
 export interface ContextFile {
     fileName: string
 
-    fileUri?: URI
+    uri?: URI
 
     repoName?: string
     revision?: string

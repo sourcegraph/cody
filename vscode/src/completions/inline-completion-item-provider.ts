@@ -142,7 +142,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
         // Do not create item for files that are on the cody ignore list
-        if (isCodyIgnoredFile(document.uri?.fsPath)) {
+        if (isCodyIgnoredFile(document.uri)) {
             return null
         }
 

@@ -63,7 +63,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         if (!activeEditor) {
             return null
         }
-        if (isCodyIgnoredFile(activeEditor.document.uri.fsPath)) {
+        if (isCodyIgnoredFile(activeEditor.document.uri)) {
             return null
         }
         const documentUri = activeEditor.document.uri

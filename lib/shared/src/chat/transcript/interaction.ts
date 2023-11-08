@@ -39,13 +39,13 @@ export class Interaction {
         const newMessages = []
         for (let i = 0; i < contextMessages.length; i++) {
             const message = contextMessages[i]
-            if (message.speaker === 'human' && message.file?.fileUri?.fsPath) {
+            if (message.speaker === 'human' && message.file?.uri) {
                 // Skip embeddings results as they should be filtered when it was indexed
                 if (message.file.source === 'embeddings') {
                     continue
                 }
                 // Skips the assistant message if the human message is ignored
-                if (isCodyIgnoredFile(message.file?.fileUri?.fsPath)) {
+                if (isCodyIgnoredFile(message.file?.uri)) {
                     i++
                     continue
                 }

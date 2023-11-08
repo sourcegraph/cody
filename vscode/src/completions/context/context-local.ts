@@ -26,7 +26,7 @@ interface Options {
 export async function getContextFromCurrentEditor(options: Options): Promise<ContextSnippet[]> {
     const { document, history, prefix, jaccardDistanceWindowSize } = options
     // Return early if current document is on the ignore list
-    if (isCodyIgnoredFile(document.uri.fsPath)) {
+    if (isCodyIgnoredFile(document.uri)) {
         return []
     }
 
@@ -36,7 +36,7 @@ export async function getContextFromCurrentEditor(options: Options): Promise<Con
     const matches: JaccardMatchWithFilename[] = []
     for (const { uri, contents } of files) {
         // skip file that is on the ignore list
-        if (isCodyIgnoredFile(uri.fsPath)) {
+        if (isCodyIgnoredFile(uri)) {
             continue
         }
 
@@ -96,7 +96,7 @@ async function getRelevantFiles(
         }
 
         // Do not add files that are on the codyignore list
-        if (isCodyIgnoredFile(document.uri.fsPath)) {
+        if (isCodyIgnoredFile(document.uri)) {
             return
         }
 
