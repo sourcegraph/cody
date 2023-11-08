@@ -539,6 +539,14 @@
         "title": "Update search indices for all workspace folders",
         "icon": "$(sync)",
         "when": "cody.activated && config.cody.experimental.new-search"
+      },
+      {
+        "command": "cody.chat.restart",
+        "category": "Cody",
+        "title": "Restart Chat Session",
+        "group": "Cody",
+        "icon": "$(refresh)",
+        "when": "cody.activated && cody.hasChatHistory && config.cody.experimental.chatPanel"
       }
     ],
     "keybindings": [
@@ -828,6 +836,12 @@
         },
         {
           "command": "cody.chat.panel.new",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.chat.restart",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation",
           "visibility": "visible"

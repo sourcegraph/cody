@@ -172,6 +172,13 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public async clearAndRestartSession(): Promise<void> {
         logDebug('ChatPanelsManager', 'clearAndRestartSession')
+        // Clear and restart chat session in current panel
+        if (this.activePanelProvider) {
+            await this.activePanelProvider.clearAndRestartSession()
+            return
+        }
+
+        // Create and restart in new panel
         const chatProvider = await this.getChatPanel()
         await chatProvider.clearAndRestartSession()
     }

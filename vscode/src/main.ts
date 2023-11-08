@@ -350,6 +350,12 @@ const register = async (
             return result
         }),
         // Commands
+        vscode.commands.registerCommand('cody.chat.restart', async () => {
+            await chatManager.clearAndRestartSession()
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
+        }),
+        // TODO remove cody.interactive.clear when we remove the old chat
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatManager.clearAndRestartSession()
             await chatManager.setWebviewView('chat')
