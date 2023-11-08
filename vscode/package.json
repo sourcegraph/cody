@@ -1087,7 +1087,8 @@
             "wizardcoder-15b",
             "llama-code-7b",
             "llama-code-13b",
-            "llama-code-13b-instruct"
+            "llama-code-13b-instruct",
+            "mistral-7b-instruct-4k"
           ],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
