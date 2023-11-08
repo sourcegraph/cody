@@ -20,8 +20,17 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Edit: Fixed formatting issues with some editor formatters that required explict indendation configuration. [pull/1620](https://github.com/sourcegraph/cody/pull/1620)
 - Edit: Fixed an issue where the diff for an edit could expand recursively each time it is viewed. [pull/1621](https://github.com/sourcegraph/cody/pull/1621)
-- Added support to test a Sourcegraph specific StarCoder setup for dotcom. [pull/1670]
 - Editor Title Icon has been moved out of the experimental stage and is now enabled by default. [pull/1651](https://github.com/sourcegraph/cody/pull/1651)
+
+## [0.14.5]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Added support to test a Sourcegraph specific StarCoder setup for dotcom. [pull/1670]
 
 ## [0.14.4]
 
