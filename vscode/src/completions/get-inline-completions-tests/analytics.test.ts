@@ -84,7 +84,9 @@ describe('[getInlineCompletions] completion event', () => {
                 "params": {
                   "completionIntent": "function.body",
                   "contextSummary": {
-                    "strategy": "local",
+                    "retrieverStats": {},
+                    "strategy": "none",
+                    "totalChars": 0,
                   },
                   "id": "stable-uuid",
                   "languageId": "typescript",
@@ -132,7 +134,9 @@ describe('[getInlineCompletions] completion event', () => {
                 "params": {
                   "completionIntent": "return_statement",
                   "contextSummary": {
-                    "strategy": "local",
+                    "retrieverStats": {},
+                    "strategy": "none",
+                    "totalChars": 0,
                   },
                   "id": "stable-uuid",
                   "languageId": "typescript",

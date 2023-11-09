@@ -3,7 +3,7 @@ import { URI } from 'vscode-uri'
 
 import { range } from '../../../../testutils/textDocument'
 
-import { SectionObserver } from './section-observer'
+import { SectionHistoryRetriever } from './section-history-retriever'
 
 const document1Uri = URI.file('/document1.ts')
 const document2Uri = URI.file('/document2.ts')
@@ -29,7 +29,7 @@ describe('GraphSectionObserver', () => {
     let onDidChangeTextEditorSelection: any
     let onDidChangeTextDocument: any
     let getDocumentSections: Mock
-    let sectionObserver: SectionObserver
+    let sectionObserver: SectionHistoryRetriever
     beforeEach(async () => {
         testDocuments = {
             document1: {
@@ -56,7 +56,7 @@ describe('GraphSectionObserver', () => {
             return doc?.sections ?? []
         })
 
-        sectionObserver = SectionObserver.createInstance(
+        sectionObserver = SectionHistoryRetriever.createInstance(
             {
                 // Mock VS Code event handlers so we can fire them manually
                 onDidChangeVisibleTextEditors: (_onDidChangeVisibleTextEditors: any) => {
@@ -211,13 +211,14 @@ describe('GraphSectionObserver', () => {
                 └ file:/document2.ts baz"
             `)
 
-            const context = await sectionObserver.getLastVisitedSections(
-                testDocuments.document1 as any,
-                {
+            const context = await sectionObserver.retrieve({
+                document: testDocuments.document1 as any,
+                position: {
                     line: 0,
                     character: 0,
-                } as any
-            )
+                } as any,
+                docContext: { contextRange: range(0, 0, 20, 0) },
+            })
 
             expect(context[0]).toEqual({
                 content: 'foo\nbar\nfoo',
@@ -246,14 +247,14 @@ describe('GraphSectionObserver', () => {
                 └ file:/document1.ts foo"
             `)
 
-            const context = await sectionObserver.getLastVisitedSections(
-                testDocuments.document1 as any,
-                {
+            const context = await sectionObserver.retrieve({
+                document: testDocuments.document1 as any,
+                position: {
                     line: 0,
                     character: 0,
                 } as any,
-                range(0, 0, 20, 0)
-            )
+                docContext: { contextRange: range(0, 0, 20, 0) },
+            })
 
             expect(context.length).toBe(0)
         })
