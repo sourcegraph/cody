@@ -10,8 +10,8 @@ import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import { BfgContextFetcher } from './graph/bfg/BfgContextFetcher'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
-import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import type { SymfRunner } from './local-context/symf'
+import { SymfContextFetcher } from './local-context/symf-context-fetcher'
 import { start } from './main'
 import type { getRgPath } from './rg'
 import { captureException, SentryService } from './services/sentry/sentry'
@@ -24,7 +24,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (...args: 
 export interface PlatformContext {
     getRgPath?: typeof getRgPath
     createCommandsController?: Constructor<typeof CommandsController>
-    createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
+    createLocalKeywordContextFetcher?: Constructor<typeof SymfContextFetcher>
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgContextFetcher?: Constructor<typeof BfgContextFetcher>
     createFilenameContextFetcher?: Constructor<typeof FilenameContextFetcher>

@@ -65,11 +65,19 @@ export class CodebaseContext {
      * The final list is a combination of these two sets of messages.
      */
     public async getCombinedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const contextMessages = this.getContextMessages(query, options)
-        const graphContextMessages = this.getGraphContextMessages()
+        const contextMessages = await this.getContextMessages(query, options)
 
-        // TODO(efritz) - open problem to figure out how to best rank these into a unified list
-        return [...(await contextMessages), ...(await graphContextMessages)]
+        // console.log('============== contextMessages ================')
+        // for (const contextMessage of contextMessages) {
+        //     console.log(contextMessage.text)
+        // }
+
+        return contextMessages
+
+        // const graphContextMessages = this.getGraphContextMessages()
+
+        // // TODO(efritz) - open problem to figure out how to best rank these into a unified list
+        // return [...(await contextMessages), ...(await graphContextMessages)]
     }
 
     /**
@@ -223,10 +231,12 @@ export class CodebaseContext {
     }
 
     private async getKeywordSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
+        // MARK
         if (!this.keywords) {
             return []
         }
         const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
+        // console.log('# results:', results)
         return results
     }
 

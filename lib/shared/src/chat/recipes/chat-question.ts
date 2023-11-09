@@ -75,6 +75,14 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
+        // MARK
+
+        let msg = '============== chat contextMessages =================\n'
+        for (const contextMessage of contextMessages) {
+            msg += '---------------------------------\n' + contextMessage.text + '\n'
+        }
+        console.log(msg)
+
         return contextMessages
     }
 

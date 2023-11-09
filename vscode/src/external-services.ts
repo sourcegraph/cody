@@ -71,7 +71,7 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        symf ? platform.createLocalKeywordContextFetcher?.(symf) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         symf,

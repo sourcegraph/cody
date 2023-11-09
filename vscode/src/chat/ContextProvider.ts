@@ -328,7 +328,7 @@ async function getCodebaseContext(
         config,
         codebase,
         embeddingsSearch || null,
-        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        symf ? platform.createLocalKeywordContextFetcher?.(symf) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         symf,
