@@ -8,7 +8,7 @@ import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/
 import { CommandsController } from './custom-prompts/CommandsController'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
-import { BfgRetriever } from './graph/bfg/BfgContextFetcher'
+import { BfgRetriever } from './graph/bfg/bfg-retriever'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import type { SymfRunner } from './local-context/symf'

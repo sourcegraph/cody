@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import type { BfgRetriever } from '../graph/bfg/BfgContextFetcher'
+import type { BfgRetriever } from '../graph/bfg/bfg-retriever'
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'

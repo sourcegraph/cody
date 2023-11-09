@@ -11,7 +11,7 @@ import * as vscode from 'vscode'
 
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { BfgRetriever } from '../../../vscode/src/graph/bfg/BfgContextFetcher'
+import { BfgRetriever } from '../../../vscode/src/graph/bfg/bfg-retriever'
 import { Agent, initializeVscodeExtension } from '../agent'
 import { MessageHandler } from '../jsonrpc-alias'
 import * as vscode_shim from '../vscode-shim'
@@ -27,7 +27,7 @@ const testFile = path.join('src', 'main.ts')
 const gitdir = path.join(dir, '.git')
 const shouldCreateGitDir = !fs.existsSync(gitdir)
 
-describe('BfgContextFetcher', async () => {
+describe('BfgRetriever', async () => {
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         // The test runs successfully without these environment variables. We
         // only have this check enabled for now to skip running BFG tests in CI.

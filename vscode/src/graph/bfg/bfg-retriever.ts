@@ -124,6 +124,13 @@ export class BfgRetriever implements ContextRetriever {
         switch (languageId) {
             case 'typescript':
             case 'typescriptreact':
+            case 'javascript':
+            case 'javascriptreact':
+            case 'java':
+            case 'go':
+            case 'dart':
+            case 'python':
+            case 'zig':
                 return true
             default:
                 return false

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { BfgRetriever } from '../../graph/bfg/BfgContextFetcher'
+import { BfgRetriever } from '../../graph/bfg/bfg-retriever'
 import { logDebug } from '../../log'
 import { DocumentContext } from '../get-current-doc-context'
 import { ContextRetriever, ContextSnippet } from '../types'
@@ -56,7 +56,7 @@ export class ContextMixer implements vscode.Disposable {
     // TODO: Generalize the retriever concept more. For now we branch off based on graph context
     // usage or not to support the existing configuration options
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
-        if (this.graphRetriever && this.graphRetriever.isSupportedForLanguageId(options.document.languageId)) {
+        if (this.graphRetriever?.isSupportedForLanguageId(options.document.languageId)) {
             return this.getGraphContext(options)
         }
         return this.getLocalContext(options)

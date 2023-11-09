@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import type { BfgRetriever } from '../graph/bfg/BfgContextFetcher'
+import type { BfgRetriever } from '../graph/bfg/bfg-retriever'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
