@@ -53,8 +53,6 @@ export class CustomPrompt implements Recipe {
         }
         const isChatQuestion = command?.slashCommand === '/ask'
 
-        const workspaceRootUri = context.editor.getWorkspaceRootUri()
-
         const contextConfig = command?.context || defaultCodyPromptContext
         // If selection is required, ensure not to accept visible content as selection
         const selection = contextConfig?.selection
@@ -86,7 +84,7 @@ export class CustomPrompt implements Recipe {
         // Add selection file name as display when available
         const displayText = contextFiles?.length
             ? createDisplayTextWithFileLinks(contextFiles, promptText)
-            : createDisplayTextWithFileSelection(commandName, selection, workspaceRootUri)
+            : createDisplayTextWithFileSelection(commandName, selection)
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
 

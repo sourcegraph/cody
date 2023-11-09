@@ -1,9 +1,5 @@
-import { URI } from 'vscode-uri'
-
 import { ContextFile } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
-
-import { isInWorkspace } from './vscode-context'
 
 /**
  * Creates display text for the given context files by replacing file names with markdown links.
@@ -31,8 +27,7 @@ export function createDisplayTextWithFileLinks(files: ContextFile[], text: strin
  */
 export function createDisplayTextWithFileSelection(
     humanInput: string,
-    selection: ActiveTextEditorSelection | null,
-    workspaceRoot: URI | null
+    selection?: ActiveTextEditorSelection | null
 ): string {
     const fileName = selection?.fileName?.trim()
     if (!fileName) {
@@ -40,21 +35,14 @@ export function createDisplayTextWithFileSelection(
     }
 
     const displayText = `${humanInput} @${fileName}`
-    if (!workspaceRoot) {
+    const fsPath = selection?.fileUri?.fsPath
+    const startLine = selection?.selectionRange?.start?.line
+    if (!fsPath || !startLine) {
         return displayText
     }
 
-    // check if fileName is a workspace file or not
-    const isFileWorkspaceFile = isInWorkspace(URI.file(fileName)) !== undefined
-    const fileUri = isFileWorkspaceFile ? URI.parse(workspaceRoot.fsPath + fileName) : URI.file(fileName)
-
     // Create markdown link to the file
-    return replaceFileNameWithMarkdownLink(
-        displayText,
-        `@${fileName}`,
-        fileUri.fsPath,
-        selection?.selectionRange?.start?.line
-    )
+    return replaceFileNameWithMarkdownLink(displayText, `@${fileName}`, fsPath, startLine)
 }
 
 /**
