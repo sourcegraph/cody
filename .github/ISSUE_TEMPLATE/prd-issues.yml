@@ -68,7 +68,6 @@ body:
       value: |
         ```[tasklist]
         ### Design Tasks
-        - [ ] Add a draft title or issue reference here
         ```
   - type: textarea
     id: engineering-tasklist
@@ -78,5 +77,4 @@ body:
       value: |
         ```[tasklist]
         ### Engineering Tasks
-        - [ ] Add a draft title or issue reference here
         ```
