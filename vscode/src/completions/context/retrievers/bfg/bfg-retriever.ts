@@ -2,12 +2,10 @@ import * as child_process from 'node:child_process'
 
 import * as vscode from 'vscode'
 
-import { GraphContextFetcher } from '../../completions/context/context-graph'
-import { ContextSnippet } from '../../completions/types'
-import { MessageHandler } from '../../jsonrpc/jsonrpc'
-import { logDebug } from '../../log'
-
-import { downloadBfg } from './download-bfg'
+import { downloadBfg } from '../../../../graph/bfg/download-bfg'
+import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
+import { logDebug } from '../../../../log'
+import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 const isTesting = process.env.CODY_TESTING === 'true'
 
@@ -54,7 +52,7 @@ function loadBFG(context: vscode.ExtensionContext): Promise<MessageHandler> {
     })
 }
 
-export class BfgContextFetcher implements GraphContextFetcher {
+export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
     private didFailLoading = false
@@ -90,12 +88,12 @@ export class BfgContextFetcher implements GraphContextFetcher {
         vscode.workspace.onDidOpenTextDocument(document => didOpenDocumentUri(document.uri))
     }
 
-    public async getContextAtPosition(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        maxChars: number,
-        contextRange?: vscode.Range | undefined
-    ): Promise<ContextSnippet[]> {
+    public async retrieve({
+        document,
+        position,
+        docContext,
+        hints,
+    }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
         if (this.didFailLoading) {
             return []
         }
@@ -109,8 +107,8 @@ export class BfgContextFetcher implements GraphContextFetcher {
             uri: document.uri.toString(),
             content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
             position: { line: position.line, character: position.character },
-            maxChars: 1337, // ignored by BFG server for now
-            contextRange,
+            maxChars: hints.maxChars, // ignored by BFG server for now
+            contextRange: docContext.contextRange,
         })
 
         // Just in case, handle non-object results
@@ -119,6 +117,23 @@ export class BfgContextFetcher implements GraphContextFetcher {
         }
 
         return [...(responses?.symbols || []), ...(responses?.files || [])]
+    }
+
+    public isSupportedForLanguageId(languageId: string): boolean {
+        switch (languageId) {
+            case 'typescript':
+            case 'typescriptreact':
+            case 'javascript':
+            case 'javascriptreact':
+            case 'java':
+            case 'go':
+            case 'dart':
+            case 'python':
+            case 'zig':
+                return true
+            default:
+                return false
+        }
     }
 
     public dispose(): void {

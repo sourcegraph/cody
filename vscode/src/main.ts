@@ -518,18 +518,14 @@ const register = async (
                     completionsProvider.dispose()
                 }
 
-                completionsProvider = await createInlineCompletionItemProvider(
-                    {
-                        config,
-                        client: codeCompletionsClient,
-                        statusBar,
-                        contextProvider,
-                        authProvider,
-                        triggerNotice: notice => chatManager.triggerNotice(notice),
-                    },
-                    context,
-                    platform
-                )
+                completionsProvider = await createInlineCompletionItemProvider({
+                    config,
+                    client: codeCompletionsClient,
+                    statusBar,
+                    authProvider,
+                    triggerNotice: notice => chatManager.triggerNotice(notice),
+                    createBfgRetriever: platform.createBfgRetriever,
+                })
             })
             .catch(error => {
                 console.error('Error creating inline completion item provider:', error)
