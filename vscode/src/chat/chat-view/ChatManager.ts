@@ -166,8 +166,11 @@ export class ChatManager implements vscode.Disposable {
      * Clears the current chat session and restarts it, creating a new chat ID.
      */
     public async clearAndRestartSession(): Promise<void> {
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.clearAndRestartSession()
+        if (!this.chatPanelsManager) {
+            return this.sidebarChat.clearAndRestartSession()
+        }
+
+        await this.chatPanelsManager.clearAndRestartSession()
     }
 
     public async restoreSession(chatID: string): Promise<void> {

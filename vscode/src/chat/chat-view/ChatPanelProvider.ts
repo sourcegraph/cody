@@ -139,9 +139,9 @@ export class ChatPanelProvider extends MessageProvider {
             isMessageInProgress,
         })
 
-        // Update webview panel title
-        const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText
-        if (text && this.webviewPanel) {
+        // Update / reset webview panel title
+        const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
+        if (this.webviewPanel) {
             this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
         }
     }
