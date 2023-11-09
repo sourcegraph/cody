@@ -6,12 +6,12 @@ import * as vscode from 'vscode'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import type { BfgRetriever } from '../graph/bfg/bfg-retriever'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { ContextMixer } from './context/context-mixer'
+import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,

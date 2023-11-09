@@ -2,11 +2,10 @@ import * as child_process from 'node:child_process'
 
 import * as vscode from 'vscode'
 
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../completions/types'
-import { MessageHandler } from '../../jsonrpc/jsonrpc'
-import { logDebug } from '../../log'
-
-import { downloadBfg } from './download-bfg'
+import { downloadBfg } from '../../../../graph/bfg/download-bfg'
+import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
+import { logDebug } from '../../../../log'
+import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 const isTesting = process.env.CODY_TESTING === 'true'
 

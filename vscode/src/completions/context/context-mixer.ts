@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
-import { BfgRetriever } from '../../graph/bfg/bfg-retriever'
 import { logDebug } from '../../log'
 import { DocumentContext } from '../get-current-doc-context'
 import { ContextRetriever, ContextSnippet } from '../types'
 
+import { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightGraphCache } from './retrievers/lsp-light/lsp-light-graph-cache'
 
