@@ -144,14 +144,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(() => {
         if (formInput.endsWith(' ')) {
             setContextSelection([])
+            return
         }
+
         // Regex to check if input ends with the '@' tag format, always get the last @tag
         // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
         // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '
         const addFileRegex = /@\S+$/
         // Get the string after the last '@' symbol
         const addFileInput = formInput.match(addFileRegex)?.[0]
-        if (addFileInput || formInput.endsWith('@')) {
+        if (formInput.endsWith('@') || addFileInput) {
             vscodeAPI.postMessage({ command: 'getUserContext', query: addFileInput?.slice(1) || '' })
         } else {
             setContextSelection([])

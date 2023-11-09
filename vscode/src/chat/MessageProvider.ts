@@ -824,6 +824,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Asynchronously retrieves context files based on a given query string.
      */
     protected async getContextFiles(query: string): Promise<ContextFile[]> {
+        if (!query.length) {
+            return getOpenTabsContextFile()
+        }
         return (await debouncedContextFileQuery(query)) || []
     }
 
@@ -862,9 +865,6 @@ function isAbortError(error: string): boolean {
 
 const debouncedContextFileQuery = debounce(async (query: string) => {
     try {
-        if (!query.length) {
-            return getOpenTabsContextFile()
-        }
         const MAX_RESULTS = 10
         const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
         const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
