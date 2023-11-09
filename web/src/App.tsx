@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
 import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
@@ -42,7 +41,7 @@ const editor: Editor = {
     getActiveTextEditorVisibleContent() {
         return null
     },
-    getTextEditorContentForContextFile(_file: ContextFile): Promise<string | undefined> {
+    getTextEditorContentForFile(_uri, _range): Promise<string | undefined> {
         return Promise.resolve(undefined)
     },
     getWorkspaceRootPath() {

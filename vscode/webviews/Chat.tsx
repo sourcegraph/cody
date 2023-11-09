@@ -99,7 +99,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             if (contextConfig?.addedContextFiles?.size) {
                 for (const file of contextConfig.addedContextFiles) {
                     if (text.includes(file[0])) {
-                        file[1].displayName = file[0]
+                        file[1].fileName = file[0]
                         userContextFiles.push(file[1])
                     }
                 }

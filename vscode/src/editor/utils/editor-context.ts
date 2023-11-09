@@ -3,7 +3,7 @@ import { basename, dirname } from 'path'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
-import { ContextFileSource, ContextKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 
@@ -51,9 +51,15 @@ export async function getSymbolContextFile(query: string, maxResults = 10): Prom
 
     const matches = []
     for (const symbol of symbols) {
-        const kind: ContextKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
+        const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
         const source: ContextFileSource = 'user'
-        const contextFile = createContextFileFromUri(symbol.location.uri, source, kind, symbol.location.range)
+        const contextFile: ContextFile = createContextFileFromUri(
+            symbol.location.uri,
+            source,
+            'symbol',
+            symbol.location.range,
+            kind
+        )
         contextFile.fileName = symbol.name
         matches.push(contextFile)
     }
@@ -68,17 +74,19 @@ export function getOpenTabsContextFile(): ContextFile[] {
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextFileSource = 'user',
-    kind: ContextKind = 'file',
-    selectionRange?: vscode.Range
+    type: ContextFileType = 'file',
+    selectionRange?: vscode.Range,
+    kind?: SymbolKind
 ): ContextFile {
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return {
         fileName: vscode.workspace.asRelativePath(uri.fsPath),
-        fileUri: uri,
+        uri,
         path: createContextFilePath(uri),
         range,
-        kind,
+        type,
         source,
+        kind,
     }
 }
 

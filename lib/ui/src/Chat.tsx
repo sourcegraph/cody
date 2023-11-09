@@ -225,6 +225,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const [contextConfig, setContextConfig] = useState({ ...defaultChatContextConfig })
 
+    /**
+     * Callback function called when a chat context file is selected from the context selector.
+     *
+     * Updates the chat input with the selected file context.
+     *
+     * Trims any existing @file text from the input.
+     * Adds the selected file path and range to the input.
+     * Updates contextConfig with the new added context file.
+     *
+     * This allows the user to quickly insert file context into the chat input.
+     */
     const onChatContextSelected = useCallback(
         (selected: ContextFile, input: string): void => {
             const lastAtIndex = input.lastIndexOf('@')
@@ -233,7 +244,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 const inputWithoutAtFileInput = input.slice(0, lastAtIndex)
                 setSelectedChatContext(0)
 
-                const isFileType = selected.kind === 'file'
+                const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
                 const symbolName = isFileType ? '' : `$${selected.fileName}`
                 // Add empty space at the end to end the file matching process

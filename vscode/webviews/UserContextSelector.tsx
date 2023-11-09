@@ -42,10 +42,10 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                     }
 
                     const icon =
-                        match.kind === 'file' ? 'file' : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-                    const title = match.kind === 'file' ? match.path?.relative : match.fileName
+                        match.type === 'file' ? 'file' : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+                    const title = match.type === 'file' ? match.path?.relative : match.fileName
                     const range = match.range ? `:${match.range.start.line + 1}-${match.range.end.line + 1}` : ''
-                    const description = match.kind === 'file' ? match.path?.dirname : match.path?.relative + range
+                    const description = match.type === 'file' ? match.path?.dirname : match.path?.relative + range
                     return (
                         <React.Fragment key={match.path?.relative}>
                             <button

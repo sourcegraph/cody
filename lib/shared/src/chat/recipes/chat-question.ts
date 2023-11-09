@@ -13,7 +13,7 @@ import {
     populateCurrentEditorSelectedContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { createDisplayTexWithContextFiles } from '../prompts/get-display-text'
+import { createDisplayTextWithContextFiles } from '../prompts/get-display-text'
 import { Interaction } from '../transcript/interaction'
 
 import { isSingleWord, numResults } from './helpers'
@@ -31,7 +31,7 @@ export class ChatQuestion implements Recipe {
 
         const contextFiles = context.userInputContextFiles
         const displayText = contextFiles?.length
-            ? createDisplayTexWithContextFiles(contextFiles, humanChatInput)
+            ? createDisplayTextWithContextFiles(contextFiles, humanChatInput)
             : humanChatInput
 
         return Promise.resolve(
@@ -119,10 +119,12 @@ export class ChatQuestion implements Recipe {
     public static async getContextFilesContext(editor: Editor, contextFiles: ContextFile[]): Promise<ContextMessage[]> {
         const contextFileMessages = []
         for (const file of contextFiles) {
-            const content = await editor.getTextEditorContentForContextFile(file)
-            if (content) {
-                const message = createContextMessageByFile(file, content)
-                contextFileMessages.push(...message)
+            if (file?.uri) {
+                const content = await editor.getTextEditorContentForFile(file?.uri, file.range)
+                if (content) {
+                    const message = createContextMessageByFile(file, content)
+                    contextFileMessages.push(...message)
+                }
             }
         }
         return contextFileMessages
