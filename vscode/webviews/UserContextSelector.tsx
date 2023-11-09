@@ -8,7 +8,7 @@ import styles from './UserContextSelector.module.css'
 
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
-> = ({ onSelected, contextSelection, formInput, selected }) => {
+> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
@@ -20,7 +20,11 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         if (container) {
             container.scrollIntoView({ block: 'nearest' })
         }
-    }, [contextSelection?.length, selected])
+    }, [contextSelection, selected])
+
+    useEffect(() => {
+        setSelectedChatContext(0)
+    }, [contextSelection, setSelectedChatContext])
 
     if (!contextSelection?.length || formInput.endsWith(' ')) {
         return

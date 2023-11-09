@@ -136,6 +136,7 @@ export interface UserContextSelectorProps {
     contextSelection?: ContextFile[]
     selected?: number
     onSubmit: (input: string, inputType: 'user') => void
+    setSelectedChatContext: (arg: number) => void
 }
 
 export interface ChatContextConfig {
@@ -531,33 +532,32 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
-                {displayCommands && ChatCommandsComponent && formInput && (
-                    <ChatCommandsComponent
-                        chatCommands={displayCommands}
-                        selectedChatCommand={selectedChatCommand}
-                        setFormInput={setFormInput}
-                        setSelectedChatCommand={setSelectedChatCommand}
-                        onSubmit={onSubmit}
-                    />
-                )}
-                {contextSelection && UserContextSelectorComponent && formInput && (
-                    <UserContextSelectorComponent
-                        selected={selectedChatContext}
-                        onSelected={onChatContextSelected}
-                        contextSelection={contextSelection}
-                        formInput={formInput}
-                        onSubmit={onSubmit}
-                    />
-                )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                {!displayCommands?.length && !contextSelection?.length && ContextStatusComponent && (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                )}
+                {ContextStatusComponent && <ContextStatusComponent {...contextStatusComponentProps} />}
                 <div className={styles.textAreaContainer}>
+                    {displayCommands && ChatCommandsComponent && formInput && (
+                        <ChatCommandsComponent
+                            chatCommands={displayCommands}
+                            selectedChatCommand={selectedChatCommand}
+                            setFormInput={setFormInput}
+                            setSelectedChatCommand={setSelectedChatCommand}
+                            onSubmit={onSubmit}
+                        />
+                    )}
+                    {contextSelection && UserContextSelectorComponent && formInput && (
+                        <UserContextSelectorComponent
+                            selected={selectedChatContext}
+                            onSelected={onChatContextSelected}
+                            contextSelection={contextSelection}
+                            formInput={formInput}
+                            onSubmit={onSubmit}
+                            setSelectedChatContext={setSelectedChatContext}
+                        />
+                    )}
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}

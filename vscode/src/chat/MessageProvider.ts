@@ -1,3 +1,4 @@
+import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -819,12 +820,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.editor.controllers.fixups.getTasks()
     }
 
+    /**
+     * Asynchronously retrieves context files based on a given query string.
+     */
     protected async getContextFiles(query: string): Promise<ContextFile[]> {
-        const files = query.length < 3 ? getOpenTabsContextFile() : await getFileContextFile(query)
-        const symbols = await getSymbolContextFile(query, 10)
-        const sortedFiles = files?.sort((a, b) => a.fileName.split('/').length - b.fileName.split('/').length)
-        const context = [...sortedFiles, ...symbols]
-        return context
+        return (await debouncedContextFileQuery(query)) || []
     }
 
     public dispose(): void {
@@ -859,3 +859,23 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 function isAbortError(error: string): boolean {
     return error === 'aborted' || error === 'socket hang up'
 }
+
+const debouncedContextFileQuery = debounce(async (query: string) => {
+    try {
+        if (!query.length) {
+            return getOpenTabsContextFile()
+        }
+        const MAX_RESULTS = 10
+        const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
+        const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+
+        const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
+        const combinedResults = [...new Set([...fileResults, ...symbolResults])]
+
+        return combinedResults
+    } catch (error) {
+        // Handle or log the error as appropriate
+        console.error('Error retrieving context files:', error)
+        return []
+    }
+}, 100)
