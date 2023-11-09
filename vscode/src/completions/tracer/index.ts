@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { GetContextResult } from '../context/context'
+import { GetContextResult } from '../context/context-mixer'
 import { InlineCompletionsResult, TriggerKind } from '../get-inline-completions'
 import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
 

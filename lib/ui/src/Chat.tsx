@@ -348,6 +348,21 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
+            // Handles keyboard shortcuts with Ctrl key.
+            // Checks if the Ctrl key is pressed with a key not in the allow list
+            // to avoid triggering default browser shortcuts and bubbling the event.
+            const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
+            if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
+                event.preventDefault()
+            }
+
+            // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
+            const vscodeCodyShortcuts = new Set(['Slash', 'KeyC'])
+            if (event.altKey && vscodeCodyShortcuts.has(event.code)) {
+                event.preventDefault()
+                return
+            }
+
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
@@ -397,11 +412,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const newMatchIndex = newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
                     setSelectedChatContext(newMatchIndex)
                 }
-
                 if (event.key === 'Backspace') {
                     setSelectedChatContext(0)
                 }
-
                 if (event.key === 'Escape') {
                     event.preventDefault()
                     event.stopPropagation()
@@ -413,7 +426,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     }
                     setSelectedChatContext(0)
                 }
-
                 // tab/enter to complete
                 if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
@@ -421,7 +433,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const selected = contextSelection[selectedChatContext]
                     onChatContextSelected(selected, formInput)
                 }
-                return
             }
 
             // Submit input on Enter press (without shift) and

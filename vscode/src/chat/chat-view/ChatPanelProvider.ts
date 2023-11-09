@@ -156,9 +156,9 @@ export class ChatPanelProvider extends MessageProvider {
             isMessageInProgress,
         })
 
-        // Update webview panel title
-        const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText
-        if (text && this.webviewPanel) {
+        // Update / reset webview panel title
+        const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
+        if (this.webviewPanel) {
             this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
         }
     }
@@ -309,7 +309,7 @@ export class ChatPanelProvider extends MessageProvider {
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
-            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+            { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
             {
                 enableScripts: true,
                 retainContextWhenHidden: true,
