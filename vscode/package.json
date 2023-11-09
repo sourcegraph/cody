@@ -550,12 +550,12 @@
       {
         "command": "cody.chat.tree.view.focus",
         "key": "alt+f1",
-        "enablement": "cody.activated && config.cody.experimental.chatPanel"
+        "when": "cody.activated && config.cody.experimental.chatPanel"
       },
       {
         "command": "cody.chat.panel.new",
         "key": "alt+/",
-        "enablement": "cody.activated && config.cody.experimental.chatPanel"
+        "when": "cody.activated && config.cody.experimental.chatPanel"
       },
       {
         "command": "cody.command.edit-code",
