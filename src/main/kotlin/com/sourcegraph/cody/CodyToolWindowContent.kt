@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -29,6 +30,7 @@ import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextMessage
 import com.sourcegraph.cody.agent.protocol.RecipeInfo
 import com.sourcegraph.cody.agent.protocol.Speaker
+import com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener
 import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
@@ -45,7 +47,7 @@ import java.awt.event.KeyEvent
 import java.util.*
 import java.util.stream.Collectors
 import javax.swing.*
-import javax.swing.KeyStroke.*
+import javax.swing.KeyStroke.getKeyStroke
 import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.plaf.ButtonUI
@@ -250,6 +252,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       val recipeButton = createRecipeButton(recipe.title)
       recipeButton.addActionListener {
         GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
+        val editorManager = FileEditorManager.getInstance(project)
+        CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
+            editorManager.selectedTextEditor)
         sendMessage(project, recipe.title, recipe.id)
       }
       recipesPanel.add(recipeButton)
