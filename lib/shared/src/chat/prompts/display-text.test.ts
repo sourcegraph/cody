@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest'
+
+import { replaceFileNameWithMarkdownLink } from './display-text'
+
+describe('replaceFileNameWithMarkdownLink', () => {
+    it('replaces file name with markdown link', () => {
+        const text = 'Hello @test.js'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/to/test.js')
+
+        expect(result).toEqual('Hello [_@test.js_](vscode://file/path/to/test.js)')
+    })
+
+    it('respects spaces in file name', () => {
+        const text = 'Loaded @my file.js'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@my file.js', '/path/to/my file.js')
+
+        expect(result).toEqual('Loaded [_@my file.js_](vscode://file/path/to/my file.js)')
+    })
+
+    it('returns original text if no match', () => {
+        const text = 'No file name'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/to/test.js')
+
+        expect(result).toEqual(text)
+    })
+
+    it('handles special characters in path', () => {
+        const text = 'Loaded @test.js'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/with/@#special$chars.js')
+
+        expect(result).toEqual('Loaded [_@test.js_](vscode://file/path/with/@#special$chars.js)')
+    })
+
+    it('handles line numbers', () => {
+        const text = 'Error in @test.js'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 10)
+
+        expect(result).toEqual('Error in [_@test.js_](vscode://file/path/test.js:10)')
+    })
+
+    it('handles names that showed up more than once', () => {
+        const text = 'Compare and explain @foo.js and @bar.js. What does @foo.js do?'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@foo.js', '/path/foo.js', 10)
+
+        expect(result).toEqual(
+            'Compare and explain [_@foo.js_](vscode://file/path/foo.js:10) and @bar.js. What does [_@foo.js_](vscode://file/path/foo.js:10) do?'
+        )
+    })
+
+    it('ignore repeated file names that are followed by another character', () => {
+        const text = 'Compare and explain @foo.js and @bar.js. What does @foo.js#FooBar() do?'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@foo.js', '/path/foo.js', 10)
+
+        expect(result).toEqual(
+            'Compare and explain [_@foo.js_](vscode://file/path/foo.js:10) and @bar.js. What does @foo.js#FooBar() do?'
+        )
+    })
+})

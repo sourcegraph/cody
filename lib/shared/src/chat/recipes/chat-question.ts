@@ -13,7 +13,7 @@ import {
     populateCurrentEditorSelectedContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { createDisplayTextWithContextFiles } from '../prompts/get-display-text'
+import { createDisplayTextWithFileLinks } from '../prompts/display-text'
 import { Interaction } from '../transcript/interaction'
 
 import { isSingleWord, numResults } from './helpers'
@@ -31,7 +31,7 @@ export class ChatQuestion implements Recipe {
 
         const contextFiles = context.userInputContextFiles
         const displayText = contextFiles?.length
-            ? createDisplayTextWithContextFiles(contextFiles, humanChatInput)
+            ? createDisplayTextWithFileLinks(contextFiles, humanChatInput)
             : humanChatInput
 
         return Promise.resolve(

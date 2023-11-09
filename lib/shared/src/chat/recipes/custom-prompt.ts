@@ -6,7 +6,7 @@ import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
-import { createDisplayTextWithContextFiles } from '../prompts/get-display-text'
+import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../prompts/display-text'
 import {
     extractTestType,
     getHumanLLMText,
@@ -22,7 +22,6 @@ import {
     getEditorDirContext,
     getEditorOpenTabsContext,
     getFilePathContext,
-    getHumanDisplayTextWithFileName,
     getPackageJsonContext,
     getTerminalOutputContext,
 } from '../prompts/vscode-context'
@@ -85,13 +84,9 @@ export class CustomPrompt implements Recipe {
         const contextFiles = command.contextFiles
 
         // Add selection file name as display when available
-        let displayText = isChatQuestion
-            ? promptText
-            : getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
-
-        if (contextFiles?.length) {
-            displayText = createDisplayTextWithContextFiles(contextFiles, promptText)
-        }
+        const displayText = contextFiles?.length
+            ? createDisplayTextWithFileLinks(contextFiles, promptText)
+            : createDisplayTextWithFileSelection(commandName, selection, workspaceRootUri)
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
 
