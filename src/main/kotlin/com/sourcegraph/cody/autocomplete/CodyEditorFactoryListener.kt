@@ -126,8 +126,10 @@ class CodyEditorFactoryListener : EditorFactoryListener {
 
     private fun getSelection(editor: Editor): Range? {
       val selectionModel = editor.selectionModel
-      val selectionStartPosition = selectionModel.selectionStartPosition
-      val selectionEndPosition = selectionModel.selectionEndPosition
+      val selectionStartPosition =
+          selectionModel.selectionStartPosition?.let { editor.visualToLogicalPosition(it) }
+      val selectionEndPosition =
+          selectionModel.selectionEndPosition?.let { editor.visualToLogicalPosition(it) }
       if (selectionStartPosition != null && selectionEndPosition != null) {
         return Range(
             Position(selectionStartPosition.line, selectionStartPosition.column),
