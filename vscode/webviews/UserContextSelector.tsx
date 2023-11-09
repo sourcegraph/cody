@@ -33,7 +33,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
     return (
         <div className={classNames(styles.container)}>
             <div className={classNames(styles.headingContainer)}>
-                <h3 className={styles.heading}>Add selection as context</h3>
+                <h3 className={styles.heading}>Select a file...</h3>
             </div>
             <div className={classNames(styles.selectionsContainer)}>
                 {contextSelection?.map((match, i) => {
