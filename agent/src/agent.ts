@@ -208,7 +208,19 @@ export class Agent extends MessageHandler {
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
-                        selectedCompletionInfo: undefined,
+                        selectedCompletionInfo:
+                            params.selectedCompletionInfo?.text === undefined ||
+                            params.selectedCompletionInfo?.text === null
+                                ? undefined
+                                : {
+                                      text: params.selectedCompletionInfo.text,
+                                      range: new vscode.Range(
+                                          params.selectedCompletionInfo.range.start.line,
+                                          params.selectedCompletionInfo.range.start.character,
+                                          params.selectedCompletionInfo.range.end.line,
+                                          params.selectedCompletionInfo.range.end.character
+                                      ),
+                                  },
                     },
                     token
                 )
@@ -218,6 +230,7 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
+
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)

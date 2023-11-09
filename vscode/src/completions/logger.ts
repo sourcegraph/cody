@@ -9,7 +9,7 @@ import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { telemetryService } from '../services/telemetry'
 
-import { ContextSummary } from './context/context'
+import { ContextSummary } from './context/context-mixer'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
 import { RequestParams } from './request-manager'
@@ -225,7 +225,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID, completion: InlineCompletionItem): void {
+export function suggested(id: CompletionLogID, completion: InlineCompletionItemWithAnalytics): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return

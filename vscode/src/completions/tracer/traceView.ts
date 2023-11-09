@@ -6,7 +6,7 @@ import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 import {
     registerDebugListener as registerSectionObserverDebugListener,
     SectionObserver,
-} from '../context/section-observer'
+} from '../context/retrievers/lsp-light/section-observer'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'

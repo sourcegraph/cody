@@ -3,7 +3,6 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
@@ -11,9 +10,8 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult } from './context/context'
-import { GraphContextFetcher } from './context/context-graph'
-import { DocumentHistory } from './context/history'
+import { ContextMixer, ContextStrategy } from './context/context-mixer'
+import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -105,14 +103,13 @@ const suggestedCompletionItemIDs = new LRUCache<CompletionItemID, AutocompleteIt
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
-    history: DocumentHistory
     statusBar: CodyStatusBar
-    getCodebaseContext: () => CodebaseContext
-    graphContextFetcher?: GraphContextFetcher | null
     tracer?: ProvideInlineCompletionItemsTracer | null
-    contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
+
+    contextStrategy: ContextStrategy
+    createBfgRetriever?: () => BfgRetriever
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -135,9 +132,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     // private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
-    private readonly config: Required<CodyCompletionItemProviderConfig>
+    private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
     private requestManager: RequestManager
+    private contextMixer: ContextMixer
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -152,21 +150,19 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
     constructor({
-        graphContextFetcher = null,
         completeSuggestWidgetSelection = true,
         disableNetworkCache = false,
         disableRecyclingOfPreviousRequests = false,
         tracer = null,
+        createBfgRetriever,
         ...config
     }: CodyCompletionItemProviderConfig) {
         this.config = {
             ...config,
-            graphContextFetcher,
             completeSuggestWidgetSelection,
             disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             tracer,
-            contextFetcher: config.contextFetcher ?? getContext,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
         }
 
@@ -189,6 +185,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
+        this.contextMixer = new ContextMixer(config.contextStrategy, createBfgRetriever)
 
         const chatHistory = localStorage.getChatHistory()?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -199,6 +196,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         )
 
         this.disposables.push(
+            this.contextMixer,
             vscode.commands.registerCommand(
                 'cody.autocomplete.inline.accepted',
                 ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
@@ -254,7 +252,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
-        const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
@@ -337,10 +334,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 docContext,
                 providerConfig: this.config.providerConfig,
                 disableStreamingTruncation: await disableStreamingTruncation,
-                graphContextFetcher,
-                contextFetcher: this.config.contextFetcher,
-                getCodebaseContext: this.config.getCodebaseContext,
-                documentHistory: this.config.history,
+                contextMixer: this.contextMixer,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,
                 debounceInterval,

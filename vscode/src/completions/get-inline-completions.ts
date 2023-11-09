@@ -1,14 +1,11 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
 
-import { GetContextOptions, GetContextResult } from './context/context'
-import { GraphContextFetcher } from './context/context-graph'
-import { DocumentHistory } from './context/history'
+import { ContextMixer } from './context/context-mixer'
 import { DocumentContext } from './get-current-doc-context'
 import { AutocompleteItem } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
@@ -18,7 +15,6 @@ import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -30,15 +26,10 @@ export interface InlineCompletionsParams {
 
     // Prompt parameters
     providerConfig: ProviderConfig
-    graphContextFetcher?: GraphContextFetcher
-
-    // Injected
-    contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    getCodebaseContext?: () => CodebaseContext
-    documentHistory?: DocumentHistory
 
     // Shared
     requestManager: RequestManager
+    contextMixer: ContextMixer
 
     // UI state
     lastCandidate?: LastInlineCompletionCandidate
@@ -165,10 +156,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext,
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
         providerConfig,
-        graphContextFetcher,
-        contextFetcher,
-        getCodebaseContext,
-        documentHistory,
+        contextMixer,
         requestManager,
         lastCandidate,
         debounceInterval,
@@ -252,15 +240,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await getCompletionContext({
+    const contextResult = await contextMixer.getContext({
         document,
         position,
-        providerConfig,
-        graphContextFetcher,
-        contextFetcher,
-        getCodebaseContext,
-        documentHistory,
         docContext,
+        abortSignal,
+        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
     })
     if (abortSignal?.aborted) {
         return null
@@ -348,54 +333,6 @@ function getCompletionProviders(params: GetCompletionProvidersParams): Provider[
             multiline: false,
         }),
     ]
-}
-
-interface GetCompletionContextParams
-    extends Pick<
-        InlineCompletionsParams,
-        | 'document'
-        | 'position'
-        | 'providerConfig'
-        | 'graphContextFetcher'
-        | 'contextFetcher'
-        | 'getCodebaseContext'
-        | 'documentHistory'
-    > {
-    docContext: DocumentContext
-}
-
-async function getCompletionContext({
-    document,
-    position,
-    providerConfig,
-    graphContextFetcher,
-    contextFetcher,
-    getCodebaseContext,
-    documentHistory,
-    docContext: { prefix, suffix, contextRange },
-}: GetCompletionContextParams): Promise<GetContextResult | null> {
-    if (!contextFetcher) {
-        return null
-    }
-    if (!getCodebaseContext) {
-        throw new Error('getCodebaseContext is required if contextFetcher is provided')
-    }
-    if (!documentHistory) {
-        throw new Error('documentHistory is required if contextFetcher is provided')
-    }
-
-    return contextFetcher({
-        document,
-        position,
-        prefix,
-        suffix,
-        contextRange,
-        history: documentHistory,
-        jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
-        getCodebaseContext,
-        graphContextFetcher,
-    })
 }
 
 function createCompletionProviderTracer(

@@ -30,6 +30,7 @@ export interface InteractionMessage extends Message {
 export interface ChatMetadata {
     source?: ChatEventSource
     requestID?: string
+    chatModel?: string
 }
 
 export interface UserLocalHistory {

@@ -102,12 +102,14 @@ export class ChatManager implements vscode.Disposable {
             return
         }
 
-        // If chat view is not needed, run the recipe via sidebar chat
-        if (!openChatView) {
+        // If chat view is not needed, run the recipe via sidebar chat without creating a new panel
+        const isDefaultEditCommands = ['/doc', '/edit'].includes(humanChatInput)
+        if (!openChatView || isDefaultEditCommands) {
             await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
             return
         }
 
+        // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
         if (!openChatView || !this.chatPanelsManager) {
             await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
@@ -164,8 +166,11 @@ export class ChatManager implements vscode.Disposable {
      * Clears the current chat session and restarts it, creating a new chat ID.
      */
     public async clearAndRestartSession(): Promise<void> {
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.clearAndRestartSession()
+        if (!this.chatPanelsManager) {
+            return this.sidebarChat.clearAndRestartSession()
+        }
+
+        await this.chatPanelsManager.clearAndRestartSession()
     }
 
     public async restoreSession(chatID: string): Promise<void> {

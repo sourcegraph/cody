@@ -6,6 +6,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
     ChatButtonProps,
+    ChatModelSelection,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
     CodeBlockActionsProps,
@@ -38,6 +39,8 @@ export const Transcript: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
+        chatModels?: ChatModelSelection[]
+        ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -64,6 +67,8 @@ export const Transcript: React.FunctionComponent<
     chatInputClassName,
     ChatButtonComponent,
     isTranscriptError,
+    chatModels,
+    ChatModelDropdownMenu,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -170,6 +175,9 @@ export const Transcript: React.FunctionComponent<
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
+                {!!chatModels?.length && ChatModelDropdownMenu && (
+                    <ChatModelDropdownMenu models={chatModels} disabled={transcript.length > 1} />
+                )}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
