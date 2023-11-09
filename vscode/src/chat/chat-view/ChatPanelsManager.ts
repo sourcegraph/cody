@@ -170,6 +170,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposeProvider(chatID)
 
             await this.activePanelProvider?.clearChatHistory(chatID)
+            this.updateTreeViewHistory()
             return
         }
 
