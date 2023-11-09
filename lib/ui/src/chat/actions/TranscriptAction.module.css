@@ -1,14 +1,13 @@
 .container {
     display: inline-block;
-    padding: 0.4rem;
     font-size: 0.9rem;
     min-width: calc(100% - 1.1rem);
+
+    background: unset !important;
 }
 .container-open {
     padding-bottom: 0.6rem;
     display: flex;
-    flex-direction: column;
-    align-self: stretch;
     gap: 0.5rem;
 }
 
@@ -34,16 +33,15 @@
 }
 
 .steps {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    display: inline-block;
+    align-items: center;
     list-style-type: none;
     margin: 0;
     padding: 0;
+    gap: 1em;
 }
 
 .step {
-    display: flex;
     align-items: center;
 }
 .step-icon {
@@ -54,6 +52,7 @@
     margin-right: 0.3rem;
 }
 .step-object {
+    background: rgba(166, 172, 205, 0.3);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

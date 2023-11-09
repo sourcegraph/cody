@@ -29,7 +29,7 @@
     background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
 }
 
-.row:hover>.header-container {
+.row:hover > .header-container {
     visibility: visible;
 }
 
@@ -53,7 +53,12 @@
     overflow-x: auto;
 }
 
-.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
     margin: 1.2em 0;
 }
 
@@ -72,7 +77,9 @@
     font-weight: 700;
 }
 
-.content h4, .content h5, .content h6 {
+.content h4,
+.content h5,
+.content h6 {
     font-size: inherit;
     font-weight: 600;
 }
@@ -153,4 +160,10 @@
 
 .submit-button:hover {
     opacity: 1;
+}
+
+.context-files-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
 }

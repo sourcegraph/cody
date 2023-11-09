@@ -1,20 +1,20 @@
 import React from 'react'
 
-import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import styles from './FileLink.module.css'
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => (
+export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path, range, source }) => (
     <button
         className={styles.linkButton}
         type="button"
+        title={source}
         onClick={() => {
-            getVSCodeAPI().postMessage({ command: 'openFile', filePath: path })
+            getVSCodeAPI().postMessage({ command: 'openFile', filePath: path, range })
         }}
-        title={path}
     >
-        {path}
+        {range?.end.line ? `@${path}:${range?.start.line + 1}-${range?.end.line - 1}` : `@${path}`}
     </button>
 )

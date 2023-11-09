@@ -37,7 +37,7 @@ export function createDisplayTextWithFileSelection(
     const displayText = `${humanInput} @${fileName}`
     const fsPath = selection?.fileUri?.fsPath
     const startLine = selection?.selectionRange?.start?.line
-    if (!fsPath || !startLine) {
+    if (!fsPath || !selection?.selectionRange?.end?.line) {
         return displayText
     }
 

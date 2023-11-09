@@ -3,7 +3,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextFileRange, ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -38,7 +38,11 @@ export type WebviewMessage =
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'chatModel'; model: string }
-    | { command: 'openFile'; filePath: string }
+    | {
+          command: 'openFile'
+          filePath: string
+          range?: ContextFileRange
+      }
     | {
           command: 'openLocalFileWithRange'
           filePath: string

@@ -15,7 +15,8 @@ import {
 
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
-import { ContextFiles, FileLinkProps } from './ContextFiles'
+import { FileLinkProps } from './components/ContextFiles'
+import { EnhancedContext } from './components/EnhancedContext'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -147,15 +148,6 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </header>
             )}
-            {message.contextFiles && message.contextFiles.length > 0 && (
-                <div className={styles.actions}>
-                    <ContextFiles
-                        contextFiles={message.contextFiles}
-                        fileLinkComponent={fileLinkComponent}
-                        className={transcriptActionClassName}
-                    />
-                </div>
-            )}
             {message.preciseContext && message.preciseContext.length > 0 && (
                 <div className={styles.actions}>
                     <PreciseContexts
@@ -190,6 +182,15 @@ export const TranscriptItem: React.FunctionComponent<
             </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
+            )}
+            {message.speaker === 'human' && message.contextFiles && message.contextFiles.length > 0 && (
+                <div className={styles.contextFilesContainer}>
+                    <EnhancedContext
+                        contextFiles={message.contextFiles}
+                        fileLinkComponent={fileLinkComponent}
+                        className={transcriptActionClassName}
+                    />
+                </div>
             )}
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&

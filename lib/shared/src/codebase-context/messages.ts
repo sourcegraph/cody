@@ -8,7 +8,7 @@ import { Message } from '../sourcegraph-api'
 // user: context file provided by the user explicitly via chat input
 // keyword: the context file returned from local keyword search
 // editor: context file retrieved from the current editor
-export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor'
+export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor' | 'filename' | 'unified'
 
 export type ContextFileType = 'file' | 'symbol'
 
@@ -32,7 +32,7 @@ export interface ContextFile {
         dirname?: string
         relative?: string
     }
-    range?: ActiveTextEditorSelectionRange
+    range?: ContextFileRange | ActiveTextEditorSelectionRange
 
     // metadata
     source?: ContextFileSource
@@ -73,6 +73,17 @@ export interface HoverContext {
     }
 }
 
+export interface ContextFileRange {
+    start: {
+        line: number
+        character: number
+    }
+    end: {
+        line: number
+        character: number
+    }
+}
+
 export interface OldContextMessage extends Message {
     fileName?: string
 }
@@ -80,8 +91,10 @@ export interface OldContextMessage extends Message {
 export function getContextMessageWithResponse(
     text: string,
     file: ContextFile,
-    response: string = 'Ok.'
+    response: string = 'Ok.',
+    source?: ContextFileSource
 ): ContextMessage[] {
+    file.source = source
     return [
         { speaker: 'human', text, file },
         { speaker: 'assistant', text: response },

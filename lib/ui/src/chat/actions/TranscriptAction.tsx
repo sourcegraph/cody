@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon } from '../../utils/Icon'
@@ -13,7 +12,6 @@ export interface TranscriptActionStep {
 
     /**
      * The SVG path of an icon.
-     *
      * @example mdiSearchWeb
      */
     icon?: string
@@ -24,11 +22,9 @@ export const TranscriptAction: React.FunctionComponent<{
     steps: TranscriptActionStep[]
     className?: string
 }> = ({ title, steps, className }) => {
-    const [open, setOpen] = useState(false)
-
     return (
-        <div className={classNames(className, styles.container, open && styles.containerOpen)}>
-            <button type="button" onClick={() => setOpen(!open)} className={styles.openCloseButton}>
+        <div className={classNames(className, styles.container, styles.containerOpen)}>
+            <div className={styles.steps}>
                 {typeof title === 'string' ? (
                     title
                 ) : (
@@ -36,25 +32,17 @@ export const TranscriptAction: React.FunctionComponent<{
                         {title.verb} <strong>{title.object}</strong>
                     </span>
                 )}
-                <Icon
-                    aria-hidden={true}
-                    svgPath={open ? mdiChevronUp : mdiChevronDown}
-                    className={styles.openCloseIcon}
-                />
-            </button>
-            {open && (
-                <ol className={styles.steps}>
-                    {steps.map((step, index) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <li key={index} className={styles.step}>
-                            {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />}{' '}
-                            <span className={styles.stepObject}>
-                                {step.verb} {step.object}
-                            </span>
-                        </li>
-                    ))}
-                </ol>
-            )}
+
+                {steps.map((step, index) => (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <span key={index} className={styles.step}>
+                        {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />}{' '}
+                        <span className={styles.stepObject}>
+                            {step.verb} {step.object}
+                        </span>
+                    </span>
+                ))}
+            </div>
         </div>
     )
 }

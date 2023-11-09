@@ -12,7 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { CodeBlockMeta } from './chat/CodeBlocks'
-import { FileLinkProps } from './chat/ContextFiles'
+import { FileLinkProps } from './chat/components/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'

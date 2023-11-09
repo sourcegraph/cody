@@ -63,12 +63,12 @@ export class Interaction {
      */
     public toChat(): ChatMessage[] {
         return [
-            this.humanMessage,
             {
-                ...this.assistantMessage,
+                ...this.humanMessage,
                 contextFiles: this.usedContextFiles,
                 preciseContext: this.usedPreciseContext,
             },
+            this.assistantMessage,
         ]
     }
 
