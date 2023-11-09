@@ -8,9 +8,9 @@ import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
-import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+import { countCode } from '../services/utils/code-count'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
