@@ -284,7 +284,7 @@ export class ChatPanelProvider extends MessageProvider {
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
-            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+            { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
             {
                 enableScripts: true,
                 retainContextWhenHidden: true,
