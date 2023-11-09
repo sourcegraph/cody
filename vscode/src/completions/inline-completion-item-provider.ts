@@ -10,7 +10,7 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { ContextMixer } from './context/context-mixer'
+import { ContextMixer, ContextStrategy } from './context/context-mixer'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -108,7 +108,7 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
-    contextStrategy: 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none'
+    contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
 
     // Feature flags

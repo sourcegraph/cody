@@ -29,16 +29,14 @@ export interface GetContextResult {
     logSummary: ContextSummary
 }
 
+export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none'
 export class ContextMixer implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     private localRetriever: ContextRetriever | undefined
     private graphRetriever: ContextRetriever | undefined
 
-    constructor(
-        contextStrategy: 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none',
-        createBfgRetriever?: () => BfgRetriever
-    ) {
+    constructor(contextStrategy: ContextStrategy, createBfgRetriever?: () => BfgRetriever) {
         if (contextStrategy !== 'none') {
             this.localRetriever = new JaccardSimilarityRetriever()
             this.disposables.push(this.localRetriever)
