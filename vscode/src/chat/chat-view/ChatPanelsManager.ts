@@ -116,9 +116,16 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private selectTreeItem(chatID: ChatID): void {
+        // no op if tree view is not visible
+        if (!this.treeView.visible) {
+            return
+        }
+
+        // Highlights the chat item in tree view
+        // This will also open the tree view (sidebar)
         const chat = this.treeViewProvider.getTreeItemByID(chatID)
         if (chat) {
-            void this.treeView?.reveal(chat, { select: true })
+            void this.treeView?.reveal(chat, { select: true, focus: false })
         }
     }
 

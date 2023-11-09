@@ -3,15 +3,19 @@ import * as vscode from 'vscode'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../../webviews/NavBar'
-import { getActiveEditor } from '../../editor/active-editor'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import {
+    handleCodeFromInsertAtCursor,
+    handleCodeFromSaveToNewFile,
+    handleCopiedCode,
+} from '../../services/utils/codeblock-action-tracker'
+import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
 import {
     APP_LANDING_URL,
@@ -82,7 +86,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
-                await this.executeRecipe(message.recipe)
+                await this.executeRecipe(message.recipe, '', 'chat')
                 break
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
@@ -106,18 +110,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
-            case 'insert':
-                await this.handleInsertAtCursor(message.text, message.metadata)
-                break
-            case 'newFile':
-                await this.handleSaveToNewFile(message.text, message.metadata)
-                break
-            case 'copy':
-                await this.handleCopiedCode(message.text, message.eventType, message.metadata)
-                break
-            case 'event':
-                telemetryService.log(message.eventName, message.properties)
-                break
             case 'history':
                 if (message.action === 'clear') {
                     await this.clearHistory()
@@ -132,9 +124,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'deleteHistory':
                 await this.deleteHistory(message.chatID)
                 break
-            case 'links':
-                void this.openExternalLinks(message.value)
-                break
             case 'custom-prompt':
                 await this.onCustomPromptClicked(message.title, message.value)
                 break
@@ -143,21 +132,27 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
                 break
+            case 'insert':
+                await handleCodeFromInsertAtCursor(message.text, message.metadata)
+                break
+            case 'newFile':
+                handleCodeFromSaveToNewFile(message.text, message.metadata)
+                await this.editor.createWorkspaceFile(message.text)
+                break
+            case 'copy':
+                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+                break
+            case 'event':
+                telemetryService.log(message.eventName, message.properties)
+                break
+            case 'links':
+                void openExternalLinks(message.value)
+                break
             case 'openFile':
-                await this.openFilePath(message.filePath)
+                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
                 break
             case 'openLocalFileWithRange':
-                await this.openLocalFileWithRange(
-                    message.filePath,
-                    message.range
-                        ? new vscode.Range(
-                              message.range.startLine,
-                              message.range.startCharacter,
-                              message.range.endLine,
-                              message.range.endCharacter
-                          )
-                        : undefined
-                )
+                await openLocalFileWithRange(message.filePath, message.range)
                 break
             case 'simplified-onboarding':
                 if (message.type === 'install-app') {
@@ -165,7 +160,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                     break
                 }
                 if (message.type === 'open-app') {
-                    void this.openExternalLinks(APP_REPOSITORIES_URL.href)
+                    void openExternalLinks(APP_REPOSITORIES_URL.href)
                     break
                 }
                 if (message.type === 'reload-state') {
@@ -199,7 +194,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             os && arch && isOsSupportedByApp(os, arch)
                 ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
                 : APP_LANDING_URL.href
-        await this.openExternalLinks(DOWNLOAD_URL)
+        await openExternalLinks(DOWNLOAD_URL)
     }
 
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
@@ -279,57 +274,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
-    /**
-     * Handles insert event to insert text from code block at cursor position
-     * Replace selection if there is one and then log insert event
-     * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
-     */
-    private async handleInsertAtCursor(text: string, meta?: CodeBlockMeta): Promise<void> {
-        const selectionRange = getActiveEditor()?.selection
-        const editor = getActiveEditor()
-        if (!editor || !selectionRange) {
-            this.handleError('No editor or selection found to insert text', 'system')
-            return
-        }
-
-        const edit = new vscode.WorkspaceEdit()
-        // trimEnd() to remove new line added by Cody
-        edit.insert(editor.document.uri, selectionRange.start, text + '\n')
-        await vscode.workspace.applyEdit(edit)
-
-        // Log insert event
-        const op = 'insert'
-        const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, meta?.source, meta?.requestID)
-    }
-
-    /**
-     * Handles insert event to insert text from code block to new file
-     */
-    private async handleSaveToNewFile(text: string, meta?: CodeBlockMeta): Promise<void> {
-        // Log insert event
-        const op = 'save'
-        const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, meta?.source, meta?.requestID)
-
-        await this.editor.createWorkspaceFile(text)
-    }
-
-    /**
-     * Handles copying code and detecting a paste event.
-     * @param text - The text from code block when copy event is triggered
-     * @param eventType - Either 'Button' or 'Keydown'
-     */
-    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown', meta?: CodeBlockMeta): Promise<void> {
-        // If it's a Button event, then the text is already passed in from the whole code block
-        const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
-        const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
-        // Send to Inline Controller for tracking
-        if (copiedCode) {
-            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, meta?.source, meta?.requestID)
-        }
-    }
-
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
         void this.webview?.postMessage({
             type: 'custom-prompts',
@@ -407,46 +351,5 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         }
         await this.deleteHistory(chatID)
         return
-    }
-
-    /**
-     * Open file in editor or in sourcegraph
-     */
-    protected async openFilePath(filePath: string): Promise<void> {
-        const rootUri = this.editor.getWorkspaceRootUri()
-        if (!rootUri) {
-            this.handleError('Failed to open file: missing rootUri', 'system')
-            return
-        }
-        try {
-            const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
-            await vscode.window.showTextDocument(doc)
-        } catch {
-            // Try to open the file in the sourcegraph view
-            const sourcegraphSearchURL = new URL(
-                `/search?q=context:global+file:${filePath}`,
-                this.contextProvider.config.serverEndpoint
-            ).href
-            void this.openExternalLinks(sourcegraphSearchURL)
-        }
-    }
-
-    /**
-     * Open file in editor (assumed filePath is absolute) and optionally reveal a specific range
-     */
-    protected async openLocalFileWithRange(filePath: string, range?: vscode.Range): Promise<void> {
-        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath))
-        await vscode.window.showTextDocument(doc, { selection: range })
-    }
-
-    /**
-     * Open external links
-     */
-    private async openExternalLinks(uri: string): Promise<void> {
-        try {
-            await vscode.env.openExternal(vscode.Uri.parse(uri))
-        } catch (error) {
-            throw new Error(`Failed to open file: ${error}`)
-        }
     }
 }

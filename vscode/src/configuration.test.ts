@@ -28,6 +28,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
+            experimentalSearchPanel: false,
             inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
@@ -71,6 +72,8 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.chatPanel':
                         return true
                     case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.newSearch':
                         return true
                     case 'cody.experimental.commandLenses':
                         return true
@@ -138,6 +141,7 @@ describe('getConfiguration', () => {
             },
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
+            experimentalSearchPanel: true,
             experimentalCommandLenses: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,

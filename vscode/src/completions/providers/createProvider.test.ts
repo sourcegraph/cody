@@ -27,6 +27,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
+    experimentalSearchPanel: false,
     inlineChat: true,
     codeActions: true,
     isRunningInsideAgent: false,

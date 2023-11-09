@@ -32,9 +32,10 @@ export class NetworkError extends Error {
 
     constructor(
         response: Response,
+        content: string,
         public traceId: string | undefined
     ) {
-        super(`Request to ${response.url} failed with ${response.status}: ${response.statusText}`)
+        super(`Request to ${response.url} failed with ${response.status} ${response.statusText}: ${content}`)
         this.status = response.status
     }
 }
