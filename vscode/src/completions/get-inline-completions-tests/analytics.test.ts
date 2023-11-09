@@ -44,6 +44,7 @@ describe('[getInlineCompletions] completion event', () => {
             'suggestedAt',
             'suggestionAnalyticsLoggedAt',
             'suggestionLoggedAt',
+            'params.contextSummary.duration',
         ])
     }
 
@@ -82,7 +83,9 @@ describe('[getInlineCompletions] completion event', () => {
                 "loggedPartialAcceptedLength": 0,
                 "params": {
                   "completionIntent": "function.body",
-                  "contextSummary": undefined,
+                  "contextSummary": {
+                    "strategy": "local",
+                  },
                   "id": "stable-uuid",
                   "languageId": "typescript",
                   "multiline": true,
@@ -128,7 +131,9 @@ describe('[getInlineCompletions] completion event', () => {
                 "loggedPartialAcceptedLength": 0,
                 "params": {
                   "completionIntent": "return_statement",
-                  "contextSummary": undefined,
+                  "contextSummary": {
+                    "strategy": "local",
+                  },
                   "id": "stable-uuid",
                   "languageId": "typescript",
                   "multiline": false,

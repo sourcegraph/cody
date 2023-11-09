@@ -277,12 +277,21 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
+                return
+            }
+
+            // Handles keyboard shortcuts with Ctrl key.
+            // Checks if the Ctrl key is pressed with a key not in the allow list
+            // to avoid triggering default browser shortcuts and bubbling the event.
+            const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
+            if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
+                event.preventDefault()
             }
 
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
-            if (event.altKey && event.key === 'c') {
+            const vscodeCodyShortcuts = new Set(['Slash', 'KeyC'])
+            if (event.altKey && vscodeCodyShortcuts.has(event.code)) {
                 event.preventDefault()
-                event.stopPropagation()
             }
 
             // Handles cycling through chat command suggestions using the up and down arrow keys

@@ -115,8 +115,13 @@ export interface AutocompleteParams {
     // Defaults to 'Automatic' for autocompletions which were not explicitly
     // triggered.
     triggerKind?: 'Automatic' | 'Invoke'
+    selectedCompletionInfo?: SelectedCompletionInfo
 }
 
+export interface SelectedCompletionInfo {
+    readonly range: Range
+    readonly text: string
+}
 export interface AutocompleteResult {
     items: AutocompleteItem[]
     completionEvent?: CompletionEvent
