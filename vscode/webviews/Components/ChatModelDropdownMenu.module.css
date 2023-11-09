@@ -1,0 +1,38 @@
+.container {
+    margin: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: calc(100% - 1.1rem);
+    margin-top: 1rem;
+}
+
+.dropdown-container {
+    width: 95%;
+    padding: 0.5rem;
+}
+
+.header-logo {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5em;
+    flex-shrink: 0;
+}
+
+.logo {
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-right: 0.5em;
+    flex-shrink: 0;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

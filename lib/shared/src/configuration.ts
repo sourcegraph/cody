@@ -29,8 +29,9 @@ export interface Configuration {
     codeActions: boolean
     experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
+    experimentalSearchPanel: boolean
     experimentalCommandLenses: boolean
-    experimentalEditorTitleCommandIcon: boolean
+    editorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean

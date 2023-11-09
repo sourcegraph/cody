@@ -65,6 +65,8 @@ interface ChatProps extends ChatClassNames {
     isTranscriptError?: boolean
     contextSelection?: ContextFile[]
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
+    chatModels?: ChatModelSelection[]
+    ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -145,6 +147,13 @@ export type ChatSubmitType = 'user' | 'suggestion' | 'example'
 
 const defaultChatContextConfig: ChatContextConfig = { useEnhancedContext: true, addedContextFiles: new Map() }
 
+export interface ChatModelSelection {
+    title?: string
+    model: string
+    provider: string
+    default: boolean
+}
+
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -202,6 +211,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isTranscriptError,
     UserContextSelectorComponent,
     contextSelection,
+    chatModels,
+    ChatModelDropdownMenu,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -497,6 +508,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     isTranscriptError={isTranscriptError}
+                    chatModels={chatModels}
+                    ChatModelDropdownMenu={ChatModelDropdownMenu}
                 />
             )}
 

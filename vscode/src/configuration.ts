@@ -73,6 +73,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         }),
         experimentalChatPanel: config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
+        experimentalSearchPanel: config.get(CONFIG_KEY.experimentalNewSearch, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
@@ -80,7 +81,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
-        experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
+        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,

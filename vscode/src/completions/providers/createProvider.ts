@@ -119,6 +119,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
         starCoder7b,
         starCoder16b,
         starCoderHybrid,
+        starCoderHybridSourcegraph,
         llamaCode7b,
         llamaCode13b,
         starcoderExtendedTokenWindow,
@@ -127,6 +128,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybridSourcegraph),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderExtendedTokenWindow),
@@ -139,7 +141,9 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
             : starCoder16b
             ? 'starcoder-16b'
             : starCoderHybrid
-            ? 'starcoder-hybrid'
+            ? starCoderHybridSourcegraph
+                ? 'starcoder-hybrid-sourcegraph'
+                : 'starcoder-hybrid'
             : llamaCode7b
             ? 'llama-code-7b'
             : 'llama-code-13b'

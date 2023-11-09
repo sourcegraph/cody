@@ -113,6 +113,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected userContextFiles: ContextFile[] = []
+    protected chatModel: string | undefined = undefined
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -178,6 +179,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
+        this.chatModel = this.transcript.chatModel
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -261,49 +263,53 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         let textConsumed = 0
 
-        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => {
-                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
-                text = text.slice(textConsumed)
-                textConsumed += text.length
-                void this.multiplexer.publish(text)
-            },
-            onComplete: () => {
-                void this.multiplexer.notifyTurnComplete()
-            },
-            onError: (err, statusCode) => {
-                // TODO notify the multiplexer of the error
-                logError('ChatViewProvider:onError', err)
+        this.cancelCompletionCallback = this.chat.chat(
+            promptMessages,
+            {
+                onChange: text => {
+                    // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                    text = text.slice(textConsumed)
+                    textConsumed += text.length
+                    void this.multiplexer.publish(text)
+                },
+                onComplete: () => {
+                    void this.multiplexer.notifyTurnComplete()
+                },
+                onError: (err, statusCode) => {
+                    // TODO notify the multiplexer of the error
+                    logError('ChatViewProvider:onError', err)
 
-                if (isAbortError(err)) {
-                    this.isMessageInProgress = false
-                    this.sendTranscript()
-                    return
-                }
+                    if (isAbortError(err)) {
+                        this.isMessageInProgress = false
+                        this.sendTranscript()
+                        return
+                    }
 
-                // Log users out on unauth error
-                if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    this.authProvider
-                        .auth(
-                            this.contextProvider.config.serverEndpoint,
-                            this.contextProvider.config.accessToken,
-                            this.contextProvider.config.customHeaders
-                        )
-                        .catch(error => console.error(error))
-                    logError('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
-                }
+                    // Log users out on unauth error
+                    if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                        this.authProvider
+                            .auth(
+                                this.contextProvider.config.serverEndpoint,
+                                this.contextProvider.config.accessToken,
+                                this.contextProvider.config.customHeaders
+                            )
+                            .catch(error => console.error(error))
+                        logError('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                    }
 
-                if (isNetworkError(err)) {
-                    err = 'Cody could not respond due to network error.'
-                }
-                // Display error message as assistant response
-                this.handleError(err, 'transcript')
-                // We ignore embeddings errors in this instance because we're already showing an
-                // error message and don't want to overwhelm the user.
-                void this.onCompletionEnd(true)
-                console.error(`Completion request failed: ${err}`)
+                    if (isNetworkError(err)) {
+                        err = 'Cody could not respond due to network error.'
+                    }
+                    // Display error message as assistant response
+                    this.handleError(err, 'transcript')
+                    // We ignore embeddings errors in this instance because we're already showing an
+                    // error message and don't want to overwhelm the user.
+                    void this.onCompletionEnd(true)
+                    console.error(`Completion request failed: ${err}`)
+                },
             },
-        })
+            { model: this.chatModel }
+        )
     }
 
     protected cancelCompletion(): void {
@@ -446,7 +452,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const properties = { contextSummary, source, requestID }
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }

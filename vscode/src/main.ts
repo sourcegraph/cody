@@ -35,6 +35,7 @@ import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/S
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
 
 /**
@@ -197,6 +198,7 @@ const register = async (
                     symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
                 })
                 .catch(() => {})
+            workspaceActionsOnConfigChange(editor.getWorkspaceRootUri(), authStatus.endpoint)
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }

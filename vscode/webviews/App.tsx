@@ -7,6 +7,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
@@ -43,6 +44,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
+
+    const [chatModels, setChatModels] = useState<ChatModelSelection[]>()
 
     useEffect(
         () =>
@@ -118,6 +121,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
+                        break
+                    case 'chatModels':
+                        setChatModels(message.models)
                         break
                 }
             }),
@@ -233,6 +239,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     onboardingPopupProps,
                                 },
                             }}
+                            chatModels={chatModels}
                         />
                     )}
                 </>

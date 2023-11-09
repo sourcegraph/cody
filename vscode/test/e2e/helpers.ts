@@ -133,7 +133,7 @@ export async function buildWorkSpaceSettings(workspaceDirectory: string): Promis
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.experimental.commandLenses': true,
-        'cody.experimental.editorTitleCommandIcon': true,
+        'cody.editorTitleCommandIcon': true,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')

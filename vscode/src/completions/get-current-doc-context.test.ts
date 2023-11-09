@@ -15,7 +15,6 @@ function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletio
         position,
         maxPrefixLength: 100,
         maxSuffixLength: 100,
-        enableExtendedTriggers: true,
         context,
     })
 }
@@ -53,7 +52,7 @@ describe('getCurrentDocContext', () => {
         })
     })
 
-    it('returns correct multi-line trigger when `enableExtendedTriggers: true`', () => {
+    it('returns correct multi-line trigger', () => {
         const result = testGetCurrentDocContext('const arr = [█\n];')
 
         expect(result).toEqual({
@@ -191,7 +190,6 @@ describe('getCurrentDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            enableExtendedTriggers: true,
         })
         expect(docContext.contextRange).toMatchInlineSnapshot(`
           Range {
