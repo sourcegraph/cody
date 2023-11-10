@@ -49,3 +49,29 @@ describe('vscode-shim', () => {
         })
     })
 })
+
+describe('vscode.workspace.fs', () => {
+    it('stat', async () => {
+        const stat = await vscode.workspace.fs.stat(vscode.Uri.parse('file:/tmp'))
+        expect(stat.type).toBe(vscode.FileType.Directory)
+    })
+    it('readDirectory', async () => {
+        const readDirectory = await vscode.workspace.fs.readDirectory(vscode.Uri.parse('file:/tmp'))
+        console.log(readDirectory)
+    })
+    it('createDirectory', async () => {
+        await vscode.workspace.fs.createDirectory(vscode.Uri.parse('file:/tmp/test'))
+        const stat = await vscode.workspace.fs.stat(vscode.Uri.parse('file:/tmp/test'))
+        expect(stat.type).toBe(vscode.FileType.Directory)
+    })
+    it('readFile', async () => {
+        const content = await vscode.workspace.fs.readFile(vscode.Uri.parse('file:/tmp/path/to/file'))
+        expect(content).toEqual(new Uint8Array(Buffer.from('Hello')))
+    })
+    it('writeFile', async () => {
+        const data = new Uint8Array(Buffer.from('Hello'))
+        await vscode.workspace.fs.writeFile(vscode.Uri.parse('file:/tmp/path/to/file'), data)
+        const content = await vscode.workspace.fs.readFile(vscode.Uri.parse('file:/tmp/path/to/file'))
+        expect(content).toEqual(data)
+    })
+})

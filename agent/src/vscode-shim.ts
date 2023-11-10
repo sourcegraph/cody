@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+import * as fs from 'fs'
+import * as fspromises from 'fs/promises'
+
 import type * as vscode from 'vscode'
 
 // <VERY IMPORTANT - PLEASE READ>
@@ -22,6 +25,7 @@ import {
     emptyDisposable,
     emptyEvent,
     EventEmitter,
+    FileType,
     UIKind,
     Uri,
 } from '../../vscode/src/testutils/mocks'
@@ -199,6 +203,79 @@ const _workspace: Partial<typeof vscode.workspace> = {
     asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
+    fs: {
+        stat: async uri => {
+            const stat = await fspromises.stat(uri.fsPath)
+            const type = stat.isFile()
+                ? FileType.File
+                : stat.isDirectory()
+                ? FileType.Directory
+                : stat.isSymbolicLink()
+                ? FileType.SymbolicLink
+                : FileType.Unknown
+
+            return {
+                type,
+                ctime: stat.ctimeMs,
+                mtime: stat.mtimeMs,
+                size: stat.size,
+            }
+        },
+        readDirectory: async uri => {
+            const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
+
+            return entries.map(entry => {
+                const type = entry.isFile()
+                    ? FileType.File
+                    : entry.isDirectory()
+                    ? FileType.Directory
+                    : entry.isSymbolicLink()
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
+
+                return [entry.name, type]
+            })
+        },
+        createDirectory: async uri => {
+            await fspromises.mkdir(uri.fsPath, { recursive: true })
+        },
+        readFile: async uri => {
+            const content = await fspromises.readFile(uri.fsPath)
+            return new Uint8Array(content.buffer)
+        },
+        writeFile: async (uri, content) => {
+            await fspromises.writeFile(uri.fsPath, content)
+        },
+        delete: async (uri, options) => {
+            const provider = this.throwIfFileSystemIsReadonly(await this.withProvider(resource), resource)
+            if (useTrash && !(provider.capabilities & FileSystemProviderCapabilities.Trash)) {
+                throw new Error(
+                    localize(
+                        'deleteFailedTrashUnsupported',
+                        "Unable to delete file '{0}' via trash because provider does not support it.",
+                        this.resourceForError(resource)
+                    )
+                )
+            }
+            if (options?.useTrash) {
+                throw new Error('Trash is not supported by the agent')
+            }
+            await fspromises.rm(uri.fsPath, { recursive: options?.recursive })
+        },
+        rename: async (source, target, options) => {
+            if (!options?.overwrite && fs.existsSync(target.fsPath)) {
+                throw new Error('Target path already exists and overwrite is set to false.')
+            }
+            await fspromises.rename(source.fsPath, target.fsPath)
+        },
+        copy: async (source, target, options) => {
+            const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
+            await fspromises.copyFile(source.fsPath, target.fsPath, mode)
+        },
+        isWritableFileSystem: scheme => {
+            return scheme === 'file' || scheme === 'git'
+        },
+    },
 }
 export const workspace = _workspace as typeof vscode.workspace
 
