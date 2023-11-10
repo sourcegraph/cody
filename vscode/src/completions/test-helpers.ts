@@ -3,12 +3,13 @@ import path from 'path'
 import dedent from 'dedent'
 import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
 import Parser, { QueryCapture, QueryMatch } from 'web-tree-sitter'
 
 import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { wrapVSCodeTextDocument } from '../testutils/textDocument'
+import { testFilePath, wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 import { SupportedLanguage } from './tree-sitter/grammars'
 import { createParser } from './tree-sitter/parser'
@@ -44,7 +45,7 @@ const CURSOR_MARKER = '█'
 export function document(
     text: string,
     languageId: string = 'typescript',
-    uriString = 'file:///test.ts'
+    uriString = URI.file(testFilePath('test.ts')).toString()
 ): VSCodeTextDocument {
     return wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, text))
 }

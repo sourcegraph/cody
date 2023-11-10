@@ -4,13 +4,13 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { Position } from '../../testutils/mocks'
-import { range, withPosixPaths } from '../../testutils/textDocument'
+import { range, testFilePath, withPosixPaths } from '../../testutils/textDocument'
 import { document } from '../test-helpers'
 
 import { LspLightGraphCache } from './lsp-light-graph-cache'
 
-const document1Uri = URI.file('/document1.ts')
-const document2Uri = URI.file('/document2.ts')
+const document1Uri = URI.file(testFilePath('document1.ts'))
+const document2Uri = URI.file(testFilePath('document2.ts'))
 
 const disposable = {
     dispose: () => {},

@@ -7,6 +7,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { testFilePath } from '../../testutils/textDocument'
 import { CodeCompletionsClient } from '../client'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
@@ -26,7 +27,7 @@ import { getParser } from '../tree-sitter/parser'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const URI_FIXTURE = URI.parse('file:///test.ts')
+const URI_FIXTURE = URI.file(testFilePath('test.ts'))
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string

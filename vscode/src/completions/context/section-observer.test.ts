@@ -222,15 +222,7 @@ describe('GraphSectionObserver', () => {
             expect(context[0]).toEqual({
                 content: 'foo\nbar\nfoo',
                 fileName: document2Uri.fsPath,
-                fileUri: {
-                    _formatted: 'file:///document2.ts',
-                    _fsPath: '/document2.ts',
-                    authority: '',
-                    fragment: '',
-                    path: '/document2.ts',
-                    query: '',
-                    scheme: 'file',
-                },
+                fileUri: document2Uri,
             })
         })
 
