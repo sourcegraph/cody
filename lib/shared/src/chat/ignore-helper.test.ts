@@ -9,8 +9,8 @@ import { CODY_IGNORE_FILENAME, IgnoreHelper } from './ignore-helper'
 
 describe('IgnoreHelper', () => {
     let ignore: IgnoreHelper
-    const workspace1Root = Uri.parse(testFilePath('foo/workspace1'))
-    const workspace2Root = Uri.parse(testFilePath('foo/workspace2'))
+    const workspace1Root = Uri.file(testFilePath('foo/workspace1'))
+    const workspace2Root = Uri.file(testFilePath('foo/workspace2'))
 
     function setIgnores(workspaceRoot: string, ignoreFolder: string, rules: string[]) {
         ignore.setIgnoreFiles(workspaceRoot, [
@@ -126,7 +126,7 @@ describe('IgnoreHelper', () => {
     })
 
     it('throws on a relative filename', () => {
-        const relativeFilename = Uri.parse('a')
+        const relativeFilename = Uri.file('a')
         expect(() => ignore.isIgnored(relativeFilename)).toThrow()
     })
 

@@ -77,7 +77,8 @@ export class IgnoreHelper {
     }
 
     public isIgnored(uri: URI): boolean {
-        this.ensureAbsolute('filePath', uri.fsPath)
+        this.ensureFileUri('uri', uri)
+        this.ensureAbsolute('uri.fsPath', uri.fsPath)
         const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)
 
         // Not in workspace so just use default rules against the filename.
@@ -101,6 +102,12 @@ export class IgnoreHelper {
         // everything the nested one does (plus potentially extra rules).
         candidates.sort((a, b) => a.length - b.length)
         return candidates.at(0)
+    }
+
+    private ensureFileUri(name: string, uri: URI): void {
+        if (uri.scheme !== 'file') {
+            throw new Error(`${name} should be a file URI: "${uri}"`)
+        }
     }
 
     private ensureAbsolute(name: string, filePath: string): void {

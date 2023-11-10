@@ -38,7 +38,7 @@ export class AgentEditor implements Editor {
         if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
-        if (isCodyIgnoredFile(URI.parse(this.agent.workspace.activeDocumentFilePath))) {
+        if (isCodyIgnoredFile(URI.file(this.agent.workspace.activeDocumentFilePath))) {
             return undefined
         }
         return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
