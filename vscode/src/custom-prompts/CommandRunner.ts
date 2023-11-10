@@ -47,7 +47,7 @@ export class CommandRunner implements vscode.Disposable {
 
         // Commands only work in active editor / workspace unless context specifies otherwise
         this.editor = getActiveEditor()
-        if (!this.editor || command.context?.none) {
+        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
