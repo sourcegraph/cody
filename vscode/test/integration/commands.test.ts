@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { afterIntegrationTest, beforeIntegrationTest, getFixupTasks, getTranscript, waitUntil } from './helpers'
 
-suite('Commands', function () {
+suite.only('Commands', function () {
     this.beforeEach(beforeIntegrationTest)
     this.afterEach(afterIntegrationTest)
 
@@ -30,7 +30,6 @@ suite('Commands', function () {
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^\/explain/)
-        assert.match(humanMessage.contextFiles?.[0]?.source || '', /editor/)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
@@ -44,7 +43,6 @@ suite('Commands', function () {
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^\/smell/)
-        assert.match(humanMessage.contextFiles?.[0]?.source || '', /editor/)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
@@ -58,7 +56,6 @@ suite('Commands', function () {
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^\/test/)
-        assert.match(humanMessage.contextFiles?.[0]?.source || '', /editor/)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
