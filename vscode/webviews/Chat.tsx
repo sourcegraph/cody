@@ -28,7 +28,6 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import { EditorContextSelector } from './Components/EditorContextSelector'
 import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
@@ -226,7 +225,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
-            LocalContextSelectorComponent={EditorContextSelector}
             EnhancedContextToggler={EnhancedContextToggler}
         />
     )

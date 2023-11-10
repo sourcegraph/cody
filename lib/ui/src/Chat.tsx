@@ -74,7 +74,6 @@ interface ChatProps extends ChatClassNames {
         enhanceContext: boolean
         setEnhanceContext: (arg: boolean) => void
     }>
-    LocalContextSelectorComponent?: React.FunctionComponent<{ title?: string }>
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
     ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
@@ -215,7 +214,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatCommandsComponent,
     isTranscriptError,
     UserContextSelectorComponent,
-    LocalContextSelectorComponent,
     EnhancedContextToggler,
     contextSelection,
     chatModels,
@@ -540,7 +538,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                 />
             )}
-            {!EnhancedContextToggler && LocalContextSelectorComponent && <LocalContextSelectorComponent />}
             {isGettingStartedComponentVisible && (
                 <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
