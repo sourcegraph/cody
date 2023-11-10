@@ -35,6 +35,15 @@ export function truncateParsedCompletionByNextSibling(context: CompletionContext
     const { completion, document, docContext } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
+    // We insert the first line of the multiline completion into the existing document
+    // to insert the potential start of the multiline block so that we can walk upwards from it.
+    //
+    // Required for multiline completions triggered from the parameters list. E.g.,:
+    // function test(█)
+    // function test(one, two) {...}
+    //
+    // In this case, the logic will find the parameter list as a node with the updated number
+    // of siblings. We get the expected result if we start from the "{" node.
     const firstLine = completion.insertText.split('\n').shift() || completion.insertText
     const parsedFirstLine = parseCompletionFirstLineMemoized(firstLine, {
         document,

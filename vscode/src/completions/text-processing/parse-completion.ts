@@ -115,6 +115,9 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         ? document.getText(new Range(range.end as Position, document.positionAt(document.getText().length)))
         : docContext.suffix
 
+    // Remove the characters that are being replaced by the completion to avoid having
+    // them in the parse tree. It breaks the multiline truncation logic which looks for
+    // the increased number of children in the tree.
     const textWithCompletion = prefix + insertText + suffix.slice(matchingSuffixLength)
 
     const treeCopy = tree.copy()
