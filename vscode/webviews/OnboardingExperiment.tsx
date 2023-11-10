@@ -129,8 +129,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                 </div>
             </div>
             <div className={styles.terms}>
-                By signing in to Cody you agree to our <a href="https://about.sourcegraph.com/terms">Terms of Service</a>{' '}
-                and <a href="https://about.sourcegraph.com/terms/privacy">Privacy Policy</a>
+                By signing in to Cody you agree to our{' '}
+                <a href="https://about.sourcegraph.com/terms">Terms of Service</a> and{' '}
+                <a href="https://about.sourcegraph.com/terms/privacy">Privacy Policy</a>
             </div>
         </div>
     )
