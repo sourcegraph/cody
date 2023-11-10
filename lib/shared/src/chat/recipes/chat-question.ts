@@ -55,7 +55,7 @@ export class ChatQuestion implements Recipe {
     private async getContextMessages(
         text: string,
         editor: Editor,
-        firstInteraction: boolean,
+        isCodebaseContextRequired: boolean,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
         selection: ActiveTextEditorSelection | null,
@@ -69,23 +69,21 @@ export class ChatQuestion implements Recipe {
             return contextMessages
         }
 
-        const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
-
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
 
-        const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
-        this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
-        if (isCodebaseContextRequired || isEditorContextRequired) {
-            contextMessages.push(...ChatQuestion.getEditorContext(editor))
-        }
-
         if (contextFiles?.length) {
             const contextFileMessages = await ChatQuestion.getContextFilesContext(editor, contextFiles)
             contextMessages.push(...contextFileMessages)
+        } else {
+            const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
+            this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
+            if (isEditorContextRequired) {
+                contextMessages.push(...ChatQuestion.getEditorContext(editor))
+            }
         }
 
         // Add selected text as context when available
@@ -96,6 +94,7 @@ export class ChatQuestion implements Recipe {
         return contextMessages
     }
 
+    // Get Visible content
     public static getEditorContext(editor: Editor): ContextMessage[] {
         const visibleContent = editor.getActiveTextEditorVisibleContent()
         if (!visibleContent) {
@@ -110,6 +109,7 @@ export class ChatQuestion implements Recipe {
         )
     }
 
+    // Get current selection
     public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(

@@ -64,3 +64,10 @@
     top: -2.5rem;
     z-index: 100;
 }
+
+.context-area-container {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}

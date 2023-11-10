@@ -219,7 +219,8 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     private async onHumanMessageSubmitted(
         text: string,
         submitType: ChatSubmitType,
-        contextFiles?: ContextFile[]
+        contextFiles?: ContextFile[],
+        addEnhancedContext = false
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
@@ -230,12 +231,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
 
-        // Add text and context to a command for custom-prompt recipe to run as ask command
-        if (contextFiles?.length) {
-            this.userContextFiles = contextFiles
-        }
-
-        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
+        return this.executeRecipe('chat-question', text, 'chat', addEnhancedContext, contextFiles)
     }
 
     /**

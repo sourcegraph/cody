@@ -30,7 +30,12 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: ChatSubmitType, contextConfig?: ChatContextConfig) => void
+    onSubmit: (
+        text: string,
+        submitType: ChatSubmitType,
+        enhanceContext?: boolean,
+        addedContextFiles?: Map<string, ContextFile>
+    ) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
@@ -64,6 +69,12 @@ interface ChatProps extends ChatClassNames {
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[]
+    EnhancedContextToggler?: React.FunctionComponent<{
+        disabled: boolean
+        enhanceContext: boolean
+        setEnhanceContext: (arg: boolean) => void
+    }>
+    LocalContextSelectorComponent?: React.FunctionComponent<{ title?: string }>
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
     ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
@@ -139,14 +150,7 @@ export interface UserContextSelectorProps {
     setSelectedChatContext: (arg: number) => void
 }
 
-export interface ChatContextConfig {
-    useEnhancedContext: boolean
-    addedContextFiles: Map<string, ContextFile>
-}
-
 export type ChatSubmitType = 'user' | 'suggestion' | 'example'
-
-const defaultChatContextConfig: ChatContextConfig = { useEnhancedContext: true, addedContextFiles: new Map() }
 
 export interface ChatModelSelection {
     title?: string
@@ -211,6 +215,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatCommandsComponent,
     isTranscriptError,
     UserContextSelectorComponent,
+    LocalContextSelectorComponent,
+    EnhancedContextToggler,
     contextSelection,
     chatModels,
     ChatModelDropdownMenu,
@@ -223,7 +229,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
-    const [contextConfig, setContextConfig] = useState({ ...defaultChatContextConfig })
+    const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
+    const [contextFiles, setContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
 
     /**
      * Callback function called when a chat context file is selected from the context selector.
@@ -253,13 +260,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setFormInput(newInput)
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
-                setContextConfig({
-                    ...contextConfig,
-                    addedContextFiles: new Map(contextConfig.addedContextFiles).set(fileDisplayText, selected),
-                })
+                setContextFiles(new Map(contextFiles).set(fileDisplayText, selected))
             }
         },
-        [contextConfig, setFormInput]
+        [contextFiles, setFormInput]
     )
 
     // Handles selecting a chat command when the user types a slash in the chat input.
@@ -305,16 +309,18 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress) {
                 return
             }
-            onSubmit(input, submitType, contextConfig)
+            onSubmit(input, submitType, enhanceContext, contextFiles)
             setSuggestions?.(undefined)
-            setContextConfig({ ...defaultChatContextConfig })
+            setContextFiles(new Map([]))
             setSelectedChatContext(0)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
+            // Automatically turn off enhance context when the user has submitted their first message.
+            setEnhanceContext(false)
         },
-        [contextConfig, inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+        [contextFiles, enhanceContext, inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -344,7 +350,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             // Clear & reset session on CMD+K
             if (event.metaKey && event.key === 'k') {
-                onSubmit('/r', 'user', contextConfig)
+                onSubmit('/r', 'user')
                 return
             }
 
@@ -477,7 +483,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             selectedChatContext,
             onChatContextSelected,
             onSubmit,
-            contextConfig,
         ]
     )
 
@@ -535,7 +540,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                 />
             )}
-
+            {!EnhancedContextToggler && LocalContextSelectorComponent && <LocalContextSelectorComponent />}
             {isGettingStartedComponentVisible && (
                 <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
@@ -559,7 +564,18 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                {ContextStatusComponent && <ContextStatusComponent {...contextStatusComponentProps} />}
+                {ContextStatusComponent && (
+                    <div className={styles.contextAreaContainer}>
+                        <ContextStatusComponent {...contextStatusComponentProps} />
+                        {EnhancedContextToggler && (
+                            <EnhancedContextToggler
+                                setEnhanceContext={setEnhanceContext}
+                                enhanceContext={enhanceContext}
+                                disabled={transcript.length > 1}
+                            />
+                        )}
+                    </div>
+                )}
                 <div className={styles.textAreaContainer}>
                     {displayCommands && ChatCommandsComponent && formInput && (
                         <ChatCommandsComponent

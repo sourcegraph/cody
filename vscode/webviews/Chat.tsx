@@ -11,7 +11,6 @@ import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environme
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
-    ChatContextConfig,
     ChatModelSelection,
     ChatSubmitType,
     Chat as ChatUI,
@@ -29,6 +28,8 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { EditorContextSelector } from './Components/EditorContextSelector'
+import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -90,21 +91,24 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (text: string, submitType: ChatSubmitType, contextConfig?: ChatContextConfig) => {
-            // TODO add UI to toggle enhanced context setting
-            const addEnhancedContext = contextConfig?.useEnhancedContext ?? false
+        (
+            text: string,
+            submitType: ChatSubmitType,
+            enhanceContext?: boolean,
+            contextFiles?: Map<string, ContextFile>
+        ) => {
+            const addEnhancedContext = enhanceContext ?? false
             const userContextFiles: ContextFile[] = []
 
-            // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
-            if (contextConfig?.addedContextFiles?.size) {
-                for (const file of contextConfig.addedContextFiles) {
+            // loop the contextFiles and check if the key still exists in the text, remove the ones not present
+            if (contextFiles?.size) {
+                for (const file of contextFiles) {
                     if (text.includes(file[0])) {
                         file[1].fileName = file[0]
                         userContextFiles.push(file[1])
                     }
                 }
             }
-
             vscodeAPI.postMessage({
                 command: 'submit',
                 text,
@@ -222,6 +226,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
+            LocalContextSelectorComponent={EditorContextSelector}
+            EnhancedContextToggler={EnhancedContextToggler}
         />
     )
 }

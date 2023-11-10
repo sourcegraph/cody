@@ -1,0 +1,12 @@
+.title {
+    font-size: var(--vscode-editor-font-size, inherit);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding: 0;
+    font-family: var(--vscode-font-family, inherit);
+    color: var(--vscode-testing-iconPassed, inherit);
+}
+
+.disabled {
+    color: inherit;
+}

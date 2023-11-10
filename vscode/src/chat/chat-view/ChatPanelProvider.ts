@@ -56,7 +56,12 @@ export class ChatPanelProvider extends MessageProvider {
                 this.handleChatModel()
                 break
             case 'submit':
-                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
+                return this.onHumanMessageSubmitted(
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
@@ -115,7 +120,8 @@ export class ChatPanelProvider extends MessageProvider {
     private async onHumanMessageSubmitted(
         text: string,
         submitType: ChatSubmitType,
-        contextFiles?: ContextFile[]
+        contextFiles?: ContextFile[],
+        addEnhancedContext = false
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
@@ -126,12 +132,7 @@ export class ChatPanelProvider extends MessageProvider {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
 
-        // Add text and context to a command for custom-prompt recipe to run as ask command
-        if (contextFiles?.length) {
-            this.userContextFiles = contextFiles
-        }
-
-        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
+        return this.executeRecipe('chat-question', text, 'chat', addEnhancedContext, contextFiles)
     }
 
     /**
