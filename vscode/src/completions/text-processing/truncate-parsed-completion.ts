@@ -1,48 +1,113 @@
+import { memoize } from 'lodash'
 import { TextDocument } from 'vscode'
+import { Point, SyntaxNode } from 'web-tree-sitter'
 
+import { DocumentContext } from '../get-current-doc-context'
 import { getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
-import { DocumentQuerySDK } from '../tree-sitter/query-sdk'
 
-import { ParsedCompletion } from './parse-completion'
+import { parseCompletion, ParsedCompletion } from './parse-completion'
 
 interface CompletionContext {
     completion: ParsedCompletion
     document: TextDocument
-    documentQuerySDK: DocumentQuerySDK
+    docContext: DocumentContext
 }
 
 /**
- * Truncates the `insertText` of a `ParsedCompletion` based on the syntactic structure
- * of the code in a given `TextDocument`. Currently supports only JavaScript and TypeScript.
- *
- * Uses `tree-sitter` to query specific code blocks for contextual truncation.
- * Returns the original `insertText` if no truncation is needed or if syntactic post-processing isn't enabled.
+ * Only the first argument is used as a memoization key.
+ * Use the memoized function to avoid re-parsing the completion's first line multiple times.
  */
-export function truncateParsedCompletion(context: CompletionContext): string {
-    const { completion, document, documentQuerySDK } = context
+const parseCompletionFirstLineMemoized = memoize((firstLine: string, context: Omit<CompletionContext, 'completion'>) =>
+    parseCompletion({
+        completion: { insertText: firstLine },
+        ...context,
+    })
+)
+
+/**
+ * Truncates the `insertText` of a `ParsedCompletion` based on the next sibling inserted
+ * into the parse tree.
+ *
+ * Uses `tree-sitter` to walk the parse tree from the node at the end of the current line
+ * and looks for a node with the updated number of children.
+ */
+export function truncateParsedCompletionByNextSibling(context: CompletionContext): string {
+    const { completion, document, docContext } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
-    if (!completion.tree || !completion.points || !parseTreeCache) {
+    const firstLine = completion.insertText.split('\n').shift() || completion.insertText
+    const parsedFirstLine = parseCompletionFirstLineMemoized(firstLine, {
+        document,
+        docContext,
+    })
+
+    if (!completion.tree || !completion.points || !parseTreeCache || !parsedFirstLine.tree) {
         throw new Error('Expected completion and document to have tree-sitter data for truncation')
     }
 
-    const { tree, points } = completion
+    const { insertText, points } = completion
 
     const queryStart = points?.trigger || points?.start
-    const [captureGroup] = documentQuerySDK.queries.getFirstMultilineBlockForTruncation(tree.rootNode, queryStart, {
-        row: queryStart.row,
-        column: queryStart.column + 1,
-    })
+    const nodeToInsert = findChildBeforeTheNewSibling(
+        parsedFirstLine.tree.rootNode,
+        completion.tree.rootNode,
+        queryStart
+    )
 
-    if (captureGroup) {
-        const overlap = findLargestSuffixPrefixOverlap(captureGroup.node.text, completion.insertText)
+    if (nodeToInsert) {
+        const overlap = findLargestSuffixPrefixOverlap(nodeToInsert.text, insertText)
 
         if (overlap) {
             return overlap
         }
     }
 
-    return completion.insertText
+    return insertText
+}
+
+// Number of ancestor nodes to check for changes in child count.
+// Set by heuristic: higher values add unnecessary performance cost with no benefit.
+const PARENTS_TO_CHECK = 7
+const NODE_TYPES_WITH_MULTIPLE_BLOCK_STATEMENTS = new Set(['if_statement', 'try_statement'])
+
+/**
+ * Finds the nearest sibling node before an insertion point in a syntax tree.
+ *
+ * This function compares two syntax trees: one before and one after a change. It starts
+ * at the cursor position and moves up the tree, checking a fixed number of ancestor nodes
+ * to find where the new sibling would be inserted. The comparison stops if the number of
+ * children changes, indicating the potential point of insertion. This is used to inform
+ * how completion suggestions should be truncated.
+ */
+function findChildBeforeTheNewSibling(
+    prevRoot: SyntaxNode,
+    currentRoot: SyntaxNode,
+    cursorPosition: Point
+): SyntaxNode | null {
+    let prevNode = namedNodeOrParent(prevRoot.descendantForPosition(cursorPosition))
+    let currentNode = namedNodeOrParent(currentRoot.descendantForPosition(cursorPosition))
+
+    for (let i = 0; i < PARENTS_TO_CHECK; i++) {
+        if (!currentNode?.parent || !prevNode?.parent) {
+            break
+        }
+
+        if (prevNode.parent.childCount !== currentNode.parent.childCount) {
+            if (NODE_TYPES_WITH_MULTIPLE_BLOCK_STATEMENTS.has(currentNode.parent.type)) {
+                return currentNode.parent
+            }
+            return currentNode
+        }
+
+        currentNode = currentNode.parent
+        prevNode = prevNode.parent
+    }
+
+    return null
+}
+
+function namedNodeOrParent(node: SyntaxNode): SyntaxNode | null {
+    return node.isNamed() ? node : node.parent
 }
 
 /**
