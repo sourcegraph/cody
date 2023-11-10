@@ -12,22 +12,21 @@ export const UserContextSelectorComponent: React.FunctionComponent<
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
-        if (selected === undefined || !contextSelection?.length) {
-            return
-        }
-
         const container = selectionRef.current
         if (container) {
             container.scrollIntoView({ block: 'nearest' })
         }
-    }, [contextSelection, selected])
+    }, [selected])
 
     useEffect(() => {
-        setSelectedChatContext(0)
+        // Set the selected context to the first item whenever the contextSelection changes
+        if (contextSelection?.length) {
+            setSelectedChatContext(0)
+        }
     }, [contextSelection, setSelectedChatContext])
 
-    if (!contextSelection?.length || formInput.endsWith(' ')) {
-        return
+    if (!contextSelection?.length) {
+        return null
     }
 
     return (
@@ -37,10 +36,6 @@ export const UserContextSelectorComponent: React.FunctionComponent<
             </div>
             <div className={classNames(styles.selectionsContainer)}>
                 {contextSelection?.map((match, i) => {
-                    if (match.fileName === 'separator') {
-                        return <hr key="separator" className={styles.separator} />
-                    }
-
                     const icon =
                         match.type === 'file' ? 'file' : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
                     const title = match.type === 'file' ? match.path?.relative : match.fileName

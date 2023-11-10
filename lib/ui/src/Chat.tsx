@@ -30,7 +30,7 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: ChatSubmitType, contextConfig?: ChatContextConfig) => void
+    onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
@@ -139,14 +139,7 @@ export interface UserContextSelectorProps {
     setSelectedChatContext: (arg: number) => void
 }
 
-export interface ChatContextConfig {
-    useEnhancedContext: boolean
-    addedContextFiles: Map<string, ContextFile>
-}
-
 export type ChatSubmitType = 'user' | 'suggestion' | 'example'
-
-const defaultChatContextConfig: ChatContextConfig = { useEnhancedContext: true, addedContextFiles: new Map() }
 
 export interface ChatModelSelection {
     title?: string
@@ -219,11 +212,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
         chatCommands || null
     )
-    const [selectedChatContext, setSelectedChatContext] = useState(0)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
-    const [contextConfig, setContextConfig] = useState({ ...defaultChatContextConfig })
+    // The context files added via the chat input by user
+    const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
+    const [selectedChatContext, setSelectedChatContext] = useState(0)
+    // TODO support toggling between enabling and disabling enhanceContext
+    // const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
 
     /**
      * Callback function called when a chat context file is selected from the context selector.
@@ -242,26 +238,21 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
                 const inputWithoutAtFileInput = input.slice(0, lastAtIndex)
-                setSelectedChatContext(0)
-
                 const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
-                const symbolName = isFileType ? '' : `$${selected.fileName}`
+                const symbolName = isFileType ? '' : `#${selected.fileName}`
                 // Add empty space at the end to end the file matching process
                 const fileDisplayText = `@${selected.path?.relative}${range}${symbolName} `
                 const newInput = `${inputWithoutAtFileInput}${fileDisplayText}`
-                setFormInput(newInput)
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
-                setContextConfig({
-                    ...contextConfig,
-                    addedContextFiles: new Map(contextConfig.addedContextFiles).set(fileDisplayText, selected),
-                })
+                setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
+                setSelectedChatContext(0)
+                setFormInput(newInput)
             }
         },
-        [contextConfig, setFormInput]
+        [chatContextFiles, setFormInput]
     )
-
     // Handles selecting a chat command when the user types a slash in the chat input.
     const chatCommentSelectionHandler = useCallback(
         (inputValue: string): void => {
@@ -289,6 +280,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
+            if (contextSelection && inputValue) {
+                setSelectedChatContext(0)
+            }
             chatCommentSelectionHandler(inputValue)
             const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
             setInputRows(rowsCount > 25 ? 25 : rowsCount)
@@ -297,7 +291,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setHistoryIndex(inputHistory.length)
             }
         },
-        [chatCommentSelectionHandler, historyIndex, inputHistory, setFormInput]
+        [contextSelection, chatCommentSelectionHandler, setFormInput, inputHistory, historyIndex]
     )
 
     const submitInput = useCallback(
@@ -305,16 +299,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress) {
                 return
             }
-            onSubmit(input, submitType, contextConfig)
+            onSubmit(input, submitType, chatContextFiles)
             setSuggestions?.(undefined)
-            setContextConfig({ ...defaultChatContextConfig })
+            setChatContextFiles(new Map())
             setSelectedChatContext(0)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
-        [contextConfig, inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions, chatContextFiles]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -344,7 +338,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             // Clear & reset session on CMD+K
             if (event.metaKey && event.key === 'k') {
-                onSubmit('/r', 'user', contextConfig)
+                onSubmit('/r', 'user', chatContextFiles)
                 return
             }
 
@@ -406,18 +400,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (contextSelection?.length && !formInput.endsWith(' ')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
-                    event.stopPropagation()
                     const selectionLength = contextSelection?.length - 1
                     const newIndex = event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
                     const newMatchIndex = newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
+                    console.log(newIndex, newMatchIndex, contextSelection)
                     setSelectedChatContext(newMatchIndex)
-                }
-                if (event.key === 'Backspace') {
-                    setSelectedChatContext(0)
+                    return
                 }
                 if (event.key === 'Escape') {
                     event.preventDefault()
-                    event.stopPropagation()
                     const lastAtIndex = formInput.lastIndexOf('@')
                     if (lastAtIndex >= 0) {
                         const inputWithoutFileInput = formInput.slice(0, lastAtIndex)
@@ -425,13 +416,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         setFormInput(inputWithoutFileInput)
                     }
                     setSelectedChatContext(0)
+                    return
                 }
                 // tab/enter to complete
                 if (event.key === 'Tab' || event.key === 'Enter') {
                     event.preventDefault()
-                    event.stopPropagation()
                     const selected = contextSelection[selectedChatContext]
                     onChatContextSelected(selected, formInput)
+                    return
                 }
             }
 
@@ -470,14 +462,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             contextSelection,
             inputHistory,
             historyIndex,
+            onSubmit,
+            chatContextFiles,
             selectedChatCommand,
             setFormInput,
             setMessageBeingEdited,
             onChatSubmit,
             selectedChatContext,
             onChatContextSelected,
-            onSubmit,
-            contextConfig,
         ]
     )
 

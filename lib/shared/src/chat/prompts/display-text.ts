@@ -60,7 +60,10 @@ export function replaceFileNameWithMarkdownLink(
     const fileLink = `vscode://file${fsPath}${range}`
     const markdownText = `[_${fileName.trim()}_](${fileLink})`
 
-    // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
-    const textToBeReplaced = new RegExp(`\\s*${fileName}(?!\\S)`, 'g')
-    return humanInput.replaceAll(textToBeReplaced, ` ${markdownText}`).trim()
+    // Escape special characters in fileName for regex
+    const escapedFileName = fileName.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
+
+    // Updated regex to match the file name with optional line number, range, and symbol name
+    const textToBeReplaced = new RegExp(`(${escapedFileName})(:\\d+(-\\d+)?(#\\S+)?)?(?!\\S)`, 'g')
+    return humanInput.replaceAll(textToBeReplaced, markdownText).trim()
 }

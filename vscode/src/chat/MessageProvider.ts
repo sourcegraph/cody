@@ -1,4 +1,3 @@
-import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -25,7 +24,6 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../editor/utils/editor-context'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
@@ -820,16 +818,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.editor.controllers.fixups.getTasks()
     }
 
-    /**
-     * Asynchronously retrieves context files based on a given query string.
-     */
-    protected async getContextFiles(query: string): Promise<ContextFile[]> {
-        if (!query.length) {
-            return getOpenTabsContextFile()
-        }
-        return (await debouncedContextFileQuery(query)) || []
-    }
-
     public dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose()
@@ -862,20 +850,3 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 function isAbortError(error: string): boolean {
     return error === 'aborted' || error === 'socket hang up'
 }
-
-const debouncedContextFileQuery = debounce(async (query: string) => {
-    try {
-        const MAX_RESULTS = 10
-        const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-        const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
-
-        const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-        const combinedResults = [...new Set([...fileResults, ...symbolResults])]
-
-        return combinedResults
-    } catch (error) {
-        // Handle or log the error as appropriate
-        console.error('Error retrieving context files:', error)
-        return []
-    }
-}, 100)

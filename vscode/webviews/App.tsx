@@ -142,11 +142,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [view, vscodeAPI])
 
     useEffect(() => {
-        if (formInput.endsWith(' ')) {
-            setContextSelection([])
-            return
-        }
-
+        setContextSelection([])
         // Regex to check if input ends with the '@' tag format, always get the last @tag
         // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
         // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '

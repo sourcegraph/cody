@@ -1,3 +1,4 @@
+import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -6,6 +7,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
+import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -231,11 +233,35 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async handleContextFiles(query: string): Promise<void> {
-        const context = await this.getContextFiles(query)
-        void this.webview?.postMessage({
-            type: 'userContextFiles',
-            context,
-        })
+        if (!query.length) {
+            const tabs = getOpenTabsContextFile()
+            await this.webview?.postMessage({
+                type: 'userContextFiles',
+                context: tabs,
+            })
+            return
+        }
+
+        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
+            try {
+                const MAX_RESULTS = 10
+                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
+                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+
+                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
+                const context = [...new Set([...fileResults, ...symbolResults])]
+
+                await this.webview?.postMessage({
+                    type: 'userContextFiles',
+                    context,
+                })
+            } catch (error) {
+                // Handle or log the error as appropriate
+                console.error('Error retrieving context files:', error)
+            }
+        }, 100)
+
+        await debouncedContextFileQuery(query)
     }
 
     /**
