@@ -1,6 +1,7 @@
 import path from 'path'
 
 import ignore, { Ignore } from 'ignore'
+import { URI } from 'vscode-uri'
 
 /**
  * The Cody ignore file path in the native platform style (backslashes on Windows).
@@ -75,19 +76,19 @@ export class IgnoreHelper {
         this.workspaceIgnores.delete(workspaceRoot)
     }
 
-    public isIgnored(filePath: string): boolean {
-        this.ensureAbsolute('filePath', filePath)
-        const workspaceRoot = this.findWorkspaceRoot(filePath)
+    public isIgnored(uri: URI): boolean {
+        this.ensureAbsolute('filePath', uri.fsPath)
+        const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)
 
         // Not in workspace so just use default rules against the filename.
         // This ensures we'll never send something like `.env` but it won't handle
         // if default rules include folders like `a/b` because we have nothing to make
         // a relative path from.
         if (!workspaceRoot) {
-            return this.getDefaultIgnores().ignores(path.basename(filePath))
+            return this.getDefaultIgnores().ignores(path.basename(uri.fsPath))
         }
 
-        const relativePath = path.relative(workspaceRoot, filePath)
+        const relativePath = path.relative(workspaceRoot, uri.fsPath)
         const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
     }

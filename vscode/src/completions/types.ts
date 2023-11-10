@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
 
 export interface Completion {
     content: string
@@ -24,10 +25,12 @@ export interface InlineCompletionItem {
  */
 export interface FileContextSnippet {
     fileName: string
+    fileUri?: URI
     content: string
 }
 export interface SymbolContextSnippet {
     fileName: string
+    fileUri?: URI
     symbol: string
     content: string
 }

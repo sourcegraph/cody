@@ -267,6 +267,7 @@ function hoverContextsToSnippets(contexts: HoverContext[]): SymbolContextSnippet
 
 function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
     return {
+        fileUri: URI.parse(context.uri),
         fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
         symbol: context.symbolName,
         content: context.content.join('\n').trim(),
