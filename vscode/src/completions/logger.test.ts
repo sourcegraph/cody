@@ -75,7 +75,9 @@ describe('logger', () => {
             providerModel: 'blazing-fast-llm',
             charCount: 3,
             contextSummary: {
-                strategy: 'fake',
+                retrieverStats: {},
+                strategy: 'none',
+                totalChars: 3,
                 duration: 0.1337,
             },
             items: [
