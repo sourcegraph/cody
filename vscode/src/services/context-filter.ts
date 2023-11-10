@@ -51,7 +51,9 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         return
     }
 
-    const ignoreFiles = await vscode.workspace.findFiles(new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB))
+    const ignoreFiles = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB)
+    )
     const filesWithContent = await Promise.all(
         ignoreFiles.map(async fileUri => ({
             filePath: fileUri.fsPath,
