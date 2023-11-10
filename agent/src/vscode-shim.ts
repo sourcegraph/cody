@@ -111,7 +111,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
             case 'cody.telemetry.level':
-                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // Use the dedicated `telemetry/recordEvent` to send telemetry from
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/telemetry": "^0.12.0",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {

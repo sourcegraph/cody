@@ -6,7 +6,7 @@ import {
     TelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
-import { ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
+import { Configuration, ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
@@ -23,9 +23,12 @@ export interface ExtensionDetails {
 }
 
 /**
- * TelemetryRecorderProvider is the default provider implementation.
+ * TelemetryRecorderProvider is the default provider implementation. It sends
+ * events directly to a connected Sourcegraph instance.
+ *
+ * This is NOT meant for use if connecting to an Agent.
  */
-export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
+export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingProduct, BillingCategory> {
     constructor(
         extensionDetails: ExtensionDetails,
         config: ConfigurationWithAccessToken,
@@ -57,9 +60,9 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
  */
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
-export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
-    constructor() {
-        super({ client: '' }, new NoOpTelemetryExporter(), [])
+export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingProduct, BillingCategory> {
+    constructor(processors?: TelemetryProcessor[]) {
+        super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
 }
 
@@ -70,8 +73,8 @@ export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getReco
  * events.
  */
 export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    BillingCategory,
-    BillingProduct
+    BillingProduct,
+    BillingCategory
 > {
     constructor(extensionDetails: ExtensionDetails, config: ConfigurationWithAccessToken, anonymousUserID: string) {
         super(
@@ -90,7 +93,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
  * automatically attached to all events.
  */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
-    constructor(private config: ConfigurationWithAccessToken) {}
+    constructor(private config: Configuration) {}
 
     public processEvent(event: TelemetryEventInput): void {
         if (!event.parameters.metadata) {
