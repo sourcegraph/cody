@@ -1,4 +1,3 @@
-// New imports needed:
 import { describe, expect, it, vi } from 'vitest'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
