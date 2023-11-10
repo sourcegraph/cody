@@ -138,7 +138,7 @@ describe('ContextMixer', () => {
     })
 
     describe('with more retriever', () => {
-        it.only('mixes the results of the retriever using reciprocal rank fusion', async () => {
+        it('mixes the results of the retriever using reciprocal rank fusion', async () => {
             const { document, position } = documentAndPosition('console.█')
             const docContext = getCurrentDocContext({
                 document,
@@ -231,13 +231,13 @@ describe('ContextMixer', () => {
                     retriever1: {
                         duration: expect.any(Number),
                         positionBitmap: 0b00101,
-                        retrievedItems: 1,
+                        retrievedItems: 2,
                         suggestedItems: 2,
                     },
                     retriever2: {
                         duration: expect.any(Number),
                         positionBitmap: 0b11010,
-                        retrievedItems: 1,
+                        retrievedItems: 3,
                         suggestedItems: 3,
                     },
                 },

@@ -171,7 +171,7 @@ export class ContextMixer implements vscode.Disposable {
                         retrieverStats[identifier] = {
                             suggestedItems: 0,
                             positionBitmap: 0,
-                            retrievedItems: snippets.length ?? 0,
+                            retrievedItems: results.find(r => r.identifier === identifier)?.snippets.length ?? 0,
                             duration: results.find(r => r.identifier === identifier)?.duration ?? 0,
                         }
                     }
