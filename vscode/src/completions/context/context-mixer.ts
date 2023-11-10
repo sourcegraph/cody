@@ -1,12 +1,9 @@
 import * as vscode from 'vscode'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { ContextRetriever, ContextSnippet } from '../types'
+import { ContextSnippet } from '../types'
 
-import { BfgRetriever } from './retrievers/bfg/bfg-retriever'
-import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
-import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
-import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
+import { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 
 export interface GetContextOptions {
     document: vscode.TextDocument
@@ -15,6 +12,9 @@ export interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
 }
+
+// k parameter for the reciprocal rank fusion scoring. 60 is the default value in many places
+const RRF_K = 60
 
 export interface ContextSummary {
     /** Name of the strategy being used */
@@ -49,79 +49,22 @@ export interface GetContextResult {
     logSummary: ContextSummary
 }
 
-export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none'
+/**
+ * The context mixer is responsible for combining multiple context retrieval strategies into a
+ * single proposed context list.
+ *
+ * This is done by ranking the order of documents using reciprocal rank fusion and then combining
+ * the snippets from each retriever into a single list using top-k (so we will pick all returned
+ * ranged for the top ranked document from all retrieval sources before we move on to the second
+ * document).
+ */
 export class ContextMixer implements vscode.Disposable {
-    private disposables: vscode.Disposable[] = []
-
-    private localRetriever: ContextRetriever | undefined
-    private graphRetriever: ContextRetriever | undefined
-
-    constructor(
-        private contextStrategy: ContextStrategy,
-        createBfgRetriever?: () => BfgRetriever
-    ) {
-        switch (contextStrategy) {
-            case 'none':
-                break
-            case 'bfg':
-                // The bfg strategy uses jaccard similarity as a fallback if no results are found or
-                // the language is not supported.
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-                if (createBfgRetriever) {
-                    this.graphRetriever = createBfgRetriever()
-                    this.disposables.push(this.graphRetriever)
-                }
-                break
-            case 'lsp-light':
-                this.localRetriever = SectionHistoryRetriever.createInstance()
-                this.graphRetriever = new LspLightRetriever()
-                this.disposables.push(this.localRetriever, this.graphRetriever)
-                break
-            case 'jaccard-similarity':
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-                break
-        }
-    }
+    constructor(private strategyFactory: ContextStrategyFactory) {}
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
-        const retrievers: ContextRetriever[] = []
-
         const start = performance.now()
 
-        switch (this.contextStrategy) {
-            case 'none': {
-                break
-            }
-
-            // The lsp-light strategy mixes local and graph based retrievers
-            case 'lsp-light': {
-                if (this.graphRetriever && this.graphRetriever.isSupportedForLanguageId(options.document.languageId)) {
-                    retrievers.push(this.graphRetriever)
-                }
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
-                break
-            }
-
-            // The bfg strategy only uses the graph based retriever and falls through to the local
-            // retriever if the graph based retriever is not available for the requested language.
-            case 'bfg':
-                if (this.graphRetriever && this.graphRetriever.isSupportedForLanguageId(options.document.languageId)) {
-                    retrievers.push(this.graphRetriever)
-                    break
-                }
-
-            case 'jaccard-similarity': {
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
-                break
-            }
-        }
-
+        const { name: strategy, retrievers } = this.strategyFactory.getStrategy(options.document)
         if (retrievers.length === 0) {
             return {
                 context: [],
@@ -153,46 +96,98 @@ export class ContextMixer implements vscode.Disposable {
             })
         )
 
+        // For every retrieval strategy, create a map of snippets by document.
+        const resultsByDocument = new Map<string, { [identifier: string]: ContextSnippet[] }>()
+        for (const { identifier, snippets } of results) {
+            for (const snippet of snippets) {
+                const documentId = snippet.fileName
+
+                let document = resultsByDocument.get(documentId)
+                if (!document) {
+                    document = {}
+                    resultsByDocument.set(documentId, document)
+                }
+                if (!document[identifier]) {
+                    document[identifier] = []
+                }
+                document[identifier].push(snippet)
+            }
+        }
+
+        // Rank the order of documents using reciprocal rank fusion.
+        const fusedDocumentScores: Map<string, number> = new Map()
+        for (const { identifier, snippets } of results) {
+            snippets.forEach((snippet, rank) => {
+                const documentId = snippet.fileName
+
+                // Since every retriever can return many snippets for a given document, we need to
+                // only consider the best rank for each document.
+                // We can use the previous map by document to find the highest ranked snippet for a
+                // retriever
+                const isBestRankForRetriever = resultsByDocument.get(documentId)?.[identifier][0] === snippet
+                if (!isBestRankForRetriever) {
+                    return
+                }
+
+                const reciprocalRank = 1 / (RRF_K + rank)
+
+                const score = fusedDocumentScores.get(documentId)
+                if (score === undefined) {
+                    fusedDocumentScores.set(documentId, reciprocalRank)
+                } else {
+                    fusedDocumentScores.set(documentId, score + reciprocalRank)
+                }
+            })
+        }
+
+        const fusedDocuments = [...fusedDocumentScores.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])
+
         const mixedContext: ContextSnippet[] = []
         const retrieverStats: ContextSummary['retrieverStats'] = {}
-
-        const maxMatches = Math.max(...[...results.values()].map(r => r.snippets.length))
-
         let totalChars = 0
         let position = 0
-        for (let i = 0; i < maxMatches; i++) {
-            for (const { identifier, duration, snippets } of results) {
-                if (i >= snippets.length) {
-                    continue
-                }
-                const snippet = snippets[i]
-                if (totalChars + snippet.content.length > options.maxChars) {
-                    continue
-                }
+        for (const documentId of fusedDocuments) {
+            const resultByDocument = resultsByDocument.get(documentId)
+            if (!resultByDocument) {
+                continue
+            }
 
-                mixedContext.push(snippet)
-                totalChars += snippet.content.length
+            const maxMatches = Math.max(...Object.values(resultByDocument).map(r => r.length))
 
-                if (!retrieverStats[identifier]) {
-                    retrieverStats[identifier] = {
-                        suggestedItems: 0,
-                        positionBitmap: 0,
-                        retrievedItems: snippets.length ?? 0,
-                        duration,
+            for (let i = 0; i < maxMatches; i++) {
+                for (const [identifier, snippets] of Object.entries(resultByDocument)) {
+                    if (i >= snippets.length) {
+                        continue
                     }
-                }
+                    const snippet = snippets[i]
+                    if (totalChars + snippet.content.length > options.maxChars) {
+                        continue
+                    }
 
-                retrieverStats[identifier].suggestedItems++
-                if (position < 32) {
-                    retrieverStats[identifier].positionBitmap |= 1 << position
-                }
+                    mixedContext.push(snippet)
+                    totalChars += snippet.content.length
 
-                position++
+                    if (!retrieverStats[identifier]) {
+                        retrieverStats[identifier] = {
+                            suggestedItems: 0,
+                            positionBitmap: 0,
+                            retrievedItems: snippets.length ?? 0,
+                            duration: results.find(r => r.identifier === identifier)?.duration ?? 0,
+                        }
+                    }
+
+                    retrieverStats[identifier].suggestedItems++
+                    if (position < 32) {
+                        retrieverStats[identifier].positionBitmap |= 1 << position
+                    }
+
+                    position++
+                }
             }
         }
 
         const logSummary: ContextSummary = {
-            strategy: this.contextStrategy,
+            strategy,
             duration: performance.now() - start,
             totalChars,
             retrieverStats,
@@ -205,6 +200,6 @@ export class ContextMixer implements vscode.Disposable {
     }
 
     public dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose())
+        this.strategyFactory.dispose()
     }
 }
