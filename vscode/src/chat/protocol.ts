@@ -115,6 +115,8 @@ export interface ConfigurationSubsetForWebview
  */
 export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
+export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/upgrade') // TODO(dantup): This
+export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/usage') // TODO(dantup): This
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
