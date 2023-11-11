@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
@@ -17,6 +18,7 @@ import { GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
+    chatClient: ChatClient
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -27,12 +29,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private disposables: vscode.Disposable[] = []
     private authProvider: AuthProvider
 
-    private promptMaker: PromptMaker = new GPT4PromptMaker()
-    // NEXT: add LLM client
+    private promptMaker: PromptMaker = new GPT4PromptMaker() // TODO: make setable/configurable
+    private chatClient: ChatClient
 
-    constructor({ extensionUri, authProvider }: SimpleChatPanelProviderOptions) {
+    constructor({ extensionUri, authProvider, chatClient }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
+        this.chatClient = chatClient
     }
     public executeRecipe(recipeID: RecipeID, chatID: string, context: any): Promise<void> {
         console.log('# TODO: executeRecipe')

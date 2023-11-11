@@ -13,7 +13,6 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
 }
 
 export class ChatClient {
-    // MARK
     constructor(private completions: SourcegraphCompletionsClient) {}
 
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
