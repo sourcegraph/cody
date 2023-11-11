@@ -222,6 +222,7 @@ describe('GraphSectionObserver', () => {
             expect(context[0]).toEqual({
                 content: 'foo\nbar\nfoo',
                 fileName: document2Uri.fsPath,
+                fileUri: document2Uri,
             })
         })
 

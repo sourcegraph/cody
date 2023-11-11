@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context
@@ -9,6 +11,8 @@ export type ContextFileSource = 'embeddings'
 
 export interface ContextFile {
     fileName: string
+    uri?: URI
+
     repoName?: string
     revision?: string
 

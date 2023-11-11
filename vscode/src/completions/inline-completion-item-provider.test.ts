@@ -8,6 +8,7 @@ import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph
 
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
+import { withPosixPaths } from '../testutils/textDocument'
 
 import { getCurrentDocContext } from './get-current-doc-context'
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
@@ -130,7 +131,7 @@ describe('InlineCompletionItemProvider', () => {
         fn.mockReset()
 
         // But it is returned and saved.
-        expect(provider.lastCandidate).toMatchInlineSnapshot(`
+        expect(withPosixPaths(provider.lastCandidate!)).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
               "completionIntent": undefined,
@@ -181,7 +182,6 @@ describe('InlineCompletionItemProvider', () => {
             },
             "uri": {
               "$mid": 1,
-              "external": "file:///test.ts",
               "path": "/test.ts",
               "scheme": "file",
             },
