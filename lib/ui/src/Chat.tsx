@@ -2,7 +2,14 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
+import {
+    ChatButton,
+    ChatContextStatus,
+    ChatMessage,
+    CodyPrompt,
+    ContextFile,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 
 import { CodeBlockMeta } from './chat/CodeBlocks'
 import { FileLinkProps } from './chat/ContextFiles'
@@ -23,7 +30,7 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
+    onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
@@ -56,6 +63,8 @@ interface ChatProps extends ChatClassNames {
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
+    contextSelection?: ContextFile[]
+    UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
     ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
 }
@@ -118,8 +127,19 @@ export interface ChatCommandsProps {
     setSelectedChatCommand: (index: number) => void
     chatCommands?: [string, CodyPrompt][] | null
     selectedChatCommand?: number
-    onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
+    onSubmit: (input: string, inputType: ChatSubmitType) => void
 }
+
+export interface UserContextSelectorProps {
+    onSelected: (context: ContextFile, input: string) => void
+    formInput: string
+    contextSelection?: ContextFile[]
+    selected?: number
+    onSubmit: (input: string, inputType: 'user') => void
+    setSelectedChatContext: (arg: number) => void
+}
+
+export type ChatSubmitType = 'user' | 'suggestion' | 'example'
 
 export interface ChatModelSelection {
     title?: string
@@ -183,6 +203,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     filterChatCommands,
     ChatCommandsComponent,
     isTranscriptError,
+    UserContextSelectorComponent,
+    contextSelection,
     chatModels,
     ChatModelDropdownMenu,
 }) => {
@@ -193,6 +215,44 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
+    // The context files added via the chat input by user
+    const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
+    const [selectedChatContext, setSelectedChatContext] = useState(0)
+    // TODO support toggling between enabling and disabling enhanceContext
+    // const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
+
+    /**
+     * Callback function called when a chat context file is selected from the context selector.
+     *
+     * Updates the chat input with the selected file context.
+     *
+     * Trims any existing @file text from the input.
+     * Adds the selected file path and range to the input.
+     * Updates contextConfig with the new added context file.
+     *
+     * This allows the user to quickly insert file context into the chat input.
+     */
+    const onChatContextSelected = useCallback(
+        (selected: ContextFile, input: string): void => {
+            const lastAtIndex = input.lastIndexOf('@')
+            if (lastAtIndex >= 0 && selected) {
+                // Trim the @file portion from input
+                const inputWithoutAtFileInput = input.slice(0, lastAtIndex)
+                const isFileType = selected.type === 'file'
+                const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
+                const symbolName = isFileType ? '' : `#${selected.fileName}`
+                // Add empty space at the end to end the file matching process
+                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName} `
+                const newInput = `${inputWithoutAtFileInput}${fileDisplayText}`
+
+                // we will use the newInput as key to check if the file still exists in formInput on submit
+                setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
+                setSelectedChatContext(0)
+                setFormInput(newInput)
+            }
+        },
+        [chatContextFiles, setFormInput]
+    )
     // Handles selecting a chat command when the user types a slash in the chat input.
     const chatCommentSelectionHandler = useCallback(
         (inputValue: string): void => {
@@ -220,6 +280,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
+            if (contextSelection && inputValue) {
+                setSelectedChatContext(0)
+            }
             chatCommentSelectionHandler(inputValue)
             const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
             setInputRows(rowsCount > 25 ? 25 : rowsCount)
@@ -228,22 +291,24 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setHistoryIndex(inputHistory.length)
             }
         },
-        [chatCommentSelectionHandler, historyIndex, inputHistory, setFormInput]
+        [contextSelection, chatCommentSelectionHandler, setFormInput, inputHistory, historyIndex]
     )
 
     const submitInput = useCallback(
-        (input: string, submitType: 'user' | 'suggestion' | 'example'): void => {
+        (input: string, submitType: ChatSubmitType): void => {
             if (messageInProgress) {
                 return
             }
-            onSubmit(input, submitType)
+            onSubmit(input, submitType, chatContextFiles)
             setSuggestions?.(undefined)
+            setChatContextFiles(new Map())
+            setSelectedChatContext(0)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
-        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions, chatContextFiles]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -264,19 +329,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
-            // Submit input on Enter press (without shift) and
-            // trim the formInput to make sure input value is not empty.
-            if (
-                event.key === 'Enter' &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                formInput?.trim() &&
-                !displayCommands?.length
-            ) {
+            // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
+            if (event.altKey && event.key === 'c') {
                 event.preventDefault()
                 event.stopPropagation()
-                setMessageBeingEdited(false)
-                onChatSubmit()
+                return
+            }
+
+            // Clear & reset session on CMD+K
+            if (event.metaKey && event.key === 'k') {
+                onSubmit('/r', 'user', chatContextFiles)
                 return
             }
 
@@ -292,6 +354,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const vscodeCodyShortcuts = new Set(['Slash', 'KeyC'])
             if (event.altKey && vscodeCodyShortcuts.has(event.code)) {
                 event.preventDefault()
+                return
             }
 
             // Handles cycling through chat command suggestions using the up and down arrow keys
@@ -312,7 +375,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatCommand(-1)
                     setFormInput('')
                 }
-
                 // tab/enter to complete
                 if (
                     (event.key === 'Tab' || event.key === 'Enter') &&
@@ -331,16 +393,53 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         setFormInput(newInput || formInput)
                     }
                 }
+                return
+            }
+
+            // Handles cycling through context matches on key presses
+            if (contextSelection?.length && !formInput.endsWith(' ')) {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    const selectionLength = contextSelection?.length - 1
+                    const newIndex = event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
+                    const newMatchIndex = newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
+                    console.log(newIndex, newMatchIndex, contextSelection)
+                    setSelectedChatContext(newMatchIndex)
+                    return
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault()
+                    const lastAtIndex = formInput.lastIndexOf('@')
+                    if (lastAtIndex >= 0) {
+                        const inputWithoutFileInput = formInput.slice(0, lastAtIndex)
+                        // Remove @ from input
+                        setFormInput(inputWithoutFileInput)
+                    }
+                    setSelectedChatContext(0)
+                    return
+                }
+                // tab/enter to complete
+                if (event.key === 'Tab' || event.key === 'Enter') {
+                    event.preventDefault()
+                    const selected = contextSelection[selectedChatContext]
+                    onChatContextSelected(selected, formInput)
+                    return
+                }
+            }
+
+            // Submit input on Enter press (without shift) and
+            // trim the formInput to make sure input value is not empty.
+            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
+                event.preventDefault()
+                event.stopPropagation()
+                setMessageBeingEdited(false)
+                onChatSubmit()
+                return
             }
 
             // Loop through input history on up arrow press
             if (!inputHistory.length) {
                 return
-            }
-
-            // Clear & reset session on CMD+K
-            if (event.metaKey && event.key === 'k') {
-                onSubmit('/r', 'user')
             }
 
             if (formInput === inputHistory[historyIndex] || !formInput) {
@@ -358,15 +457,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
         },
         [
-            formInput,
-            selectedChatCommand,
             displayCommands,
+            formInput,
+            contextSelection,
             inputHistory,
             historyIndex,
+            onSubmit,
+            chatContextFiles,
+            selectedChatCommand,
+            setFormInput,
             setMessageBeingEdited,
             onChatSubmit,
-            setFormInput,
-            onSubmit,
+            selectedChatContext,
+            onChatContextSelected,
         ]
     )
 
@@ -443,21 +546,32 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
-                {displayCommands && ChatCommandsComponent && formInput && (
-                    <ChatCommandsComponent
-                        chatCommands={displayCommands}
-                        selectedChatCommand={selectedChatCommand}
-                        setFormInput={setFormInput}
-                        setSelectedChatCommand={setSelectedChatCommand}
-                        onSubmit={onSubmit}
-                    />
-                )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
+                {ContextStatusComponent && <ContextStatusComponent {...contextStatusComponentProps} />}
                 <div className={styles.textAreaContainer}>
+                    {displayCommands && ChatCommandsComponent && formInput && (
+                        <ChatCommandsComponent
+                            chatCommands={displayCommands}
+                            selectedChatCommand={selectedChatCommand}
+                            setFormInput={setFormInput}
+                            setSelectedChatCommand={setSelectedChatCommand}
+                            onSubmit={onSubmit}
+                        />
+                    )}
+                    {contextSelection && UserContextSelectorComponent && formInput && (
+                        <UserContextSelectorComponent
+                            selected={selectedChatContext}
+                            onSelected={onChatContextSelected}
+                            contextSelection={contextSelection}
+                            formInput={formInput}
+                            onSubmit={onSubmit}
+                            setSelectedChatContext={setSelectedChatContext}
+                        />
+                    )}
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}
@@ -477,12 +591,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         }
                     />
                 </div>
-                {ContextStatusComponent ? (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                ) : (
-                    contextStatus && (
-                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                    )
+                {!ContextStatusComponent && contextStatus && (
+                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
                 )}
             </form>
         </div>

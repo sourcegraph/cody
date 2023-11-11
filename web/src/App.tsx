@@ -41,6 +41,9 @@ const editor: Editor = {
     getActiveTextEditorVisibleContent() {
         return null
     },
+    getTextEditorContentForFile(_uri, _range): Promise<string | undefined> {
+        return Promise.resolve(undefined)
+    },
     getWorkspaceRootPath() {
         return null
     },
