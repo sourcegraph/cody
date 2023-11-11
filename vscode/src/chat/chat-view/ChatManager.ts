@@ -9,8 +9,7 @@ import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { AuthStatus } from '../protocol'
 
-import { ChatPanelProvider } from './ChatPanelProvider'
-import { ChatPanelsManager } from './ChatPanelsManager'
+import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
 import { SidebarChatOptions, SidebarChatProvider } from './SidebarChatProvider'
 
 /**
@@ -57,7 +56,7 @@ export class ChatManager implements vscode.Disposable {
         })
     }
 
-    private async getChatProvider(): Promise<SidebarChatProvider | ChatPanelProvider> {
+    private async getChatProvider(): Promise<SidebarChatProvider | IChatPanelProvider> {
         if (!this.chatPanelsManager) {
             return this.sidebarChat
         }
@@ -197,7 +196,7 @@ export class ChatManager implements vscode.Disposable {
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<ChatPanelProvider | undefined> {
+    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider | undefined> {
         if (!this.chatPanelsManager) {
             return undefined
         }

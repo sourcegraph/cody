@@ -4,21 +4,36 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
-import { ChatPanelProvider, ChatPanelProviderOptions } from './ChatPanelProvider'
+import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
+import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string
 
+export interface IChatPanelProvider extends vscode.Disposable {
+    executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
+    executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
+    clearAndRestartSession(): Promise<void>
+    clearChatHistory(chatID: ChatID): Promise<void>
+    triggerNotice(notice: { key: string }): void
+    webviewPanel?: vscode.WebviewPanel
+    webview?: ChatViewProviderWebview
+    sessionID: string
+    setWebviewView(view: View): Promise<void>
+    restoreSession(chatID: string): Promise<void>
+}
+
 export class ChatPanelsManager implements vscode.Disposable {
     // Chat views in editor panels when experimentalChatPanel is enabled
-    private activePanelProvider: ChatPanelProvider | undefined = undefined
-    private panelProvidersMap: Map<ChatID, ChatPanelProvider> = new Map()
+    private activePanelProvider: IChatPanelProvider | undefined = undefined
+    private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
 
     private options: ChatPanelProviderOptions
     private onConfigurationChange: vscode.Disposable
@@ -82,17 +97,45 @@ export class ChatPanelsManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', 'cody.chatPanel', authStatus.isLoggedIn)
     }
 
-    public async getChatPanel(): Promise<ChatPanelProvider> {
+    public async getChatPanel(): Promise<IChatPanelProvider> {
         const provider = await this.createWebviewPanel()
         // Check if any existing panel is available
         return this.activePanelProvider || provider
     }
 
+    // TODO
+    private useSimpleChatPanelProvider = false
+
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<ChatPanelProvider> {
+    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider> {
         logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
+
+        // MARK: integration point
+        if (this.useSimpleChatPanelProvider) {
+            const provider = new SimpleChatPanelProvider(this.options)
+            const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
+            const sessionID = 'TODO'
+            this.activePanelProvider = provider
+            this.panelProvidersMap.set(sessionID, provider)
+
+            webviewPanel?.onDidChangeViewState(e => {
+                if (e.webviewPanel.visible && e.webviewPanel.active) {
+                    this.activePanelProvider = provider
+                    this.options.contextProvider.webview = provider.webview
+                    void this.selectTreeItem(provider.sessionID)
+                }
+            })
+
+            webviewPanel?.onDidDispose(() => {
+                this.disposeProvider(sessionID)
+            })
+
+            this.selectTreeItem(sessionID)
+            return provider
+        }
+
         const provider = new ChatPanelProvider(this.options)
         const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
         const sessionID = chatID || provider.sessionID
