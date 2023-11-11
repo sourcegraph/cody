@@ -12,7 +12,7 @@ import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../prot
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { SimpleChatModel } from './SimpleChatModel'
+import { GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
@@ -20,12 +20,15 @@ interface SimpleChatPanelProviderOptions {
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
-    private simpleChatModel: SimpleChatModel = new SimpleChatModel()
+    private chatModel: SimpleChatModel = new SimpleChatModel()
     public webviewPanel?: vscode.WebviewPanel
     public webview?: ChatViewProviderWebview
     private extensionUri: vscode.Uri
     private disposables: vscode.Disposable[] = []
     private authProvider: AuthProvider
+
+    private promptMaker: PromptMaker = new GPT4PromptMaker()
+    // NEXT: add LLM client
 
     constructor({ extensionUri, authProvider }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
@@ -90,9 +93,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             //     await this.init(this.startUpChatID)
             //     this.handleChatModel()
             //     break
-            // case 'submit':
-            //     await this.onHumanMessageSubmitted(message.text, message.submitType)
-            //     break
+            case 'submit':
+                await this.onHumanMessageSubmitted(message.text, message.submitType)
+                break
             // case 'edit':
             //     this.transcript.removeLastInteraction()
             //     await this.onHumanMessageSubmitted(message.text, 'user')
@@ -205,5 +208,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
         await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
+    }
+
+    private onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
+        this.chatModel.addHumanMessage({ text, contextReferences: [] })
+        return Promise.resolve()
     }
 }
