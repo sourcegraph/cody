@@ -4,7 +4,10 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { View } from '../../../webviews/NavBar'
-import { WebviewMessage } from '../protocol'
+import { getFullConfig } from '../../configuration'
+import { logDebug } from '../../log'
+import { AuthProvider } from '../../services/AuthProvider'
+import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
@@ -13,6 +16,7 @@ import { SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
+    authProvider: AuthProvider
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -21,9 +25,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     public webview?: ChatViewProviderWebview
     private extensionUri: vscode.Uri
     private disposables: vscode.Disposable[] = []
+    private authProvider: AuthProvider
 
-    constructor({ extensionUri }: SimpleChatPanelProviderOptions) {
+    constructor({ extensionUri, authProvider }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
+        this.authProvider = authProvider
     }
     public executeRecipe(recipeID: RecipeID, chatID: string, context: any): Promise<void> {
         console.log('# TODO: executeRecipe')
@@ -67,10 +73,76 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return Promise.resolve()
     }
 
-    private onDidReceiveMessage(message: WebviewMessage): void {
+    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         // NEXT: add case for 'ready' message, probably should copy over a lot of the old
         // messages from ChatPanelProvider
         console.log('# received message', message)
+
+        switch (message.command) {
+            case 'ready':
+                // The web view is ready to receive events. We need to make sure that it has an up
+                // to date config, even if it was already published
+                await this.authProvider.announceNewAuthStatus()
+                await this.updateViewConfig()
+                break
+            // case 'initialized':
+            //     logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
+            //     await this.init(this.startUpChatID)
+            //     this.handleChatModel()
+            //     break
+            // case 'submit':
+            //     await this.onHumanMessageSubmitted(message.text, message.submitType)
+            //     break
+            // case 'edit':
+            //     this.transcript.removeLastInteraction()
+            //     await this.onHumanMessageSubmitted(message.text, 'user')
+            //     telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+            //     telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
+            //     break
+            // case 'abort':
+            //     await this.abortCompletion()
+            //     telemetryService.log(
+            //         'CodyVSCodeExtension:abortButton:clicked',
+            //         { source: 'sidebar' },
+            //         { hasV2Event: true }
+            //     )
+            //     telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+            //     break
+            // case 'chatModel':
+            //     this.chatModel = message.model
+            //     this.transcript.setChatModel(message.model)
+            //     break
+            // case 'executeRecipe':
+            //     await this.executeRecipe(message.recipe, '', 'chat')
+            //     break
+            // case 'custom-prompt':
+            //     await this.onCustomPromptClicked(message.title, message.value)
+            //     break
+            // case 'insert':
+            //     await handleCodeFromInsertAtCursor(message.text, message.metadata)
+            //     break
+            // case 'newFile':
+            //     handleCodeFromSaveToNewFile(message.text, message.metadata)
+            //     await this.editor.createWorkspaceFile(message.text)
+            //     break
+            // case 'copy':
+            //     await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+            //     break
+            // case 'event':
+            //     telemetryService.log(message.eventName, message.properties)
+            //     break
+            // case 'links':
+            //     void openExternalLinks(message.value)
+            //     break
+            // case 'openFile':
+            //     await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+            //     break
+            // case 'openLocalFileWithRange':
+            //     await openLocalFileWithRange(message.filePath, message.range)
+            //     break
+            // default:
+            //     this.handleError('Invalid request type from Webview Panel', 'system')
+        }
     }
 
     /**
@@ -107,6 +179,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         // Register webview
         this.webviewPanel = panel
+        this.webview = panel.webview
+        // TODO(beyang): seems weird to set webview here -- is authProvider shared?
+        this.authProvider.webview = panel.webview
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
@@ -117,5 +192,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
 
         return panel
+    }
+
+    private async updateViewConfig(): Promise<void> {
+        const config = await getFullConfig()
+        const authStatus = this.authProvider.getAuthStatus()
+        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+            ...localProcess,
+            debugEnable: config.debugEnable,
+            serverEndpoint: config.serverEndpoint,
+        }
+        await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 }

@@ -104,7 +104,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     // TODO
-    private useSimpleChatPanelProvider = false
+    private useSimpleChatPanelProvider = true
 
     /**
      * Creates a new webview panel for chat.

@@ -166,6 +166,7 @@ export class ContextProvider implements vscode.Disposable {
                 this.codebaseContext = codebaseContext
             }
         }
+        // MARK
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
