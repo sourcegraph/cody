@@ -144,6 +144,7 @@ export interface AuthStatus {
     siteVersion: string
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
+    userCanUpgrade: boolean
 }
 
 export const defaultAuthStatus = {
@@ -155,6 +156,7 @@ export const defaultAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 export const unauthenticatedStatus = {
@@ -166,6 +168,7 @@ export const unauthenticatedStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 export const networkErrorAuthStatus = {
@@ -177,6 +180,7 @@ export const networkErrorAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 /** The local environment of the editor. */

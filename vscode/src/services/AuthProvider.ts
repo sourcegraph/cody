@@ -187,7 +187,8 @@ export class AuthProvider {
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
-        const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
+        const isDotCom = this.client.isDotCom()
+        const isDotComOrApp = isDotCom || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
@@ -205,10 +206,14 @@ export class AuthProvider {
                 !isError(currentUserID),
                 hasVerifiedEmail,
                 enabled,
+                /* userCanUpgrade: */ false,
                 version,
                 configOverwrites
             )
         }
+
+        // TODO(dantup): Rename this and/or split into another query.
+        //   Can we use a query with codyProStatus against all instances (eg. non-dotcom)?
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
 
@@ -227,6 +232,7 @@ export class AuthProvider {
                   !!userInfo.id,
                   userInfo.hasVerifiedEmail,
                   isCodyEnabled,
+                  /* userCanUpgrade: */ isDotCom && !userInfo.codyProEnabled, // should we require explicit false?
                   version,
                   configOverwrites
               )

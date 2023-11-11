@@ -1,5 +1,9 @@
 import * as vscode from 'vscode'
 
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+
+import { AuthStatus } from '../chat/protocol'
+
 import { CodySidebarTreeItem, CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -7,10 +11,10 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
+    private authStatus: AuthStatus | undefined
 
     constructor(private type: CodyTreeItemType) {
-        this.updateTree(getCodyTreeItems(type))
-        this.refresh()
+        void this.updateTree(getCodyTreeItems(type))
     }
 
     /**
@@ -28,11 +32,20 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     /**
-     * Updates the tree view with the provided tree items.
+     * Updates the tree view with the provided tree items, filtering out any
+     * that do not meet the required criteria to show.
      */
-    public updateTree(treeItems: CodySidebarTreeItem[]): void {
+    public async updateTree(treeItems: CodySidebarTreeItem[]): Promise<void> {
         const updatedTree: vscode.TreeItem[] = []
-        treeItems.forEach(item => {
+        for (const item of treeItems) {
+            if (item.requireFeature && !(await featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
+                continue
+            }
+
+            if (item.requireUpgradeAvailable && !(this.authStatus?.userCanUpgrade ?? false)) {
+                continue
+            }
+
             const treeItem = new vscode.TreeItem({ label: item.title })
             treeItem.id = item.id
             treeItem.iconPath = new vscode.ThemeIcon(item.icon)
@@ -40,9 +53,14 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             treeItem.command = { command: item.command.command, title: item.title, arguments: item.command.args }
 
             updatedTree.push(treeItem)
-        })
+        }
         this.treeNodes = updatedTree
         this.refresh()
+    }
+
+    public syncAuthStatus(authStatus: AuthStatus): void {
+        this.authStatus = authStatus
+        void this.refresh()
     }
 
     /**

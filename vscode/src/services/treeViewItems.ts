@@ -1,4 +1,5 @@
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
@@ -16,6 +17,8 @@ export interface CodySidebarTreeItem {
         args?: string[] | { [key: string]: string }[]
     }
     isNestedItem?: string
+    requireFeature?: FeatureFlag
+    requireUpgradeAvailable?: boolean
 }
 
 /**
@@ -57,13 +60,14 @@ const supportItems: CodySidebarTreeItem[] = [
         description: 'Upgrade to Pro',
         icon: 'zap',
         command: { command: 'vscode.open', args: [ACCOUNT_UPGRADE_URL.href] },
-        // TODO(dantup): Add a way to show this conditionally based on current user license
-        //  + refresh the tree view when the user changes their license.
+        requireUpgradeAvailable: true,
+        requireFeature: FeatureFlag.CodeProDecGA,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'vscode.open', args: [ACCOUNT_USAGE_URL.href] },
+        requireFeature: FeatureFlag.CodeProDecGA,
     },
     {
         title: 'Settings',

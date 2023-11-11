@@ -75,6 +75,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        this.treeViewProvider.syncAuthStatus(authStatus)
         if (!authStatus.isLoggedIn) {
             this.disposePanels()
         }
@@ -156,7 +157,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     private updateTreeViewHistory(): void {
         const localHistory = localStorage.getChatHistory()
         if (localHistory) {
-            this.treeViewProvider.updateTree(
+            void this.treeViewProvider.updateTree(
                 createCodyChatTreeItems({
                     chat: localHistory?.chat,
                     input: localHistory.input,

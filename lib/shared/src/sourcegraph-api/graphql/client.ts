@@ -58,7 +58,9 @@ interface CurrentUserIdResponse {
 }
 
 interface CurrentUserIdHasVerifiedEmailResponse {
-    currentUser: { id: string; hasVerifiedEmail: boolean } | null
+    // TODO(dantup): Is it reasonable to add this flag here to avoid two requests?
+    //   Can we assume codyProEnabled is boolean or can it be missing?
+    currentUser: { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | null
 }
 
 interface CodyLLMSiteConfigurationResponse {
@@ -310,7 +312,9 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
+    public async getCurrentUserIdAndVerifiedEmail(): Promise<
+        { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | Error
+    > {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailResponse>>(
             CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
             {}

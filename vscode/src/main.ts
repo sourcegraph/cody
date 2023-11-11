@@ -204,6 +204,8 @@ const register = async (
             symfRunner?.setSourcegraphAuth(null, null)
         }
     })
+    // Sync initial auth status
+    void chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     const executeRecipeInChatView = async (
         recipe: RecipeID,
