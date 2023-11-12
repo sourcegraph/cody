@@ -223,9 +223,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         this.chatModel.addHumanMessage({ text })
 
-        console.log('debug: fetching embeddings')
         const contextItems: ContextItem[] = []
         if (this.embeddingsClient) {
+            console.log('debug: fetching embeddings')
             const embeddings = await this.embeddingsClient.search(text, 2, 2)
             if (isError(embeddings)) {
                 console.error('# TODO: embeddings error', embeddings)
@@ -235,7 +235,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         scheme: 'file',
                         path: codeResult.fileName,
                         fragment: `${codeResult.startLine}:${codeResult.endLine}`,
-                    }).toString()
+                    })
                     const range = new vscode.Range(
                         new vscode.Position(codeResult.startLine, 0),
                         new vscode.Position(codeResult.endLine, 0)
@@ -252,7 +252,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         scheme: 'file',
                         path: textResult.fileName,
                         fragment: `${textResult.startLine}:${textResult.endLine}`,
-                    }).toString()
+                    })
                     const range = new vscode.Range(
                         new vscode.Position(textResult.startLine, 0),
                         new vscode.Position(textResult.endLine, 0)
@@ -264,8 +264,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     })
                 }
             }
+            console.log('debug: finished fetching embeddings', embeddings)
         }
-        console.log('debug: finished fetching embeddings')
 
         const promptMessages = this.promptMaker.makePrompt(this.chatModel, contextItems).map(m => ({
             speaker: m.speaker,

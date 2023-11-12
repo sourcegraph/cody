@@ -28,7 +28,7 @@ export class SimpleChatModel {
 }
 
 export interface ContextItem {
-    uri: string
+    uri: vscode.Uri
     range: vscode.Range
     text: string
 }
@@ -38,7 +38,22 @@ export interface PromptMaker {
 }
 
 export class GPT4PromptMaker implements PromptMaker {
-    public makePrompt(chat: SimpleChatModel, context: ContextItem[]): Message[] {
-        return chat.messages
+    public makePrompt(chat: SimpleChatModel, contextItems: ContextItem[]): Message[] {
+        const promptMessages: Message[] = []
+        for (const contextItem of contextItems) {
+            console.log('# using file path in prompt: ' + contextItem.uri.fsPath)
+            promptMessages.push(
+                {
+                    speaker: 'human',
+                    text: 'Use the following text from file `' + contextItem.uri.fsPath + '`\n\n' + contextItem.text,
+                },
+                {
+                    speaker: 'assistant',
+                    text: 'Ok.',
+                }
+            )
+        }
+        promptMessages.push(...chat.messages)
+        return promptMessages
     }
 }

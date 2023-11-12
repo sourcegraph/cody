@@ -268,6 +268,12 @@ export class ContextProvider implements vscode.Disposable {
         return (this.appClient = new SourcegraphGraphQLAPIClient(clientConfig))
     }
 
+    public async hackGetEmbeddingClientCandidates(
+        config: GraphQLAPIClientConfig
+    ): Promise<SourcegraphGraphQLAPIClient[]> {
+        return this.getEmbeddingClientCandidates(config)
+    }
+
     // Gets a list of GraphQL clients to interrogate for embeddings
     // availability.
     private async getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
@@ -286,6 +292,18 @@ export class ContextProvider implements vscode.Disposable {
         }
         return result
     }
+}
+
+export function hackGetCodebaseContext(
+    config: Config,
+    rgPath: string | null,
+    symf: IndexedKeywordContextFetcher | undefined,
+    editor: Editor,
+    chatClient: ChatClient,
+    platform: PlatformContext,
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
+): Promise<CodebaseContext | null> {
+    return getCodebaseContext(config, rgPath, symf, editor, chatClient, platform, embeddingsClientCandidates)
 }
 
 /**
