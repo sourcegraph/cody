@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import * as fs from 'fs'
 import * as fspromises from 'fs/promises'
 
 import type * as vscode from 'vscode'
@@ -247,36 +246,43 @@ const _workspace: Partial<typeof vscode.workspace> = {
             await fspromises.writeFile(uri.fsPath, content)
         },
         delete: async (uri, options) => {
-            const provider = this.throwIfFileSystemIsReadonly(await this.withProvider(resource), resource)
-            if (useTrash && !(provider.capabilities & FileSystemProviderCapabilities.Trash)) {
-                throw new Error(
-                    localize(
-                        'deleteFailedTrashUnsupported',
-                        "Unable to delete file '{0}' via trash because provider does not support it.",
-                        this.resourceForError(resource)
-                    )
-                )
+            if (options?.useTrash ?? true) {
+                // move file to trash folder
+            } else {
+                await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
             }
-            if (options?.useTrash) {
-                throw new Error('Trash is not supported by the agent')
-            }
-            await fspromises.rm(uri.fsPath, { recursive: options?.recursive })
         },
         rename: async (source, target, options) => {
-            if (!options?.overwrite && fs.existsSync(target.fsPath)) {
-                throw new Error('Target path already exists and overwrite is set to false.')
+            if (options?.overwrite ?? false) {
+                await fspromises.unlink(target.fsPath)
             }
-            await fspromises.rename(source.fsPath, target.fsPath)
+            try {
+                await fspromises.link(source.fsPath, target.fsPath)
+            } catch {
+                throw new Error(
+                    `Failed to rename file from ${source.fsPath} to ${target.fsPath}, ${source.fsPath} does not exist`
+                )
+            }
+            await fspromises.unlink(source.fsPath)
         },
         copy: async (source, target, options) => {
             const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
             await fspromises.copyFile(source.fsPath, target.fsPath, mode)
         },
         isWritableFileSystem: scheme => {
-            return scheme === 'file' || scheme === 'git'
+            switch (scheme) {
+                case 'file':
+                case 'git':
+                    return true
+                case 'http':
+                case 'https':
+                default:
+                    return false
+            }
         },
     },
 }
+
 export const workspace = _workspace as typeof vscode.workspace
 
 const statusBarItem: Partial<vscode.StatusBarItem> = {
