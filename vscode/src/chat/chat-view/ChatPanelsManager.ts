@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -44,7 +45,10 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    constructor({ extensionUri, ...options }: SidebarChatOptions) {
+    constructor(
+        { extensionUri, ...options }: SidebarChatOptions,
+        private chatClient: ChatClient
+    ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
 
@@ -114,7 +118,7 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         // MARK: integration point
         if (this.useSimpleChatPanelProvider) {
-            const provider = new SimpleChatPanelProvider(this.options)
+            const provider = new SimpleChatPanelProvider({ ...this.options, chatClient: this.chatClient })
             const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
             const sessionID = 'TODO'
             this.activePanelProvider = provider

@@ -159,10 +159,13 @@ const register = async (
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
-    const chatManager = new ChatManager({
-        ...messageProviderOptions,
-        extensionUri: context.extensionUri,
-    })
+    const chatManager = new ChatManager(
+        {
+            ...messageProviderOptions,
+            extensionUri: context.extensionUri,
+        },
+        chatClient
+    )
 
     // Register tree views
     disposables.push(

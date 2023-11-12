@@ -3,21 +3,21 @@ export class SimpleChatModel {
     public messages: Message[] = []
 
     public addHumanMessage(message: Omit<Message, 'speaker'>): void {
-        if (this.messages.at(-1)?.speaker === 'user') {
+        if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
         this.messages.push({
-            speaker: 'user',
+            speaker: 'human',
             ...message,
         })
     }
 
     public addBotMessage(message: Omit<Message, 'speaker'>): void {
-        if (this.messages.at(-1)?.speaker === 'bot') {
+        if (this.messages.at(-1)?.speaker === 'assistant') {
             throw new Error('Cannot add a bot message after a bot message')
         }
         this.messages.push({
-            speaker: 'bot',
+            speaker: 'assistant',
             ...message,
         })
     }
@@ -47,7 +47,7 @@ export class GPT4PromptMaker implements PromptMaker {
 }
 
 interface Message {
-    speaker: 'user' | 'bot'
+    speaker: 'human' | 'assistant'
     text: string
     contextReferences: { uri: string; startOffset: number; endOffset: number }[]
 }

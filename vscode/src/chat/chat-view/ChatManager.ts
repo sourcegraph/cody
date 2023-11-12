@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -26,7 +27,10 @@ export class ChatManager implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    constructor({ extensionUri, ...options }: SidebarChatOptions) {
+    constructor(
+        { extensionUri, ...options }: SidebarChatOptions,
+        private chatClient: ChatClient
+    ) {
         logDebug('ChatManager:constructor', 'init')
         this.options = { extensionUri, ...options }
 
@@ -188,7 +192,7 @@ export class ChatManager implements vscode.Disposable {
 
     private createChatPanelsManger(): void {
         if (!this.chatPanelsManager) {
-            this.chatPanelsManager = new ChatPanelsManager(this.options)
+            this.chatPanelsManager = new ChatPanelsManager(this.options, this.chatClient)
             telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
         }
     }

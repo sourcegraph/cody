@@ -172,6 +172,8 @@ export const Transcript: React.FunctionComponent<
             )
         }
 
+    console.log('# earlierMessages', earlierMessages)
+
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>

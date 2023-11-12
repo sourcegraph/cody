@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatMessage } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -215,6 +216,62 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         this.chatModel.addHumanMessage({ text, contextReferences: [] })
+
+        const messages: ChatMessage[] = this.chatModel.messages.map(m => ({
+            speaker: m.speaker,
+            text: m.text,
+            displayText: m.text,
+            // TODO: context references
+        }))
+
+        let lastContent = ''
+        const abort = this.chatClient.chat(
+            messages,
+            {
+                onChange: (content: string) => {
+                    console.log('# onChange', content)
+                    lastContent = content
+                    const newMessages: ChatMessage[] = [
+                        ...messages,
+                        {
+                            speaker: 'assistant',
+                            text: content,
+                            displayText: content,
+                        },
+                    ]
+                    void this.webview?.postMessage({
+                        type: 'transcript',
+                        messages: newMessages,
+                        isMessageInProgress: true,
+                    })
+                },
+                onComplete: () => {
+                    console.log('# onComplete', lastContent)
+                    const newMessages: ChatMessage[] = [
+                        ...messages,
+                        {
+                            speaker: 'assistant',
+                            text: lastContent,
+                            displayText: lastContent,
+                        },
+                    ]
+                    this.chatModel.addBotMessage({ text: lastContent, contextReferences: [] })
+                    void this.webview?.postMessage({
+                        type: 'transcript',
+                        messages: newMessages,
+                        isMessageInProgress: false,
+                    })
+                },
+                onError: error => {
+                    // TODO
+                    console.error('# err', error)
+                },
+            },
+            {
+                model: 'openai/gpt-4-1106-preview',
+            }
+        )
+
         return Promise.resolve()
     }
 }

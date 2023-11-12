@@ -48,7 +48,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'transcript': {
-                        console.log('# webview:transcript')
+                        console.log('# webview:transcript', message)
                         if (message.isMessageInProgress) {
                             const msgLength = message.messages.length - 1
                             setTranscript(message.messages.slice(0, msgLength))
