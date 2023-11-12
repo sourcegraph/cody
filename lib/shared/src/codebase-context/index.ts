@@ -40,6 +40,10 @@ export class CodebaseContext {
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
 
+    public tempHackGetEmbeddingsSearch(): EmbeddingsSearch | null {
+        return this.embeddings
+    }
+
     public getCodebase(): string | undefined {
         return this.codebase
     }
