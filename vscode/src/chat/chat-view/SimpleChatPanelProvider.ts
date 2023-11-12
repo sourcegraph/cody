@@ -4,6 +4,8 @@ import { ChatMessage } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
@@ -14,12 +16,13 @@ import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../prot
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel'
+import { ContextItem, GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
+    embeddingsClient: EmbeddingsSearch | null
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -33,10 +36,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private promptMaker: PromptMaker = new GPT4PromptMaker() // TODO: make setable/configurable
     private chatClient: ChatClient
 
-    constructor({ extensionUri, authProvider, chatClient }: SimpleChatPanelProviderOptions) {
+    private embeddingsClient: EmbeddingsSearch | null
+
+    constructor({ extensionUri, authProvider, chatClient, embeddingsClient }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
+        this.embeddingsClient = embeddingsClient
     }
     public executeRecipe(recipeID: RecipeID, chatID: string, context: any): Promise<void> {
         console.log('# TODO: executeRecipe')
@@ -214,25 +220,68 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
-    private onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        this.chatModel.addHumanMessage({ text, contextReferences: [] })
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
+        this.chatModel.addHumanMessage({ text })
 
-        const messages: ChatMessage[] = this.chatModel.messages.map(m => ({
+        console.log('debug: fetching embeddings')
+        const contextItems: ContextItem[] = []
+        if (this.embeddingsClient) {
+            const embeddings = await this.embeddingsClient.search(text, 2, 2)
+            if (isError(embeddings)) {
+                console.error('# TODO: embeddings error', embeddings)
+            } else {
+                for (const codeResult of embeddings.codeResults) {
+                    const uri = vscode.Uri.from({
+                        scheme: 'file',
+                        path: codeResult.fileName,
+                        fragment: `${codeResult.startLine}:${codeResult.endLine}`,
+                    }).toString()
+                    const range = new vscode.Range(
+                        new vscode.Position(codeResult.startLine, 0),
+                        new vscode.Position(codeResult.endLine, 0)
+                    )
+                    contextItems.push({
+                        uri,
+                        range,
+                        text: codeResult.content,
+                    })
+                }
+
+                for (const textResult of embeddings.textResults) {
+                    const uri = vscode.Uri.from({
+                        scheme: 'file',
+                        path: textResult.fileName,
+                        fragment: `${textResult.startLine}:${textResult.endLine}`,
+                    }).toString()
+                    const range = new vscode.Range(
+                        new vscode.Position(textResult.startLine, 0),
+                        new vscode.Position(textResult.endLine, 0)
+                    )
+                    contextItems.push({
+                        uri,
+                        range,
+                        text: textResult.content,
+                    })
+                }
+            }
+        }
+        console.log('debug: finished fetching embeddings')
+
+        const promptMessages = this.promptMaker.makePrompt(this.chatModel, contextItems).map(m => ({
             speaker: m.speaker,
             text: m.text,
             displayText: m.text,
-            // TODO: context references
         }))
 
         let lastContent = ''
         const abort = this.chatClient.chat(
-            messages,
+            promptMessages,
             {
                 onChange: (content: string) => {
                     console.log('# onChange', content)
                     lastContent = content
                     const newMessages: ChatMessage[] = [
-                        ...messages,
+                        ...this.chatModel.messages,
                         {
                             speaker: 'assistant',
                             text: content,
@@ -248,14 +297,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 onComplete: () => {
                     console.log('# onComplete', lastContent)
                     const newMessages: ChatMessage[] = [
-                        ...messages,
+                        ...this.chatModel.messages,
                         {
                             speaker: 'assistant',
                             text: lastContent,
                             displayText: lastContent,
                         },
                     ]
-                    this.chatModel.addBotMessage({ text: lastContent, contextReferences: [] })
+                    this.chatModel.addBotMessage({ text: lastContent })
                     void this.webview?.postMessage({
                         type: 'transcript',
                         messages: newMessages,

@@ -1,3 +1,7 @@
+import * as vscode from 'vscode'
+
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+
 export class SimpleChatModel {
     public context: ContextItem[] = []
     public messages: Message[] = []
@@ -23,31 +27,18 @@ export class SimpleChatModel {
     }
 }
 
-interface ContextItem {
+export interface ContextItem {
     uri: string
-    fsPathRelativeToRepoRoot: string
-    range: Range
+    range: vscode.Range
     text: string
-}
-
-interface ContextReference {
-    uri: string
-    startOffset: number
-    endOffset: number
 }
 
 export interface PromptMaker {
-    makePrompt(chat: SimpleChatModel): string
+    makePrompt(chat: SimpleChatModel, context: ContextItem[]): Message[]
 }
 
 export class GPT4PromptMaker implements PromptMaker {
-    public makePrompt(chat: SimpleChatModel): string {
-        return 'TODO'
+    public makePrompt(chat: SimpleChatModel, context: ContextItem[]): Message[] {
+        return chat.messages
     }
-}
-
-interface Message {
-    speaker: 'human' | 'assistant'
-    text: string
-    contextReferences: { uri: string; startOffset: number; endOffset: number }[]
 }

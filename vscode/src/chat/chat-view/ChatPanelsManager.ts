@@ -4,6 +4,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
@@ -47,7 +48,8 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
-        private chatClient: ChatClient
+        private chatClient: ChatClient,
+        private embeddingsSearch: EmbeddingsSearch | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
@@ -118,7 +120,11 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         // MARK: integration point
         if (this.useSimpleChatPanelProvider) {
-            const provider = new SimpleChatPanelProvider({ ...this.options, chatClient: this.chatClient })
+            const provider = new SimpleChatPanelProvider({
+                ...this.options,
+                chatClient: this.chatClient,
+                embeddingsClient: this.embeddingsSearch,
+            })
             const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
             const sessionID = 'TODO'
             this.activePanelProvider = provider

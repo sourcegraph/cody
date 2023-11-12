@@ -132,6 +132,8 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
+    const embeddingsSearch = initialCodebaseContext.tempHackGetEmbeddingsSearch()
+
     const contextProvider = new ContextProvider(
         initialConfig,
         chatClient,
@@ -164,7 +166,8 @@ const register = async (
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
         },
-        chatClient
+        chatClient,
+        embeddingsSearch
     )
 
     // Register tree views
