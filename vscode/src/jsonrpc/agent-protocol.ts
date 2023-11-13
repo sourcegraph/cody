@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
+import { URI } from 'vscode-uri'
+
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -173,7 +175,8 @@ export interface ExtensionConfiguration {
     verboseDebug?: boolean
     codebase?: string
 
-    /** When passed, the Agent will handle recording events.
+    /**
+     * When passed, the Agent will handle recording events.
      * If not passed, client must send `graphql/logEvent` requests manually. **/
     eventProperties?: EventProperties
 }
@@ -208,6 +211,8 @@ export interface TextDocument {
     filePath: string
     content?: string
     selection?: Range
+    uri?: URI
+    isIgnored?: boolean
 }
 
 export interface RecipeInfo {

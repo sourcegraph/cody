@@ -38,10 +38,13 @@ export class AgentEditor implements Editor {
         if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
-        if (isCodyIgnoredFile(URI.file(this.agent.workspace.activeDocumentFilePath))) {
-            return undefined
+        const document = this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
+        if (document) {
+            const uri = URI.file(this.agent.workspace.activeDocumentFilePath)
+            document.uri = uri
+            document.isIgnored = isCodyIgnoredFile(uri)
         }
-        return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
+        return document
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
@@ -51,7 +54,9 @@ export class AgentEditor implements Editor {
         }
         return {
             filePath: document.filePath,
+            fileUri: document.uri,
             content: document.content || '',
+            isIgnored: document.isIgnored,
         }
     }
 

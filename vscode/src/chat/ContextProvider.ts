@@ -199,6 +199,7 @@ export class ContextProvider implements vscode.Disposable {
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                     selectionRange: editorContext?.selectionRange,
                     supportsKeyword: true,
+                    isIgnored: editorContext?.isIgnored,
                 },
             })
         }

@@ -21,6 +21,10 @@ import { getActiveEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
+export interface CodyVSCodeTextEditor extends vscode.TextEditor {
+    isIgnored?: boolean
+}
+
 export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
     constructor(
         public readonly controllers: ActiveTextEditorViewControllers<
@@ -63,18 +67,17 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         if (!activeEditor) {
             return null
         }
-        if (isCodyIgnoredFile(activeEditor.document.uri)) {
-            return null
-        }
         const documentUri = activeEditor.document.uri
         const documentText = activeEditor.document.getText()
         const documentSelection = activeEditor.selection
+        const filePath = documentUri.fsPath
 
         return {
             content: documentText,
-            filePath: documentUri.fsPath,
+            filePath,
             fileUri: documentUri,
             selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
+            isIgnored: isCodyIgnoredFile(activeEditor.document.uri),
         }
     }
 
@@ -93,7 +96,9 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return {
             content: documentText || '',
             filePath: documentUri.fsPath,
+            fileUri: documentUri,
             selectionRange: documentSelection,
+            isIgnored: isCodyIgnoredFile(documentUri),
         }
     }
 
@@ -113,7 +118,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
-    private getActiveTextEditorInstance(): vscode.TextEditor | null {
+    private getActiveTextEditorInstance(): CodyVSCodeTextEditor | null {
         const activeEditor = getActiveEditor()
         return activeEditor ?? null
     }

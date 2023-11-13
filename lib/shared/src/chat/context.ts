@@ -12,4 +12,6 @@ export interface ChatContextStatus {
     filePath?: string
     selectionRange?: ActiveTextEditorSelectionRange
     supportsKeyword?: boolean
+
+    isIgnored?: boolean
 }

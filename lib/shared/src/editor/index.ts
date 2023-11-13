@@ -7,9 +7,13 @@ export interface ActiveTextEditor {
     content: string
     filePath: string
     fileUri?: URI
+
     repoName?: string
     revision?: string
+
     selectionRange?: ActiveTextEditorSelectionRange
+
+    isIgnored?: boolean
 }
 
 export interface ActiveTextEditorSelectionRange {

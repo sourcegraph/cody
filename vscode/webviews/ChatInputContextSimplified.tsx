@@ -153,7 +153,9 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
             {codebaseState}
             {contextStatus?.filePath ? (
                 <p className={styles.file} title={contextStatus.filePath}>
-                    {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
+                    {contextStatus?.isIgnored
+                        ? contextStatus.filePath + 'is on Cody ignore list'
+                        : formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
                 </p>
             ) : (
                 <p className={styles.file}>No file selected</p>
