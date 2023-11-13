@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { CodebaseContext, ContextSearchOptions } from '../../codebase-context'
+import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
@@ -46,13 +46,11 @@ export async function getContextMessagesFromSelection(
     precedingText: string,
     followingText: string,
     { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
-    codebaseContext: CodebaseContext,
-    options?: Partial<ContextSearchOptions>
+    codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
         numCodeResults: 4,
         numTextResults: 0,
-        ...options,
     })
 
     return selectedTextContext.concat(
