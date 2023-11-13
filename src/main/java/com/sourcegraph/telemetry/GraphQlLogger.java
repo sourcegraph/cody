@@ -70,7 +70,7 @@ public class GraphQlLogger {
       updatedEventParameters.addProperty("source", params.getSource());
       updatedEventParameters.addProperty("charCount", params.getCharCount());
       updatedEventParameters.addProperty("lineCount", params.getLineCount());
-      updatedEventParameters.addProperty("multilineMode", params.getMultiline());
+      updatedEventParameters.addProperty("multilineMode", params.getMultilineMode());
       updatedEventParameters.addProperty("providerIdentifier", params.getProviderIdentifier());
     }
     return updatedEventParameters;
