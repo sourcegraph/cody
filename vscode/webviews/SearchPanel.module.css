@@ -1,0 +1,126 @@
+.outer-container {
+    background-color: var(--vscode-sideBar-background);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.outer-container:focus {
+    outline-width: 0;
+}
+
+.search-input-container {
+    display: grid;
+}
+
+.search-input {
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+    border-color: var(--vscode-input-border, transparent);
+    resize: none;
+    border-radius: 2px;
+    height: 1.3em;
+    padding: 8px 8px 8px 8px;
+    font: inherit;
+}
+
+.search-input:placeholder-shown {
+    text-overflow: ellipsis;
+}
+
+.search-input::placeholder {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.search-input:focus,
+.search-input:focus-visible,
+.search-input:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+    color: var(--vscode-inputOption-activeForeground);
+    border-color: var(--vscode-inputOption-activeBorder, transparent);
+}
+
+.search-result-row-inner {
+    height: 22px;
+    display: flex;
+    position: relative;
+}
+
+.search-result-row:hover {
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.search-result-row-inner-selected {
+    color: var(--vscode-list-focusForeground);
+    background-color: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.outer-container:focus .search-result-row-inner-selected {
+    color: var(--vscode-list-activeSelectionForeground);
+    background-color: var(--vscode-list-activeSelectionBackground);
+    outline: solid 1px var(--vscode-list-focusOutline);
+    z-index: 1;
+}
+
+.search-result-indent {
+    width: 8px;
+}
+
+.search-result-indent-guide {
+    position: absolute;
+    top: 0;
+    left: 16px;
+    border-left: 1px solid transparent;
+    border-color: var(--vscode-tree-indentGuidesStroke);
+    height: 100%;
+}
+
+.search-result-twistie {
+    display: flex !important;
+    flex-shrink: 0;
+    align-items: center;
+    height: 100%;
+    padding-left: 8px;
+    padding-right: 6px;
+    width: 16px;
+}
+
+.search-result-twistie-noindent {
+    padding-left: 0px;
+}
+
+.search-result-content {
+    height: 100%;
+    line-height: 22px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.filematch-label {
+    vertical-align: center;
+}
+
+.filematch-icon {
+    color: var(--vscode-banner-iconForeground);
+}
+
+.filematch-icon > i {
+    vertical-align: 'text-bottom';
+}
+
+.filematch-description {
+    font-size: 0.9em;
+    color: var(--vscode-search-resultsInfoForeground);
+}
+
+.input-row {
+    border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
+    gap: 0.3rem;
+    padding: 0.75rem 0.75rem 1rem 0.75rem;
+}

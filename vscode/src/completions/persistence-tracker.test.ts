@@ -4,11 +4,11 @@ import type * as vscode from 'vscode'
 import { telemetryService } from '../services/telemetry'
 import { range } from '../testutils/textDocument'
 
-import { CompletionID } from './logger'
+import { CompletionAnalyticsID } from './logger'
 import { PersistenceTracker } from './persistence-tracker'
 import { document } from './test-helpers'
 
-const completionId = '123' as CompletionID
+const completionId = '123' as CompletionAnalyticsID
 
 describe('PersistenceTracker', () => {
     let logSpy: MockInstance
@@ -41,14 +41,16 @@ describe('PersistenceTracker', () => {
     })
 
     it('tracks completions over time when there are no document changes', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         const sharedArgs = {
             id: '123',
@@ -58,39 +60,57 @@ describe('PersistenceTracker', () => {
         }
 
         vi.advanceTimersByTime(30 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 30,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 30,
+            },
+            { agent: true }
+        )
 
         vi.advanceTimersByTime(90 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 120,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 120,
+            },
+            { agent: true }
+        )
 
         vi.advanceTimersByTime(3 * 60 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 300,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 300,
+            },
+            { agent: true }
+        )
 
         vi.advanceTimersByTime(5 * 60 * 1000)
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 600,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 600,
+            },
+            { agent: true }
+        )
     })
 
     it('tracks changes to the document', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         const sharedArgs = {
             id: '123',
@@ -99,11 +119,15 @@ describe('PersistenceTracker', () => {
         }
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 30,
-            difference: 0,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 30,
+                difference: 0,
+            },
+            { agent: true }
+        )
 
         vi.spyOn(doc, 'getText').mockImplementationOnce(() => 'fo0')
         onDidChangeTextDocument({
@@ -120,22 +144,28 @@ describe('PersistenceTracker', () => {
         })
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            ...sharedArgs,
-            afterSec: 120,
-            difference: 1 / 3,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                ...sharedArgs,
+                afterSec: 120,
+                difference: 1 / 3,
+            },
+            { agent: true }
+        )
     })
 
     it('tracks changes after renaming a document', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         const renamedDoc = document('fo0', 'typescript', 'file:///test2.ts')
         onDidRenameFiles({
@@ -162,24 +192,30 @@ describe('PersistenceTracker', () => {
         })
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
-            afterSec: 30,
-            charCount: 3,
-            difference: 1 / 3,
-            id: '123',
-            lineCount: 1,
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:present',
+            {
+                afterSec: 30,
+                charCount: 3,
+                difference: 1 / 3,
+                id: '123',
+                lineCount: 1,
+            },
+            { agent: true }
+        )
     })
 
     it('gracefully handles file deletions', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         onDidDeleteFiles({ files: [doc.uri] })
 
@@ -188,18 +224,24 @@ describe('PersistenceTracker', () => {
     })
 
     it('tracks the deletion of a range', () => {
-        const completion = {
-            insertText: 'foo',
-            range: range(0, 0, 0, 0),
-        }
         // This document is in the state _after_ the completion was inserted
         const doc = document('')
 
-        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
+        tracker.track({
+            id: completionId,
+            insertedAt: Date.now(),
+            insertText: 'foo',
+            insertRange: range(0, 0, 0, 0),
+            document: doc,
+        })
 
         vi.advanceTimersToNextTimer()
-        expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:removed', {
-            id: '123',
-        })
+        expect(logSpy).toHaveBeenCalledWith(
+            'CodyVSCodeExtension:completion:persistence:removed',
+            {
+                id: '123',
+            },
+            { agent: true }
+        )
     })
 })

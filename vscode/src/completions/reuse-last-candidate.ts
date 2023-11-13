@@ -90,26 +90,47 @@ export function reuseLastCandidate({
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
                 const remaining = lastCompletion.slice(currentLinePrefix.length)
+                const alreadyInsertedText = item.insertText.slice(0, -remaining.length)
+
+                // Shift the range by the already inserted characters to the right
+                const prevRange = item.range
+                let newRange
+                if (prevRange) {
+                    const rangeShift = alreadyInsertedText.length
+                    newRange = new vscode.Range(
+                        prevRange.start.line,
+                        prevRange.start.character + rangeShift,
+                        prevRange.end.line,
+                        prevRange.end.character + rangeShift
+                    )
+                }
 
                 // When the remaining text is empty, the user has forward-typed the full text of the
                 // completion. We mark this as an accepted completion.
                 if (remaining.length === 0) {
                     didAcceptCompletion = true
-                    handleDidAcceptCompletionItem?.(
-                        lastCandidate.result.logId,
-                        item,
-                        getRequestParamsFromLastCandidate(document, lastCandidate)
-                    )
+                    handleDidAcceptCompletionItem?.({
+                        requestParams: getRequestParamsFromLastCandidate(document, lastCandidate),
+                        logId: lastCandidate.result.logId,
+                        analyticsItem: item,
+                        trackedRange: item.range,
+                    })
                     return undefined
                 }
 
                 // Detect partial acceptance of the last candidate
                 const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefixInDocument.length
                 if (isPartialAcceptance(item.insertText, acceptedLength)) {
-                    handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
+                    handleDidPartiallyAcceptCompletionItem?.(
+                        {
+                            logId: lastCandidate.result.logId,
+                            analyticsItem: item,
+                        },
+                        acceptedLength
+                    )
                 }
 
-                return { ...item, insertText: remaining }
+                return { ...item, insertText: remaining, range: newRange }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.

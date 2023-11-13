@@ -1,23 +1,20 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
 
-import { GetContextOptions, GetContextResult } from './context/context'
-import { GraphContextFetcher } from './context/context-graph'
-import { DocumentHistory } from './context/history'
+import { ContextMixer } from './context/context-mixer'
 import { DocumentContext } from './get-current-doc-context'
+import { AutocompleteItem } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
-import { SuggestionID } from './logger'
+import { CompletionLogID } from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -29,15 +26,10 @@ export interface InlineCompletionsParams {
 
     // Prompt parameters
     providerConfig: ProviderConfig
-    graphContextFetcher?: GraphContextFetcher
-
-    // Injected
-    contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    getCodebaseContext?: () => CodebaseContext
-    documentHistory?: DocumentHistory
 
     // Shared
     requestManager: RequestManager
+    contextMixer: ContextMixer
 
     // UI state
     lastCandidate?: LastInlineCompletionCandidate
@@ -54,13 +46,10 @@ export interface InlineCompletionsParams {
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
-        logId: SuggestionID,
-        completion: InlineCompletionItemWithAnalytics,
-        request: RequestParams
+        completion: Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
     ) => void
     handleDidPartiallyAcceptCompletionItem?: (
-        logId: SuggestionID,
-        completion: InlineCompletionItemWithAnalytics,
+        completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ) => void
 }
@@ -90,7 +79,7 @@ export interface LastInlineCompletionCandidate {
  */
 export interface InlineCompletionsResult {
     /** The unique identifier for logging this result. */
-    logId: SuggestionID
+    logId: CompletionLogID
 
     /** Where this result was generated from. */
     source: InlineCompletionsResultSource
@@ -122,13 +111,13 @@ export enum InlineCompletionsResultSource {
  * via the keyboard shortcut and invoking a completion via hovering over ghost text.
  */
 export enum TriggerKind {
-    /** Completion was triggered explicitly by a user hovering over ghost text. **/
+    /** Completion was triggered explicitly by a user hovering over ghost text. */
     Hover = 'Hover',
 
-    /** Completion was triggered automatically while editing. **/
+    /** Completion was triggered automatically while editing. */
     Automatic = 'Automatic',
 
-    /** Completion was triggered manually by the user invoking the keyboard shortcut. **/
+    /** Completion was triggered manually by the user invoking the keyboard shortcut. */
     Manual = 'Manual',
 
     /** When the user uses the suggest widget to cycle through different completions. */
@@ -167,10 +156,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext,
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
         providerConfig,
-        graphContextFetcher,
-        contextFetcher,
-        getCodebaseContext,
-        documentHistory,
+        contextMixer,
         requestManager,
         lastCandidate,
         debounceInterval,
@@ -228,7 +214,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.flushActiveSuggestions()
+    CompletionLogger.flushActiveSuggestionRequests()
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
@@ -254,15 +240,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await getCompletionContext({
+    const contextResult = await contextMixer.getContext({
         document,
         position,
-        providerConfig,
-        graphContextFetcher,
-        contextFetcher,
-        getCodebaseContext,
-        documentHistory,
         docContext,
+        abortSignal,
+        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
     })
     if (abortSignal?.aborted) {
         return null
@@ -305,7 +288,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             ? InlineCompletionsResultSource.CacheAfterRequestStart
             : InlineCompletionsResultSource.Network
 
-    CompletionLogger.loaded(logId, reqContext, completions)
+    CompletionLogger.loaded(logId, reqContext, completions, source)
 
     return {
         logId,
@@ -350,54 +333,6 @@ function getCompletionProviders(params: GetCompletionProvidersParams): Provider[
             multiline: false,
         }),
     ]
-}
-
-interface GetCompletionContextParams
-    extends Pick<
-        InlineCompletionsParams,
-        | 'document'
-        | 'position'
-        | 'providerConfig'
-        | 'graphContextFetcher'
-        | 'contextFetcher'
-        | 'getCodebaseContext'
-        | 'documentHistory'
-    > {
-    docContext: DocumentContext
-}
-
-async function getCompletionContext({
-    document,
-    position,
-    providerConfig,
-    graphContextFetcher,
-    contextFetcher,
-    getCodebaseContext,
-    documentHistory,
-    docContext: { prefix, suffix, contextRange },
-}: GetCompletionContextParams): Promise<GetContextResult | null> {
-    if (!contextFetcher) {
-        return null
-    }
-    if (!getCodebaseContext) {
-        throw new Error('getCodebaseContext is required if contextFetcher is provided')
-    }
-    if (!documentHistory) {
-        throw new Error('documentHistory is required if contextFetcher is provided')
-    }
-
-    return contextFetcher({
-        document,
-        position,
-        prefix,
-        suffix,
-        contextRange,
-        history: documentHistory,
-        jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
-        getCodebaseContext,
-        graphContextFetcher,
-    })
 }
 
 function createCompletionProviderTracer(

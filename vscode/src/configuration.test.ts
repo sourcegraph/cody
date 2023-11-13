@@ -23,14 +23,16 @@ describe('getConfiguration', () => {
                 scminput: false,
             },
             experimentalCommandLenses: false,
-            experimentalEditorTitleCommandIcon: false,
+            editorTitleCommandIcon: true,
             experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
+            experimentalSearchPanel: false,
             inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIDE: undefined,
             experimentalNonStop: false,
             debugEnable: false,
             debugVerbose: false,
@@ -71,9 +73,11 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.chatPredictions':
                         return true
+                    case 'cody.experimental.newSearch':
+                        return true
                     case 'cody.experimental.commandLenses':
                         return true
-                    case 'cody.experimental.editorTitleCommandIcon':
+                    case 'cody.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -113,6 +117,8 @@ describe('getConfiguration', () => {
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.agent.ide':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -135,13 +141,15 @@ describe('getConfiguration', () => {
             },
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
+            experimentalSearchPanel: true,
             experimentalCommandLenses: true,
-            experimentalEditorTitleCommandIcon: true,
+            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
             inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIde: undefined,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,

@@ -73,6 +73,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         }),
         experimentalChatPanel: config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
+        experimentalSearchPanel: config.get(CONFIG_KEY.experimentalNewSearch, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
@@ -80,7 +81,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
-        experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
+        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
@@ -107,6 +108,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
+        agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
     }
 }
 

@@ -1,12 +1,11 @@
 import { Position, TextDocument } from 'vscode'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
 import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
-import { truncateParsedCompletion } from './truncate-parsed-completion'
+import { truncateParsedCompletionByNextSibling } from './truncate-parsed-completion'
 
 export interface ParseAndTruncateParams {
     document: TextDocument
@@ -24,8 +23,7 @@ export function parseAndTruncateCompletion(
         document,
         multiline,
         docContext,
-        position,
-        docContext: { prefix, suffix },
+        docContext: { prefix },
         useTreeSitter = true,
     } = params
 
@@ -34,16 +32,18 @@ export function parseAndTruncateCompletion(
     const parsed = parseCompletion({
         completion: { insertText: insertTextBeforeTruncation },
         document,
-        position,
         docContext,
     })
+
+    if (parsed.insertText === '') {
+        return parsed
+    }
 
     if (multiline) {
         const truncationResult = truncateMultilineBlock({
             parsed,
             document,
-            suffix,
-            prefix,
+            docContext,
             useTreeSitter,
         })
 
@@ -60,9 +60,8 @@ export function parseAndTruncateCompletion(
 
 interface TruncateMultilineBlockParams {
     parsed: ParsedCompletion
+    docContext: DocumentContext
     document: TextDocument
-    prefix: string
-    suffix: string
     useTreeSitter: boolean
 }
 
@@ -72,15 +71,20 @@ interface TruncateMultilineBlockResult {
 }
 
 export function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
-    const { parsed, document, prefix, suffix, useTreeSitter } = params
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+    const { parsed, docContext, document, useTreeSitter } = params
 
-    if (useTreeSitter && parsed.tree && documentQuerySDK) {
+    if (useTreeSitter && parsed.tree) {
         return {
             truncatedWith: 'tree-sitter',
-            insertText: truncateParsedCompletion({ completion: parsed, document, documentQuerySDK }),
+            insertText: truncateParsedCompletionByNextSibling({
+                completion: parsed,
+                docContext,
+                document,
+            }),
         }
     }
+
+    const { prefix, suffix } = docContext
 
     return {
         truncatedWith: 'indentation',

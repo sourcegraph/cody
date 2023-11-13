@@ -32,7 +32,7 @@ describe('[getInlineCompletions] completion event', () => {
         )
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
-        const suggestionId: CompletionLogger.SuggestionID = spy.mock.calls[0][0]
+        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0]
         const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)
 
         return omit(completionEvent, [
@@ -44,6 +44,7 @@ describe('[getInlineCompletions] completion event', () => {
             'suggestedAt',
             'suggestionAnalyticsLoggedAt',
             'suggestionLoggedAt',
+            'params.contextSummary.duration',
         ])
     }
 
@@ -55,45 +56,48 @@ describe('[getInlineCompletions] completion event', () => {
             )
 
             expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
-          {
-            "id": "stable-uuid",
-            "items": [
               {
-                "charCount": 30,
-                "lineCount": 2,
-                "lineTruncatedCount": 0,
-                "nodeTypes": {
-                  "atCursor": "{",
-                  "grandparent": "function_declaration",
-                  "greatGrandparent": "program",
-                  "parent": "statement_block",
+                "id": "stable-uuid",
+                "items": [
+                  {
+                    "charCount": 30,
+                    "lineCount": 2,
+                    "lineTruncatedCount": 0,
+                    "nodeTypes": {
+                      "atCursor": "{",
+                      "grandparent": "function_declaration",
+                      "greatGrandparent": "program",
+                      "parent": "statement_block",
+                    },
+                    "nodeTypesWithCompletion": {
+                      "atCursor": "{",
+                      "grandparent": "function_declaration",
+                      "greatGrandparent": "program",
+                      "parent": "statement_block",
+                    },
+                    "parseErrorCount": 0,
+                    "stopReason": "unit-test",
+                    "truncatedWith": "tree-sitter",
+                  },
+                ],
+                "loggedPartialAcceptedLength": 0,
+                "params": {
+                  "completionIntent": "function.body",
+                  "contextSummary": {
+                    "strategy": "local",
+                  },
+                  "id": "stable-uuid",
+                  "languageId": "typescript",
+                  "multiline": true,
+                  "multilineMode": "block",
+                  "providerIdentifier": "anthropic",
+                  "providerModel": "claude-instant-1.2",
+                  "source": "Network",
+                  "triggerKind": "Automatic",
+                  "type": "inline",
                 },
-                "nodeTypesWithCompletion": {
-                  "atCursor": "{",
-                  "grandparent": "function_declaration",
-                  "greatGrandparent": "program",
-                  "parent": "statement_block",
-                },
-                "parseErrorCount": 0,
-                "stopReason": "unit-test",
-                "truncatedWith": "tree-sitter",
-              },
-            ],
-            "loggedPartialAcceptedLength": 0,
-            "params": {
-              "completionIntent": "function.body",
-              "contextSummary": undefined,
-              "id": "stable-uuid",
-              "languageId": "typescript",
-              "multiline": true,
-              "multilineMode": "block",
-              "providerIdentifier": "anthropic",
-              "providerModel": "claude-instant-1.2",
-              "triggerKind": "Automatic",
-              "type": "inline",
-            },
-          }
-        `)
+              }
+            `)
         })
 
         it('for singleline completions', async () => {
@@ -127,13 +131,16 @@ describe('[getInlineCompletions] completion event', () => {
                 "loggedPartialAcceptedLength": 0,
                 "params": {
                   "completionIntent": "return_statement",
-                  "contextSummary": undefined,
+                  "contextSummary": {
+                    "strategy": "local",
+                  },
                   "id": "stable-uuid",
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
+                  "source": "Network",
                   "triggerKind": "Automatic",
                   "type": "inline",
                 },

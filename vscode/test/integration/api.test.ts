@@ -3,7 +3,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { VSCodeDocumentHistory } from '../../src/completions/context/history'
+import { VSCodeDocumentHistory } from '../../src/completions/context/retrievers/jaccard-similarity/history'
 
 suite('API tests', () => {
     test('Cody registers some commands', async () => {
