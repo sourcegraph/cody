@@ -11,6 +11,7 @@ data class SettingsModel(
     var isCodyVerboseDebugEnabled: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Color? = null,
+    var isLookupAutocompleteEnabled: Boolean = true,
     var blacklistedLanguageIds: List<String> = listOf(),
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
     var shouldCheckForUpdates: Boolean = false

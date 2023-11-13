@@ -219,6 +219,8 @@
     </actions>
 
     <projectListeners>
+        <listener topic="com.intellij.codeInsight.lookup.LookupManagerListener"
+                  class="com.sourcegraph.cody.editor.CodyLookupListener"/>
         <listener topic="com.intellij.openapi.command.CommandListener"
                   class="com.sourcegraph.cody.editor.CodyCommandListener"/>
     </projectListeners>

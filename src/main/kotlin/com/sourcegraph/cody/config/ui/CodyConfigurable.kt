@@ -76,6 +76,12 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
                   .bindSelected(settingsModel::isCodyAutocompleteEnabled)
         }
         row {
+          val enableLookupAutocomplete =
+              checkBox("Enable autocomplete for lookup elements")
+                  .enabledIf(enableAutocompleteCheckbox.selected)
+                  .bindSelected(settingsModel::isLookupAutocompleteEnabled)
+        }
+        row {
           autocompleteLanguageTable()
               .enabledIf(enableAutocompleteCheckbox.selected)
               .horizontalAlign(HorizontalAlign.FILL)
@@ -99,6 +105,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     settingsModel.customAutocompleteColor =
         // note: this sets the same value for both light & dark mode, currently
         codyApplicationSettings.customAutocompleteColor?.let { JBColor(it, it) }
+    settingsModel.isLookupAutocompleteEnabled = codyApplicationSettings.isLookupAutocompleteEnabled
     settingsModel.blacklistedLanguageIds = codyApplicationSettings.blacklistedLanguageIds
     settingsModel.shouldAcceptNonTrustedCertificatesAutomatically =
         codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically
@@ -130,6 +137,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     codyApplicationSettings.isCustomAutocompleteColorEnabled =
         settingsModel.isCustomAutocompleteColorEnabled
     codyApplicationSettings.customAutocompleteColor = settingsModel.customAutocompleteColor?.rgb
+    codyApplicationSettings.isLookupAutocompleteEnabled = settingsModel.isLookupAutocompleteEnabled
     codyApplicationSettings.blacklistedLanguageIds = settingsModel.blacklistedLanguageIds
     codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically =
         settingsModel.shouldAcceptNonTrustedCertificatesAutomatically

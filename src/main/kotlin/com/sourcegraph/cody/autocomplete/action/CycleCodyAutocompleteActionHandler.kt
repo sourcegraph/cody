@@ -44,7 +44,12 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
         CodyAutocompleteManager.instance.let {
           it.clearAutocompleteSuggestions(editor)
           it.displayAgentAutocomplete(
-              editor, caret.offset, newItems, editor.inlayModel, InlineCompletionTriggerKind.INVOKE)
+              editor,
+              caret.offset,
+              newItems,
+              editor.inlayModel,
+              InlineCompletionTriggerKind.INVOKE,
+              null)
         }
         autocompleteItemsCache[cacheKey] = newItems
       }

@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.autocomplete
 
 import com.intellij.codeInsight.hint.HintManager
-import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.components.Service
@@ -18,6 +17,7 @@ import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.protocol.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol.Position
+import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -27,12 +27,7 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.resetApplication
-import com.sourcegraph.cody.vscode.CancellationToken
-import com.sourcegraph.cody.vscode.InlineAutocompleteItem
-import com.sourcegraph.cody.vscode.InlineAutocompleteList
-import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
-import com.sourcegraph.cody.vscode.IntelliJTextDocument
-import com.sourcegraph.cody.vscode.TextDocument
+import com.sourcegraph.cody.vscode.*
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.config.UserLevelConfig
 import com.sourcegraph.telemetry.GraphQlLogger
@@ -124,7 +119,12 @@ class CodyAutocompleteManager {
    * @param editor The editor instance to provide autocomplete for.
    * @param offset The character offset in the editor to trigger auto-complete at.
    */
-  fun triggerAutocomplete(editor: Editor, offset: Int, triggerKind: InlineCompletionTriggerKind) {
+  fun triggerAutocomplete(
+      editor: Editor,
+      offset: Int,
+      triggerKind: InlineCompletionTriggerKind,
+      lookupString: String? = null
+  ) {
     val isTriggeredExplicitly = triggerKind == InlineCompletionTriggerKind.INVOKE
     val isTriggeredImplicitly = !isTriggeredExplicitly
     if (!isCodyEnabled()) {
@@ -143,7 +143,9 @@ class CodyAutocompleteManager {
       return
     }
     val currentCommand = CommandProcessor.getInstance().currentCommandName
-    if (isTriggeredImplicitly && isCommandExcluded(currentCommand)) {
+    if (isTriggeredImplicitly &&
+        lookupString.isNullOrEmpty() &&
+        isCommandExcluded(currentCommand)) {
       return
     }
     val project = editor.project
@@ -154,7 +156,9 @@ class CodyAutocompleteManager {
     currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered()
     val textDocument: TextDocument = IntelliJTextDocument(editor, project)
     val autoCompleteDocumentContext = textDocument.getAutocompleteContext(offset)
-    if (isTriggeredImplicitly && !autoCompleteDocumentContext.isCompletionTriggerValid()) {
+    if (lookupString.isNullOrEmpty() &&
+        isTriggeredImplicitly &&
+        !autoCompleteDocumentContext.isCompletionTriggerValid()) {
       return
     }
     if (isTriggeredExplicitly &&
@@ -167,7 +171,7 @@ class CodyAutocompleteManager {
     currentJob.set(cancellationToken)
     val autocompleteRequest =
         triggerAutocompleteAsync(
-            project, editor, offset, textDocument, triggerKind, cancellationToken)
+            project, editor, offset, textDocument, triggerKind, cancellationToken, lookupString)
     cancellationToken.onCancellationRequested { autocompleteRequest.cancel(true) }
   }
 
@@ -178,7 +182,8 @@ class CodyAutocompleteManager {
       offset: Int,
       textDocument: TextDocument,
       triggerKind: InlineCompletionTriggerKind,
-      cancellationToken: CancellationToken
+      cancellationToken: CancellationToken,
+      lookupString: String?,
   ): CompletableFuture<Void?> {
     if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
       tryRestartingAgentIfNotRunning(project)
@@ -193,7 +198,16 @@ class CodyAutocompleteManager {
     val virtualFile =
         FileDocumentManager.getInstance().getFile(editor.document)
             ?: return CompletableFuture.completedFuture(null)
-    val params = AutocompleteParams(virtualFile.path, Position(position.line, position.character))
+    val params =
+        if (lookupString.isNullOrEmpty())
+            AutocompleteParams(virtualFile.path, Position(position.line, position.character))
+        else
+            AutocompleteParams(
+                virtualFile.path,
+                Position(position.line, position.character),
+                null,
+                SelectedCompletionInfo(lookupString, Range(position, position)))
+
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
     val completions = server!!.autocompleteExecute(params)
 
@@ -203,7 +217,8 @@ class CodyAutocompleteManager {
     cancellationToken.onCancellationRequested { completions.cancel(true) }
     return completions
         .thenAccept { result: InlineAutocompleteList ->
-          processAutocompleteResult(project, editor, offset, triggerKind, result, cancellationToken)
+          processAutocompleteResult(
+              editor, offset, triggerKind, result, cancellationToken, lookupString)
         }
         .exceptionally { error: Throwable? ->
           if (!(error is CancellationException || error is CompletionException)) {
@@ -215,12 +230,12 @@ class CodyAutocompleteManager {
   }
 
   private fun processAutocompleteResult(
-      project: Project,
       editor: Editor,
       offset: Int,
       triggerKind: InlineCompletionTriggerKind,
       result: InlineAutocompleteList,
-      cancellationToken: CancellationToken
+      cancellationToken: CancellationToken,
+      lookupString: String?,
   ) {
     currentAutocompleteTelemetry?.markCompletionEvent(result.completionEvent)
     val items = result.items
@@ -249,18 +264,7 @@ class CodyAutocompleteManager {
       clearAutocompleteSuggestions(editor)
       currentAutocompleteTelemetry?.markCompletionDisplayed()
 
-      // Avoid displaying autocomplete when IntelliJ is already displaying
-      // built-in completions. When built-in completions are visible, we can't
-      // accept the Cody autocomplete with TAB because it accepts the built-in
-      // completion.
-      if (LookupManager.getInstance(project).activeLookup != null) {
-        if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
-            UserLevelConfig.isVerboseLoggingEnabled()) {
-          logger.warn("Skipping autocomplete because lookup is active: ${items.first()}")
-        }
-        return@invokeLater
-      }
-      displayAgentAutocomplete(editor, offset, items, inlayModel, triggerKind)
+      displayAgentAutocomplete(editor, offset, items, inlayModel, triggerKind, lookupString)
     }
   }
 
@@ -275,14 +279,40 @@ class CodyAutocompleteManager {
       offset: Int,
       items: List<InlineAutocompleteItem>,
       inlayModel: InlayModel,
-      triggerKind: InlineCompletionTriggerKind
+      triggerKind: InlineCompletionTriggerKind,
+      lookupString: String?,
   ) {
     val defaultItem = items.firstOrNull() ?: return
     val range = getTextRange(editor.document, defaultItem.range)
     val originalText = editor.document.getText(range)
-    val insertTextFirstLine: String = defaultItem.insertText.lines().firstOrNull() ?: ""
+    var insertTextFirstLine: String = defaultItem.insertText.lines().firstOrNull() ?: ""
+    val lineNumber = editor.document.getLineNumber(offset)
+    val caretPositionInLine = offset - editor.document.getLineStartOffset(lineNumber)
+
     val multilineInsertText: String =
         defaultItem.insertText.lines().drop(1).joinToString(separator = "\n")
+
+    if (!lookupString.isNullOrEmpty()) {
+      val lastCommonSuffixCharacterPosition =
+          findLastCommonSuffixElementPosition(
+              originalText.substring(0, caretPositionInLine), lookupString)
+      insertTextFirstLine =
+          insertTextFirstLine.removeRange(lastCommonSuffixCharacterPosition, caretPositionInLine)
+
+      // For each autocomplete item, remove common part with already inserted part of the lookup
+      // element.
+      items.stream().forEach { item ->
+        if (lastCommonSuffixCharacterPosition != caretPositionInLine) {
+          item.insertText =
+              item.insertText.removeRange(lastCommonSuffixCharacterPosition, caretPositionInLine)
+          val endPosition = item.range.end
+          item.range =
+              Range(
+                  item.range.start,
+                  com.sourcegraph.cody.vscode.Position(endPosition.line, item.insertText.length))
+        }
+      }
+    }
 
     // Run Myers diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
@@ -322,6 +352,21 @@ class CodyAutocompleteManager {
           Int.MAX_VALUE,
           CodyAutocompleteBlockElementRenderer(multilineInsertText, items, editor))
     }
+  }
+
+  private fun findLastCommonSuffixElementPosition(
+      stringToFindSuffixIn: String,
+      suffix: String
+  ): Int {
+    var i = 0
+    while (i < suffix.length) {
+      val partY = suffix.substring(0, suffix.length - i)
+      if (stringToFindSuffixIn.endsWith(partY)) {
+        return stringToFindSuffixIn.length - (suffix.length - i)
+      }
+      i++
+    }
+    return 0
   }
 
   private fun cancelCurrentJob(project: Project?) {

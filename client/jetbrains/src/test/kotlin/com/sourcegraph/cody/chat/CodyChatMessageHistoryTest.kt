@@ -1,24 +1,17 @@
 package com.sourcegraph.cody.chat
-
 import com.intellij.ui.components.JBTextArea
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-
 class CodyChatMessageHistoryTest {
   private lateinit var history: CodyChatMessageHistory
-
   @BeforeEach
   fun setup() {
     history = CodyChatMessageHistory(10)
   }
-
   @Test
   fun `messageSent adds message to latest position in history`() {
     val textArea = JBTextArea()
-    textArea.text = "test"
-    history.messageSent(textArea)
-
     history.popUpperMessage(textArea)
     assertThat(textArea.text).isEqualTo("test")
   }
@@ -30,7 +23,6 @@ class CodyChatMessageHistoryTest {
     history.messageSent(textArea)
     textArea.text = "test 2"
     history.messageSent(textArea)
-
     history.popUpperMessage(textArea)
     assertThat(textArea.text).isEqualTo("test 2")
 

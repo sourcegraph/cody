@@ -17,6 +17,7 @@ data class CodyApplicationSettings(
     var isInstallEventLogged: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
+    var isLookupAutocompleteEnabled: Boolean = true,
     var blacklistedLanguageIds: List<String> = listOf(),
     var isOnboardingGuidanceDismissed: Boolean = false,
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
@@ -35,6 +36,7 @@ data class CodyApplicationSettings(
     this.isInstallEventLogged = state.isInstallEventLogged
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
     this.customAutocompleteColor = state.customAutocompleteColor
+    this.isLookupAutocompleteEnabled = state.isLookupAutocompleteEnabled
     this.blacklistedLanguageIds = state.blacklistedLanguageIds
     this.isOnboardingGuidanceDismissed = state.isOnboardingGuidanceDismissed
     this.shouldAcceptNonTrustedCertificatesAutomatically =

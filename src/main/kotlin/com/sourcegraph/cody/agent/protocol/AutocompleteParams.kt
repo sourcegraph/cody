@@ -10,5 +10,6 @@ enum class AutocompleteTriggerKind {
 data class AutocompleteParams(
     val filePath: String,
     val position: Position,
-    val triggerKind: AutocompleteTriggerKind? = AutocompleteTriggerKind.AUTOMATIC
+    val triggerKind: AutocompleteTriggerKind? = AutocompleteTriggerKind.AUTOMATIC,
+    val selectedCompletionInfo: SelectedCompletionInfo? = null
 )
