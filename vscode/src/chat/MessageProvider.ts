@@ -387,7 +387,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 intentDetector: this.intentDetector,
                 codebaseContext: this.contextProvider.context,
                 responseMultiplexer: this.multiplexer,
-                firstInteraction: this.transcript.isEmpty && !!addEnhancedContext,
+                firstInteraction: addEnhancedContext,
                 userInputContextFiles,
             })
         } catch (error) {

@@ -6,13 +6,16 @@ import classNames from 'classnames'
 import styles from './EnhancedContextToggler.module.css'
 
 export const EnhancedContextToggler: React.FunctionComponent<{
-    disabled: boolean
+    disabled?: boolean
     enhanceContext: boolean
     setEnhanceContext: (arg: boolean) => void
 }> = React.memo(function ChatInputContextContent({ disabled, enhanceContext, setEnhanceContext }) {
-    const onClickHandler = useCallback((): void => {
-        setEnhanceContext(!enhanceContext)
-    }, [enhanceContext, setEnhanceContext])
+    const onClickHandler = useCallback(
+        (option: boolean): void => {
+            setEnhanceContext(option)
+        },
+        [setEnhanceContext]
+    )
 
     if (disabled) {
         return (
@@ -32,7 +35,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
             className={classNames(styles.title, !enhanceContext && styles.disabled)}
             appearance="icon"
             type="button"
-            onClick={() => onClickHandler()}
+            onClick={() => onClickHandler(!enhanceContext)}
             title={`Enhanced Context ${enhanceContext ? 'Enabled' : 'Disabled'}`}
         >
             <i className={enhanceContext ? 'codicon codicon-pass-filled' : 'codicon codicon-pass'} />

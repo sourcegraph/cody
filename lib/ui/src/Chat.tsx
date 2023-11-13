@@ -70,7 +70,7 @@ interface ChatProps extends ChatClassNames {
     isTranscriptError?: boolean
     contextSelection?: ContextFile[]
     EnhancedContextToggler?: React.FunctionComponent<{
-        disabled: boolean
+        disabled?: boolean
         enhanceContext: boolean
         setEnhanceContext: (arg: boolean) => void
     }>
@@ -227,7 +227,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
-    const [enhanceContext, setEnhanceContext] = useState(true)
+    const [enhanceContext, setEnhanceContext] = useState(transcript.length < 3)
     const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
     // TODO support toggling between enabling and disabling enhanceContext
@@ -320,9 +320,21 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
             // Automatically turn off enhance context when the user has submitted their first message.
-            setEnhanceContext(false)
+            if (enhanceContext && transcript.length < 3) {
+                setEnhanceContext(false)
+                return
+            }
         },
-        [messageInProgress, onSubmit, chatContextFiles, enhanceContext, setSuggestions, inputHistory, setInputHistory]
+        [
+            messageInProgress,
+            onSubmit,
+            chatContextFiles,
+            enhanceContext,
+            setSuggestions,
+            inputHistory,
+            setInputHistory,
+            transcript,
+        ]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -492,6 +504,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 speaker: 'assistant',
                 displayText: welcomeText({ helpMarkdown, afterMarkdown }),
                 buttons: gettingStartedButtons,
+                data: 'welcome-text',
             },
             ...transcript,
         ],
@@ -570,7 +583,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             <EnhancedContextToggler
                                 setEnhanceContext={setEnhanceContext}
                                 enhanceContext={enhanceContext}
-                                disabled={transcript.length > 1}
+                                // disabled={transcript.length > 1}
                             />
                         )}
                     </div>
