@@ -10,6 +10,12 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
+import {
+    getArtificialDelay,
+    LatencyFeatureFlags,
+    lowPerformanceLanguageIds,
+    resetArtificialDelay,
+} from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
@@ -21,7 +27,6 @@ import {
     LastInlineCompletionCandidate,
     TriggerKind,
 } from './get-inline-completions'
-import { getLatency, LatencyFeatureFlags, lowPerformanceLanguageIds, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
 import { CompletionEvent, CompletionItemID, CompletionLogID, READ_TIMEOUT_MS } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -375,7 +380,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 const latencyFeatureFlags: LatencyFeatureFlags = {
                     user: await minLatencyFlagsPromises.user,
                     language: (await minLatencyFlagsPromises.language) && !(await lowPerformanceDebouncePromise), // only one language flag should be enabled at a time
-                    provider: await minLatencyFlagsPromises.provider,
                 }
                 // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
                 const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > READ_TIMEOUT_MS
@@ -383,10 +387,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 const isMinLatencyEnabled =
                     latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
                 if (isLastSuggestionRead && triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
-                    const minimumLatency = getLatency(
+                    const minimumLatency = getArtificialDelay(
                         latencyFeatureFlags,
-                        this.config.providerConfig.identifier,
-                        document.uri.fsPath,
+                        document.uri.toString(),
                         document.languageId,
                         result.items[0]?.nodeTypes?.atCursor
                     )
@@ -496,7 +499,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        resetLatency()
+        resetArtificialDelay()
 
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
