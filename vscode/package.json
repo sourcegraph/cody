@@ -1153,7 +1153,7 @@
         "description": "Cody logo heavy",
         "default": {
           "fontPath": "resources/cody-icons.woff",
-          "fontCharacter": "\\0043"
+          "fontCharacter": "\\0048"
         }
       }
     }
