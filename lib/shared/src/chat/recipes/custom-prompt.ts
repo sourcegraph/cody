@@ -1,11 +1,12 @@
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
+import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../prompts/display-text'
 import {
     extractTestType,
     getHumanLLMText,
@@ -21,12 +22,12 @@ import {
     getEditorDirContext,
     getEditorOpenTabsContext,
     getFilePathContext,
-    getHumanDisplayTextWithFileName,
     getPackageJsonContext,
     getTerminalOutputContext,
 } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
+import { ChatQuestion } from './chat-question'
 import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -50,8 +51,7 @@ export class CustomPrompt implements Recipe {
             const errorMessage = 'Invalid command -- command not found.'
             return newInteractionWithError(errorMessage)
         }
-
-        const workspaceRootUri = context.editor.getWorkspaceRootUri()
+        const isChatQuestion = command?.slashCommand === '/ask'
 
         const contextConfig = command?.context || defaultCodyPromptContext
         // If selection is required, ensure not to accept visible content as selection
@@ -61,12 +61,12 @@ export class CustomPrompt implements Recipe {
 
         // Get prompt text from the editor command or from the human input
         const promptText = command.prompt
-        const commandName = command?.slashCommand || command?.description || promptText
+        const commandName = isChatQuestion ? promptText : command.slashCommand || promptText
 
         // Log all custom commands under 'custom'
         const source = getCommandEventSource(command)
 
-        if (!promptText || !commandName) {
+        if (!promptText) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
             return newInteractionWithError(errorMessage, promptText || '')
         }
@@ -76,9 +76,17 @@ export class CustomPrompt implements Recipe {
             return newInteractionWithError(errorMessage, commandName)
         }
 
-        // Add selection file name as display when available
-        const displayText = getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
         const text = getHumanLLMText(promptText, selection?.fileName)
+
+        const commandOutput = command.context?.output
+        const contextFiles = command.contextFiles
+
+        // Add selection file name as display when available
+        const displayText = contextFiles?.length
+            ? createDisplayTextWithFileLinks(contextFiles, promptText)
+            : createDisplayTextWithFileSelection(commandName, selection)
+
+        const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
@@ -86,15 +94,13 @@ export class CustomPrompt implements Recipe {
             return newInteraction({ text, displayText, contextMessages, source })
         }
 
-        const commandOutput = command.context?.output
-
-        const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
         const contextMessages = this.getContextMessages(
-            truncatedText,
+            promptText,
             context.editor,
             context.codebaseContext,
             contextConfig,
             selection,
+            context.userInputContextFiles,
             commandOutput
         )
 
@@ -102,37 +108,42 @@ export class CustomPrompt implements Recipe {
     }
 
     private async getContextMessages(
-        text: string,
+        promptText: string,
         editor: Editor,
         codebaseContext: CodebaseContext,
         promptContext: CodyPromptContext,
         selection?: ActiveTextEditorSelection | null,
+        contextFiles?: ContextFile[],
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         const workspaceRootUri = editor.getWorkspaceRootUri()
-        const isUnitTestRequest = extractTestType(text) === 'unit'
+        const isUnitTestRequest = extractTestType(promptText) === 'unit'
 
         if (promptContext.none) {
             return []
         }
 
         if (promptContext.codebase) {
-            const codebaseMessages = await codebaseContext.getContextMessages(text, numResults)
+            const codebaseMessages = await codebaseContext.getContextMessages(promptText, numResults)
             contextMessages.push(...codebaseMessages)
         }
+
         if (promptContext.openTabs) {
             const openTabsMessages = await getEditorOpenTabsContext()
             contextMessages.push(...openTabsMessages)
         }
+
         if (promptContext.currentDir) {
             const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
             contextMessages.push(...currentDirMessages)
         }
+
         if (promptContext.directoryPath) {
             const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
             contextMessages.push(...dirMessages)
         }
+
         if (promptContext.filePath) {
             const fileMessages = await getFilePathContext(promptContext.filePath)
             contextMessages.push(...fileMessages)
@@ -152,10 +163,17 @@ export class CustomPrompt implements Recipe {
                 contextMessages.push(...currentFileMessages)
             }
         }
+
         if (promptContext.command && commandOutput) {
             const outputMessages = getTerminalOutputContext(commandOutput)
             contextMessages.push(...outputMessages)
         }
+
+        if (contextFiles?.length) {
+            const contextFileMessages = await ChatQuestion.getContextFilesContext(editor, contextFiles)
+            contextMessages.push(...contextFileMessages)
+        }
+
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
