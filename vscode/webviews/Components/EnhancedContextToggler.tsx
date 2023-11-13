@@ -35,7 +35,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
             onClick={() => onClickHandler()}
             title={`Enhanced Context ${enhanceContext ? 'Enabled' : 'Disabled'}`}
         >
-            <i className={enhanceContext ? 'codicon codicon-pass-filled' : 'codicon codicon-search-stop'} />
+            <i className={enhanceContext ? 'codicon codicon-pass-filled' : 'codicon codicon-pass'} />
         </VSCodeButton>
     )
 })

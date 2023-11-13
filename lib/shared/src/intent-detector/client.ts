@@ -5,7 +5,7 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { IntentClassificationOption, IntentDetector } from '.'
 
-const editorRegexps = [/selected/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
+const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
 
 export class SourcegraphIntentDetectorClient implements IntentDetector {
     constructor(
