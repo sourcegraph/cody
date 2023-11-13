@@ -233,16 +233,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [
-            isIncreasedDebounceTimeEnabledPromise,
-            syntacticTriggersPromise,
-            lowPerformanceDebouncePromise,
-            disableStreamingTruncation,
-        ] = [
+        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise, lowPerformanceDebouncePromise] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLowPerformanceDebounce),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableStreamingTruncation),
         ]
 
         const minLatencyFlagsPromises = {
@@ -333,7 +327,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 selectedCompletionInfo: context.selectedCompletionInfo,
                 docContext,
                 providerConfig: this.config.providerConfig,
-                disableStreamingTruncation: await disableStreamingTruncation,
                 contextMixer: this.contextMixer,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,

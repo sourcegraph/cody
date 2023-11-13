@@ -34,12 +34,7 @@ export function canUsePartialCompletion(
     }
 
     // The last line might not be complete yet, so we discard it
-    const item = parseAndTruncateCompletion(partialResponse.slice(0, lastNewlineIndex), {
-        ...params,
-        // The tree-sitter-based truncation is disabled until the next-new-sibling approach is implemented.
-        // See: https://github.com/sourcegraph/cody/issues/1402
-        useTreeSitter: false,
-    })
+    const item = parseAndTruncateCompletion(partialResponse.slice(0, lastNewlineIndex), params)
 
     if (params.multiline) {
         return (item.lineTruncatedCount || 0) > 0 ? item : null

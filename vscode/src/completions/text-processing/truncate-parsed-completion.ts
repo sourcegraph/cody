@@ -1,4 +1,4 @@
-import { memoize } from 'lodash'
+import { LRUCache } from 'lru-cache'
 import { TextDocument } from 'vscode'
 import { Point, SyntaxNode } from 'web-tree-sitter'
 
@@ -13,16 +13,29 @@ interface CompletionContext {
     docContext: DocumentContext
 }
 
-/**
- * Only the first argument is used as a memoization key.
- * Use the memoized function to avoid re-parsing the completion's first line multiple times.
- */
-const parseCompletionFirstLineMemoized = memoize((firstLine: string, context: Omit<CompletionContext, 'completion'>) =>
-    parseCompletion({
-        completion: { insertText: firstLine },
-        ...context,
-    })
-)
+class ParsedCompletionCache {
+    private cache = new LRUCache<string, ParsedCompletion>({ max: 12 })
+
+    private toCacheKey(key: CompletionContext): string {
+        return `${key.docContext.prefix}█${key.completion.insertText}█${key.docContext.nextNonEmptyLine}`
+    }
+
+    /**
+     * Use the LRU cache to avoid re-parsing the completion's first line multiple times when
+     * it is being streamed to the client.
+     */
+    public parse(context: CompletionContext): ParsedCompletion {
+        const cacheKey = this.toCacheKey(context)
+
+        if (!this.cache.has(cacheKey)) {
+            this.cache.set(cacheKey, parseCompletion(context))
+        }
+
+        return this.cache.get(cacheKey)!
+    }
+}
+
+const parsedCompletionCache = new ParsedCompletionCache()
 
 /**
  * Truncates the `insertText` of a `ParsedCompletion` based on the next sibling inserted
@@ -45,7 +58,8 @@ export function truncateParsedCompletionByNextSibling(context: CompletionContext
     // In this case, the logic will find the parameter list as a node with the updated number
     // of siblings. We get the expected result if we start from the "{" node.
     const firstLine = completion.insertText.split('\n').shift() || completion.insertText
-    const parsedFirstLine = parseCompletionFirstLineMemoized(firstLine, {
+    const parsedFirstLine = parsedCompletionCache.parse({
+        completion: { insertText: firstLine },
         document,
         docContext,
     })
@@ -56,7 +70,7 @@ export function truncateParsedCompletionByNextSibling(context: CompletionContext
 
     const { insertText, points } = completion
 
-    const queryStart = points?.trigger || points?.start
+    const queryStart = points?.trigger || points.start
     const nodeToInsert = findChildBeforeTheNewSibling(
         parsedFirstLine.tree.rootNode,
         completion.tree.rootNode,
@@ -98,6 +112,12 @@ function findChildBeforeTheNewSibling(
 
     for (let i = 0; i < PARENTS_TO_CHECK; i++) {
         if (!currentNode?.parent || !prevNode?.parent) {
+            // If we are already at the tip of the tree, check if the current node
+            // has the updated number of children.
+            if (prevNode?.childCount !== currentNode?.childCount) {
+                return currentNode
+            }
+
             break
         }
 
