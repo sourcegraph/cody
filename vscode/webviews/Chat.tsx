@@ -90,16 +90,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (
-            text: string,
-            submitType: ChatSubmitType,
-            enhanceContext?: boolean,
-            contextFiles?: Map<string, ContextFile>
-        ) => {
+        (text: string, submitType: ChatSubmitType, contextFiles?: Map<string, ContextFile>, enhanceContext = true) => {
+            // TODO add UI to toggle enhanced context setting
             const addEnhancedContext = enhanceContext ?? false
             const userContextFiles: ContextFile[] = []
 
-            // loop the contextFiles and check if the key still exists in the text, remove the ones not present
+            // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
             if (contextFiles?.size) {
                 for (const file of contextFiles) {
                     if (text.includes(file[0])) {

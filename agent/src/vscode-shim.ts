@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { execSync } from 'child_process'
+
 import type * as vscode from 'vscode'
 
 // <VERY IMPORTANT - PLEASE READ>
@@ -16,6 +18,7 @@ import type * as vscode from 'vscode'
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
+import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
@@ -28,7 +31,7 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import type { ExtensionConfiguration } from './protocol-alias'
+import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 export {
     emptyEvent,
@@ -79,6 +82,10 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
     ignoreDeleteEvents: true,
     dispose(): void {},
 }
+export let clientInfo: ClientInfo | undefined
+export function setClientInfo(newClientInfo: ClientInfo): void {
+    clientInfo = newClientInfo
+}
 
 export let connectionConfig: ExtensionConfiguration | undefined
 export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
@@ -103,6 +110,10 @@ const configuration: vscode.WorkspaceConfiguration = {
         return true
     },
     get: (section, defaultValue?: any) => {
+        const fromCustomConfiguration = customConfiguration[section]
+        if (fromCustomConfiguration) {
+            return fromCustomConfiguration
+        }
         switch (section) {
             case 'cody.serverEndpoint':
                 return connectionConfig?.serverEndpoint
@@ -138,7 +149,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.codebase':
                 return connectionConfig?.codebase
             default:
-                return customConfiguration[section] ?? defaultValue
+                return defaultValue
         }
     },
     update(section, value, configurationTarget, overrideInLanguage) {
@@ -165,7 +176,12 @@ export interface WorkspaceDocuments {
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
+    if (newWorkspaceDocuments.workspaceRootUri) {
+        workspaceFolders.push({ name: 'Workspace Root', uri: newWorkspaceDocuments.workspaceRootUri, index: 0 })
+    }
 }
+
+const workspaceFolders: vscode.WorkspaceFolder[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
@@ -175,6 +191,7 @@ const _workspace: Partial<typeof vscode.workspace> = {
         const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
         return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
     },
+    workspaceFolders,
     getWorkspaceFolder: () => {
         if (workspaceDocuments?.workspaceRootUri === undefined) {
             throw new Error(
@@ -289,8 +306,41 @@ const _window: Partial<typeof vscode.window> = {
 
 export const window = _window as typeof vscode.window
 
+const gitExtension: Partial<vscode.Extension<GitExtension>> = {
+    isActive: true,
+    exports: {
+        enabled: true,
+        onDidChangeEnablement: emptyEvent(),
+        getAPI(version) {
+            const api: Partial<API> = {
+                getRepository(uri) {
+                    const cwd = workspaceDocuments?.workspaceRootUri?.fsPath
+                    if (!cwd) {
+                        return null
+                    }
+                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                    const repository: Partial<Repository> = {
+                        rootUri: Uri.file(toplevel),
+                        state: {
+                            remotes: [],
+                        } as any,
+                    }
+                    return repository as Repository
+                },
+            }
+            return api as API
+        },
+    },
+}
+
 const _extensions: Partial<typeof vscode.extensions> = {
-    getExtension: (extensionId: string) => undefined,
+    getExtension: (extensionId: string) => {
+        const shouldActivateGitExtension = clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
+        if (shouldActivateGitExtension && extensionId === 'vscode.git') {
+            return gitExtension as any
+        }
+        return undefined
+    },
 }
 export const extensions = _extensions as typeof vscode.extensions
 

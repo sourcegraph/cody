@@ -148,6 +148,7 @@ export interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
+    git?: 'none' | 'disabled'
 }
 
 export interface ServerInfo {

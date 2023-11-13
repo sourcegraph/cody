@@ -62,4 +62,20 @@ describe('replaceFileNameWithMarkdownLink', () => {
             'Compare and explain [_@foo.js_](vscode://file/path/foo.js:10) and @bar.js. What does @foo.js#FooBar() do?'
         )
     })
+
+    // FAILING - NEED TO BE FIXED
+    it('handles file names with line number and symbol name', () => {
+        const text = '@vscode/src/logged-rerank.ts:7-23#getRerankWithLog() what does this do'
+
+        const result = replaceFileNameWithMarkdownLink(
+            text,
+            '@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()',
+            '/vscode/src/logged-rerank.ts',
+            7
+        )
+
+        expect(result).toEqual(
+            '[_@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()_](vscode://file/vscode/src/logged-rerank.ts:7) what does this do'
+        )
+    })
 })

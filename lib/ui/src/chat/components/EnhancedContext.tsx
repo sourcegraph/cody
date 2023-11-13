@@ -39,7 +39,7 @@ export const EnhancedContext: React.FunctionComponent<{
 
     return (
         <TranscriptAction
-            title="✨"
+            title={{ verb: '✨', object: '', tooltip: 'Files included by Enhanced Context' }}
             steps={filteredFiles?.map(file => ({
                 verb: '',
                 object: (
