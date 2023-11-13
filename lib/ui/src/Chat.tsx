@@ -227,7 +227,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
-    const [enhanceContext, setEnhanceContext] = useState(transcript.length < 3)
+    const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
     const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
     // TODO support toggling between enabling and disabling enhanceContext
@@ -320,7 +320,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
             // Automatically turn off enhance context when the user has submitted their first message.
-            if (enhanceContext && transcript.length < 3) {
+            if (transcript.length < 2) {
                 setEnhanceContext(false)
                 return
             }

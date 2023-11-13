@@ -162,7 +162,7 @@ export class Transcript {
         })
     }
 
-    private async getLastInteractionWithContextIndex(): Promise<number> {
+    public async getLastInteractionWithContextIndex(): Promise<number> {
         for (let index = this.interactions.length - 1; index >= 0; index--) {
             const hasContext = await this.interactions[index].hasContext()
             if (hasContext) {
@@ -181,14 +181,13 @@ export class Transcript {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
 
-        const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
             const interaction = this.interactions[index]
             const humanMessage = PromptMixin.mixInto(interaction.getHumanMessage())
             const assistantMessage = interaction.getAssistantMessage()
             const contextMessages = await interaction.getFullContext()
-            if (index === lastInteractionWithContextIndex && !onlyHumanMessages) {
+            if (index === this.interactions.length - 1 && !onlyHumanMessages) {
                 messages.push(...contextMessages, humanMessage, assistantMessage)
             } else {
                 messages.push(humanMessage, assistantMessage)
