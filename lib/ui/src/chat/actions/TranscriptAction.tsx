@@ -18,7 +18,7 @@ export interface TranscriptActionStep {
 }
 
 export const TranscriptAction: React.FunctionComponent<{
-    title: string | { verb: string; object: string }
+    title: string | { verb: string; object: string; tooltip?: string }
     steps: TranscriptActionStep[]
     className?: string
 }> = ({ title, steps, className }) => {
@@ -28,7 +28,7 @@ export const TranscriptAction: React.FunctionComponent<{
                 {typeof title === 'string' ? (
                     title
                 ) : (
-                    <span>
+                    <span title={title.tooltip}>
                         {title.verb} <strong>{title.object}</strong>
                     </span>
                 )}
