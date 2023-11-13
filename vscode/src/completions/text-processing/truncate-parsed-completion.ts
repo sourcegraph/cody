@@ -70,7 +70,7 @@ export function truncateParsedCompletionByNextSibling(context: CompletionContext
 
     const { insertText, points } = completion
 
-    const queryStart = points?.trigger || points?.start
+    const queryStart = points?.trigger || points.start
     const nodeToInsert = findChildBeforeTheNewSibling(
         parsedFirstLine.tree.rootNode,
         completion.tree.rootNode,
@@ -112,6 +112,12 @@ function findChildBeforeTheNewSibling(
 
     for (let i = 0; i < PARENTS_TO_CHECK; i++) {
         if (!currentNode?.parent || !prevNode?.parent) {
+            // If we are already at the tip of the tree, check if the current node
+            // has the updated number of children.
+            if (prevNode?.childCount !== currentNode?.childCount) {
+                return currentNode
+            }
+
             break
         }
 
