@@ -6,12 +6,12 @@ import { ActiveTextEditorDiagnostic, ActiveTextEditorSelection } from '../editor
 import { MAX_RECIPE_INPUT_TOKENS } from './constants'
 import { truncateText, truncateTextStart } from './truncation'
 
-const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
+const CODE_CONTEXT_TEMPLATE = `Review context from codebase file \`{filePath}\`:
 \`\`\`{language}
 {text}
 \`\`\``
 
-const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Use following code snippet from file \`{filePath}\` in repository \`{repoName}\`:
+const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Review context from codebase file \`{filePath}\` in repository \`{repoName}\`:
 \`\`\`{language}
 {text}
 \`\`\``
@@ -35,10 +35,10 @@ export function populatePreciseCodeContextTemplate(symbol: string, filePath: str
         .replace('{text}', code)
 }
 
-const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
+const MARKDOWN_CONTEXT_TEMPLATE = 'Review context from text file `{filePath}`:\n{text}'
 
 const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =
-    'Use the following text from file `{filePath}` in repository `{repoName}`:\n{text}'
+    'Review context from text file `{filePath}` in repository `{repoName}`:\n{text}'
 
 export function populateMarkdownContextTemplate(markdown: string, filePath: string, repoName?: string): string {
     return (repoName ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : MARKDOWN_CONTEXT_TEMPLATE)

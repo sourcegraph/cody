@@ -89,6 +89,7 @@ describe('Transcript', () => {
                     null,
                     null
                 ),
+                firstInteraction: false,
             })
         )
 
@@ -97,10 +98,6 @@ describe('Transcript', () => {
 
         const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
-            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
-            { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
-            { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
         ]
@@ -140,9 +137,9 @@ describe('Transcript', () => {
 
         const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
-            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'human', text: 'Review context from text file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            { speaker: 'human', text: 'Review context from codebase file `src/main.go`:\n```go\npackage main\n```' },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
@@ -176,6 +173,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
+                firstInteraction: true,
             })
         )
         transcript.addInteraction(firstInteraction)
@@ -188,6 +186,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
+                firstInteraction: true,
             })
         )
         transcript.addInteraction(secondInteraction)
@@ -196,9 +195,9 @@ describe('Transcript', () => {
         const expectedPrompt = [
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: assistantResponse },
-            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'human', text: 'Review context from text file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            { speaker: 'human', text: 'Review context from codebase file `src/main.go`:\n```go\npackage main\n```' },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how to create a batch change' },
             { speaker: 'assistant', text: undefined },
@@ -234,7 +233,7 @@ describe('Transcript', () => {
         assert.deepStrictEqual(preamble, prompt.slice(0, 4))
     })
 
-    it('includes currently visible content from the editor', async () => {
+    it('includes codebase context only without extra content from the editor', async () => {
         const editor = new MockEditor({
             getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
@@ -245,6 +244,9 @@ describe('Transcript', () => {
                     textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
                 }),
         })
+
+        const addEnhancedContext = true
+
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
             { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
@@ -257,34 +259,26 @@ describe('Transcript', () => {
 
         const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
-
         const interaction = await chatQuestionRecipe.getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 editor,
                 intentDetector,
                 codebaseContext,
+                firstInteraction: addEnhancedContext,
             })
         )
         transcript.addInteraction(interaction)
 
         const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
-            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'human', text: 'Review context from text file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
             {
                 speaker: 'human',
-                text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+                text: 'Review context from codebase file `src/main.go`:\n```go\npackage main\n```',
             },
             { speaker: 'assistant', text: 'Ok.' },
-            {
-                speaker: 'human',
-                text: 'I have the `internal/lib.go` file opened in my editor. Use following code snippet from file `internal/lib.go`:\n```go\npackage lib\n```',
-            },
-            {
-                speaker: 'assistant',
-                text: 'Ok.',
-            },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
         ]
@@ -343,6 +337,8 @@ describe('Transcript', () => {
                 codebaseContext,
             })
         )
+        const isFirstInteraction = !!firstInteraction
+        const addEnhancedContext = true
         transcript.addInteraction(firstInteraction)
         transcript.addAssistantResponse('Smartly.')
 
@@ -351,6 +347,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
+                firstInteraction: addEnhancedContext || isFirstInteraction || false,
             })
         )
         transcript.addInteraction(secondInteraction)
@@ -369,9 +366,9 @@ describe('Transcript', () => {
         const expectedPrompt = [
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do batch changes work in sourcegraph' },
             { speaker: 'assistant', text: 'Smartly.' },
-            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'human', text: 'Review context from text file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            { speaker: 'human', text: 'Review context from codebase file `src/main.go`:\n```go\npackage main\n```' },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: 'By setting the Authorization header.' },
