@@ -78,12 +78,12 @@ export class ChatQuestion implements Recipe {
         if (contextFiles?.length) {
             const contextFileMessages = await ChatQuestion.getContextFilesContext(editor, contextFiles)
             contextMessages.push(...contextFileMessages)
-        } else {
-            const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
-            this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
-            if (isEditorContextRequired) {
-                contextMessages.push(...ChatQuestion.getEditorContext(editor))
-            }
+        }
+
+        const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
+        this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
+        if (isEditorContextRequired) {
+            contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 
         // Add selected text as context when available

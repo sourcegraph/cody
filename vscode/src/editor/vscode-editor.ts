@@ -299,12 +299,9 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
 
         const visibleRange = visibleRanges[0]
-        const content = activeEditor.document.getText(
-            new vscode.Range(
-                new vscode.Position(visibleRange.start.line, 0),
-                new vscode.Position(visibleRange.end.line + 1, 0)
-            )
-        )
+        const endLine = activeEditor.document.lineCount - 1 || visibleRange?.end.line
+        const documentRange = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(endLine, 0))
+        const content = activeEditor.document.getText(documentRange) || activeEditor.document.getText(visibleRange)
 
         return {
             fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
