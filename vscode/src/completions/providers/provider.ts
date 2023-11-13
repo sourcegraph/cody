@@ -23,11 +23,6 @@ export interface ProviderConfig {
     contextSizeHints: ProviderContextSizeHints
 
     /**
-     * When set, multi-line completions will trigger more often. This is
-     */
-    enableExtendedMultilineTriggers: boolean
-
-    /**
      * A string identifier for the provider config used in event logs.
      */
     identifier: string
@@ -67,9 +62,6 @@ export interface ProviderOptions {
     multiline: boolean
     // Number of parallel LLM requests per completion.
     n: number
-
-    // Use indentation-based or tree-sitter-based truncation strategies to stop streaming early.
-    disableStreamingTruncation?: boolean
 }
 
 export abstract class Provider {

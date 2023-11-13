@@ -55,6 +55,15 @@ export class AgentEditor implements Editor {
         }
     }
 
+    public async getTextEditorContentForFile(uri: URI): Promise<string | undefined> {
+        if (!uri) {
+            return Promise.resolve(undefined)
+        }
+
+        const doc = this.agent.workspace.getDocument(uri.fsPath)
+        return Promise.resolve(doc?.content)
+    }
+
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const document = this.activeDocument()
         if (document?.content === undefined || document.selection === undefined) {

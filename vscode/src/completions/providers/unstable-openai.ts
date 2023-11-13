@@ -144,14 +144,12 @@ ${OPENING_CODE_TAG}${infillBlock}`
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        if (!this.options.disableStreamingTruncation) {
-                            const processedCompletion = this.postProcess(incompleteResponse.completion)
-                            const completion = canUsePartialCompletion(processedCompletion, this.options)
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
+                        const completion = canUsePartialCompletion(processedCompletion, this.options)
 
-                            if (completion) {
-                                resolve({ ...completion, stopReason: 'streaming-truncation' })
-                                abortController.abort()
-                            }
+                        if (completion) {
+                            resolve({ ...completion, stopReason: 'streaming-truncation' })
+                            abortController.abort()
                         }
                     },
                     abortController.signal
@@ -198,7 +196,6 @@ export function createProviderConfig({
             return new UnstableOpenAIProvider(options, { maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         model: model ?? 'gpt-35-turbo',
     }

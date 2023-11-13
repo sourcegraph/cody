@@ -94,6 +94,13 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
+                    'Editor Title Icon',
+                    undefined,
+                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
+                    'cody.editorTitleCommandIcon',
+                    c => c.editorTitleCommandIcon
+                ),
+                createFeatureToggle(
                     'Inline Chat',
                     undefined,
                     'Enable chatting and editing with Cody, directly in your code',
@@ -123,18 +130,18 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPanel
                 ),
                 createFeatureToggle(
+                    'New Search UI',
+                    'Experimental',
+                    'Enable new search panel',
+                    'cody.experimental.newSearch',
+                    c => c.experimentalSearchPanel
+                ),
+                createFeatureToggle(
                     'Code Lenses',
                     'Experimental',
                     'Enable Code Lenses in documents for quick access to Cody commands',
                     'cody.experimental.commandLenses',
                     c => c.experimentalCommandLenses
-                ),
-                createFeatureToggle(
-                    'Editor Title Icon',
-                    'Experimental',
-                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
-                    'cody.experimental.editorTitleCommandIcon',
-                    c => c.experimentalEditorTitleCommandIcon
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

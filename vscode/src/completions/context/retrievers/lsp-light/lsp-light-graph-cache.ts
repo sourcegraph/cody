@@ -8,14 +8,13 @@ import { URI } from 'vscode-uri'
 import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
-import { getGraphContextFromRange as defaultGetGraphContextFromRange } from '../../graph/lsp/graph'
-import { ContextSnippet, SymbolContextSnippet } from '../types'
+import { getGraphContextFromRange as defaultGetGraphContextFromRange } from '../../../../graph/lsp/graph'
+import { ContextRetriever, ContextRetrieverOptions, ContextSnippet, SymbolContextSnippet } from '../../../types'
+import { CustomAbortController, CustomAbortSignal } from '../../utils'
 
-import { GraphContextFetcher, supportedLanguageId } from './context-graph'
 import { SectionObserver } from './section-observer'
-import { CustomAbortController, CustomAbortSignal } from './utils'
 
-export class LspLightGraphCache implements GraphContextFetcher {
+export class LspLightGraphCache implements ContextRetriever {
     public identifier = 'lsp-light'
     private disposables: vscode.Disposable[] = []
     private cache: GraphCache = new GraphCache()
@@ -51,12 +50,21 @@ export class LspLightGraphCache implements GraphContextFetcher {
         )
     }
 
-    public async getContextAtPosition(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        maxChars: number,
-        contextRange?: vscode.Range
-    ): Promise<ContextSnippet[]> {
+    public async retrieve({
+        document,
+        position,
+        docContext: { contextRange },
+        hints: { maxChars },
+    }: {
+        document: ContextRetrieverOptions['document']
+        position: ContextRetrieverOptions['position']
+        docContext: {
+            contextRange?: ContextRetrieverOptions['docContext']['contextRange']
+        }
+        hints: {
+            maxChars: ContextRetrieverOptions['hints']['maxChars']
+        }
+    }): Promise<ContextSnippet[]> {
         const key = `${document.uri.toString()}█${position.line}█${document.lineAt(position.line).text}`
         if (this.lastRequestKey !== key) {
             this.abortLastRequest()
@@ -128,6 +136,10 @@ export class LspLightGraphCache implements GraphContextFetcher {
         return context
     }
 
+    public isSupportedForLanguageId(languageId: string): boolean {
+        return supportedLanguageId(languageId)
+    }
+
     private getLspContextForLine({
         document,
         line,
@@ -186,7 +198,12 @@ export class LspLightGraphCache implements GraphContextFetcher {
         }
 
         // Start a preloading requests as identifier by setting the maxChars to 0
-        void this.getContextAtPosition(event.textEditor.document, event.selections[0].active, 0)
+        void this.retrieve({
+            document: event.textEditor.document,
+            position: event.selections[0].active,
+            docContext: {},
+            hints: { maxChars: 0 },
+        })
     }
 
     /**
@@ -272,5 +289,18 @@ function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
         fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
         symbol: context.symbolName,
         content: context.content.join('\n').trim(),
+    }
+}
+export function supportedLanguageId(languageId: string): boolean {
+    switch (languageId) {
+        case 'python':
+        case 'go':
+        case 'javascript':
+        case 'javascriptreact':
+        case 'typescript':
+        case 'typescriptreact':
+            return true
+        default:
+            return false
     }
 }

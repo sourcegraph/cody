@@ -15,7 +15,6 @@ function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletio
         position,
         maxPrefixLength: 100,
         maxSuffixLength: 100,
-        enableExtendedTriggers: true,
         context,
     })
 }
@@ -34,6 +33,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '',
             multilineTrigger: '{',
             injectedPrefix: null,
+            position: { character: 2, line: 1 },
         })
     })
 
@@ -50,10 +50,11 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '}',
             multilineTrigger: '{',
             injectedPrefix: null,
+            position: { character: 2, line: 2 },
         })
     })
 
-    it('returns correct multi-line trigger when `enableExtendedTriggers: true`', () => {
+    it('returns correct multi-line trigger', () => {
         const result = testGetCurrentDocContext('const arr = [█\n];')
 
         expect(result).toEqual({
@@ -66,6 +67,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
             injectedPrefix: null,
+            position: { character: 13, line: 0 },
         })
     })
 
@@ -82,6 +84,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
             injectedPrefix: null,
+            position: { character: 13, line: 1 },
         })
     })
 
@@ -109,6 +112,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: 'ssert',
+            position: { character: 9, line: 0 },
         })
     })
 
@@ -137,6 +141,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: 'log',
+            position: { character: 8, line: 1 },
         })
     })
 
@@ -164,6 +169,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: null,
+            position: { character: 7, line: 0 },
         })
     })
 
@@ -191,7 +197,6 @@ describe('getCurrentDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            enableExtendedTriggers: true,
         })
         expect(docContext.contextRange).toMatchInlineSnapshot(`
           Range {

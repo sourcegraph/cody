@@ -8,9 +8,9 @@ import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
-import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+import { countCode } from '../services/utils/code-count'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -24,7 +24,7 @@ import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
 import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
 import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
-import { CodyTaskState } from './utils'
+import { CodyTaskState, getEditorInsertSpaces, getEditorTabSize } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -479,7 +479,10 @@ export class FixupController
             (await vscode.commands.executeCommand<vscode.TextEdit[]>(
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
-                {}
+                {
+                    tabSize: getEditorTabSize(document.uri),
+                    insertSpaces: getEditorInsertSpaces(document.uri),
+                }
             )) || []
 
         const formattingChangesInRange = formattingChanges.filter(change => rangeToFormat.contains(change.range))
@@ -845,8 +848,11 @@ export class FixupController
         }
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
-        await this.contentStore.set(task.id, task.fixupFile.uri)
-        const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
+
+        // Ensure each diff is fresh so there is no chance of diffing an already diffed file.
+        const diffId = `${task.id}-${Date.now()}`
+        await this.contentStore.set(diffId, task.fixupFile.uri)
+        const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
         const range = task.editedRange || task.selectionRange
@@ -881,7 +887,7 @@ export class FixupController
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
         // Prompt the user for a new instruction, and create a new fixup
-        const instruction = (await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })).trim()
+        const instruction = await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })
 
         // Revert and remove the previous task
         await this.undoTask(task)

@@ -17,6 +17,7 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.JSX },
         { languageId: SupportedLanguage.TSX },
         { languageId: SupportedLanguage.Go },
+        { languageId: SupportedLanguage.Python },
     ])('returns valid SDK for $languageId', async ({ languageId }) => {
         const nonInitializedSDK = getDocumentQuerySDK(languageId)
         expect(nonInitializedSDK).toBeNull()
@@ -25,7 +26,7 @@ describe('getDocumentQuerySDK', () => {
         expect(parser).toBeTruthy()
 
         const sdk = getDocumentQuerySDK(languageId)
-        expect(sdk?.queries.blocks).toBeTruthy()
+        expect(sdk?.queries.intents).toBeTruthy()
     })
 
     it.each([
@@ -33,7 +34,6 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.Cpp },
         { languageId: SupportedLanguage.Dart },
         { languageId: SupportedLanguage.Php },
-        { languageId: SupportedLanguage.Python },
     ])('returns null for $languageId because queries are not defined', async ({ languageId }) => {
         const nonInitializedSDK = getDocumentQuerySDK(languageId)
         expect(nonInitializedSDK).toBeNull()

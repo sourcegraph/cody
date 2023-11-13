@@ -23,6 +23,7 @@ import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { setUpCodyIgnore } from './services/context-filter'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -35,6 +36,7 @@ import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/S
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
 
 /**
@@ -180,6 +182,17 @@ const register = async (
         })
     )
 
+    if (symfRunner) {
+        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        searchViewProvider.initialize()
+        disposables.push(searchViewProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+    }
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener((authStatus: AuthStatus) => {
         void chatManager.syncAuthStatus(authStatus)
@@ -189,6 +202,7 @@ const register = async (
                     symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
                 })
                 .catch(() => {})
+            workspaceActionsOnConfigChange(editor.getWorkspaceRootUri(), authStatus.endpoint)
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
@@ -342,6 +356,12 @@ const register = async (
             return result
         }),
         // Commands
+        vscode.commands.registerCommand('cody.chat.restart', async () => {
+            await chatManager.clearAndRestartSession()
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
+        }),
+        // TODO remove cody.interactive.clear when we remove the old chat
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatManager.clearAndRestartSession()
             await chatManager.setWebviewView('chat')
@@ -508,18 +528,14 @@ const register = async (
                     completionsProvider.dispose()
                 }
 
-                completionsProvider = await createInlineCompletionItemProvider(
-                    {
-                        config,
-                        client: codeCompletionsClient,
-                        statusBar,
-                        contextProvider,
-                        authProvider,
-                        triggerNotice: notice => chatManager.triggerNotice(notice),
-                    },
-                    context,
-                    platform
-                )
+                completionsProvider = await createInlineCompletionItemProvider({
+                    config,
+                    client: codeCompletionsClient,
+                    statusBar,
+                    authProvider,
+                    triggerNotice: notice => chatManager.triggerNotice(notice),
+                    createBfgRetriever: platform.createBfgRetriever,
+                })
             })
             .catch(error => {
                 console.error('Error creating inline completion item provider:', error)

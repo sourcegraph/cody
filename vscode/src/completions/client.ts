@@ -107,7 +107,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         }
 
         if (!response.ok) {
-            throw new NetworkError(response, traceId)
+            throw new NetworkError(response, await response.text(), traceId)
         }
 
         if (response.body === null) {
@@ -131,6 +131,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 for await (const chunk of iterator) {
                     if (chunk.event === 'completion') {
+                        if (signal?.aborted) {
+                            break // Stop processing the already received chunks.
+                        }
+
                         lastResponse = JSON.parse(chunk.data) as CompletionResponse
                         onPartialResponse?.(lastResponse)
                     }

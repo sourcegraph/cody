@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, Mock, vitest } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { range } from '../../testutils/textDocument'
+import { range } from '../../../../testutils/textDocument'
 
 import { SectionObserver } from './section-observer'
 

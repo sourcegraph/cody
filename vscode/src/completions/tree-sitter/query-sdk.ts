@@ -81,16 +81,6 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
 }
 
 export interface QueryWrappers {
-    /**
-     * Returns the first block-like node (block_statement).
-     * Handles special cases where we want to use the parent block instead
-     * if it has a specific node type (if_statement).
-     */
-    getFirstMultilineBlockForTruncation: (
-        node: SyntaxNode,
-        start: Point,
-        end?: Point
-    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
     getSinglelineTrigger: (
         node: SyntaxNode,
         start: Point,
@@ -108,20 +98,6 @@ export interface QueryWrappers {
  */
 function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
     return {
-        getFirstMultilineBlockForTruncation: (root, start, end) => {
-            const captures = queries.blocks.compiled.captures(root, start, end)
-            const { trigger } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
-
-            if (!trigger) {
-                return []
-            }
-
-            // Check for special cases where we need match a parent node.
-            const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
-            const potentialParent = potentialParentNodes.find(capture => trigger.parent?.id === capture.node.id)?.node
-
-            return [{ node: potentialParent || trigger, name: 'trigger' }] as const
-        },
         getSinglelineTrigger: (root, start, end) => {
             const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
             const { trigger, block } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
@@ -173,16 +149,9 @@ function getIntentFromCaptures(
         })
     )
 
-    const cursorCaptureIndex = captures.findIndex(capture => capture.node === cursorCapture?.node)
-
     // Find the corresponding preceding intent capture that matches the cursor capture name.
-    const intentCapture = findLast(captures.slice(0, cursorCaptureIndex), capture => {
-        const { name, node } = capture
-
-        const matchesCursorPosition =
-            node.startPosition.column === cursor.column && node.startPosition.row === cursor.row
-
-        return name === withoutCursorSuffix(cursorCapture?.name) && matchesCursorPosition
+    const intentCapture = findLast(captures, capture => {
+        return capture.name === withoutCursorSuffix(cursorCapture?.name)
     })
 
     if (cursorCapture && intentCapture) {
@@ -192,7 +161,10 @@ function getIntentFromCaptures(
     // If we didn't find a multinode intent, use the most nested atomic capture group.
     // Atomic capture groups are matches with one node and `!` at the end the capture group name.
     const atomicCapture = findLast(captures, capture => {
-        return capture.name.endsWith('!')
+        const enclosesCursor =
+            capture.node.startPosition.column <= cursor.column && cursor.column <= capture.node.endPosition.column
+
+        return capture.name.endsWith('!') && enclosesCursor
     })
 
     if (atomicCapture) {

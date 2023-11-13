@@ -1,22 +1,43 @@
 import { URI } from 'vscode-uri'
 
+import { ActiveTextEditorSelectionRange } from '../editor'
 import { Message } from '../sourcegraph-api'
 
-// tracked for telemetry purposes. Which context source provided this context
-// file.
-//
-// For now we just track "embeddings" since that is the main driver for
-// understanding if it is being useful.
-export type ContextFileSource = 'embeddings'
+// tracked for telemetry purposes. Which context source provided this context file.
+// embeddings: context file returned by the embeddings client
+// user: context file provided by the user explicitly via chat input
+// keyword: the context file returned from local keyword search
+// editor: context file retrieved from the current editor
+export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor'
+
+export type ContextFileType = 'file' | 'symbol'
+
+export type SymbolKind = 'class' | 'function' | 'method'
 
 export interface ContextFile {
+    // Name of the context
+    // for file, this is usually the relative path
+    // for symbol, this is usually the fuzzy name of the symbol
     fileName: string
-    uri?: URI
+
+    content?: string
 
     repoName?: string
     revision?: string
 
+    // Location
+    uri?: URI
+    path?: {
+        basename?: string
+        dirname?: string
+        relative?: string
+    }
+    range?: ActiveTextEditorSelectionRange
+
+    // metadata
     source?: ContextFileSource
+    type?: ContextFileType
+    kind?: SymbolKind
 }
 
 export interface ContextMessage extends Message {
@@ -64,5 +85,21 @@ export function getContextMessageWithResponse(
     return [
         { speaker: 'human', text, file },
         { speaker: 'assistant', text: response },
+    ]
+}
+
+export function createContextMessageByFile(file: ContextFile, content: string): ContextMessage[] {
+    const code = content || file.content
+    if (!code) {
+        return []
+    }
+
+    const fileMessage = `Context from file path @${file.fileName}:\n${code}`
+    const symbolMessage = `$${file.fileName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`
+    const text = file.type === 'file' ? fileMessage : symbolMessage
+
+    return [
+        { speaker: 'human', text, file },
+        { speaker: 'assistant', text: 'OK.' },
     ]
 }

@@ -98,7 +98,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     /**
      * Returns pieces of context relevant for the given query. Uses a keyword-search-based
      * approach.
-     *
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
@@ -119,7 +118,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 const uri = vscode.Uri.file(path.join(rootPath, filename))
                 try {
                     const content = (await vscode.workspace.openTextDocument(uri)).getText()
-                    return [{ fileName: filename, content }]
+                    return [{ fileName: filename, content, uri, source: 'keyword', type: 'file' }]
                 } catch (error) {
                     // Handle file reading errors in case of concurrent file deletions or binary files
                     console.error(error)
@@ -233,7 +232,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     const endLine = startLine + 5
                     const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
 
-                    return [{ fileName: filename, content }]
+                    return [{ fileName: filename, content, uri, source: 'keyword', type: 'file' }]
                 } catch (error) {
                     console.error(error)
                     return []

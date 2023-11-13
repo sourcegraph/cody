@@ -9,8 +9,9 @@ import * as rimraf from 'rimraf'
 import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
+import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
+import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { BfgContextFetcher } from '../../../vscode/src/graph/bfg/BfgContextFetcher'
 import { Agent, initializeVscodeExtension } from '../agent'
 import { MessageHandler } from '../jsonrpc-alias'
 import * as vscode_shim from '../vscode-shim'
@@ -26,7 +27,7 @@ const testFile = path.join('src', 'main.ts')
 const gitdir = path.join(dir, '.git')
 const shouldCreateGitDir = !fs.existsSync(gitdir)
 
-describe('BfgContextFetcher', async () => {
+describe('BfgRetriever', async () => {
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         // The test runs successfully without these environment variables. We
         // only have this check enabled for now to skip running BFG tests in CI.
@@ -39,7 +40,7 @@ describe('BfgContextFetcher', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        initializeVscodeExtension()
+        initializeVscodeExtension(vscode.Uri.file(process.cwd()))
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
@@ -82,15 +83,36 @@ describe('BfgContextFetcher', async () => {
             content: content.replace(CURSOR, ''),
         })
 
-        const bfg = new BfgContextFetcher(extensionContext as vscode.ExtensionContext, () => gitdirUri)
+        const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext, () => gitdirUri)
 
-        const doc = agent.workspace.agentTextDocument({ filePath })
-        assert(doc.getText().length > 0)
+        const document = agent.workspace.agentTextDocument({ filePath })
+        assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)
-        const position = doc.positionAt(offset)
+        const position = document.positionAt(offset)
+        const docContext = getCurrentDocContext({ document, position, maxPrefixLength: 10_000, maxSuffixLength: 1_000 })
         const maxChars = 1_000
+        const maxMs = 100
 
-        expect(await bfg.getContextAtPosition(doc, position, maxChars, undefined)).toHaveLength(2)
+        const actual = await bfg.retrieve({ document, position, docContext, hints: { maxChars, maxMs } })
+        actual.sort((a, b) => a.content.localeCompare(b.content))
+
+        expect(actual).toMatchInlineSnapshot([
+            {
+                content: 'distance(a: Point, b: Point)',
+                fileName: 'Point.ts',
+                symbol: 'scip-ctags . . . distance().',
+            },
+            {
+                content: "import { distance } from './Point'",
+                fileName: 'main.ts',
+                symbol: 'scip-ctags . . . distance.',
+            },
+            {
+                content: 'interface Point {\n    x: number\n    y: number\n}',
+                fileName: 'Point.ts',
+                symbol: 'scip-ctags . . . Point#',
+            },
+        ])
     })
 })

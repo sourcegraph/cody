@@ -5,58 +5,66 @@ import { URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 
-import { ContextSnippet } from '../types'
+import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import { baseLanguageId } from '../../utils'
 
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
-import { DocumentHistory } from './history'
-import { baseLanguageId } from './utils'
+import { DocumentHistory, VSCodeDocumentHistory } from './history'
+
+/**
+ * The size of the Jaccard distance match window in number of lines. It determines how many
+ * lines of the 'matchText' are considered at once when searching for a segment
+ * that is most similar to the 'targetText'. In essence, it sets the maximum number
+ * of lines that the best match can be. A larger 'windowSize' means larger potential matches
+ */
+export const SNIPPET_WINDOW_SIZE = 50
+
+/**
+ * The Jaccard Similarity Retriever is a sparse, local-only, retrieval strategy that uses local
+ * editor content (open tabs and file history) to find relevant code snippets based on the current
+ * editor prefix.
+ */
+export class JaccardSimilarityRetriever implements ContextRetriever {
+    public identifier = 'jaccard-similarity'
+    private history = new VSCodeDocumentHistory()
+
+    public async retrieve({ document, docContext, abortSignal }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+        const targetText = lastNLines(docContext.prefix, SNIPPET_WINDOW_SIZE)
+        const files = await getRelevantFiles(document, this.history)
+
+        const matches: JaccardMatchWithFilename[] = []
+        for (const { uri, contents } of files) {
+            const match = bestJaccardMatch(targetText, contents, SNIPPET_WINDOW_SIZE)
+            if (!match || abortSignal?.aborted || isCodyIgnoredFile(uri)) {
+                continue
+            }
+
+            matches.push({
+                // Use relative path to remove redundant information from the prompts and
+                // keep in sync with embeddings search results which use relative to repo root paths
+                fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
+                ...match,
+                uri,
+            })
+        }
+
+        matches.sort((a, b) => b.score - a.score)
+
+        return matches
+    }
+
+    public isSupportedForLanguageId(): boolean {
+        return true
+    }
+
+    public dispose(): void {
+        this.history.dispose()
+    }
+}
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
-    fileUri: URI
-}
-
-interface Options {
-    document: vscode.TextDocument
-    history: DocumentHistory
-    prefix: string
-    jaccardDistanceWindowSize: number
-}
-
-export async function getContextFromCurrentEditor(options: Options): Promise<ContextSnippet[]> {
-    const { document, history, prefix, jaccardDistanceWindowSize } = options
-    // Return early if current document is on the ignore list
-    if (isCodyIgnoredFile(document.uri)) {
-        return []
-    }
-
-    const targetText = lastNLines(prefix, jaccardDistanceWindowSize)
-    const files = await getRelevantFiles(document, history)
-
-    const matches: JaccardMatchWithFilename[] = []
-    for (const { uri, contents } of files) {
-        // skip file that is on the ignore list
-        if (isCodyIgnoredFile(uri)) {
-            continue
-        }
-
-        const match = bestJaccardMatch(targetText, contents, jaccardDistanceWindowSize)
-        if (!match) {
-            continue
-        }
-
-        matches.push({
-            // Use relative path to remove redundant information from the prompts and
-            // keep in sync with embeddings search resutls which use relatve to repo root paths.
-            fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
-            fileUri: uri,
-            ...match,
-        })
-    }
-
-    matches.sort((a, b) => b.score - a.score)
-
-    return matches
+    uri: URI
 }
 
 interface FileContents {

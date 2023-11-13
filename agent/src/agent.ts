@@ -1,5 +1,6 @@
 import path from 'path'
 
+import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
@@ -14,16 +15,17 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
-import { MessageHandler } from './jsonrpc-alias'
+import { InProcessClient, MessageHandler } from './jsonrpc-alias'
 import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(): void {
+export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
+    const paths = envPaths('Cody')
     activate({
         asAbsolutePath(relativePath) {
-            return path.resolve(process.cwd(), relativePath)
+            return path.resolve(workspaceRoot.fsPath, relativePath)
         },
         environmentVariableCollection: {} as any,
         extension: {} as any,
@@ -60,10 +62,25 @@ export function initializeVscodeExtension(): void {
         storageUri: {} as any,
         subscriptions: [],
         workspaceState: {} as any,
-        globalStorageUri: {} as any,
+        globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: {} as any,
-        globalStoragePath: {} as any,
+        globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     })
+}
+
+export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<InProcessClient> {
+    process.env.ENABLE_SENTRY = 'false'
+    const agent = new Agent()
+    const debugHandler = new MessageHandler()
+    debugHandler.registerNotification('debug/message', params => {
+        console.error(`${params.channel}: ${params.message}`)
+    })
+    debugHandler.messageEncoder.pipe(agent.messageDecoder)
+    agent.messageEncoder.pipe(debugHandler.messageDecoder)
+    const client = agent.clientForThisInstance()
+    await client.request('initialize', clientInfo)
+    client.notify('initialized', null)
+    return client
 }
 
 export class Agent extends MessageHandler {
@@ -81,10 +98,11 @@ export class Agent extends MessageHandler {
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
-            initializeVscodeExtension()
+            vscode_shim.setClientInfo(clientInfo)
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+            initializeVscodeExtension(this.workspace.workspaceRootUri)
 
             if (clientInfo.extensionConfiguration) {
                 this.setClient(clientInfo.extensionConfiguration)
@@ -208,7 +226,19 @@ export class Agent extends MessageHandler {
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
-                        selectedCompletionInfo: undefined,
+                        selectedCompletionInfo:
+                            params.selectedCompletionInfo?.text === undefined ||
+                            params.selectedCompletionInfo?.text === null
+                                ? undefined
+                                : {
+                                      text: params.selectedCompletionInfo.text,
+                                      range: new vscode.Range(
+                                          params.selectedCompletionInfo.range.start.line,
+                                          params.selectedCompletionInfo.range.start.character,
+                                          params.selectedCompletionInfo.range.end.line,
+                                          params.selectedCompletionInfo.range.end.character
+                                      ),
+                                  },
                     },
                     token
                 )
@@ -218,6 +248,7 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
+
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)

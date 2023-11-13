@@ -5,18 +5,21 @@ import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-sh
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
+import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 
 import { localStorage } from './LocalStorageProvider'
 
 export let eventLogger: EventLogger | null = null
+let telemetryLevel: 'all' | 'off' | 'agent' = 'off'
 let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
+const config = getConfiguration(vscode.workspace.getConfiguration())
 export const extensionDetails: ExtensionDetails = {
-    ide: 'VSCode',
+    ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
     arch,
@@ -37,9 +40,12 @@ export async function createOrUpdateEventLogger(
         // check that CODY_TESTING is not true, because we want to log events when we are testing
         if (process.env.CODY_TESTING !== 'true') {
             eventLogger = null
+            telemetryLevel = 'off'
             return
         }
     }
+
+    telemetryLevel = config.telemetryLevel
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
     globalAnonymousUserID = anonymousUserID
@@ -68,8 +74,8 @@ export async function createOrUpdateEventLogger(
  * DEPRECATED: Callsites should ALSO record an event using services/telemetry-v2
  * as well and indicate this has happened, for example:
  *
- *   logEvent(name, properties, { hasV2Event: true })
- *   telemetryRecorder.recordEvent(...)
+ * logEvent(name, properties, { hasV2Event: true })
+ * telemetryRecorder.recordEvent(...)
  *
  * In the future, all usages of TelemetryService will be removed in
  * favour of the new libraries. For more information, see:
@@ -78,15 +84,23 @@ export async function createOrUpdateEventLogger(
  * PRIVACY: Do NOT include any potentially private information in `properties`. These properties may
  * get sent to analytics tools, so must not include private information, such as search queries or
  * repository names.
- *
  * @param eventName The name of the event.
  * @param properties Event properties. Do NOT include any private information, such as full URLs
  * that may contain private repository names or search queries.
  */
-function logEvent(eventName: string, properties?: TelemetryEventProperties, opts?: { hasV2Event: boolean }): void {
+function logEvent(
+    eventName: string,
+    properties?: TelemetryEventProperties,
+    opts?: { hasV2Event?: boolean; agent?: boolean }
+): void {
+    if (telemetryLevel === 'agent' && !opts?.agent) {
+        return
+    }
+
     logDebug(
         `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
         eventName,
+        extensionDetails.ide,
         JSON.stringify({ properties, opts })
     )
     if (!eventLogger || !globalAnonymousUserID) {

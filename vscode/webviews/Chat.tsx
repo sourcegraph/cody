@@ -3,12 +3,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
+    ChatModelSelection,
+    ChatSubmitType,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUISuggestionButtonProps,
@@ -23,9 +27,11 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
-import { FileLink } from './FileLink'
+import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
+import { UserContextSelectorComponent } from './UserContextSelector'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
@@ -51,8 +57,9 @@ interface ChatboxProps {
         embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
+    contextSelection?: ContextFile[]
+    chatModels?: ChatModelSelection[]
 }
-
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     messageBeingEdited,
@@ -70,6 +77,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatCommands,
     isTranscriptError,
     applessOnboarding,
+    contextSelection,
+    chatModels,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -80,8 +89,32 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (text: string, submitType: 'user' | 'suggestion' | 'example') => {
-            vscodeAPI.postMessage({ command: 'submit', text, submitType })
+        (
+            text: string,
+            submitType: ChatSubmitType,
+            contextFiles?: Map<string, ContextFile>,
+            addEnhancedContext = true
+        ) => {
+            // TODO add UI to toggle enhanced context setting
+            const userContextFiles: ContextFile[] = []
+
+            // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
+            if (contextFiles?.size) {
+                for (const file of contextFiles) {
+                    if (text.includes(file[0])) {
+                        file[1].fileName = file[0]
+                        userContextFiles.push(file[1])
+                    }
+                }
+            }
+
+            vscodeAPI.postMessage({
+                command: 'submit',
+                text,
+                submitType,
+                addEnhancedContext,
+                contextFiles: userContextFiles,
+            })
         },
         [vscodeAPI]
     )
@@ -95,14 +128,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, {
+            const eventData = {
                 value: text,
                 lastChatUsedEmbeddings: Boolean(
                     transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
                 ),
-            })
+                transcript: '',
+            }
+
+            if (applessOnboarding.endpoint && isDotCom(applessOnboarding.endpoint)) {
+                eventData.transcript = JSON.stringify(transcript)
+            }
+
+            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
         },
-        [telemetryService, transcript]
+        [telemetryService, transcript, applessOnboarding]
     )
 
     const onCopyBtnClick = useCallback(
@@ -181,6 +221,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 contextStatus,
                 ...applessOnboarding.props,
             }}
+            contextSelection={contextSelection}
+            UserContextSelectorComponent={UserContextSelectorComponent}
+            chatModels={chatModels}
+            ChatModelDropdownMenu={ChatModelDropdownMenu}
         />
     )
 }
@@ -217,7 +261,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     onKeyDown,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = "Ask a question or type '/' for commands"
+    const placeholder = 'Message (type @ to attach files)'
 
     useEffect(() => {
         if (autoFocus) {
@@ -247,13 +291,6 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         [inputRef, onKeyDown]
     )
 
-    const onTextAreaCommandButtonClick = useCallback((): void => {
-        if (setValue && inputRef?.current?.value === '') {
-            setValue('/')
-            inputRef.current?.focus()
-        }
-    }, [inputRef, setValue])
-
     return (
         <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
             <textarea
@@ -268,18 +305,6 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
             />
-            <div className={styles.chatInputActions}>
-                <VSCodeButton
-                    appearance="icon"
-                    type="button"
-                    className={styles.chatInputCommandButton}
-                    onClick={onTextAreaCommandButtonClick}
-                    disabled={!!value}
-                    title="Commands"
-                >
-                    <i className="codicon codicon-terminal" />
-                </VSCodeButton>
-            </div>
         </div>
     )
 }

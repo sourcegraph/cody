@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+
 /**
  * Gets the currently active text editor instance if available.
  * Returns undefined if no editor is active.
@@ -25,7 +27,11 @@ export function getActiveEditor(): vscode.TextEditor | undefined {
         const activeEditor = vscode.window.activeTextEditor
         if (activeEditor?.document.uri.scheme) {
             if (validFileSchemes.has(activeEditor.document.uri.scheme)) {
-                lastTrackedTextEditor = activeEditor
+                if (isCodyIgnoredFile(activeEditor?.document.uri)) {
+                    lastTrackedTextEditor = undefined
+                } else {
+                    lastTrackedTextEditor = activeEditor
+                }
             }
         }
         return lastTrackedTextEditor
