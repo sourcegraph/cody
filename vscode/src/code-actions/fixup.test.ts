@@ -1,6 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import { FixupCodeAction } from './fixup'
 
@@ -122,5 +123,28 @@ describe('fixup code action', () => {
         expect(prompt).toMatchSnapshot()
     })
 
-    test.todo('produces correct prompt for diagnostics with related information', async () => {})
+    test('produces correct prompt for diagnostics with related information', async () => {
+        const testDocUri = URI.file('/document1.ts')
+        const diagnostics = [
+            {
+                severity: vscode.DiagnosticSeverity.Error,
+                message: 'no field `taur` on type `&mut tauri::Config`',
+                range: new vscode.Range(96, 9, 96, 13),
+                source: 'rustc',
+                relatedInformation: [
+                    {
+                        location: {
+                            uri: testDocUri,
+                            range: new vscode.Range(90, 1, 92, 13),
+                        },
+                        message: 'a field with a similar name exists: `tauri`',
+                    },
+                ],
+            },
+        ]
+
+        const codeAction = new FixupCodeAction()
+        const prompt = await codeAction.getCodeActionInstruction('         .taur', diagnostics)
+        expect(prompt).toMatchSnapshot()
+    })
 })

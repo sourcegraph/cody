@@ -19,8 +19,7 @@ exports[`fixup code action > produces correct prompt for a limited diagnostic 1`
     }
 }</problemCode>
 
-Fix the following warning from within <problemCode></problemCode>:
-Type 'null' is not assignable to type 'ContextResult[]'."
+Fix the following warning from within <problemCode></problemCode>: Type 'null' is not assignable to type 'ContextResult[]'."
 `;
 
 exports[`fixup code action > produces correct prompt for code with a single diagnostic 1`] = `
@@ -42,8 +41,7 @@ exports[`fixup code action > produces correct prompt for code with a single diag
     }
 }</problemCode>
 
-Fix the following ts error from within <problemCode></problemCode>:
-Type 'null' is not assignable to type 'ContextResult[]'."
+Fix the following ts error from within <problemCode></problemCode>: Type 'null' is not assignable to type 'ContextResult[]'."
 `;
 
 exports[`fixup code action > produces correct prompt for code with multiple diagnostics and overlapping ranges 1`] = `
@@ -65,14 +63,23 @@ exports[`fixup code action > produces correct prompt for code with multiple diag
     }
 }</problemCode>
 
-Fix the following ts error from within <problemCode></problemCode>:
-'const' declarations must be initialized.
+Fix the following ts error from within <problemCode></problemCode>: 'const' declarations must be initialized.
 
 
-Fix the following ts warning from within <problemCode></problemCode>:
-'rerank' is declared but its value is never read.
+Fix the following ts warning from within <problemCode></problemCode>: 'rerank' is declared but its value is never read.
 
 
-Fix the following ts error from within <problemCode></problemCode>:
-Variable 'rerank' implicitly has an 'any' type."
+Fix the following ts error from within <problemCode></problemCode>: Variable 'rerank' implicitly has an 'any' type."
+`;
+
+exports[`fixup code action > produces correct prompt for diagnostics with related information 1`] = `
+"<problemCode>         .taur</problemCode>
+
+Fix the following rustc error from within <problemCode></problemCode>: no field \`taur\` on type \`&mut tauri::Config\`
+Code related to this diagnostic:
+a field with a similar name exists: \`tauri\`
+<relatedCode>foo
+bar
+foo</relatedCode>
+"
 `;

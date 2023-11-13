@@ -66,9 +66,8 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             prompt.push(
                 `Fix the following ${
                     source ? `${source} ` : ''
-                }${diagnosticType} from within <problemCode></problemCode>:`
+                }${diagnosticType} from within <problemCode></problemCode>: ${message}`
             )
-            prompt.push(message)
 
             if (relatedInformation?.length) {
                 prompt.push('Code related to this diagnostic:')
@@ -91,8 +90,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         for (const { location, message } of relatedInformation) {
             prompt.push(message)
             const document = await vscode.workspace.openTextDocument(location.uri)
-            prompt.push(`\`\`\`${document.getText(location.range)}\`\`\``)
-            prompt.push('\n')
+            prompt.push(`<relatedCode>${document.getText(location.range)}</relatedCode>\n`)
         }
         return prompt
     }
