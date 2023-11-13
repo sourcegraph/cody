@@ -177,7 +177,10 @@ export const TranscriptItem: React.FunctionComponent<
                         />
                     )
                 ) : inProgress ? (
-                    <BlinkingCursor />
+                    <span>
+                        Fetching context...
+                        <BlinkingCursor />
+                    </span>
                 ) : null}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
