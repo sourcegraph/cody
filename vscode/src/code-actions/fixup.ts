@@ -34,12 +34,17 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
 
         const newRange = targetAreaRange ? new vscode.Range(targetAreaRange.start, targetAreaRange.end) : expandedRange
-        return [this.createCommandCodeAction(diagnostics, newRange)]
+        const codeAction = await this.createCommandCodeAction(document, diagnostics, newRange)
+        return [codeAction]
     }
 
-    private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
+    private async createCommandCodeAction(
+        document: vscode.TextDocument,
+        diagnostics: vscode.Diagnostic[],
+        range: vscode.Range
+    ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
-        const instruction = this.getCodeActionInstruction(diagnostics)
+        const instruction = await this.getCodeActionInstruction(document, diagnostics)
         const source = 'code-action'
         action.command = {
             command: 'cody.command.edit-code',
@@ -50,9 +55,42 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         return action
     }
 
-    private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string => {
-        return `Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
-            .map(({ message }) => `\`\`\`${message}\`\`\``)
-            .join('\n')}`
+    // Public for testing
+    public async getCodeActionInstruction(
+        document: vscode.TextDocument,
+        diagnostics: vscode.Diagnostic[]
+    ): Promise<string> {
+        const prompt: string[] = []
+        // todo: group diagnostics by range??
+        for (const { message, source, severity, range, relatedInformation } of diagnostics) {
+            prompt.push(`\`\`\`\n${document.getText(range)}\n\`\`\``)
+            const diagonsticSource = source ? `${source} ` : ' '
+            const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
+            prompt.push(`From this code, fix the following ${diagonsticSource}${diagnosticType}:`)
+            prompt.push(message)
+
+            if (relatedInformation?.length) {
+                prompt.push('Related information:')
+                const relatedInfo = await this.getRelatedInformationContext(relatedInformation)
+                prompt.push(...relatedInfo)
+            }
+
+            prompt.push('\n')
+        }
+
+        return prompt.join('\n')
+    }
+
+    public async getRelatedInformationContext(
+        relatedInformation: vscode.DiagnosticRelatedInformation[]
+    ): Promise<string[]> {
+        const prompt: string[] = []
+        for (const { location, message } of relatedInformation) {
+            prompt.push(message)
+            const document = await vscode.workspace.openTextDocument(location.uri)
+            prompt.push(`\`\`\`${document.getText(location.range)}\`\`\``)
+            prompt.push('\n')
+        }
+        return prompt
     }
 }
