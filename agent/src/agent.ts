@@ -1,3 +1,4 @@
+import * as fspromises from 'fs/promises'
 import path from 'path'
 
 import envPaths from 'env-paths'
@@ -15,7 +16,7 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
-import { InProcessClient, MessageHandler } from './jsonrpc-alias'
+import { MessageHandler } from './jsonrpc-alias'
 import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
@@ -68,7 +69,7 @@ export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
     })
 }
 
-export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<InProcessClient> {
+export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
     process.env.ENABLE_SENTRY = 'false'
     const agent = new Agent()
     const debugHandler = new MessageHandler()
@@ -78,9 +79,18 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<In
     debugHandler.messageEncoder.pipe(agent.messageDecoder)
     agent.messageEncoder.pipe(debugHandler.messageDecoder)
     const client = agent.clientForThisInstance()
+    const workspaceRoot = vscode.Uri.parse(clientInfo.workspaceRootUri)
+    try {
+        const gitdir = await fspromises.stat(path.join(workspaceRoot.fsPath, '.git'))
+        if (gitdir.isDirectory()) {
+            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
+        }
+    } catch {
+        /* ignore */
+    }
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
-    return client
+    return agent
 }
 
 export class Agent extends MessageHandler {
