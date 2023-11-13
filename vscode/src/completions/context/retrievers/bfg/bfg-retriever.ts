@@ -7,8 +7,6 @@ import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
-const isTesting = process.env.CODY_TESTING === 'true'
-
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
@@ -132,11 +130,7 @@ export class BfgRetriever implements ContextRetriever {
         const isVerboseDebug = vscode.workspace.getConfiguration().get<boolean>('cody.debug.verbose', false)
         const child = child_process.spawn(codyrpc, { stdio: 'pipe', env: { VERBOSE_DEBUG: `${isVerboseDebug}` } })
         child.stderr.on('data', chunk => {
-            if (isTesting) {
-                console.log(chunk.toString())
-            } else {
-                logDebug('BFG', 'stderr output', chunk.toString())
-            }
+            logDebug('BFG', 'stderr', chunk.toString())
         })
         child.on('disconnect', () => reject())
         child.on('close', () => reject())
