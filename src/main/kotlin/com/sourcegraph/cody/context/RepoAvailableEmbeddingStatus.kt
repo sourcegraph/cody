@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.context
 
-abstract class RepoAvailableEmbeddingStatus protected constructor(fullRepositoryName: String) :
-    EmbeddingStatus {
+sealed class RepoAvailableEmbeddingStatus(fullRepositoryName: String) : EmbeddingStatus {
   private val simpleRepositoryName: String
 
   init {

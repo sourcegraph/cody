@@ -12,10 +12,10 @@ class RepositoryNotFoundOnSourcegraphInstance(private val repoName: String) :
 
   override fun getTooltip(project: Project): String {
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccountType(project)
-    if (activeAccountType == AccountType.DOTCOM) {
-      return "$repoName not found on Sourcegraph.com. Support for private repos coming soon"
+    return if (activeAccountType == AccountType.DOTCOM) {
+      "$repoName not found on Sourcegraph.com. Support for private repos coming soon"
     } else {
-      return "Repository $repoName was not found on this Sourcegraph instance"
+      "Repository $repoName was not found on this Sourcegraph instance"
     }
   }
 }
