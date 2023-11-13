@@ -15,6 +15,7 @@ import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -164,6 +165,8 @@ const register = async (
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
     })
+
+    disposables.push(new CodeActionProvider({ contextProvider }))
 
     // Register tree views
     disposables.push(
