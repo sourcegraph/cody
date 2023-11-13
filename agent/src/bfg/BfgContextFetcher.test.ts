@@ -40,7 +40,7 @@ describe('BfgRetriever', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        initializeVscodeExtension()
+        initializeVscodeExtension(vscode.Uri.file(process.cwd()))
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
@@ -94,6 +94,25 @@ describe('BfgRetriever', async () => {
         const maxChars = 1_000
         const maxMs = 100
 
-        expect(await bfg.retrieve({ document, position, docContext, hints: { maxChars, maxMs } })).toHaveLength(2)
+        const actual = await bfg.retrieve({ document, position, docContext, hints: { maxChars, maxMs } })
+        actual.sort((a, b) => a.content.localeCompare(b.content))
+
+        expect(actual).toMatchInlineSnapshot([
+            {
+                content: 'distance(a: Point, b: Point)',
+                fileName: 'Point.ts',
+                symbol: 'scip-ctags . . . distance().',
+            },
+            {
+                content: "import { distance } from './Point'",
+                fileName: 'main.ts',
+                symbol: 'scip-ctags . . . distance.',
+            },
+            {
+                content: 'interface Point {\n    x: number\n    y: number\n}',
+                fileName: 'Point.ts',
+                symbol: 'scip-ctags . . . Point#',
+            },
+        ])
     })
 })
