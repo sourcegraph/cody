@@ -2,8 +2,9 @@ import assert from 'assert'
 import * as path from 'path'
 
 import { describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
+
+import * as vscode from './vscode-shim'
 
 describe('vscode-shim', () => {
     describe('vscode.Uri', () => {

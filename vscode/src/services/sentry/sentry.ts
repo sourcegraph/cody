@@ -30,8 +30,12 @@ export abstract class SentryService {
     private prepareReconfigure(): void {
         try {
             const isProd = process.env.NODE_ENV === 'production'
+
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
+            if (!isSentryEnabled) {
+                return
+            }
 
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
@@ -48,7 +52,7 @@ export abstract class SentryService {
                 // Only send errors when connected to dotcom in the production build.
                 beforeSend: (event, hint) => {
                     if (
-                        (isProd || isSentryEnabled) &&
+                        isProd &&
                         isDotCom(this.config.serverEndpoint) &&
                         shouldErrorBeReported(hint.originalException)
                     ) {

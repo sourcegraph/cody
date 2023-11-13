@@ -51,6 +51,14 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
+export interface TextDocumentContent {
+    content: string
+    fileName: string
+    fileUri?: URI
+    repoName?: string
+    revision?: string
+}
+
 export interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
     selectionRange: ActiveTextEditorSelectionRange | null
@@ -126,6 +134,9 @@ export interface Editor<
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
+
+    getTextEditorContentForFile(uri: URI, range?: ActiveTextEditorSelectionRange): Promise<string | undefined>
+
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
@@ -183,6 +194,13 @@ export class NoopEditor implements Editor {
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return null
+    }
+
+    public getTextEditorContentForFile(
+        _uri: URI,
+        _range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        return Promise.resolve(undefined)
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {

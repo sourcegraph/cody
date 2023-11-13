@@ -1,6 +1,7 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
@@ -110,6 +111,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected contextProvider: ContextProvider
     protected platform: Pick<PlatformContext, 'recipes'>
 
+    protected userContextFiles: ContextFile[] = []
     protected chatModel: string | undefined = undefined
 
     constructor(options: MessageProviderOptions) {
@@ -218,12 +220,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onTurnComplete: async () => {
                 typewriter.close()
                 typewriter.stop()
-
-                if (!text) {
-                    // Cody either didn't provide any text, or didn't use the correct topic.
-                    // Emit an error so we can handle it rather than leaving the UI in a pending or empty state.
-                    return this.handleError('Cody did not respond with any text', 'system')
-                }
 
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
@@ -340,7 +336,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', source?: ChatEventSource): Promise<void> {
+    public async executeRecipe(
+        recipeId: RecipeID,
+        humanChatInput = '',
+        source?: ChatEventSource,
+        userInputContextFiles?: ContextFile[]
+    ): Promise<void> {
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple actions. Please wait for the current action to finish.', 'system')
             return
@@ -362,13 +363,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         humanChatInput = command?.text
         recipeId = command?.recipeId
 
-        logDebug('MessageProvider:executeRecipe', recipeId, { verbose: humanChatInput })
-
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
             logDebug('MessageProvider:executeRecipe', 'no recipe found')
             return
         }
+
+        logDebug('MessageProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         // Create a new multiplexer to drop any old subscribers
         this.multiplexer = new BotResponseMultiplexer()
@@ -382,15 +383,18 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 codebaseContext: this.contextProvider.context,
                 responseMultiplexer: this.multiplexer,
                 firstInteraction: this.transcript.isEmpty,
+                userInputContextFiles,
             })
-        } catch (error: any) {
-            this.handleError(error.message, 'system')
+        } catch (error) {
+            this.handleError('Fail to submit question', 'system')
+            console.error(error)
             return
         }
 
         if (!interaction) {
             return
         }
+
         const errorMsg = interaction?.getAssistantMessage()?.error
         if (errorMsg !== undefined) {
             await this.addCustomInteraction({ assistantResponse: errorMsg }, interaction)
@@ -582,72 +586,80 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
-        eventArgs?: { requestID?: string; source?: ChatEventSource }
-    ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | null> {
+        eventTrace?: { requestID?: string; source?: ChatEventSource }
+    ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
+        const source = eventTrace?.source || undefined
         // Inline chat has its own filter for slash commands
         if (recipeId === 'inline-chat') {
-            return { text, recipeId }
+            return { text, recipeId, source }
         }
+
         text = text.trim()
         if (!text?.startsWith('/')) {
-            return { text, recipeId }
+            return { text, recipeId, source }
         }
-        const source = eventArgs?.source || undefined
+
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu', source)
+
             case text === '/commands-settings':
-                telemetryService.log('CodyVSCodeExtension:commandConfigMenuButton:clicked', eventArgs, {
+                telemetryService.log('CodyVSCodeExtension:commandConfigMenuButton:clicked', eventTrace, {
                     hasV2Event: true,
                 })
                 telemetryRecorder.recordEvent(`cody.sidebar.commandConfigMenuButton.${source}`, 'clicked')
                 return vscode.commands.executeCommand('cody.settings.commands')
+
             case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
-                // open the user's ~/.vscode/cody.json file
-                await this.editor.controllers.command?.open(text.split(' ')[1])
-                telemetryService.log('CodyVSCodeExtension:command:openFile:executed', eventArgs, { hasV2Event: true })
+                telemetryService.log('CodyVSCodeExtension:command:openFile:executed', eventTrace, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.command.openFile', 'executed')
-                return null
+                // open the user's ~/.vscode/cody.json file
+                return this.editor.controllers.command?.open(text.split(' ')[1])
+
             case /^\/r(eset)?$/.test(text):
-                await this.clearAndRestartSession()
-                telemetryService.log('CodyVSCodeExtension:command:resetChat:executed', eventArgs, { hasV2Event: true })
+                telemetryService.log('CodyVSCodeExtension:command:resetChat:executed', eventTrace, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.command.resetChat', 'executed')
-                return null
+                return this.clearAndRestartSession()
+
             case /^\/symf(?:\s|$)/.test(text):
-                telemetryService.log('CodyVSCodeExtension:command:symf:executed', eventArgs, { hasV2Event: true })
+                telemetryService.log('CodyVSCodeExtension:command:symf:executed', eventTrace, { hasV2Event: true })
                 return { text, recipeId: 'local-indexed-keyword-search' }
+
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
-            case /^\/ask(\s)?/.test(text): {
-                let question = text.replace('/ask', '').trim()
-                if (!question) {
-                    question = await showAskQuestionQuickPick()
-                }
-                await vscode.commands.executeCommand('cody.action.chat', question, source)
-                return null
-            }
+
             case /^\/edit(\s)?/.test(text):
-                await vscode.commands.executeCommand('cody.command.edit-code', { instruction: text }, source)
-                return null
+                return vscode.commands.executeCommand('cody.command.edit-code', { instruction: text }, source)
+
+            // TODO bee retire chat-question recipe and run all chat questions in custom-prompt recipe
+            case /^\/ask(\s)?/.test(text): {
+                const question = text.replace('/ask', '').trimStart() || (await showAskQuestionQuickPick())
+                return { text: question, recipeId: 'chat-question', source }
+            }
+
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
                     const assistantResponse = 'Command failed. Please open a file and try again.'
-                    await this.addCustomInteraction({ assistantResponse, text, source })
-                    return null
+                    return this.addCustomInteraction({ assistantResponse, text, source })
                 }
+
                 const commandRunnerID = await this.editor.controllers.command?.addCommand(
                     text,
                     '',
-                    eventArgs?.requestID
+                    eventTrace?.requestID,
+                    this.userContextFiles
                 )
+                // no op
                 if (!commandRunnerID) {
-                    return null
+                    return
                 }
+
                 if (commandRunnerID === 'invalid') {
                     const assistantResponse = `__${text}__ is not a valid command`
                     // If no command found, send error message to view
-                    await this.addCustomInteraction({ assistantResponse, text, source })
+                    return this.addCustomInteraction({ assistantResponse, text, source })
                 }
+
                 return { text: commandRunnerID, recipeId: 'custom-prompt', source }
             }
         }

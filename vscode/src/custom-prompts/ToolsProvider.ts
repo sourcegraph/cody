@@ -10,8 +10,8 @@ import { logDebug, logError } from '../log'
 import { UserWorkspaceInfo } from './utils'
 import { outputWrapper } from './utils/helpers'
 
-const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
-const currentFilePath = getActiveEditor()?.document.uri.fsPath
+const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
+const currentFilePath: () => string | undefined = () => getActiveEditor()?.document.uri.fsPath
 const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 const _exec = promisify(exec)
 /**
@@ -36,8 +36,8 @@ export class ToolsProvider {
         const appRoot = vscode.env.appRoot
         return {
             homeDir: homePath,
-            workspaceRoot: rootPath,
-            currentFilePath,
+            workspaceRoot: rootPath(),
+            currentFilePath: currentFilePath(),
             appRoot,
         }
     }
@@ -53,7 +53,7 @@ export class ToolsProvider {
      * Open a folder in the file explorer
      */
     public async openFolder(): Promise<void> {
-        await vscode.commands.executeCommand('vscode.openFolder', rootPath)
+        await vscode.commands.executeCommand('vscode.openFolder', rootPath())
     }
 
     /**
@@ -69,7 +69,7 @@ export class ToolsProvider {
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}`)
         try {
             const { stdout, stderr } = await _exec(filteredCommand, {
-                cwd: runFromWSRoot ? rootPath : currentFilePath,
+                cwd: runFromWSRoot ? rootPath() : currentFilePath(),
                 encoding: 'utf8',
             })
             const output = stdout || stderr

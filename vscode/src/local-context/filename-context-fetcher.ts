@@ -23,7 +23,6 @@ export class FilenameContextFetcher {
 
     /**
      * Returns pieces of context relevant for the given query. Uses a filename search approach
-     *
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
@@ -71,6 +70,9 @@ export class FilenameContextFetcher {
                     return {
                         fileName,
                         content,
+                        uri,
+                        source: 'filename',
+                        type: 'file',
                     }
                 })
                 .reverse()
