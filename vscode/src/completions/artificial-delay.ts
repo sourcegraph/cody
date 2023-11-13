@@ -1,5 +1,7 @@
 import { logDebug } from '../log'
 
+import { DocumentContext } from './get-current-doc-context'
+
 export interface LatencyFeatureFlags {
     user?: boolean
     language?: boolean
@@ -42,12 +44,13 @@ export function getArtificialDelay(
     featureFlags: LatencyFeatureFlags,
     uri: string,
     languageId: string,
-    nodeType: string | undefined
+    docContext: Pick<DocumentContext, 'completionIntent'>
 ): number {
     let baseline = 0
 
+    console.log({ foo: docContext.completionIntent })
     const isLowPerformance = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
-    const isComment = nodeType === 'comment'
+    const isComment = docContext.completionIntent === 'comment'
     if (isLowPerformance || isComment) {
         baseline = defaultLatencies.lowPerformance
     }
