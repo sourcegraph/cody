@@ -12,7 +12,6 @@ export interface ParseAndTruncateParams {
     position: Position
     docContext: DocumentContext
     multiline: boolean
-    useTreeSitter?: boolean
 }
 
 export function parseAndTruncateCompletion(
@@ -24,7 +23,6 @@ export function parseAndTruncateCompletion(
         multiline,
         docContext,
         docContext: { prefix },
-        useTreeSitter = true,
     } = params
 
     const insertTextBeforeTruncation = multiline ? normalizeStartLine(completion, prefix) : completion
@@ -44,7 +42,6 @@ export function parseAndTruncateCompletion(
             parsed,
             document,
             docContext,
-            useTreeSitter,
         })
 
         const initialLineCount = insertTextBeforeTruncation.split('\n').length
@@ -62,7 +59,6 @@ interface TruncateMultilineBlockParams {
     parsed: ParsedCompletion
     docContext: DocumentContext
     document: TextDocument
-    useTreeSitter: boolean
 }
 
 interface TruncateMultilineBlockResult {
@@ -71,9 +67,9 @@ interface TruncateMultilineBlockResult {
 }
 
 export function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
-    const { parsed, docContext, document, useTreeSitter } = params
+    const { parsed, docContext, document } = params
 
-    if (useTreeSitter && parsed.tree) {
+    if (parsed.tree) {
         return {
             truncatedWith: 'tree-sitter',
             insertText: truncateParsedCompletionByNextSibling({
