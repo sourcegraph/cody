@@ -296,8 +296,10 @@ class CodyAutocompleteManager {
       val lastCommonSuffixCharacterPosition =
           findLastCommonSuffixElementPosition(
               originalText.substring(0, caretPositionInLine), lookupString)
-      insertTextFirstLine =
-          insertTextFirstLine.removeRange(lastCommonSuffixCharacterPosition, caretPositionInLine)
+      if (lastCommonSuffixCharacterPosition > 0) {
+        insertTextFirstLine =
+            insertTextFirstLine.removeRange(lastCommonSuffixCharacterPosition, caretPositionInLine)
+      }
 
       // For each autocomplete item, remove common part with already inserted part of the lookup
       // element.
