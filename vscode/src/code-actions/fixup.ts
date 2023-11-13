@@ -44,7 +44,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         range: vscode.Range
     ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
-        const instruction = await this.getCodeActionInstruction(document, diagnostics)
+        const instruction = await this.getCodeActionInstruction(document.getText(range), diagnostics)
         const source = 'code-action'
         action.command = {
             command: 'cody.command.edit-code',
@@ -56,32 +56,35 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     }
 
     // Public for testing
-    public async getCodeActionInstruction(
-        document: vscode.TextDocument,
-        diagnostics: vscode.Diagnostic[]
-    ): Promise<string> {
-        const prompt: string[] = []
-        // todo: group diagnostics by range??
-        for (const { message, source, severity, range, relatedInformation } of diagnostics) {
-            prompt.push(`\`\`\`\n${document.getText(range)}\n\`\`\``)
-            const diagonsticSource = source ? `${source} ` : ' '
+    public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
+        const prompt: string[] = [`<problemCode>${code}</problemCode>\n`]
+
+        for (let i = 0; i < diagnostics.length; i++) {
+            const { message, source, severity, relatedInformation } = diagnostics[i]
+
             const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
-            prompt.push(`From this code, fix the following ${diagonsticSource}${diagnosticType}:`)
+            prompt.push(
+                `Fix the following ${
+                    source ? `${source} ` : ''
+                }${diagnosticType} from within <problemCode></problemCode>:`
+            )
             prompt.push(message)
 
             if (relatedInformation?.length) {
-                prompt.push('Related information:')
+                prompt.push('Code related to this diagnostic:')
                 const relatedInfo = await this.getRelatedInformationContext(relatedInformation)
                 prompt.push(...relatedInfo)
             }
 
-            prompt.push('\n')
+            if (i < diagnostics.length - 1) {
+                prompt.push('\n')
+            }
         }
 
         return prompt.join('\n')
     }
 
-    public async getRelatedInformationContext(
+    private async getRelatedInformationContext(
         relatedInformation: vscode.DiagnosticRelatedInformation[]
     ): Promise<string[]> {
         const prompt: string[] = []
