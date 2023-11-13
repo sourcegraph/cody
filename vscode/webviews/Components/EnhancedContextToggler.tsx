@@ -19,10 +19,10 @@ export const EnhancedContextToggler: React.FunctionComponent<{
             <VSCodeButton
                 className={classNames(styles.title, styles.disabled)}
                 appearance="icon"
-                title="Enhanced context is only available for the first question."
+                title="Start a new chat to ask new questions with enhanced context attached."
                 disabled={true}
             >
-                <i className="codicon codicon-search-stop" />
+                <i className="codicon codicon-circle-slash" />
             </VSCodeButton>
         )
     }
