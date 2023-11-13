@@ -1,4 +1,5 @@
 import { CodebaseContext } from '../../codebase-context'
+import { ContextFile } from '../../codebase-context/messages'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { BotResponseMultiplexer } from '../bot-response-multiplexer'
@@ -11,6 +12,7 @@ export interface RecipeContext {
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
     firstInteraction: boolean
+    userInputContextFiles?: ContextFile[]
 }
 
 export type RecipeID =

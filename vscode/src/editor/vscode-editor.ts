@@ -202,6 +202,30 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
+    public async getTextEditorContentForFile(
+        fileUri: vscode.Uri,
+        selectionRange?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        if (!fileUri) {
+            return undefined
+        }
+
+        let range: vscode.Range | undefined
+        if (selectionRange) {
+            const startLine = selectionRange?.start?.line
+            let endLine = selectionRange?.end?.line
+            if (startLine === endLine) {
+                endLine++
+            }
+            range = new vscode.Range(startLine, 0, endLine, 0)
+        }
+
+        // Get the text from document by file Uri
+        const vscodeUri = vscode.Uri.parse(fileUri.fsPath)
+        const doc = await vscode.workspace.openTextDocument(vscodeUri)
+        return doc.getText(range)
+    }
+
     private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {
         switch (severity) {
             case vscode.DiagnosticSeverity.Error:

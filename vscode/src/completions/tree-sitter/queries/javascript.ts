@@ -3,13 +3,6 @@ import dedent from 'dedent'
 import { SupportedLanguage } from '../grammars'
 import type { QueryName } from '../queries'
 
-const JS_BLOCKS_QUERY = dedent`
-    (_ ("{") @block_start) @trigger
-
-    [(try_statement)
-    (if_statement)] @parents
-`
-
 /**
  * Incomplete code cases to cover:
  *
@@ -21,7 +14,7 @@ const JS_BLOCKS_QUERY = dedent`
  * The capture group name ending with "!" means this capture group does not require
  * a specific cursor position to match.
  *
- * TODO: classes, try/catch, members, if/else, loops, etc.
+ * TODO: try/catch, members, if/else, loops, etc.
  * Tracking: https://github.com/sourcegraph/cody/issues/1456
  */
 const JS_INTENTS_QUERY = dedent`
@@ -100,22 +93,18 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
 
 export const javascriptQueries = {
     [SupportedLanguage.JavaScript]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
     },
     [SupportedLanguage.JSX]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
     },
     [SupportedLanguage.TypeScript]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
     },
     [SupportedLanguage.TSX]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
     },

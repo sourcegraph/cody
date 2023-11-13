@@ -51,10 +51,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // we can just make them `null`.
             //
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            getCodebaseContext: null as any,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            history: null as any,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
             statusBar: null as any,
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
@@ -62,7 +58,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 model: null,
             }),
             triggerNotice: null,
-
+            contextStrategy: 'none',
             ...superArgs,
         })
         this.getInlineCompletions = mockGetInlineCompletions
@@ -144,6 +140,10 @@ describe('InlineCompletionItemProvider', () => {
               "injectedPrefix": null,
               "multilineTrigger": null,
               "nextNonEmptyLine": "console.log(1)",
+              "position": Position {
+                "character": 12,
+                "line": 0,
+              },
               "prefix": "const foo = ",
               "prevNonEmptyLine": "",
               "suffix": "

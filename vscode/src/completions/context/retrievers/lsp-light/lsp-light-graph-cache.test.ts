@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { Position } from '../../testutils/mocks'
-import { range, withPosixPaths } from '../../testutils/textDocument'
-import { document } from '../test-helpers'
+import { Position } from '../../../../testutils/mocks'
+import { range, withPosixPaths } from '../../../../testutils/textDocument'
+import { document } from '../../../test-helpers'
 
 import { LspLightGraphCache } from './lsp-light-graph-cache'
 
@@ -89,7 +89,12 @@ describe('LSPLightGraphCache', () => {
     })
 
     it('calls the LSP for context of the current and previous lines', async () => {
-        await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100)
+        await cache.retrieve({
+            document: testDocuments.document1,
+            position: new Position(1, 0),
+            docContext: {},
+            hints: { maxChars: 100 },
+        })
 
         expect(getGraphContextFromRange).toHaveBeenCalledWith(
             testDocuments.document1,
@@ -124,8 +129,16 @@ describe('LSPLightGraphCache', () => {
 
         getGraphContextFromRange.mockClear()
 
-        expect(withPosixPaths(await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100)))
-            .toMatchInlineSnapshot(`
+        expect(
+            withPosixPaths(
+                await cache.retrieve({
+                    document: testDocuments.document1,
+                    position: new Position(1, 0),
+                    docContext: {},
+                    hints: { maxChars: 100 },
+                })
+            )
+        ).toMatchInlineSnapshot(`
           [
             {
               "content": "foo(): void",
@@ -162,8 +175,16 @@ describe('LSPLightGraphCache', () => {
             contentChanges: [],
         })
 
-        expect(withPosixPaths(await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100)))
-            .toMatchInlineSnapshot(`
+        expect(
+            withPosixPaths(
+                await cache.retrieve({
+                    document: testDocuments.document1,
+                    position: new Position(1, 0),
+                    docContext: {},
+                    hints: { maxChars: 100 },
+                })
+            )
+        ).toMatchInlineSnapshot(`
           [
             {
               "content": "foo(): void",

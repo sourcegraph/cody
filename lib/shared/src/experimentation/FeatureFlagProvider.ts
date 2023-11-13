@@ -13,6 +13,8 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
+    // This flag is only used when `CodyAutocompleteStarCoderHybrid` is also true
+    CodyAutocompleteStarCoderHybridSourcegraph = 'cody-autocomplete-default-starcoder-hybrid-sourcegraph',
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
