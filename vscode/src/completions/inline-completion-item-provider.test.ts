@@ -140,6 +140,10 @@ describe('InlineCompletionItemProvider', () => {
               "injectedPrefix": null,
               "multilineTrigger": null,
               "nextNonEmptyLine": "console.log(1)",
+              "position": Position {
+                "character": 12,
+                "line": 0,
+              },
               "prefix": "const foo = ",
               "prevNonEmptyLine": "",
               "suffix": "
