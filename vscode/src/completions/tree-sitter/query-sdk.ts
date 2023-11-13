@@ -81,16 +81,6 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
 }
 
 export interface QueryWrappers {
-    /**
-     * Returns the first block-like node (block_statement).
-     * Handles special cases where we want to use the parent block instead
-     * if it has a specific node type (if_statement).
-     */
-    getFirstMultilineBlockForTruncation: (
-        node: SyntaxNode,
-        start: Point,
-        end?: Point
-    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
     getSinglelineTrigger: (
         node: SyntaxNode,
         start: Point,
@@ -108,20 +98,6 @@ export interface QueryWrappers {
  */
 function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
     return {
-        getFirstMultilineBlockForTruncation: (root, start, end) => {
-            const captures = queries.blocks.compiled.captures(root, start, end)
-            const { trigger } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
-
-            if (!trigger) {
-                return []
-            }
-
-            // Check for special cases where we need match a parent node.
-            const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
-            const potentialParent = potentialParentNodes.find(capture => trigger.parent?.id === capture.node.id)?.node
-
-            return [{ node: potentialParent || trigger, name: 'trigger' }] as const
-        },
         getSinglelineTrigger: (root, start, end) => {
             const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
             const { trigger, block } = getTriggerNodeWithBlockStaringAtPoint(captures, start)

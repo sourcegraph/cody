@@ -11,7 +11,7 @@ import { logDebug } from '../../log'
 import { getOSArch } from '../../os'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
-const defaultBfgVersion = '5.2.4257'
+const defaultBfgVersion = '5.2.6637'
 
 export async function downloadBfg(context: vscode.ExtensionContext): Promise<string | null> {
     const config = vscode.workspace.getConfiguration()
@@ -64,8 +64,8 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     try {
         await vscode.window.withProgress(
             {
-                location: vscode.ProgressLocation.Notification,
-                title: 'Downloading BFG code graph utility',
+                location: vscode.ProgressLocation.Window,
+                title: 'Downloading context engine',
                 cancellable: false,
             },
             async progress => {

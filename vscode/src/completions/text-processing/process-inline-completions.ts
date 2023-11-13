@@ -142,10 +142,10 @@ export function getRangeAdjustedForOverlappingCharacters(
     item: InlineCompletionItem,
     { position, currentLineSuffix }: AdjustRangeToOverwriteOverlappingCharactersParams
 ): InlineCompletionItem['range'] {
-    const matchinSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
+    const matchingSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
 
-    if (!item.range && currentLineSuffix !== '' && matchinSuffixLength !== 0) {
-        return new Range(position, position.translate(undefined, matchinSuffixLength))
+    if (!item.range && currentLineSuffix !== '' && matchingSuffixLength !== 0) {
+        return new Range(position, position.translate(undefined, matchingSuffixLength))
     }
 
     return undefined
