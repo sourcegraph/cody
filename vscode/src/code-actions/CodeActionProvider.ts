@@ -13,56 +13,41 @@ interface CodeActionProviderOptions {
 
 export class CodeActionProvider implements vscode.Disposable {
     private configurationChangeListener: vscode.Disposable
-    private fixActionProvider: vscode.Disposable | null = null
-    private explainActionProvider: vscode.Disposable | null = null
-    private documentActionProvider: vscode.Disposable | null = null
-    private editActionProvider: vscode.Disposable | null = null
+    private actionProviders: vscode.Disposable[] = []
 
     constructor(options: CodeActionProviderOptions) {
-        this.configureCodeActions(options.contextProvider.config)
+        this.registerCodeActions(options.contextProvider.config)
         this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
-            this.configureCodeActions(options.contextProvider.config)
+            this.registerCodeActions(options.contextProvider.config)
         })
     }
 
-    private configureCodeActions(config: Omit<Config, 'codebase'>): void {
-        // Disable the code action provider if currently enabled
-        // if (!config.codeActions) {
-        //     this.codeActionProvider?.dispose()
-        //     this.codeActionProvider = null
-        //     return
-        // }
+    private registerCodeActions(config: Omit<Config, 'codebase'>): void {
+        this.actionProviders.forEach(provider => provider.dispose())
+        this.actionProviders = []
 
-        // Code action provider already exists, skip re-registering
-        if (!this.fixActionProvider) {
-            this.fixActionProvider = vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
-                providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
-            })
+        if (!config.codeActions) {
+            return
         }
 
-        if (!this.explainActionProvider) {
-            this.explainActionProvider = vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
-                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
-            })
-        }
+        this.addActionProvider(FixupCodeAction)
+        this.addActionProvider(ExplainCodeAction)
+        this.addActionProvider(DocumentCodeAction)
+        this.addActionProvider(EditCodeAction)
+    }
 
-        if (!this.documentActionProvider) {
-            this.documentActionProvider = vscode.languages.registerCodeActionsProvider('*', new DocumentCodeAction(), {
-                providedCodeActionKinds: DocumentCodeAction.providedCodeActionKinds,
-            })
-        }
-
-        if (!this.editActionProvider) {
-            this.editActionProvider = vscode.languages.registerCodeActionsProvider('*', new EditCodeAction(), {
-                providedCodeActionKinds: EditCodeAction.providedCodeActionKinds,
-            })
-        }
+    private addActionProvider(ActionType: {
+        new (): vscode.CodeActionProvider
+        providedCodeActionKinds: vscode.CodeActionKind[]
+    }): void {
+        const provider = vscode.languages.registerCodeActionsProvider('*', new ActionType(), {
+            providedCodeActionKinds: ActionType.providedCodeActionKinds,
+        })
+        this.actionProviders.push(provider)
     }
 
     public dispose(): void {
         this.configurationChangeListener.dispose()
-        this.fixActionProvider?.dispose()
-        this.explainActionProvider?.dispose()
-        this.documentActionProvider?.dispose()
+        this.actionProviders.forEach(provider => provider.dispose())
     }
 }
