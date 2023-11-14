@@ -110,9 +110,9 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
     const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
 
     // Adjust suffix and prefix based on completion insert range.
-    const prefix = range ? document.getText(new Range(new Position(0, 0), range.start as Position)) : docContext.prefix
+    const prefix = range ? document.getText(new Range(new Position(0, 0), range.start)) : docContext.prefix
     const suffix = range
-        ? document.getText(new Range(range.end as Position, document.positionAt(document.getText().length)))
+        ? document.getText(new Range(range.end, document.positionAt(document.getText().length)))
         : docContext.suffix
 
     // Remove the characters that are being replaced by the completion to avoid having

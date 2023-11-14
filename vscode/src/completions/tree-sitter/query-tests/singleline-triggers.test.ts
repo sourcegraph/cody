@@ -1,8 +1,8 @@
 import { describe, it } from 'vitest'
 
+import { SupportedLanguage } from '../../../tree-sitter/grammars'
+import { getDocumentQuerySDK } from '../../../tree-sitter/query-sdk'
 import { initTreeSitterParser } from '../../test-helpers'
-import { SupportedLanguage } from '../grammars'
-import { getDocumentQuerySDK } from '../query-sdk'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 

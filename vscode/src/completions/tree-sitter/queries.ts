@@ -1,4 +1,5 @@
-import { SupportedLanguage } from './grammars'
+import { SupportedLanguage } from '../../tree-sitter/grammars'
+
 import { goQueries } from './queries/go'
 import { javascriptQueries } from './queries/javascript'
 import { pythonQueries } from './queries/python'

@@ -1,9 +1,9 @@
 import { beforeAll, describe, it } from 'vitest'
 
+import { getNodeAtCursorAndParents } from '../../../tree-sitter/ast-getters'
+import { SupportedLanguage } from '../../../tree-sitter/grammars'
+import { getDocumentQuerySDK } from '../../../tree-sitter/query-sdk'
 import { initTreeSitterParser } from '../../test-helpers'
-import { getNodeAtCursorAndParents } from '../ast-getters'
-import { SupportedLanguage } from '../grammars'
-import { getDocumentQuerySDK } from '../query-sdk'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 

@@ -1,10 +1,9 @@
 import { findLast } from 'lodash'
-import { Position, TextDocument } from 'vscode'
 import Parser, { Language, Point, Query, QueryCapture, SyntaxNode } from 'web-tree-sitter'
 
-import { getParseLanguage, SupportedLanguage } from './grammars'
-import { getCachedParseTreeForDocument } from './parse-tree-cache'
-import { getParser } from './parser'
+import { SupportedLanguage } from '../../tree-sitter/grammars'
+import { execQueryWrapper as _execQueryWrapper } from '../../tree-sitter/query-sdk'
+
 import { CompletionIntent, intentPriority, languages, QueryName } from './queries'
 
 interface ParsedQuery {
@@ -47,36 +46,6 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
     QUERIES_LOCAL_CACHE[languageId] = {
         ...queries,
         ...getLanguageSpecificQueryWrappers(queries, parser),
-    }
-}
-
-export interface DocumentQuerySDK {
-    parser: Parser
-    queries: ResolvedQueries & QueryWrappers
-    language: SupportedLanguage
-}
-
-/**
- * Returns the query SDK only if the language has queries defined and
- * the relevant laguage parser is initialized.
- */
-export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
-    const supportedLanguage = getParseLanguage(language)
-    if (!supportedLanguage) {
-        return null
-    }
-
-    const parser = getParser(supportedLanguage)
-    const queries = QUERIES_LOCAL_CACHE[supportedLanguage]
-
-    if (!parser || !queries) {
-        return null
-    }
-
-    return {
-        parser,
-        queries,
-        language: supportedLanguage,
     }
 }
 
@@ -277,43 +246,6 @@ function isBlockNodeEmpty(node: SyntaxNode | null): boolean {
     return isBlockEmpty || isMissingBlockEnd
 }
 
-interface QueryPoints {
-    startPoint: Point
-    endPoint: Point
-}
-
-export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
-    const startPoint = {
-        row: position.line,
-        column: position.character,
-    }
-
-    const endPoint = {
-        row: position.line,
-        // Querying around one character after trigger position.
-        column: position.character + 1,
-    }
-
-    return { startPoint, endPoint }
-}
-
-export function execQueryWrapper<T extends keyof QueryWrappers>(
-    document: TextDocument,
-    position: Pick<Position, 'line' | 'character'>,
-    queryWrapper: T
-): ReturnType<QueryWrappers[T]> | never[] {
-    const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
-
-    const { startPoint, endPoint } = positionToQueryPoints(position)
-
-    if (documentQuerySDK && parseTreeCache) {
-        return documentQuerySDK.queries[queryWrapper](parseTreeCache.tree.rootNode, startPoint, endPoint) as ReturnType<
-            QueryWrappers[T]
-        >
-    }
-
-    return []
-}
+export const execQueryWrapper = _execQueryWrapper<QueryWrappers>
 
 export { CompletionIntent }

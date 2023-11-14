@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 
-import { SupportedLanguage } from '../grammars'
+import { SupportedLanguage } from '../../../tree-sitter/grammars'
 import type { QueryName } from '../queries'
 
 export const pythonQueries = {
