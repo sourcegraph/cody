@@ -48,7 +48,6 @@ export function getArtificialDelay(
 ): number {
     let baseline = 0
 
-    console.log({ foo: docContext.completionIntent })
     const isLowPerformance = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
     const isComment = docContext.completionIntent === 'comment'
     if (isLowPerformance || isComment) {

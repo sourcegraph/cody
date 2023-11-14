@@ -28,7 +28,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
             case 'bfg':
                 // The bfg strategy uses jaccard similarity as a fallback if no results are found or
-                // the language is not supported.
+                // the language is not supported by BFG
                 this.localRetriever = new JaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
                 if (createBfgRetriever) {

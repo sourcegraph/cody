@@ -10,27 +10,9 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-<<<<<<< HEAD
-import {
-    getArtificialDelay,
-    LatencyFeatureFlags,
-    lowPerformanceLanguageIds,
-    resetArtificialDelay,
-} from './artificial-delay'
+import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
-||||||| parent of fb6a0d80 (restructure the calers)
-import {
-    getArtificialDelay,
-    LatencyFeatureFlags,
-    lowPerformanceLanguageIds,
-    resetArtificialDelay,
-} from './artificial-delay'
-import { ContextMixer, ContextStrategy } from './context/context-mixer'
-=======
-import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
-import { ContextMixer, ContextStrategy } from './context/context-mixer'
->>>>>>> fb6a0d80 (restructure the calers)
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
