@@ -4,8 +4,8 @@ Contains the [cody-icons](font) font, used by the VS Code extension to show Cody
 
 ## Character Table
 
-| Character | Icon                 |
-| --------- | -------------------- |
+| Character | Icon                           |
+| --------- | ------------------------------ |
 | `A`       | ![A icon](svg-originals/A.svg) |
 | `B`       | ![B icon](svg-originals/B.svg) |
 | `H`       | ![H icon](svg-originals/H.svg) |
