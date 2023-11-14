@@ -6,14 +6,14 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import styles from './FileLink.module.css'
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => (
+export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path, source }) => (
     <button
         className={styles.linkButton}
         type="button"
         onClick={() => {
             getVSCodeAPI().postMessage({ command: 'openFile', filePath: path })
         }}
-        title={path}
+        title={`File '${path}' from ${source}`}
     >
         {path}
     </button>

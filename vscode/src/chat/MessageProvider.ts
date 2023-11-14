@@ -407,6 +407,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const contextSummary = {
             embeddings: 0,
+            symf: 0,
             local: 0,
         }
 
@@ -436,8 +437,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.saveTranscriptToChatHistory()
 
                 contextFiles.map(file => {
-                    if (file.source) {
+                    if (file.source === 'embeddings') {
                         contextSummary.embeddings++
+                    } else if (file.source === 'symf') {
+                        contextSummary.symf++
                     } else {
                         contextSummary.local++
                     }

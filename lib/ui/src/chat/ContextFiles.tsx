@@ -10,6 +10,7 @@ export interface FileLinkProps {
     path: string
     repoName?: string
     revision?: string
+    source?: string
 }
 
 export const ContextFiles: React.FunctionComponent<{
@@ -33,7 +34,14 @@ export const ContextFiles: React.FunctionComponent<{
                 { verb: 'Searched', object: 'entire codebase for relevant files', icon: mdiMagnify },
                 ...filteredFiles.map(file => ({
                     verb: '',
-                    object: <FileLink path={file.fileName} repoName={file.repoName} revision={file.revision} />,
+                    object: (
+                        <FileLink
+                            path={file.fileName}
+                            repoName={file.repoName}
+                            revision={file.revision}
+                            source={file.source}
+                        />
+                    ),
                     icon: mdiFileDocumentOutline,
                 })),
             ]}

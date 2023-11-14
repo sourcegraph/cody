@@ -8,7 +8,9 @@ import { Message } from '../sourcegraph-api'
 // user: context file provided by the user explicitly via chat input
 // keyword: the context file returned from local keyword search
 // editor: context file retrieved from the current editor
-export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor'
+export type ContextFileSource = 'embeddings' | 'user' | 'editor' | LocalContextFileSource
+
+export type LocalContextFileSource = 'keyword' | 'filename' | 'symf'
 
 export type ContextFileType = 'file' | 'symbol'
 
@@ -80,8 +82,12 @@ export interface OldContextMessage extends Message {
 export function getContextMessageWithResponse(
     text: string,
     file: ContextFile,
-    response: string = 'Ok.'
+    response: string = 'Ok.',
+    source?: ContextFileSource
 ): ContextMessage[] {
+    if (!file.source && source) {
+        file.source = source
+    }
     return [
         { speaker: 'human', text, file },
         { speaker: 'assistant', text: response },

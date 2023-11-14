@@ -5,10 +5,13 @@ import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logDebug } from '../log'
+
+const source: ContextFileSource = 'filename'
 
 /**
  * A local context fetcher that uses a LLM to generate filename fragments, which are then used to
@@ -71,7 +74,7 @@ export class FilenameContextFetcher {
                         fileName,
                         content,
                         uri,
-                        source: 'filename',
+                        source,
                         type: 'file',
                     }
                 })

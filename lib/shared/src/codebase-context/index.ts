@@ -81,7 +81,7 @@ export class CodebaseContext {
             case 'unified':
                 return this.getUnifiedContextMessages(query, options)
             case 'keyword':
-                return this.getLocalContextMessages(query, options)
+                return this.symf ? this.getSymfContextMessage(query) : this.getLocalContextMessages(query, options)
             case 'none':
                 return []
             default:
@@ -222,12 +222,35 @@ export class CodebaseContext {
         }
     }
 
+    private async getSymfContextMessage(query: string): Promise<ContextMessage[]> {
+        const results = await this.getSymfSearchResults(query)
+        const source = 'symf'
+        return results
+            .flatMap(({ content, fileName, repoName, revision, range }) => {
+                const messageText = populateCodeContextTemplate(content, fileName, repoName)
+                return getContextMessageWithResponse(
+                    messageText,
+                    { fileName, repoName, revision, source, range },
+                    undefined,
+                    source
+                )
+            })
+            .map(message => contextMessageWithSource(message, source))
+    }
+
     private async getKeywordSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
         if (!this.keywords) {
             return []
         }
         const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
         return results
+    }
+
+    private async getSymfSearchResults(query: string): Promise<ContextResult[]> {
+        if (!this.symf) {
+            return []
+        }
+        return this.symf.getSearchContext(query)
     }
 
     private async getFilenameSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
@@ -301,10 +324,10 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
     return mergedResults
 }
 
-function resultsToMessages(results: ContextResult[]): ContextMessage[] {
+function resultsToMessages(results: ContextResult[], source?: ContextFileSource): ContextMessage[] {
     return results.flatMap(({ content, fileName, repoName, revision }) => {
         const messageText = populateCodeContextTemplate(content, fileName, repoName)
-        return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
+        return getContextMessageWithResponse(messageText, { fileName, repoName, revision }, undefined, source)
     })
 }
 

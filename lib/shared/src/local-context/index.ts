@@ -1,8 +1,22 @@
+import { ContextFileSource } from '../codebase-context/messages'
+import { ActiveTextEditorSelectionRange } from '../editor'
+
 export interface ContextResult {
     repoName?: string
     revision?: string
+
     fileName: string
     content: string
+
+    range?: ActiveTextEditorSelectionRange
+
+    // metadata
+    source?: ContextFileSource
+}
+
+export interface IndexedKeywordContextFetcher {
+    getResults(query: string, scopeDirs: string[]): Promise<Promise<Result[]>[]>
+    getSearchContext(query: string): Promise<ContextResult[]>
 }
 
 export interface KeywordContextFetcher {
@@ -36,10 +50,7 @@ export interface Result {
     file: string
     range: Range
     summary: string
-}
-
-export interface IndexedKeywordContextFetcher {
-    getResults(query: string, scopeDirs: string[]): Promise<Promise<Result[]>[]>
+    source?: ContextFileSource
 }
 
 /**

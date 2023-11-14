@@ -7,6 +7,7 @@ import * as vscode from 'vscode'
 import winkUtils from 'wink-nlp-utils'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 
@@ -83,6 +84,8 @@ function longestCommonPrefix(s: string, t: string): string {
     return s.slice(0, endIdx)
 }
 
+const source: ContextFileSource = 'keyword'
+
 /**
  * A local context fetcher that uses a LLM to generate a keyword query, which is then
  * converted to a regex fed to ripgrep to search for files that are relevant to the
@@ -118,7 +121,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 const uri = vscode.Uri.file(path.join(rootPath, filename))
                 try {
                     const content = (await vscode.workspace.openTextDocument(uri)).getText()
-                    return [{ fileName: filename, content, uri, source: 'keyword', type: 'file' }]
+                    return [{ fileName: filename, content, uri, source, type: 'file' }]
                 } catch (error) {
                     // Handle file reading errors in case of concurrent file deletions or binary files
                     console.error(error)
@@ -232,7 +235,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     const endLine = startLine + 5
                     const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
 
-                    return [{ fileName: filename, content, uri, source: 'keyword', type: 'file' }]
+                    return [{ fileName: filename, content, uri, source, type: 'file' }]
                 } catch (error) {
                     console.error(error)
                     return []
