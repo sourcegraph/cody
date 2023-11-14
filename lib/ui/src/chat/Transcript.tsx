@@ -184,7 +184,7 @@ export const Transcript: React.FunctionComponent<
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
                         message={messageInProgress}
-                        inProgress={true}
+                        inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={false}
                         setBeingEdited={setMessageBeingEdited}
                         fileLinkComponent={fileLinkComponent}

@@ -433,6 +433,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     recipeId,
                     requestID
                 )
+                this.sendTranscript()
                 await this.saveTranscriptToChatHistory()
 
                 contextFiles.map(file => {

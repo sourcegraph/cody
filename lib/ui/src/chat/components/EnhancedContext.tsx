@@ -25,10 +25,10 @@ export const EnhancedContext: React.FunctionComponent<{
 
     const uniqueFiles = new Set<string>()
     const filteredFiles = contextFiles.filter(file => {
-        if (uniqueFiles.has(file.fileName)) {
+        if (uniqueFiles.has(file.fileName) || !file.source) {
             return false
         }
-        if (file.source && !enhancedContextSources.has(file.source)) {
+        if (!enhancedContextSources.has(file.source)) {
             return false
         }
         uniqueFiles.add(file.fileName)

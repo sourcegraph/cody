@@ -170,7 +170,7 @@ export const TranscriptItem: React.FunctionComponent<
                               inProgress={inProgress}
                           />
                       )
-                    : null}
+                    : inProgress && <LoadingDots />}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
