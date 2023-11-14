@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 
-import { evaluateAutocompleteCommand } from './evaluate-autocomplete/evalaute-autocomplete'
+import { evaluateAutocompleteCommand } from './evaluate-autocomplete/evaluate-autocomplete'
 import { jsonrpcCommand } from './jsonrpc'
 
 export const rootCommand = new Command()
