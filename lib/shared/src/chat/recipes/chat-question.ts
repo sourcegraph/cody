@@ -41,7 +41,7 @@ export class ChatQuestion implements Recipe {
                 this.getContextMessages(
                     truncatedText,
                     context.editor,
-                    context.firstInteraction,
+                    context.addEnhancedContext,
                     context.intentDetector,
                     context.codebaseContext,
                     context.editor.getActiveTextEditorSelection() || null,

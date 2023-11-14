@@ -306,7 +306,7 @@ export const useClient = ({
                 intentDetector,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
-                firstInteraction: transcript.isEmpty,
+                addEnhancedContext: transcript.isEmpty,
             })
             if (!interaction) {
                 return Promise.resolve(null)

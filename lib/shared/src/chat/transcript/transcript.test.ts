@@ -89,7 +89,7 @@ describe('Transcript', () => {
                     null,
                     null
                 ),
-                firstInteraction: false,
+                addEnhancedContext: false,
             })
         )
 
@@ -128,7 +128,7 @@ describe('Transcript', () => {
                     null,
                     null
                 ),
-                firstInteraction: true,
+                addEnhancedContext: true,
             })
         )
 
@@ -173,7 +173,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
-                firstInteraction: true,
+                addEnhancedContext: true,
             })
         )
         transcript.addInteraction(firstInteraction)
@@ -186,7 +186,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
-                firstInteraction: true,
+                addEnhancedContext: true,
             })
         )
         transcript.addInteraction(secondInteraction)
@@ -265,7 +265,7 @@ describe('Transcript', () => {
                 editor,
                 intentDetector,
                 codebaseContext,
-                firstInteraction: addEnhancedContext,
+                addEnhancedContext,
             })
         )
         transcript.addInteraction(interaction)
@@ -347,7 +347,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
-                firstInteraction: addEnhancedContext,
+                addEnhancedContext,
             })
         )
         transcript.addInteraction(secondInteraction)
