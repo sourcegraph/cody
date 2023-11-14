@@ -7,7 +7,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -54,9 +54,18 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocompleteAdvancedProvider = 'fireworks'
     }
 
+    // check if the configured enum values are valid
+    const configKeys = ['autocompleteAdvancedProvider', 'autocompleteAdvancedModel'] as (keyof ConfigurationKeysMap)[]
+
+    for (const configVal of configKeys) {
+        const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
+        const value: string | null = config.get(CONFIG_KEY[configVal])
+        checkValidEnumValues(key, value)
+    }
+
     return {
-        // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
-        // to use as fallback for users who do not have access to local storage
+        //  NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
+        //  to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
@@ -103,10 +112,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
          * UNDOCUMENTED FLAGS
          */
 
-        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
-        // We currently use this flag for the agent to provide more helpful error messages
-        // when something goes wrong, and to suppress event logging in the agent.
-        // Rely on this flag sparingly.
+        //  Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        //  We currently use this flag for the agent to provide more helpful error messages
+        //  when something goes wrong, and to suppress event logging in the agent.
+        //  Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
         agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
     }
@@ -123,8 +132,8 @@ function sanitizeCodebase(codebase: string | undefined): string {
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
     if (!serverEndpoint) {
-        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
-        // tests.
+        //  TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
+        //  tests.
         const isTesting = process.env.CODY_TESTING === 'true'
         if (isTesting) {
             return 'http://localhost:49300/'
@@ -138,8 +147,19 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
 
 export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration()
-    // Migrate endpoints to local storage
+    //  Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
+}
+
+function checkValidEnumValues(configName: string, value: string | null): void {
+    const validEnumValues = getConfigEnumValues('cody.' + configName)
+    if (value) {
+        if (!validEnumValues.includes(value)) {
+            void vscode.window.showErrorMessage(
+                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(', ')}`
+            )
+        }
+    }
 }
