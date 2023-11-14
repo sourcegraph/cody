@@ -13,7 +13,7 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { BlinkingCursor } from './BlinkingCursor'
+import { ContextFetching } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
@@ -177,10 +177,7 @@ export const TranscriptItem: React.FunctionComponent<
                         />
                     )
                 ) : inProgress ? (
-                    <span>
-                        Fetching context...
-                        <BlinkingCursor />
-                    </span>
+                    <ContextFetching />
                 ) : null}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
