@@ -2,65 +2,53 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
-import { ContextRetriever } from '../types'
+import { ContextRetriever, ContextSnippet } from '../types'
 
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 
-describe('ContextMixer', () => {
-    it('calls strategy factory to get strategy', async () => {
-        const { document, position } = documentAndPosition('console.█')
-        const docContext = getCurrentDocContext({
-            document,
-            position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
-        })
-
-        const mockStrategyFactory = {
-            getStrategy: vi.fn().mockReturnValue({
-                name: 'none',
-                retrievers: [],
-            }),
+function createMockStrategy(resultSets: ContextSnippet[][]): ContextStrategyFactory {
+    const retrievers = []
+    for (const [index, set] of resultSets.entries()) {
+        retrievers.push({
+            identifier: `retriever${index + 1}`,
+            retrieve: () => Promise.resolve(set),
+            isSupportedForLanguageId: () => true,
             dispose: vi.fn(),
-        } satisfies ContextStrategyFactory
+        } satisfies ContextRetriever)
+    }
 
-        const mixer = new ContextMixer(mockStrategyFactory)
-        await mixer.getContext({
-            document,
-            position,
-            docContext,
-            maxChars: 1000,
-        })
+    const mockStrategyFactory = {
+        getStrategy: vi.fn().mockReturnValue({
+            name: retrievers.length > 0 ? 'jaccard-similarity' : 'none',
+            retrievers,
+        }),
+        dispose: vi.fn(),
+    } satisfies ContextStrategyFactory
 
-        expect(mockStrategyFactory.getStrategy).toHaveBeenCalledWith(document)
-    })
+    return mockStrategyFactory
+}
 
+const { document, position } = documentAndPosition('console.█')
+const docContext = getCurrentDocContext({
+    document,
+    position,
+    maxPrefixLength: 100,
+    maxSuffixLength: 100,
+})
+
+const defaultOptions = {
+    document,
+    position,
+    docContext,
+    maxChars: 1000,
+}
+
+describe('ContextMixer', () => {
     describe('with no retriever', () => {
         it('returns empty result if no retrievers', async () => {
-            const { document, position } = documentAndPosition('console.█')
-            const docContext = getCurrentDocContext({
-                document,
-                position,
-                maxPrefixLength: 100,
-                maxSuffixLength: 100,
-            })
-
-            const mockStrategyFactory = {
-                getStrategy: vi.fn().mockReturnValue({
-                    name: 'none',
-                    retrievers: [],
-                }),
-                dispose: vi.fn(),
-            } satisfies ContextStrategyFactory
-
-            const mixer = new ContextMixer(mockStrategyFactory)
-            const { context, logSummary } = await mixer.getContext({
-                document,
-                position,
-                docContext,
-                maxChars: 1000,
-            })
+            const mixer = new ContextMixer(createMockStrategy([]))
+            const { context, logSummary } = await mixer.getContext(defaultOptions)
 
             expect(context).toEqual([])
             expect(logSummary).toEqual({ duration: 0, retrieverStats: {}, strategy: 'none', totalChars: 0 })
@@ -69,18 +57,9 @@ describe('ContextMixer', () => {
 
     describe('with one retriever', () => {
         it('returns the results of the retriever', async () => {
-            const { document, position } = documentAndPosition('console.█')
-            const docContext = getCurrentDocContext({
-                document,
-                position,
-                maxPrefixLength: 100,
-                maxSuffixLength: 100,
-            })
-
-            const retriever = {
-                identifier: 'test',
-                retrieve: () =>
-                    Promise.resolve([
+            const mixer = new ContextMixer(
+                createMockStrategy([
+                    [
                         {
                             fileName: 'foo.ts',
                             content: 'function foo() {}',
@@ -89,26 +68,10 @@ describe('ContextMixer', () => {
                             fileName: 'bar.ts',
                             content: 'function bar() {}',
                         },
-                    ]),
-                isSupportedForLanguageId: () => true,
-                dispose: vi.fn(),
-            } satisfies ContextRetriever
-
-            const mockStrategyFactory = {
-                getStrategy: vi.fn().mockReturnValue({
-                    name: 'jaccard-similarity',
-                    retrievers: [retriever],
-                }),
-                dispose: vi.fn(),
-            } satisfies ContextStrategyFactory
-
-            const mixer = new ContextMixer(mockStrategyFactory)
-            const { context, logSummary } = await mixer.getContext({
-                document,
-                position,
-                docContext,
-                maxChars: 1000,
-            })
+                    ],
+                ])
+            )
+            const { context, logSummary } = await mixer.getContext(defaultOptions)
 
             expect(context).toEqual([
                 {
@@ -123,7 +86,7 @@ describe('ContextMixer', () => {
             expect(logSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
-                    test: {
+                    retriever1: {
                         duration: expect.any(Number),
                         positionBitmap: 3,
                         retrievedItems: 2,
@@ -138,18 +101,9 @@ describe('ContextMixer', () => {
 
     describe('with more retriever', () => {
         it('mixes the results of the retriever using reciprocal rank fusion', async () => {
-            const { document, position } = documentAndPosition('console.█')
-            const docContext = getCurrentDocContext({
-                document,
-                position,
-                maxPrefixLength: 100,
-                maxSuffixLength: 100,
-            })
-
-            const retriever1 = {
-                identifier: 'retriever1',
-                retrieve: () =>
-                    Promise.resolve([
+            const mixer = new ContextMixer(
+                createMockStrategy([
+                    [
                         {
                             fileName: 'foo.ts',
                             content: 'function foo1() {}',
@@ -158,15 +112,9 @@ describe('ContextMixer', () => {
                             fileName: 'bar.ts',
                             content: 'function bar1() {}',
                         },
-                    ]),
-                isSupportedForLanguageId: () => true,
-                dispose: vi.fn(),
-            } satisfies ContextRetriever
+                    ],
 
-            const retriever2 = {
-                identifier: 'retriever2',
-                retrieve: () =>
-                    Promise.resolve([
+                    [
                         {
                             fileName: 'baz.ts',
                             content: 'function baz2() {}',
@@ -179,26 +127,10 @@ describe('ContextMixer', () => {
                             fileName: 'bar.ts',
                             content: 'function bar2() {}',
                         },
-                    ]),
-                isSupportedForLanguageId: () => true,
-                dispose: vi.fn(),
-            } satisfies ContextRetriever
-
-            const mockStrategyFactory = {
-                getStrategy: vi.fn().mockReturnValue({
-                    name: 'jaccard-similarity',
-                    retrievers: [retriever1, retriever2],
-                }),
-                dispose: vi.fn(),
-            } satisfies ContextStrategyFactory
-
-            const mixer = new ContextMixer(mockStrategyFactory)
-            const { context, logSummary } = await mixer.getContext({
-                document,
-                position,
-                docContext,
-                maxChars: 1000,
-            })
+                    ],
+                ])
+            )
+            const { context, logSummary } = await mixer.getContext(defaultOptions)
 
             expect(context).toMatchInlineSnapshot(`
               [

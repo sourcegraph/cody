@@ -14,6 +14,8 @@ export interface GetContextOptions {
 }
 
 // k parameter for the reciprocal rank fusion scoring. 60 is the default value in many places
+//
+// c.f. https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking#how-rrf-ranking-works
 const RRF_K = 60
 
 export interface ContextSummary {
@@ -115,6 +117,10 @@ export class ContextMixer implements vscode.Disposable {
         }
 
         // Rank the order of documents using reciprocal rank fusion.
+        //
+        // For this, we take the top rank of every document from each retrieved set and compute a
+        // combined rank. The idea is that a document that ranks highly across multiple retrievers
+        // should be ranked higher overall.
         const fusedDocumentScores: Map<string, number> = new Map()
         for (const { identifier, snippets } of results) {
             snippets.forEach((snippet, rank) => {
@@ -146,12 +152,21 @@ export class ContextMixer implements vscode.Disposable {
         const retrieverStats: ContextSummary['retrieverStats'] = {}
         let totalChars = 0
         let position = 0
+        // Now that we have a sorted list of documents (with the first document being the highest
+        // ranked one), we use top-k to combine snippets from each retriever into a result set.
+        //
+        // We start with the highest ranked document and include all retrieved snippets from this
+        // document into the result set, starting with the top retrieved snippet from each retriever
+        // and adding entries greedily.
         for (const documentId of fusedDocuments) {
             const resultByDocument = resultsByDocument.get(documentId)
             if (!resultByDocument) {
                 continue
             }
 
+            // We want to start iterating over every retrievers first rank, then every retrievers
+            // second rank etc. The termination criteria is thus defined to be the length of the
+            // largest snippet list of any retriever.
             const maxMatches = Math.max(...Object.values(resultByDocument).map(r => r.length))
 
             for (let i = 0; i < maxMatches; i++) {
