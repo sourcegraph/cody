@@ -75,36 +75,40 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     /**
      * Adds a new command to the commands map.
-     * @param key - The unique key for the command. e.g. /test
-     * or 'invalid' if the command is not found.
      *
      * Looks up the command prompt using the given key in the default prompts map.
      * If found, creates a new Cody command runner instance for that prompt and input.
      * Returns the ID of the created runner, or 'invalid' if not found.
      */
     public async addCommand(
-        key: string,
-        input = '',
+        text: string,
         requestID?: string,
         contextFiles?: ContextFile[],
         addEnhancedContext?: boolean
     ): Promise<string> {
-        const command = this.default.get(key)
+        const commandSplit = text.split(' ')
+        // The unique key for the command. e.g. /test
+        const commandKey = commandSplit.shift() || text
+        // Additional instruction that will be added to end of prompt
+        const commandInput = commandKey === text ? '' : commandSplit.join(' ')
+
+        const command = this.default.get(commandKey)
         if (!command) {
             return 'invalid'
         }
 
         if (command.slashCommand === '/ask') {
-            command.prompt = input
+            command.prompt = text
         }
 
         if (!command.context && addEnhancedContext) {
             command.context = { codebase: addEnhancedContext }
         }
 
+        command.additionalInput = commandInput
         command.requestID = requestID
         command.contextFiles = contextFiles
-        return this.createCodyCommandRunner(command, input)
+        return this.createCodyCommandRunner(command, commandInput)
     }
 
     /**

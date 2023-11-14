@@ -642,10 +642,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     const assistantResponse = 'Command failed. Please open a file and try again.'
                     return this.addCustomInteraction({ assistantResponse, text, source })
                 }
-
                 const commandRunnerID = await this.editor.controllers.command?.addCommand(
                     text,
-                    '',
                     eventTrace?.requestID,
                     this.userContextFiles
                 )
