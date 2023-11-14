@@ -10,8 +10,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.ui.ColorUtil
-import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTabbedPane
@@ -19,7 +17,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import com.intellij.xml.util.XmlStringUtil
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getClient
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
@@ -36,22 +33,15 @@ import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.EmbeddingStatusView
-import com.sourcegraph.cody.ui.AutoGrowingTextArea
 import com.sourcegraph.cody.ui.ChatScrollPane
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.awt.*
 import java.awt.event.ActionEvent
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
 import java.util.*
 import java.util.stream.Collectors
 import javax.swing.*
-import javax.swing.KeyStroke.getKeyStroke
-import javax.swing.border.EmptyBorder
-import javax.swing.event.DocumentEvent
 import javax.swing.plaf.ButtonUI
-import javax.swing.text.DefaultEditorKit
 
 @Service(Service.Level.PROJECT)
 class CodyToolWindowContent(private val project: Project) : UpdatableChat {
@@ -69,7 +59,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   override var isChatVisible = false
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
   private val chatMessageHistory = CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY)
-  private var isInHistoryMode = true
 
   init {
     // Tabs
@@ -87,72 +76,16 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     val chatPanel = ChatScrollPane(messagesPanel)
 
     // Controls panel
-    val controlsPanel = JPanel()
-    controlsPanel.layout = BorderLayout()
-    controlsPanel.border = EmptyBorder(JBUI.insets(0, 14, 14, 14))
-    val promptPanel = JPanel(BorderLayout())
     sendButton = createSendButton(project)
-    val autoGrowingTextArea = AutoGrowingTextArea(3, 9, promptPanel)
-    promptInput = autoGrowingTextArea.textArea
-    /* Submit on enter */
-    val JUST_ENTER = KeyboardShortcut(getKeyStroke(KeyEvent.VK_ENTER, 0), null)
-    val UP = KeyboardShortcut(getKeyStroke(KeyEvent.VK_UP, 0), null)
-    val DOWN = KeyboardShortcut(getKeyStroke(KeyEvent.VK_DOWN, 0), null)
-    val DEFAULT_SUBMIT_ACTION_SHORTCUT = CustomShortcutSet(JUST_ENTER)
-    val POP_UPPER_MESSAGE_ACTION_SHORTCUT = CustomShortcutSet(UP)
-    val POP_LOWER_MESSAGE_ACTION_SHORTCUT = CustomShortcutSet(DOWN)
-    val upperMessageAction: AnAction =
-        object : DumbAwareAction() {
-          override fun actionPerformed(e: AnActionEvent) {
-            if (isInHistoryMode) {
-              chatMessageHistory.popUpperMessage(promptInput)
-            } else {
-              val defaultAction = promptInput.actionMap[DefaultEditorKit.upAction]
-              defaultAction.actionPerformed(null)
-            }
-          }
-        }
-    val lowerMessageAction: AnAction =
-        object : DumbAwareAction() {
-          override fun actionPerformed(e: AnActionEvent) {
-            if (isInHistoryMode) {
-              chatMessageHistory.popLowerMessage(promptInput)
-            } else {
-              val defaultAction = promptInput.actionMap[DefaultEditorKit.downAction]
-              defaultAction.actionPerformed(null)
-            }
-          }
-        }
-    val sendMessageAction: AnAction =
-        object : DumbAwareAction() {
-          override fun actionPerformed(e: AnActionEvent) {
-            if (promptInput.getText().isNotEmpty()) {
-              sendChatMessage(project)
-            }
-          }
-        }
-    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput)
-    upperMessageAction.registerCustomShortcutSet(POP_UPPER_MESSAGE_ACTION_SHORTCUT, promptInput)
-    lowerMessageAction.registerCustomShortcutSet(POP_LOWER_MESSAGE_ACTION_SHORTCUT, promptInput)
-    promptInput.addKeyListener(
-        object : KeyAdapter() {
-          override fun keyReleased(e: KeyEvent) {
-            val keyCode = e.keyCode
-            if (keyCode != KeyEvent.VK_UP && keyCode != KeyEvent.VK_DOWN) {
-              isInHistoryMode = promptInput.getText().isEmpty()
-            }
-          }
-        })
-    // Enable/disable the send button based on whether promptInput is empty
-    promptInput.document.addDocumentListener(
-        object : DocumentAdapter() {
-          override fun textChanged(e: DocumentEvent) {
-            sendButton.isEnabled = promptInput.getText().isNotEmpty()
-          }
-        })
-    promptPanel.add(autoGrowingTextArea.scrollPane, BorderLayout.CENTER)
-    promptPanel.border = BorderFactory.createEmptyBorder(0, 0, 10, 0)
+    val promptPanel =
+        PromptPanel(
+            project,
+            chatMessageHistory,
+            ::sendChatMessage,
+            onTextChangedSetButtonEnabled = { v -> sendButton.isEnabled = v })
+    promptInput = promptPanel.promptInput
     val stopGeneratingButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 5))
+    val controlsPanel = ControlsPanel(promptPanel, sendButton)
     stopGeneratingButtonPanel.preferredSize =
         Dimension(Short.MAX_VALUE.toInt(), stopGeneratingButton.getPreferredSize().height + 10)
     stopGeneratingButton.addActionListener {
@@ -163,18 +96,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     stopGeneratingButton.isVisible = false
     stopGeneratingButtonPanel.add(stopGeneratingButton)
     stopGeneratingButtonPanel.isOpaque = false
-    controlsPanel.add(promptPanel, BorderLayout.NORTH)
-    controlsPanel.add(sendButton, BorderLayout.EAST)
-    val lowerPanel = JPanel(BorderLayout())
-    val borderColor = ColorUtil.brighter(UIUtil.getPanelBackground(), 3)
-    val topBorder = BorderFactory.createMatteBorder(1, 0, 0, 0, borderColor)
-    lowerPanel.border = topBorder
-    lowerPanel.layout = BoxLayout(lowerPanel, BoxLayout.Y_AXIS)
-    lowerPanel.add(stopGeneratingButtonPanel)
-    lowerPanel.add(controlsPanel)
     embeddingStatusView = EmbeddingStatusView(project)
-    embeddingStatusView.border = topBorder
-    lowerPanel.add(embeddingStatusView)
+    val lowerPanel = LowerPanel(stopGeneratingButtonPanel, controlsPanel, embeddingStatusView)
 
     // Main content panel
     contentPanel.layout = BorderLayout(0, 0)
