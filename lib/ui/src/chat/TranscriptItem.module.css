@@ -53,6 +53,10 @@
     overflow-x: auto;
 }
 
+.content a {
+    background: rgba(250, 250, 250, 0.1);
+}
+
 .content h1,
 .content h2,
 .content h3,
