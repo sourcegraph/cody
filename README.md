@@ -4,8 +4,8 @@
 
 Use Sourcegraph’s AI assistant Cody and Sourcegraph Code Search directly from your JetBrains IDE.
 
-- [Cody](https://about.sourcegraph.com/cody) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase.
-- With [Code Search](https://about.sourcegraph.com/code-search), you can search code across all your repositories and code hosts—even the code you don’t have locally.
+- [Cody](https://about.sourcegraph.com/cody?utm_source=plugins.jetbrains.com&utm_medium=referral) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase.
+- With [Code Search](https://about.sourcegraph.com/code-search?utm_source=plugins.jetbrains.com&utm_medium=referral), you can search code across all your repositories and code hosts—even the code you don’t have locally.
 
 **Cody for JetBrains IDEs is experimental right now. We’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
 
@@ -76,7 +76,7 @@ For those with a Cody Enterprise subscription, your Sourcegraph Enterprise syste
 
 ### Cody Enterprise
 
-Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization. [Contact us](https://about.sourcegraph.com/contact/request-info) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
+Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization. [Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=plugins.jetbrains.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 
 ## Feedback
 
