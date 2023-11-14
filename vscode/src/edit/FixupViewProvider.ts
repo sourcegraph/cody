@@ -3,10 +3,9 @@ import * as vscode from 'vscode'
 import { contentSanitizer } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { MessageProvider, MessageProviderOptions } from '../chat/MessageProvider'
 import { FixupCodeAction } from '../code-actions/fixup'
 import { FixupTask } from '../non-stop/FixupTask'
-
-import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
 export class FixupManager implements vscode.Disposable {
     private fixupProviders = new Map<FixupTask, FixupProvider>()

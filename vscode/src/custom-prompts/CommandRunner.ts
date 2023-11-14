@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { getActiveEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
@@ -143,6 +144,7 @@ export class CommandRunner implements vscode.Disposable {
                 document: doc,
                 auto: true,
                 insertMode,
+                intent: (this.kind === 'doc' ? 'doc' : 'edit') satisfies FixupIntent,
             },
             source
         )

@@ -1,5 +1,5 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { VsCodeFixupTaskRecipeData } from '../../editor'
+import { FixupIntent, VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
@@ -8,12 +8,6 @@ import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
-
-/**
- * The intent classification.
- * Inferred from the prefix provided to the fixup command, e.g. `/edit` or `/fix`
- */
-export type FixupIntent = 'add' | 'edit' | 'fix'
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
