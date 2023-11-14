@@ -169,6 +169,7 @@ export interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
+    git?: 'none' | 'disabled'
 }
 
 export interface ServerInfo {
@@ -215,10 +216,12 @@ export interface ExtensionConfiguration {
  * This type is intended for use in the Agent RPC handler only - clients sending
  * events to the Agent should use 'newTelemetryEvent()' to create event objects,
  * which uses the same type constraints as '(TelemetryEventRecorder).recordEvent()'.
- * @param feature must be snakeCase and '.'-delimited, e.g. 'myFeature.subFeature'.
+ * @param feature must be camelCase and '.'-delimited, e.g. 'myFeature.subFeature'.
  * Features should NOT include the client platform, e.g. 'vscode' - information
- * about the client is automatically attached to all events.
- * @param action must be snakeCase and simple, e.g. 'submit', 'failed', or
+ * about the client is automatically attached to all events. Note that Cody
+ * events MUST have provide feature 'cody' or have a feature prefixed with
+ * 'cody.' to be considered Cody events.
+ * @param action must be camelCase and simple, e.g. 'submit', 'failed', or
  * 'success', in the context of feature.
  * @param parameters should be as described in {@link TelemetryEventParameters}.
  */

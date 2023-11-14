@@ -10,7 +10,8 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { ContextMixer, ContextStrategy } from './context/context-mixer'
+import { ContextMixer } from './context/context-mixer'
+import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -185,7 +186,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
-        this.contextMixer = new ContextMixer(config.contextStrategy, createBfgRetriever)
+        this.contextMixer = new ContextMixer(
+            new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
+        )
 
         const chatHistory = localStorage.getChatHistory()?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -233,16 +236,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [
-            isIncreasedDebounceTimeEnabledPromise,
-            syntacticTriggersPromise,
-            lowPerformanceDebouncePromise,
-            disableStreamingTruncation,
-        ] = [
+        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise, lowPerformanceDebouncePromise] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLowPerformanceDebounce),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableStreamingTruncation),
         ]
 
         const minLatencyFlagsPromises = {
@@ -333,7 +330,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 selectedCompletionInfo: context.selectedCompletionInfo,
                 docContext,
                 providerConfig: this.config.providerConfig,
-                disableStreamingTruncation: await disableStreamingTruncation,
                 contextMixer: this.contextMixer,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,

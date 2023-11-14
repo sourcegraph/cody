@@ -137,6 +137,13 @@ export class MockEditor implements Editor {
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
     }
+
+    public async getTextEditorContentForFile(
+        uri: URI,
+        range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve(undefined)
+    }
 }
 
 export const defaultEmbeddingsClient = new MockEmbeddingsClient()

@@ -1,3 +1,4 @@
+import { ContextFile } from '../../codebase-context/messages'
 import { ChatEventSource } from '../transcript/messages'
 
 import * as defaultPrompts from './cody.json'
@@ -64,6 +65,9 @@ export interface CodyPrompt {
     type?: CodyPromptType
     slashCommand: string
     mode?: CodyPromptMode
+
+    // internal properties
+    contextFiles?: ContextFile[]
 }
 
 /**
@@ -85,6 +89,7 @@ export interface CodyPromptContext {
     command?: string
     output?: string
     filePath?: string
+    filePaths?: string[]
     directoryPath?: string
     none?: boolean
 }

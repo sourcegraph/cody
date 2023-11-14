@@ -3,13 +3,6 @@ import dedent from 'dedent'
 import { SupportedLanguage } from '../grammars'
 import type { QueryName } from '../queries'
 
-const JS_BLOCKS_QUERY = dedent`
-    (_ ("{") @block_start) @trigger
-
-    [(try_statement)
-    (if_statement)] @parents
-`
-
 /**
  * Incomplete code cases to cover:
  *
@@ -100,22 +93,18 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
 
 export const javascriptQueries = {
     [SupportedLanguage.JavaScript]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
     },
     [SupportedLanguage.JSX]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
     },
     [SupportedLanguage.TypeScript]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
     },
     [SupportedLanguage.TSX]: {
-        blocks: JS_BLOCKS_QUERY,
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
     },

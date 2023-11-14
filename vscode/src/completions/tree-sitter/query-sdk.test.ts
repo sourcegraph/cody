@@ -26,7 +26,7 @@ describe('getDocumentQuerySDK', () => {
         expect(parser).toBeTruthy()
 
         const sdk = getDocumentQuerySDK(languageId)
-        expect(sdk?.queries.blocks).toBeTruthy()
+        expect(sdk?.queries.intents).toBeTruthy()
     })
 
     it.each([

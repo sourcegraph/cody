@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-let workspaceRootUri = vscode.workspace.workspaceFolders?.[0].uri
+let workspaceRootUri = vscode.workspace.workspaceFolders?.[0]?.uri
 let serverEndpoint = ''
 
 export function workspaceActionsOnConfigChange(workspaceUri: vscode.Uri | null, endpoint?: string | null): void {

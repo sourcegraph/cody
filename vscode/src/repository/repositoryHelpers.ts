@@ -26,7 +26,7 @@ function gitRepositoryRemoteUrl(uri: vscode.Uri): string | undefined {
     }
 }
 
-function gitAPI(): API | undefined {
+export function gitAPI(): API | undefined {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
     if (!extension) {
         console.warn('Git extension not available')
