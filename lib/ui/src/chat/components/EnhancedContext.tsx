@@ -39,9 +39,15 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
+    const lines = filteredFiles.reduce((total, file) =>
+        total + (file.range?.end?.line || 0) - (file.range?.start?.line || file.range?.end?.line || 0) + 1,
+        0
+    )
+    const files = filteredFiles.length
+
     return (
         <TranscriptAction
-            title={{ verb: '✨', object: '', tooltip: 'Files from codebase context' }}
+            title={{ verb: `✨ ${lines} lines from ${files} files`, object: '', tooltip: 'Related code automatically included as context' }}
             steps={filteredFiles?.map(file => ({
                 verb: '',
                 object: (

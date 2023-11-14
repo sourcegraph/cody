@@ -2,8 +2,6 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Icon } from '../../utils/Icon'
-
 import styles from './TranscriptAction.module.css'
 
 export interface TranscriptActionStep {
@@ -23,8 +21,8 @@ export const TranscriptAction: React.FunctionComponent<{
     className?: string
 }> = ({ title, steps, className }) => {
     return (
-        <div className={classNames(className, styles.container, styles.containerOpen)}>
-            <div className={styles.steps}>
+        <details className={classNames(className, styles.container)}>
+            <summary>
                 {typeof title === 'string' ? (
                     title
                 ) : (
@@ -32,17 +30,14 @@ export const TranscriptAction: React.FunctionComponent<{
                         {title.verb} <strong>{title.object}</strong>
                     </span>
                 )}
-
+            </summary>
+            <div className={styles.steps}>
                 {steps.map((step, index) => (
-                    // eslint-disable-next-line react/no-array-index-key
                     <span key={index} className={styles.step}>
-                        {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />}{' '}
-                        <span className={styles.stepObject}>
-                            {step.verb} {step.object}
-                        </span>
+                        {step.object}
                     </span>
                 ))}
             </div>
-        </div>
+        </details>
     )
 }
