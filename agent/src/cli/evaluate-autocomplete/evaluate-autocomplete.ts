@@ -121,7 +121,7 @@ async function runEvalution(
     vscode_shim.customConfiguration['cody.autocomplete.advanced.model'] = 'starcoder-7b'
     vscode_shim.customConfiguration['cody.debug.verbose'] = 'true'
     if (options.bfgBinary) {
-        vscode_shim.customConfiguration['cody.experimental.bfg.path'] = options.bfgBinary
+        vscode_shim.customConfiguration['cody.experimental.cody-engine.path'] = options.bfgBinary
     }
     const queries = new Queries(options.queries)
     const grammarDirectory = path.normalize(options.treeSitterGrammars)
