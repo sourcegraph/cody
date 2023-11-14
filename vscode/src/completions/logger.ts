@@ -47,7 +47,7 @@ export interface CompletionEvent {
         providerIdentifier: string
         providerModel: string
         languageId: string
-        contextSummary?: ContextSummary
+        contextSummary?: any
         source?: InlineCompletionsResultSource
         lineCount?: number
         charCount?: number

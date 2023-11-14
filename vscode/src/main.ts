@@ -4,6 +4,7 @@ import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -221,6 +222,7 @@ const register = async (
         args: {
             document?: vscode.TextDocument
             instruction?: string
+            intent?: FixupIntent
             range?: vscode.Range
             insertMode?: boolean
         } = {},
@@ -238,8 +240,8 @@ const register = async (
             return
         }
 
-        const task = args.instruction?.replace(/^\/edit/, '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode, source)
+        const task = args.instruction?.trim()
+            ? fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -322,6 +324,7 @@ const register = async (
                 args: {
                     range?: vscode.Range
                     instruction?: string
+                    intent?: FixupIntent
                     document?: vscode.TextDocument
                     insertMode?: boolean
                 },

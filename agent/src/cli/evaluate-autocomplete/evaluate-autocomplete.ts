@@ -85,7 +85,7 @@ export const evaluateAutocompleteCommand = new Command('evaluate-autocomplete')
         }
 
         const workspaceRootUri = Uri.from({ scheme: 'file', path: workspace })
-        const client = await newEmbeddedAgentClient({
+        const agent = await newEmbeddedAgentClient({
             name: 'evaluate-autocomplete',
             version: '0.1.0',
             workspaceRootUri: workspaceRootUri.toString(),
@@ -95,6 +95,7 @@ export const evaluateAutocompleteCommand = new Command('evaluate-autocomplete')
                 customHeaders: {},
             },
         })
+        const client = agent.clientForThisInstance()
         try {
             await runEvalution(client, options, workspace)
         } catch (error) {
@@ -120,7 +121,7 @@ async function runEvalution(
     vscode_shim.customConfiguration['cody.autocomplete.advanced.model'] = 'starcoder-7b'
     vscode_shim.customConfiguration['cody.debug.verbose'] = 'true'
     if (options.bfgBinary) {
-        vscode_shim.customConfiguration['cody.experimental.bfg.path'] = options.bfgBinary
+        vscode_shim.customConfiguration['cody.experimental.cody-engine.path'] = options.bfgBinary
     }
     const queries = new Queries(options.queries)
     const grammarDirectory = path.normalize(options.treeSitterGrammars)
@@ -187,6 +188,8 @@ async function runEvalution(
             const input = new Input(filePath, content)
             const snapshot = formatSnapshot(input, document)
             await fspromises.writeFile(outputPath, snapshot)
+        } else if (options.snapshotDirectory) {
+            console.error(`Empty autocomplete: ${document.relative_path}`)
         }
     }
 }

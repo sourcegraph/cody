@@ -693,6 +693,8 @@ export const vsCodeMocks = {
     SymbolKind,
     FoldingRange,
     FoldingRangeKind,
+    CodeActionKind,
+    DiagnosticSeverity,
 } as const
 
 export enum UIKind {

@@ -12,9 +12,7 @@ import { getGraphContextFromRange as defaultGetGraphContextFromRange } from '../
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet, SymbolContextSnippet } from '../../../types'
 import { CustomAbortController, CustomAbortSignal } from '../../utils'
 
-import { SectionObserver } from './section-observer'
-
-export class LspLightGraphCache implements ContextRetriever {
+export class LspLightRetriever implements ContextRetriever {
     public identifier = 'lsp-light'
     private disposables: vscode.Disposable[] = []
     private cache: GraphCache = new GraphCache()
@@ -22,26 +20,11 @@ export class LspLightGraphCache implements ContextRetriever {
     private lastRequestKey: string | null = null
     private abortLastRequest: () => void = () => {}
 
-    public static instance: LspLightGraphCache | null = null
-    public static createInstance(
-        window?: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'>,
-        workspace?: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'>,
-        getGraphContextFromRange?: typeof defaultGetGraphContextFromRange,
-        sectionObserver?: null
-    ): LspLightGraphCache {
-        if (this.instance) {
-            throw new Error('LspLightGraphCache has already been initialized')
-        }
-        this.instance = new LspLightGraphCache(window, workspace, getGraphContextFromRange, sectionObserver)
-        return this.instance
-    }
-
-    private constructor(
+    constructor(
         // All arguments are optional, because they are only used in tests.
         private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window,
         private workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'> = vscode.workspace,
-        private getGraphContextFromRange = defaultGetGraphContextFromRange,
-        private sectionObserver: SectionObserver | null = SectionObserver.createInstance()
+        private getGraphContextFromRange = defaultGetGraphContextFromRange
     ) {
         this.onDidChangeTextEditorSelection = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
         this.disposables.push(
@@ -53,14 +36,10 @@ export class LspLightGraphCache implements ContextRetriever {
     public async retrieve({
         document,
         position,
-        docContext: { contextRange },
         hints: { maxChars },
     }: {
         document: ContextRetrieverOptions['document']
         position: ContextRetrieverOptions['position']
-        docContext: {
-            contextRange?: ContextRetrieverOptions['docContext']['contextRange']
-        }
         hints: {
             maxChars: ContextRetrieverOptions['hints']['maxChars']
         }
@@ -78,10 +57,9 @@ export class LspLightGraphCache implements ContextRetriever {
         const prevLine = Math.max(position.line - 1, 0)
         const currentLine = position.line
 
-        const [prevLineContext, currentLineContext, sectionHistory] = await Promise.all([
+        const [prevLineContext, currentLineContext] = await Promise.all([
             this.getLspContextForLine({ document, line: prevLine, abortSignal: abortController.signal }),
             this.getLspContextForLine({ document, line: currentLine, abortSignal: abortController.signal }),
-            this.sectionObserver?.getLastVisitedSections(document, position, contextRange),
         ])
 
         const sectionGraphContext = [...prevLineContext, ...currentLineContext]
@@ -92,48 +70,7 @@ export class LspLightGraphCache implements ContextRetriever {
             return []
         }
 
-        let usedContextChars = 0
-        const context: ContextSnippet[] = []
-
-        function overlapsContextRange(uri: string, range?: { startLine: number; endLine: number }): boolean {
-            if (!contextRange || !range || uri !== document.uri.toString()) {
-                return false
-            }
-
-            return contextRange.start.line <= range.startLine && range.endLine <= contextRange.end.line
-        }
-
-        // Allocate up to 40% of the maxChars budget to inlining previous section unless we have no
-        // graph context
-        if (sectionHistory) {
-            const maxCharsForPreviousSections = sectionGraphContext ? maxChars * 0.4 : maxChars
-            for (const historyContext of sectionHistory) {
-                if (usedContextChars + historyContext.content.length > maxCharsForPreviousSections) {
-                    // We use continue here to test potentially smaller context snippets that might
-                    // still fit inside the budget
-                    continue
-                }
-                usedContextChars += historyContext.content.length
-                context.push(historyContext)
-            }
-        }
-
-        if (sectionGraphContext) {
-            const preciseContexts = hoverContextsToSnippets(
-                sectionGraphContext.filter(context => !overlapsContextRange(context.uri, context.range))
-            )
-            for (const preciseContext of preciseContexts) {
-                if (usedContextChars + preciseContext.content.length > maxChars) {
-                    // We use continue here to test potentially smaller context snippets that might
-                    // still fit inside the budget
-                    continue
-                }
-                usedContextChars += preciseContext.content.length
-                context.push(preciseContext)
-            }
-        }
-
-        return context
+        return hoverContextsToSnippets(sectionGraphContext)
     }
 
     public isSupportedForLanguageId(languageId: string): boolean {
@@ -182,11 +119,9 @@ export class LspLightGraphCache implements ContextRetriever {
 
     public dispose(): void {
         this.abortLastRequest()
-        this.sectionObserver?.dispose()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
-        LspLightGraphCache.instance = null
     }
 
     /**
@@ -201,7 +136,6 @@ export class LspLightGraphCache implements ContextRetriever {
         void this.retrieve({
             document: event.textEditor.document,
             position: event.selections[0].active,
-            docContext: {},
             hints: { maxChars: 0 },
         })
     }

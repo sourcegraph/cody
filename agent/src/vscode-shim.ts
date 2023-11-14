@@ -232,6 +232,7 @@ export function setAgent(newAgent: Agent): void {
 }
 
 const _window: Partial<typeof vscode.window> = {
+    createTreeView: () => ({ visible: false }) as any,
     tabGroups,
     registerCustomEditorProvider: () => emptyDisposable,
     registerFileDecorationProvider: () => emptyDisposable,
@@ -305,6 +306,28 @@ const _window: Partial<typeof vscode.window> = {
 }
 
 export const window = _window as typeof vscode.window
+const gitRepositories: Repository[] = []
+export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
+    const repository: Partial<Repository> = {
+        rootUri: uri,
+        ui: {} as any,
+        state: {
+            refs: [],
+            indexChanges: [],
+            mergeChanges: [],
+            onDidChange: emptyEvent(),
+            remotes: [],
+            submodules: [],
+            workingTreeChanges: [],
+            rebaseCommit: undefined,
+            HEAD: {
+                type: /* RefType.Head */ 0, // Can't reference RefType.Head because it's from a d.ts file
+                commit: headCommit,
+            },
+        },
+    }
+    gitRepositories.push(repository as Repository)
+}
 
 const gitExtension: Partial<vscode.Extension<GitExtension>> = {
     isActive: true,
@@ -313,6 +336,11 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
         onDidChangeEnablement: emptyEvent(),
         getAPI(version) {
             const api: Partial<API> = {
+                repositories: gitRepositories,
+                onDidChangeState: emptyEvent(),
+                onDidCloseRepository: emptyEvent(),
+                onDidOpenRepository: emptyEvent(),
+                onDidPublish: emptyEvent(),
                 getRepository(uri) {
                     const cwd = workspaceDocuments?.workspaceRootUri?.fsPath
                     if (!cwd) {

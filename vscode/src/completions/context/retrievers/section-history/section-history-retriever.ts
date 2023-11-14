@@ -8,7 +8,7 @@ import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import { getGraphDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../../../graph/lsp/sections'
-import { ContextSnippet } from '../../../types'
+import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 import { createSubscriber } from '../../../utils'
 import { baseLanguageId } from '../../utils'
 
@@ -33,9 +33,10 @@ const debugSubscriber = createSubscriber<void>()
 export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscriber)
 
 /**
- * Keeps track of document sections a user is navigating to
+ * Keeps track of document sections a user is navigating to and retrievers the last visited section
  */
-export class SectionObserver implements vscode.Disposable {
+export class SectionHistoryRetriever implements ContextRetriever {
+    public identifier = 'section-history'
     private disposables: vscode.Disposable[] = []
 
     // A map of all active documents that are being tracked. We rely on the LRU cache to evict
@@ -60,7 +61,7 @@ export class SectionObserver implements vscode.Disposable {
         void this.onDidChangeVisibleTextEditors()
     }
 
-    public static instance: SectionObserver | null = null
+    public static instance: SectionHistoryRetriever | null = null
     public static createInstance(
         window?: Pick<
             typeof vscode.window,
@@ -68,19 +69,25 @@ export class SectionObserver implements vscode.Disposable {
         >,
         workspace?: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'>,
         getDocumentSections?: typeof defaultGetDocumentSections
-    ): SectionObserver {
+    ): SectionHistoryRetriever {
         if (this.instance) {
             throw new Error('SectionObserver has already been initialized')
         }
-        this.instance = new SectionObserver(window, workspace, getDocumentSections)
+        this.instance = new SectionHistoryRetriever(window, workspace, getDocumentSections)
         return this.instance
     }
 
-    public async getLastVisitedSections(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        contextRange?: vscode.Range
-    ): Promise<ContextSnippet[]> {
+    public async retrieve({
+        document,
+        position,
+        docContext: { contextRange },
+    }: {
+        document: ContextRetrieverOptions['document']
+        position: ContextRetrieverOptions['position']
+        docContext: {
+            contextRange: ContextRetrieverOptions['docContext']['contextRange']
+        }
+    }): Promise<ContextSnippet[]> {
         const section = this.getSectionAtPosition(document, position)
 
         function overlapsContextRange(uri: vscode.Uri, range?: { startLine: number; endLine: number }): boolean {
@@ -134,6 +141,10 @@ export class SectionObserver implements vscode.Disposable {
                     })
             )
         ).filter(isDefined)
+    }
+
+    public isSupportedForLanguageId(): boolean {
+        return true
     }
 
     private getSectionAtPosition(document: vscode.TextDocument, position: vscode.Position): Section | undefined {
@@ -314,7 +325,7 @@ export class SectionObserver implements vscode.Disposable {
     }
 
     public dispose(): void {
-        SectionObserver.instance = null
+        SectionHistoryRetriever.instance = null
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
