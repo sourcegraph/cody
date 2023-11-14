@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+
 import { FixupFile } from './FixupFile'
 import { FixupTask } from './FixupTask'
 
@@ -16,7 +18,6 @@ export interface FixupFileCollection {
      * If there is a FixupFile for the specified URI, return it, otherwise
      * undefined. VScode callbacks which have a document or URI can use this
      * to determine if there may be interest in the URI.
-     *
      * @param uri the URI of the document of interest.
      */
     maybeFileForUri(uri: vscode.Uri): FixupFile | undefined
@@ -33,7 +34,12 @@ export interface FixupIdleTaskRunner {
  * Creates and starts processing a task.
  */
 export interface FixupTaskFactory {
-    createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask
+    createTask(
+        documentUri: vscode.Uri,
+        instruction: string,
+        selectionRange: vscode.Range,
+        intent?: FixupIntent
+    ): FixupTask
 }
 
 /**

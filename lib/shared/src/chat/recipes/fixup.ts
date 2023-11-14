@@ -11,12 +11,9 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /**
  * The intent classification.
- * This is either provided by the user, or inferred from their instructions
+ * Inferred from the prefix provided to the fixup command, e.g. `/edit` or `/fix`
  */
-export type FixupIntent = 'add' | 'edit'
-
-const editIntentInstruction =
-    'The user wants you to replace parts of the selected code or correct a problem by following their instructions.'
+export type FixupIntent = 'add' | 'edit' | 'fix'
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
@@ -29,39 +26,41 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const intent = await fixupController.getTaskIntent(taskId)
-        const enableSmartSelection = intent === 'edit'
-        const fixupTask = await fixupController.getTaskRecipeData(taskId, { enableSmartSelection })
+        const fixupTask = await fixupController.getTaskRecipeData(taskId)
 
-        if (!fixupTask || !intent) {
+        if (!fixupTask) {
             return null
         }
 
-        const promptText = this.getPrompt(fixupTask, intent)
+        const promptText = this.getPrompt(fixupTask)
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
 
         return newInteraction({
             text: promptText,
             source: this.id,
-            contextMessages: this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
+            contextMessages: this.getContextFromIntent(fixupTask.intent, fixupTask, quarterFileContext, context),
         })
     }
 
-    public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {
-        if (intent === 'add') {
-            return Fixup.addPrompt
-                .replace('{precedingText}', task.precedingText)
-                .replace('{humanInput}', task.instruction)
-                .replace('{fileName}', task.fileName)
-        }
-
+    public getPrompt(task: VsCodeFixupTaskRecipeData): string {
         const promptInstruction = truncateText(task.instruction, MAX_HUMAN_INPUT_TOKENS)
-
-        return Fixup.editPrompt
-            .replace('{humanInput}', promptInstruction)
-            .replace('{intent}', editIntentInstruction)
-            .replace('{selectedText}', task.selectedText)
-            .replace('{fileName}', task.fileName)
+        switch (task.intent) {
+            case 'add':
+                return Fixup.addPrompt
+                    .replace('{precedingText}', task.precedingText)
+                    .replace('{instruction}', task.instruction)
+                    .replace('{fileName}', task.fileName)
+            case 'edit':
+                return Fixup.editPrompt
+                    .replace('{instruction}', promptInstruction)
+                    .replace('{selectedText}', task.selectedText)
+                    .replace('{fileName}', task.fileName)
+            case 'fix':
+                return Fixup.fixPrompt
+                    .replace('{instruction}', promptInstruction)
+                    .replace('{selectedText}', task.selectedText)
+                    .replace('{fileName}', task.fileName)
+        }
     }
 
     private async getContextFromIntent(
@@ -84,19 +83,21 @@ export class Fixup implements Recipe {
              * TODO: Consider using code completion model?
              */
             case 'add':
-                return context.codebaseContext
-                    .getContextMessages(task.instruction, {
-                        numCodeResults: 4,
-                        numTextResults: 0,
-                    })
-                    .then(messages =>
-                        messages.concat(
-                            [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
-                                getContextMessageWithResponse(populateCodeContextTemplate(text, task.fileName), task)
-                            )
-                        )
-                    )
-
+                const instructionContext = await context.codebaseContext.getContextMessages(task.instruction, {
+                    numCodeResults: 4,
+                    numTextResults: 0,
+                })
+                return [
+                    ...instructionContext,
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedPrecedingText, task.fileName),
+                        task
+                    ),
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedFollowingText, task.fileName),
+                        task
+                    ),
+                ]
             /**
              * Broad set of possible instructions.
              * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
@@ -106,23 +107,28 @@ export class Fixup implements Recipe {
                 const range = task.selectionRange
                 const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
                 const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
-
-                return getContextMessagesFromSelection(
+                const selectionContext = await getContextMessagesFromSelection(
                     task.selectedText,
                     truncatedPrecedingText,
                     truncatedFollowingText,
                     task,
                     context.codebaseContext
-                ).then(messages =>
-                    messages.concat(
-                        errorsAndWarnings.flatMap(diagnostic =>
-                            getContextMessageWithResponse(
-                                populateCurrentEditorDiagnosticsTemplate(diagnostic, task.fileName),
-                                task
-                            )
-                        )
-                    )
                 )
+                return [
+                    ...selectionContext,
+                    ...errorsAndWarnings.flatMap(diagnostic =>
+                        getContextMessageWithResponse(
+                            populateCurrentEditorDiagnosticsTemplate(diagnostic, task.fileName),
+                            task
+                        )
+                    ),
+                ]
+            /**
+             * Specific case where a user is explciitly trying to "fix" a problem in their code.
+             * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
+             */
+            case 'fix':
+                return []
         }
         /* eslint-enable no-case-declarations */
     }
@@ -143,10 +149,10 @@ This is part of the file {fileName}.
 The user has the following code in their selection:
 <selectedCode>{selectedText}</selectedCode>
 
-{intent}
+The user wants you to replace parts of the selected code or correct a problem by following their instructions.
 Provide your generated code using the following instructions:
 <instructions>
-{humanInput}
+{instruction}
 </instructions>
 `
 
@@ -162,7 +168,30 @@ The user is currently in the file: {fileName}
 
 Provide your generated code using the following instructions:
 <instructions>
-{humanInput}
+{instruction}
 </instructions>
+`
+
+    public static readonly fixPrompt = `
+- You are an AI programming assistant who is an expert in fixing errors within code.
+- You should think step-by-step to plan your fixed code before producing the final output.
+- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+- Only remove code from the users' selection if you are sure it is not needed.
+- It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
+- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your fixed code.
+- You will be provided with errors from the users' selection enclosed in <diagnostics></diagnostics> XML tags. You must attempt to fix all of these errors.
+- If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
+- Enclose your response in <fixup></fixup> XML tags. Do not provide anything else.
+
+This is part of the file {fileName}.
+
+The user has the following code in their selection:
+<selectedCode>{selectedText}</selectedCode>
+
+The user wants you to correct problems in their code by following their instructions.
+Provide your generated code using the following instructions:
+<diagnostics>
+{instruction}
+</diagnostics>
 `
 }
