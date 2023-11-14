@@ -88,7 +88,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
             const snippetMessages: string[] = [
                 'symbol' in snippet && snippet.symbol !== ''
                     ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                    : `Use following code snippet from file '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
             ]
             const numSnippetChars = snippetMessages.join('\n\n').length + 1
             if (numSnippetChars > remainingChars) {
