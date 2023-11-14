@@ -43,7 +43,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const source = 'code-action'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range }, source],
+            arguments: [{ instruction, range, intent: 'fix' satisfies FixupIntent }, source],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
@@ -51,8 +51,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     }
 
     private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string => {
-        const intent: FixupIntent = 'edit'
-        return `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
+        return `Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
             .join('\n')}`
     }

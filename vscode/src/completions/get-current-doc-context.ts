@@ -29,6 +29,8 @@ export interface DocumentContext {
     multilineTrigger: string | null
 
     completionIntent?: CompletionIntent
+
+    position: vscode.Position
 }
 
 interface GetCurrentDocContextParams {
@@ -146,6 +148,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         nextNonEmptyLine,
         injectedPrefix,
         completionIntent: completionItent?.name,
+        position,
     }
 
     return {

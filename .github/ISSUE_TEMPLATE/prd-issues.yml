@@ -1,15 +1,16 @@
 name: PRD Feature Request (Internal Only)
 description: User story for completing items on the PRD.
-title: 'PRD-Issue: Example user story from PRD'
+title: 'PRD: Example user story from PRD'
 labels:
   - prd-issue
+  - clients/vscode
 projects:
   - sourcegraph/387
 body:
   - type: markdown
     attributes:
       value: |
-        **Note:** Title must have prefix `PRD-Issue:`
+        **Note:** Title must have prefix `PRD:`
 
         Welcome! Please use this template to provide a detailed description of the feature you would like to see implemented. 
 
@@ -25,8 +26,7 @@ body:
         <!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat.
 
         The new chat window should be fast and responsive, with the ability to let the user choose the type of context used for the LLM. I should be given the option to choose whether or not I want Cody to find the context, or let me choose it myself. I want more control over what is fed into the LLM for answers. I should easily be able to distinguish what my last question was versus what was displayed from commands.
-
-        The new chat window should have a clean, modern interface with plenty of white space, reminiscent of existing AI chatbots. Each message should appear in a clearly defined chat bubble that is visually attributed to the prompt that triggered it. This will help conversations feel well-structured and easy to follow. A text box at the bottom will let me quickly type a response. -->
+        -->
     validations:
       required: true
 
@@ -49,10 +49,7 @@ body:
         - The user should be able to use "@ commands" to select files or symbols for context
         - The chat should separate the output from Chat and Commands
         - The chat should be a close mimic to existing AI chatbots
-        - Messages are displayed in bubbles that clearly indicate which user sent each message
         - Messages scroll vertically as more are added
-        - The window can be minimized/maximized for multitasking
-        - Fonts, colors, and layout align with brand style and accessibility guide
         -->
   - type: textarea
     id: design-tasklist

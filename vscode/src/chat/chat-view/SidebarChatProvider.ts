@@ -1,10 +1,14 @@
+import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
+import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
@@ -64,8 +68,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.init()
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text, message.submitType)
-                break
+                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
@@ -109,6 +112,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
+                break
+            case 'getUserContext':
+                await this.handleContextFiles(message.query)
                 break
             case 'history':
                 if (message.action === 'clear') {
@@ -212,13 +218,26 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
     }
 
-    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('SidebarChatProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+    private async onHumanMessageSubmitted(
+        text: string,
+        submitType: ChatSubmitType,
+        contextFiles?: ContextFile[]
+    ): Promise<void> {
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+
         MessageProvider.inputHistory.push(text)
-        await this.executeRecipe('chat-question', text, 'chat')
+
         if (submitType === 'suggestion') {
-            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', undefined, { hasV2Event: true })
+            const args = { requestID: this.currentRequestID }
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
+
+        // Add text and context to a command for custom-prompt recipe to run as ask command
+        if (contextFiles?.length) {
+            this.userContextFiles = contextFiles
+        }
+
+        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
     }
 
     /**
@@ -281,6 +300,37 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         })
     }
 
+    private async handleContextFiles(query: string): Promise<void> {
+        if (!query.length) {
+            const tabs = getOpenTabsContextFile()
+            await this.webview?.postMessage({
+                type: 'userContextFiles',
+                context: tabs,
+            })
+            return
+        }
+
+        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
+            try {
+                const MAX_RESULTS = 10
+                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
+                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+
+                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
+                const context = [...new Set([...fileResults, ...symbolResults])]
+
+                await this.webview?.postMessage({
+                    type: 'userContextFiles',
+                    context,
+                })
+            } catch (error) {
+                // Handle or log the error as appropriate
+                console.error('Error retrieving context files:', error)
+            }
+        }, 100)
+
+        await debouncedContextFileQuery(query)
+    }
     /**
      *
      * @param notice Triggers displaying a notice.

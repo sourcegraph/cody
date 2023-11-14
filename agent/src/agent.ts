@@ -1,5 +1,7 @@
+import * as fspromises from 'fs/promises'
 import path from 'path'
 
+import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
@@ -20,10 +22,11 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(): void {
+export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
+    const paths = envPaths('Cody')
     activate({
         asAbsolutePath(relativePath) {
-            return path.resolve(process.cwd(), relativePath)
+            return path.resolve(workspaceRoot.fsPath, relativePath)
         },
         environmentVariableCollection: {} as any,
         extension: {} as any,
@@ -60,10 +63,34 @@ export function initializeVscodeExtension(): void {
         storageUri: {} as any,
         subscriptions: [],
         workspaceState: {} as any,
-        globalStorageUri: {} as any,
+        globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: {} as any,
-        globalStoragePath: {} as any,
+        globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     })
+}
+
+export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
+    process.env.ENABLE_SENTRY = 'false'
+    const agent = new Agent()
+    const debugHandler = new MessageHandler()
+    debugHandler.registerNotification('debug/message', params => {
+        console.error(`${params.channel}: ${params.message}`)
+    })
+    debugHandler.messageEncoder.pipe(agent.messageDecoder)
+    agent.messageEncoder.pipe(debugHandler.messageDecoder)
+    const client = agent.clientForThisInstance()
+    const workspaceRoot = vscode.Uri.parse(clientInfo.workspaceRootUri)
+    try {
+        const gitdir = await fspromises.stat(path.join(workspaceRoot.fsPath, '.git'))
+        if (gitdir.isDirectory()) {
+            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
+        }
+    } catch {
+        /* ignore */
+    }
+    await client.request('initialize', clientInfo)
+    client.notify('initialized', null)
+    return agent
 }
 
 export class Agent extends MessageHandler {
@@ -81,10 +108,11 @@ export class Agent extends MessageHandler {
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
-            initializeVscodeExtension()
+            vscode_shim.setClientInfo(clientInfo)
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+            initializeVscodeExtension(this.workspace.workspaceRootUri)
 
             if (clientInfo.extensionConfiguration) {
                 this.setClient(clientInfo.extensionConfiguration)
