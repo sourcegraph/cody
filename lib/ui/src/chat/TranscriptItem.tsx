@@ -164,32 +164,36 @@ export const TranscriptItem: React.FunctionComponent<
                     inProgress && styles.rowInProgress
                 )}
             >
-                {message.displayText ? (
-                    textarea ?? (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            inProgress={inProgress}
-                        />
-                    )
-                ) : inProgress ? (
-                    <LoadingDots />
-                ) : null}
+                {message.displayText
+                    ? textarea ?? (
+                          <CodeBlocks
+                              displayText={message.displayText}
+                              copyButtonClassName={codeBlocksCopyButtonClassName}
+                              copyButtonOnSubmit={copyButtonOnSubmit}
+                              insertButtonClassName={codeBlocksInsertButtonClassName}
+                              insertButtonOnSubmit={insertButtonOnSubmit}
+                              metadata={message.metadata}
+                              inProgress={inProgress}
+                          />
+                      )
+                    : null}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
-            {message.speaker === 'human' && message.contextFiles && message.contextFiles.length > 0 && (
+            {message.speaker === 'human' && (
                 <div className={styles.contextFilesContainer}>
-                    <EnhancedContext
-                        contextFiles={message.contextFiles}
-                        fileLinkComponent={fileLinkComponent}
-                        className={transcriptActionClassName}
-                    />
+                    {message.contextFiles && message.contextFiles.length > 0 ? (
+                        <EnhancedContext
+                            contextFiles={message.contextFiles}
+                            fileLinkComponent={fileLinkComponent}
+                            className={transcriptActionClassName}
+                        />
+                    ) : (
+                        <div className={styles.loadingStateContainer}>
+                            <LoadingDots />
+                        </div>
+                    )}
                 </div>
             )}
             {showFeedbackButtons &&

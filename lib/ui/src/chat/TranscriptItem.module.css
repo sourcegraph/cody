@@ -167,3 +167,7 @@
     flex-direction: column;
     padding: 0;
 }
+
+.loading-state-Container {
+    margin-top: 1rem;
+}
