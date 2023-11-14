@@ -309,7 +309,7 @@ describe('Transcript', () => {
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
 
-    it('adds context for last interaction with non-empty context', async () => {
+    it('Do not add context for last interaction with empty context', async () => {
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
                 Promise.resolve({
@@ -338,7 +338,7 @@ describe('Transcript', () => {
             })
         )
         const isFirstInteraction = !!firstInteraction
-        const addEnhancedContext = true
+        const addEnhancedContext = true || isFirstInteraction
         transcript.addInteraction(firstInteraction)
         transcript.addAssistantResponse('Smartly.')
 
@@ -347,7 +347,7 @@ describe('Transcript', () => {
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
-                firstInteraction: addEnhancedContext || isFirstInteraction || false,
+                firstInteraction: addEnhancedContext,
             })
         )
         transcript.addInteraction(secondInteraction)
@@ -366,10 +366,6 @@ describe('Transcript', () => {
         const expectedPrompt = [
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do batch changes work in sourcegraph' },
             { speaker: 'assistant', text: 'Smartly.' },
-            { speaker: 'human', text: 'Review context from text file `docs/README.md`:\n# Main' },
-            { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Review context from codebase file `src/main.go`:\n```go\npackage main\n```' },
-            { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: 'By setting the Authorization header.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do to delete them' },
