@@ -10,7 +10,8 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { ContextMixer, ContextStrategy } from './context/context-mixer'
+import { ContextMixer } from './context/context-mixer'
+import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -185,7 +186,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
-        this.contextMixer = new ContextMixer(config.contextStrategy, createBfgRetriever)
+        this.contextMixer = new ContextMixer(
+            new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
+        )
 
         const chatHistory = localStorage.getChatHistory()?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0

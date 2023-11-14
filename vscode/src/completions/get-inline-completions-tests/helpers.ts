@@ -9,6 +9,7 @@ import {
 
 import { CodeCompletionsClient } from '../client'
 import { ContextMixer } from '../context/context-mixer'
+import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
     getInlineCompletions as _getInlineCompletions,
@@ -101,7 +102,7 @@ export function params(
         selectedCompletionInfo,
         providerConfig,
         requestManager: new RequestManager(),
-        contextMixer: new ContextMixer('none', null as any),
+        contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
         ...params,
     }
 }
