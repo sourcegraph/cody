@@ -89,6 +89,7 @@ describe('Transcript', () => {
                     null,
                     null
                 ),
+                addEnhancedContext: false,
             })
         )
 
@@ -131,7 +132,7 @@ describe('Transcript', () => {
                     null,
                     null
                 ),
-                firstInteraction: true,
+                addEnhancedContext: true,
             })
         )
 
@@ -171,14 +172,14 @@ describe('Transcript', () => {
         const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
-        const firstInteraction = await chatQuestionRecipe.getInteraction(
+        const addEnhancedContext = await chatQuestionRecipe.getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
             })
         )
-        transcript.addInteraction(firstInteraction)
+        transcript.addInteraction(addEnhancedContext)
 
         const assistantResponse = 'By setting the Authorization header.'
         transcript.addAssistantResponse(assistantResponse)
@@ -336,14 +337,14 @@ describe('Transcript', () => {
         const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
-        const firstInteraction = await chatQuestionRecipe.getInteraction(
+        const addEnhancedContext = await chatQuestionRecipe.getInteraction(
             'how do batch changes work in sourcegraph',
             newRecipeContext({
                 intentDetector,
                 codebaseContext,
             })
         )
-        transcript.addInteraction(firstInteraction)
+        transcript.addInteraction(addEnhancedContext)
         transcript.addAssistantResponse('Smartly.')
 
         const secondInteraction = await chatQuestionRecipe.getInteraction(

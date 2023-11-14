@@ -31,6 +31,7 @@ export interface CodyClientScope {
     includeInferredFile: boolean
     repositories: string[]
     editor: Editor
+    addEnhancedContext: boolean
 }
 
 export interface CodyClientScopePartial {
@@ -89,6 +90,7 @@ export const useClient = ({
         includeInferredFile: true,
         repositories: [],
         editor: new NoopEditor(),
+        addEnhancedContext: true,
     },
     onEvent,
 }: CodyClientProps): CodyClient => {
@@ -174,6 +176,7 @@ export const useClient = ({
                 ...scope,
                 includeInferredRepository: !scope.includeInferredRepository,
                 includeInferredFile: !scope.includeInferredRepository,
+                addEnhancedContext: !scope.includeInferredRepository,
             })),
         [setScopeState]
     )
@@ -239,6 +242,7 @@ export const useClient = ({
                 includeInferredFile: initialScope?.includeInferredFile ?? true,
                 repositories: initialScope?.repositories ?? [],
                 editor: initialScope?.editor ?? scope.editor,
+                addEnhancedContext: initialScope?.addEnhancedContext ?? true,
             }))
 
             onEvent?.('initializedNewChat')
@@ -306,7 +310,7 @@ export const useClient = ({
                 intentDetector,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
-                firstInteraction: transcript.isEmpty,
+                addEnhancedContext: scope.addEnhancedContext,
             })
             if (!interaction) {
                 return Promise.resolve(null)

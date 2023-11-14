@@ -40,6 +40,20 @@
     width: 2rem;
 }
 
+.context-button {
+    color: var(--foreground);
+    position: absolute;
+    right: 1rem;
+    bottom: 0;
+    fill: currentColor;
+    margin: 0rem 0.2rem 0rem 0rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    height: 1.8rem;
+    width: 2rem;
+}
+
 .submit-button:hover {
     opacity: 1;
 }

@@ -28,6 +28,7 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -95,7 +96,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextFiles?: Map<string, ContextFile>,
             addEnhancedContext = true
         ) => {
-            // TODO add UI to toggle enhanced context setting
             const userContextFiles: ContextFile[] = []
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
@@ -225,6 +225,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
+            EnhancedContextToggler={EnhancedContextToggler}
         />
     )
 }
