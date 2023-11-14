@@ -60,6 +60,7 @@ interface ChatboxProps {
     }
     contextSelection?: ContextFile[]
     chatModels?: ChatModelSelection[]
+    enableNewChatUI: boolean
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -80,6 +81,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     applessOnboarding,
     contextSelection,
     chatModels,
+    enableNewChatUI,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -225,7 +227,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
-            EnhancedContextToggler={EnhancedContextToggler}
+            EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
         />
     )
 }

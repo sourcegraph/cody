@@ -30,7 +30,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
                         checked={enhanceContext}
                         onChange={e => onClickHandler((e.target as HTMLInputElement).checked)}
                     >
-                        Enhanced Context
+                        Enhanced Context ✨
                     </VSCodeCheckbox>
                     <p className={styles.enhancedContextHelpText}>
                         Automatically include additional context from your codebase {contextStatus.codebase}
@@ -42,7 +42,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!open)}
-                title={`Enhanced Context ${enhanceContext ? 'Enabled' : 'Disabled'}`}
+                title="Configure Enhanced Context"
             >
                 <i className="codicon codicon-settings" />
             </VSCodeButton>

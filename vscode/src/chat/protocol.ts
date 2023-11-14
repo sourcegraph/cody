@@ -103,7 +103,8 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
