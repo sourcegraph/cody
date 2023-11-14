@@ -359,8 +359,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/shared
       axios:
-        specifier: ^1.3.6
-        version: 1.3.6
+        specifier: ^1.6.2
+        version: 1.6.2
       envalid:
         specifier: ^7.3.1
         version: 7.3.1
@@ -369,7 +369,7 @@ importers:
         version: 1.4.2
       langchain:
         specifier: ^0.0.105
-        version: 0.0.105(axios@1.3.6)(hnswlib-node@1.4.2)
+        version: 0.0.105(axios@1.6.2)(hnswlib-node@1.4.2)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -426,8 +426,8 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0
       axios:
-        specifier: ^1.3.6
-        version: 1.3.6
+        specifier: ^1.6.2
+        version: 1.6.2
       classnames:
         specifier: ^2.3.2
         version: 2.3.2
@@ -6034,7 +6034,7 @@ packages:
   /@types/axios@0.14.0:
     resolution: {integrity: sha512-KqQnQbdYE54D7oa/UmYVMZKq7CO4l8DEENzOKc4aBRwxCXSlJXGz83flFx5L7AWrOQnmuN3kVsRdt+GZPPjiVQ==}
     dependencies:
-      axios: 1.3.6
+      axios: 1.6.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -7499,8 +7499,8 @@ packages:
       - debug
     dev: false
 
-  /axios@1.3.6:
-    resolution: {integrity: sha512-PEcdkk7JcdPiMDkvM4K6ZBRYq9keuVJsToxm2zQIM70Qqo2WHTdJZMXcG9X+RmRp2VPNUQC8W1RAGbgt6b1yMg==}
+  /axios@1.6.2:
+    resolution: {integrity: sha512-7i24Ri4pmDRfJTR7LDBhsOTtcm+9kjX5WiY1X3wIisx6G9So3pfMkEiU7emUBe46oceVImccTEM3k6C5dbVW8A==}
     dependencies:
       follow-redirects: 1.15.1
       form-data: 4.0.0
@@ -12206,7 +12206,7 @@ packages:
       - supports-color
     dev: true
 
-  /langchain@0.0.105(axios@1.3.6)(hnswlib-node@1.4.2):
+  /langchain@0.0.105(axios@1.6.2)(hnswlib-node@1.4.2):
     resolution: {integrity: sha512-iytaHWDQw6U1KG47MTeZOlzQeWGjadBWXxkf1LkmZSPnbGsgFHea/fufKcaIrhsHJn7whf7UIhuBjqu+6TjDmg==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -12373,7 +12373,7 @@ packages:
     dependencies:
       '@anthropic-ai/sdk': 0.4.3
       ansi-styles: 5.2.0
-      axios: 1.3.6
+      axios: 1.6.2
       binary-extensions: 2.2.0
       camelcase: 6.3.0
       decamelize: 1.2.0
