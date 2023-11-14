@@ -301,13 +301,15 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('telemetry/recordEvent', async event => {
             this.telemetryRecorderProvider.getRecorder().recordEvent(
-                // HACK: We have no control over what gets sent over JSON RPC,
-                // so we depend on client implementations to deal with this
-                // themselves. When passing the provided event to the
-                // TelemetryRecorder implementation, we forcibly cast the
-                // input into known types so that the recorder will accept it.
-                //
-                // Do not do this elsewhere!
+                // 👷 HACK: We have no control over what gets sent over JSON RPC,
+                // so we depend on client implementations to give type guidance
+                // to ensure that we don't accidentally share arbitrary,
+                // potentially sensitive string values. In this RPC handler,
+                // when passing the provided event to the TelemetryRecorder
+                // implementation, we forcibly cast all the inputs below
+                // (feature, action, parameters) into known types (strings
+                // 'feature', 'action', 'key') so that the recorder will accept
+                // it. DO NOT do this elsewhere!
                 event.feature as 'feature',
                 event.action as 'action',
                 event.parameters as TelemetryEventParameters<{ key: number }, BillingProduct, BillingCategory>
