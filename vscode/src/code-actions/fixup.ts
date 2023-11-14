@@ -51,8 +51,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     }
 
     private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string => {
-        const intent: FixupIntent = 'fix'
-        return `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
+        return `Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
             .join('\n')}`
     }
