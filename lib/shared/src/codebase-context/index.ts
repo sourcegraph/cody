@@ -60,6 +60,21 @@ export class CodebaseContext {
         return Array.from(uniques.values())
     }
 
+    // A more generic approach to merge two arbitrary result arrays
+    private mergeIndexedContextResults(
+        results: { type: ContextFileSource; results: ContextResult[] }[]
+    ): ContextResult[] {
+        const uniques = new Set<ContextResult>()
+        for (const resultType of results) {
+            resultType.results.forEach(result => {
+                result.source = resultType.type
+                uniques.add(result)
+            })
+        }
+
+        return Array.from(uniques)
+    }
+
     /**
      * Returns context messages from both generic contexts and graph-based contexts.
      * The final list is a combination of these two sets of messages.
@@ -85,6 +100,9 @@ export class CodebaseContext {
             case 'none':
                 return []
             default:
+                if (this.symf && this.embeddings) {
+                    return this.getIndexedContextMessages(query, options)
+                }
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getLocalContextMessages(query, options)
@@ -199,6 +217,33 @@ export class CodebaseContext {
 
             return []
         })
+    }
+
+    private async getIndexedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        try {
+            const [embeddingResults, symfResults] = await Promise.all([
+                this.getEmbeddingSearchResults(query, options),
+                this.getSymfSearchResults(query),
+            ])
+
+            const combinedResults = this.mergeIndexedContextResults([
+                { type: 'embeddings', results: embeddingResults },
+                { type: 'symf', results: symfResults },
+            ])
+
+            const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
+            const messages = resultsToMessages(rerankedResults)
+
+            return messages
+        } catch (error) {
+            if (isError(error)) {
+                console.error('Error retrieving indexed context:', error.message, error.stack)
+            } else {
+                console.error('Error retrieving indexed context:', error)
+            }
+            this.embeddingResultsError = 'Error retrieving indexed context'
+            return []
+        }
     }
 
     private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
@@ -324,8 +369,8 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
     return mergedResults
 }
 
-function resultsToMessages(results: ContextResult[], source?: ContextFileSource): ContextMessage[] {
-    return results.flatMap(({ content, fileName, repoName, revision }) => {
+function resultsToMessages(results: ContextResult[]): ContextMessage[] {
+    return results.flatMap(({ content, fileName, repoName, revision, source }) => {
         const messageText = populateCodeContextTemplate(content, fileName, repoName)
         return getContextMessageWithResponse(messageText, { fileName, repoName, revision }, undefined, source)
     })
