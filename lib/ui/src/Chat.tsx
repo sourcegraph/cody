@@ -259,6 +259,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (!chatCommands || !ChatCommandsComponent) {
                 return
             }
+            const splittedValue = inputValue.split(' ')
+            if (splittedValue.length > 1) {
+                const matchedCommand = chatCommands.filter(([name]) => name === splittedValue[0])
+                if (matchedCommand.length === 1) {
+                    setDisplayCommands(matchedCommand)
+                    setSelectedChatCommand(0)
+                }
+                return
+            }
             if (inputValue === '/') {
                 setDisplayCommands(chatCommands)
                 setSelectedChatCommand(chatCommands.length)
