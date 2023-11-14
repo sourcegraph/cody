@@ -9,7 +9,7 @@
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
 
     position: absolute;
-    bottom: 1.5rem;
+    bottom: 2.5rem;
     right: 1rem;
 
     width: 50%;
@@ -34,4 +34,15 @@
 .settings-btn {
     position: relative;
     color: var(--vscode-editor-foreground);
+}
+
+.pop-up-container:before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 0;
+
+    width: 0;
+    border-top: 1rem solid var(--vscode-input-background);
+    border-left: 1rem solid transparent;
 }
