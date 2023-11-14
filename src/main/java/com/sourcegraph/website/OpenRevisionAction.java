@@ -48,21 +48,21 @@ public class OpenRevisionAction extends DumbAwareAction {
                   if (RepoUtil.getVcsType(project, file) == VCSType.PERFORCE) {
                     // Perforce doesn't have a history view, so we'll just open the file in
                     // Sourcegraph.
-                    ErrorNotification.show(
+                    ErrorNotification.INSTANCE.show(
                         project,
                         "This feature is not yet supported for Perforce. If you want to see Perforce support sooner than later, please raise this at support@sourcegraph.com.");
                   } else {
-                    ErrorNotification.show(project, "Could not find revision to open.");
+                    ErrorNotification.INSTANCE.show(project, "Could not find revision to open.");
                   }
                 });
       } else {
-        ErrorNotification.show(project, "Could not find revision to open.");
+        ErrorNotification.INSTANCE.show(project, "Could not find revision to open.");
       }
       return;
     }
 
     if (project.getProjectFilePath() == null) {
-      ErrorNotification.show(
+      ErrorNotification.INSTANCE.show(
           project, "No project file path found (project: " + project.getName() + ")");
       return;
     }
@@ -103,7 +103,7 @@ public class OpenRevisionAction extends DumbAwareAction {
                     e);
                 return;
               }
-              BrowserOpener.openInBrowser(project, url);
+              BrowserOpener.INSTANCE.openInBrowser(project, url);
             });
   }
 

@@ -62,7 +62,7 @@ public class LocalAppManager {
   public static Optional<String> getLocalAppAccessToken() {
     return getLocalAppInfo()
         .flatMap(appInfo -> Optional.ofNullable(appInfo.getToken()))
-        .filter(AuthorizationUtil::isValidAccessToken);
+        .filter(AuthorizationUtil.INSTANCE::isValidAccessToken);
   }
 
   @NotNull

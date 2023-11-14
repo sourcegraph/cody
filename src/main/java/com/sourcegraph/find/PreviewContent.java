@@ -207,7 +207,7 @@ public class PreviewContent {
       openInEditor();
     } else {
       if (relativeUrl != null) {
-        BrowserOpener.openRelativeUrlInBrowser(project, relativeUrl);
+        BrowserOpener.INSTANCE.openRelativeUrlInBrowser(project, relativeUrl);
       }
     }
   }

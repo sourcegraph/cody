@@ -7,6 +7,6 @@ import org.jetbrains.annotations.NotNull;
 public class OpenFileAction extends FileActionBase {
   @Override
   protected void handleFileUri(@NotNull Project project, @NotNull String url) {
-    BrowserOpener.openInBrowser(project, url);
+    BrowserOpener.INSTANCE.openInBrowser(project, url);
   }
 }

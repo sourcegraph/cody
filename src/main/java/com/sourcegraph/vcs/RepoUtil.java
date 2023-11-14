@@ -66,7 +66,7 @@ public class RepoUtil {
       } else {
         message = "Error determining repository info: " + err.getMessage();
       }
-      ErrorNotification.show(project, message);
+      ErrorNotification.INSTANCE.show(project, message);
       logger.warn(message);
       logger.warn(err);
     }

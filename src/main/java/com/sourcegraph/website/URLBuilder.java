@@ -1,9 +1,8 @@
 package com.sourcegraph.website;
 
-import static com.sourcegraph.common.RegexEscaper.escapeRegexChars;
-
 import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.common.RegexEscaper;
 import com.sourcegraph.config.ConfigUtil;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -76,7 +75,7 @@ public class URLBuilder {
       @Nullable String repoName) {
     String repoFilter =
         (codeHost != null && repoName != null)
-            ? "repo:^" + escapeRegexChars(codeHost + "/" + repoName) + "$"
+            ? "repo:^" + RegexEscaper.INSTANCE.escapeRegexChars(codeHost + "/" + repoName) + "$"
             : null;
     return ConfigUtil.getServerPath(project).getUrl()
         + "/search"

@@ -43,7 +43,7 @@ public class VcsCommitsMetadataLoader {
       return Optional.empty();
     } catch (ExecutionException e) {
       logger.warn(e.getMessage());
-      ErrorNotification.show(
+      ErrorNotification.INSTANCE.show(
           project,
           "Unable to load history from version control system. Please try again or reach out to us at support@sourcegraph.com.");
       return Optional.empty();

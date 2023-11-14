@@ -42,7 +42,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
       SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
       String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
       url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
-      BrowserOpener.openInBrowser(project, url);
+      BrowserOpener.INSTANCE.openInBrowser(project, url);
     } else {
       // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
       ApplicationManager.getApplication()
@@ -66,7 +66,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
                       URLBuilder.buildEditorSearchUrl(
                           project, selectedText, remoteUrl, remoteBranchName);
                 }
-                BrowserOpener.openInBrowser(project, url);
+                BrowserOpener.INSTANCE.openInBrowser(project, url);
               });
     }
   }
