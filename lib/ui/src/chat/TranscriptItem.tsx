@@ -157,13 +157,7 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div
-                className={classNames(
-                    styles.contentPadding,
-                    textarea ? undefined : styles.content,
-                    inProgress && styles.rowInProgress
-                )}
-            >
+            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
                 {message.displayText
                     ? textarea ?? (
                           <CodeBlocks
@@ -190,9 +184,11 @@ export const TranscriptItem: React.FunctionComponent<
                             className={transcriptActionClassName}
                         />
                     ) : (
-                        <div className={styles.loadingStateContainer}>
-                            <LoadingDots />
-                        </div>
+                        inProgress && (
+                            <span className={styles.loadingStateContainer}>
+                                ✨<LoadingDots />
+                            </span>
+                        )
                     )}
                 </div>
             )}

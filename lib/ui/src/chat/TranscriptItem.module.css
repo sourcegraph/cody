@@ -9,11 +9,6 @@
     padding: var(--spacing);
 }
 
-/* Additional padding for the stop-generating button */
-.row-in-progress {
-    padding-bottom: calc(var(--spacing) * 2);
-}
-
 .row:before {
     position: absolute;
     top: 0;
@@ -173,5 +168,5 @@
 }
 
 .loading-state-Container {
-    margin-top: 1rem;
+    display: flex;
 }

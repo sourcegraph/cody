@@ -12,6 +12,8 @@ export interface FileLinkProps {
     range?: ContextFileRange
 }
 
+const enhancedContextSources = new Set(['embeddings', 'keyword', 'symf', 'filename'])
+
 export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
@@ -23,10 +25,10 @@ export const EnhancedContext: React.FunctionComponent<{
 
     const uniqueFiles = new Set<string>()
     const filteredFiles = contextFiles.filter(file => {
-        if (file.source !== 'embeddings') {
+        if (uniqueFiles.has(file.fileName)) {
             return false
         }
-        if (uniqueFiles.has(file.fileName)) {
+        if (file.source && !enhancedContextSources.has(file.source)) {
             return false
         }
         uniqueFiles.add(file.fileName)
@@ -39,7 +41,7 @@ export const EnhancedContext: React.FunctionComponent<{
 
     return (
         <TranscriptAction
-            title={{ verb: '✨', object: '', tooltip: 'Files included by Enhanced Context' }}
+            title={{ verb: '✨', object: '', tooltip: 'Files from codebase context' }}
             steps={filteredFiles?.map(file => ({
                 verb: '',
                 object: (
