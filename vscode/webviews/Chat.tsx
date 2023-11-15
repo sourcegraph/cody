@@ -58,6 +58,7 @@ interface ChatboxProps {
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[]
+    setChatModels?: (models: ChatModelSelection[]) => void
     chatModels?: ChatModelSelection[]
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -78,6 +79,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     isTranscriptError,
     applessOnboarding,
     contextSelection,
+    setChatModels,
     chatModels,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
@@ -117,6 +119,20 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             })
         },
         [vscodeAPI]
+    )
+
+    const onCurrentChatModelChange = useCallback(
+        (selected: ChatModelSelection): void => {
+            if (!chatModels || !setChatModels) {
+                return
+            }
+            vscodeAPI.postMessage({ command: 'chatModel', model: selected.model })
+            const updatedChatModels = chatModels.map(m =>
+                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
+            )
+            setChatModels(updatedChatModels)
+        },
+        [chatModels, setChatModels, vscodeAPI]
     )
 
     const onEditBtnClick = useCallback(
@@ -224,6 +240,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
+            onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
         />
     )
@@ -259,6 +276,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (type @ to attach files)'
@@ -267,7 +285,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         if (autoFocus) {
             inputRef.current?.focus()
         }
-    }, [autoFocus, value])
+    }, [autoFocus, value, chatModels])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
