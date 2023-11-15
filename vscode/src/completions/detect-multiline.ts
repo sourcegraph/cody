@@ -1,9 +1,9 @@
 import { Position, TextDocument } from 'vscode'
 
+import { getLanguageConfig } from '../tree-sitter/language'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 import { DocumentContext } from './get-current-doc-context'
-import { getLanguageConfig } from './language'
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,

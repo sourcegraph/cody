@@ -1,17 +1,12 @@
-import path from 'path'
-
 import dedent from 'dedent'
 import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import Parser, { QueryCapture, QueryMatch } from 'web-tree-sitter'
 
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
-import { SupportedLanguage } from '../tree-sitter/grammars'
-import { createParser } from '../tree-sitter/parser'
-import { DocumentQuerySDK, getDocumentQuerySDK } from '../tree-sitter/query-sdk'
+
+export * from '../tree-sitter/test-helpers'
 
 /**
  * A tag function for creating a {@link CompletionResponse}, for use in tests only.
@@ -62,58 +57,6 @@ export function documentAndPosition(
     const doc = document(prefix + suffix, languageId, uriString)
     const position = doc.positionAt(cursorIndex)
     return { document: doc, position }
-}
-
-export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')
-
-/**
- * Should be used in tests only.
- */
-export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser> {
-    return createParser({
-        language,
-        grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
-    })
-}
-
-/**
- * Should be used in tests only.
- */
-export async function initTreeSitterSDK(language = SupportedLanguage.TypeScript): Promise<DocumentQuerySDK> {
-    await initTreeSitterParser(language)
-    const sdk = getDocumentQuerySDK(language)
-
-    if (!sdk) {
-        throw new Error('Document query SDK is not initialized')
-    }
-
-    return sdk
-}
-
-interface FormattedMatch {
-    pattern: number
-    captures: FormattedCapture[]
-}
-
-export function formatMatches(matches: QueryMatch[]): FormattedMatch[] {
-    return matches.map(({ pattern, captures }) => ({
-        pattern,
-        captures: formatCaptures(captures),
-    }))
-}
-
-interface FormattedCapture {
-    name: string
-    text: string
-}
-
-export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
-    return captures.map(capture => ({
-        name: capture.name,
-        text: capture.node.text,
-        start: capture.node.startPosition,
-        end: capture.node.endPosition,
-    }))
 }
 
 export async function nextTick(): Promise<void> {

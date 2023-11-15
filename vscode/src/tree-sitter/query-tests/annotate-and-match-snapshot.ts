@@ -7,8 +7,8 @@ import { findLast } from 'lodash'
 import { expect } from 'vitest'
 import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
-import { getLanguageConfig } from '../../completions/language'
 import { SupportedLanguage } from '../grammars'
+import { getLanguageConfig } from '../language'
 
 interface CommentSymbolInfo {
     delimiter: string

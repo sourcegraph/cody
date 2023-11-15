@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
+import { getLanguageConfig } from '../tree-sitter/language'
 import { CompletionIntent, execQueryWrapper } from '../tree-sitter/query-sdk'
 
 import { detectMultiline } from './detect-multiline'
-import { getLanguageConfig } from './language'
 import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
 
 export interface DocumentContext {
