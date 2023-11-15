@@ -66,7 +66,8 @@ interface ChatProps extends ChatClassNames {
     contextSelection?: ContextFile[]
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
-    ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
+    ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
+    onCurrentChatModelChange?: (model: ChatModelSelection) => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -91,6 +92,7 @@ export interface ChatUITextAreaProps {
     onInput: React.FormEventHandler<HTMLElement>
     setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
+    chatModels?: ChatModelSelection[]
 }
 
 export interface ChatUISubmitButtonProps {
@@ -146,6 +148,12 @@ export interface ChatModelSelection {
     model: string
     provider: string
     default: boolean
+}
+
+export interface ChatModelDropdownMenuProps {
+    models: ChatModelSelection[]
+    disabled: boolean
+    onCurrentChatModelChange: (model: ChatModelSelection) => void
 }
 
 /**
@@ -207,6 +215,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextSelection,
     chatModels,
     ChatModelDropdownMenu,
+    onCurrentChatModelChange,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -524,6 +533,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatButtonComponent={ChatButtonComponent}
                     isTranscriptError={isTranscriptError}
                     chatModels={chatModels}
+                    onCurrentChatModelChange={onCurrentChatModelChange}
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                 />
             )}
@@ -582,6 +592,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                         setValue={inputHandler}
+                        chatModels={chatModels}
                     />
                     <SubmitButton
                         className={styles.submitButton}

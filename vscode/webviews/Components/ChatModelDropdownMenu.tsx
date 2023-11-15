@@ -2,26 +2,24 @@ import React, { useCallback, useState } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 
-import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
+import { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
 import { AnthropicLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
-
-import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import styles from './ChatModelDropdownMenu.module.css'
 
-export const ChatModelDropdownMenu: React.FunctionComponent<{
-    models: ChatModelSelection[]
-    disabled: boolean
-}> = ({ models, disabled }) => {
+export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({
+    models,
+    disabled,
+    onCurrentChatModelChange,
+}) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
-
     const handleChange = useCallback(
         (event: any): void => {
             const selectedModel = models[event.target?.selectedIndex]
-            getVSCodeAPI().postMessage({ command: 'chatModel', model: selectedModel.model })
+            onCurrentChatModelChange(selectedModel)
             setCurrentModel(selectedModel)
         },
-        [models]
+        [models, onCurrentChatModelChange]
     )
 
     if (!models.length || models.length < 1) {
