@@ -5,11 +5,11 @@ import java.util.*
 
 class CodyChatMessageHistory(private val capacity: Int) {
   var currentValue: String = ""
-  var upperStack: Stack<String> = Stack<String>()
+  private var upperStack: Stack<String> = Stack<String>()
   private var lowerStack: Stack<String> = Stack<String>()
 
   fun popUpperMessage(promptInput: JBTextArea) {
-    resetHistoryIfPromptCleared(promptInput)
+    resetHistoryIfPromptCleared(promptInput.text)
     if (upperStack.isNotEmpty()) {
       val pop = upperStack.pop()
       lowerStack.push(promptInput.text)
@@ -19,7 +19,7 @@ class CodyChatMessageHistory(private val capacity: Int) {
   }
 
   fun popLowerMessage(promptInput: JBTextArea) {
-    resetHistoryIfPromptCleared(promptInput)
+    resetHistoryIfPromptCleared(promptInput.text)
     if (lowerStack.isNotEmpty()) {
       val pop = lowerStack.pop()
       upperStack.push(promptInput.text)
@@ -32,9 +32,9 @@ class CodyChatMessageHistory(private val capacity: Int) {
    * When new message is sent it is pushing all messages from lower stack to upper stack and at the
    * end pushes new message
    */
-  fun messageSent(promptInput: JBTextArea) {
+  fun messageSent(text: String) {
     resetHistory()
-    upperStack.push(promptInput.text)
+    upperStack.push(text)
     if (upperStack.size > capacity) {
       upperStack.removeFirst()
     }
@@ -57,8 +57,8 @@ class CodyChatMessageHistory(private val capacity: Int) {
     currentValue = ""
   }
 
-  private fun resetHistoryIfPromptCleared(promptInput: JBTextArea) {
-    if (promptInput.text.isEmpty() && currentValue.isNotEmpty()) {
+  private fun resetHistoryIfPromptCleared(text: String) {
+    if (text.isEmpty() && currentValue.isNotEmpty()) {
       resetHistory()
     }
   }

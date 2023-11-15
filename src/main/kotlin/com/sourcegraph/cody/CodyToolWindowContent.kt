@@ -80,7 +80,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         PromptPanel(
             chatMessageHistory,
             ::sendChatMessage,
-            onTextChangedSetButtonEnabled = { v -> sendButton.isEnabled = v })
+            sendButton,
+            isGenerating = stopGeneratingButton::isVisible)
 
     val stopGeneratingButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 5))
     val controlsPanel = ControlsPanel(promptPanel, sendButton)
@@ -107,8 +108,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     allContentPanel.add(
         singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL, SIGN_IN_PANEL_INDEX)
     allContentLayout.show(allContentPanel, SING_IN_WITH_SOURCEGRAPH_PANEL)
-    updateVisibilityOfContentPanels()
-    // Add welcome message
+    refreshPanelsVisibility()
+
     addWelcomeMessage()
   }
 
@@ -126,8 +127,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     ApplicationManager.getApplication().executeOnPooledThread { // Non-blocking data fetch
       try {
         server.recipesList().thenAccept { recipes: List<RecipeInfo> ->
-          ApplicationManager.getApplication().invokeLater { updateUIWithRecipeList(recipes) }
-        } // Update on EDT
+          ApplicationManager.getApplication().invokeLater {
+            updateUIWithRecipeList(recipes)
+          } // Update on EDT
+        }
       } catch (e: Exception) {
         logger.warn("Error fetching recipes from agent", e)
         // Update on EDT
@@ -205,7 +208,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   @RequiresEdt
-  private fun updateVisibilityOfContentPanels() {
+  override fun refreshPanelsVisibility() {
     val codyAuthenticationManager = CodyAuthenticationManager.instance
     if (codyAuthenticationManager.getAccounts().isEmpty()) {
       allContentLayout.show(allContentPanel, SING_IN_WITH_SOURCEGRAPH_PANEL)
@@ -218,7 +221,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       val newCodyOnboardingGuidancePanel = CodyOnboardingGuidancePanel(displayName)
       newCodyOnboardingGuidancePanel.addMainButtonActionListener {
         CodyApplicationSettings.instance.isOnboardingGuidanceDismissed = true
-        updateVisibilityOfContentPanels()
+        refreshPanelsVisibility()
         refreshRecipes()
       }
       if (displayName != null) {
@@ -325,6 +328,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     ApplicationManager.getApplication().invokeLater {
       stopGeneratingButton.isVisible = false
       ensureBlinkingCursorIsNotDisplayed()
+      sendButton.isEnabled = promptPanel.textArea.text.isNotBlank()
     }
   }
 
@@ -349,24 +353,15 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   @RequiresEdt
-  override fun refreshPanelsVisibility() {
-    updateVisibilityOfContentPanels()
-  }
-
-  @RequiresEdt
   private fun sendChatMessage() {
-    val text = promptPanel.textArea.getText()
-    chatMessageHistory.messageSent(promptPanel.textArea)
+    val text = promptPanel.textArea.text
+    chatMessageHistory.messageSent(text)
     sendMessage(project, text, "chat-question")
     promptPanel.reset()
-    sendButton.isEnabled = false
   }
 
   @RequiresEdt
   private fun sendMessage(project: Project, message: String, recipeId: String) {
-    if (!sendButton.isEnabled) {
-      return
-    }
     startMessageProcessing()
     val displayText = XmlStringUtil.escapeString(message)
     val humanMessage = ChatMessage(Speaker.HUMAN, message, displayText)

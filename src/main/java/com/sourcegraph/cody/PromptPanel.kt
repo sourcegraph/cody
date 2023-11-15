@@ -12,6 +12,7 @@ import java.awt.BorderLayout
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.BorderFactory
+import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.KeyStroke
 import javax.swing.event.DocumentEvent
@@ -20,7 +21,8 @@ import javax.swing.text.DefaultEditorKit
 class PromptPanel(
     chatMessageHistory: CodyChatMessageHistory,
     onSendMessageAction: () -> Unit,
-    onTextChangedSetButtonEnabled: (Boolean) -> Unit
+    sendButton: JButton,
+    isGenerating: () -> Boolean
 ) : JPanel(BorderLayout()) {
 
   private val autoGrowingTextArea = AutoGrowingTextArea(3, 9, this)
@@ -55,7 +57,7 @@ class PromptPanel(
     val sendMessageAction: AnAction =
         object : DumbAwareAction() {
           override fun actionPerformed(e: AnActionEvent) {
-            if (textArea.getText().isNotEmpty()) {
+            if (sendButton.isEnabled) {
               onSendMessageAction()
               isInHistoryMode = true
             }
@@ -73,12 +75,11 @@ class PromptPanel(
             }
           }
         })
-    // Enable/disable the send button based on whether promptInput is empty
     textArea.document.addDocumentListener(
         object : DocumentAdapter() {
           override fun textChanged(e: DocumentEvent) {
-            // extract method instead of passing sendActionPanel
-            onTextChangedSetButtonEnabled(textArea.getText().isNotEmpty())
+            val empty = textArea.getText().isEmpty()
+            sendButton.isEnabled = !empty && !isGenerating()
           }
         })
     add(autoGrowingTextArea.scrollPane, BorderLayout.CENTER)
