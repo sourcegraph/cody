@@ -59,8 +59,6 @@ export async function getContextMessagesFromSelection(
                 fileName,
                 repoName,
                 revision,
-                source: 'user',
-                type: 'file',
             })
         )
     )

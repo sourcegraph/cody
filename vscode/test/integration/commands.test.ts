@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { afterIntegrationTest, beforeIntegrationTest, getFixupTasks, getTranscript, waitUntil } from './helpers'
 
-suite.only('Commands', function () {
+suite('Commands', function () {
     this.beforeEach(beforeIntegrationTest)
     this.afterEach(afterIntegrationTest)
 

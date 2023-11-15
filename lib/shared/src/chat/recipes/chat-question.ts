@@ -104,9 +104,7 @@ export class ChatQuestion implements Recipe {
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
-            visibleContent,
-            undefined,
-            'editor'
+            visibleContent
         )
     }
 
