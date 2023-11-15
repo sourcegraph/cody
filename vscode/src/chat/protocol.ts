@@ -1,4 +1,4 @@
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -38,7 +38,11 @@ export type WebviewMessage =
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'chatModel'; model: string }
-    | { command: 'openFile'; filePath: string }
+    | {
+          command: 'openFile'
+          filePath: string
+          range?: ActiveTextEditorSelectionRange
+      }
     | {
           command: 'openLocalFileWithRange'
           filePath: string

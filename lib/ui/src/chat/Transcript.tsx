@@ -15,7 +15,7 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { FileLinkProps } from './ContextFiles'
+import { FileLinkProps } from './components/ContextFiles'
 import { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
@@ -148,7 +148,11 @@ export const Transcript: React.FunctionComponent<
                 <TranscriptItem
                     key={index + offset}
                     message={message}
-                    inProgress={false}
+                    inProgress={
+                        index + offset === earlierMessages.length &&
+                        messageInProgress?.speaker === 'assistant' &&
+                        !messageInProgress?.displayText
+                    }
                     beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
@@ -191,7 +195,7 @@ export const Transcript: React.FunctionComponent<
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
                         message={messageInProgress}
-                        inProgress={true}
+                        inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={false}
                         setBeingEdited={setMessageBeingEdited}
                         fileLinkComponent={fileLinkComponent}
@@ -209,6 +213,9 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                     />
+                )}
+                {messageInProgress && messageInProgress.speaker === 'assistant' && (
+                    <div className={styles.rowInProgress} />
                 )}
             </div>
             <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>

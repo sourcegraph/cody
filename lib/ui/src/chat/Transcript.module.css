@@ -14,3 +14,8 @@
     height: 5px; /* this is the grippy region for autoscroll */
     width: 100vw;
 }
+
+/* Additional padding for the stop-generating button */
+.row-in-progress {
+    padding-bottom: 1rem;
+}

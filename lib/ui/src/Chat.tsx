@@ -12,7 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { CodeBlockMeta } from './chat/CodeBlocks'
-import { FileLinkProps } from './chat/ContextFiles'
+import { FileLinkProps } from './chat/components/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
@@ -266,6 +266,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const chatCommentSelectionHandler = useCallback(
         (inputValue: string): void => {
             if (!chatCommands || !ChatCommandsComponent) {
+                return
+            }
+            const splittedValue = inputValue.split(' ')
+            if (splittedValue.length > 1) {
+                const matchedCommand = chatCommands.filter(([name]) => name === splittedValue[0])
+                if (matchedCommand.length === 1) {
+                    setDisplayCommands(matchedCommand)
+                    setSelectedChatCommand(0)
+                }
                 return
             }
             if (inputValue === '/') {
