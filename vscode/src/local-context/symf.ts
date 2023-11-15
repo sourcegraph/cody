@@ -8,6 +8,7 @@ import { promisify } from 'node:util'
 import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import { getCurrentVSCodeDocTextByURI } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context'
 import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -131,7 +132,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     public async getSearchContext(query: string): Promise<ContextResult[]> {
         const scopeDir = getScopeDirs()
         const results = await this.getResults(query, scopeDir)
-        return toContextResult(results)
+        return toContextResult(await Promise.all(results))
     }
 
     public async deleteIndex(scopeDir: string): Promise<void> {
@@ -332,12 +333,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     }
 }
 
-async function toContextResult(results: Promise<Result[]>[]): Promise<ContextResult[]> {
-    const symfResults = await Promise.all(results)
+export async function toContextResult(symResults: Result[][]): Promise<ContextResult[]> {
     const contextResults: ContextResult[] = []
-    for (const resultArray of symfResults) {
-        for (const result of resultArray) {
-            const uri = vscode.Uri.file(result.file)
+    for (const results of symResults) {
+        for (const result of results) {
+            const uri = URI.file(result.file)
             const fileName = vscode.workspace.asRelativePath(result.file)
             const vscodeRange = new vscode.Range(
                 result.range.startPoint.row,
@@ -345,13 +345,18 @@ async function toContextResult(results: Promise<Result[]>[]): Promise<ContextRes
                 result.range.endPoint.row,
                 result.range.endPoint.col
             )
+
             const content = await getCurrentVSCodeDocTextByURI(uri, vscodeRange)
+            if (vscodeRange.isEmpty || !content.trim()) {
+                continue
+            }
 
             contextResults.push({
                 fileName,
                 revision: result.type,
                 content,
                 source,
+                uri,
                 range: {
                     start: {
                         line: vscodeRange.start.line,

@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { ContextFileSource } from '../codebase-context/messages'
 import { ActiveTextEditorSelectionRange } from '../editor'
 
@@ -8,6 +10,7 @@ export interface ContextResult {
     fileName: string
     content: string
 
+    uri?: URI
     range?: ActiveTextEditorSelectionRange
 
     // metadata
