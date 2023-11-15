@@ -145,7 +145,7 @@ export const Transcript: React.FunctionComponent<
                 <TranscriptItem
                     key={index + offset}
                     message={message}
-                    inProgress={!!messageInProgress?.speaker.length}
+                    inProgress={index + offset === earlierMessages.length && !messageInProgress?.displayText}
                     beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
