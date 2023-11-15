@@ -1,7 +1,6 @@
 import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
-import { FixupIntent } from '../chat/recipes/fixup'
 
 export interface ActiveTextEditor {
     content: string
@@ -65,8 +64,15 @@ export interface VsCodeInlineController {
     error(): Promise<void>
 }
 
+/**
+ * The intent classification for the fixup.
+ * Manually determined depending on how the fixup is triggered.
+ */
+export type FixupIntent = 'add' | 'edit' | 'fix'
+
 export interface VsCodeFixupTaskRecipeData {
     instruction: string
+    intent: FixupIntent
     fileName: string
     precedingText: string
     selectedText: string
@@ -75,11 +81,7 @@ export interface VsCodeFixupTaskRecipeData {
 }
 
 export interface VsCodeFixupController {
-    getTaskRecipeData(
-        taskId: string,
-        options: { enableSmartSelection?: boolean }
-    ): Promise<VsCodeFixupTaskRecipeData | undefined>
-    getTaskIntent(taskId: string): Promise<FixupIntent>
+    getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
 }
 
 export interface VsCodeCommandsController {

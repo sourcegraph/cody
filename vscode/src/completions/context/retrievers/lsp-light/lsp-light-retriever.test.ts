@@ -7,7 +7,7 @@ import { Position } from '../../../../testutils/mocks'
 import { range, withPosixPaths } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
 
-import { LspLightGraphCache } from './lsp-light-graph-cache'
+import { LspLightRetriever } from './lsp-light-retriever'
 
 const document1Uri = URI.file('/document1.ts')
 const document2Uri = URI.file('/document2.ts')
@@ -16,13 +16,13 @@ const disposable = {
     dispose: () => {},
 }
 
-describe('LSPLightGraphCache', () => {
+describe('LspLightRetriever', () => {
     let testDocuments: {
         document1: vscode.TextDocument
         document2: vscode.TextDocument
     }
 
-    let cache: LspLightGraphCache
+    let retriever: LspLightRetriever
     let onDidChangeTextEditorSelection: any
     let onDidChangeTextDocument: any
     let getGraphContextFromRange: Mock
@@ -66,7 +66,7 @@ describe('LSPLightGraphCache', () => {
             .mockImplementation(() =>
                 Promise.resolve([{ symbolName: 'foo', content: ['foo(): void'], uri: document1Uri.toString() }])
             )
-        cache = LspLightGraphCache.createInstance(
+        retriever = new LspLightRetriever(
             {
                 // Mock VS Code event handlers so we can fire them manually
                 onDidChangeTextEditorSelection: (_onDidChangeTextEditorSelection: any) => {
@@ -80,19 +80,17 @@ describe('LSPLightGraphCache', () => {
                     return disposable
                 },
             },
-            getGraphContextFromRange,
-            null
+            getGraphContextFromRange
         )
     })
     afterEach(() => {
-        cache.dispose()
+        retriever.dispose()
     })
 
     it('calls the LSP for context of the current and previous lines', async () => {
-        await cache.retrieve({
+        await retriever.retrieve({
             document: testDocuments.document1,
             position: new Position(1, 0),
-            docContext: {},
             hints: { maxChars: 100 },
         })
 
@@ -131,10 +129,9 @@ describe('LSPLightGraphCache', () => {
 
         expect(
             withPosixPaths(
-                await cache.retrieve({
+                await retriever.retrieve({
                     document: testDocuments.document1,
                     position: new Position(1, 0),
-                    docContext: {},
                     hints: { maxChars: 100 },
                 })
             )
@@ -177,10 +174,9 @@ describe('LSPLightGraphCache', () => {
 
         expect(
             withPosixPaths(
-                await cache.retrieve({
+                await retriever.retrieve({
                     document: testDocuments.document1,
                     position: new Position(1, 0),
-                    docContext: {},
                     hints: { maxChars: 100 },
                 })
             )

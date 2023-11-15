@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
@@ -35,14 +36,16 @@ export class FixupTask {
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
+        /* The intent of the edit, derived from the source of the command. */
+        public readonly intent: FixupIntent = 'edit',
         public selectionRange: vscode.Range,
-        // insert mode means insert replacement at selection, otherwise replace selection contents with replacement
+        /* insert mode means insert replacement at selection, otherwise replace selection contents with replacement */
         public insertMode?: boolean,
-        // the source of the instruction, e.g. 'code-action', 'doc', etc
+        /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
-        this.instruction = instruction.replace(/^\/edit/, '').trim()
+        this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
     }
 
     /**

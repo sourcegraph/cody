@@ -43,6 +43,14 @@ describe('replaceFileNameWithMarkdownLink', () => {
         expect(result).toEqual('Error in [_@test.js_](vscode://file/path/test.js:10)')
     })
 
+    it('handles edge case where start line at 0 - exclude start line in markdown link', () => {
+        const text = 'Error in @test.js'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 0)
+
+        expect(result).toEqual('Error in [_@test.js_](vscode://file/path/test.js)')
+    })
+
     it('handles names that showed up more than once', () => {
         const text = 'Compare and explain @foo.js and @bar.js. What does @foo.js do?'
 
