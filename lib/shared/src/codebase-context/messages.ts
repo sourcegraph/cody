@@ -32,7 +32,7 @@ export interface ContextFile {
         dirname?: string
         relative?: string
     }
-    range?: ContextFileRange | ActiveTextEditorSelectionRange
+    range?: ActiveTextEditorSelectionRange
 
     // metadata
     source?: ContextFileSource
@@ -70,17 +70,6 @@ export interface HoverContext {
         startCharacter: number
         endLine: number
         endCharacter: number
-    }
-}
-
-export interface ContextFileRange {
-    start: {
-        line: number
-        character: number
-    }
-    end: {
-        line: number
-        character: number
     }
 }
 

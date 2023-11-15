@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ContextFileRange } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
 
 let workspaceRootUri = vscode.workspace.workspaceFolders?.[0]?.uri
 let serverEndpoint = ''
@@ -20,7 +20,7 @@ export function workspaceActionsOnConfigChange(workspaceUri: vscode.Uri | null, 
 export async function openFilePath(
     filePath: string,
     currentViewColumn?: vscode.ViewColumn,
-    range?: ContextFileRange
+    range?: ActiveTextEditorSelectionRange
 ): Promise<void> {
     void vscode.commands.executeCommand('vscode.open', filePath)
     if (!workspaceRootUri) {

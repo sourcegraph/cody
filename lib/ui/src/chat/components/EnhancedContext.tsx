@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ContextFile, ContextFileRange } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
@@ -9,7 +9,7 @@ export interface FileLinkProps {
     repoName?: string
     revision?: string
     source?: string
-    range?: ContextFileRange
+    range?: ActiveTextEditorSelectionRange
 }
 
 const enhancedContextSources = new Set(['embeddings', 'keyword', 'symf', 'filename'])

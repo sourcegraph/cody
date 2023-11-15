@@ -1,4 +1,5 @@
 import { Configuration } from '../configuration'
+import { ActiveTextEditorSelectionRange } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { GraphContextFetcher } from '../graph-context'
 import {
@@ -18,13 +19,7 @@ import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
-import {
-    ContextFile,
-    ContextFileRange,
-    ContextFileSource,
-    ContextMessage,
-    getContextMessageWithResponse,
-} from './messages'
+import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithResponse } from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number
@@ -327,7 +322,7 @@ function contextMessageWithSource(message: ContextMessage, source: ContextFileSo
     return message
 }
 
-function createContextFileRange(result: EmbeddingsSearchResult): ContextFileRange {
+function createContextFileRange(result: EmbeddingsSearchResult): ActiveTextEditorSelectionRange {
     return {
         start: {
             line: result.startLine,
