@@ -28,6 +28,11 @@ export class IgnoreHelper {
      * A map of workspace roots to their ignore rules.
      */
     private workspaceIgnores = new Map<string, Ignore>()
+    /**
+     * The absolute path of the current workspace root being checked.
+     * This should be updated everytime users switch workspaces.
+     */
+    private currentWorkspace: string | undefined
 
     /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
@@ -70,6 +75,7 @@ export class IgnoreHelper {
         }
 
         this.workspaceIgnores.set(workspaceRoot, rules)
+        this.currentWorkspace = workspaceRoot
     }
 
     public clearIgnoreFiles(workspaceRoot: string): void {
@@ -92,6 +98,16 @@ export class IgnoreHelper {
         const relativePath = path.relative(workspaceRoot, uri.fsPath)
         const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
+    }
+
+    public isIgnoredInCurrentWorkspace(relativeFilePath: string): boolean {
+        if (!this.currentWorkspace) {
+            throw new Error('Workspace is not configured')
+        }
+        // create uri from workspace root and relativePath
+        const workspaceRootUri = URI.parse(this.currentWorkspace)
+        const uri = URI.file(path.join(workspaceRootUri.fsPath, relativeFilePath))
+        return this.isIgnored(uri)
     }
 
     private findWorkspaceRoot(filePath: string): string | undefined {
