@@ -13,7 +13,6 @@ import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTabbedPane
-import com.intellij.ui.components.JBTextArea
 import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
@@ -49,7 +48,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private val allContentPanel = JPanel(allContentLayout)
   private val tabbedPane = JBTabbedPane()
   private val messagesPanel = JPanel()
-  private val promptInput: JBTextArea
+  private val promptPanel: PromptPanel
   private val sendButton: JButton
   private var inProgressChat = CancellationToken()
   private val stopGeneratingButton =
@@ -76,14 +75,13 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     val chatPanel = ChatScrollPane(messagesPanel)
 
     // Controls panel
-    sendButton = createSendButton(project)
-    val promptPanel =
+    sendButton = createSendButton()
+    promptPanel =
         PromptPanel(
-            project,
             chatMessageHistory,
             ::sendChatMessage,
             onTextChangedSetButtonEnabled = { v -> sendButton.isEnabled = v })
-    promptInput = promptPanel.promptInput
+
     val stopGeneratingButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 5))
     val controlsPanel = ControlsPanel(promptPanel, sendButton)
     stopGeneratingButtonPanel.preferredSize =
@@ -91,7 +89,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     stopGeneratingButton.addActionListener {
       inProgressChat.abort()
       stopGeneratingButton.isVisible = false
-      sendButton.isEnabled = true
     }
     stopGeneratingButton.isVisible = false
     stopGeneratingButtonPanel.add(stopGeneratingButton)
@@ -257,15 +254,16 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     addMessageToChat(ChatMessage(Speaker.ASSISTANT, welcomeText))
   }
 
-  private fun createSendButton(project: Project): JButton {
+  private fun createSendButton(): JButton {
     val sendButton = JButton("Send")
     sendButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, java.lang.Boolean.TRUE)
     val buttonUI = DarculaButtonUI.createUI(sendButton) as ButtonUI
     sendButton.setUI(buttonUI)
-    sendButton.addActionListener { e: ActionEvent? ->
+    sendButton.addActionListener { _: ActionEvent? ->
       GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "clicked")
-      sendChatMessage(project)
+      sendChatMessage()
     }
+    sendButton.isEnabled = false
     return sendButton
   }
 
@@ -326,7 +324,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   override fun finishMessageProcessing() {
     ApplicationManager.getApplication().invokeLater {
       stopGeneratingButton.isVisible = false
-      sendButton.isEnabled = true
       ensureBlinkingCursorIsNotDisplayed()
     }
   }
@@ -334,7 +331,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   override fun resetConversation() {
     ApplicationManager.getApplication().invokeLater {
       stopGeneratingButton.isVisible = false
-      sendButton.isEnabled = true
       messagesPanel.removeAll()
       addWelcomeMessage()
       messagesPanel.revalidate()
@@ -358,11 +354,12 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   @RequiresEdt
-  private fun sendChatMessage(project: Project) {
-    val text = promptInput.getText()
-    chatMessageHistory.messageSent(promptInput)
+  private fun sendChatMessage() {
+    val text = promptPanel.textArea.getText()
+    chatMessageHistory.messageSent(promptPanel.textArea)
     sendMessage(project, text, "chat-question")
-    promptInput.text = ""
+    promptPanel.reset()
+    sendButton.isEnabled = false
   }
 
   @RequiresEdt
@@ -425,14 +422,14 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
   private fun focusPromptInput() {
     if (tabbedPane.selectedIndex == CHAT_TAB_INDEX) {
-      promptInput.requestFocusInWindow()
-      val textLength = promptInput.document.length
-      promptInput.caretPosition = textLength
+      promptPanel.textArea.requestFocusInWindow()
+      val textLength = promptPanel.textArea.document.length
+      promptPanel.textArea.caretPosition = textLength
     }
   }
 
   val preferredFocusableComponent: JComponent
-    get() = promptInput
+    get() = promptPanel.textArea
 
   companion object {
     const val ONBOARDING_PANEL = "onboardingPanel"

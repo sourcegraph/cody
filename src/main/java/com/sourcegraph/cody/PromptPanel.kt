@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.project.DumbAwareAction
-import com.intellij.openapi.project.Project
 import com.intellij.ui.DocumentAdapter
 import com.sourcegraph.cody.chat.CodyChatMessageHistory
 import com.sourcegraph.cody.ui.AutoGrowingTextArea
@@ -19,24 +18,25 @@ import javax.swing.event.DocumentEvent
 import javax.swing.text.DefaultEditorKit
 
 class PromptPanel(
-    project: Project,
     chatMessageHistory: CodyChatMessageHistory,
-    onSendMessageAction: (Project) -> Unit,
+    onSendMessageAction: () -> Unit,
     onTextChangedSetButtonEnabled: (Boolean) -> Unit
 ) : JPanel(BorderLayout()) {
 
   private val autoGrowingTextArea = AutoGrowingTextArea(3, 9, this)
-  val promptInput = autoGrowingTextArea.textArea
+  val textArea = autoGrowingTextArea.textArea
   private var isInHistoryMode = true
 
   init {
+    textArea.emptyText.text = "Ask a question about this code..."
+
     val upperMessageAction: AnAction =
         object : DumbAwareAction() {
           override fun actionPerformed(e: AnActionEvent) {
             if (isInHistoryMode) {
-              chatMessageHistory.popUpperMessage(promptInput)
+              chatMessageHistory.popUpperMessage(textArea)
             } else {
-              val defaultAction = promptInput.actionMap[DefaultEditorKit.upAction]
+              val defaultAction = textArea.actionMap[DefaultEditorKit.upAction]
               defaultAction.actionPerformed(null)
             }
           }
@@ -45,9 +45,9 @@ class PromptPanel(
         object : DumbAwareAction() {
           override fun actionPerformed(e: AnActionEvent) {
             if (isInHistoryMode) {
-              chatMessageHistory.popLowerMessage(promptInput)
+              chatMessageHistory.popLowerMessage(textArea)
             } else {
-              val defaultAction = promptInput.actionMap[DefaultEditorKit.downAction]
+              val defaultAction = textArea.actionMap[DefaultEditorKit.downAction]
               defaultAction.actionPerformed(null)
             }
           }
@@ -55,33 +55,39 @@ class PromptPanel(
     val sendMessageAction: AnAction =
         object : DumbAwareAction() {
           override fun actionPerformed(e: AnActionEvent) {
-            if (promptInput.getText().isNotEmpty()) {
-              onSendMessageAction(project)
+            if (textArea.getText().isNotEmpty()) {
+              onSendMessageAction()
+              isInHistoryMode = true
             }
           }
         }
-    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput)
-    upperMessageAction.registerCustomShortcutSet(POP_UPPER_MESSAGE_ACTION_SHORTCUT, promptInput)
-    lowerMessageAction.registerCustomShortcutSet(POP_LOWER_MESSAGE_ACTION_SHORTCUT, promptInput)
-    promptInput.addKeyListener(
+    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, textArea)
+    upperMessageAction.registerCustomShortcutSet(POP_UPPER_MESSAGE_ACTION_SHORTCUT, textArea)
+    lowerMessageAction.registerCustomShortcutSet(POP_LOWER_MESSAGE_ACTION_SHORTCUT, textArea)
+    textArea.addKeyListener(
         object : KeyAdapter() {
           override fun keyReleased(e: KeyEvent) {
             val keyCode = e.keyCode
             if (keyCode != KeyEvent.VK_UP && keyCode != KeyEvent.VK_DOWN) {
-              isInHistoryMode = promptInput.getText().isEmpty()
+              isInHistoryMode = textArea.getText().isEmpty()
             }
           }
         })
     // Enable/disable the send button based on whether promptInput is empty
-    promptInput.document.addDocumentListener(
+    textArea.document.addDocumentListener(
         object : DocumentAdapter() {
           override fun textChanged(e: DocumentEvent) {
             // extract method instead of passing sendActionPanel
-            onTextChangedSetButtonEnabled(promptInput.getText().isNotEmpty())
+            onTextChangedSetButtonEnabled(textArea.getText().isNotEmpty())
           }
         })
     add(autoGrowingTextArea.scrollPane, BorderLayout.CENTER)
     border = BorderFactory.createEmptyBorder(0, 0, 10, 0)
+  }
+
+  fun reset() {
+    textArea.text = ""
+    isInHistoryMode = true
   }
 
   companion object {
