@@ -14,3 +14,50 @@
         visibility: hidden;
     }
 }
+
+.loading-container {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    opacity: 0.8;
+}
+
+.dots-holder {
+    display: flex;
+    gap: 0.2rem;
+    margin: 0.5rem 0;
+    margin-left: 0.25rem;
+}
+
+.dot {
+    animation: 1s flash 0.5s infinite;
+    width: 0.25rem !important;
+    height: 0.25rem !important;
+    border-radius: 100%;
+    background-color: #fff;
+    opacity: 0.25;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.6s;
+    background-color: #fff;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.7s;
+    background-color: #fff;
+}
+
+@keyframes flash {
+    from {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.25;
+    }
+}

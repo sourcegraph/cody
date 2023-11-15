@@ -104,7 +104,7 @@ export class ChatPanelProvider extends MessageProvider {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+                await openFilePath(message.filePath, this.webviewPanel?.viewColumn, message.range)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)

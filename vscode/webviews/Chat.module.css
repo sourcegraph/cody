@@ -59,13 +59,6 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     padding-left: 2rem;
 }
 
-.transcript-action {
-    background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-button-secondaryForeground);
-    font-size: var(--vscode-editor-font-size);
-    margin-top: 5px;
-}
-
 .code-blocks-copy-button,
 .code-blocks-insert-button {
     color: var(--vscode-foreground);

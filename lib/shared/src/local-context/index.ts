@@ -1,4 +1,6 @@
-export interface ContextResult {
+import { ContextFile } from '../codebase-context/messages'
+
+export interface ContextResult extends ContextFile {
     repoName?: string
     revision?: string
     fileName: string
