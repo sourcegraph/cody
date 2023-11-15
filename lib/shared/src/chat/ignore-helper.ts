@@ -28,11 +28,18 @@ export class IgnoreHelper {
      * A map of workspace roots to their ignore rules.
      */
     private workspaceIgnores = new Map<string, Ignore>()
+
     /**
-     * The absolute path of the current workspace root being checked.
-     * This should be updated everytime users switch workspaces.
+     * The absolute path of the current workspace root folder (last checked workspace)
+     * This is mainly used to construct a file URL for results returned by the embedding clients
+     *
+     * Used as a workaround as IDE clients currently don't support multi-root workspaces at the moment as users
+     * can only define one codebase at a time via cody.codebase
+     *
+     * This can be removed once the embedding clients support .cody/.ignore directly
      */
     private currentWorkspace: string | undefined
+
     /**
      * Check if the configuration is enabled or not
      * Do not ignore files if the feature is not enabled
@@ -84,7 +91,6 @@ export class IgnoreHelper {
         }
 
         this.workspaceIgnores.set(workspaceRoot, rules)
-        this.currentWorkspace = workspaceRoot
     }
 
     public clearIgnoreFiles(workspaceRoot: string): void {
@@ -109,6 +115,11 @@ export class IgnoreHelper {
         if (!workspaceRoot) {
             return this.getDefaultIgnores().ignores(path.basename(uri.fsPath))
         }
+
+        // Set current workspace for checking relative paths returned by embedding client
+        // Before each request submitted by a user, we will first run this method to check
+        // the file the user is currently on, which in returns allows us to know which workspace the user is in
+        this.currentWorkspace = workspaceRoot
 
         const relativePath = path.relative(workspaceRoot, uri.fsPath)
         const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
