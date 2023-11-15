@@ -30,7 +30,16 @@ export const ChatModelDropdownMenu: React.FunctionComponent<{
 
     return (
         <div className={styles.container}>
-            <VSCodeDropdown disabled={disabled} className={styles.dropdownContainer} onChange={handleChange} title={disabled ? `This chat is using ${currentModel.title}. Start a new chat to choose a different model.` : undefined}>
+            <VSCodeDropdown
+                disabled={disabled}
+                className={styles.dropdownContainer}
+                onChange={handleChange}
+                title={
+                    disabled
+                        ? `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`
+                        : undefined
+                }
+            >
                 {models?.map((option, index) => (
                     <VSCodeOption className={styles.option} key={option.model} id={index.toString()}>
                         <ProviderIcon model={option.model} />
