@@ -9,10 +9,9 @@ import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
-
-import { SupportedLanguage } from './tree-sitter/grammars'
-import { createParser } from './tree-sitter/parser'
-import { DocumentQuerySDK, getDocumentQuerySDK } from './tree-sitter/query-sdk'
+import { SupportedLanguage } from '../tree-sitter/grammars'
+import { createParser } from '../tree-sitter/parser'
+import { DocumentQuerySDK, getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 
 /**
  * A tag function for creating a {@link CompletionResponse}, for use in tests only.

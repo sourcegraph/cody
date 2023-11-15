@@ -3,7 +3,7 @@ import * as path from 'path'
 
 import Parser, { Query } from 'web-tree-sitter'
 
-import { SupportedLanguage } from '../../../../vscode/src/completions/tree-sitter/grammars'
+import { SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 
 export type QueryName = 'context'
 

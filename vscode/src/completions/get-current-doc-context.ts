@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 
+import { CompletionIntent, execQueryWrapper } from '../tree-sitter/query-sdk'
+
 import { detectMultiline } from './detect-multiline'
 import { getLanguageConfig } from './language'
 import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
-import { CompletionIntent, execQueryWrapper } from './tree-sitter/query-sdk'
 
 export interface DocumentContext {
     prefix: string

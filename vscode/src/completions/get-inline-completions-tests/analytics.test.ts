@@ -2,10 +2,10 @@ import { omit } from 'lodash'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
 import { CompletionEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
-import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletions, params } from './helpers'
 

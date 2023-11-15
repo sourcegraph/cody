@@ -1,6 +1,6 @@
 import { beforeAll, describe, it } from 'vitest'
 
-import { initTreeSitterParser } from '../../test-helpers'
+import { initTreeSitterParser } from '../../completions/test-helpers'
 import { getNodeAtCursorAndParents } from '../ast-getters'
 import { SupportedLanguage } from '../grammars'
 import { getDocumentQuerySDK } from '../query-sdk'

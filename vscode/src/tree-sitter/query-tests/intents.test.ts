@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 
-import { initTreeSitterSDK } from '../../test-helpers'
+import { initTreeSitterSDK } from '../../completions/test-helpers'
 import { SupportedLanguage } from '../grammars'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
