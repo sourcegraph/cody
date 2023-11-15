@@ -11,15 +11,9 @@ import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
 import { PromptsProvider } from './PromptsProvider'
-import { ToolsProvider } from './ToolsProvider'
 import { constructFileUri, createFileWatchers, createQuickPickItem, openCustomCommandDocsLink } from './utils/helpers'
-import {
-    menu_options,
-    menu_separators,
-    showAskQuestionQuickPick,
-    showcommandTypeQuickPick,
-    showRemoveConfirmationInput,
-} from './utils/menu'
+import { menu_options, menu_separators, showAskQuestionQuickPick, showRemoveConfirmationInput } from './utils/menu'
+import { ToolsProvider } from './utils/ToolsProvider'
 
 /**
  * Manage commands built with prompts from CustomPromptsStore and PromptsProvider
@@ -75,36 +69,40 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     /**
      * Adds a new command to the commands map.
-     * @param key - The unique key for the command. e.g. /test
-     * or 'invalid' if the command is not found.
      *
      * Looks up the command prompt using the given key in the default prompts map.
      * If found, creates a new Cody command runner instance for that prompt and input.
      * Returns the ID of the created runner, or 'invalid' if not found.
      */
     public async addCommand(
-        key: string,
-        input = '',
+        text: string,
         requestID?: string,
         contextFiles?: ContextFile[],
         addEnhancedContext?: boolean
     ): Promise<string> {
-        const command = this.default.get(key)
+        const commandSplit = text.split(' ')
+        // The unique key for the command. e.g. /test
+        const commandKey = commandSplit.shift() || text
+        // Additional instruction that will be added to end of prompt in the custom-prompt recipe
+        const commandInput = commandKey === text ? '' : commandSplit.join(' ')
+
+        const command = this.default.get(commandKey)
         if (!command) {
             return 'invalid'
         }
 
         if (command.slashCommand === '/ask') {
-            command.prompt = input
+            command.prompt = text
         }
 
         if (!command.context && addEnhancedContext) {
             command.context = { codebase: addEnhancedContext }
         }
 
+        command.additionalInput = commandInput
         command.requestID = requestID
         command.contextFiles = contextFiles
-        return this.createCodyCommandRunner(command, input)
+        return this.createCodyCommandRunner(command, commandInput)
     }
 
     /**
@@ -329,28 +327,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         logDebug('CommandsController:customPrompts:menu', action)
-
-        switch (action) {
-            case 'delete':
-            case 'file':
-            case 'open': {
-                await this.configFileAction(
-                    action,
-                    selected.type || (await showcommandTypeQuickPick(action, this.custom.promptSize))
-                )
-                break
-            }
-            case 'add': {
-                await this.configFileAction(action)
-                break
-            }
-            case 'list':
-                await this.customCommandMenu()
-                break
-            case 'docs':
-                await openCustomCommandDocsLink()
-                break
-        }
+        await this.configFileAction(action, selected.type, selected.type)
 
         return this.refresh()
     }
@@ -359,27 +336,33 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async configFileAction(action: string, fileType?: CustomCommandType): Promise<void> {
+    public async configFileAction(action: string, fileType?: CustomCommandType, filePath?: string): Promise<void> {
         switch (action) {
-            case 'delete':
+            case 'add': {
+                await this.addNewUserCommandQuick()
+                break
+            }
+            case 'list':
+                await this.customCommandMenu()
+                break
+            case 'docs':
+                await openCustomCommandDocsLink()
+                break
+            case 'delete': {
                 if ((await showRemoveConfirmationInput()) !== 'Yes') {
                     return
                 }
                 await this.custom.deleteConfig(fileType)
                 await this.refresh()
                 break
+            }
             case 'file':
                 await this.custom.createConfig(fileType)
                 break
             case 'open':
-                if (fileType) {
-                    await this.open(fileType)
+                if (filePath) {
+                    await this.open(filePath)
                 }
-                break
-            case 'add':
-                await this.addNewUserCommandQuick()
-                break
-            default:
                 break
         }
     }
@@ -420,7 +403,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             const uri = this.custom.jsonFileUris[filePath]
             const doesExist = await this.tools.doesUriExist(uri)
             // create file if it doesn't exist
-            return doesExist ? this.tools.openFile(uri) : this.configFileAction('file', filePath)
+            return doesExist ? this.tools.openFile(uri) : this.open(filePath)
         }
         const fileUri = constructFileUri(filePath, this.tools.getUserInfo()?.workspaceRoot)
 

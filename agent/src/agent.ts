@@ -1,3 +1,5 @@
+import { spawn } from 'child_process'
+import * as fspromises from 'fs/promises'
 import path from 'path'
 
 import envPaths from 'env-paths'
@@ -15,7 +17,7 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
-import { InProcessClient, MessageHandler } from './jsonrpc-alias'
+import { MessageHandler } from './jsonrpc-alias'
 import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
@@ -68,7 +70,41 @@ export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
     })
 }
 
-export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<InProcessClient> {
+export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHandler> {
+    const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
+        const serverHandler = new MessageHandler()
+        const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        args.push('jsonrpc')
+        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false' } })
+        child.stderr.on('data', chunk => {
+            console.error(`agent stderr ${chunk}`)
+        })
+        child.on('disconnect', () => reject())
+        child.on('close', () => reject())
+        child.on('error', error => reject(error))
+        child.on('exit', code => {
+            serverHandler.exit()
+            reject(code)
+        })
+        child.stderr.pipe(process.stdout)
+        child.stdout.pipe(serverHandler.messageDecoder)
+        serverHandler.messageEncoder.pipe(child.stdin)
+        serverHandler.registerNotification('debug/message', params => {
+            console.error(`${params.channel}: ${params.message}`)
+        })
+        await serverHandler.request('initialize', clientInfo)
+        serverHandler.notify('initialized', null)
+        return serverHandler
+    }
+    return new Promise<MessageHandler>((resolve, reject) => {
+        asyncHandler(reject).then(
+            handler => resolve(handler),
+            error => reject(error)
+        )
+    })
+}
+
+export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
     process.env.ENABLE_SENTRY = 'false'
     const agent = new Agent()
     const debugHandler = new MessageHandler()
@@ -78,9 +114,18 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<In
     debugHandler.messageEncoder.pipe(agent.messageDecoder)
     agent.messageEncoder.pipe(debugHandler.messageDecoder)
     const client = agent.clientForThisInstance()
+    const workspaceRoot = vscode.Uri.parse(clientInfo.workspaceRootUri)
+    try {
+        const gitdir = await fspromises.stat(path.join(workspaceRoot.fsPath, '.git'))
+        if (gitdir.isDirectory()) {
+            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
+        }
+    } catch {
+        /* ignore */
+    }
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
-    return client
+    return agent
 }
 
 export class Agent extends MessageHandler {

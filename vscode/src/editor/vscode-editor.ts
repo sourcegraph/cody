@@ -12,7 +12,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CommandsController } from '../custom-prompts/CommandsController'
+import { CommandsController } from '../commands/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
