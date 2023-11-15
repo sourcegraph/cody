@@ -45,6 +45,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: null,
+            internalUnstable: false,
         })
     })
 
@@ -119,6 +120,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.agent.ide':
                         return undefined
+                    case 'cody.internal.unstable':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }

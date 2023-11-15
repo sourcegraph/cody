@@ -11,6 +11,8 @@ const utf8 = new TextDecoder('utf-8')
  * @returns A Disposable that should be disposed when the extension unloads.
  */
 export function setUpCodyIgnore(): vscode.Disposable {
+    onConfigChange()
+
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_POSIX_GLOB)
     watcher.onDidChange(refresh)
@@ -26,12 +28,24 @@ export function setUpCodyIgnore(): vscode.Disposable {
     // Handle existing workspace folders.
     vscode.workspace.workspaceFolders?.map(wf => refresh(wf.uri))
 
+    const onDidChangeConfig = vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('cody')) {
+            onConfigChange()
+        }
+    })
+
     return {
         dispose() {
             watcher.dispose()
             didChangeSubscription.dispose()
+            onDidChangeConfig.dispose()
         },
     }
+}
+
+function onConfigChange(): void {
+    const config = vscode.workspace.getConfiguration('cody')
+    ignores.setActiveState(config.get('internal.unstable') as boolean)
 }
 
 /**

@@ -1131,6 +1131,12 @@
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
+        },
+        "cody.internal.unstable": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
+          "default": false
         }
       }
     },

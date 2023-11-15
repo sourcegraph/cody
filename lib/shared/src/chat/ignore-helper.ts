@@ -33,6 +33,15 @@ export class IgnoreHelper {
      * This should be updated everytime users switch workspaces.
      */
     private currentWorkspace: string | undefined
+    /**
+     * Check if the configuration is enabled or not
+     * Do not ignore files if the feature is not enabled
+     * TODO: Remove this once it's ready for GA
+     */
+    private isActive = false
+    public setActiveState(isActive: boolean): void {
+        this.isActive = isActive
+    }
 
     /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
@@ -80,9 +89,15 @@ export class IgnoreHelper {
 
     public clearIgnoreFiles(workspaceRoot: string): void {
         this.workspaceIgnores.delete(workspaceRoot)
+        this.currentWorkspace = workspaceRoot
     }
 
     public isIgnored(uri: URI): boolean {
+        // Do not ignore if the feature is not enabled
+        if (!this.isActive) {
+            return false
+        }
+
         this.ensureFileUri('uri', uri)
         this.ensureAbsolute('uri.fsPath', uri.fsPath)
         const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)

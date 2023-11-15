@@ -98,7 +98,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
         autocompleteExperimentalGraphContext,
-
+        internalUnstable: config.get<boolean>(CONFIG_KEY.internalUnstable, false),
         /**
          * UNDOCUMENTED FLAGS
          */

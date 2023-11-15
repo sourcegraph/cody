@@ -43,6 +43,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
+    internalUnstable: false,
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({
