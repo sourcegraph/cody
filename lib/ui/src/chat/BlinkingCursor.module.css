@@ -16,8 +16,10 @@
 }
 
 .loading-container {
+    margin-top: 0.5rem;
     display: flex;
     align-items: center;
+    opacity: 0.8;
 }
 
 .dots-holder {

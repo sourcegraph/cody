@@ -4,10 +4,9 @@ import styles from './BlinkingCursor.module.css'
 
 export const BlinkingCursor: React.FunctionComponent = () => <span className={styles.cursor} />
 
-export const ContextFetching: React.FunctionComponent = () => (
+export const LoadingContext: React.FunctionComponent = () => (
     <div className={styles.loadingContainer}>
-        ✨ Fetch Contexting
-        <LoadingDots />
+        ✨ <LoadingDots />
     </div>
 )
 

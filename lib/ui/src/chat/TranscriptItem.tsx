@@ -13,7 +13,7 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { LoadingDots } from './BlinkingCursor'
+import { LoadingContext, LoadingDots } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
@@ -184,11 +184,7 @@ export const TranscriptItem: React.FunctionComponent<
                             className={transcriptActionClassName}
                         />
                     ) : (
-                        inProgress && (
-                            <span className={styles.loadingStateContainer}>
-                                ✨<LoadingDots />
-                            </span>
-                        )
+                        inProgress && <LoadingContext />
                     )}
                 </div>
             )}
