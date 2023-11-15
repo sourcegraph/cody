@@ -116,13 +116,14 @@ export class IgnoreHelper {
     }
 
     public isIgnoredInCurrentWorkspace(relativeFilePath: string): boolean {
-        if (!this.currentWorkspace) {
-            throw new Error('Workspace is not configured')
+        if (this.currentWorkspace) {
+            // create uri from workspace root and relativePath
+            const workspaceRootUri = URI.parse(this.currentWorkspace)
+            const uri = URI.file(path.join(workspaceRootUri.fsPath, relativeFilePath))
+            return this.isIgnored(uri)
+            // throw new Error('Workspace is not configured')
         }
-        // create uri from workspace root and relativePath
-        const workspaceRootUri = URI.parse(this.currentWorkspace)
-        const uri = URI.file(path.join(workspaceRootUri.fsPath, relativeFilePath))
-        return this.isIgnored(uri)
+        return false
     }
 
     private findWorkspaceRoot(filePath: string): string | undefined {
