@@ -83,18 +83,6 @@
 
 // ------------------------------------
 
-  /**
-//^ start comment[1]
-   * comment
-//         █
-   */
-//  ^ end comment[1]
-
-// Nodes types:
-// comment[1]: comment
-
-// ------------------------------------
-
   function functionName() {}
 //         ^^^^^^^^^^^^ function.name[1]
 //                    █
