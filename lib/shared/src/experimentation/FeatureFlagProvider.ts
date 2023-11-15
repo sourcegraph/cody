@@ -23,10 +23,8 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    CodyAutocompleteProviderLatency = 'cody-autocomplete-provider-latency',
     CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
-    CodyAutocompleteLowPerformanceDebounce = 'cody-autocomplete-low-performance-debounce',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

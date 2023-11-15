@@ -39,6 +39,7 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+    artificialDelay?: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -164,6 +165,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         tracer,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
+        artificialDelay,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -221,10 +223,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerModel: providerConfig.model,
         languageId: document.languageId,
         completionIntent,
+        artificialDelay,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    const interval = multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine
+    const interval =
+        ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
     if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
         await new Promise<void>(resolve => setTimeout(resolve, interval))
     }
