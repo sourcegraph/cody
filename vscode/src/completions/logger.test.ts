@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'v
 import { telemetryService } from '../services/telemetry'
 import { range } from '../testutils/textDocument'
 
+import { ContextSummary } from './context/context-mixer'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import * as CompletionLogger from './logger'
@@ -16,6 +17,13 @@ const defaultArgs = {
     providerModel: 'blazing-fast-llm',
     languageId: 'typescript',
 }
+
+const defaultContextSummary = {
+    strategy: 'none',
+    duration: 0.1337,
+    totalChars: 3,
+    retrieverStats: {},
+} satisfies ContextSummary
 
 const { document, position } = documentAndPosition('const foo = █')
 const defaultRequestParams: RequestParams = {
@@ -47,7 +55,7 @@ describe('logger', () => {
         expect(typeof id).toBe('string')
 
         CompletionLogger.start(id)
-        CompletionLogger.networkRequestStarted(id, { strategy: 'fake', duration: 0.1337 })
+        CompletionLogger.networkRequestStarted(id, defaultContextSummary)
         CompletionLogger.loaded(id, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
         CompletionLogger.suggested(id, item)
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0))
@@ -67,7 +75,9 @@ describe('logger', () => {
             providerModel: 'blazing-fast-llm',
             charCount: 3,
             contextSummary: {
-                strategy: 'fake',
+                retrieverStats: {},
+                strategy: 'none',
+                totalChars: 3,
                 duration: 0.1337,
             },
             items: [
@@ -117,7 +127,7 @@ describe('logger', () => {
 
         const id1 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id1)
-        CompletionLogger.networkRequestStarted(id1, { strategy: 'fake', duration: 0 })
+        CompletionLogger.networkRequestStarted(id1, defaultContextSummary)
         CompletionLogger.loaded(id1, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
         CompletionLogger.suggested(id1, item)
 
@@ -127,7 +137,7 @@ describe('logger', () => {
 
         const id2 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id2)
-        CompletionLogger.networkRequestStarted(id2, { strategy: 'fake', duration: 0 })
+        CompletionLogger.networkRequestStarted(id2, defaultContextSummary)
         CompletionLogger.loaded(id2, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
         CompletionLogger.suggested(id2, item)
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0))
@@ -163,7 +173,7 @@ describe('logger', () => {
         // After accepting the completion, the ID won't be reused a third time
         const id3 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id3)
-        CompletionLogger.networkRequestStarted(id3, { strategy: 'fake', duration: 0 })
+        CompletionLogger.networkRequestStarted(id3, defaultContextSummary)
         CompletionLogger.loaded(id3, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
         CompletionLogger.suggested(id3, item)
 

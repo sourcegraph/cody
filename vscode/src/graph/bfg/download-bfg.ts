@@ -15,30 +15,30 @@ const defaultBfgVersion = '5.2.6637'
 
 export async function downloadBfg(context: vscode.ExtensionContext): Promise<string | null> {
     const config = vscode.workspace.getConfiguration()
-    const userBfgPath = config.get<string>('cody.experimental.bfg.path')
+    const userBfgPath = config.get<string>('cody.experimental.cody-engine.path')
     if (userBfgPath) {
         const bfgStat = await fspromises.stat(userBfgPath)
         if (!bfgStat.isFile()) {
             throw new Error(`not a file: ${userBfgPath}`)
         }
-        logDebug('BFG', `using user bfg: ${userBfgPath} ${bfgStat.isFile()}`)
+        logDebug('CodyEngine', `using user-provided path: ${userBfgPath} ${bfgStat.isFile()}`)
         return userBfgPath
     }
 
     const osArch = getOSArch()
     if (!osArch) {
-        logDebug('BFG', 'getOSArch returned nothing')
+        logDebug('CodyEngine', 'getOSArch returned nothing')
         return null
     }
     const { platform, arch } = osArch
 
     if (!arch) {
-        logDebug('BFG', 'getOSArch returned undefined arch')
+        logDebug('CodyEngine', 'getOSArch returned undefined arch')
         return null
     }
 
     if (!platform) {
-        logDebug('BFG', 'getOSArch returned undefined platform')
+        logDebug('CodyEngine', 'getOSArch returned undefined platform')
         return null
     }
     // Rename returned architecture to match RFC 795 conventions
@@ -49,14 +49,14 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     ])
     const rfc795Arch = archRenames.get(arch ?? '') ?? arch
 
-    const bfgContainingDir = path.join(context.globalStorageUri.fsPath, 'bfg')
-    const bfgVersion = config.get<string>('cody.experimental.bfg.version', defaultBfgVersion)
+    const bfgContainingDir = path.join(context.globalStorageUri.fsPath, 'cody-engine')
+    const bfgVersion = config.get<string>('cody.experimental.cody-engine.version', defaultBfgVersion)
     await fspromises.mkdir(bfgContainingDir, { recursive: true })
-    const bfgFilename = `bfg-${bfgVersion}-${platform}-${rfc795Arch}`
+    const bfgFilename = `cody-engine-${bfgVersion}-${platform}-${rfc795Arch}`
     const bfgPath = path.join(bfgContainingDir, bfgFilename)
     const isAlreadyDownloaded = await fileExists(bfgPath)
     if (isAlreadyDownloaded) {
-        logDebug('BFG', `using downloaded bfg "${bfgPath}"`)
+        logDebug('CodyEngine', `using downloaded path "${bfgPath}"`)
         return bfgPath
     }
 
@@ -65,22 +65,22 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
         await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Window,
-                title: 'Downloading context engine',
+                title: 'Downloading cody-engine',
                 cancellable: false,
             },
             async progress => {
-                progress.report({ message: 'Downloading bfg and extracting bfg' })
+                progress.report({ message: 'Downloading cody-engine' })
                 const bfgZip = path.join(bfgContainingDir, 'bfg.zip')
                 await downloadBfgBinary(bfgURL, bfgZip)
                 await unzipBfg(bfgZip, bfgContainingDir)
-                logDebug('BFG', bfgPath)
+                logDebug('CodyEngine', bfgPath)
                 // The zip file contains a binary named `bfg` or `bfg.exe`. We unzip it with that name first and then rename into
                 // a version-specific binary so that we can delete old versions of bfg.
                 const unzipPath = platform === 'windows' ? 'bfg.exe' : 'bfg'
                 await fspromises.rename(path.join(bfgContainingDir, unzipPath), bfgPath)
                 await fspromises.chmod(bfgPath, 0o755)
                 await fspromises.rm(bfgZip)
-                logDebug('BFG', `downloaded bfg to ${bfgPath}`)
+                logDebug('CodyEngine', `downloaded cody-engine to ${bfgPath}`)
             }
         )
         void removeOldBfgBinaries(bfgContainingDir, bfgFilename)
@@ -102,7 +102,7 @@ async function unzipBfg(zipFile: string, destinationDir: string): Promise<void> 
 }
 
 async function downloadBfgBinary(url: string, destination: string): Promise<void> {
-    logDebug('BFG', `Downloading from URL ${url}`)
+    logDebug('CodyEngine', `downloading from URL ${url}`)
     const response = await axios({
         url,
         method: 'GET',

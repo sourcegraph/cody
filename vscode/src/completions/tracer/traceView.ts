@@ -5,8 +5,8 @@ import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
 import {
     registerDebugListener as registerSectionObserverDebugListener,
-    SectionObserver,
-} from '../context/retrievers/lsp-light/section-observer'
+    SectionHistoryRetriever,
+} from '../context/retrievers/section-history/section-history-retriever'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
@@ -181,7 +181,7 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
-        SectionObserver.instance
+        SectionHistoryRetriever.instance
             ? `
 ## Document sections
 
@@ -211,10 +211,10 @@ function statisticSummary(): string {
 }
 
 function documentSections(): string {
-    if (!SectionObserver.instance) {
+    if (!SectionHistoryRetriever.instance) {
         return ''
     }
-    return `\`\`\`\n${SectionObserver.instance.debugPrint()}\n\`\`\``
+    return `\`\`\`\n${SectionHistoryRetriever.instance.debugPrint()}\n\`\`\``
 }
 
 function codeDetailsWithSummary(
@@ -248,10 +248,10 @@ function markdownCodeBlock(value: string): string {
     return '```\n' + value.replaceAll('`', '\\`') + '\n```\n'
 }
 
-function markdownList(object: { [key: string]: string | number | boolean }): string {
+function markdownList(object: { [key: string]: any }): string {
     return Object.keys(object)
         .sort()
-        .map(key => `- ${key}: ${JSON.stringify(object[key as keyof typeof object])}`)
+        .map(key => `- ${key}: ${JSON.stringify(object[key as keyof typeof object], null, 2)}`)
         .join('\n')
 }
 

@@ -490,7 +490,7 @@
         "title": "Start a New Chat Panel",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
-        "icon": "$(comment)"
+        "icon": "$(new-comment-icon)"
       },
       {
         "command": "cody.chat.tree.view.focus",
@@ -1122,7 +1122,8 @@
           "enum": [
             null,
             "lsp-light",
-            "bfg"
+            "bfg",
+            "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
@@ -1153,6 +1154,13 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0042"
+        }
+      },
+      "new-comment-icon": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0048"
         }
       }
     }

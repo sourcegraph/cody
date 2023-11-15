@@ -5,46 +5,62 @@ import * as vscode from 'vscode'
 import { downloadBfg } from '../../../../graph/bfg/download-bfg'
 import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
+import { Repository } from '../../../../repository/builtinGitExtension'
+import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+
+// This promise is only used for testing purposes. We don't await on the
+// indexing request during autocomplete because we want autocomplete to respond
+// quickly even while BFG is indexing.
+export let bfgIndexingPromise = Promise.resolve<void>(undefined)
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
     private didFailLoading = false
-    private latestRepoIndexing: Promise<void[]> = Promise.resolve([])
-    private indexedGitDirectories = new Set<string>()
-    constructor(
-        private context: vscode.ExtensionContext,
-        private gitDirectoryUri: (uri: vscode.Uri) => vscode.Uri | undefined
-    ) {
+    // Keys are repository URIs, values are revisions (commit hashes).
+    private indexedRepositoryRevisions = new Map<string, string>()
+    constructor(private context: vscode.ExtensionContext) {
         this.loadedBFG = this.loadBFG()
 
         this.loadedBFG.then(
             () => {},
             error => {
                 this.didFailLoading = true
-                logDebug('BFG', 'failed to initialize', error)
+                logDebug('CodyEngine', 'failed to initialize', error)
             }
         )
 
-        this.latestRepoIndexing = Promise.all(
-            vscode.window.visibleTextEditors.map(textEditor => this.didOpenDocumentUri(textEditor.document.uri))
-        )
-        vscode.workspace.onDidOpenTextDocument(document => this.didOpenDocumentUri(document.uri))
+        bfgIndexingPromise = this.indexOpenGitRepositories()
     }
 
-    private async didOpenDocumentUri(uri: vscode.Uri): Promise<void> {
-        if (this.didFailLoading) {
+    private async indexOpenGitRepositories(): Promise<void> {
+        const git = gitAPI()
+        if (!git) {
             return
         }
-        const gitdir = this.gitDirectoryUri(uri)?.toString()
-        if (gitdir && !this.indexedGitDirectories.has(gitdir)) {
-            this.indexedGitDirectories.add(gitdir)
-            const bfg = await this.loadedBFG
-            const indexingStartTime = Date.now()
-            await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: gitdir })
-            logDebug('BFG', `indexing time ${Date.now() - indexingStartTime}ms`)
+        for (const repository of git.repositories) {
+            await this.onDidChangeRepository(repository)
         }
+        this.context.subscriptions.push(git.onDidOpenRepository(repository => this.onDidChangeRepository(repository)))
+        // TODO: handle closed repositories
+    }
+
+    private async onDidChangeRepository(repository: Repository): Promise<void> {
+        const uri = repository.rootUri.toString()
+        const head = repository?.state?.HEAD?.commit
+        if (head !== this.indexedRepositoryRevisions.get(uri)) {
+            this.indexedRepositoryRevisions.set(uri, head ?? '')
+            await this.indexRepository(repository)
+        }
+    }
+
+    private async indexRepository(repository: Repository): Promise<void> {
+        const bfg = await this.loadedBFG
+        const indexingStartTime = Date.now()
+        // TODO: include commit?
+        await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
+        logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
     }
 
     public async retrieve({
@@ -58,10 +74,9 @@ export class BfgRetriever implements ContextRetriever {
         }
         const bfg = await this.loadedBFG
         if (!bfg.isAlive()) {
-            logDebug('BFG', 'BFG is not alive')
+            logDebug('CodyEngine', 'not alive')
             return []
         }
-        await this.latestRepoIndexing
 
         const responses = await bfg.request('bfg/contextAtPosition', {
             uri: document.uri.toString(),
@@ -124,13 +139,13 @@ export class BfgRetriever implements ContextRetriever {
         const codyrpc = await downloadBfg(this.context)
         if (!codyrpc) {
             throw new Error(
-                'Failed to download BFG binary. To fix this problem, set the "cody.experimental.bfg.path" configuration to the path of your BFG binary'
+                'Failed to download BFG binary. To fix this problem, set the "cody.experimental.cody-engine.path" configuration to the path of your BFG binary'
             )
         }
         const isVerboseDebug = vscode.workspace.getConfiguration().get<boolean>('cody.debug.verbose', false)
         const child = child_process.spawn(codyrpc, { stdio: 'pipe', env: { VERBOSE_DEBUG: `${isVerboseDebug}` } })
         child.stderr.on('data', chunk => {
-            logDebug('BFG', 'stderr', chunk.toString())
+            logDebug('CodyEngine', 'stderr', chunk.toString())
         })
         child.on('disconnect', () => reject())
         child.on('close', () => reject())
@@ -143,9 +158,6 @@ export class BfgRetriever implements ContextRetriever {
         child.stdout.pipe(bfg.messageDecoder)
         bfg.messageEncoder.pipe(child.stdin)
         await bfg.request('bfg/initialize', { clientName: 'vscode' })
-        for (const folder of vscode.workspace.workspaceFolders ?? []) {
-            await this.didOpenDocumentUri(folder.uri)
-        }
         return bfg
     }
 }
