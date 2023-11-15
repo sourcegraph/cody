@@ -39,9 +39,10 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
+    // It checks if file.range exists first before accessing start and end.
+    // If range doesn't exist, it adds 0 lines for that file.
     const lines = filteredFiles.reduce(
-        (total, file) =>
-            total + (file.range?.end?.line || 0) - (file.range?.start?.line || file.range?.end?.line || 0) + 1,
+        (total, file) => total + (file.range ? file.range?.end?.line - file.range?.start?.line + 1 : 0),
         0
     )
     const files = filteredFiles.length
