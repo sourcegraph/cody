@@ -30,10 +30,10 @@ export class CodeActionProvider implements vscode.Disposable {
             return
         }
 
-        this.addActionProvider(FixupCodeAction)
-        this.addActionProvider(ExplainCodeAction)
-        this.addActionProvider(DocumentCodeAction)
         this.addActionProvider(EditCodeAction)
+        this.addActionProvider(DocumentCodeAction)
+        this.addActionProvider(ExplainCodeAction)
+        this.addActionProvider(FixupCodeAction)
     }
 
     private addActionProvider(ActionType: {
