@@ -82,9 +82,12 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "function.body",
                   "contextSummary": {
-                    "strategy": "local",
+                    "retrieverStats": {},
+                    "strategy": "none",
+                    "totalChars": 0,
                   },
                   "id": "stable-uuid",
                   "languageId": "typescript",
@@ -130,9 +133,12 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "return_statement",
                   "contextSummary": {
-                    "strategy": "local",
+                    "retrieverStats": {},
+                    "strategy": "none",
+                    "totalChars": 0,
                   },
                   "id": "stable-uuid",
                   "languageId": "typescript",

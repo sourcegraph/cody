@@ -9,11 +9,10 @@ import * as rimraf from 'rimraf'
 import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
+import { bfgIndexingPromise, BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { Agent, initializeVscodeExtension } from '../agent'
-import { MessageHandler } from '../jsonrpc-alias'
+import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
 const exec = util.promisify(child_process.exec)
@@ -55,35 +54,38 @@ describe('BfgRetriever', async () => {
     afterAll(async () => {
         if (shouldCreateGitDir) {
             await rimraf.rimraf(gitdir)
-            // rimraf.rimrafSync(tmpDir)
         }
     })
 
-    const agent = new Agent()
-
-    const debugHandler = new MessageHandler()
-    debugHandler.registerNotification('debug/message', params => console.log(`${params.channel}: ${params.message}`))
-    debugHandler.messageEncoder.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(debugHandler.messageDecoder)
+    const rootUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
+    vscode_shim.addGitRepository(rootUri, 'asdf')
+    const agent = await newEmbeddedAgentClient({
+        name: 'BfgContextFetcher',
+        version: '0.1.0',
+        workspaceRootUri: rootUri.toString(),
+    })
+    const client = agent.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
     const content = await fspromises.readFile(filePath, 'utf8')
     const CURSOR = '/*CURSOR*/'
     it('returns non-empty context', async () => {
-        const gitdirUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
         if (bfgCratePath) {
             const bfgBinary = path.join(bfgCratePath, '..', '..', 'target', 'debug', 'bfg')
             vscode_shim.customConfiguration['cody.experimental.bfg.path'] = bfgBinary
         }
         const extensionContext: Partial<vscode.ExtensionContext> = {
+            subscriptions: [],
             globalStorageUri: vscode.Uri.from({ scheme: 'file', path: tmpDir }),
         }
-        agent.workspace.addDocument({
+        client.notify('textDocument/didOpen', {
             filePath,
             content: content.replace(CURSOR, ''),
         })
 
-        const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext, () => gitdirUri)
+        const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext)
+
+        await bfgIndexingPromise
 
         const document = agent.workspace.agentTextDocument({ filePath })
         assert(document.getText().length > 0)
@@ -99,19 +101,14 @@ describe('BfgRetriever', async () => {
 
         expect(actual).toMatchInlineSnapshot([
             {
-                content: 'distance(a: Point, b: Point)',
-                fileName: 'Point.ts',
-                symbol: 'scip-ctags . . . distance().',
-            },
-            {
-                content: "import { distance } from './Point'",
-                fileName: 'main.ts',
-                symbol: 'scip-ctags . . . distance.',
+                content: 'function distance(a: Point, b: Point): number  { ... }',
+                fileName: 'src/Point.ts',
+                symbol: 'scip-ctags . . . src/`Point.ts`/distance().',
             },
             {
                 content: 'interface Point {\n    x: number\n    y: number\n}',
-                fileName: 'Point.ts',
-                symbol: 'scip-ctags . . . Point#',
+                fileName: 'src/Point.ts',
+                symbol: 'scip-ctags . . . src/`Point.ts`/Point#',
             },
         ])
     })

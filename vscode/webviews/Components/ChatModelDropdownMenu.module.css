@@ -8,17 +8,17 @@
 }
 
 .dropdown-container {
-    width: 95%;
+    width: 100%;
     padding: 0.5rem;
 }
 
 .header-logo {
     width: 1.5rem;
-    height: 1.5rem;
+    height: 1rem;
     margin-right: 0.5em;
     flex-shrink: 0;
+    padding: 0.25rem 0rem 0.25rem 0.25rem;
 }
-
 .logo {
     width: 0.8rem;
     height: 0.8rem;

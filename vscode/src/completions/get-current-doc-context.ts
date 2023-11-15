@@ -133,7 +133,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
               character: Math.max(0, position.character - 1),
           }
 
-    const [completionItent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
+    const [completionIntent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
 
     const docContext: Omit<DocumentContext, 'multilineTrigger'> = {
         prefix,
@@ -147,7 +147,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         prevNonEmptyLine,
         nextNonEmptyLine,
         injectedPrefix,
-        completionIntent: completionItent?.name,
+        completionIntent: completionIntent?.name,
         position,
     }
 
