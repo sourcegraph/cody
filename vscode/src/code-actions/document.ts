@@ -1,48 +1,49 @@
 import * as vscode from 'vscode'
 import Parser from 'web-tree-sitter'
 
+import { getParseLanguage } from '../completions/tree-sitter/grammars'
 import { getCachedParseTreeForDocument } from '../completions/tree-sitter/parse-tree-cache'
 
-const getDocumentableNodeForPosition = (
-    document: vscode.TextDocument,
-    position: vscode.Position
-): Parser.SyntaxNode | null => {
-    const parseTreeCache = getCachedParseTreeForDocument(document)
+const isValidDocumentableNode = (node: Parser.SyntaxNode, languageId: string): boolean => {
+    const language = getParseLanguage(languageId)
 
-    if (!parseTreeCache) {
-        return null
+    if (!language) {
+        return false
     }
 
-    const { parser, tree } = parseTreeCache
-
-    const language = parser.getLanguage()
-
-    const node = language
-        .query(
-            `
-(function_declaration
-    name: (identifier) @function.name)
-    `
-        )
-        .matches(tree.rootNode, { row: position.line, column: position.character })
-
-    console.log(node[0].captures[0].node.text)
-    // TODO: Language specific checks for allowed documentable nodes
-
-    return null
+    switch (language) {
+        case 'typescript':
+        case 'typescriptreact':
+        case 'javascript':
+        case 'javascriptreact':
+            return Boolean(node.type.match(/definition|declaration|declarator|export_statement/))
+        // TODO
+        case 'java':
+        case 'go':
+        case 'python':
+        case 'csharp':
+            return false
+        default:
+            return Boolean(node.type.match(/definition|declaration|declarator/))
+    }
 }
 
 export class DocumentCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
 
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] {
-        const documentableNode = getDocumentableNodeForPosition(document, range.start)
+        const tree = getCachedParseTreeForDocument(document)?.tree
 
-        if (!documentableNode) {
+        if (!tree) {
             return []
         }
 
-        return [this.createCommandCodeAction(document, range, documentableNode.text)]
+        const node = tree.rootNode.descendantForPosition({ row: range.start.line, column: range.start.character })
+        if (!isValidDocumentableNode(node, document.languageId)) {
+            return []
+        }
+
+        return [this.createCommandCodeAction(document, range, node.text)]
     }
 
     private createCommandCodeAction(
