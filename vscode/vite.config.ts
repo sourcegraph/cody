@@ -17,7 +17,7 @@ export default defineConfig({
             //
             // https://vitest.dev/guide/reporters.html#hanging-process-reporter
             'hanging-process',
-            'default'
-        ]
-    }
+            'default',
+        ],
+    },
 })
