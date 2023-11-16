@@ -82,6 +82,7 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "function.body",
                   "contextSummary": {
                     "retrieverStats": {},
@@ -132,6 +133,7 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "return_statement",
                   "contextSummary": {
                     "retrieverStats": {},

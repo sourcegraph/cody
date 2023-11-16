@@ -13,9 +13,10 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { BlinkingCursor } from './BlinkingCursor'
+import { LoadingContext, LoadingDots } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
-import { ContextFiles, FileLinkProps } from './ContextFiles'
+import { FileLinkProps } from './components/ContextFiles'
+import { EnhancedContext } from './components/EnhancedContext'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -147,15 +148,6 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </header>
             )}
-            {message.contextFiles && message.contextFiles.length > 0 && (
-                <div className={styles.actions}>
-                    <ContextFiles
-                        contextFiles={message.contextFiles}
-                        fileLinkComponent={fileLinkComponent}
-                        className={transcriptActionClassName}
-                    />
-                </div>
-            )}
             {message.preciseContext && message.preciseContext.length > 0 && (
                 <div className={styles.actions}>
                     <PreciseContexts
@@ -165,31 +157,36 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div
-                className={classNames(
-                    styles.contentPadding,
-                    textarea ? undefined : styles.content,
-                    inProgress && styles.rowInProgress
-                )}
-            >
-                {message.displayText ? (
-                    textarea ?? (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            inProgress={inProgress}
-                        />
-                    )
-                ) : inProgress ? (
-                    <BlinkingCursor />
-                ) : null}
+            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
+                {message.displayText
+                    ? textarea ?? (
+                          <CodeBlocks
+                              displayText={message.displayText}
+                              copyButtonClassName={codeBlocksCopyButtonClassName}
+                              copyButtonOnSubmit={copyButtonOnSubmit}
+                              insertButtonClassName={codeBlocksInsertButtonClassName}
+                              insertButtonOnSubmit={insertButtonOnSubmit}
+                              metadata={message.metadata}
+                              inProgress={inProgress}
+                          />
+                      )
+                    : inProgress && <LoadingDots />}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
+            )}
+            {message.speaker === 'human' && (
+                <div className={styles.contextFilesContainer}>
+                    {message.contextFiles && message.contextFiles.length > 0 ? (
+                        <EnhancedContext
+                            contextFiles={message.contextFiles}
+                            fileLinkComponent={fileLinkComponent}
+                            className={transcriptActionClassName}
+                        />
+                    ) : (
+                        inProgress && <LoadingContext />
+                    )}
+                </div>
             )}
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&

@@ -16,7 +16,6 @@ import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
-import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
@@ -332,7 +331,6 @@ async function getCodebaseContext(
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         symf,
-        undefined,
-        getRerankWithLog(chatClient)
+        undefined
     )
 }

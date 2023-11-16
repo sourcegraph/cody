@@ -382,7 +382,6 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * Checks if Cody is enabled on the current Sourcegraph instance.
-     *
      * @returns
      * enabled: Whether Cody is enabled.
      * version: The Sourcegraph version.

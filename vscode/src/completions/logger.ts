@@ -51,6 +51,7 @@ export interface CompletionEvent {
         source?: InlineCompletionsResultSource
         lineCount?: number
         charCount?: number
+        artificialDelay?: number
         // Mapping to a higher level abstractions of syntax nodes (e.g., function declaration body)
         completionIntent?: CompletionIntent
     }

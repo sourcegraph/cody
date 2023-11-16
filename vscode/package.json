@@ -1122,7 +1122,8 @@
           "enum": [
             null,
             "lsp-light",
-            "bfg"
+            "bfg",
+            "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
