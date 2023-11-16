@@ -27,7 +27,7 @@ export class BfgRetriever implements ContextRetriever {
             () => {},
             error => {
                 this.didFailLoading = true
-                logDebug('BFG', 'failed to initialize', error)
+                logDebug('CodyEngine', 'failed to initialize', error)
             }
         )
 
@@ -60,7 +60,7 @@ export class BfgRetriever implements ContextRetriever {
         const indexingStartTime = Date.now()
         // TODO: include commit?
         await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
-        logDebug('BFG', `indexing time ${Date.now() - indexingStartTime}ms`)
+        logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
     }
 
     public async retrieve({
@@ -74,7 +74,7 @@ export class BfgRetriever implements ContextRetriever {
         }
         const bfg = await this.loadedBFG
         if (!bfg.isAlive()) {
-            logDebug('BFG', 'BFG is not alive')
+            logDebug('CodyEngine', 'not alive')
             return []
         }
 
@@ -139,13 +139,13 @@ export class BfgRetriever implements ContextRetriever {
         const codyrpc = await downloadBfg(this.context)
         if (!codyrpc) {
             throw new Error(
-                'Failed to download BFG binary. To fix this problem, set the "cody.experimental.bfg.path" configuration to the path of your BFG binary'
+                'Failed to download BFG binary. To fix this problem, set the "cody.experimental.cody-engine.path" configuration to the path of your BFG binary'
             )
         }
         const isVerboseDebug = vscode.workspace.getConfiguration().get<boolean>('cody.debug.verbose', false)
         const child = child_process.spawn(codyrpc, { stdio: 'pipe', env: { VERBOSE_DEBUG: `${isVerboseDebug}` } })
         child.stderr.on('data', chunk => {
-            logDebug('BFG', 'stderr', chunk.toString())
+            logDebug('CodyEngine', 'stderr', chunk.toString())
         })
         child.on('disconnect', () => reject())
         child.on('close', () => reject())

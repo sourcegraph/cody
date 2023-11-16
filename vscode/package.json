@@ -38,7 +38,7 @@
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
-    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/query-tests/**/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
   },
   "categories": [
     "Programming Languages",
@@ -490,7 +490,7 @@
         "title": "Start a New Chat Panel",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
-        "icon": "$(comment)"
+        "icon": "$(new-comment-icon)"
       },
       {
         "command": "cody.chat.tree.view.focus",
@@ -1122,7 +1122,8 @@
           "enum": [
             null,
             "lsp-light",
-            "bfg"
+            "bfg",
+            "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
@@ -1147,6 +1148,13 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0042"
+        }
+      },
+      "new-comment-icon": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0048"
         }
       }
     }

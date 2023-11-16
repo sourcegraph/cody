@@ -6,7 +6,7 @@
 
 "an AI pair programmer that actually knows about your entire codebase's APIs, impls, and idioms"
 
-[Docs](https://docs.sourcegraph.com/cody) • [cody.dev](https://cody.dev)
+[Docs](https://docs.sourcegraph.com/cody) • [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medium=referral)
 
 [![vscode extension](https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vscode%20ext)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -31,7 +31,7 @@ Cody is a free, open-source AI coding assistant that can write and fix code, pro
 
 Cody is currently in Beta and available for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph).
 
-See [cody.dev](https://cody.dev) for more info.
+See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medium=referral) for more info.
 
 ## What can Cody do?
 
@@ -77,7 +77,7 @@ Cody is often magical and sometimes frustratingly wrong. Cody's goal is to be po
 
 ### Individual usage
 
-Individual usage of Cody currently requires a (free) [Sourcegraph.com](https://sourcegraph.com) account because we need to prevent abuse of the free Anthropic/OpenAI LLM usage. We're working on supporting more swappable LLM options (including using your own Anthropic/OpenAI account or a self-hosted LLM) to make it possible to use Cody without any required third-party dependencies.
+Individual usage of Cody currently requires a (free) [Sourcegraph.com](https://sourcegraph.com/?utm_source=github.com&utm_medium=referral) account because we need to prevent abuse of the free Anthropic/OpenAI LLM usage. We're working on supporting more swappable LLM options (including using your own Anthropic/OpenAI account or a self-hosted LLM) to make it possible to use Cody without any required third-party dependencies.
 
 ### Codying at work
 
