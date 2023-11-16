@@ -6,6 +6,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
     ChatButtonProps,
+    ChatModelDropdownMenuProps,
     ChatModelSelection,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
@@ -14,7 +15,7 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { FileLinkProps } from './ContextFiles'
+import { FileLinkProps } from './components/ContextFiles'
 import { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
@@ -40,7 +41,8 @@ export const Transcript: React.FunctionComponent<
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
         chatModels?: ChatModelSelection[]
-        ChatModelDropdownMenu?: React.FunctionComponent<{ models: ChatModelSelection[]; disabled: boolean }>
+        ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
+        onCurrentChatModelChange?: (model: ChatModelSelection) => void
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -69,6 +71,7 @@ export const Transcript: React.FunctionComponent<
     isTranscriptError,
     chatModels,
     ChatModelDropdownMenu,
+    onCurrentChatModelChange,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -145,7 +148,11 @@ export const Transcript: React.FunctionComponent<
                 <TranscriptItem
                     key={index + offset}
                     message={message}
-                    inProgress={false}
+                    inProgress={
+                        index + offset === earlierMessages.length &&
+                        messageInProgress?.speaker === 'assistant' &&
+                        !messageInProgress?.displayText
+                    }
                     beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
@@ -175,8 +182,12 @@ export const Transcript: React.FunctionComponent<
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length && ChatModelDropdownMenu && (
-                    <ChatModelDropdownMenu models={chatModels} disabled={transcript.length > 1} />
+                {!!chatModels?.length && ChatModelDropdownMenu && onCurrentChatModelChange && (
+                    <ChatModelDropdownMenu
+                        models={chatModels}
+                        disabled={transcript.length > 1}
+                        onCurrentChatModelChange={onCurrentChatModelChange}
+                    />
                 )}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
@@ -184,7 +195,7 @@ export const Transcript: React.FunctionComponent<
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
                         message={messageInProgress}
-                        inProgress={true}
+                        inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={false}
                         setBeingEdited={setMessageBeingEdited}
                         fileLinkComponent={fileLinkComponent}
@@ -202,6 +213,9 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                     />
+                )}
+                {messageInProgress && messageInProgress.speaker === 'assistant' && (
+                    <div className={styles.rowInProgress} />
                 )}
             </div>
             <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>

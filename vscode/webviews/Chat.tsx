@@ -28,6 +28,7 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -58,7 +59,9 @@ interface ChatboxProps {
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[]
+    setChatModels?: (models: ChatModelSelection[]) => void
     chatModels?: ChatModelSelection[]
+    enableNewChatUI: boolean
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -78,7 +81,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     isTranscriptError,
     applessOnboarding,
     contextSelection,
+    setChatModels,
     chatModels,
+    enableNewChatUI,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -95,7 +100,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextFiles?: Map<string, ContextFile>,
             addEnhancedContext = true
         ) => {
-            // TODO add UI to toggle enhanced context setting
             const userContextFiles: ContextFile[] = []
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
@@ -117,6 +121,20 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             })
         },
         [vscodeAPI]
+    )
+
+    const onCurrentChatModelChange = useCallback(
+        (selected: ChatModelSelection): void => {
+            if (!chatModels || !setChatModels) {
+                return
+            }
+            vscodeAPI.postMessage({ command: 'chatModel', model: selected.model })
+            const updatedChatModels = chatModels.map(m =>
+                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
+            )
+            setChatModels(updatedChatModels)
+        },
+        [chatModels, setChatModels, vscodeAPI]
     )
 
     const onEditBtnClick = useCallback(
@@ -224,7 +242,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
+            onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
+            EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
         />
     )
 }
@@ -259,6 +279,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (type @ to attach files)'
@@ -267,7 +288,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         if (autoFocus) {
             inputRef.current?.focus()
         }
-    }, [autoFocus, value])
+    }, [autoFocus, value, chatModels])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -292,9 +313,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
 
     return (
-        <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
+        <div
+            className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
+            data-value={value || placeholder}
+        >
             <textarea
-                className={classNames(styles.chatInput, className)}
+                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
                 rows={1}
                 ref={inputRef}
                 value={value}

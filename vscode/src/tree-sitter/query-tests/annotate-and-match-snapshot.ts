@@ -7,8 +7,8 @@ import { findLast } from 'lodash'
 import { expect } from 'vitest'
 import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
-import { getLanguageConfig } from '../../language'
 import { SupportedLanguage } from '../grammars'
+import { getLanguageConfig } from '../language'
 
 interface CommentSymbolInfo {
     delimiter: string
@@ -117,7 +117,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const lines = code.split('\n').map(line => line.replaceAll(/\t/g, ' '.repeat(4)))
     const caretPoint = getCaretPoint(lines, delimiter)
     if (!caretPoint) {
-        throw new Error('No caret point found')
+        throw new Error('No caret point found in snippet: \n' + lines.join('\n'))
     }
 
     const cursorPositionLine = { index: -1, line: '' }

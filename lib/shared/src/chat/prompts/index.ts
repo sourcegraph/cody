@@ -68,6 +68,7 @@ export interface CodyPrompt {
 
     // internal properties
     contextFiles?: ContextFile[]
+    additionalInput?: string
 }
 
 /**

@@ -14,6 +14,8 @@ import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/s
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
+const source: ContextFileSource = 'keyword'
+
 /**
  * Exclude files without extensions and hidden files (starts with '.')
  * Limits to use 1 thread
@@ -83,8 +85,6 @@ function longestCommonPrefix(s: string, t: string): string {
     }
     return s.slice(0, endIdx)
 }
-
-const source: ContextFileSource = 'keyword'
 
 /**
  * A local context fetcher that uses a LLM to generate a keyword query, which is then

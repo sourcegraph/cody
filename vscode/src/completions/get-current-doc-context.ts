@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 
+import { getLanguageConfig } from '../tree-sitter/language'
+import { CompletionIntent, execQueryWrapper } from '../tree-sitter/query-sdk'
+
 import { detectMultiline } from './detect-multiline'
-import { getLanguageConfig } from './language'
 import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
-import { CompletionIntent, execQueryWrapper } from './tree-sitter/query-sdk'
 
 export interface DocumentContext {
     prefix: string
@@ -133,7 +134,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
               character: Math.max(0, position.character - 1),
           }
 
-    const [completionItent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
+    const [completionIntent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
 
     const docContext: Omit<DocumentContext, 'multilineTrigger'> = {
         prefix,
@@ -147,7 +148,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         prevNonEmptyLine,
         nextNonEmptyLine,
         injectedPrefix,
-        completionIntent: completionItent?.name,
+        completionIntent: completionIntent?.name,
         position,
     }
 

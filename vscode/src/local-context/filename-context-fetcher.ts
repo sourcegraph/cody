@@ -5,13 +5,11 @@ import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextFileSource, ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logDebug } from '../log'
-
-const source: ContextFileSource = 'filename'
 
 /**
  * A local context fetcher that uses a LLM to generate filename fragments, which are then used to
@@ -64,6 +62,8 @@ export class FilenameContextFetcher {
         }
 
         const sortedMatchingFiles = allBoostedFiles.concat(remainingFiles).slice(0, numResults)
+        const source: ContextFileSource = 'filename'
+        const type: ContextFileType = 'file'
 
         const results = await Promise.all(
             sortedMatchingFiles
@@ -75,7 +75,7 @@ export class FilenameContextFetcher {
                         content,
                         uri,
                         source,
-                        type: 'file',
+                        type,
                     }
                 })
                 .reverse()
