@@ -64,8 +64,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     }
 
     return {
-        //  NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
-        //  to use as fallback for users who do not have access to local storage
+        // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
+        // to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
@@ -112,10 +112,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
          * UNDOCUMENTED FLAGS
          */
 
-        //  Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
-        //  We currently use this flag for the agent to provide more helpful error messages
-        //  when something goes wrong, and to suppress event logging in the agent.
-        //  Rely on this flag sparingly.
+        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        // We currently use this flag for the agent to provide more helpful error messages
+        // when something goes wrong, and to suppress event logging in the agent.
+        // Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
         agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
     }
@@ -132,8 +132,8 @@ function sanitizeCodebase(codebase: string | undefined): string {
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
     if (!serverEndpoint) {
-        //  TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
-        //  tests.
+        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
+        // tests.
         const isTesting = process.env.CODY_TESTING === 'true'
         if (isTesting) {
             return 'http://localhost:49300/'
@@ -147,7 +147,7 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
 
 export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration()
-    //  Migrate endpoints to local storage
+    // Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
