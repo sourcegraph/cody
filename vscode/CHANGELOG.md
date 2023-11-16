@@ -28,6 +28,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Autocomplete: Improved the multiline completions truncation logic. [pull/1709](https://github.com/sourcegraph/cody/pull/1709)
 - Autocomplete: Fix an issue where typing as suggested causes the completion to behave unexpectedly. [pull/1701](https://github.com/sourcegraph/cody/pull/1701)
 - Chat: Forbid style tags in DOMPurify config to prevent code block rendering issues. [pull/1747](https://github.com/sourcegraph/cody/pull/1747)
+- Edit: Fix `selectedCode` and `problemCode` sometimes being added to the document after an edit. [pull/1765](https://github.com/sourcegraph/cody/pull/1765)
 
 ### Changed
 
