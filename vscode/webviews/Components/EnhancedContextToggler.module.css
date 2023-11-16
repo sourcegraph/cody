@@ -1,0 +1,48 @@
+.container {
+    z-index: 10;
+    position: relative;
+}
+
+.pop-up-container {
+    background: var(--vscode-input-background);
+    color: var(--vscode-inputOption-activeForeground);
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+
+    position: absolute;
+    bottom: 2.5rem;
+    right: 1rem;
+
+    width: 50%;
+    min-width: 300px;
+
+    padding: 1rem;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.5rem;
+
+    z-index: 100;
+}
+
+.enhanced-context-help-text {
+    margin: 0.5rem 0;
+    font-size: smaller;
+}
+
+.settings-btn {
+    position: relative;
+    color: var(--vscode-editor-foreground);
+}
+
+.pop-up-container:before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 0;
+
+    width: 0;
+    border-top: 1rem solid var(--vscode-input-background);
+    border-left: 1rem solid transparent;
+}

@@ -223,6 +223,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                experimentalChatPanel: this.config.experimentalChatPanel,
             }
 
             // update codebase context on configuration change

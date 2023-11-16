@@ -111,7 +111,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected contextProvider: ContextProvider
     protected platform: Pick<PlatformContext, 'recipes'>
 
-    protected userContextFiles: ContextFile[] = []
     protected chatModel: string | undefined = undefined
 
     constructor(options: MessageProviderOptions) {
@@ -340,7 +339,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         recipeId: RecipeID,
         humanChatInput = '',
         source?: ChatEventSource,
-        userInputContextFiles?: ContextFile[]
+        userInputContextFiles?: ContextFile[],
+        addEnhancedContext = true
     ): Promise<void> {
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple actions. Please wait for the current action to finish.', 'system')
@@ -356,7 +356,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
-        const command = await this.chatCommandsFilter(humanChatInput, recipeId, { source, requestID })
+        const command = await this.chatCommandsFilter(
+            humanChatInput,
+            recipeId,
+            { source, requestID },
+            userInputContextFiles
+        )
         if (!command) {
             return
         }
@@ -382,7 +387,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 intentDetector: this.intentDetector,
                 codebaseContext: this.contextProvider.context,
                 responseMultiplexer: this.multiplexer,
-                firstInteraction: this.transcript.isEmpty,
+                addEnhancedContext,
                 userInputContextFiles,
             })
         } catch (error) {
@@ -469,7 +474,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             intentDetector: this.intentDetector,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
-            firstInteraction: this.transcript.isEmpty,
+            addEnhancedContext: this.transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -587,7 +592,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
-        eventTrace?: { requestID?: string; source?: ChatEventSource }
+        eventTrace?: { requestID?: string; source?: ChatEventSource },
+        userContextFiles?: ContextFile[]
     ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
         const source = eventTrace?.source || undefined
         // Inline chat has its own filter for slash commands
@@ -646,7 +652,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const commandRunnerID = await this.editor.controllers.command?.addCommand(
                     text,
                     eventTrace?.requestID,
-                    this.userContextFiles
+                    userContextFiles
                 )
                 // no op
                 if (!commandRunnerID) {

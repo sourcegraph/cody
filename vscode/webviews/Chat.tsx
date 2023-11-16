@@ -28,6 +28,7 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -60,6 +61,7 @@ interface ChatboxProps {
     contextSelection?: ContextFile[]
     setChatModels?: (models: ChatModelSelection[]) => void
     chatModels?: ChatModelSelection[]
+    enableNewChatUI: boolean
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -81,6 +83,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     contextSelection,
     setChatModels,
     chatModels,
+    enableNewChatUI,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -97,7 +100,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextFiles?: Map<string, ContextFile>,
             addEnhancedContext = true
         ) => {
-            // TODO add UI to toggle enhanced context setting
             const userContextFiles: ContextFile[] = []
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
@@ -242,6 +244,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
+            EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
         />
     )
 }
@@ -310,9 +313,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
 
     return (
-        <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
+        <div
+            className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
+            data-value={value || placeholder}
+        >
             <textarea
-                className={classNames(styles.chatInput, className)}
+                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
                 rows={1}
                 ref={inputRef}
                 value={value}
