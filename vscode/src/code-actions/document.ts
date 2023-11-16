@@ -31,12 +31,19 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
     ): vscode.CodeAction {
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
         const source = 'code-action'
-        const instruction = 'Document this code'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range, intent: 'edit', document }, source],
+            arguments: [{ instruction: this.instruction, range, intent: 'edit', document }, source],
             title: displayText,
         }
         return action
     }
+
+    /**
+     * Edit instruction for generating documentation.
+     * Note: This is a clone of the hard coded instruction in `lib/shared/src/chat/prompts/cody.json`.
+     * TODO: (umpox) Consider moving top level instructions out of the JSON format.
+     */
+    private readonly instruction =
+        'Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not output any other code or comments besides the documentation. Output only the comment and do not enclose it in markdown.'
 }
