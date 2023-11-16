@@ -67,11 +67,10 @@ export class IgnoreHelper {
             for (let ignoreLine of ignoreFile.content.split('\n')) {
                 // Skip blanks/comments
                 ignoreLine = ignoreLine.trim()
-                if (ignoreLine.startsWith('#')) {
+                if (ignoreLine.startsWith('@')) {
                     const codebasePath = ignoreLine.slice(2)
                     if (!this.workspaceCodebases.has(codebasePath)) {
                         this.workspaceCodebases.set(codebasePath, workspaceRoot)
-                    }
                     continue
                 }
 
