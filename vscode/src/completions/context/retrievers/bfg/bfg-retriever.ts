@@ -160,7 +160,7 @@ export class BfgRetriever implements ContextRetriever {
             bfg.exit()
             reject(code)
         })
-        child.stderr.pipe(process.stdout)
+        child.stderr.pipe(process.stderr)
         child.stdout.pipe(bfg.messageDecoder)
         bfg.messageEncoder.pipe(child.stdin)
         await bfg.request('bfg/initialize', { clientName: 'vscode' })

@@ -81,7 +81,7 @@ export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHan
         args.push('jsonrpc')
         const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false' } })
         child.stderr.on('data', chunk => {
-            console.error(`agent stderr ${chunk}`)
+            console.error(`------agent stderr------\n${chunk}\n------------------------`)
         })
         child.on('disconnect', () => reject())
         child.on('close', () => reject())
@@ -90,7 +90,7 @@ export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHan
             serverHandler.exit()
             reject(code)
         })
-        child.stderr.pipe(process.stdout)
+        child.stderr.pipe(process.stderr)
         child.stdout.pipe(serverHandler.messageDecoder)
         serverHandler.messageEncoder.pipe(child.stdin)
         serverHandler.registerNotification('debug/message', params => {

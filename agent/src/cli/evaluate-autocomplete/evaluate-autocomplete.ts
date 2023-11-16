@@ -18,8 +18,6 @@ import { newAgentClient } from '../../agent'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
-import { AutocompleteResult } from '../../protocol-alias'
-import * as vscode_shim from '../../vscode-shim'
 
 import { formatSnapshot } from './formatSnapshot'
 import { Queries } from './Queries'
@@ -29,6 +27,8 @@ interface EvaluateAutocompleteOptions {
     treeSitterGrammars: string
     queriesDirectory: string
     testCount: number
+    includeFixture: string[]
+    excludeFixture: string[]
     includeWorkspace: string[]
     excludeWorkspace: string[]
     includeFilepath?: string[]
@@ -40,10 +40,23 @@ interface EvaluateAutocompleteOptions {
     bfgBinary?: string
     installCommands?: string[]
     testCommands?: string[]
+    fixture: EvaluationFixture
 }
 
 interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
     tests: EvaluateAutocompleteOptions[]
+    fixtures?: EvaluationFixture[]
+}
+
+enum EvaluationStrategy {
+    BFG = 'bfg',
+    GitLog = 'git-log',
+}
+
+interface EvaluationFixture {
+    name: string
+    customConfiguration?: Record<string, any>
+    strategy: EvaluationStrategy
 }
 
 async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promise<EvaluateAutocompleteOptions[]> {
@@ -65,12 +78,18 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
             : config.queriesDirectory
             ? path.join(rootDir, config.queriesDirectory)
             : options.queriesDirectory
-        const snapshotDirectory = test.snapshotDirectory
-            ? path.join(rootDir, test.snapshotDirectory, test.workspace)
-            : config.snapshotDirectory
-            ? path.join(rootDir, config.snapshotDirectory, test.workspace)
-            : options.snapshotDirectory
-        result.push({ ...options, ...config, ...test, workspace, queriesDirectory, snapshotDirectory })
+        const fixtures: EvaluationFixture[] = config.fixtures ?? [{ name: 'default', strategy: EvaluationStrategy.BFG }]
+        for (const fixture of fixtures) {
+            if (!fixture.strategy) {
+                throw new Error(`missing: fixture.strategy: ${JSON.stringify(fixture)}`)
+            }
+            const snapshotDirectory = test.snapshotDirectory
+                ? path.join(rootDir, test.snapshotDirectory, fixture.name, test.workspace)
+                : config.snapshotDirectory
+                ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
+                : options.snapshotDirectory
+            result.push({ ...options, ...config, ...test, workspace, queriesDirectory, snapshotDirectory, fixture })
+        }
     }
 
     return result
@@ -121,6 +140,18 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         collect as any,
         []
     )
+    .option(
+        '--include-fixture <glob>',
+        'A glob pattern to determine what fixtures to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-fixture <glob>',
+        'A glob pattern to determine what fixtures exclude in the evaluation',
+        collect as any,
+        []
+    )
     .addOption(new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
     .option(
         '--tree-sitter-grammars <path>',
@@ -130,13 +161,16 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
     .option('--queries-directory <path>', 'Path to a directory containing tree-sitter queries')
     .action(async (options: EvaluateAutocompleteOptions) => {
         const testOptions = await loadEvaluationConfig(options)
-        const workspacesToRun = testOptions.filter(testOptions =>
-            matchesGlobPatterns(options.includeWorkspace, options.excludeWorkspace, testOptions.workspace)
+        const workspacesToRun = testOptions.filter(
+            testOptions =>
+                matchesGlobPatterns(options.includeWorkspace, options.excludeWorkspace, testOptions.workspace) &&
+                matchesGlobPatterns(options.includeFixture, options.excludeFixture, testOptions.fixture.name)
         )
         await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
+    console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
     const workspace = path.normalize(options.workspace)
 
     if (!options.queriesDirectory) {
@@ -161,15 +195,28 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
+            customConfiguration: options.fixture.customConfiguration,
         },
     })
     try {
-        await evaluateWorkspaceOrCrash(client, options, workspace)
+        if (options.fixture.strategy === EvaluationStrategy.BFG) {
+            await evaluateBfgStrategy(client, options, workspace)
+        } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
+            await evaluateGitLogStrategy(client, options, workspace)
+        }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)
     }
     await client.request('shutdown', null)
     client.notify('exit', null)
+}
+
+async function evaluateGitLogStrategy(
+    client: MessageHandler,
+    options: EvaluateAutocompleteOptions,
+    workspace: string
+): Promise<void> {
+    // TODO: complete this Philipp
 }
 
 /**
@@ -178,18 +225,11 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
  * code. Eventually, we could make the logic configurable via command-line
  * flags so that we can reuse this command for different kinds of evaluations.
  */
-async function evaluateWorkspaceOrCrash(
+async function evaluateBfgStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions,
     workspace: string
 ): Promise<void> {
-    vscode_shim.customConfiguration['cody.autocomplete.experimental.graphContext'] = 'bfg'
-    vscode_shim.customConfiguration['cody.autocomplete.advanced.provider'] = 'fireworks'
-    vscode_shim.customConfiguration['cody.autocomplete.advanced.model'] = 'starcoder-7b'
-    vscode_shim.customConfiguration['cody.debug.verbose'] = 'true'
-    if (options.bfgBinary) {
-        vscode_shim.customConfiguration['cody.experimental.cody-engine.path'] = options.bfgBinary
-    }
     const queries = new Queries(options.queriesDirectory)
     const grammarDirectory = path.normalize(options.treeSitterGrammars)
     const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
@@ -237,10 +277,15 @@ async function evaluateWorkspaceOrCrash(
                     }
                     try {
                         await triggerAutocomplete({ content, filePath, capture, client, document })
-                        remainingTests--
-                    } catch {
+                    } catch (error) {
+                        // const message = error instanceof Error ? error.message : `${error}`
+                        // TODO: push error occurrence
+                        // const range
+                        // const occurrence = new scip.scip.Occurrence({ symbol: message })
+                        // document.occurrences.push(occurrence)
                         // ignore. Most common issue is that autocomplete times out.
                     }
+                    remainingTests--
                 }
             }
         }
@@ -256,6 +301,7 @@ async function evaluateWorkspaceOrCrash(
     }
 }
 
+// TODO: rename to remove fixture from this interface
 interface AutocompleteFixture {
     content: string
     filePath: string
@@ -264,7 +310,20 @@ interface AutocompleteFixture {
     document: scip.scip.Document
 }
 
-async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<AutocompleteResult> {
+// TODO: complete this interface when we start using graphql/logEvent
+// interface AutocompletePublicArgument {
+//     fixture: string
+//     filepath: string
+//     commit: string
+//     completionEvent?: CompletionEvent
+//     error?: string
+//     emptyResult?: boolean
+//     exactMatch?: boolean
+//     didParseSuccessfully?: boolean
+//     didTypecheckSuccessfully?: boolean
+// }
+
+async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<void> {
     const { content, filePath, capture, client, document } = fixture
     // Modify the content by replacing the argument list to the call expression
     // with an empty argument list. This evaluation is interesting because it
@@ -283,7 +342,15 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<Autoco
             line: capture.node.startPosition.row,
             character: capture.node.startPosition.column + 1,
         },
+        // We don't use the "automatic" trigger to avoid certain code paths like
+        // synthetic latency when acceptance rate is low.
+        triggerKind: 'Invoke',
     })
+    const didNotSendNetworkRequest =
+        result.items.length === 0 && result.completionEvent?.networkRequestStartedAt === null
+    if (didNotSendNetworkRequest) {
+        return
+    }
     const textDocument = new AgentTextDocument({ filePath, content: modifiedContent })
     const pushText = (text: string): void => {
         const scipRange = [
@@ -296,6 +363,15 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<Autoco
             range: scipRange,
             symbol_roles: 0,
         })
+        // TODO: log event
+        // client.request('graphql/logEvent', {
+        //     event: 'CodyEvaluation',
+        //     client: 'evaluate-autocomplete',
+        //     source: 'IDEEXTENSION',
+        //     url: '',
+        //     userCookieID: '',
+        //     publicArgument:
+        // })
         document.occurrences.push(occurrence)
     }
     for (const item of result.items) {
@@ -307,11 +383,16 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<Autoco
         )
         const original = textDocument.getText(range)
         const completion = item.insertText
+        const patches: string[] = []
         for (const [sx, ex, text] of calcPatch(original, completion)) {
             if (sx !== ex) {
                 // TODO: handle non-insert patches
                 continue
             }
+            patches.push(text)
+        }
+        if (patches.length > 0) {
+            const text = patches.join('')
             if (['(', text, ')'].join('') === removedContent) {
                 pushText('EXACT_MATCH')
             } else {
@@ -322,7 +403,6 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<Autoco
     if (result.items.length === 0) {
         pushText(removedContent === '()' ? 'EXACT_MATCH' : 'EMPTY_RESULT')
     }
-    return result
 }
 
 function matchesGlobPatterns(includeGlobs: string[], excludeGlobs: string[], value: string): boolean {

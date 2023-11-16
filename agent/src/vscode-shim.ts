@@ -105,8 +105,6 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
-export const customConfiguration: Record<string, any> = {}
-
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
@@ -123,8 +121,8 @@ const configuration: vscode.WorkspaceConfiguration = {
             )[value.toLowerCase()]
         }
 
-        const fromCustomConfiguration = customConfiguration[section]
-        if (fromCustomConfiguration) {
+        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
+        if (fromCustomConfiguration !== undefined) {
             return fromCustomConfiguration
         }
         switch (section) {
