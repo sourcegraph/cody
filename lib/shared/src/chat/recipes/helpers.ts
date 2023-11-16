@@ -72,7 +72,7 @@ export function getFileExtension(fileName: string): string {
 // ex. Remove  `tags:` that Cody sometimes include in the returned content
 // It also removes all spaces before a new line to keep the indentations
 export function contentSanitizer(text: string): string {
-    let output = text.replace(/<\/(fixup|selectedCode)>\s$/, '')
+    let output = text.replaceAll(/^<selectedCode>|<\/selectedCode>$/g, '')
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
         // NOTE: 6 is the length of `tags:` + 1 space
