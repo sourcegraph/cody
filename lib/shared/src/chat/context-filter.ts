@@ -19,6 +19,6 @@ export function isCodyIgnoredFile(uri: URI): boolean {
  * Use for matching search results returned from the embeddings client that do not contain absolute path/URI
  * In isIgnoredByCurrentWorkspace, we will construct a URI with the relative path and workspace root before checking
  */
-export function isCodyIgnoredFilePath(relativePath: string): boolean {
-    return ignores.isIgnoredInCurrentWorkspace(relativePath)
+export function isCodyIgnoredFilePath(codebase: string, relativePath: string): boolean {
+    return ignores.isIgnoredByCodebase(codebase.trim(), relativePath)
 }

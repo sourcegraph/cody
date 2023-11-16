@@ -132,7 +132,7 @@ export class CodebaseContext {
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
             .flatMap(groupedResults => this.makeContextMessageWithResponse(groupedResults))
-            .map(message => contextMessageWithSource(message, 'embeddings'))
+            .map(message => contextMessageWithSource(message, 'embeddings', this.codebase))
     }
 
     private async getEmbeddingSearchResults(
@@ -308,9 +308,14 @@ function resultsToMessages(results: ContextResult[]): ContextMessage[] {
     })
 }
 
-function contextMessageWithSource(message: ContextMessage, source: ContextFileSource): ContextMessage {
+function contextMessageWithSource(
+    message: ContextMessage,
+    source: ContextFileSource,
+    codebase?: string
+): ContextMessage {
     if (message.file) {
         message.file.source = source
+        message.file.repoName = codebase ?? message.file.repoName
     }
     return message
 }

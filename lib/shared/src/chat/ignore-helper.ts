@@ -23,16 +23,18 @@ export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', '.
  *
  * `clearIgnoreFiles` should be called for workspace roots as they are removed.
  */
+type ClientWorkspace = string
+type CodyWorkspace = string
 export class IgnoreHelper {
     /**
      * A map of workspace roots to their ignore rules.
      */
-    private workspaceIgnores = new Map<string, Ignore>()
+    private workspaceIgnores = new Map<ClientWorkspace, Ignore>()
     /**
-     * The absolute path of the current workspace root being checked.
-     * This should be updated everytime users switch workspaces.
+     * A map of codebase to workspace roots with their ignore rules.
      */
-    private currentWorkspace: string | undefined
+    private workspaceCodebases = new Map<ClientWorkspace, CodyWorkspace>()
+
     /**
      * Check if the configuration is enabled or not
      * Do not ignore files if the feature is not enabled
@@ -65,6 +67,14 @@ export class IgnoreHelper {
             for (let ignoreLine of ignoreFile.content.split('\n')) {
                 // Skip blanks/comments
                 ignoreLine = ignoreLine.trim()
+                if (ignoreLine.startsWith('#')) {
+                    const codebasePath = ignoreLine.slice(2)
+                    if (!this.workspaceCodebases.has(codebasePath)) {
+                        this.workspaceCodebases.set(codebasePath, workspaceRoot)
+                    }
+                    continue
+                }
+
                 if (!ignoreLine.length || ignoreLine.startsWith('#')) {
                     continue
                 }
@@ -84,12 +94,10 @@ export class IgnoreHelper {
         }
 
         this.workspaceIgnores.set(workspaceRoot, rules)
-        this.currentWorkspace = workspaceRoot
     }
 
     public clearIgnoreFiles(workspaceRoot: string): void {
         this.workspaceIgnores.delete(workspaceRoot)
-        this.currentWorkspace = workspaceRoot
     }
 
     public isIgnored(uri: URI): boolean {
@@ -115,15 +123,26 @@ export class IgnoreHelper {
         return rules.ignores(relativePath) ?? false
     }
 
-    public isIgnoredInCurrentWorkspace(relativeFilePath: string): boolean {
-        if (this.currentWorkspace) {
-            // create uri from workspace root and relativePath
-            const workspaceRootUri = URI.parse(this.currentWorkspace)
-            const uri = URI.file(path.join(workspaceRootUri.fsPath, relativeFilePath))
-            return this.isIgnored(uri)
-            // throw new Error('Workspace is not configured')
+    /**
+     * Checks if the given file path should be ignored for the provided codebase.
+     *
+     * This checks if ignore rules are enabled, finds the workspace root for the
+     * codebase, gets the ignore rules for that workspace, and checks if those rules
+     * ignore the given relative path.
+     */
+    public isIgnoredByCodebase(codebaseName: string, relativePath: string): boolean {
+        // Do not ignore if the feature is not enabled
+        if (!this.isActive) {
+            return false
         }
-        return false
+
+        const workspaceRoot = this.workspaceCodebases.get(codebaseName)
+        if (!workspaceRoot) {
+            return false
+        }
+
+        const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
+        return rules.ignores(relativePath) ?? false
     }
 
     private findWorkspaceRoot(filePath: string): string | undefined {
