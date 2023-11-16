@@ -1,15 +1,13 @@
 package com.sourcegraph.cody.agent.protocol
 
-import com.google.gson.annotations.SerializedName
-
-enum class AutocompleteTriggerKind {
-  @SerializedName("Automatic") AUTOMATIC,
-  @SerializedName("Invoke") INVOKE,
+enum class AutocompleteTriggerKind(val value: String) {
+  AUTOMATIC("Automatic"),
+  INVOKE("Invoke"),
 }
 
 data class AutocompleteParams(
     val filePath: String,
     val position: Position,
-    val triggerKind: AutocompleteTriggerKind? = AutocompleteTriggerKind.AUTOMATIC,
+    val triggerKind: String? = AutocompleteTriggerKind.AUTOMATIC.value,
     val selectedCompletionInfo: SelectedCompletionInfo? = null
 )
