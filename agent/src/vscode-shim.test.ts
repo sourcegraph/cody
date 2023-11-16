@@ -5,10 +5,9 @@ import * as path from 'path'
 
 import { rimraf } from 'rimraf'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { FileType } from './vscode-shim'
+import * as vscode from './vscode-shim'
 
 describe('vscode-shim', () => {
     describe('vscode.Uri', () => {
@@ -56,7 +55,7 @@ describe('vscode-shim', () => {
 })
 
 describe('vscode.workspace.fs', () => {
-    let tmpdir: vscode.Uri
+    let tmpdir: URI
 
     beforeEach(async () => {
         const testFolderPath = await fspromises.mkdtemp(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
@@ -82,9 +81,9 @@ describe('vscode.workspace.fs', () => {
 
         const readDirectory = await vscode.workspace.fs.readDirectory(tmpdir)
         const expectedRead = [
-            [path.basename(testDirPath), FileType.Directory],
-            [path.basename(testFilePath), FileType.File],
-            [path.basename(testLinkPath), FileType.SymbolicLink],
+            [path.basename(testDirPath), vscode.FileType.Directory],
+            [path.basename(testFilePath), vscode.FileType.File],
+            [path.basename(testLinkPath), vscode.FileType.SymbolicLink],
         ]
         expect(readDirectory.sort()).toEqual(expectedRead.sort())
     })
