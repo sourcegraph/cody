@@ -170,6 +170,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
-        firstInteraction: args.firstInteraction ?? false,
+        addEnhancedContext: args.addEnhancedContext ?? false,
     }
 }

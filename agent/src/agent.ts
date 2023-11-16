@@ -1,3 +1,4 @@
+import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
@@ -70,6 +71,40 @@ export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
         globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: {} as any,
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
+    })
+}
+
+export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHandler> {
+    const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
+        const serverHandler = new MessageHandler()
+        const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        args.push('jsonrpc')
+        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false' } })
+        child.stderr.on('data', chunk => {
+            console.error(`agent stderr ${chunk}`)
+        })
+        child.on('disconnect', () => reject())
+        child.on('close', () => reject())
+        child.on('error', error => reject(error))
+        child.on('exit', code => {
+            serverHandler.exit()
+            reject(code)
+        })
+        child.stderr.pipe(process.stdout)
+        child.stdout.pipe(serverHandler.messageDecoder)
+        serverHandler.messageEncoder.pipe(child.stdin)
+        serverHandler.registerNotification('debug/message', params => {
+            console.error(`${params.channel}: ${params.message}`)
+        })
+        await serverHandler.request('initialize', clientInfo)
+        serverHandler.notify('initialized', null)
+        return serverHandler
+    }
+    return new Promise<MessageHandler>((resolve, reject) => {
+        asyncHandler(reject).then(
+            handler => resolve(handler),
+            error => reject(error)
+        )
     })
 }
 

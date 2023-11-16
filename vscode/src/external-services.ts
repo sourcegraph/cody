@@ -14,7 +14,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
 import { logDebug, logger } from './log'
-import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -75,8 +74,7 @@ export async function configureExternalServices(
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         symf,
-        undefined,
-        getRerankWithLog(chatClient)
+        undefined
     )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)

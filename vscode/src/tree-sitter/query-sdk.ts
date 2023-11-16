@@ -162,7 +162,8 @@ function getIntentFromCaptures(
     // Atomic capture groups are matches with one node and `!` at the end the capture group name.
     const atomicCapture = findLast(captures, capture => {
         const enclosesCursor =
-            capture.node.startPosition.column <= cursor.column && cursor.column <= capture.node.endPosition.column
+            (capture.node.startPosition.column <= cursor.column || capture.node.startPosition.row < cursor.row) &&
+            (cursor.column <= capture.node.endPosition.column || cursor.row < capture.node.endPosition.row)
 
         return capture.name.endsWith('!') && enclosesCursor
     })

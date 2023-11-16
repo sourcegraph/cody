@@ -41,6 +41,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 hasAppJson: false,
                 uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
+                experimentalChatPanel: false,
             },
             authStatus: {
                 ...defaultAuthStatus,
