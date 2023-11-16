@@ -13,7 +13,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path, range, 
         <button
             className={styles.linkButton}
             type="button"
-            title={`${pathWithRange} included via ${source}`}
+            title={source ? `${pathWithRange} included via ${source}` : pathWithRange}
             onClick={() => {
                 getVSCodeAPI().postMessage({ command: 'openFile', filePath: path, range })
             }}

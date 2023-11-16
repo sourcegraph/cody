@@ -413,6 +413,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const contextSummary = {
             embeddings: 0,
             local: 0,
+            user: 0, // context added by user with @ command
         }
 
         // Check whether or not to connect to LLM backend for responses
@@ -442,8 +443,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.saveTranscriptToChatHistory()
 
                 contextFiles.map(file => {
-                    if (file.source) {
+                    if (file.source === 'embeddings') {
                         contextSummary.embeddings++
+                    } else if (file.source === 'user') {
+                        contextSummary.user++
                     } else {
                         contextSummary.local++
                     }
