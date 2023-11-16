@@ -68,7 +68,7 @@ export class IgnoreHelper {
                 // Skip blanks/comments
                 ignoreLine = ignoreLine.trim()
                 if (ignoreLine.startsWith('@')) {
-                    const codebasePath = ignoreLine.slice(2)
+                    const codebasePath = ignoreLine.slice(1)
                     if (!this.workspaceCodebases.has(codebasePath)) {
                         this.workspaceCodebases.set(codebasePath, workspaceRoot)
                     continue
