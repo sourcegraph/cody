@@ -8,6 +8,7 @@ import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { telemetryService } from '../services/telemetry'
+import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextSummary } from './context/context-mixer'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -16,7 +17,6 @@ import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
-import { CompletionIntent } from './tree-sitter/query-sdk'
 import { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
