@@ -131,7 +131,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands.add(command.slashCommand)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner
-        if (isFixupRequest || command.mode === 'inline') {
+        if (isFixupRequest) {
             return ''
         }
 

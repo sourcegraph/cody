@@ -78,7 +78,7 @@ export interface CodyPrompt {
  * - insert mode is the same as edit, but instead of replacing selection with cody's response,
  * it adds to the top of the selection instead
  */
-export type CodyPromptMode = 'ask' | 'inline' | 'edit' | 'insert'
+export type CodyPromptMode = 'ask' | 'edit' | 'insert'
 
 // Type of context available for prompt building
 export interface CodyPromptContext {
