@@ -43,7 +43,6 @@ export type Config = Pick<
     | 'experimentalCommandLenses'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
-    | 'inlineChat'
 >
 
 export enum ContextEvent {

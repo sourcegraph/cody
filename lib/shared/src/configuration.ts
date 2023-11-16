@@ -25,7 +25,6 @@ export interface Configuration {
     chatPreInstruction: string
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    inlineChat: boolean
     codeActions: boolean
     experimentalChatPanel: boolean
     experimentalChatPredictions: boolean

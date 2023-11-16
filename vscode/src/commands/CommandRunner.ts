@@ -54,11 +54,6 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        if (command.mode === 'inline') {
-            void this.handleInlineRequest()
-            return
-        }
-
         // Run fixup if this is a edit command
         const insertMode = command.mode === 'insert'
         const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
@@ -146,35 +141,6 @@ export class CommandRunner implements vscode.Disposable {
             },
             source
         )
-    }
-
-    /**
-     * handleInlineRequest method handles executing inline request based on editor selection.
-     *
-     * Gets the current editor selection range and document.
-     * Returns early if no range or document.
-     * Gets the folding range if selection start equals end.
-     *
-     * Calls the vscode.commands.executeCommand with the 'cody.inline.add' command,
-     * passing the instruction prompt and range.
-     *
-     * This executes the inline request using the current selection range in the editor.
-     */
-    private async handleInlineRequest(): Promise<void> {
-        logDebug('CommandRunner:handleFixupRequest', 'inline chat request detected')
-
-        let range = this.editor?.selection
-        const doc = this.editor?.document
-        if (!range || !doc) {
-            return
-        }
-        // Get folding range if no selection is found
-        if (range?.start.isEqual(range.end)) {
-            range = await getSmartSelection(doc.uri, range.start.line)
-        }
-
-        const instruction = this.command.prompt
-        await vscode.commands.executeCommand('cody.inline.add', instruction, range)
     }
 
     /**

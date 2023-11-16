@@ -106,10 +106,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
                 value: this.config.experimentalChatPredictions ? 1 : 0,
             },
             {
-                key: 'inline',
-                value: this.config.inlineChat ? 1 : 0,
-            },
-            {
                 key: 'nonStop',
                 value: this.config.experimentalNonStop ? 1 : 0,
             },

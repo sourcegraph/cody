@@ -29,7 +29,6 @@ describe('getConfiguration', () => {
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             experimentalSearchPanel: false,
-            inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
@@ -80,8 +79,6 @@ describe('getConfiguration', () => {
                     case 'cody.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
-                        return true
-                    case 'cody.inlineChat.enabled':
                         return true
                     case 'cody.codeActions.enabled':
                         return true
@@ -146,7 +143,6 @@ describe('getConfiguration', () => {
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
-            inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIde: undefined,

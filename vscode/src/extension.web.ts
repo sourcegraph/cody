@@ -10,8 +10,6 @@ import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
-import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
-import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
@@ -35,8 +33,6 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new GenerateTest(),
     new ImproveVariableNames(),
     new CustomPrompt(),
-    new InlineChat(logDebug),
-    new InlineTouch(logDebug),
     new NextQuestions(),
     new TranslateToLanguage(),
     new ContextSearch(),

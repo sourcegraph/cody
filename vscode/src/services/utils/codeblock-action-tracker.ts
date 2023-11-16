@@ -107,33 +107,3 @@ export function matchCodeInStore(code: string): boolean {
     }
     return matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, lastStoredCode.code)
 }
-
-// For tracking paste events for inline-chat
-export async function onTextDocumentChange(newCode: string): Promise<void> {
-    const { code, lineCount, charCount, source, requestID } = lastStoredCode
-
-    if (!code) {
-        return
-    }
-
-    if (insertInProgress) {
-        insertInProgress = false
-        return
-    }
-
-    await setLastTextFromClipboard()
-
-    // the copied code should be the same as the clipboard text
-    if (matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, newCode)) {
-        const op = 'paste'
-        const eventType = source.startsWith('inline') ? 'inlineChat' : 'keyDown'
-        // 'CodyVSCodeExtension:inlineChat:Paste:clicked' or 'CodyVSCodeExtension:keyDown:Paste:clicked'
-        telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
-            op,
-            lineCount,
-            charCount,
-            source,
-            requestID,
-        })
-    }
-}

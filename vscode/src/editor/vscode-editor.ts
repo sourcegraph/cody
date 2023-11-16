@@ -14,20 +14,13 @@ import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants
 
 import { CommandsController } from '../commands/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
-import { InlineController } from '../services/InlineController'
 
 import { getActiveEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
-export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
-    constructor(
-        public readonly controllers: ActiveTextEditorViewControllers<
-            InlineController,
-            FixupController,
-            CommandsController
-        >
-    ) {
+export class VSCodeEditor implements Editor<FixupController, CommandsController> {
+    constructor(public readonly controllers: ActiveTextEditorViewControllers<FixupController, CommandsController>) {
         /**
          * Callback function that calls getActiveEditor() whenever the visible text editors change in VS Code.
          * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
@@ -74,51 +67,12 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
     }
 
-    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
-        const inlineController = this.controllers.inline
-        const documentUri = inlineController?.thread?.uri
-        if (!inlineController?.isInProgress || !documentUri) {
-            return null
-        }
-        const documentSelection = inlineController?.selectionRange
-        // get text from the doc uri and selection range
-        const documentText = vscode.workspace.textDocuments
-            .find(doc => doc.uri.fsPath === documentUri.fsPath)
-            ?.getText(documentSelection)
-
-        return {
-            content: documentText || '',
-            filePath: documentUri.fsPath,
-            selectionRange: documentSelection,
-        }
-    }
-
-    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
-        const inlineChatEditor = this.getActiveInlineChatTextEditor()
-        if (!inlineChatEditor) {
-            return null
-        }
-        const activeEditor = vscode.window.visibleTextEditors.find(
-            editor => editor.document.uri.fsPath === inlineChatEditor.filePath
-        )
-        const selectionRange = this.controllers.inline?.getSelectionRange()
-        if (!activeEditor || !selectionRange) {
-            return null
-        }
-        const selection = new vscode.Selection(selectionRange.start.line, 0, selectionRange.end.line + 1, 0)
-        return this.createActiveTextEditorSelection(activeEditor, selection)
-    }
-
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
         const activeEditor = getActiveEditor()
         return activeEditor ?? null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        // Get selection from Inline Controller if there is an inline task in progress
-        if (this.controllers.inline?.isInProgress) {
-            return this.getActiveInlineChatSelection()
-        }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -176,10 +130,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
-        // Get selection from Inline Controller if there is an inline task in progress
-        if (this.controllers.inline?.isInProgress) {
-            return this.getActiveInlineChatSelection()
-        }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -315,11 +265,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
-        // Use the replace method from inline controller if there is a Inline Fixsup in progress
-        if (this.controllers.inline?.isInProgress) {
-            await this.controllers.inline.replace(fileName, replacement, selectedText)
-            return
-        }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
             console.error('Missing file')

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -12,7 +11,6 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 import { ChatManager } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
-import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -27,7 +25,6 @@ import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
-import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
 import * as OnboardingExperiment from './services/OnboardingExperiment'
@@ -86,8 +83,6 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    // Controller for inline Chat
-    const commentController = new InlineController(context.extensionPath)
     // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
@@ -96,7 +91,6 @@ const register = async (
     }
 
     const editor = new VSCodeEditor({
-        inline: commentController,
         fixups: fixup,
         command: platform.createCommandsController?.(context),
     })
@@ -158,7 +152,6 @@ const register = async (
         platform,
     }
 
-    const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
     const chatManager = new ChatManager({
         ...messageProviderOptions,
@@ -250,96 +243,6 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        // Inline Chat Provider
-        vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isEditMode = commandRegex.edit.test(comment.text.trimStart())
-
-            /**
-             * TODO: Should we make fix the default for comments?
-             * /chat or /ask could trigger a chat
-             */
-            if (isEditMode) {
-                const source = 'inline-chat'
-                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup(
-                    {
-                        document: activeDocument,
-                        instruction: comment.text.replace(commandRegex.edit, ''),
-                        range: comment.thread.range,
-                    },
-                    source
-                )
-            }
-
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, false)
-        }),
-        vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
-            inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', undefined, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.comment.delete', 'clicked')
-        }),
-        vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
-            await inlineChatProvider.abortChat()
-            telemetryService.log(
-                'CodyVSCodeExtension:abortButton:clicked',
-                { source: 'inline-chat' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.comment.stop', 'clicked', {
-                privateMetadata: { source: 'inline-chat' },
-            })
-        }),
-        vscode.commands.registerCommand('cody.comment.collapse-all', () => {
-            void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', undefined, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.comment.collapse-all', 'clicked')
-        }),
-        vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
-            const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
-            // Ensure that the sidebar view is open if not already
-            await chatManager.setWebviewView('chat')
-            // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-            await chatManager.restoreSession(inlineChatProvider.sessionID)
-            // Remove the inline chat
-            inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.comment.open-in-sidebar', 'clicked')
-        }),
-        vscode.commands.registerCommand(
-            'cody.command.edit-code',
-            (
-                args: {
-                    range?: vscode.Range
-                    instruction?: string
-                    intent?: FixupIntent
-                    document?: vscode.TextDocument
-                    insertMode?: boolean
-                },
-                source?: ChatEventSource
-            ) => executeFixup(args, source)
-        ),
-        vscode.commands.registerCommand('cody.inline.new', async () => {
-            // move focus line to the end of the current selection
-            await vscode.commands.executeCommand('cursorLineEndSelect')
-            await vscode.commands.executeCommand('workbench.action.addComment')
-        }),
-        vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
-            const comment = commentController.create(instruction, range)
-            if (!comment) {
-                return Promise.resolve()
-            }
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            void inlineChatProvider.addChat(comment.text, false)
-        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (url, token) => authProvider.auth(url, token)),
@@ -398,6 +301,20 @@ const register = async (
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
             await chatManager.executeCustomCommand(title)
         }),
+        // CORE COMMANDS
+        vscode.commands.registerCommand(
+            'cody.command.edit-code',
+            (
+                args: {
+                    range?: vscode.Range
+                    instruction?: string
+                    intent?: FixupIntent
+                    document?: vscode.TextDocument
+                    insertMode?: boolean
+                },
+                source?: ChatEventSource
+            ) => executeFixup(args, source)
+        ),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
             await executeRecipeInChatView('custom-prompt', true, '/explain')
         }),
@@ -410,9 +327,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
             await executeRecipeInChatView('custom-prompt', true, '/smell')
         }),
-        vscode.commands.registerCommand('cody.command.inline-touch', () =>
-            executeRecipeInChatView('inline-touch', false)
-        ),
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
         ),
@@ -460,20 +374,6 @@ const register = async (
             )
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
-        }),
-        vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'enableInlineChat' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked')
-            await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
-            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.inlineChat.enabled',
-                openToSide: true,
-            })
         }),
         vscode.commands.registerCommand('agent.auth.reload', async () => {
             await authProvider.reloadAuthStatus()
@@ -551,11 +451,6 @@ const register = async (
         setupAutocomplete()
     })
     setupAutocomplete()
-
-    // Initiate inline chat when feature flag is on
-    if (!initialConfig.inlineChat) {
-        commentController.dispose()
-    }
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
