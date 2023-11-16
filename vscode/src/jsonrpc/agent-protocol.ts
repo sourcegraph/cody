@@ -165,6 +165,9 @@ export interface ExtensionConfiguration {
     proxy?: string | null
     accessToken: string
     customHeaders: Record<string, string>
+
+    connectedClient: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+
     autocompleteAdvancedProvider?: string
     autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedModel?: string | null
@@ -173,8 +176,10 @@ export interface ExtensionConfiguration {
     verboseDebug?: boolean
     codebase?: string
 
-    /** When passed, the Agent will handle recording events.
-     * If not passed, client must send `graphql/logEvent` requests manually. **/
+    /**
+     * When passed, the Agent will handle recording events.
+     * If not passed, client must send `graphql/logEvent` requests manually.
+     */
     eventProperties?: EventProperties
 }
 

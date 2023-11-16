@@ -148,6 +148,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return false
             case 'cody.codebase':
                 return connectionConfig?.codebase
+            case 'cody.advanced.agent.ide':
+                return connectionConfig?.connectedClient
             default:
                 return defaultValue
         }
