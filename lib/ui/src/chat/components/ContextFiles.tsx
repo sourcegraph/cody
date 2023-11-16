@@ -4,7 +4,7 @@ import { mdiFileDocumentOutline, mdiMagnify } from '@mdi/js'
 
 import { ContextFile, pluralize } from '@sourcegraph/cody-shared'
 
-import { TranscriptAction } from './actions/TranscriptAction'
+import { TranscriptAction } from '../actions/TranscriptAction'
 
 export interface FileLinkProps {
     path: string

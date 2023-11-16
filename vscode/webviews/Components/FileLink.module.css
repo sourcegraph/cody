@@ -1,7 +1,7 @@
 .link-button {
     background: none;
     border: none;
-    color: var(--vscode-button-secondaryForeground);
+    color: var(--vscode-textLink-foreground);
     cursor: pointer;
     font-size: inherit;
     text-decoration: underline;

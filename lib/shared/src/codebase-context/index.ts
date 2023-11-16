@@ -1,4 +1,5 @@
 import { Configuration } from '../configuration'
+import { ActiveTextEditorSelectionRange } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { GraphContextFetcher } from '../graph-context'
 import {
@@ -187,6 +188,7 @@ export class CodebaseContext {
             return []
         }
 
+        const source: ContextFileSource = 'unified'
         return results.flatMap(result => {
             if (result?.type === 'FileChunkContext') {
                 const { content, filePath, repoName, revision } = result
@@ -194,7 +196,7 @@ export class CodebaseContext {
                     ? populateMarkdownContextTemplate(content, filePath, repoName)
                     : populateCodeContextTemplate(content, filePath, repoName)
 
-                return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
+                return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision, source })
             }
 
             return []
@@ -242,8 +244,6 @@ export class CodebaseContext {
         if (!this.config.experimentalLocalSymbols || !this.graph) {
             return []
         }
-        console.debug('Fetching graph context')
-
         const contextMessages: ContextMessage[] = []
         for (const preciseContext of await this.graph.getContext()) {
             const text = populatePreciseCodeContextTemplate(
@@ -263,7 +263,14 @@ function groupResultsByFile(results: EmbeddingsSearchResult[]): { file: ContextF
     const originalFileOrder: ContextFile[] = []
     for (const result of results) {
         if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.fileName === result.fileName)) {
-            originalFileOrder.push({ fileName: result.fileName, repoName: result.repoName, revision: result.revision })
+            originalFileOrder.push({
+                fileName: result.fileName,
+                repoName: result.repoName,
+                revision: result.revision,
+                range: createContextFileRange(result),
+                source: 'embeddings',
+                type: 'file',
+            })
         }
     }
 
@@ -313,4 +320,17 @@ function contextMessageWithSource(message: ContextMessage, source: ContextFileSo
         message.file.source = source
     }
     return message
+}
+
+function createContextFileRange(result: EmbeddingsSearchResult): ActiveTextEditorSelectionRange {
+    return {
+        start: {
+            line: result.startLine,
+            character: 0,
+        },
+        end: {
+            line: result.endLine,
+            character: 0,
+        },
+    }
 }

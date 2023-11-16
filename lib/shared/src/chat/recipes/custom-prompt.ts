@@ -60,7 +60,8 @@ export class CustomPrompt implements Recipe {
             : context.editor.getActiveTextEditorSelectionOrVisibleContent()
 
         // Get prompt text from the editor command or from the human input
-        const promptText = command.prompt
+        const commandAdditionalInput = command.additionalInput
+        const promptText = commandAdditionalInput ? `${command.prompt}\n${commandAdditionalInput}` : command.prompt
         const commandName = isChatQuestion ? promptText : command.slashCommand || promptText
 
         // Log all custom commands under 'custom'
@@ -84,7 +85,10 @@ export class CustomPrompt implements Recipe {
         // Add selection file name as display when available
         const displayText = contextFiles?.length
             ? createDisplayTextWithFileLinks(contextFiles, promptText)
-            : createDisplayTextWithFileSelection(commandName, selection)
+            : createDisplayTextWithFileSelection(
+                  commandAdditionalInput ? `${commandName} ${commandAdditionalInput}` : commandName,
+                  selection
+              )
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
 
