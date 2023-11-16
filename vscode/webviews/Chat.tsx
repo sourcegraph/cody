@@ -313,9 +313,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
 
     return (
-        <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
+        <div
+            className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
+            data-value={value || placeholder}
+        >
             <textarea
-                className={classNames(styles.chatInput, className)}
+                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
                 rows={1}
                 ref={inputRef}
                 value={value}

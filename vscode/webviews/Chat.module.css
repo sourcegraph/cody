@@ -111,8 +111,16 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     width: 100%;
     overflow: hidden;
 
+    min-height: 3.5rem;
+
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
+}
+
+/* Unset for the new chat ui */
+.new-chat-input,
+.new-chat-input-container::after {
+    min-height: unset;
 }
 
 .chat-input {
