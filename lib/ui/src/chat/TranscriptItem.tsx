@@ -13,7 +13,7 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { LoadingContext, LoadingDots } from './BlinkingCursor'
+import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
@@ -170,7 +170,7 @@ export const TranscriptItem: React.FunctionComponent<
                               inProgress={inProgress}
                           />
                       )
-                    : inProgress && <LoadingDots />}
+                    : inProgress && <BlinkingCursor />}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
