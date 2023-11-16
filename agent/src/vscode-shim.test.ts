@@ -1,9 +1,14 @@
 import assert from 'assert'
+import * as fspromises from 'fs/promises'
+import os from 'os'
 import * as path from 'path'
 
-import { describe, expect, it } from 'vitest'
+import { rimraf } from 'rimraf'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
+
+import { FileType } from './vscode-shim'
 
 describe('vscode-shim', () => {
     describe('vscode.Uri', () => {
@@ -51,59 +56,106 @@ describe('vscode-shim', () => {
 })
 
 describe('vscode.workspace.fs', () => {
+    let tmpdir: vscode.Uri
+
+    beforeEach(async () => {
+        const testFolderPath = await fspromises.mkdtemp(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+        tmpdir = vscode.Uri.file(testFolderPath)
+    })
+    afterEach(async () => {
+        await rimraf.rimraf(tmpdir.fsPath)
+    })
+
     it('stat', async () => {
-        const stat = await vscode.workspace.fs.stat(vscode.Uri.parse('file:///tmp'))
+        const stat = await vscode.workspace.fs.stat(tmpdir)
         expect(stat.type).toBe(vscode.FileType.Directory)
     })
+
     it('readDirectory', async () => {
-        const readDirectory = await vscode.workspace.fs.readDirectory(vscode.Uri.parse('file:///tmp'))
-        console.log(readDirectory)
+        const testDirPath = path.join(tmpdir.fsPath, 'testDir')
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile.txt')
+        const testLinkPath = path.join(tmpdir.fsPath, 'testLink.txt')
+
+        await fspromises.mkdir(testDirPath)
+        await fspromises.writeFile(testFilePath, 'Hello')
+        await fspromises.symlink(testFilePath, testLinkPath)
+
+        const readDirectory = await vscode.workspace.fs.readDirectory(tmpdir)
+        const expectedRead = [
+            [path.basename(testDirPath), FileType.Directory],
+            [path.basename(testFilePath), FileType.File],
+            [path.basename(testLinkPath), FileType.SymbolicLink],
+        ]
+        expect(readDirectory.sort()).toEqual(expectedRead.sort())
     })
+
     it('createDirectory', async () => {
-        await vscode.workspace.fs.createDirectory(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test'))
-        const stat = await vscode.workspace.fs.stat(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test'))
-        expect(stat.type).toBe(vscode.FileType.Directory)
+        const testDirPath = path.join(tmpdir.fsPath, 'testDir')
+        await vscode.workspace.fs.createDirectory(vscode.Uri.parse(testDirPath))
+        const stat = await fspromises.stat(testDirPath)
+        expect(stat.isDirectory()).toBe(true)
     })
+
     it('writeFile', async () => {
-        const data = new Uint8Array(Buffer.from('Hello'))
-        await vscode.workspace.fs.writeFile(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/file'), data)
-        const content = await vscode.workspace.fs.readFile(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/file'))
-        expect(content).toEqual(data)
+        const testBuffer = Buffer.from('Hello')
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await vscode.workspace.fs.writeFile(vscode.Uri.parse(testFilePath), new Uint8Array(testBuffer))
+        const content = await fspromises.readFile(testFilePath)
+        expect(content).toEqual(testBuffer)
     })
+
     it('readFile', async () => {
-        const content = await vscode.workspace.fs.readFile(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/file'))
-        expect(content).toEqual(new Uint8Array(Buffer.from('Hello')))
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await fspromises.writeFile(testFilePath, 'Hello')
+        const content = await vscode.workspace.fs.readFile(vscode.Uri.parse(testFilePath))
+        expect(content).toEqual(new Uint8Array(await fspromises.readFile(testFilePath)))
     })
+
     it('copy', async () => {
-        const source = vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/file')
-        const target = vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/oldFile')
-        await vscode.workspace.fs.copy(source, target)
-        const content = await vscode.workspace.fs.readFile(target)
-        expect(content).toEqual(new Uint8Array(Buffer.from('Hello')))
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await fspromises.writeFile(testFilePath, 'Hello')
+        const copiedPath = path.join(tmpdir.fsPath, 'copiedFile')
+        await vscode.workspace.fs.copy(vscode.Uri.parse(testFilePath), vscode.Uri.parse(copiedPath))
+        expect(await fspromises.readFile(copiedPath)).toEqual(await fspromises.readFile(testFilePath))
     })
-    it('delete with useTrash set to false', async () => {
-        await vscode.workspace.fs.delete(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/file'), {
-            useTrash: false,
-        })
-        await expect(
-            vscode.workspace.fs.stat(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/file'))
-        ).rejects.toThrow()
+
+    it('delete', async () => {
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await fspromises.writeFile(testFilePath, 'Hello')
+        await vscode.workspace.fs.delete(vscode.Uri.parse(testFilePath))
+        await expect(fspromises.stat(testFilePath)).rejects.toThrow()
     })
-    it('rename', async () => {
-        const oldPath = vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/oldFile')
-        const newPath = vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/newFile')
-        await vscode.workspace.fs.rename(oldPath, newPath)
-        const content = await vscode.workspace.fs.readFile(newPath)
-        expect(content).toEqual(new Uint8Array(Buffer.from('Hello')))
-        await expect(vscode.workspace.fs.stat(oldPath)).rejects.toThrow()
-    })
-    it('delete recursive with useTrash set to false', async () => {
-        await vscode.workspace.fs.delete(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/'), {
+
+    it('recursive delete', async () => {
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await fspromises.writeFile(testFilePath, 'Hello')
+        await vscode.workspace.fs.delete(tmpdir, {
             recursive: true,
-            useTrash: false,
         })
-        await expect(vscode.workspace.fs.stat(vscode.Uri.parse('file:///tmp/cody-vscode-shim-test/'))).rejects.toThrow()
+        await expect(fspromises.stat(tmpdir.fsPath)).rejects.toThrow()
     })
+
+    it('rename', async () => {
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await fspromises.writeFile(testFilePath, 'Hello')
+        const renamedPath = path.join(tmpdir.fsPath, 'renamedFile')
+        await vscode.workspace.fs.rename(vscode.Uri.parse(testFilePath), vscode.Uri.parse(renamedPath))
+        expect(await fspromises.readdir(tmpdir.fsPath)).toHaveLength(1)
+        expect(await fspromises.readFile(renamedPath)).toEqual(Buffer.from('Hello'))
+    })
+
+    it('rename with overwrite', async () => {
+        const testFilePath = path.join(tmpdir.fsPath, 'testFile')
+        await fspromises.writeFile(testFilePath, 'Hello')
+        const renamedPath = path.join(tmpdir.fsPath, 'renamedFile')
+        await fspromises.writeFile(renamedPath, 'Hello')
+        await vscode.workspace.fs.rename(vscode.Uri.parse(testFilePath), vscode.Uri.parse(renamedPath), {
+            overwrite: true,
+        })
+        expect(await fspromises.readdir(tmpdir.fsPath)).toHaveLength(1)
+        expect(await fspromises.readFile(renamedPath)).toEqual(Buffer.from('Hello'))
+    })
+
     it('isWritableFileSystem', () => {
         expect(vscode.workspace.fs.isWritableFileSystem('file')).toBe(true)
     })

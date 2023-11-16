@@ -246,23 +246,13 @@ const _workspace: Partial<typeof vscode.workspace> = {
             await fspromises.writeFile(uri.fsPath, content)
         },
         delete: async (uri, options) => {
-            if (options?.useTrash ?? true) {
-                // move file to trash folder
-            } else {
-                await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
-            }
+            await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
         },
         rename: async (source, target, options) => {
             if (options?.overwrite ?? false) {
                 await fspromises.unlink(target.fsPath)
             }
-            try {
-                await fspromises.link(source.fsPath, target.fsPath)
-            } catch {
-                throw new Error(
-                    `Failed to rename file from ${source.fsPath} to ${target.fsPath}, ${source.fsPath} does not exist`
-                )
-            }
+            await fspromises.link(source.fsPath, target.fsPath)
             await fspromises.unlink(source.fsPath)
         },
         copy: async (source, target, options) => {
@@ -270,15 +260,10 @@ const _workspace: Partial<typeof vscode.workspace> = {
             await fspromises.copyFile(source.fsPath, target.fsPath, mode)
         },
         isWritableFileSystem: scheme => {
-            switch (scheme) {
-                case 'file':
-                case 'git':
-                    return true
-                case 'http':
-                case 'https':
-                default:
-                    return false
+            if (scheme === 'file') {
+                return true
             }
+            return false
         },
     },
 }
