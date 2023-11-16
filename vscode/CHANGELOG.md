@@ -12,7 +12,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
-- Inline Chat has been deprecated.
+- `Inline Chat` has been deprecated. [pull/1779](https://github.com/sourcegraph/cody/pull/1779)
 
 ## [0.16.0]
 
