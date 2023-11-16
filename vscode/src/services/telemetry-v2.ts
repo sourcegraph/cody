@@ -52,7 +52,11 @@ const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
 const debugLogLabel = 'telemetry-v2'
 
-function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void {
+/**
+ *
+ * @param updatedProvider
+ */
+export function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void {
     telemetryRecorderProvider?.unsubscribe()
     telemetryRecorderProvider = updatedProvider
     telemetryRecorder = updatedProvider.getRecorder([

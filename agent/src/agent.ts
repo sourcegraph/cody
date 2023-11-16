@@ -140,9 +140,15 @@ export class Agent extends MessageHandler {
     private clientInfo: ClientInfo | null = null
 
     /**
-     * telemetryRecorderProvider must be used for all events recording.
+     * agentTelemetryRecorderProvider must be used for all events recording
+     * directly within the agent (i.e. code in agent/src/...) and via the agent's
+     * 'telemetry/recordEvent' RPC.
+     *
+     * Components that use VSCode implementations directly (i.e. code in
+     * vscode/src/...) will continue to use the shared recorder initialized and
+     * configured as part of VSCode initialization in vscode/src/services/telemetry-v2.ts.
      */
-    private telemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider = new NoOpTelemetryRecorderProvider([
+    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider = new NoOpTelemetryRecorderProvider([
         {
             processEvent: event =>
                 process.stderr.write(
@@ -259,7 +265,7 @@ export class Agent extends MessageHandler {
             }
 
             await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
-            this.telemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
+            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
             await client.executeRecipe(data.id, {
                 signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
@@ -335,7 +341,7 @@ export class Agent extends MessageHandler {
         })
 
         this.registerRequest('telemetry/recordEvent', async event => {
-            this.telemetryRecorderProvider.getRecorder().recordEvent(
+            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,
                 // so we depend on client implementations to give type guidance
                 // to ensure that we don't accidentally share arbitrary,
@@ -410,8 +416,8 @@ export class Agent extends MessageHandler {
         const codyClient = await this.client
         if (codyClient && this.clientInfo) {
             // Update telemetry
-            this.telemetryRecorderProvider?.unsubscribe()
-            this.telemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
+            this.agentTelemetryRecorderProvider?.unsubscribe()
+            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
                 codyClient.graphqlClient,
                 this.clientInfo,
                 {

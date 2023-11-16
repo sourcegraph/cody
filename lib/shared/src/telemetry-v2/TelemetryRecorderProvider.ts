@@ -38,7 +38,9 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
         const client = new SourcegraphGraphQLAPIClient(config)
         super(
             {
-                client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
+                client: `${extensionDetails.ide || 'unknown'}${
+                    extensionDetails.ideExtensionType ? `.${extensionDetails.ideExtensionType}` : ''
+                }`,
                 clientVersion: extensionDetails.version,
             },
             new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
