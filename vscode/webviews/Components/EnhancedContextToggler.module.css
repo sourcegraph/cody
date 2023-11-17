@@ -6,11 +6,11 @@
 .pop-up-container {
     background: var(--vscode-input-background);
     color: var(--vscode-inputOption-activeForeground);
-    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+    box-shadow: 0 0 3px 2px var(--vscode-inputOption-activeBorder);
 
     position: absolute;
     bottom: 2.5rem;
-    right: 1rem;
+    right: -2.5rem;
 
     width: 50%;
     min-width: 300px;
@@ -21,14 +21,33 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 0.25rem;
 
     z-index: 100;
 }
 
-.enhanced-context-help-text {
-    margin: 0.5rem 0;
+.pop-up-container:before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 3.4rem;
+
+    width: 0;
+    border-top: 0.5rem solid var(--vscode-input-background);
+    border-left: 0.5rem solid transparent;
+    border-right: 0.5rem solid transparent;
+}
+
+.enhanced-context-description {
     font-size: smaller;
+    margin: 0;
+    color: var(--vscode-descriptionForeground);
+}
+
+.codebase-connection {
+    font-size: smaller;
+    margin: 0;
+    margin-top: 1rem;
 }
 
 .settings-btn {
@@ -41,13 +60,11 @@
     color: var(--vscode-button-foreground);
 }
 
-.pop-up-container:before {
-    content: '';
-    position: absolute;
-    top: 100%;
-    right: 0;
+.check-box {
+    margin: 0;
+    margin-bottom: 0.25rem;
+}
 
-    width: 0;
-    border-top: 1rem solid var(--vscode-input-background);
-    border-left: 1rem solid transparent;
+.codebase {
+    border-bottom: 1px solid var(--vscode-selection-background);
 }
