@@ -3,8 +3,13 @@ import * as vscode from 'vscode'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 export class SimpleChatModel {
-    public context: ContextItem[] = []
-    public messages: Message[] = []
+    private enhancedContext: ContextItem[] = []
+    private userContext: ContextItem[] = []
+    private messages: Message[] = []
+
+    public isEmpty(): boolean {
+        return this.messages.length === 0
+    }
 
     public addHumanMessage(message: Omit<Message, 'speaker'>): void {
         if (this.messages.at(-1)?.speaker === 'human') {
@@ -25,11 +30,31 @@ export class SimpleChatModel {
             ...message,
         })
     }
+
+    public getMessages(): Message[] {
+        return this.messages
+    }
+
+    public setEnhancedContext(context: ContextItem[]): void {
+        this.enhancedContext = context
+    }
+
+    public getEnhancedContext(): ContextItem[] {
+        return this.enhancedContext
+    }
+
+    public setUserContext(context: ContextItem[]): void {
+        this.userContext = context
+    }
+
+    public getUserContext(): ContextItem[] {
+        return this.userContext
+    }
 }
 
 export interface ContextItem {
     uri: vscode.Uri
-    range: vscode.Range
+    range?: vscode.Range
     text: string
 }
 
@@ -53,7 +78,7 @@ export class GPT4PromptMaker implements PromptMaker {
                 }
             )
         }
-        promptMessages.push(...chat.messages)
+        promptMessages.push(...chat.getMessages())
         return promptMessages
     }
 }

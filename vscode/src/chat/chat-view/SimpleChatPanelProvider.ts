@@ -1,15 +1,20 @@
+import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
+import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
 import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
@@ -24,12 +29,15 @@ interface SimpleChatPanelProviderOptions {
     authProvider: AuthProvider
     chatClient: ChatClient
     embeddingsClient: EmbeddingsSearch | null
+    editor: VSCodeEditor
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
     private chatModel: SimpleChatModel = new SimpleChatModel()
+
     public webviewPanel?: vscode.WebviewPanel
     public webview?: ChatViewProviderWebview
+
     private extensionUri: vscode.Uri
     private disposables: vscode.Disposable[] = []
     private authProvider: AuthProvider
@@ -39,11 +47,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private embeddingsClient: EmbeddingsSearch | null
 
-    constructor({ extensionUri, authProvider, chatClient, embeddingsClient }: SimpleChatPanelProviderOptions) {
+    private readonly editor: VSCodeEditor
+
+    constructor({ extensionUri, authProvider, chatClient, embeddingsClient, editor }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
+        this.editor = editor
     }
     public executeRecipe(recipeID: RecipeID, chatID: string, context: any): Promise<void> {
         console.log('# TODO: executeRecipe')
@@ -53,10 +64,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         console.log('# TODO: executeCustomCommand')
         return Promise.resolve()
     }
-    public clearAndRestartSession(): Promise<void> {
+    public async clearAndRestartSession(): Promise<void> {
         console.log('# TODO: clearAndRestartSession')
-        return Promise.resolve()
+        if (this.chatModel.isEmpty()) {
+            return Promise.resolve()
+        }
+        await this.reset()
     }
+
     public clearChatHistory(chatID: string): Promise<void> {
         console.log('# TODO: clearChatHistory')
         return Promise.resolve()
@@ -88,6 +103,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        console.log('# onDidReceiveMessage', message.command)
         switch (message.command) {
             case 'ready':
                 // The web view is ready to receive events. We need to make sure that it has an up
@@ -101,7 +117,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             //     this.handleChatModel()
             //     break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text, message.submitType)
+                await this.onHumanMessageSubmitted(
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
+                break
+            case 'getUserContext':
+                await this.handleContextFiles(message.query)
                 break
             // case 'edit':
             //     this.transcript.removeLastInteraction()
@@ -218,12 +242,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
-    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
+    private async onHumanMessageSubmitted(
+        text: string,
+        submitType: 'user' | 'suggestion' | 'example',
+        userContextFiles?: ContextFile[],
+        addEnhancedContext = true
+    ): Promise<void> {
         this.chatModel.addHumanMessage({ text })
-        void this.updateTranscript()
+        // TODO(beyang): may want to preserve old user context.
+        // This means we may want to track user context per message in the model.
+        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [])
+        this.chatModel.setUserContext(userContextItems)
+        void this.updateViewTranscript(undefined, userContextFiles)
 
-        const contextItems: ContextItem[] = []
-        if (this.embeddingsClient) {
+        const contextItems: ContextItem[] = [...userContextItems]
+        // TODO: only fetch context on first message
+        if (this.embeddingsClient && addEnhancedContext) {
             console.log('debug: fetching embeddings')
             const embeddings = await this.embeddingsClient.search(text, 2, 2)
             if (isError(embeddings)) {
@@ -266,6 +300,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             console.log('debug: finished fetching embeddings', embeddings)
         }
 
+        this.chatModel.setEnhancedContext(contextItems)
+        void this.updateViewTranscript(undefined, userContextFiles)
+
         const promptMessages = this.promptMaker.makePrompt(this.chatModel, contextItems).map(m => ({
             speaker: m.speaker,
             text: m.text,
@@ -273,22 +310,38 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }))
 
         let lastContent = ''
+        const typewriter = new Typewriter({
+            update: content => {
+                // const displayText = reformatBotMessage(content, '')
+                lastContent = content
+                void this.updateViewTranscript(
+                    {
+                        speaker: 'assistant',
+                        text: content,
+                        // TODO(beyang): set display text as content? does reformatting affect future response quality?
+                        displayText: content,
+                    },
+                    userContextFiles
+                )
+            },
+            close: () => {
+                this.chatModel.addBotMessage({ text: lastContent })
+                void this.updateViewTranscript(undefined, userContextFiles)
+            },
+        })
+
         const abort = this.chatClient.chat(
             promptMessages,
             {
                 onChange: (content: string) => {
-                    console.log('# onChange', content)
-                    lastContent = content
-                    void this.updateTranscript({
-                        speaker: 'assistant',
-                        text: content,
-                        displayText: content,
-                    })
+                    typewriter.update(content)
                 },
                 onComplete: () => {
-                    console.log('# onComplete', lastContent)
-                    this.chatModel.addBotMessage({ text: lastContent })
-                    void this.updateTranscript()
+                    typewriter.close()
+                    typewriter.stop()
+
+                    // TODO(beyang): guardrails annotate attributions
+                    // TODO(beyang): count lines of generated code
                 },
                 onError: error => {
                     console.error('TODO: handle error', error)
@@ -302,16 +355,68 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return Promise.resolve()
     }
 
-    private async updateTranscript(messageInProgress?: ChatMessage): Promise<void> {
-        const newMessages: ChatMessage[] = this.chatModel.messages.map(m => toViewMessage(m))
+    // Handler to fetch context files candidates
+    private async handleContextFiles(query: string): Promise<void> {
+        if (!query.length) {
+            const tabs = getOpenTabsContextFile()
+            await this.webview?.postMessage({
+                type: 'userContextFiles',
+                context: tabs,
+            })
+            return
+        }
+
+        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
+            try {
+                const MAX_RESULTS = 10
+                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
+                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+
+                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
+                const context = [...new Set([...fileResults, ...symbolResults])]
+
+                await this.webview?.postMessage({
+                    type: 'userContextFiles',
+                    context,
+                })
+            } catch (error) {
+                // Handle or log the error as appropriate
+                console.error('Error retrieving context files:', error)
+            }
+        }, 100)
+
+        await debouncedContextFileQuery(query)
+    }
+
+    private async updateViewTranscript(
+        messageInProgress?: ChatMessage,
+        userContextFiles?: ContextFile[]
+    ): Promise<void> {
+        const newMessages: ChatMessage[] = this.chatModel.getMessages().map(m => toViewMessage(m))
         if (messageInProgress) {
             newMessages.push(messageInProgress)
         }
+
+        const contextFiles: ContextFile[] = []
+        if (userContextFiles) {
+            contextFiles.push(...userContextFiles)
+        }
+
+        const additionalContextFiles = contextItemsToContextFiles(this.chatModel.getEnhancedContext())
+        if (newMessages.length > 0) {
+            newMessages[0].contextFiles = additionalContextFiles
+        }
+
         await this.webview?.postMessage({
             type: 'transcript',
             messages: newMessages,
             isMessageInProgress: !!messageInProgress,
         })
+    }
+
+    private async reset(): Promise<void> {
+        this.chatModel = new SimpleChatModel()
+        await this.updateViewTranscript()
     }
 }
 
@@ -320,4 +425,58 @@ function toViewMessage(message: Message): ChatMessage {
         ...message,
         displayText: message.text,
     }
+}
+
+function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
+    const contextFiles: ContextFile[] = []
+    for (const item of items) {
+        console.log('# item.range', item.range)
+        contextFiles.push({
+            fileName: item.uri.fsPath,
+            source: 'embeddings',
+            range: rangeToViewRange(item.range),
+
+            // TODO: repoName + revision?
+        })
+    }
+    return contextFiles
+}
+
+function contextFilesToContextItems(editor: Editor, files: ContextFile[]): Promise<ContextItem[]> {
+    return Promise.all(
+        files.map(async (file: ContextFile): Promise<ContextItem> => {
+            const range = viewRangeToRange(file.range)
+            if (!file.uri) {
+                throw new Error('contextFilesToContextItems: uri undefined on ContextFile')
+            }
+            return {
+                uri: file.uri,
+                range,
+                text: file.content || (await editor.getTextEditorContentForFile(file.uri, range)) || '',
+            }
+        })
+    )
+}
+
+function rangeToViewRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
+    if (!range) {
+        return undefined
+    }
+    return {
+        start: {
+            line: range.start.line,
+            character: range.start.character,
+        },
+        end: {
+            line: range.end.line,
+            character: range.end.character,
+        },
+    }
+}
+
+function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
+    if (!range) {
+        return undefined
+    }
+    return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
 }
