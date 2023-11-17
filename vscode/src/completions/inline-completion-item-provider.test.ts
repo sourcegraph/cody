@@ -47,6 +47,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
     ) {
         super({
             completeSuggestWidgetSelection: true,
+            authProvider: null as any,
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //

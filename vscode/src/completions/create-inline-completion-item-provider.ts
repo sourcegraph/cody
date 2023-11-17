@@ -87,6 +87,7 @@ export async function createInlineCompletionItemProvider({
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
+            authProvider,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             disableNetworkCache,
