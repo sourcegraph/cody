@@ -85,7 +85,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off') {
+    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
     }
