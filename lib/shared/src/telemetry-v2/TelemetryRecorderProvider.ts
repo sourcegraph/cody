@@ -63,6 +63,8 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
 export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingProduct, BillingCategory> {
+    public readonly noOp = true
+
     constructor(processors?: TelemetryProcessor[]) {
         super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
