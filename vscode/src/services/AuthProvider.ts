@@ -212,9 +212,9 @@ export class AuthProvider {
             )
         }
 
-        // TODO(dantup): Rename this and/or split into another query.
-        //   Can we use a query with codyProStatus against all instances (eg. non-dotcom)?
-        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
+        const userInfo = isDotCom
+            ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            : await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
 
         // check first if it's a network error
@@ -222,20 +222,25 @@ export class AuthProvider {
             if (isNetworkError(userInfo.message)) {
                 return { ...networkErrorAuthStatus, endpoint }
             }
+            return { ...unauthenticatedStatus, endpoint }
         }
 
-        return isError(userInfo)
-            ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(
-                  endpoint,
-                  isDotComOrApp,
-                  !!userInfo.id,
-                  userInfo.hasVerifiedEmail,
-                  isCodyEnabled,
-                  /* userCanUpgrade: */ isDotCom && !userInfo.codyProEnabled, // should we require explicit false?
-                  version,
-                  configOverwrites
-              )
+        const userCanUpgrade =
+            isDotCom &&
+            'codyProEnabled' in userInfo &&
+            typeof userInfo.codyProEnabled === 'boolean' &&
+            !userInfo.codyProEnabled
+
+        return newAuthStatus(
+            endpoint,
+            isDotComOrApp,
+            !!userInfo.id,
+            userInfo.hasVerifiedEmail,
+            isCodyEnabled,
+            userCanUpgrade,
+            version,
+            configOverwrites
+        )
     }
 
     public getAuthStatus(): AuthStatus {
