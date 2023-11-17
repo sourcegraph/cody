@@ -37,8 +37,8 @@
     opacity: 0.8;
     border: none;
     cursor: pointer;
-    margin: 0 0.5rem;
     border-radius: 50%;
+    margin-left: 0.5rem;
 }
 
 .context-button {

@@ -38,7 +38,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
                 </div>
             )}
             <VSCodeButton
-                className={classNames(styles.settingsBtn)}
+                className={classNames(styles.settingsBtn, enhanceContext && styles.settingsBtnActive)}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!open)}

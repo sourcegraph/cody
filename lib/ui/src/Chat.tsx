@@ -643,7 +643,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={needsEmailVerification || !isCodyEnabled || !(formInput.length && messageInProgress)}
+                        disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
                         onAbortMessageInProgress={
                             !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
                         }
