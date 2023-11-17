@@ -145,6 +145,14 @@ export interface AuthStatus {
     siteVersion: string
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
+    /**
+     * Whether the users account can be upgraded.
+     *
+     * This is `true` if the user is on dotCom and has
+     * not already upgraded. It is used to customise
+     * rate limit messages and show additional upgrade
+     * buttons in the UI.
+     */
     userCanUpgrade: boolean
 }
 

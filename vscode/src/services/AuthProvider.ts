@@ -212,8 +212,9 @@ export class AuthProvider {
             )
         }
 
-        // TODO(dantup): Can't check feature flag here, because it requires auth
-        //  so we will always use the new query for dotCom?
+        // TODO(dantup): If local app support is removed, this can be simplified
+        //  (this path will only be dotCom) and the 'getCurrentUserIdAndVerifiedEmail'
+        //  queries removed.
         const userInfo = isDotCom
             ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
             : await this.client.getCurrentUserIdAndVerifiedEmail()

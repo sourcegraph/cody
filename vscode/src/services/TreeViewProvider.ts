@@ -36,6 +36,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * that do not meet the required criteria to show.
      */
     public async updateTree(treeItems: CodySidebarTreeItem[]): Promise<void> {
+        // TODO(dantup): This method can be made not-async again when we don't need to call evaluateFeatureFlag
         const updatedTree: vscode.TreeItem[] = []
         for (const item of treeItems) {
             if (item.requireFeature && !(await featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
