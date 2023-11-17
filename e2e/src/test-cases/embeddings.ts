@@ -19,8 +19,9 @@ addTestCase('Embeddings context > Explain nussknacker designer server', {
     transcript: [
         {
             question: 'Using code in this repository describe the main use case of designer server?',
-            answerSummary: '',
-            facts: literalFacts(''),
+            answerSummary:
+                'Designer server provides a REST API for managing processes and versions for the Nussknacker workflow engine.',
+            facts: literalFacts('scenario', 'process', 'workflow'),
         },
     ],
 })
