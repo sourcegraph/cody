@@ -16,10 +16,10 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
-import com.sourcegraph.cody.agent.protocol.AutocompleteParams
-import com.sourcegraph.cody.agent.protocol.AutocompleteTriggerKind
+import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.Position
-import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
+import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -30,6 +30,9 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.*
+import com.sourcegraph.cody.vscode.Range
+import com.sourcegraph.cody.vscode.TextDocument
+import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.config.UserLevelConfig
 import com.sourcegraph.telemetry.GraphQlLogger
@@ -48,6 +51,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.stream.Collectors
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
 @Service
@@ -250,7 +254,17 @@ class CodyAutocompleteManager {
     // correctly propagate the cancellation to the agent.
     cancellationToken.onCancellationRequested { completions.cancel(true) }
     return completions
+        .exceptionally { error ->
+          if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
+            handleError(project, error)
+          } else if (!UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown) {
+            handleError(project, error)
+            UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown = true
+          }
+          null
+        }
         .thenAccept { result: InlineAutocompleteList ->
+          UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown = false
           processAutocompleteResult(
               editor, offset, triggerKind, result, cancellationToken, lookupString)
         }
@@ -261,6 +275,16 @@ class CodyAutocompleteManager {
           null
         }
         .thenAccept { resetApplication(project) }
+  }
+
+  private fun handleError(project: Project, error: Throwable?) {
+    if (error is ResponseErrorException) {
+      val errorCode = error.toErrorCode()
+      if (errorCode == ErrorCode.RateLimitError) {
+        val rateLimitError = error.toRateLimitError()
+        UpgradeToCodyProNotification.create(rateLimitError).notify(project)
+      }
+    }
   }
 
   private fun processAutocompleteResult(
