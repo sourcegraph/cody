@@ -49,8 +49,6 @@ export interface CompletionEvent {
         languageId: string
         contextSummary?: any
         source?: InlineCompletionsResultSource
-        lineCount?: number
-        charCount?: number
         artificialDelay?: number
         // Mapping to a higher level abstractions of syntax nodes (e.g., function declaration body)
         completionIntent?: CompletionIntent
@@ -238,10 +236,6 @@ export function suggested(id: CompletionLogID, completion: InlineCompletionItemW
     }
 
     if (!event.suggestedAt) {
-        const { lineCount, charCount } = lineAndCharCount(completion)
-
-        event.params.lineCount = lineCount
-        event.params.charCount = charCount
         event.suggestedAt = performance.now()
 
         setTimeout(() => {
