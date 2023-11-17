@@ -52,6 +52,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public async refresh(): Promise<void> {
         // TODO(dantup): This method can be made not-async again when we don't need to call evaluateFeatureFlag
         const updatedTree: vscode.TreeItem[] = []
+        this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.
         for (const item of this.treeItems) {
             if (item.requireFeature && !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
                 continue
@@ -69,7 +70,6 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
             updatedTree.push(treeItem)
         }
-        this.treeNodes = updatedTree
 
         if (this.type === 'chat') {
             void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)

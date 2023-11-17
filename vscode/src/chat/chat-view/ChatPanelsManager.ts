@@ -28,6 +28,8 @@ export class ChatPanelsManager implements vscode.Disposable {
     public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
     public treeView
 
+    public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
+
     protected disposables: vscode.Disposable[] = []
 
     constructor({ extensionUri, ...options }: SidebarChatOptions) {
@@ -42,10 +44,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Register Tree View
         this.disposables.push(
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeViewProvider),
-            vscode.window.registerTreeDataProvider(
-                'cody.support.tree.view',
-                new TreeViewProvider('support', featureFlagProvider)
-            ),
+            vscode.window.registerTreeDataProvider('cody.support.tree.view', this.supportTreeViewProvider),
             vscode.window.registerTreeDataProvider(
                 'cody.commands.tree.view',
                 new TreeViewProvider('command', featureFlagProvider)
@@ -82,7 +81,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        this.treeViewProvider.syncAuthStatus(authStatus)
+        this.supportTreeViewProvider.syncAuthStatus(authStatus)
         if (!authStatus.isLoggedIn) {
             this.disposePanels()
         }
