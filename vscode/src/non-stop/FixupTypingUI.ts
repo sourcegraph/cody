@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { EDIT_COMMAND, menu_buttons } from '../custom-prompts/utils/menu'
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
@@ -51,7 +51,7 @@ export class FixupTypingUI {
     }
 
     public async show(): Promise<FixupTask | null> {
-        const editor = getActiveEditor()
+        const editor = getEditor().active
         if (!editor) {
             return null
         }

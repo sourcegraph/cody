@@ -2,6 +2,9 @@ import * as vscode from 'vscode'
 
 import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CODY_IGNORE_FILENAME_POSIX_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
+
+import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -43,6 +46,10 @@ export function setUpCodyIgnore(): vscode.Disposable {
     }
 }
 
+export function updateCodyIgnoreCodespaceMap(codebase: string, workspace: vscode.Uri): void {
+    ignores.updateCodebaseWorkspaceMap(codebase, workspace.fsPath)
+}
+
 function onConfigChange(): void {
     const config = vscode.workspace.getConfiguration('cody')
     ignores.setActiveState(config.get('internal.unstable') as boolean)
@@ -65,6 +72,11 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         return
     }
 
+    // Get the codebase name from the git clone URL on each refresh
+    // NOTE: This is needed because the ignore rules are mapped to workspace addreses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
+    const remoteUrl = repositoryRemoteUrl(wf.uri)
+    const codebaseName = remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : undefined
+
     const ignoreFiles = await vscode.workspace.findFiles(
         new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB)
     )
@@ -75,7 +87,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         }))
     )
 
-    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent)
+    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName || undefined)
 }
 
 /**

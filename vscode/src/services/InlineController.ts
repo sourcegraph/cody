@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection, VsCodeInlineController } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
@@ -195,7 +195,7 @@ export class InlineController implements VsCodeInlineController {
         if (!this.commentController) {
             return null
         }
-        const editor = getActiveEditor()
+        const editor = getEditor().active
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null
         }

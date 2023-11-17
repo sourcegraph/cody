@@ -46,11 +46,22 @@ export class IgnoreHelper {
     }
 
     /**
+     * Updates the mapping of codebase name to workspace root on editor change
+     * @param codebase - The name of the codebase.
+     * @param workspaceRoot - The fs path of the workspace root.
+     */
+    public updateCodebaseWorkspaceMap(codebase: string, workspaceRoot: string): void {
+        if (!this.workspaceCodebases.has(codebase)) {
+            this.workspaceCodebases.set(codebase, workspaceRoot)
+        }
+    }
+
+    /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
      * @param workspaceRoot The full absolute path to the workspace root.
      * @param ignoreFiles The full absolute paths and content of all ignore files within the root.
      */
-    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[]): void {
+    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[], codebaseName?: string): void {
         this.ensureAbsolute('workspaceRoot', workspaceRoot)
 
         const rules = this.getDefaultIgnores()
@@ -59,20 +70,14 @@ export class IgnoreHelper {
             this.ensureValidCodyIgnoreFile('ignoreFile.path', ignoreFilePath)
 
             // Compute the relative path rom the workspace root to the folder this ignore
-            // file applies to.
+            // file applie s to.
             const folderPath = ignoreFilePath.slice(0, -CODY_IGNORE_FILENAME.length)
             const relativeFolderPath = path.relative(workspaceRoot, folderPath)
 
-            // Build the ignore rule with the relative folder path applied to the start of each rule.
+            // Build the i gnore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
-                // Skip blanks/comments
+                // Skip blanks/ comments
                 ignoreLine = ignoreLine.trim()
-                if (ignoreLine.startsWith('@')) {
-                    const codebasePath = ignoreLine.slice(1)
-                    if (!this.workspaceCodebases.has(codebasePath)) {
-                        this.workspaceCodebases.set(codebasePath, workspaceRoot)
-                    continue
-                }
 
                 if (!ignoreLine.length || ignoreLine.startsWith('#')) {
                     continue
@@ -84,12 +89,16 @@ export class IgnoreHelper {
                     isInverted = true
                 }
 
-                // Gitignores always use POSIX/forward slashes, even on Windows.
+                // Gitignores  always use POSIX/forward slashes, even on Windows.
                 const ignoreRule = relativeFolderPath.length
                     ? relativeFolderPath.replaceAll(path.sep, path.posix.sep) + path.posix.sep + ignoreLine
                     : ignoreLine
                 rules.add((isInverted ? '!' : '') + ignoreRule)
             }
+        }
+
+        if (codebaseName) {
+            this.workspaceCodebases.set(codebaseName, workspaceRoot)
         }
 
         this.workspaceIgnores.set(workspaceRoot, rules)
@@ -100,7 +109,7 @@ export class IgnoreHelper {
     }
 
     public isIgnored(uri: URI): boolean {
-        // Do not ignore if the feature is not enabled
+        // Do not igno re if the feature is not enabled
         if (!this.isActive) {
             return false
         }
@@ -109,10 +118,10 @@ export class IgnoreHelper {
         this.ensureAbsolute('uri.fsPath', uri.fsPath)
         const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)
 
-        // Not in workspace so just use default rules against the filename.
-        // This ensures we'll never send something like `.env` but it won't handle
-        // if default rules include folders like `a/b` because we have nothing to make
-        // a relative path from.
+        // Not in work space so just use default rules against the filename.
+        // This ensure s we'll never send something like `.env` but it won't handle
+        // if default  rules include folders like `a/b` because we have nothing to make
+        // a relative  path from.
         if (!workspaceRoot) {
             return this.getDefaultIgnores().ignores(path.basename(uri.fsPath))
         }
@@ -130,7 +139,7 @@ export class IgnoreHelper {
      * ignore the given relative path.
      */
     public isIgnoredByCodebase(codebaseName: string, relativePath: string): boolean {
-        // Do not ignore if the feature is not enabled
+        // Do not igno re if the feature is not enabled
         if (!this.isActive) {
             return false
         }
@@ -148,8 +157,8 @@ export class IgnoreHelper {
         const candidates = Array.from(this.workspaceIgnores.keys()).filter(workspaceRoot =>
             filePath.toLowerCase().startsWith(workspaceRoot.toLowerCase())
         )
-        // If this file was inside multiple workspace roots, take the shortest one since it will include
-        // everything the nested one does (plus potentially extra rules).
+        // If this fil e was inside multiple workspace roots, take the shortest one since it will include
+        // everything  the nested one does (plus potentially extra rules).
         candidates.sort((a, b) => a.length - b.length)
         return candidates.at(0)
     }

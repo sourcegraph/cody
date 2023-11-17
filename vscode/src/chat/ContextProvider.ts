@@ -13,11 +13,13 @@ import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
+import { getEditor } from '../editor/active-editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -116,7 +118,7 @@ export class ContextProvider implements vscode.Disposable {
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -187,7 +189,9 @@ export class ContextProvider implements vscode.Disposable {
      */
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
-            const editorContext = this.editor.getActiveTextEditor()
+            const editor = getEditor()
+            const activeEditor = editor.active
+
             await this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
@@ -196,8 +200,8 @@ export class ContextProvider implements vscode.Disposable {
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
-                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selectionRange: editorContext?.selectionRange,
+                    filePath: editor.ignored ? 'ignored' : activeEditor?.document.fileName,
+                    selectionRange: editor.ignored ? undefined : activeEditor?.selection,
                     supportsKeyword: true,
                 },
             })
@@ -309,11 +313,11 @@ async function getCodebaseContext(
     }
     const remoteUrl = repositoryRemoteUrl(workspaceRoot)
     // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
+    const codebase = remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : config.codebase
     if (!codebase) {
         return null
     }
-
+    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot)
     // Find an embeddings client
     let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
     if (isError(embeddingsSearch)) {
