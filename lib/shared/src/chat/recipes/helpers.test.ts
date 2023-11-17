@@ -35,12 +35,12 @@ describe('contentSanitizer', () => {
     })
 
     it('handles problematic prompt correct', () => {
-        const sanitizedPrompt = contentSanitizer('<fixupSelectedCode>' + correctResponse + '</fixupSelectedCode>')
+        const sanitizedPrompt = contentSanitizer('<selectedCode>' + correctResponse + '</selectedCode>')
         expect(sanitizedPrompt).toBe(correctResponse)
     })
 
     it('handles partially problematic prompt correctly', () => {
-        const sanitizedPrompt = contentSanitizer('<fixupProblemCode>' + correctResponse)
+        const sanitizedPrompt = contentSanitizer('<problemCode>' + correctResponse)
         expect(sanitizedPrompt).toBe(correctResponse)
     })
 
@@ -50,9 +50,7 @@ describe('contentSanitizer', () => {
     })
 
     it('handles problematic prompt correctly with whitespace across new lines', () => {
-        const sanitizedPrompt = contentSanitizer(
-            '\n   <fixupSelectedCode>' + correctResponse + '</fixupSelectedCode>   \n'
-        )
+        const sanitizedPrompt = contentSanitizer('\n   <selectedCode>' + correctResponse + '</selectedCode>   \n')
         expect(sanitizedPrompt).toBe(correctResponse)
     })
 })
