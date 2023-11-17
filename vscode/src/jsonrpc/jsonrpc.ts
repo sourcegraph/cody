@@ -6,6 +6,8 @@ import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
+import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+
 import * as agent from './agent-protocol'
 import * as bfg from './bfg-protocol'
 
@@ -41,6 +43,7 @@ enum ErrorCode {
     MethodNotFound = -32601,
     InvalidParams = -32602,
     InternalError = -32603,
+    RateLimitError = -32000,
 }
 
 // Result of an erroneous request, which populates the `error` property instead
@@ -274,11 +277,12 @@ export class MessageHandler {
                         error => {
                             const message = error instanceof Error ? error.message : `${error}`
                             const stack = error instanceof Error ? `\n${error.stack}` : ''
+                            const code = isRateLimitError(error) ? ErrorCode.RateLimitError : ErrorCode.InternalError
                             const data: ResponseMessage<any> = {
                                 jsonrpc: '2.0',
                                 id: msg.id,
                                 error: {
-                                    code: ErrorCode.InternalError,
+                                    code,
                                     message,
                                     data: JSON.stringify({ error, stack }),
                                 },
