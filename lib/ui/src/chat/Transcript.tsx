@@ -144,16 +144,15 @@ export const Transcript: React.FunctionComponent<
             if (!message?.displayText) {
                 return null
             }
+            const offsetIndex = index + offset === earlierMessages.length
             return (
                 <TranscriptItem
                     key={index + offset}
                     message={message}
                     inProgress={
-                        index + offset === earlierMessages.length &&
-                        messageInProgress?.speaker === 'assistant' &&
-                        !messageInProgress?.displayText
+                        offsetIndex && messageInProgress?.speaker === 'assistant' && !messageInProgress?.displayText
                     }
-                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                    beingEdited={messageBeingEdited && offsetIndex}
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     symbolLinkComponent={symbolLinkComponent}
@@ -166,7 +165,7 @@ export const Transcript: React.FunctionComponent<
                     textAreaComponent={textAreaComponent}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={index > 0 && transcript.length - index === 2}
+                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText.startsWith('/')}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}

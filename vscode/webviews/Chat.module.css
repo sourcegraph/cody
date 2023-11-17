@@ -8,7 +8,7 @@
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     border-color: var(--vscode-sideBarSectionHeader-border);
-    padding: 15px 15px 15px 20px;
+    padding: 1rem 1rem 1rem 1.25rem;
     color: var(--vscode-foreground);
 }
 
