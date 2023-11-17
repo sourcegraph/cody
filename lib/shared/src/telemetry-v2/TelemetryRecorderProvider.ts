@@ -116,6 +116,10 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
             {
                 key: 'guardrails',
                 value: this.config.experimentalGuardrails ? 1 : 0,
+            },
+            {
+                key: 'newChatUI',
+                value: this.config.experimentalChatPanel ? 1 : 0,
             }
         )
     }
