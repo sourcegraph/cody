@@ -6,6 +6,8 @@ import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
+import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+
 import * as agent from './agent-protocol'
 import * as bfg from './bfg-protocol'
 
@@ -41,6 +43,7 @@ enum ErrorCode {
     MethodNotFound = -32601,
     InvalidParams = -32602,
     InternalError = -32603,
+    RateLimitError = -32000,
 }
 
 // Result of an erroneous request, which populates the `error` property instead
@@ -211,7 +214,7 @@ type RequestCallback<M extends RequestMethodName> = (
     params: ParamsOf<M>,
     cancelToken: vscode.CancellationToken
 ) => Promise<ResultOf<M>>
-type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void
+type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void | Promise<void>
 
 /**
  * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
@@ -274,11 +277,12 @@ export class MessageHandler {
                         error => {
                             const message = error instanceof Error ? error.message : `${error}`
                             const stack = error instanceof Error ? `\n${error.stack}` : ''
+                            const code = isRateLimitError(error) ? ErrorCode.RateLimitError : ErrorCode.InternalError
                             const data: ResponseMessage<any> = {
                                 jsonrpc: '2.0',
                                 id: msg.id,
                                 error: {
-                                    code: ErrorCode.InternalError,
+                                    code,
                                     message,
                                     data: JSON.stringify({ error, stack }),
                                 },
@@ -314,7 +318,7 @@ export class MessageHandler {
             } else {
                 const notificationHandler = this.notificationHandlers.get(msg.method)
                 if (notificationHandler) {
-                    notificationHandler(msg.params)
+                    void notificationHandler(msg.params)
                 } else {
                     console.error(`No handler for notification with method ${msg.method}`)
                 }
@@ -399,7 +403,7 @@ export class InProcessClient {
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
         const handler = this.notificationHandlers.get(method)
         if (handler) {
-            handler(params)
+            void handler(params)
             return
         }
         throw new Error('No such notification handler: ' + method)

@@ -173,8 +173,10 @@ export interface ExtensionConfiguration {
     verboseDebug?: boolean
     codebase?: string
 
-    /** When passed, the Agent will handle recording events.
-     * If not passed, client must send `graphql/logEvent` requests manually. **/
+    /**
+     * When passed, the Agent will handle recording events.
+     * If not passed, client must send `graphql/logEvent` requests manually.
+     */
     eventProperties?: EventProperties
 }
 
