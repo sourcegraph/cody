@@ -221,7 +221,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             insertButtonOnSubmit={onInsertBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
-            abortMessageInProgressComponent={AbortMessageInProgress}
             onAbortMessageInProgress={abortMessageInProgress}
             isTranscriptError={isTranscriptError}
             // TODO: We should fetch this from the server and pass a pretty component
@@ -248,22 +247,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         />
     )
 }
-
-interface AbortMessageInProgressProps {
-    onAbortMessageInProgress: () => void
-}
-
-const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
-    <div className={classNames(styles.stopGeneratingButtonContainer)}>
-        <VSCodeButton
-            className={classNames(styles.stopGeneratingButton)}
-            onClick={onAbortMessageInProgress}
-            appearance="secondary"
-        >
-            <i className="codicon codicon-stop-circle" /> Stop generating
-        </VSCodeButton>
-    </div>
-)
 
 const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
     <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
@@ -333,16 +316,21 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
 }
 
-const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
+const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
+    className,
+    disabled,
+    onClick,
+    onAbortMessageInProgress,
+}) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className)}
-        appearance="icon"
+        className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
+        appearance="primary"
         type="button"
         disabled={disabled}
-        onClick={onClick}
-        title="Send Message"
+        onClick={onAbortMessageInProgress ?? onClick}
+        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? 'Message is empty' : 'Send Message'}
     >
-        <SubmitSvg />
+        {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
     </VSCodeButton>
 )
 

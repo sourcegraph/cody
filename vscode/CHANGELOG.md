@@ -16,6 +16,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Chat: Updated the design and location for the `chat submit` button and `stop generating` button. [pull/1782](https://github.com/sourcegraph/cody/pull/1782)
+
 ## [0.16.0]
 
 ### Added
