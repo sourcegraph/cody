@@ -17,7 +17,9 @@ import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
-import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
+import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
@@ -34,6 +36,7 @@ interface SimpleChatPanelProviderOptions {
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
     private chatModel: SimpleChatModel = new SimpleChatModel()
+    private modelID = 'anthropic/claude-2'
 
     public webviewPanel?: vscode.WebviewPanel
     public webview?: ChatViewProviderWebview
@@ -48,6 +51,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private embeddingsClient: EmbeddingsSearch | null
 
     private readonly editor: VSCodeEditor
+
+    private completionCanceller?: () => void
+    private cancelInProgressCompletion(): void {
+        if (this.completionCanceller) {
+            this.completionCanceller()
+            this.completionCanceller = undefined
+        }
+    }
 
     constructor({ extensionUri, authProvider, chatClient, embeddingsClient, editor }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
@@ -111,11 +122,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await this.authProvider.announceNewAuthStatus()
                 await this.updateViewConfig()
                 break
-            // case 'initialized':
-            //     logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
-            //     await this.init(this.startUpChatID)
-            //     this.handleChatModel()
-            //     break
+            case 'initialized':
+                logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
+                // await this.init(this.startUpChatID)
+                this.onInitialized()
+                break
             case 'submit':
                 await this.onHumanMessageSubmitted(
                     message.text,
@@ -133,25 +144,27 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             //     telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
             //     telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
             //     break
-            // case 'abort':
-            //     await this.abortCompletion()
-            //     telemetryService.log(
-            //         'CodyVSCodeExtension:abortButton:clicked',
-            //         { source: 'sidebar' },
-            //         { hasV2Event: true }
-            //     )
-            //     telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
-            //     break
-            // case 'chatModel':
-            //     this.chatModel = message.model
-            //     this.transcript.setChatModel(message.model)
-            //     break
+            case 'abort':
+                this.cancelInProgressCompletion()
+                telemetryService.log(
+                    'CodyVSCodeExtension:abortButton:clicked',
+                    { source: 'sidebar' },
+                    { hasV2Event: true }
+                )
+                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+                break
+            case 'chatModel':
+                this.modelID = message.model
+                break
             // case 'executeRecipe':
             //     await this.executeRecipe(message.recipe, '', 'chat')
             //     break
             // case 'custom-prompt':
             //     await this.onCustomPromptClicked(message.title, message.value)
             //     break
+            case 'event':
+                telemetryService.log(message.eventName, message.properties)
+                break
             // case 'insert':
             //     await handleCodeFromInsertAtCursor(message.text, message.metadata)
             //     break
@@ -161,9 +174,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             //     break
             // case 'copy':
             //     await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
-            //     break
-            // case 'event':
-            //     telemetryService.log(message.eventName, message.properties)
             //     break
             // case 'links':
             //     void openExternalLinks(message.value)
@@ -177,6 +187,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             // default:
             //     this.handleError('Invalid request type from Webview Panel', 'system')
         }
+    }
+
+    private onInitialized(): void {
+        const endpoint = this.authProvider.getAuthStatus()?.endpoint
+        const allowedModels = getChatModelsForWebview(endpoint)
+        const models = this.chatModel
+            ? allowedModels.map(model => {
+                  return {
+                      ...model,
+                      default: model.model === this.modelID,
+                  }
+              })
+            : allowedModels
+
+        void this.webview?.postMessage({
+            type: 'chatModels',
+            models,
+        })
     }
 
     /**
@@ -330,13 +358,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             },
         })
 
-        const abort = this.chatClient.chat(
+        this.cancelInProgressCompletion()
+        this.completionCanceller = this.chatClient.chat(
             promptMessages,
             {
                 onChange: (content: string) => {
                     typewriter.update(content)
                 },
                 onComplete: () => {
+                    this.completionCanceller = undefined
                     typewriter.close()
                     typewriter.stop()
 
@@ -344,12 +374,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     // TODO(beyang): count lines of generated code
                 },
                 onError: error => {
+                    this.completionCanceller = undefined
                     console.error('TODO: handle error', error)
                 },
             },
-            {
-                model: 'openai/gpt-4-1106-preview',
-            }
+            { model: this.modelID }
         )
 
         return Promise.resolve()
