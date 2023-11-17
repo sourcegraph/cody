@@ -128,7 +128,16 @@ export class Fixup implements Recipe {
              * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
              */
             case 'fix':
-                return []
+                return [
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedPrecedingText, task.fileName),
+                        task
+                    ),
+                    ...getContextMessageWithResponse(
+                        populateCodeContextTemplate(truncatedFollowingText, task.fileName),
+                        task
+                    ),
+                ]
         }
         /* eslint-enable no-case-declarations */
     }
@@ -140,20 +149,20 @@ export class Fixup implements Recipe {
 - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
 - Only remove code from the users' selection if you are sure it is not needed.
 - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
-- You will be provided with code that is in the users' selection, enclosed in <fixupSelectedCode></fixupSelectedCode> XML tags. You must use this code to help you plan your updated code.
-- You will be provided with instructions on how to update this code, enclosed in <fixupInstructions></fixupInstructions> XML tags. You must follow these instructions carefully and to the letter.
+- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
+- You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <fixup></fixup> XML tags. Do use any other XML tags unless they are part of the generated code.
 
 This is part of the file {fileName}.
 
 The user has the following code in their selection:
-<fixupSelectedCode>{selectedText}</fixupSelectedCode>
+<selectedCode>{selectedText}</selectedCode>
 
 The user wants you to replace parts of the selected code or correct a problem by following their instructions.
 Provide your generated code using the following instructions:
-<fixupInstructions>
+<instructions>
 {instruction}
-</fixupInstructions>
+</instructions>
 `
 
     public static readonly addPrompt = `
@@ -161,15 +170,15 @@ Provide your generated code using the following instructions:
 - You should think step-by-step to plan your code before adding the final output.
 - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
 - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
-- You will be provided with instructions on what to do, enclosed in <fixupInstructions></fixupInstructions> XML tags. You must follow these instructions carefully and to the letter.
+- You will be provided with instructions on what to do, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <fixup></fixup> XML tags. Do use any other XML tags unless they are part of the generated code.
 
 The user is currently in the file: {fileName}
 
 Provide your generated code using the following instructions:
-<fixupInstructions>
+<instructions>
 {instruction}
-</fixupInstructions>
+</instructions>
 `
 
     public static readonly fixPrompt = `
@@ -178,20 +187,20 @@ Provide your generated code using the following instructions:
 - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
 - Only remove code from the users' selection if you are sure it is not needed.
 - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
-- You will be provided with code that is in the users' selection, enclosed in <fixupSelectedCode></fixupSelectedCode> XML tags. You must use this code to help you plan your fixed code.
-- You will be provided with errors from the users' selection enclosed in <fixupDiagnostics></fixupDiagnostics> XML tags. You must attempt to fix all of these errors.
+- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your fixed code.
+- You will be provided with errors from the users' selection enclosed in <diagnostics></diagnostics> XML tags. You must attempt to fix all of these errors.
 - If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
 - Only enclose your response in <fixup></fixup> XML tags. Do use any other XML tags unless they are part of the generated code.
 
 This is part of the file {fileName}.
 
 The user has the following code in their selection:
-<fixupSelectedCode>{selectedText}</fixupSelectedCode>
+<selectedCode>{selectedText}</selectedCode>
 
 The user wants you to correct problems in their code by following their instructions.
 Provide your generated code using the following instructions:
-<fixupDiagnostics>
+<diagnostics>
 {instruction}
-</fixupDiagnostics>
+</diagnostics>
 `
 }

@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`fixup code action > produces correct prompt for a limited diagnostic 1`] = `
-"<problemCode>export function getRerankWithLog(
+"<fixupProblemCode>export function getRerankWithLog(
     chatClient: ChatClient
 ): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
     if (TestSupport.instance) {
@@ -17,13 +17,13 @@ exports[`fixup code action > produces correct prompt for a limited diagnostic 1`
         logDebug('Reranker:rerank', JSON.stringify({ duration }))
         const rerank
     }
-}</problemCode>
+}</fixupProblemCode>
 
-Fix the following warning from within <problemCode></problemCode>: Type 'null' is not assignable to type 'ContextResult[]'."
+Fix the following warning from within <fixupProblemCode></fixupProblemCode>: Type 'null' is not assignable to type 'ContextResult[]'."
 `;
 
 exports[`fixup code action > produces correct prompt for code with a single diagnostic 1`] = `
-"<problemCode>export function getRerankWithLog(
+"<fixupProblemCode>export function getRerankWithLog(
     chatClient: ChatClient
 ): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
     if (TestSupport.instance) {
@@ -39,13 +39,13 @@ exports[`fixup code action > produces correct prompt for code with a single diag
         logDebug('Reranker:rerank', JSON.stringify({ duration }))
         const rerank
     }
-}</problemCode>
+}</fixupProblemCode>
 
-Fix the following ts error from within <problemCode></problemCode>: Type 'null' is not assignable to type 'ContextResult[]'."
+Fix the following ts error from within <fixupProblemCode></fixupProblemCode>: Type 'null' is not assignable to type 'ContextResult[]'."
 `;
 
 exports[`fixup code action > produces correct prompt for code with multiple diagnostics and overlapping ranges 1`] = `
-"<problemCode>export function getRerankWithLog(
+"<fixupProblemCode>export function getRerankWithLog(
     chatClient: ChatClient
 ): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
     if (TestSupport.instance) {
@@ -61,25 +61,25 @@ exports[`fixup code action > produces correct prompt for code with multiple diag
         logDebug('Reranker:rerank', JSON.stringify({ duration }))
         const rerank
     }
-}</problemCode>
+}</fixupProblemCode>
 
-Fix the following ts error from within <problemCode></problemCode>: 'const' declarations must be initialized.
-
-
-Fix the following ts warning from within <problemCode></problemCode>: 'rerank' is declared but its value is never read.
+Fix the following ts error from within <fixupProblemCode></fixupProblemCode>: 'const' declarations must be initialized.
 
 
-Fix the following ts error from within <problemCode></problemCode>: Variable 'rerank' implicitly has an 'any' type."
+Fix the following ts warning from within <fixupProblemCode></fixupProblemCode>: 'rerank' is declared but its value is never read.
+
+
+Fix the following ts error from within <fixupProblemCode></fixupProblemCode>: Variable 'rerank' implicitly has an 'any' type."
 `;
 
 exports[`fixup code action > produces correct prompt for diagnostics with related information 1`] = `
-"<problemCode>         .taur</problemCode>
+"<fixupProblemCode>         .taur</fixupProblemCode>
 
-Fix the following rustc error from within <problemCode></problemCode>: no field \`taur\` on type \`&mut tauri::Config\`
+Fix the following rustc error from within <fixupProblemCode></fixupProblemCode>: no field \`taur\` on type \`&mut tauri::Config\`
 Code related to this diagnostic:
 a field with a similar name exists: \`tauri\`
-<relatedCode>foo
+<fixupRelatedCode>foo
 bar
-foo</relatedCode>
+foo</fixupRelatedCode>
 "
 `;
