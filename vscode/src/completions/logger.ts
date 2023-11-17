@@ -238,10 +238,6 @@ export function suggested(id: CompletionLogID, completion: InlineCompletionItemW
     }
 
     if (!event.suggestedAt) {
-        const { lineCount, charCount } = lineAndCharCount(completion)
-
-        event.params.lineCount = lineCount
-        event.params.charCount = charCount
         event.suggestedAt = performance.now()
 
         setTimeout(() => {
