@@ -317,7 +317,10 @@ async function getCodebaseContext(
     if (!codebase) {
         return null
     }
-    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot)
+
+    // Map the ignore rules for the workspace with the codebase name
+    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot.fsPath)
+
     // Find an embeddings client
     let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
     if (isError(embeddingsSearch)) {
