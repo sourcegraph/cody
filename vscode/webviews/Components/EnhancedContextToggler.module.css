@@ -37,9 +37,8 @@
 }
 
 .settings-btn-active {
-    background: var(--vscode-input-background);
-    color: var(--vscode-list-activeSelectionForeground);
-    border: 1px solid var(--vscode-list-activeSelectionForeground);
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
 }
 
 .pop-up-container:before {

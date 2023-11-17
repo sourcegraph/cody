@@ -42,7 +42,7 @@
 }
 
 .context-button {
-    color: var(--foreground);
+    color: var(--button-primary-background);
     position: absolute;
     right: 0;
     bottom: 0;
