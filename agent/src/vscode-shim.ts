@@ -3,6 +3,8 @@ import { execSync } from 'child_process'
 
 import type * as vscode from 'vscode'
 
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
@@ -110,6 +112,17 @@ const configuration: vscode.WorkspaceConfiguration = {
         return true
     },
     get: (section, defaultValue?: any) => {
+        const clientNameToIDE = (value: string): Configuration['agentIDE'] | undefined => {
+            return (
+                {
+                    vscode: 'VSCode',
+                    jetbrains: 'JetBrains',
+                    emacs: 'Emacs',
+                    neovim: 'Neovim',
+                } as const
+            )[value.toLowerCase()]
+        }
+
         const fromCustomConfiguration = customConfiguration[section]
         if (fromCustomConfiguration) {
             return fromCustomConfiguration
@@ -148,6 +161,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return false
             case 'cody.codebase':
                 return connectionConfig?.codebase
+            case 'cody.advanced.agent.ide':
+                return clientNameToIDE(clientInfo?.name ?? '')
             default:
                 return defaultValue
         }
