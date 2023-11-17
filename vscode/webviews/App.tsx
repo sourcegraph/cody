@@ -50,9 +50,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
+                console.log('# webview:message', message.type)
                 switch (message.type) {
                     case 'transcript': {
-                        console.log('# webview:transcript', message)
                         if (message.isMessageInProgress) {
                             const msgLength = message.messages.length - 1
                             setTranscript(message.messages.slice(0, msgLength))
@@ -65,7 +65,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'config':
-                        console.log('# webview:config')
                         setConfig(message.config)
                         setIsAppInstalled(message.config.isAppInstalled)
                         setEndpoint(message.authStatus.endpoint)
@@ -73,38 +72,30 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         break
                     case 'login':
-                        console.log('# webview:login')
                         break
                     case 'history':
-                        console.log('# webview:history')
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)
                         break
                     case 'contextStatus':
-                        console.log('# webview:contextStatus')
                         setContextStatus(message.contextStatus)
                         break
                     case 'userContextFiles':
                         setContextSelection(message.context)
                         break
                     case 'errors':
-                        console.log('# webview:errors')
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
                         break
                     case 'view':
-                        console.log('# webview:view')
                         setView(message.messages)
                         break
                     case 'suggestions':
-                        console.log('# webview:suggestions')
                         setSuggestions(message.suggestions)
                         break
                     case 'app-state':
-                        console.log('# webview:app-state')
                         setIsAppInstalled(message.isInstalled)
                         break
                     case 'custom-prompts': {
-                        console.log('# webview:custom-prompts')
                         let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
                             message.prompts
 
@@ -130,11 +121,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'transcript-errors':
-                        console.log('# webview:transcript-errors')
                         setIsTranscriptError(message.isTranscriptError)
                         break
                     case 'chatModels':
-                        console.log('# webview:chatModels')
                         setChatModels(message.models)
                         break
                 }

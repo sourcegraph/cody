@@ -220,6 +220,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         this.chatModel.addHumanMessage({ text })
+        void this.updateTranscript()
 
         const contextItems: ContextItem[] = []
         if (this.embeddingsClient) {
@@ -278,37 +279,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 onChange: (content: string) => {
                     console.log('# onChange', content)
                     lastContent = content
-                    const newMessages: ChatMessage[] = [
-                        ...this.chatModel.messages.map(m => toViewMessage(m)),
-                        {
-                            speaker: 'assistant',
-                            text: content,
-                            displayText: content,
-                        },
-                    ]
-
-                    void this.webview?.postMessage({
-                        type: 'transcript',
-                        messages: newMessages,
-                        isMessageInProgress: true,
+                    void this.updateTranscript({
+                        speaker: 'assistant',
+                        text: content,
+                        displayText: content,
                     })
                 },
                 onComplete: () => {
                     console.log('# onComplete', lastContent)
-                    const newMessages: ChatMessage[] = [
-                        ...this.chatModel.messages.map(m => toViewMessage(m)),
-                        {
-                            speaker: 'assistant',
-                            text: lastContent,
-                            displayText: lastContent,
-                        },
-                    ]
                     this.chatModel.addBotMessage({ text: lastContent })
-                    void this.webview?.postMessage({
-                        type: 'transcript',
-                        messages: newMessages,
-                        isMessageInProgress: false,
-                    })
+                    void this.updateTranscript()
                 },
                 onError: error => {
                     console.error('TODO: handle error', error)
@@ -320,6 +300,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         )
 
         return Promise.resolve()
+    }
+
+    private async updateTranscript(messageInProgress?: ChatMessage): Promise<void> {
+        const newMessages: ChatMessage[] = this.chatModel.messages.map(m => toViewMessage(m))
+        if (messageInProgress) {
+            newMessages.push(messageInProgress)
+        }
+        await this.webview?.postMessage({
+            type: 'transcript',
+            messages: newMessages,
+            isMessageInProgress: !!messageInProgress,
+        })
     }
 }
 
