@@ -3,6 +3,9 @@ description: File a bug report to help us improve
 title: 'bug: '
 labels:
   - bug
+  - clients/vscode
+projects:
+  - sourcegraph/387
 body:
   - type: markdown
     attributes:

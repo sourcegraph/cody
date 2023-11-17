@@ -4,6 +4,8 @@ title: 'feedback: '
 labels:
   - clients/vscode
   - feedback
+projects:
+  - sourcegraph/387
 body:
   - type: markdown
     attributes:
