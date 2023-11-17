@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { AuthStatus } from '../chat/protocol'
 
@@ -12,9 +12,14 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
     private authStatus: AuthStatus | undefined
+    private treeItems: CodySidebarTreeItem[]
 
-    constructor(private type: CodyTreeItemType) {
-        void this.updateTree(getCodyTreeItems(type))
+    constructor(
+        private type: CodyTreeItemType,
+        private readonly featureFlagProvider: FeatureFlagProvider
+    ) {
+        this.treeItems = getCodyTreeItems(type)
+        void this.refresh()
     }
 
     /**
@@ -36,10 +41,19 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * that do not meet the required criteria to show.
      */
     public async updateTree(treeItems: CodySidebarTreeItem[]): Promise<void> {
+        this.treeItems = treeItems
+        return this.refresh()
+    }
+
+    /**
+     * Refreshes the visible tree items, filtering out any
+     * that do not meet the required criteria to show.
+     */
+    public async refresh(): Promise<void> {
         // TODO(dantup): This method can be made not-async again when we don't need to call evaluateFeatureFlag
         const updatedTree: vscode.TreeItem[] = []
-        for (const item of treeItems) {
-            if (item.requireFeature && !(await featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
+        for (const item of this.treeItems) {
+            if (item.requireFeature && !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
                 continue
             }
 
@@ -56,22 +70,16 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             updatedTree.push(treeItem)
         }
         this.treeNodes = updatedTree
-        this.refresh()
+
+        if (this.type === 'chat') {
+            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
+        }
+        this._onDidChangeTreeData.fire()
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
         this.authStatus = authStatus
         void this.refresh()
-    }
-
-    /**
-     * Refresh the tree view to get the latest data
-     */
-    public refresh(): void {
-        if (this.type === 'chat') {
-            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
-        }
-        this._onDidChangeTreeData.fire()
     }
 
     /**
@@ -102,7 +110,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public reset(): void {
         void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', false)
         this.treeNodes = []
-        this.refresh()
+        void this.refresh()
     }
 
     /**

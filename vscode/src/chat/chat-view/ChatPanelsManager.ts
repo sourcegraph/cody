@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -24,7 +25,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     private onConfigurationChange: vscode.Disposable
 
     // Tree view for chat history
-    public treeViewProvider = new TreeViewProvider('chat')
+    public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
     public treeView
 
     protected disposables: vscode.Disposable[] = []
@@ -41,8 +42,14 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Register Tree View
         this.disposables.push(
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeViewProvider),
-            vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support')),
-            vscode.window.registerTreeDataProvider('cody.commands.tree.view', new TreeViewProvider('command'))
+            vscode.window.registerTreeDataProvider(
+                'cody.support.tree.view',
+                new TreeViewProvider('support', featureFlagProvider)
+            ),
+            vscode.window.registerTreeDataProvider(
+                'cody.commands.tree.view',
+                new TreeViewProvider('command', featureFlagProvider)
+            )
         )
 
         // Register Commands
