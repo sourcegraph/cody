@@ -318,6 +318,28 @@ export function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLin
     return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
 }
 
+export function getFirstLine(text: string): string {
+    const firstLf = text.indexOf('\n')
+    const firstCrLf = text.indexOf('\r\n')
+    // There are no line breaks
+    if (firstLf === -1 && firstCrLf === -1) {
+        return text
+    }
+
+    return text.slice(0, firstCrLf >= 0 ? firstCrLf : firstLf)
+}
+
+export function getLastLine(text: string): string {
+    const lastLf = text.lastIndexOf('\n')
+    const lastCrLf = text.lastIndexOf('\r\n')
+    // There are no line breaks
+    if (lastLf === -1 && lastCrLf === -1) {
+        return text
+    }
+
+    return text.slice(lastCrLf >= 0 ? lastCrLf + 2 : lastLf + 1)
+}
+
 export function getNextNonEmptyLine(suffix: string): string {
     const nextLf = suffix.indexOf('\n')
     const nextCrLf = suffix.indexOf('\r\n')

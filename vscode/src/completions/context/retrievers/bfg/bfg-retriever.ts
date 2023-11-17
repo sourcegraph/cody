@@ -7,6 +7,7 @@ import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
+import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 // This promise is only used for testing purposes. We don't await on the
@@ -82,8 +83,8 @@ export class BfgRetriever implements ContextRetriever {
             uri: document.uri.toString(),
             content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
             position: { line: position.line, character: position.character },
-            maxChars: hints.maxChars,
-            contextRange: docContext.contextRange,
+            maxChars: hints.maxChars, // ignored by BFG server for now
+            contextRange: getContextRange(document, docContext),
         })
 
         // Just in case, handle non-object results

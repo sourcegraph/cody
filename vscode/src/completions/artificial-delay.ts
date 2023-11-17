@@ -1,6 +1,5 @@
 import { logDebug } from '../log'
-
-import { DocumentContext } from './get-current-doc-context'
+import { CompletionIntent } from '../tree-sitter/queries'
 
 export interface LatencyFeatureFlags {
     user?: boolean
@@ -44,12 +43,12 @@ export function getArtificialDelay(
     featureFlags: LatencyFeatureFlags,
     uri: string,
     languageId: string,
-    docContext: Pick<DocumentContext, 'completionIntent'>
+    completionIntent?: CompletionIntent
 ): number {
     let baseline = 0
 
     const isLowPerformance = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
-    const isComment = docContext.completionIntent === 'comment'
+    const isComment = completionIntent === 'comment'
     if (isLowPerformance || isComment) {
         baseline = defaultLatencies.lowPerformance
     }
