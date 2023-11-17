@@ -46,5 +46,5 @@ export interface CompletionCallbacks {
      * assumed to be a "complete" event, and no other callbacks will be called
      * afterwards.
      */
-    onError: (message: string, statusCode?: number) => void
+    onError: (error: Error, statusCode?: number) => void
 }

@@ -129,7 +129,8 @@ export const TranscriptItem: React.FunctionComponent<
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
+                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow,
+                message.isRateLimitError ? styles.rateLimitError : undefined
             )}
         >
             {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
@@ -175,6 +176,7 @@ export const TranscriptItem: React.FunctionComponent<
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
+            {message.footerText && <div className={styles.footerText}>{message.footerText}</div>}
             {message.speaker === 'human' && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (

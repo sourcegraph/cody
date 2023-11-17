@@ -9,22 +9,30 @@ export interface ChatButton {
     label: string
     action: string
     onClick: (action: string) => void
+    appearance?: 'primary' | 'secondary' | 'icon'
 }
 
 export interface ChatMessage extends Message {
+    className?: string
     displayText?: string
     contextFiles?: ContextFile[]
     preciseContext?: PreciseContext[]
     buttons?: ChatButton[]
+    footerText?: string
     data?: any
     metadata?: ChatMetadata
+    isRateLimitError?: boolean
 }
 
 export interface InteractionMessage extends Message {
+    className?: string
     displayText?: string
     prefix?: string
     error?: string
     metadata?: ChatMetadata
+    buttons?: ChatButton[]
+    footerText?: string
+    isRateLimitError?: boolean
 }
 
 export interface ChatMetadata {

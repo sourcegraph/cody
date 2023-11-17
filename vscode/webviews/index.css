@@ -48,3 +48,9 @@ a:hover {
 .cody-chat-error > span {
     font-weight: bold;
 }
+
+.cody-chat-rate-limit-error {
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    padding: 0.5rem;
+}

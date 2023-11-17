@@ -2,6 +2,7 @@ import { ContextFile, ContextMessage, OldContextMessage, PreciseContext } from '
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
+import { RateLimitError } from '../../sourcegraph-api/errors'
 
 import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
@@ -143,22 +144,84 @@ export class Transcript {
     }
 
     /**
-     * Adds a error div to the assistant response. If the assistant has collected
+     * Adds an error div to the assistant response. If the assistant has collected
      * some response before, we will add the error message after it.
-     * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
+     * @param error The error to be displayed.
      */
-    public addErrorAsAssistantResponse(errorText: string): void {
+    public addErrorAsAssistantResponse(error: Error): void {
+        if (error instanceof RateLimitError) {
+            this.addRateLimitErrorAsAssistantResponse(error)
+            return
+        }
+
         const lastInteraction = this.getLastInteraction()
         if (!lastInteraction) {
             return
         }
         // If assistant has responsed before, we will add the error message after it
         const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
+
+        const errorHtml = `<div class="cody-chat-error"><span>Request failed: </span>${error.message}</div>`
+
         lastInteraction.setAssistantMessage({
             speaker: 'assistant',
             text: 'Failed to generate a response due to server error.',
-            displayText:
-                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
+            displayText: lastAssistantMessage + errorHtml,
+        })
+    }
+
+    /**
+     * Adds an error div to the assistant response with information about the
+     * RateLimitError that was triggered.
+     */
+    public addRateLimitErrorAsAssistantResponse(error: RateLimitError): void {
+        const lastInteraction = this.getLastInteraction()
+        if (!lastInteraction) {
+            return
+        }
+
+        const canUpgrade = false // TODO(dantup): Get from auth + GA feature flag
+        const className = canUpgrade ? 'rate-limit-error upgradable' : 'rate-limit-error'
+        const title = canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'
+        let description = error.buildMessage('chat messages')
+        if (canUpgrade) {
+            description += ' Upgrade to Cody Pro to get unlimited chats.'
+        }
+        // TODO(dantup): Is HTML here the right place?
+        const errorHtml = `
+                <div class="${className}">
+                    <h1>${title}</h1>
+                    <span>${description}</span>
+                </div>
+            `.trim()
+
+        lastInteraction.setAssistantMessage({
+            speaker: 'assistant',
+            text: 'Failed to generate a response due to rate limit error.',
+            displayText: errorHtml,
+            buttons: [
+                {
+                    label: 'Upgrade',
+                    action: '',
+                    onClick: (action: string) => {
+                        // TODO(dantup): How do we open a URL from here?
+                        // can we use something like vscode.env.openExternal or
+                        // vscode.commands.executeCommand()?
+                        // console.log(`TODO: Open ${ACCOUNT_UPGRADE_URL}`);
+                    },
+                    appearance: 'primary',
+                },
+                {
+                    label: 'Learn More',
+                    action: '',
+                    onClick: (action: string) => {
+                        // TODO: Where does Learn More go?
+                    },
+                    appearance: 'secondary',
+                },
+            ],
+            footerText: error.buildResetMessage(),
+            isRateLimitError: true,
         })
     }
 

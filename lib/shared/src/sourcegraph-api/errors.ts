@@ -1,3 +1,5 @@
+import { formatDistance } from 'date-fns'
+
 import { isError } from '../utils'
 
 export class RateLimitError extends Error {
@@ -7,6 +9,16 @@ export class RateLimitError extends Error {
         public retryAfter?: Date
     ) {
         super(message)
+    }
+
+    public buildMessage(feature: string): string {
+        const limit = this.limit
+        return `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
+    }
+
+    public buildResetMessage(): string | undefined {
+        const retryAfter = this.retryAfter
+        return retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
     }
 }
 

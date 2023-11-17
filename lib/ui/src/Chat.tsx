@@ -88,6 +88,7 @@ export interface ChatButtonProps {
     label: string
     action: string
     onClick: (action: string) => void
+    appearance?: 'primary' | 'secondary' | 'icon'
 }
 
 export interface ChatUITextAreaProps {

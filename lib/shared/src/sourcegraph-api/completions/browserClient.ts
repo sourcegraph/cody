@@ -34,12 +34,12 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                         // We show the generic error message in this case
                         console.error(error)
                     }
-                    cb.onError(
+                    const error = new Error(
                         errorMessage === null || errorMessage.length === 0
                             ? `Request failed with status code ${response.status}`
-                            : errorMessage,
-                        response.status
+                            : errorMessage
                     )
+                    cb.onError(error, response.status)
                     abort.abort()
                     return
                 }

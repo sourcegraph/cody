@@ -112,9 +112,7 @@ export class FilenameContextFetcher {
                     onComplete: () => {
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
-                    onError: (message: string, statusCode?: number) => {
-                        reject(new Error(message))
-                    },
+                    onError: (error: Error, statusCode?: number) => reject(error),
                 },
                 {
                     temperature: 0,

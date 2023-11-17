@@ -68,7 +68,7 @@ abstract class MessageHandler {
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
-    protected abstract handleError(errorMsg: string, type: MessageErrorType): void
+    protected abstract handleError(error: Error, type: MessageErrorType): void
 }
 
 export interface MessageProviderOptions {
@@ -284,7 +284,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 },
                 onError: (err, statusCode) => {
                     // TODO notify the multiplexer of the error
-                    logError('ChatViewProvider:onError', err)
+                    logError('ChatViewProvider:onError', err.message)
 
                     if (isAbortError(err)) {
                         this.isMessageInProgress = false
@@ -301,12 +301,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                                 this.contextProvider.config.customHeaders
                             )
                             .catch(error => console.error(error))
-                        logError('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                        logError('ChatViewProvider:onError:unauthUser', err.message, { verbose: { statusCode } })
                     }
 
                     if (isNetworkError(err)) {
-                        err = 'Cody could not respond due to network error.'
+                        err = new Error('Cody could not respond due to network error.')
                     }
+
                     // Display error message as assistant response
                     this.handleError(err, 'transcript')
                     // We ignore embeddings errors in this instance because we're already showing an
@@ -358,7 +359,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         addEnhancedContext = true
     ): Promise<void> {
         if (this.isMessageInProgress) {
-            this.handleError('Cannot execute multiple actions. Please wait for the current action to finish.', 'system')
+            this.handleError(
+                new Error('Cannot execute multiple actions. Please wait for the current action to finish.'),
+                'system'
+            )
             return
         }
 
@@ -406,7 +410,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 userInputContextFiles,
             })
         } catch (error) {
-            this.handleError('Fail to submit question', 'system')
+            this.handleError(new Error('Fail to submit question'), 'system')
             console.error(error)
             return
         }
@@ -812,7 +816,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const searchErrors = this.contextProvider.context.getEmbeddingSearchErrors()
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
-            this.handleError(searchErrors, 'transcript')
+            this.handleError(new Error(searchErrors), 'transcript')
             logError('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
@@ -865,6 +869,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 }
 
-function isAbortError(error: string): boolean {
-    return error === 'aborted' || error === 'socket hang up'
+function isAbortError(error: Error): boolean {
+    return error.message === 'aborted' || error.message === 'socket hang up'
 }

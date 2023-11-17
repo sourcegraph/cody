@@ -1,4 +1,3 @@
-import { formatDistance } from 'date-fns'
 import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -596,9 +595,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             }
             this.config.statusBar.addError({
                 title: errorTitle,
-                description:
-                    `You've used all${error.limit ? ` ${error.limit}` : ''} daily autocompletions.` +
-                    (error.retryAfter ? ` Usage will reset in ${formatDistance(error.retryAfter, new Date())}.` : ''),
+                description: (error.buildMessage('autocompletions') + ' ' + (error.buildResetMessage() ?? '')).trim(),
                 onSelect: () => {
                     void vscode.env.openExternal(vscode.Uri.parse(errorUrl))
                 },
