@@ -203,7 +203,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .submit-button[disabled] {
-    pointer-events: none;
+    cursor: text;
 }
 
 .stop-generating-button {

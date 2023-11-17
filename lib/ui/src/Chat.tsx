@@ -109,6 +109,7 @@ export interface ChatUISubmitButtonProps {
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+    onAbortMessageInProgress?: () => void
 }
 
 export interface ChatUISuggestionButtonProps {
@@ -616,32 +617,35 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             setSelectedChatContext={setSelectedChatContext}
                         />
                     )}
-                    <TextArea
-                        className={classNames(styles.chatInput, chatInputClassName)}
-                        rows={inputRows}
-                        value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                        autoFocus={true}
-                        required={true}
-                        disabled={needsEmailVerification || !isCodyEnabled}
-                        onInput={onChatInput}
-                        onKeyDown={onChatKeyDown}
-                        setValue={inputHandler}
-                        chatModels={chatModels}
-                    />
-                    {ContextStatusComponent && EnhancedContextToggler && contextStatus && (
-                        <div className={styles.contextButton}>
-                            <EnhancedContextToggler
-                                setEnhanceContext={setEnhanceContext}
-                                enhanceContext={enhanceContext}
-                                contextStatus={contextStatus}
-                            />
-                        </div>
-                    )}
+                    <div className={styles.chatInputContainer}>
+                        <TextArea
+                            className={classNames(styles.chatInput, chatInputClassName)}
+                            rows={inputRows}
+                            value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
+                            autoFocus={true}
+                            required={true}
+                            disabled={needsEmailVerification || !isCodyEnabled}
+                            onInput={onChatInput}
+                            onKeyDown={onChatKeyDown}
+                            setValue={inputHandler}
+                            chatModels={chatModels}
+                        />
+                        {ContextStatusComponent && EnhancedContextToggler && contextStatus && (
+                            <div className={styles.contextButton}>
+                                <EnhancedContextToggler
+                                    setEnhanceContext={setEnhanceContext}
+                                    enhanceContext={enhanceContext}
+                                    contextStatus={contextStatus}
+                                />
+                            </div>
+                        )}
+                    </div>
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={
-                            !!messageInProgress || needsEmailVerification || !isCodyEnabled || formInput.length === 0
+                        disabled={needsEmailVerification || !isCodyEnabled || !(formInput.length && messageInProgress)}
+                        onAbortMessageInProgress={
+                            !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
                         }
                     />
                 </div>
