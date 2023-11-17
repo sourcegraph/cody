@@ -214,7 +214,7 @@ type RequestCallback<M extends RequestMethodName> = (
     params: ParamsOf<M>,
     cancelToken: vscode.CancellationToken
 ) => Promise<ResultOf<M>>
-type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void
+type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void | Promise<void>
 
 /**
  * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
@@ -318,7 +318,7 @@ export class MessageHandler {
             } else {
                 const notificationHandler = this.notificationHandlers.get(msg.method)
                 if (notificationHandler) {
-                    notificationHandler(msg.params)
+                    void notificationHandler(msg.params)
                 } else {
                     console.error(`No handler for notification with method ${msg.method}`)
                 }
@@ -403,7 +403,7 @@ export class InProcessClient {
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
         const handler = this.notificationHandlers.get(method)
         if (handler) {
-            handler(params)
+            void handler(params)
             return
         }
         throw new Error('No such notification handler: ' + method)
