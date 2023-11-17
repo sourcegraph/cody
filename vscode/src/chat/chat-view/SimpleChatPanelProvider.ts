@@ -5,6 +5,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -211,6 +212,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ...localProcess,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
+            experimentalChatPanel: config.experimentalChatPanel,
         }
         await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
@@ -277,13 +279,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     console.log('# onChange', content)
                     lastContent = content
                     const newMessages: ChatMessage[] = [
-                        ...this.chatModel.messages,
+                        ...this.chatModel.messages.map(m => toViewMessage(m)),
                         {
                             speaker: 'assistant',
                             text: content,
                             displayText: content,
                         },
                     ]
+
                     void this.webview?.postMessage({
                         type: 'transcript',
                         messages: newMessages,
@@ -293,7 +296,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 onComplete: () => {
                     console.log('# onComplete', lastContent)
                     const newMessages: ChatMessage[] = [
-                        ...this.chatModel.messages,
+                        ...this.chatModel.messages.map(m => toViewMessage(m)),
                         {
                             speaker: 'assistant',
                             text: lastContent,
@@ -317,5 +320,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         )
 
         return Promise.resolve()
+    }
+}
+
+function toViewMessage(message: Message): ChatMessage {
+    return {
+        ...message,
+        displayText: message.text,
     }
 }
