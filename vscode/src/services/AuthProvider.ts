@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -213,10 +212,11 @@ export class AuthProvider {
             )
         }
 
-        const userInfo =
-            isDotCom && (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodeProDecGA))
-                ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
-                : await this.client.getCurrentUserIdAndVerifiedEmail()
+        // TODO(dantup): Can't check feature flag here, because it requires auth
+        //  so we will always use the new query for dotCom?
+        const userInfo = isDotCom
+            ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            : await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
 
         // check first if it's a network error
