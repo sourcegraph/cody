@@ -13,7 +13,7 @@ interface EditorCodeLens {
  */
 export class EditorCodeLenses implements vscode.CodeLensProvider {
     private isEnabled = false
-    private isInlineChatEnabled = true
+    private isInlineChatEnabled = false
 
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
@@ -55,8 +55,11 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
         this.isEnabled = config.get('experimental.commandLenses') as boolean
-        this.isInlineChatEnabled =
-            (config.get('inlineChat.enabled') as boolean) && (config.get('inlineChat.codeLenses') as boolean)
+
+        // NOTE: Do not enable inline-chat when experimental.chatPanel is enabled
+        const isInlineChatEnabled =
+            (config.get('inlineChat.enabled') as boolean) && !(config.get('experimental.chatPanel') as boolean)
+        this.isInlineChatEnabled = isInlineChatEnabled && (config.get('inlineChat.codeLenses') as boolean)
         if (this.isEnabled && !this._disposables.length) {
             this.init()
         }
