@@ -57,7 +57,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
 
     // Public for testing
     public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
-        const prompt: string[] = [`<problemCode>${code}</problemCode>\n`]
+        const prompt: string[] = [`<fixupProblemCode>${code}</fixupProblemCode>\n`]
 
         for (let i = 0; i < diagnostics.length; i++) {
             const { message, source, severity, relatedInformation } = diagnostics[i]
@@ -66,7 +66,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             prompt.push(
                 `Fix the following ${
                     source ? `${source} ` : ''
-                }${diagnosticType} from within <problemCode></problemCode>: ${message}`
+                }${diagnosticType} from within <fixupProblemCode></fixupProblemCode>: ${message}`
             )
 
             if (relatedInformation?.length) {
@@ -90,7 +90,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         for (const { location, message } of relatedInformation) {
             prompt.push(message)
             const document = await vscode.workspace.openTextDocument(location.uri)
-            prompt.push(`<relatedCode>${document.getText(location.range)}</relatedCode>\n`)
+            prompt.push(`<fixupRelatedCode>${document.getText(location.range)}</fixupRelatedCode>\n`)
         }
         return prompt
     }
