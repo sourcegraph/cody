@@ -1,0 +1,42 @@
+name: Bug report (VS Code)
+description: File a bug report to help us improve
+title: 'bug: '
+labels:
+  - bug
+  - clients/vscode
+projects:
+  - sourcegraph/387
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please include as much information as possible to help us fix the issue. 
+
+        Tip: You can attach images or videos by dragging it into the text box.
+  - type: input
+    attributes:
+      label: Version
+      description: Please specify the exact VS Code extension version you're reporting for.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is. Please include steps on how to reproduce the behaviour.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: |
+        Please add any links, or references that can give us more context on the bug.
+
+        Tip: You can attach images or videos by dragging it into the text box.
+    validations:
+      required: false
