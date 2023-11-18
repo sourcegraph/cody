@@ -7,6 +7,7 @@ import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
+import { captureException } from '../../../../services/sentry/sentry'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 // This promise is only used for testing purposes. We don't await on the
@@ -26,6 +27,7 @@ export class BfgRetriever implements ContextRetriever {
         this.loadedBFG.then(
             () => {},
             error => {
+                captureException(error)
                 this.didFailLoading = true
                 logDebug('CodyEngine', 'failed to initialize', error)
             }
@@ -129,7 +131,10 @@ export class BfgRetriever implements ContextRetriever {
         return new Promise<MessageHandler>((resolve, reject) => {
             this.doLoadBFG(reject).then(
                 bfg => resolve(bfg),
-                error => reject(error)
+                error => {
+                    captureException(error)
+                    reject(error)
+                }
             )
         })
     }

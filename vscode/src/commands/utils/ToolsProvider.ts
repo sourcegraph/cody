@@ -4,11 +4,11 @@ import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
-import { getEditor } from '../editor/active-editor'
-import { logDebug, logError } from '../log'
+import { getEditor } from '../../editor/active-editor'
+import { logDebug, logError } from '../../log'
 
-import { UserWorkspaceInfo } from './utils'
-import { outputWrapper } from './utils/helpers'
+import { UserWorkspaceInfo } from '.'
+import { outputWrapper } from './helpers'
 
 const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
 const currentFilePath: () => string | undefined = () => getEditor().active?.document.uri.fsPath

@@ -17,6 +17,13 @@
 }
 
 .text-area-container {
+    width: 100%;
+    display: flex;
+}
+
+.chat-input-container {
+    width: 96%;
+    height: 100%;
     position: relative;
 }
 
@@ -27,16 +34,24 @@
 }
 
 .submit-button {
+    opacity: 0.8;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    margin-left: 0.5rem;
+}
+
+.context-button {
+    color: var(--button-primary-background);
     position: absolute;
     right: 0;
     bottom: 0;
+
     fill: currentColor;
-    opacity: 0.8;
-    margin: 0 0 0.2rem 0;
     background: none;
     border: none;
     cursor: pointer;
-    height: 2rem;
+    height: 1.8rem;
     width: 2rem;
 }
 

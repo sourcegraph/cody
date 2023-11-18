@@ -9,11 +9,6 @@
     padding: var(--spacing);
 }
 
-/* Additional padding for the stop-generating button */
-.row-in-progress {
-    padding-bottom: calc(var(--spacing) * 2);
-}
-
 .row:before {
     position: absolute;
     top: 0;
@@ -29,7 +24,7 @@
     background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
 }
 
-.row:hover>.header-container {
+.row:hover > .header-container {
     visibility: visible;
 }
 
@@ -44,6 +39,17 @@
     line-height: 150%;
 }
 
+/* Style @-file tokens to match TranscriptAction context files */
+.content a[href^="vscode://file"] em
+{
+    padding: 1px 2px;
+    box-sizing: border-box;
+    background-color: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+    border-radius: 2px;
+    font-style: normal;
+    word-break: break-all;
+}
+
 .content p {
     word-break: break-word;
 }
@@ -53,7 +59,12 @@
     overflow-x: auto;
 }
 
-.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
     margin: 1.2em 0;
 }
 
@@ -72,7 +83,9 @@
     font-weight: 700;
 }
 
-.content h4, .content h5, .content h6 {
+.content h4,
+.content h5,
+.content h6 {
     font-size: inherit;
     font-weight: 600;
 }
@@ -93,12 +106,27 @@
     visibility: hidden;
 }
 
-.editing-container {
-    position: absolute;
-    right: var(--spacing);
-    top: var(--spacing);
+.transcript-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
+    margin-bottom: 0.2em;
+}
+
+.editing-container {
     visibility: visible;
+}
+
+.editing-button-container {
+    visibility: visible;
+    position: absolute;
+
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+
+    align-self: center;
 }
 
 .editing-label {
@@ -153,4 +181,10 @@
 
 .submit-button:hover {
     opacity: 1;
+}
+
+.context-files-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
 }

@@ -7,7 +7,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -52,6 +52,15 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     // Handle the old `unstable-fireworks` option
     if (autocompleteAdvancedProvider === 'unstable-fireworks') {
         autocompleteAdvancedProvider = 'fireworks'
+    }
+
+    // check if the configured enum values are valid
+    const configKeys = ['autocompleteAdvancedProvider', 'autocompleteAdvancedModel'] as (keyof ConfigurationKeysMap)[]
+
+    for (const configVal of configKeys) {
+        const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
+        const value: string | null = config.get(CONFIG_KEY[configVal])
+        checkValidEnumValues(key, value)
     }
 
     return {
@@ -142,4 +151,15 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
+}
+
+function checkValidEnumValues(configName: string, value: string | null): void {
+    const validEnumValues = getConfigEnumValues('cody.' + configName)
+    if (value) {
+        if (!validEnumValues.includes(value)) {
+            void vscode.window.showErrorMessage(
+                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(', ')}`
+            )
+        }
+    }
 }
