@@ -228,9 +228,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
         const absIndexedDir = path.resolve(scopeDir)
+        const encodedIndexedDir = Buffer.from(absIndexedDir).toString('base64url')
         return {
-            indexDir: path.join(this.indexRoot, absIndexedDir),
-            tmpDir: path.join(this.indexRoot, '.tmp', absIndexedDir),
+            indexDir: path.join(this.indexRoot, encodedIndexedDir),
+            tmpDir: path.join(this.indexRoot, '.tmp', encodedIndexedDir),
         }
     }
 
