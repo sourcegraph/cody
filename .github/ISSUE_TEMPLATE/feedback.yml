@@ -1,5 +1,5 @@
-name: Submit Feedback
-description: Suggest an improvement for Cody (VS Code)
+name: Submit Feedback (VS Code)
+description: Suggest an improvement for Cody
 title: 'feedback: '
 labels:
   - clients/vscode
