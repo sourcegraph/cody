@@ -285,48 +285,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         const contextItems: ContextItem[] = [...userContextItems]
         // TODO: only fetch context on first message
-        if (this.embeddingsClient && addEnhancedContext) {
-            console.log('debug: fetching embeddings')
-            const embeddings = await this.embeddingsClient.search(text, 2, 2)
-            if (isError(embeddings)) {
-                console.error('# TODO: embeddings error', embeddings)
-            } else {
-                for (const codeResult of embeddings.codeResults) {
-                    const uri = vscode.Uri.from({
-                        scheme: 'file',
-                        path: codeResult.fileName,
-                        fragment: `${codeResult.startLine}:${codeResult.endLine}`,
-                    })
-                    const range = new vscode.Range(
-                        new vscode.Position(codeResult.startLine, 0),
-                        new vscode.Position(codeResult.endLine, 0)
-                    )
-                    contextItems.push({
-                        uri,
-                        range,
-                        text: codeResult.content,
-                    })
-                }
-
-                for (const textResult of embeddings.textResults) {
-                    const uri = vscode.Uri.from({
-                        scheme: 'file',
-                        path: textResult.fileName,
-                        fragment: `${textResult.startLine}:${textResult.endLine}`,
-                    })
-                    const range = new vscode.Range(
-                        new vscode.Position(textResult.startLine, 0),
-                        new vscode.Position(textResult.endLine, 0)
-                    )
-                    contextItems.push({
-                        uri,
-                        range,
-                        text: textResult.content,
-                    })
-                }
-            }
-            console.log('debug: finished fetching embeddings', embeddings)
-        }
+        const contextItems = this.fetchContext() // NEXT: merge these
 
         this.chatModel.setEnhancedContext(contextItems)
         void this.updateViewTranscript(undefined, userContextFiles)
@@ -382,6 +341,76 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         )
 
         return Promise.resolve()
+    }
+
+    private async fetchContext(): Promise<ContextItem[]> {
+        if (this.embeddingsClient) {
+            return this.fetchEmbeddingsContext()
+        }
+        return []
+    }
+
+    private async fetchEmbeddingsContext(): Promise<ContextItem[]> {
+        if (!this.embeddingsClient) {
+            throw new Error('attempting to fetch embeddings, but no embeddings available')
+        }
+
+        const messages = this.chatModel.getMessages()
+        const lastMessage = messages.at(-1)
+        if (!lastMessage) {
+            return []
+        }
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('invalid state: cannot fetch context when last message was not human')
+        }
+        if (lastMessage.text === undefined) {
+            return []
+        }
+
+        const text = lastMessage.text
+        const contextItems: ContextItem[] = []
+
+        console.log('debug: fetching embeddings')
+        const embeddings = await this.embeddingsClient.search(text, 2, 2)
+        if (isError(embeddings)) {
+            console.error('# TODO: embeddings error', embeddings)
+        } else {
+            for (const codeResult of embeddings.codeResults) {
+                const uri = vscode.Uri.from({
+                    scheme: 'file',
+                    path: codeResult.fileName,
+                    fragment: `${codeResult.startLine}:${codeResult.endLine}`,
+                })
+                const range = new vscode.Range(
+                    new vscode.Position(codeResult.startLine, 0),
+                    new vscode.Position(codeResult.endLine, 0)
+                )
+                contextItems.push({
+                    uri,
+                    range,
+                    text: codeResult.content,
+                })
+            }
+
+            for (const textResult of embeddings.textResults) {
+                const uri = vscode.Uri.from({
+                    scheme: 'file',
+                    path: textResult.fileName,
+                    fragment: `${textResult.startLine}:${textResult.endLine}`,
+                })
+                const range = new vscode.Range(
+                    new vscode.Position(textResult.startLine, 0),
+                    new vscode.Position(textResult.endLine, 0)
+                )
+                contextItems.push({
+                    uri,
+                    range,
+                    text: textResult.content,
+                })
+            }
+        }
+        console.log('debug: finished fetching embeddings', embeddings)
+        return contextItems
     }
 
     // Handler to fetch context files candidates

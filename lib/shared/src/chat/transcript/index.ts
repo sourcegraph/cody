@@ -269,6 +269,7 @@ export class Transcript {
     }
 }
 
+// MARK: context window restriction
 /**
  * Truncates the given prompt messages to fit within the available tokens budget.
  * The truncation is done by removing the oldest pairs of messages first.
