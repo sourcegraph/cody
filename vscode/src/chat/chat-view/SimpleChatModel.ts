@@ -4,6 +4,7 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 export class SimpleChatModel {
     private enhancedContext: ContextItem[] = []
+    // TODO: remove from here? this will change with each message...
     private userContext: ContextItem[] = []
     private messages: Message[] = []
 
