@@ -5,6 +5,7 @@ import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 import { MessageProvider } from './chat/MessageProvider'
 import { FixupController } from './non-stop/FixupController'
 import { FixupTask } from './non-stop/FixupTask'
+import { CodyStatusBar } from './services/StatusBar'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -42,6 +43,7 @@ export class TestSupport {
 
     public messageProvider = new Rendezvous<MessageProvider>()
     public fixupController = new Rendezvous<FixupController>()
+    public statusBar: CodyStatusBar | undefined
 
     public reranker: Reranker | undefined
 

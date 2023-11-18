@@ -44,7 +44,7 @@ export async function ensureExecuteCommand<T>(command: string, ...args: any[]): 
     return result
 }
 
-export async function waitUntil(predicate: () => Promise<boolean>): Promise<void> {
+export async function waitUntil(predicate: () => Promise<boolean> | boolean): Promise<void> {
     let delay = 10
     while (!(await predicate())) {
         await new Promise(resolve => setTimeout(resolve, delay))
