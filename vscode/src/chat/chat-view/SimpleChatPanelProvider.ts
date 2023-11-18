@@ -283,14 +283,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatModel.setUserContext(userContextItems)
         void this.updateViewTranscript(undefined, userContextFiles)
 
-        const contextItems: ContextItem[] = [...userContextItems]
         // TODO: only fetch context on first message
-        const contextItems = this.fetchContext() // NEXT: merge these
+        const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
+        // TODO: display warnings
+        const { usedContext, ignoredContext, warnings } = await this.computeContext(
+            userContextItems,
+            contextWindowBytes
+        )
 
-        this.chatModel.setEnhancedContext(contextItems)
+        this.chatModel.setEnhancedContext(usedContext)
         void this.updateViewTranscript(undefined, userContextFiles)
 
-        const promptMessages = this.promptMaker.makePrompt(this.chatModel, contextItems).map(m => ({
+        const promptMessages = this.promptMaker.makePrompt(this.chatModel, usedContext).map(m => ({
             speaker: m.speaker,
             text: m.text,
             displayText: m.text,
@@ -343,11 +347,45 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return Promise.resolve()
     }
 
-    private async fetchContext(): Promise<ContextItem[]> {
-        if (this.embeddingsClient) {
-            return this.fetchEmbeddingsContext()
+    private async computeContext(
+        userContextItems: ContextItem[],
+        byteLimit: number
+    ): Promise<{
+        usedContext: ContextItem[]
+        ignoredContext: ContextItem[]
+        warnings: string[]
+    }> {
+        let bytesUsed = 0
+        const usedContext: ContextItem[] = []
+        const ignoredContext: ContextItem[] = []
+        const warnings: string[] = []
+        for (const item of userContextItems) {
+            if (bytesUsed + item.text.length > byteLimit) {
+                ignoredContext.push(item)
+            } else {
+                usedContext.push(item)
+                bytesUsed += item.text.length
+            }
         }
-        return []
+
+        if (ignoredContext.length > 0) {
+            warnings.push(
+                `Ignored ${ignoredContext.length} user context items because they exceeded the byte limit of ${byteLimit} bytes.`
+            )
+        }
+
+        if (this.embeddingsClient) {
+            const embeddingsContext = await this.fetchEmbeddingsContext()
+            for (const item of embeddingsContext) {
+                if (bytesUsed + item.text.length > byteLimit) {
+                    ignoredContext.push(item)
+                } else {
+                    usedContext.push(item)
+                    bytesUsed += item.text.length
+                }
+            }
+        }
+        return { usedContext, ignoredContext, warnings }
     }
 
     private async fetchEmbeddingsContext(): Promise<ContextItem[]> {
