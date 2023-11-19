@@ -40,8 +40,7 @@ interface SimpleChatPanelProviderOptions {
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
-    private chatModel: SimpleChatModel = new SimpleChatModel()
-    private modelID = 'anthropic/claude-2'
+    private chatModel: SimpleChatModel = new SimpleChatModel('anthropic/claude-2')
 
     public webviewPanel?: vscode.WebviewPanel
     public webview?: ChatViewProviderWebview
@@ -158,7 +157,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
                 break
             case 'chatModel':
-                this.modelID = message.model
+                this.chatModel.modelID = message.model
                 break
             // case 'executeRecipe':
             //     await this.executeRecipe(message.recipe, '', 'chat')
@@ -200,7 +199,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ? allowedModels.map(model => {
                   return {
                       ...model,
-                      default: model.model === this.modelID,
+                      default: model.model === this.chatModel.modelID,
                   }
               })
             : allowedModels
@@ -348,7 +347,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     console.error('TODO: handle error', error)
                 },
             },
-            { model: this.modelID }
+            { model: this.chatModel.modelID }
         )
 
         return Promise.resolve()
@@ -536,7 +535,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async reset(): Promise<void> {
-        this.chatModel = new SimpleChatModel()
+        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         await this.updateViewTranscript()
     }
 }
