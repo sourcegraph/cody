@@ -713,16 +713,20 @@ class ContextProvider implements IContextProvider {
 // TODO(beyang): move to separate module?
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class GPT4Prompter {
-    public static makePrompt(
+    public static async makePrompt(
         chat: SimpleChatModel,
         contextProvider: ContextProvider,
         byteLimit: number
-    ): {
+    ): Promise<{
         prompt: Message[]
         warnings: string[]
         newContextUsed: ContextItem[]
-    } {
-        const { reversePrompt, warnings, newContextUsed } = this.makeReversePrompt(chat, contextProvider, byteLimit)
+    }> {
+        const { reversePrompt, warnings, newContextUsed } = await this.makeReversePrompt(
+            chat,
+            contextProvider,
+            byteLimit
+        )
         return {
             prompt: [...reversePrompt].reverse(),
             warnings,
@@ -735,18 +739,17 @@ export class GPT4Prompter {
     //
     // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
     // the new context that was used in the prompt for the current message.
-    private static makeReversePrompt(
+    private static async makeReversePrompt(
         chat: SimpleChatModel,
         contextProvider: ContextProvider,
         byteLimit: number
-    ): {
+    ): Promise<{
         reversePrompt: Message[]
         warnings: string[]
         newContextUsed: ContextItem[]
-    } {
+    }> {
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
-        const seenContext = new Set<string>()
         const warnings: string[] = []
 
         // Add existing transcript messages
@@ -764,44 +767,28 @@ export class GPT4Prompter {
             }
         }
 
-        // Add context from new user-specified context items
-        for (const userContextItem of contextProvider.getUserContext()) {
-            if (seenContext.has(contextItemId(userContextItem))) {
-                continue
+        {
+            // Add context from new user-specified context items
+            const { limitReached, used } = promptBuilder.tryAddContext(
+                contextProvider.getUserContext(),
+                (item: ContextItem) => this.renderContextItem(item)
+            )
+            newContextUsed.push(...used)
+            if (limitReached) {
+                warnings.push('Ignored current user-specified context items due to context limit')
+                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
             }
-            for (const contextMessage of this.renderContextItem(userContextItem).reverse()) {
-                const contextLimitReached = promptBuilder.tryAdd(contextMessage)
-                if (!contextLimitReached) {
-                    warnings.push('Ignored current user-specified context items due to context limit')
-                    return {
-                        reversePrompt: promptBuilder.reverseMessages,
-                        warnings,
-                        newContextUsed,
-                    }
-                }
-            }
-            seenContext.add(contextItemId(userContextItem))
-            newContextUsed.push(userContextItem)
         }
 
-        // Add context from previous messages
-        for (const message of reverseTranscript) {
-            for (const contextItem of message.newContextUsed || []) {
-                if (seenContext.has(contextItemId(contextItem))) {
-                    continue
-                }
-                for (const contextMessage of this.renderContextItem(contextItem).reverse()) {
-                    const contextLimitReached = promptBuilder.tryAdd(contextMessage)
-                    if (!contextLimitReached) {
-                        warnings.push('Ignored some previous user-specified context items due to context limit')
-                        return {
-                            reversePrompt: promptBuilder.reverseMessages,
-                            warnings,
-                            newContextUsed,
-                        }
-                    }
-                }
-                seenContext.add(contextItemId(contextItem))
+        {
+            // Add context from previous messages
+            const { limitReached } = promptBuilder.tryAddContext(
+                reverseTranscript.flatMap((message: MessageWithContext) => message.newContextUsed || []),
+                (item: ContextItem) => this.renderContextItem(item)
+            )
+            if (limitReached) {
+                warnings.push('Ignored prior context items due to context limit')
+                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
             }
         }
 
@@ -815,7 +802,18 @@ export class GPT4Prompter {
             }
         }
 
-        // TODO: NEXT: include selection/file or do an embeddings search
+        // TODO: include selection/current file if that's the user intent
+        const enhancedContext = await contextProvider.getEnhancedContext(firstMessageWithContext.message.text)
+        {
+            // Add context from enhanced context
+            const { limitReached, used } = promptBuilder.tryAddContext(enhancedContext, (item: ContextItem) =>
+                this.renderContextItem(item)
+            )
+            newContextUsed.push(...used)
+            if (limitReached) {
+                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
+            }
+        }
 
         return {
             reversePrompt: promptBuilder.reverseMessages,
@@ -832,6 +830,7 @@ export class GPT4Prompter {
 class PromptBuilder {
     public reverseMessages: Message[] = []
     private bytesUsed = 0
+    private seenContext = new Set<string>()
     constructor(private readonly byteLimit: number) {}
     public tryAdd(message: Message): boolean {
         // TODO: check for speaker alternation here
@@ -843,5 +842,47 @@ class PromptBuilder {
         this.reverseMessages.push(message)
         this.bytesUsed += msgLen
         return true
+    }
+
+    public tryAddContext(
+        contextItems: ContextItem[],
+        renderContextItem: (contextItem: ContextItem) => Message[]
+    ): {
+        limitReached: boolean
+        used: ContextItem[]
+        ignored: ContextItem[]
+        duplicate: ContextItem[]
+    } {
+        let limitReached = false
+        const used: ContextItem[] = []
+        const ignored: ContextItem[] = []
+        const duplicate: ContextItem[] = []
+        for (const contextItem of contextItems) {
+            const id = contextItemId(contextItem)
+            if (this.seenContext.has(id)) {
+                duplicate.push(contextItem)
+                continue
+            }
+            const contextMessages = renderContextItem(contextItem)
+            const contextLen = contextMessages.reduce(
+                (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
+                0
+            )
+            if (this.bytesUsed + contextLen > this.byteLimit) {
+                ignored.push(contextItem)
+                limitReached = true
+                continue
+            }
+            this.seenContext.add(id)
+            this.reverseMessages.push(...contextMessages)
+            this.bytesUsed += contextLen
+            used.push(contextItem)
+        }
+        return {
+            limitReached,
+            used,
+            ignored,
+            duplicate,
+        }
     }
 }
