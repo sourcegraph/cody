@@ -138,9 +138,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     message.addEnhancedContext
                 )
                 break
-            case 'getUserContext':
-                await this.handleContextFiles(message.query)
-                break
             // case 'edit':
             //     this.transcript.removeLastInteraction()
             //     await this.onHumanMessageSubmitted(message.text, 'user')
@@ -162,12 +159,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             // case 'executeRecipe':
             //     await this.executeRecipe(message.recipe, '', 'chat')
             //     break
+            case 'getUserContext':
+                await this.handleContextFiles(message.query)
+                break
             // case 'custom-prompt':
             //     await this.onCustomPromptClicked(message.title, message.value)
             //     break
-            case 'event':
-                telemetryService.log(message.eventName, message.properties)
-                break
             // case 'insert':
             //     await handleCodeFromInsertAtCursor(message.text, message.metadata)
             //     break
@@ -178,6 +175,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             // case 'copy':
             //     await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
             //     break
+            case 'event':
+                telemetryService.log(message.eventName, message.properties)
+                break
             // case 'links':
             //     void openExternalLinks(message.value)
             //     break
