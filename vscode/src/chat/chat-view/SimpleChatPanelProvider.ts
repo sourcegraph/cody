@@ -353,131 +353,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return Promise.resolve()
     }
 
-    // private async computeContext(
-    //     userContextItems: ContextItem[],
-    //     byteLimit: number
-    // ): Promise<{
-    //     usedContext: ContextItem[]
-    //     ignoredContext: ContextItem[]
-    //     warnings: string[]
-    // }> {
-    //     let bytesUsed = 0
-    //     const usedContext: ContextItem[] = []
-    //     const ignoredContext: ContextItem[] = []
-    //     const warnings: string[] = []
-
-    //     // // add current selection, or current editor context
-    //     // const selection = this.editor.getActiveTextEditorSelection()
-    //     // if (selection?.selectedText) {
-    //     //     const selectedText = selection.selectedText
-    //     //     const selectedTextLength = selectedText.length
-    //     //     if (selectedTextLength > byteLimit) {
-    //     //         warnings.push(`Ignored selection because it exceeded the byte limit of ${byteLimit} bytes.`)
-    //     //     } else {
-    //     //         usedContext.push({
-    //     //             text: selectedText,
-    //     //             type: 'user',
-    //     //             start: selection.start,
-    //     //             end: selection.end,
-    //     //         })
-    //     //         bytesUsed += selectedTextLength
-    //     //     }
-    //     // } else {
-    //     // }
-
-    //     for (const item of userContextItems) {
-    //         if (bytesUsed + item.text.length > byteLimit) {
-    //             ignoredContext.push(item)
-    //         } else {
-    //             usedContext.push(item)
-    //             bytesUsed += item.text.length
-    //         }
-    //     }
-
-    //     if (ignoredContext.length > 0) {
-    //         warnings.push(
-    //             `Ignored ${ignoredContext.length} user context items because they exceeded the byte limit of ${byteLimit} bytes.`
-    //         )
-    //     }
-
-    //     if (this.embeddingsClient) {
-    //         const embeddingsContext = await this.fetchEmbeddingsContext()
-    //         for (const item of embeddingsContext) {
-    //             if (bytesUsed + item.text.length > byteLimit) {
-    //                 ignoredContext.push(item)
-    //             } else {
-    //                 usedContext.push(item)
-    //                 bytesUsed += item.text.length
-    //             }
-    //         }
-    //     }
-
-    //     return { usedContext, ignoredContext, warnings }
-    // }
-
-    // private async fetchEmbeddingsContext(): Promise<ContextItem[]> {
-    //     if (!this.embeddingsClient) {
-    //         throw new Error('attempting to fetch embeddings, but no embeddings available')
-    //     }
-
-    //     const messages = this.chatModel.getMessagesWithContext()
-    //     const lastMessage = messages.at(-1)
-    //     if (!lastMessage) {
-    //         return []
-    //     }
-    //     if (lastMessage.speaker !== 'human') {
-    //         throw new Error('invalid state: cannot fetch context when last message was not human')
-    //     }
-    //     if (lastMessage.text === undefined) {
-    //         return []
-    //     }
-
-    //     const text = lastMessage.text
-    //     const contextItems: ContextItem[] = []
-
-    //     console.log('debug: fetching embeddings')
-    //     const embeddings = await this.embeddingsClient.search(text, 2, 2)
-    //     if (isError(embeddings)) {
-    //         console.error('# TODO: embeddings error', embeddings)
-    //     } else {
-    //         for (const codeResult of embeddings.codeResults) {
-    //             const uri = vscode.Uri.from({
-    //                 scheme: 'file',
-    //                 path: codeResult.fileName,
-    //                 fragment: `${codeResult.startLine}:${codeResult.endLine}`,
-    //             })
-    //             const range = new vscode.Range(
-    //                 new vscode.Position(codeResult.startLine, 0),
-    //                 new vscode.Position(codeResult.endLine, 0)
-    //             )
-    //             contextItems.push({
-    //                 uri,
-    //                 range,
-    //                 text: codeResult.content,
-    //             })
-    //         }
-
-    //         for (const textResult of embeddings.textResults) {
-    //             const uri = vscode.Uri.from({
-    //                 scheme: 'file',
-    //                 path: textResult.fileName,
-    //                 fragment: `${textResult.startLine}:${textResult.endLine}`,
-    //             })
-    //             const range = new vscode.Range(
-    //                 new vscode.Position(textResult.startLine, 0),
-    //                 new vscode.Position(textResult.endLine, 0)
-    //             )
-    //             contextItems.push({
-    //                 uri,
-    //                 range,
-    //                 text: textResult.content,
-    //             })
-    //         }
-    //     }
-    //     console.log('debug: finished fetching embeddings', embeddings)
-    //     return contextItems
-    // }
-
     // Handler to fetch context files candidates
     private async handleContextFiles(query: string): Promise<void> {
         if (!query.length) {
@@ -516,16 +391,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (messageInProgress) {
             messages.push(messageInProgress)
         }
-
-        // const contextFiles: ContextFile[] = []
-        // if (userContextFiles) {
-        //     contextFiles.push(...userContextFiles)
-        // }
-
-        // const additionalContextFiles = contextItemsToContextFiles(this.chatModel.getEnhancedContext())
-        // if (messages.length > 0) {
-        //     messages[0].contextFiles = additionalContextFiles
-        // }
 
         await this.webview?.postMessage({
             type: 'transcript',
@@ -920,16 +785,3 @@ function isEditorContextRequired(input: string): boolean | Error {
     }
     return false
 }
-
-// function makeContextMessageWithResponse(groupedResults: { file: ContextFile; results: string[] }): Message[] {
-//     const contextTemplateFn = isMarkdownFile(groupedResults.file.fileName)
-//         ? populateMarkdownContextTemplate
-//         : populateCodeContextTemplate
-
-//     return groupedResults.results.flatMap<Message>(text =>
-//         getContextMessageWithResponse(
-//             contextTemplateFn(text, groupedResults.file.fileName, groupedResults.file.repoName),
-//             groupedResults.file
-//         )
-//     )
-// }
