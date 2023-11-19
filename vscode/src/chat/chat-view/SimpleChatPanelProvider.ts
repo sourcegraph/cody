@@ -297,10 +297,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             newContextUsed,
         } = await GPT4Prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
 
+        console.log('# promptMessages', promptMessages)
+
         this.chatModel.setNewContextUsed(newContextUsed)
 
         // TODO: send warnings to client
-        console.error(`# warnings: ${warnings}`)
+        console.error('# warnings', warnings)
 
         void this.updateViewTranscript()
 
@@ -322,7 +324,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             },
             close: () => {
                 this.chatModel.addBotMessage({ text: lastContent })
-                this.chatModel.setNewContextUsed(newContextUsed)
                 void this.updateViewTranscript()
             },
         })
@@ -552,7 +553,6 @@ function toViewMessage(mwc: MessageWithContext): ChatMessage {
 function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
     const contextFiles: ContextFile[] = []
     for (const item of items) {
-        console.log('# item.range', item.range)
         contextFiles.push({
             fileName: item.uri.fsPath,
             source: 'embeddings',
