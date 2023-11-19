@@ -6,7 +6,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
+import { createCodyChatTreeItems, updateChatHistoryLastInteractionMessage } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
@@ -163,6 +163,15 @@ export class ChatPanelsManager implements vscode.Disposable {
                 })
             )
         }
+    }
+
+    public async editChatHistory(chatID: string): Promise<void> {
+        await vscode.window.showInputBox({ prompt: 'Enter new chat history name' }).then(async message => {
+            if (message) {
+                await updateChatHistoryLastInteractionMessage(chatID, message)
+                this.updateTreeViewHistory()
+            }
+        })
     }
 
     public async clearHistory(chatID?: string): Promise<void> {

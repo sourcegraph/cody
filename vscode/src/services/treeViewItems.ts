@@ -3,6 +3,7 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
+import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -49,6 +50,19 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
         }
     })
     return chatTreeItems.reverse()
+}
+
+export async function updateChatHistoryLastInteractionMessage(chatID: string, message: string): Promise<void> {
+    const userHistory = localStorage.getChatHistory()
+    const userChat = userHistory?.chat[chatID]
+    if (userChat) {
+        const lastInteraction = userChat.interactions.findLast(interaction => interaction?.humanMessage)
+        if (lastInteraction?.humanMessage) {
+            lastInteraction.humanMessage.displayText = message
+            userHistory.chat[chatID] = userChat
+            await localStorage.setChatHistory(userHistory)
+        }
+    }
 }
 
 const supportItems: CodySidebarTreeItem[] = [

@@ -41,7 +41,8 @@ export class ChatManager implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
-            vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item))
+            vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
+            vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item))
         )
 
         // Register config change listener
@@ -129,6 +130,13 @@ export class ChatManager implements vscode.Disposable {
 
         const chatProvider = await this.getChatProvider()
         await chatProvider.executeCustomCommand(title, type)
+    }
+
+    public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
+        const chatID = treeItem?.id
+        if (chatID) {
+            await this.chatPanelsManager?.editChatHistory(chatID)
+        }
     }
 
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
