@@ -2,23 +2,26 @@ import * as vscode from 'vscode'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
+export interface ContextMessage extends Message {
+    context: ContextItem[]
+}
+
 export class SimpleChatModel {
     private enhancedContext: ContextItem[] = []
-    // TODO: remove from here? this will change with each message...
-    private userContext: ContextItem[] = []
-    private messages: Message[] = []
+    private messages: ContextMessage[] = []
 
     public isEmpty(): boolean {
         return this.messages.length === 0
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>): void {
+    public addHumanMessage(message: Omit<Message, 'speaker'>, userContext: ContextItem[]): void {
         if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
         this.messages.push({
             speaker: 'human',
             ...message,
+            context: userContext,
         })
     }
 
@@ -29,10 +32,11 @@ export class SimpleChatModel {
         this.messages.push({
             speaker: 'assistant',
             ...message,
+            context: [],
         })
     }
 
-    public getMessages(): Message[] {
+    public getMessages(): ContextMessage[] {
         return this.messages
     }
 
@@ -42,14 +46,6 @@ export class SimpleChatModel {
 
     public getEnhancedContext(): ContextItem[] {
         return this.enhancedContext
-    }
-
-    public setUserContext(context: ContextItem[]): void {
-        this.userContext = context
-    }
-
-    public getUserContext(): ContextItem[] {
-        return this.userContext
     }
 }
 

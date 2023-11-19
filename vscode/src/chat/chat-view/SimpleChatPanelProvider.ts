@@ -24,7 +24,7 @@ import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, Webvi
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { ContextItem, GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel'
+import { ContextItem, ContextMessage, GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
@@ -276,11 +276,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         userContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        this.chatModel.addHumanMessage({ text })
-        // TODO(beyang): may want to preserve old user context.
-        // This means we may want to track user context per message in the model.
         const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [])
-        this.chatModel.setUserContext(userContextItems)
+        this.chatModel.addHumanMessage({ text }, userContextItems)
         void this.updateViewTranscript(undefined, userContextFiles)
 
         // TODO: only fetch context on first message
@@ -602,7 +599,6 @@ interface IContextProvider {
     getCurrentSelection(): ContextItem[]
     getVisible(): ContextItem[]
     getEnhancedContext(query: string): Promise<ContextItem[]>
-    getUserContext(): ContextItem[]
 }
 
 class ContextProvider implements IContextProvider {
@@ -703,6 +699,8 @@ class ContextProvider implements IContextProvider {
     }
 }
 
+// TODO(beyang): move to separate module?
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class GPT4Prompter {
     public static makePrompt(
         chat: SimpleChatModel,
@@ -711,11 +709,17 @@ export class GPT4Prompter {
     ): {
         prompt: Message[]
         warnings: string[]
+        fetchedEnhancedContext?: ContextItem[]
     } {
-        const { reversePrompt, warnings } = this.makeReversePrompt(chat, contextProvider, byteLimit)
+        const { reversePrompt, warnings, fetchedEnhancedContext } = this.makeReversePrompt(
+            chat,
+            contextProvider,
+            byteLimit
+        )
         return {
-            prompt: reversePrompt.toReversed(),
+            prompt: [...reversePrompt].reverse(),
             warnings,
+            fetchedEnhancedContext,
         }
     }
 
@@ -726,33 +730,56 @@ export class GPT4Prompter {
     ): {
         reversePrompt: Message[]
         warnings: string[]
+        fetchedEnhancedContext?: ContextItem[]
     } {
-        let contextLimitReached = false
         const promptBuilder = new PromptBuilder(byteLimit)
         const warnings: string[] = []
 
         // Add existing transcript messages
-        const reverseTranscript: Message[] = [...chat.getMessages()].reverse()
+        const reverseTranscript: ContextMessage[] = [...chat.getMessages()].reverse()
         for (let i = 0; i < reverseTranscript.length; i++) {
             const message = reverseTranscript[i]
-            const success = promptBuilder.tryAdd(message)
-            if (!success) {
+            const contextLimitReached = promptBuilder.tryAdd(message)
+            if (!contextLimitReached) {
                 warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
-                contextLimitReached = true
-                break
+                return {
+                    reversePrompt: promptBuilder.reverseMessages,
+                    warnings,
+                }
             }
         }
 
-        if (contextLimitReached) {
+        // Add user context for all messages
+        for (const message of reverseTranscript) {
+            for (const contextItem of message.context) {
+                for (const contextMessage of this.renderContextItem(contextItem).reverse()) {
+                    const contextLimitReached = promptBuilder.tryAdd(contextMessage)
+                    if (!contextLimitReached) {
+                        warnings.push('Ignored some user-specified context items due to context limit')
+                        return {
+                            reversePrompt: promptBuilder.reverseMessages,
+                            warnings,
+                        }
+                    }
+                }
+            }
+        }
+
+        // If not the first message, don't fetch enhanced context or look for a current selection/file
+        const firstMessage = chat.getMessages().at(0)
+        if (!firstMessage?.text || chat.getMessages().length !== 1) {
             return {
                 reversePrompt: promptBuilder.reverseMessages,
                 warnings,
             }
         }
+        const firstMessageText = firstMessage.text
+        // NEXT: current selection patterns (what do we currently do?)
 
-        // NEXT: add in context messages (all context goes at the top for now)
-        // - add in existing context messages first
-        // - then add new ones (and need a mechanism to update the context items in the chat model)
+        // TODO: if it's the first message, look at selection or current file
+        // (look for key phrases like "this file" or the existence of a selection)
+
+        // TODO: add in context messages (all context goes at the top for now)
 
         // const userContextItems = contextProvider.getUserContext()
         // for (const item of userContextItems) {
@@ -781,11 +808,7 @@ export class GPT4Prompter {
         }
     }
 
-    private static renderCodeBlock(contextItem: ContextItem): Message[] {
-        return []
-    }
-
-    private static renderDocBlock(contextItem: ContextItem): Message[] {
+    private static renderContextItem(contextItem: ContextItem): Message[] {
         return []
     }
 }
