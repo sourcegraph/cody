@@ -6,7 +6,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
+import { createCodyChatTreeItems, updateCodyTreeViewItem } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
@@ -156,13 +156,24 @@ export class ChatPanelsManager implements vscode.Disposable {
     private updateTreeViewHistory(): void {
         const localHistory = localStorage.getChatHistory()
         if (localHistory) {
-            this.treeViewProvider.updateTree(
-                createCodyChatTreeItems({
-                    chat: localHistory?.chat,
-                    input: localHistory.input,
-                })
-            )
+            createCodyChatTreeItems({
+                chat: localHistory?.chat,
+                input: localHistory.input,
+            })
+            this.treeViewProvider.updateTree('chat')
         }
+    }
+
+    public async editChatHistory(chatID?: string): Promise<void> {
+        if (chatID) {
+            await vscode.window.showInputBox({ prompt: 'Enter new chat history name' }).then(message => {
+                if (message) {
+                    updateCodyTreeViewItem(chatID, message)
+                }
+            })
+            this.treeViewProvider.updateTree('chat')
+        }
+        return
     }
 
     public async clearHistory(chatID?: string): Promise<void> {
@@ -175,6 +186,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
 
         this.disposePanels()
+        this.treeViewProvider.updateTree('chat')
         this.treeViewProvider.reset()
     }
 

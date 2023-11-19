@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { localStorage } from './LocalStorageProvider'
 import { CodySidebarTreeItem, CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -9,7 +10,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
 
     constructor(private type: CodyTreeItemType) {
-        this.updateTree(getCodyTreeItems(type))
+        this.updateTree(type, getCodyTreeItems(type))
         this.refresh()
     }
 
@@ -30,9 +31,17 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     /**
      * Updates the tree view with the provided tree items.
      */
-    public updateTree(treeItems: CodySidebarTreeItem[]): void {
+    public updateTree(type: CodyTreeItemType, treeItems?: CodySidebarTreeItem[]): void {
         const updatedTree: vscode.TreeItem[] = []
-        treeItems.forEach(item => {
+        let historyTreeitems: CodySidebarTreeItem[] | undefined = treeItems
+
+        if (type === 'chat') {
+            const historyItems = localStorage.getHistoryTreeViewItems()
+            if (historyItems) {
+                historyTreeitems = historyItems
+            }
+        }
+        historyTreeitems?.forEach(item => {
             const treeItem = new vscode.TreeItem({ label: item.title })
             treeItem.id = item.id
             treeItem.iconPath = new vscode.ThemeIcon(item.icon)
@@ -41,6 +50,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
             updatedTree.push(treeItem)
         })
+
         this.treeNodes = updatedTree
         this.refresh()
     }

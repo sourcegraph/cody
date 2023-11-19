@@ -3,6 +3,8 @@ import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { CodySidebarTreeItem } from './treeViewItems'
+
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
@@ -10,6 +12,7 @@ export class LocalStorage {
     protected LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
+    protected HISTORY_TREE_VIEW_ITEMS_KEY = 'SOURCEGRAPH_CODY_HISTORY_TREE_VIEW_ITEMS'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -98,6 +101,18 @@ export class LocalStorage {
         } catch (error) {
             console.error(error)
         }
+    }
+
+    public async setHistoryTreeViewItems(treeItems: CodySidebarTreeItem[]): Promise<void> {
+        try {
+            await this.storage.update(this.HISTORY_TREE_VIEW_ITEMS_KEY, treeItems)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+    public getHistoryTreeViewItems(): CodySidebarTreeItem[] | null {
+        const treeItems = this.storage.get<CodySidebarTreeItem[] | null>(this.HISTORY_TREE_VIEW_ITEMS_KEY, null)
+        return treeItems
     }
 
     /**

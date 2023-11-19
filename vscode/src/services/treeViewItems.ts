@@ -3,6 +3,7 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
+import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -48,7 +49,27 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
             })
         }
     })
+    void saveCodyChatTreeItems(chatTreeItems)
     return chatTreeItems.reverse()
+}
+
+export function updateCodyTreeViewItem(treeItemId: string, updatedTitle: string): void {
+    const currentTreeItems = localStorage.getHistoryTreeViewItems()
+    if (currentTreeItems) {
+        const index = currentTreeItems.findIndex(item => item.id === treeItemId)
+        if (index !== -1) {
+            const updatedTreeItem = {
+                ...currentTreeItems[index],
+                title: updatedTitle,
+            }
+            currentTreeItems[index] = updatedTreeItem
+            void saveCodyChatTreeItems(currentTreeItems)
+        }
+    }
+}
+
+export async function saveCodyChatTreeItems(treeItems: CodySidebarTreeItem[]): Promise<void> {
+    await localStorage.setHistoryTreeViewItems(treeItems)
 }
 
 const supportItems: CodySidebarTreeItem[] = [

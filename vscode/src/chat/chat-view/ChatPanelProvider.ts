@@ -167,7 +167,7 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     /**
-     * Send transcript error to webview
+     * Send transcript erroxr to webview
      */
     protected handleTranscriptErrors(transcriptError: boolean): void {
         void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: transcriptError })
@@ -188,7 +188,8 @@ export class ChatPanelProvider extends MessageProvider {
             chat: MessageProvider.chatHistory,
             input: MessageProvider.inputHistory,
         }
-        this.treeView.updateTree(createCodyChatTreeItems(history))
+        createCodyChatTreeItems(history)
+        this.treeView.updateTree('chat')
     }
 
     /**
