@@ -8,7 +8,6 @@ export interface MessageWithContext {
 }
 
 export class SimpleChatModel {
-    // private enhancedContext: ContextItem[] = []
     private messagesWithContext: MessageWithContext[] = []
 
     public isEmpty(): boolean {
@@ -66,28 +65,3 @@ export function contextItemId(contextItem: ContextItem): string {
         ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
         : contextItem.uri.toString()
 }
-
-// export interface PromptMaker {
-//     makePrompt(chat: SimpleChatModel, context: ContextItem[]): Message[]
-// }
-
-// export class GPT4PromptMaker implements PromptMaker {
-//     public makePrompt(chat: SimpleChatModel, contextItems: ContextItem[]): Message[] {
-//         const promptMessages: Message[] = []
-//         for (const contextItem of contextItems) {
-//             console.log('# using file path in prompt: ' + contextItem.uri.fsPath)
-//             promptMessages.push(
-//                 {
-//                     speaker: 'human',
-//                     text: 'Use the following text from file `' + contextItem.uri.fsPath + '`\n\n' + contextItem.text,
-//                 },
-//                 {
-//                     speaker: 'assistant',
-//                     text: 'Ok.',
-//                 }
-//             )
-//         }
-//         promptMessages.push(...chat.getMessagesWithContext())
-//         return promptMessages
-//     }
-// }
