@@ -884,7 +884,7 @@ class PromptBuilder {
                 duplicate.push(contextItem)
                 continue
             }
-            const contextMessages = renderContextItem(contextItem)
+            const contextMessages = renderContextItem(contextItem).reverse()
             const contextLen = contextMessages.reduce(
                 (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
                 0
