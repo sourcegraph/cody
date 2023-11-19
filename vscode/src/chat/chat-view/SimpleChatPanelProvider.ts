@@ -24,7 +24,14 @@ import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, Webvi
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { ContextItem, ContextMessage, GPT4PromptMaker, PromptMaker, SimpleChatModel } from './SimpleChatModel'
+import {
+    ContextItem,
+    contextItemId,
+    GPT4PromptMaker,
+    MessageWithContext,
+    PromptMaker,
+    SimpleChatModel,
+} from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
@@ -277,25 +284,27 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         addEnhancedContext = true
     ): Promise<void> {
         const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [])
-        this.chatModel.addHumanMessage({ text }, userContextItems)
+        this.chatModel.addHumanMessage({ text })
         void this.updateViewTranscript(undefined, userContextFiles)
 
-        // TODO: only fetch context on first message
         const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
-        // TODO: display warnings
-        const { usedContext, ignoredContext, warnings } = await this.computeContext(
+
+        const contextProvider = new ContextProvider(
             userContextItems,
-            contextWindowBytes
+            this.editor,
+            addEnhancedContext ? this.embeddingsClient : null
         )
+        const {
+            prompt: promptMessages,
+            warnings,
+            newContextUsed,
+        } = GPT4Prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
 
-        this.chatModel.setEnhancedContext(usedContext)
+        this.chatModel.setNewContextUsed(newContextUsed)
+
+        // TODO: send warnings to client
+
         void this.updateViewTranscript(undefined, userContextFiles)
-
-        const promptMessages = this.promptMaker.makePrompt(this.chatModel, usedContext).map(m => ({
-            speaker: m.speaker,
-            text: m.text,
-            displayText: m.text,
-        }))
 
         let lastContent = ''
         const typewriter = new Typewriter({
@@ -344,74 +353,74 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return Promise.resolve()
     }
 
-    private async computeContext(
-        userContextItems: ContextItem[],
-        byteLimit: number
-    ): Promise<{
-        usedContext: ContextItem[]
-        ignoredContext: ContextItem[]
-        warnings: string[]
-    }> {
-        let bytesUsed = 0
-        const usedContext: ContextItem[] = []
-        const ignoredContext: ContextItem[] = []
-        const warnings: string[] = []
+    // private async computeContext(
+    //     userContextItems: ContextItem[],
+    //     byteLimit: number
+    // ): Promise<{
+    //     usedContext: ContextItem[]
+    //     ignoredContext: ContextItem[]
+    //     warnings: string[]
+    // }> {
+    //     let bytesUsed = 0
+    //     const usedContext: ContextItem[] = []
+    //     const ignoredContext: ContextItem[] = []
+    //     const warnings: string[] = []
 
-        // // add current selection, or current editor context
-        // const selection = this.editor.getActiveTextEditorSelection()
-        // if (selection?.selectedText) {
-        //     const selectedText = selection.selectedText
-        //     const selectedTextLength = selectedText.length
-        //     if (selectedTextLength > byteLimit) {
-        //         warnings.push(`Ignored selection because it exceeded the byte limit of ${byteLimit} bytes.`)
-        //     } else {
-        //         usedContext.push({
-        //             text: selectedText,
-        //             type: 'user',
-        //             start: selection.start,
-        //             end: selection.end,
-        //         })
-        //         bytesUsed += selectedTextLength
-        //     }
-        // } else {
-        // }
+    //     // // add current selection, or current editor context
+    //     // const selection = this.editor.getActiveTextEditorSelection()
+    //     // if (selection?.selectedText) {
+    //     //     const selectedText = selection.selectedText
+    //     //     const selectedTextLength = selectedText.length
+    //     //     if (selectedTextLength > byteLimit) {
+    //     //         warnings.push(`Ignored selection because it exceeded the byte limit of ${byteLimit} bytes.`)
+    //     //     } else {
+    //     //         usedContext.push({
+    //     //             text: selectedText,
+    //     //             type: 'user',
+    //     //             start: selection.start,
+    //     //             end: selection.end,
+    //     //         })
+    //     //         bytesUsed += selectedTextLength
+    //     //     }
+    //     // } else {
+    //     // }
 
-        for (const item of userContextItems) {
-            if (bytesUsed + item.text.length > byteLimit) {
-                ignoredContext.push(item)
-            } else {
-                usedContext.push(item)
-                bytesUsed += item.text.length
-            }
-        }
+    //     for (const item of userContextItems) {
+    //         if (bytesUsed + item.text.length > byteLimit) {
+    //             ignoredContext.push(item)
+    //         } else {
+    //             usedContext.push(item)
+    //             bytesUsed += item.text.length
+    //         }
+    //     }
 
-        if (ignoredContext.length > 0) {
-            warnings.push(
-                `Ignored ${ignoredContext.length} user context items because they exceeded the byte limit of ${byteLimit} bytes.`
-            )
-        }
+    //     if (ignoredContext.length > 0) {
+    //         warnings.push(
+    //             `Ignored ${ignoredContext.length} user context items because they exceeded the byte limit of ${byteLimit} bytes.`
+    //         )
+    //     }
 
-        if (this.embeddingsClient) {
-            const embeddingsContext = await this.fetchEmbeddingsContext()
-            for (const item of embeddingsContext) {
-                if (bytesUsed + item.text.length > byteLimit) {
-                    ignoredContext.push(item)
-                } else {
-                    usedContext.push(item)
-                    bytesUsed += item.text.length
-                }
-            }
-        }
+    //     if (this.embeddingsClient) {
+    //         const embeddingsContext = await this.fetchEmbeddingsContext()
+    //         for (const item of embeddingsContext) {
+    //             if (bytesUsed + item.text.length > byteLimit) {
+    //                 ignoredContext.push(item)
+    //             } else {
+    //                 usedContext.push(item)
+    //                 bytesUsed += item.text.length
+    //             }
+    //         }
+    //     }
 
-        return { usedContext, ignoredContext, warnings }
-    }
+    //     return { usedContext, ignoredContext, warnings }
+    // }
 
     private async fetchEmbeddingsContext(): Promise<ContextItem[]> {
         if (!this.embeddingsClient) {
             throw new Error('attempting to fetch embeddings, but no embeddings available')
         }
 
-        const messages = this.chatModel.getMessages()
+        const messages = this.chatModel.getMessagesWithContext()
         const lastMessage = messages.at(-1)
         if (!lastMessage) {
             return []
@@ -506,7 +515,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         messageInProgress?: ChatMessage,
         userContextFiles?: ContextFile[]
     ): Promise<void> {
-        const newMessages: ChatMessage[] = this.chatModel.getMessages().map(m => toViewMessage(m))
+        const newMessages: ChatMessage[] = this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
         if (messageInProgress) {
             newMessages.push(messageInProgress)
         }
@@ -599,6 +608,7 @@ interface IContextProvider {
     getCurrentSelection(): ContextItem[]
     getVisible(): ContextItem[]
     getEnhancedContext(query: string): Promise<ContextItem[]>
+    getUserContext(): ContextItem[]
 }
 
 class ContextProvider implements IContextProvider {
@@ -608,7 +618,7 @@ class ContextProvider implements IContextProvider {
         private embeddingsClient: EmbeddingsSearch | null
     ) {}
 
-    // TODO: implement max-per-file truncation
+    // TODO(beyang): implement max-per-file truncation
 
     public getCurrentSelection(): ContextItem[] {
         const selection = this.editor.getActiveInlineChatSelection()
@@ -694,6 +704,7 @@ class ContextProvider implements IContextProvider {
         console.log('debug: finished fetching embeddings', embeddings)
         return contextItems
     }
+
     public getUserContext(): ContextItem[] {
         return this.userContext
     }
@@ -709,20 +720,21 @@ export class GPT4Prompter {
     ): {
         prompt: Message[]
         warnings: string[]
-        fetchedEnhancedContext?: ContextItem[]
+        newContextUsed: ContextItem[]
     } {
-        const { reversePrompt, warnings, fetchedEnhancedContext } = this.makeReversePrompt(
-            chat,
-            contextProvider,
-            byteLimit
-        )
+        const { reversePrompt, warnings, newContextUsed } = this.makeReversePrompt(chat, contextProvider, byteLimit)
         return {
             prompt: [...reversePrompt].reverse(),
             warnings,
-            fetchedEnhancedContext,
+            newContextUsed,
         }
     }
 
+    // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
+    // an array with the most important messages (which appear most important first in the reverse-prompt.
+    //
+    // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
+    // the new context that was used in the prompt for the current message.
     private static makeReversePrompt(
         chat: SimpleChatModel,
         contextProvider: ContextProvider,
@@ -730,81 +742,85 @@ export class GPT4Prompter {
     ): {
         reversePrompt: Message[]
         warnings: string[]
-        fetchedEnhancedContext?: ContextItem[]
+        newContextUsed: ContextItem[]
     } {
         const promptBuilder = new PromptBuilder(byteLimit)
+        const newContextUsed: ContextItem[] = []
+        const seenContext = new Set<string>()
         const warnings: string[] = []
 
         // Add existing transcript messages
-        const reverseTranscript: ContextMessage[] = [...chat.getMessages()].reverse()
+        const reverseTranscript: MessageWithContext[] = [...chat.getMessagesWithContext()].reverse()
         for (let i = 0; i < reverseTranscript.length; i++) {
-            const message = reverseTranscript[i]
-            const contextLimitReached = promptBuilder.tryAdd(message)
+            const messageWithContext = reverseTranscript[i]
+            const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
             if (!contextLimitReached) {
                 warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
                 return {
                     reversePrompt: promptBuilder.reverseMessages,
                     warnings,
+                    newContextUsed,
                 }
             }
         }
 
-        // Add user context for all messages
+        // Add context from new user-specified context items
+        for (const userContextItem of contextProvider.getUserContext()) {
+            if (seenContext.has(contextItemId(userContextItem))) {
+                continue
+            }
+            for (const contextMessage of this.renderContextItem(userContextItem).reverse()) {
+                const contextLimitReached = promptBuilder.tryAdd(contextMessage)
+                if (!contextLimitReached) {
+                    warnings.push('Ignored current user-specified context items due to context limit')
+                    return {
+                        reversePrompt: promptBuilder.reverseMessages,
+                        warnings,
+                        newContextUsed,
+                    }
+                }
+            }
+            seenContext.add(contextItemId(userContextItem))
+            newContextUsed.push(userContextItem)
+        }
+
+        // Add context from previous messages
         for (const message of reverseTranscript) {
-            for (const contextItem of message.context) {
+            for (const contextItem of message.newContextUsed || []) {
+                if (seenContext.has(contextItemId(contextItem))) {
+                    continue
+                }
                 for (const contextMessage of this.renderContextItem(contextItem).reverse()) {
                     const contextLimitReached = promptBuilder.tryAdd(contextMessage)
                     if (!contextLimitReached) {
-                        warnings.push('Ignored some user-specified context items due to context limit')
+                        warnings.push('Ignored some previous user-specified context items due to context limit')
                         return {
                             reversePrompt: promptBuilder.reverseMessages,
                             warnings,
+                            newContextUsed,
                         }
                     }
                 }
+                seenContext.add(contextItemId(contextItem))
             }
         }
 
         // If not the first message, don't fetch enhanced context or look for a current selection/file
-        const firstMessage = chat.getMessages().at(0)
-        if (!firstMessage?.text || chat.getMessages().length !== 1) {
+        const firstMessageWithContext = chat.getMessagesWithContext().at(0)
+        if (!firstMessageWithContext?.message.text || chat.getMessagesWithContext().length !== 1) {
             return {
                 reversePrompt: promptBuilder.reverseMessages,
                 warnings,
+                newContextUsed,
             }
         }
-        const firstMessageText = firstMessage.text
-        // NEXT: current selection patterns (what do we currently do?)
 
-        // TODO: if it's the first message, look at selection or current file
-        // (look for key phrases like "this file" or the existence of a selection)
+        // TODO: NEXT: include selection/file or do an embeddings search
 
-        // TODO: add in context messages (all context goes at the top for now)
-
-        // const userContextItems = contextProvider.getUserContext()
-        // for (const item of userContextItems) {
-        //     if (bytesUsed + item.text.length > byteLimit) {
-        //         ignoredContext.push(item)
-        //     } else {
-        //         usedContext.push(item)
-        //         bytesUsed += item.text.length
-        //     }
-        // }
-
-        // if (ignoredContext.length > 0) {
-        //     warnings.push(
-        //         `Ignored ${ignoredContext.length} user context items because they exceeded the byte limit of ${byteLimit} bytes.`
-        //     )
-        // }
-
-        // if (chat.getMessages().length === 1) {
-        //     console.error('# NOT')
-        // }
-
-        // TODO(beyang): reverse order
         return {
             reversePrompt: promptBuilder.reverseMessages,
             warnings,
+            newContextUsed,
         }
     }
 
@@ -818,7 +834,7 @@ class PromptBuilder {
     private bytesUsed = 0
     constructor(private readonly byteLimit: number) {}
     public tryAdd(message: Message): boolean {
-        // TODO: check for speaker alternation here?
+        // TODO: check for speaker alternation here
 
         const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
         if (this.bytesUsed + msgLen > this.byteLimit) {
