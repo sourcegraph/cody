@@ -62,10 +62,10 @@ class JsonrpcError extends Error {
     public toString(): string {
         return `${this.name}: ${this.message}`
     }
-    get name(): string {
+    public get name(): string {
         return ErrorCode[this.info.code]
     }
-    get message(): string {
+    public get message(): string {
         if (typeof this.info?.data === 'string') {
             try {
                 const data = JSON.parse(this.info.data)
@@ -254,7 +254,7 @@ export class MessageHandler {
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private alive = true
-    private processExitedError = () => new Error('Process has exited')
+    private processExitedError: () => Error = () => new Error('Process has exited')
     private responseHandlers: Map<
         Id,
         {
