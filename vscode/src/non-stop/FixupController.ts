@@ -324,14 +324,6 @@ export class FixupController
                 },
             })
 
-            task.editedRange = new vscode.Range(
-                new vscode.Position(task.selectionRange.start.line, 0),
-                new vscode.Position(
-                    task.selectionRange.start.line + codeCount.lineCount,
-                    task.selectionRange.end.character
-                )
-            )
-
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
@@ -426,15 +418,27 @@ export class FixupController
         // join text with new lines, and then remove everything after the last new line if it only contains white spaces
         const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
 
+        let editOk: boolean
+
         // Insert updated text at selection range
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.insert(document.uri, range.start, replacementText)
-            return vscode.workspace.applyEdit(edit)
+            editOk = await vscode.workspace.applyEdit(edit)
+        } else {
+            editOk = await edit(editBuilder => {
+                editBuilder.insert(range.start, replacementText)
+            }, options)
         }
 
-        return edit(editBuilder => {
-            editBuilder.insert(range.start, replacementText)
-        }, options)
+        if (editOk) {
+            // Expand the selection range to include the newly inserted text
+            task.selectionRange = new vscode.Range(
+                new vscode.Position(range.start.line, 0),
+                range.end.translate(textLines.length - 1)
+            )
+        }
+
+        return editOk
     }
 
     private async formatEdit(
@@ -443,7 +447,7 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.editedRange
+        const rangeToFormat = task.selectionRange
 
         if (!rangeToFormat) {
             return false
@@ -556,11 +560,9 @@ export class FixupController
             return
         }
 
-        const revertRange = task.editedRange || task.selectionRange
-
-        editor.revealRange(revertRange)
+        editor.revealRange(task.selectionRange)
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(revertRange, task.original)
+            editBuilder.replace(task.selectionRange, task.original)
         })
 
         if (!editOk) {
@@ -837,8 +839,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.editedRange || task.selectionRange
-        edit.replace(tempDocUri, range, diff.originalText)
+        edit.replace(tempDocUri, task.selectionRange, diff.originalText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
@@ -851,7 +852,7 @@ export class FixupController
             {
                 preview: true,
                 preserveFocus: false,
-                selection: range,
+                selection: task.selectionRange,
                 label: 'Cody Fixup Diff View',
                 description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
             }
