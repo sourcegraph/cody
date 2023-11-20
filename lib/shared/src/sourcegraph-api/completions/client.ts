@@ -50,6 +50,8 @@ export abstract class SourcegraphCompletionsClient {
                     if (!this.errorEncountered) {
                         cb.onComplete()
                     }
+                    // reset errorEncountered for next request
+                    this.errorEncountered = false                    
                     break
             }
         }
