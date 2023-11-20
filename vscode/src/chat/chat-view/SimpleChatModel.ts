@@ -93,32 +93,6 @@ export class SimpleChatModel {
             interactions,
         }
     }
-
-    public static fromTranscriptJSON(json: TranscriptJSON): SimpleChatModel {
-        const messages: MessageWithContext[] = json.interactions.flatMap(
-            (interaction: InteractionJSON): MessageWithContext[] => {
-                return [
-                    {
-                        message: {
-                            speaker: 'human',
-                            text: interaction.humanMessage.text,
-                        },
-                        // TODO: include context
-                        newContextUsed: [],
-                    },
-                    {
-                        message: {
-                            speaker: 'assistant',
-                            text: interaction.assistantMessage.text,
-                        },
-                        // TODO: include context
-                        newContextUsed: [],
-                    },
-                ]
-            }
-        )
-        return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', messages, json.id)
-    }
 }
 
 export interface ContextItem {

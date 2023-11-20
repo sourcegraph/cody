@@ -6,6 +6,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
@@ -152,7 +153,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (!oldTranscript) {
             throw new Error(`Could not find chat history for sessionID ${sessionID}`)
         }
-        const newModel = SimpleChatModel.fromTranscriptJSON(oldTranscript)
+        const newModel = await newChatModelfromTranscriptJSON(this.editor, oldTranscript)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
 
@@ -322,7 +323,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         userContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [])
+        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
         this.chatModel.addHumanMessage({ text })
         void this.updateViewTranscript()
 
@@ -456,59 +457,6 @@ function toViewMessage(mwc: MessageWithContext): ChatMessage {
         displayText: mwc.message.text,
         contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
     }
-}
-
-function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
-    const contextFiles: ContextFile[] = []
-    for (const item of items) {
-        contextFiles.push({
-            fileName: item.uri.fsPath,
-            source: 'embeddings',
-            range: rangeToViewRange(item.range),
-
-            // TODO: repoName + revision?
-        })
-    }
-    return contextFiles
-}
-
-function contextFilesToContextItems(editor: Editor, files: ContextFile[]): Promise<ContextItem[]> {
-    return Promise.all(
-        files.map(async (file: ContextFile): Promise<ContextItem> => {
-            const range = viewRangeToRange(file.range)
-            if (!file.uri) {
-                throw new Error('contextFilesToContextItems: uri undefined on ContextFile')
-            }
-            return {
-                uri: file.uri,
-                range,
-                text: file.content || (await editor.getTextEditorContentForFile(file.uri, range)) || '',
-            }
-        })
-    )
-}
-
-function rangeToViewRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
-    if (!range) {
-        return undefined
-    }
-    return {
-        start: {
-            line: range.start.line,
-            character: range.start.character,
-        },
-        end: {
-            line: range.end.line,
-            character: range.end.character,
-        },
-    }
-}
-
-function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
-    if (!range) {
-        return undefined
-    }
-    return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
 }
 
 interface IContextProvider {
@@ -828,4 +776,88 @@ function isEditorContextRequired(input: string): boolean | Error {
         }
     }
     return false
+}
+
+export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
+    const contextFiles: ContextFile[] = []
+    for (const item of items) {
+        contextFiles.push({
+            fileName: item.uri.fsPath,
+            source: 'embeddings',
+            range: rangeToViewRange(item.range),
+
+            // TODO: repoName + revision?
+        })
+    }
+    return contextFiles
+}
+
+export function contextFilesToContextItems(
+    editor: Editor,
+    files: ContextFile[],
+    fetchContent?: boolean
+): Promise<ContextItem[]> {
+    return Promise.all(
+        files.map(async (file: ContextFile): Promise<ContextItem> => {
+            const range = viewRangeToRange(file.range)
+            const uri = file.uri || vscode.Uri.file(file.fileName)
+            let text = file.content
+            if (!text && fetchContent) {
+                text = await editor.getTextEditorContentForFile(uri, range)
+            }
+            return {
+                uri,
+                range,
+                text: text || '',
+            }
+        })
+    )
+}
+
+export function rangeToViewRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
+    if (!range) {
+        return undefined
+    }
+    return {
+        start: {
+            line: range.start.line,
+            character: range.start.character,
+        },
+        end: {
+            line: range.end.line,
+            character: range.end.character,
+        },
+    }
+}
+
+export function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
+    if (!range) {
+        return undefined
+    }
+    return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
+}
+
+async function newChatModelfromTranscriptJSON(editor: Editor, json: TranscriptJSON): Promise<SimpleChatModel> {
+    const messages: Promise<MessageWithContext[]>[] = json.interactions.map(
+        async (interaction: InteractionJSON): Promise<MessageWithContext[]> => {
+            return [
+                {
+                    message: {
+                        speaker: 'human',
+                        text: interaction.humanMessage.text,
+                    },
+                    // TODO(beyang): not fetching content here means the loaded chats can't be continued
+                    // should just make the future ones editable and persist the exact context they used
+                    newContextUsed: await contextFilesToContextItems(editor, interaction.usedContextFiles),
+                },
+                {
+                    message: {
+                        speaker: 'assistant',
+                        text: interaction.assistantMessage.text,
+                    },
+                },
+            ]
+        }
+    )
+    return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', (await Promise.all(messages)).flat(), json.id)
 }
