@@ -184,6 +184,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
+        vscodeAPI.postMessage({ command: 'ready' })
         return <LoadingPage />
     }
 
