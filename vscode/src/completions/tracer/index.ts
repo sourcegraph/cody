@@ -30,7 +30,7 @@ export interface ProvideInlineCompletionsItemTraceData {
         triggerKind: TriggerKind
         selectedCompletionInfo?: vscode.SelectedCompletionInfo
     }
-    completers?: Provider['options'][]
+    completers?: (Provider['options'] & { completionIntent?: string })[]
 
     /**
      * @todo Make this support recording more than 1 call to a completion provider.
