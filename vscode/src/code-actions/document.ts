@@ -33,7 +33,7 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
         const source = 'code-action'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction: this.instruction, range, intent: 'edit', document }, source],
+            arguments: [{ instruction: this.instruction, range, intent: 'edit', document, insertMode: true }, source],
             title: displayText,
         }
         return action
