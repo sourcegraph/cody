@@ -41,16 +41,19 @@ export const EnhancedContext: React.FunctionComponent<{
 
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
-    const lines = filteredFiles.reduce(
+    const lineCount = filteredFiles.reduce(
         (total, file) => total + (file.range ? file.range?.end?.line - file.range?.start?.line + 1 : 0),
         0
     )
-    const files = filteredFiles.length
+    const fileCount = filteredFiles.length
+    const lines = `${lineCount} line` + (lineCount > 1 ? 's' : '')
+    const files = `${fileCount} file` + (fileCount > 1 ? 's' : '')
+    const title = lineCount ? `✨ ${lines} from ${files}` : `✨ snippets from ${files}`
 
     return (
         <TranscriptAction
             title={{
-                verb: `✨ ${lines} lines from ${files} files`,
+                verb: title,
                 object: '',
                 tooltip: 'Related code automatically included as context',
             }}

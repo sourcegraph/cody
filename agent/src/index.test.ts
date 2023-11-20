@@ -42,6 +42,7 @@ describe.each([
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
             extensionConfiguration: {
+                anonymousUserID: 'abcde1234',
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
                 serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
@@ -62,6 +63,7 @@ describe.each([
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
             extensionConfiguration: {
+                anonymousUserID: 'abcde1234',
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
                 serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
@@ -74,8 +76,9 @@ describe.each([
             name: 'test-client',
             version: 'v1',
             workspaceRootUri: 'file:///path/to/foo',
-            workspaceRootPath: '/path/to/foo',
             extensionConfiguration: {
+                anonymousUserID: 'abcde1234',
+                workspaceRootPath: '/path/to/foo',
                 accessToken: '',
                 serverEndpoint: 'https://sourcegraph.com/',
                 customHeaders: {},
@@ -118,11 +121,13 @@ describe.each([
         // fine as long as we didn't send the second unauthenticated config
         // change.
         client.notify('extensionConfiguration/didChange', {
+            anonymousUserID: 'abcde1234',
             accessToken: 'https://sourcegraph.com/',
             serverEndpoint: '',
             customHeaders: {},
         })
         client.notify('extensionConfiguration/didChange', {
+            anonymousUserID: 'abcde1234',
             accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
             serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
             customHeaders: {},

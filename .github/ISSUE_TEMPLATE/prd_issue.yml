@@ -23,13 +23,9 @@ body:
       label: 'Description:'
       description: What is the problem we are trying to solve?
       value: |
-        <!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat.
-
-        The new chat window should be fast and responsive, with the ability to let the user choose the type of context used for the LLM. I should be given the option to choose whether or not I want Cody to find the context, or let me choose it myself. I want more control over what is fed into the LLM for answers. I should easily be able to distinguish what my last question was versus what was displayed from commands.
-        -->
+        <!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat. -->
     validations:
       required: true
-
   - type: textarea
     id: objective
     attributes:
@@ -47,9 +43,6 @@ body:
         - The chat window has a clean, uncluttered interface with plenty of white space
         - The user should have the option to select whether Cody or the user chooses the context
         - The user should be able to use "@ commands" to select files or symbols for context
-        - The chat should separate the output from Chat and Commands
-        - The chat should be a close mimic to existing AI chatbots
-        - Messages scroll vertically as more are added
         -->
   - type: textarea
     id: design-tasklist

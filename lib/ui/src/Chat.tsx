@@ -30,7 +30,12 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
+    onSubmit: (
+        text: string,
+        submitType: ChatSubmitType,
+        userContextFiles?: Map<string, ContextFile>,
+        enhanceContext?: boolean
+    ) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
@@ -66,6 +71,11 @@ interface ChatProps extends ChatClassNames {
     contextSelection?: ContextFile[]
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
+    EnhancedContextToggler?: React.FunctionComponent<{
+        enhanceContext: boolean
+        setEnhanceContext: (arg: boolean) => void
+        contextStatus: ChatContextStatus
+    }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelSelection) => void
 }
@@ -99,6 +109,7 @@ export interface ChatUISubmitButtonProps {
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+    onAbortMessageInProgress?: () => void
 }
 
 export interface ChatUISuggestionButtonProps {
@@ -215,6 +226,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextSelection,
     chatModels,
     ChatModelDropdownMenu,
+    EnhancedContextToggler,
     onCurrentChatModelChange,
 }) => {
     const [inputRows, setInputRows] = useState(1)
@@ -227,8 +239,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     // The context files added via the chat input by user
     const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
-    // TODO support toggling between enabling and disabling enhanceContext
-    // const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
+    // Toggle between enabling and disabling enhanceContext
+    const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
 
     /**
      * Callback function called when a chat context file is selected from the context selector.
@@ -317,7 +329,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress) {
                 return
             }
-            onSubmit(input, submitType, chatContextFiles)
+            onSubmit(input, submitType, chatContextFiles, enhanceContext)
             setSuggestions?.(undefined)
             setChatContextFiles(new Map())
             setSelectedChatContext(0)
@@ -325,8 +337,23 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputHistory([...inputHistory, input])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
+
+            // Automatically turn off enhance context when the user has submitted their first message.
+            if (transcript.length < 2) {
+                setEnhanceContext(false)
+                return
+            }
         },
-        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions, chatContextFiles]
+        [
+            messageInProgress,
+            onSubmit,
+            chatContextFiles,
+            enhanceContext,
+            setSuggestions,
+            inputHistory,
+            setInputHistory,
+            transcript.length,
+        ]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -421,7 +448,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const selectionLength = contextSelection?.length - 1
                     const newIndex = event.key === 'ArrowUp' ? selectedChatContext - 1 : selectedChatContext + 1
                     const newMatchIndex = newIndex < 0 ? selectionLength : newIndex > selectionLength ? 0 : newIndex
-                    console.log(newIndex, newMatchIndex, contextSelection)
                     setSelectedChatContext(newMatchIndex)
                     return
                 }
@@ -497,6 +523,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 speaker: 'assistant',
                 displayText: welcomeText({ helpMarkdown, afterMarkdown }),
                 buttons: gettingStartedButtons,
+                data: 'welcome-text',
             },
             ...transcript,
         ],
@@ -570,7 +597,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
-                {ContextStatusComponent && <ContextStatusComponent {...contextStatusComponentProps} />}
                 <div className={styles.textAreaContainer}>
                     {displayCommands && ChatCommandsComponent && formInput && (
                         <ChatCommandsComponent
@@ -591,27 +617,42 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             setSelectedChatContext={setSelectedChatContext}
                         />
                     )}
-                    <TextArea
-                        className={classNames(styles.chatInput, chatInputClassName)}
-                        rows={inputRows}
-                        value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                        autoFocus={true}
-                        required={true}
-                        disabled={needsEmailVerification || !isCodyEnabled}
-                        onInput={onChatInput}
-                        onKeyDown={onChatKeyDown}
-                        setValue={inputHandler}
-                        chatModels={chatModels}
-                    />
+                    <div className={styles.chatInputContainer}>
+                        <TextArea
+                            className={classNames(styles.chatInput, chatInputClassName)}
+                            rows={inputRows}
+                            value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
+                            autoFocus={true}
+                            required={true}
+                            disabled={needsEmailVerification || !isCodyEnabled}
+                            onInput={onChatInput}
+                            onKeyDown={onChatKeyDown}
+                            setValue={inputHandler}
+                            chatModels={chatModels}
+                        />
+                        {ContextStatusComponent && EnhancedContextToggler && contextStatus && (
+                            <div className={styles.contextButton}>
+                                <EnhancedContextToggler
+                                    setEnhanceContext={setEnhanceContext}
+                                    enhanceContext={enhanceContext}
+                                    contextStatus={contextStatus}
+                                />
+                            </div>
+                        )}
+                    </div>
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={
-                            !!messageInProgress || needsEmailVerification || !isCodyEnabled || formInput.length === 0
+                        disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
+                        onAbortMessageInProgress={
+                            !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
                         }
                     />
                 </div>
-                {!ContextStatusComponent && contextStatus && (
+                {!EnhancedContextToggler && ContextStatusComponent && (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                )}
+                {!EnhancedContextToggler && !ContextStatusComponent && contextStatus && (
                     <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
                 )}
             </form>

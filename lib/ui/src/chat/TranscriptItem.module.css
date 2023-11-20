@@ -106,12 +106,27 @@
     visibility: hidden;
 }
 
-.editing-container {
-    position: absolute;
-    right: var(--spacing);
-    top: var(--spacing);
+.transcript-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
+    margin-bottom: 0.2em;
+}
+
+.editing-container {
     visibility: visible;
+}
+
+.editing-button-container {
+    visibility: visible;
+    position: absolute;
+
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+
+    align-self: center;
 }
 
 .editing-label {

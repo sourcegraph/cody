@@ -63,7 +63,6 @@ describe('logger', () => {
         const shared = {
             id: expect.any(String),
             languageId: 'typescript',
-            lineCount: 1,
             source: 'Network',
             triggerKind: 'Automatic',
             type: 'inline',
@@ -73,7 +72,6 @@ describe('logger', () => {
             otherCompletionProviders: [],
             providerIdentifier: 'bfl',
             providerModel: 'blazing-fast-llm',
-            charCount: 3,
             contextSummary: {
                 retrieverStats: {},
                 strategy: 'none',

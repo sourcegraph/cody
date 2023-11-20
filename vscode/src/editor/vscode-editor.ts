@@ -40,7 +40,10 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return getActiveEditor()?.document.fileName ?? ''
     }
 
-    /** @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead. */
+    /**
+     * @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead
+    /** NOTE DO NOT UES - this does not work with chat webview panel
+     */
     public getWorkspaceRootPath(): string | null {
         const uri = this.getWorkspaceRootUri()
         return uri?.scheme === 'file' ? uri.fsPath : null

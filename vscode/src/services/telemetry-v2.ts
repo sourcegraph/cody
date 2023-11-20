@@ -52,7 +52,7 @@ const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
 const debugLogLabel = 'telemetry-v2'
 
-function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void {
+export function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { noOp?: boolean }): void {
     telemetryRecorderProvider?.unsubscribe()
     telemetryRecorderProvider = updatedProvider
     telemetryRecorder = updatedProvider.getRecorder([
@@ -60,7 +60,9 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void
         new CallbackTelemetryProcessor(event => {
             logDebug(
                 debugLogLabel,
-                `recordEvent: ${event.feature}/${event.action}: ${JSON.stringify({
+                `recordEvent${updatedProvider.noOp ? ' (no-op)' : ''}: ${event.feature}/${
+                    event.action
+                }: ${JSON.stringify({
                     parameters: event.parameters,
                 })}`
             )
@@ -81,7 +83,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off') {
+    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
     }
