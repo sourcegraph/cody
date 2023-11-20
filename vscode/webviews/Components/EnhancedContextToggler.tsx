@@ -21,6 +21,8 @@ export const EnhancedContextToggler: React.FunctionComponent<{
         [setEnhanceContext]
     )
 
+    const codebaseName = contextStatus.codebase ?? 'a local codebase'
+
     return (
         <div className={styles.container}>
             {open && (
@@ -32,13 +34,16 @@ export const EnhancedContextToggler: React.FunctionComponent<{
                     >
                         Enhanced Context ✨
                     </VSCodeCheckbox>
-                    <p className={styles.enhancedContextHelpText}>
-                        Automatically include additional context from your codebase {contextStatus.codebase}
+                    <p className={styles.enhancedContextDescription}>
+                        Automatically include additional context from your codebase.
+                    </p>
+                    <p className={styles.codebaseConnection}>
+                        Connected to <span className={contextStatus.codebase && styles.codebase}>{codebaseName}</span>
                     </p>
                 </div>
             )}
             <VSCodeButton
-                className={classNames(styles.settingsBtn)}
+                className={classNames(styles.settingsBtn, enhanceContext && styles.settingsBtnActive)}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!open)}

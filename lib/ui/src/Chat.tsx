@@ -109,6 +109,7 @@ export interface ChatUISubmitButtonProps {
     className: string
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+    onAbortMessageInProgress?: () => void
 }
 
 export interface ChatUISuggestionButtonProps {
@@ -290,15 +291,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
             if (inputValue === '/') {
                 setDisplayCommands(chatCommands)
-                setSelectedChatCommand(chatCommands.length)
+                setSelectedChatCommand(0)
                 return
             }
             if (inputValue.startsWith('/')) {
                 const filteredCommands = filterChatCommands
                     ? filterChatCommands(chatCommands, inputValue)
-                    : chatCommands.filter(([_, prompt]) => prompt.slashCommand?.startsWith(inputValue))
+                    : chatCommands.filter(command => command[1].slashCommand?.startsWith(inputValue))
                 setDisplayCommands(filteredCommands)
-                setSelectedChatCommand(0)
+                // setSelectedChatCommand(0)
                 return
             }
             setDisplayCommands(null)
@@ -405,28 +406,24 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     event.preventDefault()
-                    event.stopPropagation()
                     const commandsLength = displayCommands?.length
                     const curIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
-                    const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex >= commandsLength - 1 ? 0 : curIndex
+                    const newIndex = curIndex < 0 ? commandsLength - 1 : curIndex > commandsLength - 1 ? 0 : curIndex
                     setSelectedChatCommand(newIndex)
                     const newInput = displayCommands?.[newIndex]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
+                    return
                 }
                 // close the chat command suggestions on escape key
                 if (event.key === 'Escape') {
                     setDisplayCommands(null)
                     setSelectedChatCommand(-1)
                     setFormInput('')
+                    return
                 }
                 // tab/enter to complete
-                if (
-                    (event.key === 'Tab' || event.key === 'Enter') &&
-                    selectedChatCommand > -1 &&
-                    displayCommands.length
-                ) {
+                if ((event.key === 'Tab' || event.key === 'Enter') && displayCommands.length) {
                     event.preventDefault()
-                    event.stopPropagation()
                     const selectedCommand = displayCommands?.[selectedChatCommand]?.[1]
                     if (formInput.startsWith(selectedCommand?.slashCommand)) {
                         // submit message if the input has slash command already completed
@@ -616,32 +613,35 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             setSelectedChatContext={setSelectedChatContext}
                         />
                     )}
-                    <TextArea
-                        className={classNames(styles.chatInput, chatInputClassName)}
-                        rows={inputRows}
-                        value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                        autoFocus={true}
-                        required={true}
-                        disabled={needsEmailVerification || !isCodyEnabled}
-                        onInput={onChatInput}
-                        onKeyDown={onChatKeyDown}
-                        setValue={inputHandler}
-                        chatModels={chatModels}
-                    />
-                    {ContextStatusComponent && EnhancedContextToggler && contextStatus && (
-                        <div className={styles.contextButton}>
-                            <EnhancedContextToggler
-                                setEnhanceContext={setEnhanceContext}
-                                enhanceContext={enhanceContext}
-                                contextStatus={contextStatus}
-                            />
-                        </div>
-                    )}
+                    <div className={styles.chatInputContainer}>
+                        <TextArea
+                            className={classNames(styles.chatInput, chatInputClassName)}
+                            rows={inputRows}
+                            value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
+                            autoFocus={true}
+                            required={true}
+                            disabled={needsEmailVerification || !isCodyEnabled}
+                            onInput={onChatInput}
+                            onKeyDown={onChatKeyDown}
+                            setValue={inputHandler}
+                            chatModels={chatModels}
+                        />
+                        {ContextStatusComponent && EnhancedContextToggler && contextStatus && (
+                            <div className={styles.contextButton}>
+                                <EnhancedContextToggler
+                                    setEnhanceContext={setEnhanceContext}
+                                    enhanceContext={enhanceContext}
+                                    contextStatus={contextStatus}
+                                />
+                            </div>
+                        )}
+                    </div>
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={
-                            !!messageInProgress || needsEmailVerification || !isCodyEnabled || formInput.length === 0
+                        disabled={needsEmailVerification || !isCodyEnabled || (!formInput.length && !messageInProgress)}
+                        onAbortMessageInProgress={
+                            !AbortMessageInProgressButton && messageInProgress ? onAbortMessageInProgress : undefined
                         }
                     />
                 </div>

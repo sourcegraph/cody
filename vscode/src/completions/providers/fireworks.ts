@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
@@ -25,6 +26,7 @@ export interface FireworksOptions {
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
     starcoderExtendedTokenWindow?: boolean
+    timeouts: AutocompleteTimeouts
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -89,12 +91,14 @@ export class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
+    private timeouts?: AutocompleteTimeouts
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
+        { model, maxContextTokens, client, timeouts }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
     ) {
         super(options)
+        this.timeouts = timeouts
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
@@ -164,6 +168,17 @@ export class FireworksProvider extends Provider {
                 ? MODEL_MAP[multiline ? 'starcoder-16b-sourcegraph' : 'starcoder-7b-sourcegraph']
                 : MODEL_MAP[this.model]
 
+        const timeoutMs: number = multiline
+            ? this.timeouts?.multiline === undefined
+                ? 15_000
+                : this.timeouts.multiline
+            : this.timeouts?.singleline === undefined
+            ? 5_000
+            : this.timeouts.singleline
+        if (timeoutMs === 0) {
+            return []
+        }
+
         const args: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
@@ -174,7 +189,7 @@ export class FireworksProvider extends Provider {
             topK: 0,
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
-            timeoutMs: multiline ? 15000 : 5000,
+            timeoutMs,
         }
 
         tracer?.params(args)
@@ -266,6 +281,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
 
 export function createProviderConfig({
     model,
+    timeouts,
     ...otherOptions
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
     const resolvedModel =
@@ -287,7 +303,12 @@ export function createProviderConfig({
 
     return {
         create(options: ProviderOptions) {
-            return new FireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
+            return new FireworksProvider(options, {
+                model: resolvedModel,
+                maxContextTokens,
+                timeouts,
+                ...otherOptions,
+            })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,

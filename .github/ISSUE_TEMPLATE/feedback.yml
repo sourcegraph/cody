@@ -1,0 +1,59 @@
+name: Submit Feedback (VS Code)
+description: Suggest an improvement for Cody
+title: 'feedback: '
+labels:
+  - clients/vscode
+  - feedback
+projects:
+  - sourcegraph/387
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this form! Please submit any suggestions or feedback on how we can improve Cody for VS Code.
+  - type: checkboxes
+    attributes:
+      label: Areas for Improvement
+      description: Please choose all areas of the improvement this feedback affects
+      options:
+        - label: UI/UX
+        - label: Onboarding
+        - label: Docs
+        - label: Chat
+        - label: Commands
+        - label: Context
+        - label: Response Quality
+        - label: Other
+  - type: textarea
+    attributes:
+      label: What needs to be improved? Please describe how this affects the user experience.
+      description: A clear and concise description of what is wrong or needs improvement.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why is this feedback important? Please describe the rationale.
+      description: A clear and concise explanation of the rationale.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the solution you'd like to see
+      description: A clear and concise description of what you would like the solution to look like.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe any alternatives that could be considered
+      description: A clear and concise description of alternative solutions that could also address the issue.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: |
+        Please add any links, or references that can give us more context on the feedback!
+
+        Tip: You can attach images by dragging it into the text box.
+    validations:
+      required: false

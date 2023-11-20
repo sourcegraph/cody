@@ -25,11 +25,9 @@ const config = {
       __dirname + '/slack/tsconfig.json',
       __dirname + '/vscode/tsconfig.json',
       __dirname + '/vscode/test/integration/tsconfig.json',
-      __dirname + '/vscode/test/completions/tsconfig.json',
       __dirname + '/vscode/scripts/tsconfig.json',
       __dirname + '/web/tsconfig.json',
       __dirname + '/tsconfig.json',
-      __dirname + '/completions-review-tool/tsconfig.json',
     ],
   },
   settings: {

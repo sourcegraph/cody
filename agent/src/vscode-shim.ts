@@ -105,8 +105,6 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
-export const customConfiguration: Record<string, any> = {}
-
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
@@ -123,8 +121,8 @@ const configuration: vscode.WorkspaceConfiguration = {
             )[value.toLowerCase()]
         }
 
-        const fromCustomConfiguration = customConfiguration[section]
-        if (fromCustomConfiguration) {
+        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
+        if (fromCustomConfiguration !== undefined) {
             return fromCustomConfiguration
         }
         switch (section) {
@@ -135,7 +133,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
             case 'cody.telemetry.level':
-                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // Use the dedicated `telemetry/recordEvent` to send telemetry from
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
@@ -361,14 +359,18 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                     if (!cwd) {
                         return null
                     }
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                    const repository: Partial<Repository> = {
-                        rootUri: Uri.file(toplevel),
-                        state: {
-                            remotes: [],
-                        } as any,
+                    try {
+                        const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                        const repository: Partial<Repository> = {
+                            rootUri: Uri.file(toplevel),
+                            state: {
+                                remotes: [],
+                            } as any,
+                        }
+                        return repository as Repository
+                    } catch {
+                        return null
                     }
-                    return repository as Repository
                 },
             }
             return api as API

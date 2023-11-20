@@ -3,6 +3,13 @@
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import {
+    KnownKeys,
+    KnownString,
+    TelemetryEventMarketingTrackingInput,
+    TelemetryEventParameters,
+} from '@sourcegraph/telemetry'
 
 import { CompletionEvent } from '../completions/logger'
 
@@ -39,7 +46,15 @@ export type Requests = {
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
     'graphql/currentUserId': [null, string]
+
+    /**
+     * @deprecated use 'telemetry/recordEvent' instead.
+     */
     'graphql/logEvent': [event, null]
+    /**
+     * Record telemetry events.
+     */
+    'telemetry/recordEvent': [TelemetryEvent, null]
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
@@ -142,6 +157,12 @@ export interface ClientInfo {
 
     extensionConfiguration?: ExtensionConfiguration
     capabilities?: ClientCapabilities
+
+    /**
+     * Optional tracking attributes to inject into telemetry events recorded
+     * by the agent.
+     */
+    marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
 export interface ClientCapabilities {
@@ -165,6 +186,14 @@ export interface ExtensionConfiguration {
     proxy?: string | null
     accessToken: string
     customHeaders: Record<string, string>
+
+    /**
+     * anonymousUserID is an important component of telemetry events that get
+     * recorded. It is currently optional for backwards compatibility, but
+     * it is strongly recommended to set this when connecting to Agent.
+     */
+    anonymousUserID?: string
+
     autocompleteAdvancedProvider?: string
     autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedModel?: string | null
@@ -176,12 +205,57 @@ export interface ExtensionConfiguration {
     /**
      * When passed, the Agent will handle recording events.
      * If not passed, client must send `graphql/logEvent` requests manually.
+     * @deprecated This is only used for the legacy logEvent - use `telemetry` instead.
      */
     eventProperties?: EventProperties
+
+    customConfiguration?: Record<string, any>
 }
 
+/**
+ * TelemetryEvent is a JSON RPC format of the arguments to a typical
+ * TelemetryEventRecorder implementation from '@sourcegraph/telemetry'.
+ * This type is intended for use in the Agent RPC handler only - clients sending
+ * events to the Agent should use 'newTelemetryEvent()' to create event objects,
+ * which uses the same type constraints as '(TelemetryEventRecorder).recordEvent()'.
+ * @param feature must be camelCase and '.'-delimited, e.g. 'myFeature.subFeature'.
+ * Features should NOT include the client platform, e.g. 'vscode' - information
+ * about the client is automatically attached to all events. Note that Cody
+ * events MUST have provide feature 'cody' or have a feature prefixed with
+ * 'cody.' to be considered Cody events.
+ * @param action must be camelCase and simple, e.g. 'submit', 'failed', or
+ * 'success', in the context of feature.
+ * @param parameters should be as described in {@link TelemetryEventParameters}.
+ */
+export interface TelemetryEvent {
+    feature: string
+    action: string
+    parameters?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
+}
+
+/**
+ * newTelemetryEvent is a constructor for TelemetryEvent that shares the same
+ * type constraints as '(TelemetryEventRecorder).recordEvent()'.
+ */
+export function newTelemetryEvent<Feature extends string, Action extends string, MetadataKey extends string>(
+    feature: KnownString<Feature>,
+    action: KnownString<Action>,
+    parameters?: TelemetryEventParameters<
+        KnownKeys<MetadataKey, { [key in MetadataKey]: number }>,
+        BillingProduct,
+        BillingCategory
+    >
+): TelemetryEvent {
+    return { feature, action, parameters }
+}
+
+/**
+ * @deprecated EventProperties are no longer referenced.
+ */
 export interface EventProperties {
-    /** Anonymous user ID */
+    /**
+     * @deprecated Use (ExtensionConfiguration).anonymousUserID instead
+     */
     anonymousUserID: string
 
     /** Event prefix, like 'CodyNeovimPlugin' */
