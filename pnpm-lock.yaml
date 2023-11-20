@@ -9,7 +9,7 @@ neverBuiltDependencies:
   - playwright
 
 overrides:
-  tslib: 2.1.0
+  tslib: 2.6.2
 
 packageExtensionsChecksum: bc809394d179d8460f9d473fc54e379a
 
@@ -593,7 +593,7 @@ packages:
       '@azure/core-rest-pipeline': 1.12.0
       '@azure/core-tracing': 1.0.1
       '@azure/core-util': 1.4.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -602,7 +602,7 @@ packages:
     resolution: {integrity: sha512-TrRLIoSQVzfAJX9H1JeFjzAoDGcoK1IYX1UImfceTZpsyYfWr09Ss1aHW1y5TrrR3iq6RZLBwJ3E24uwPhwahw==}
     engines: {node: '>=12.0.0'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@azure/core-auth@1.5.0:
@@ -611,7 +611,7 @@ packages:
     dependencies:
       '@azure/abort-controller': 1.1.0
       '@azure/core-util': 1.4.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@azure/core-lro@2.5.4:
@@ -621,7 +621,7 @@ packages:
       '@azure/abort-controller': 1.1.0
       '@azure/core-util': 1.4.0
       '@azure/logger': 1.0.4
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@azure/core-rest-pipeline@1.12.0:
@@ -636,7 +636,7 @@ packages:
       form-data: 4.0.0
       http-proxy-agent: 5.0.0
       https-proxy-agent: 5.0.1
-      tslib: 2.1.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -645,7 +645,7 @@ packages:
     resolution: {integrity: sha512-I5CGMoLtX+pI17ZdiFJZgxMJApsK6jjfm85hpgp3oazCdq5Wxgh4wMr7ge/TTWW1B5WBuvIOI1fMU/FrOAMKrw==}
     engines: {node: '>=12.0.0'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@azure/core-util@1.4.0:
@@ -653,14 +653,14 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@azure/abort-controller': 1.1.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@azure/logger@1.0.4:
     resolution: {integrity: sha512-ustrPY8MryhloQj7OWGe+HrYx+aoiOxzbXTtgblbV3xwCqpzUK36phH3XNHQKj3EPonyFUuDTfR3qFhTEAuZEg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@azure/openai@1.0.0-beta.5:
@@ -672,7 +672,7 @@ packages:
       '@azure/core-lro': 2.5.4
       '@azure/core-rest-pipeline': 1.12.0
       '@azure/logger': 1.0.4
-      tslib: 2.1.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -4112,7 +4112,7 @@ packages:
       '@microsoft/fast-element': 1.12.0
       '@microsoft/fast-web-utilities': 5.4.1
       tabbable: 5.3.3
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@microsoft/fast-react-wrapper@0.1.48(react@18.2.0):
@@ -4551,7 +4551,7 @@ packages:
       '@sentry/core': 7.66.0
       '@sentry/types': 7.66.0
       '@sentry/utils': 7.66.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@sentry/browser@7.66.0:
@@ -4563,7 +4563,7 @@ packages:
       '@sentry/replay': 7.66.0
       '@sentry/types': 7.66.0
       '@sentry/utils': 7.66.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@sentry/core@7.66.0:
@@ -4572,7 +4572,7 @@ packages:
     dependencies:
       '@sentry/types': 7.66.0
       '@sentry/utils': 7.66.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@sentry/node@7.66.0:
@@ -4586,7 +4586,7 @@ packages:
       cookie: 0.4.2
       https-proxy-agent: 5.0.1
       lru_map: 0.3.3
-      tslib: 2.1.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -4610,7 +4610,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       '@sentry/types': 7.66.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@sinclair/typebox@0.27.8:
@@ -6598,7 +6598,7 @@ packages:
       '@microsoft/fast-react-wrapper': 0.1.48(react@18.2.0)
       '@microsoft/fast-web-utilities': 6.0.0
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /@xmldom/xmldom@0.7.11:
@@ -6618,7 +6618,7 @@ packages:
       esbuild: '>=0.10.0'
     dependencies:
       esbuild: 0.17.14
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: true
 
   /abab@2.0.6:
@@ -6961,21 +6961,21 @@ packages:
     resolution: {integrity: sha512-O0yuUDnZeQDL+ncNGlJ78BiO4jnYI3bvMsD5prT0/nsgijG/LpNBIr63gTjVTNsiGkgQhiyCShTgxt8oXOrklA==}
     engines: {node: '>=4'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: true
 
   /ast-types@0.15.2:
     resolution: {integrity: sha512-c27loCv9QkZinsa5ProX751khO9DJl/AcB5c2KNtA6NRvHKS0PgLfcftz72KVq504vB0Gku5s2kUZzDBvQWvHg==}
     engines: {node: '>=4'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: true
 
   /ast-types@0.16.1:
     resolution: {integrity: sha512-6t10qk83GOG8p0vKmaCr8eiilZwO171AvbROMtvvNiwrTly62t+7XkA8RdIIVbpMhCASAsxgAzdRSwh6nw/5Dg==}
     engines: {node: '>=4'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: true
 
   /astral-regex@2.0.0:
@@ -6990,7 +6990,7 @@ packages:
   /async-mutex@0.4.0:
     resolution: {integrity: sha512-eJFZ1YhRR8UN8eBLoNzcDPcy/jqjsg6I1AP+KvWQX80BqOSW1oJPJXDylPUEeMr2ZQvHgnQ//Lp6f3RQ1zI7HA==}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: false
 
   /async@3.2.4:
@@ -8502,7 +8502,7 @@ packages:
     resolution: {integrity: sha512-KL1YRwn8WcoF/Ty7t+yLLtZol01xr9ZJMTjzoGRM8NaSU+nQQjSWOQKKJhJP2P57bpdakJ9jbxqQX4fGTOicZg==}
     engines: {node: '>=8.12'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
 
   /envinfo@7.10.0:
     resolution: {integrity: sha512-ZtUjZO6l5mwTHvc1L9+1q5p/R3wTopcfqMW8r5t8SJSKqeVI/LtajORwRFEKpEFuekjD0VBjwu1HMxL4UalIRw==}
@@ -8829,7 +8829,7 @@ packages:
       eslint: 8.49.0
       eslint-etc: 5.1.0(eslint@8.49.0)(typescript@5.1.6)
       requireindex: 1.2.0
-      tslib: 2.1.0
+      tslib: 2.6.2
       tsutils: 3.21.0(typescript@5.1.6)
       typescript: 5.1.6
     transitivePeerDependencies:
@@ -8970,7 +8970,7 @@ packages:
       eslint-etc: 5.1.0(eslint@8.49.0)(typescript@5.1.6)
       requireindex: 1.2.0
       rxjs-report-usage: 1.0.5
-      tslib: 2.1.0
+      tslib: 2.6.2
       tsutils: 3.21.0(typescript@5.1.6)
       tsutils-etc: 1.4.1(tsutils@3.21.0)(typescript@5.1.6)
       typescript: 5.1.6
@@ -13782,7 +13782,7 @@ packages:
       ast-types: 0.15.2
       esprima: 4.0.1
       source-map: 0.6.1
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: true
 
   /recast@0.23.2:
@@ -13793,7 +13793,7 @@ packages:
       ast-types: 0.16.1
       esprima: 4.0.1
       source-map: 0.6.1
-      tslib: 2.1.0
+      tslib: 2.6.2
     dev: true
 
   /rechoir@0.6.2:
@@ -14089,7 +14089,7 @@ packages:
   /rxjs@7.8.1:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
 
   /safe-buffer@5.1.1:
     resolution: {integrity: sha512-kKvNJn6Mm93gAczWVJg7wH+wGYWNrDHdWvpUmHyEsgCtIwwo3bqPtV4tR5tuPaUhTOo/kvhVwd8XwwOllGYkbg==}
@@ -15130,8 +15130,8 @@ packages:
       strip-bom: 3.0.0
     dev: true
 
-  /tslib@2.1.0:
-    resolution: {integrity: sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==}
+  /tslib@2.6.2:
+    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
   /tsscmp@1.0.6:
     resolution: {integrity: sha512-LxhtAkPDTkVCMQjt2h6eBVY28KCjikZqZfMcC15YBeNjkgUpdCfBu5HoiOTDu86v6smE8yOjyEktJ8hlbANHQA==}
@@ -15156,7 +15156,7 @@ packages:
     peerDependencies:
       typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.2
       typescript: 5.1.6
     dev: true
 

@@ -66,7 +66,7 @@
   },
   "packageManager": "pnpm@8.6.7",
   "resolutions": {
-    "tslib": "2.1.0"
+    "tslib": "2.6.2"
   },
   "pnpm": {
     "packageExtensions": {
