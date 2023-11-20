@@ -277,7 +277,7 @@ async function evaluateBfgStrategy(
                     }
                     try {
                         await triggerAutocomplete({ content, filePath, capture, client, document })
-                    } catch (error) {
+                    } catch {
                         // const message = error instanceof Error ? error.message : `${error}`
                         // TODO: push error occurrence
                         // const range
