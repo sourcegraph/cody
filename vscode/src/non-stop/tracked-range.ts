@@ -109,3 +109,67 @@ export function updateRange(range: vscode.Range, change: TextChange): vscode.Ran
     }
     return range
 }
+
+/*
+TODO:
+
+This works:
+"export function getRerankWithLog(
+    chatClient: ChatClient
+): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
+    if (TestSupport.instance) {
+        const reranker = TestSupport.instance.getReranker()
+        return (query: string, results: ContextResult[]): Promise<ContextResult[]> => reranker.rerank(query, results)
+    }
+
+    const reranker = new LLMReranker(chatClient)
+    return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
+        const start = performance.now()
+        const rerankedResults = await reranker.rerank(userQuery, results)
+        const duration = performance.now() - start
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
+        return rerankedResults
+    }
+}"
+
+This does not, extea new line:
+"export function getRerankWithLog(
+    chatClient: ChatClient
+): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
+    if (TestSupport.instance) {
+        const reranker = TestSupport.instance.getReranker()
+        return (query: string, results: ContextResult[]): Promise<ContextResult[]> => reranker.rerank(query, results)
+    }
+
+    const reranker = new LLMReranker(chatClient)
+    return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
+        const start = performance.now()
+        const rerankedResults = await reranker.rerank(userQuery, results)
+        const duration = performance.now() - start
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
+        return rerankedResults
+    }
+}
+"
+
+Neither does this - new line at top?
+"
+export function getRerankWithLog(
+    chatClient: ChatClient
+): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
+    if (TestSupport.instance) {
+        const reranker = TestSupport.instance.getReranker()
+        return (query: string, results: ContextResult[]): Promise<ContextResult[]> => reranker.rerank(query, results)
+    }
+
+    const reranker = new LLMReranker(chatClient)
+    return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
+        const start = performance.now()
+        const rerankedResults = await reranker.rerank(userQuery, results)
+        const duration = performance.now() - start
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
+        return rerankedResults
+    }
+}"
+
+*/
