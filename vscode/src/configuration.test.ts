@@ -45,6 +45,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: null,
+            autocompleteTimeouts: {},
         })
     })
 
@@ -109,6 +110,10 @@ describe('getConfiguration', () => {
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
+                    case 'cody.autocomplete.advanced.timeout.multiline':
+                        return undefined
+                    case 'cody.autocomplete.advanced.timeout.singleline':
+                        return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
@@ -149,7 +154,7 @@ describe('getConfiguration', () => {
             inlineChat: true,
             codeActions: true,
             isRunningInsideAgent: false,
-            agentIde: undefined,
+            agentIDE: undefined,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
@@ -162,6 +167,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteTimeouts: {},
         })
     })
 })

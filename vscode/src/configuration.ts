@@ -118,6 +118,13 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
         agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
+        autocompleteTimeouts: {
+            multiline: config.get<number | undefined>('cody.autocomplete.advanced.timeout.multiline' as any, undefined),
+            singleline: config.get<number | undefined>(
+                'cody.autocomplete.advanced.timeout.singleline' as any,
+                undefined
+            ),
+        },
     }
 }
 
