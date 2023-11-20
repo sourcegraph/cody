@@ -21,6 +21,8 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
+    const [isWebviewReady, setIsWebviewReady] = useState(false)
+
     const [config, setConfig] = useState<
         (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
     >(null)
@@ -69,6 +71,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        setIsWebviewReady(true)
                         break
                     case 'login':
                         break
@@ -138,6 +141,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(() => {
         if (!view) {
             vscodeAPI.postMessage({ command: 'initialized' })
+            setIsWebviewReady(true)
         }
     }, [view, vscodeAPI])
 
@@ -184,7 +188,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
-        vscodeAPI.postMessage({ command: 'ready' })
+        // This mean webview is not ready
+        if (isWebviewReady && !authStatus && !config && !view) {
+            setIsWebviewReady(false)
+            vscodeAPI.postMessage({ command: 'ready' })
+        }
         return <LoadingPage />
     }
 
