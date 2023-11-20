@@ -7,8 +7,8 @@ import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
-import { getContextRange } from '../../../doc-context-getters'
 import { captureException } from '../../../../services/sentry/sentry'
+import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 // This promise is only used for testing purposes. We don't await on the
