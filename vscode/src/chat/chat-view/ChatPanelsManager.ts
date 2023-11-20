@@ -89,7 +89,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         if (this.activePanelProvider && !this.activePanelProvider?.webviewPanel?.active) {
             this.activePanelProvider.webviewPanel?.reveal()
             void vscode.window.showErrorMessage(
-                'Please wait for the current panel to be activated before opening a new one.'
+                'Please wait for the current panel to load.'
             )
             return this.activePanelProvider
         }
