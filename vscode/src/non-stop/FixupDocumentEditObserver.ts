@@ -63,10 +63,7 @@ export class FixupDocumentEditObserver {
         for (const task of tasks) {
             const targetRange = task.selectionRange
             for (const edit of event.contentChanges) {
-                if (
-                    edit.range.end.isBeforeOrEqual(targetRange.start) ||
-                    edit.range.start.isAfterOrEqual(targetRange.end)
-                ) {
+                if (edit.range.end.isBefore(targetRange.start) || edit.range.start.isAfter(targetRange.end)) {
                     continue
                 }
                 this.provider_.textDidChange(task)
