@@ -100,16 +100,16 @@ export class SimpleChatModel {
                 return [
                     {
                         message: {
-                            speaker: 'assistant',
-                            text: interaction.assistantMessage.text,
+                            speaker: 'human',
+                            text: interaction.humanMessage.text,
                         },
                         // TODO: include context
                         newContextUsed: [],
                     },
                     {
                         message: {
-                            speaker: 'human',
-                            text: interaction.humanMessage.text,
+                            speaker: 'assistant',
+                            text: interaction.assistantMessage.text,
                         },
                         // TODO: include context
                         newContextUsed: [],
