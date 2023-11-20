@@ -43,6 +43,7 @@ enum ErrorCode {
     MethodNotFound = -32601,
     InvalidParams = -32602,
     InternalError = -32603,
+    RequestCanceled = -32604,
     RateLimitError = -32000,
 }
 
@@ -52,6 +53,30 @@ interface ErrorInfo<T> {
     code: ErrorCode
     message: string
     data: T
+}
+
+class JsonrpcError extends Error {
+    constructor(public readonly info: ErrorInfo<any>) {
+        super()
+    }
+    public toString(): string {
+        return `${this.name}: ${this.message}`
+    }
+    get name(): string {
+        return ErrorCode[this.info.code]
+    }
+    get message(): string {
+        if (typeof this.info?.data === 'string') {
+            try {
+                const data = JSON.parse(this.info.data)
+                return `${this.info.message}: ${JSON.stringify(data, null, 2)}`
+            } catch {
+                // ignore
+            }
+            return `${this.info.message}: ${this.info.data}`
+        }
+        return this.info.message
+    }
 }
 
 // The three different kinds of toplevel JSON objects that get written to the
@@ -229,7 +254,7 @@ export class MessageHandler {
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private alive = true
-    private processExitedError = new Error('Process has exited')
+    private processExitedError = () => new Error('Process has exited')
     private responseHandlers: Map<
         Id,
         {
@@ -242,8 +267,9 @@ export class MessageHandler {
     }
     public exit(): void {
         this.alive = false
+        const error = this.processExitedError()
         for (const { reject } of this.responseHandlers.values()) {
-            reject(this.processExitedError)
+            reject(error)
         }
     }
 
@@ -280,7 +306,11 @@ export class MessageHandler {
                         error => {
                             const message = error instanceof Error ? error.message : `${error}`
                             const stack = error instanceof Error ? `\n${error.stack}` : ''
-                            const code = isRateLimitError(error) ? ErrorCode.RateLimitError : ErrorCode.InternalError
+                            const code = cancelToken.token.isCancellationRequested
+                                ? ErrorCode.RequestCanceled
+                                : isRateLimitError(error)
+                                ? ErrorCode.RateLimitError
+                                : ErrorCode.InternalError
                             const data: ResponseMessage<any> = {
                                 jsonrpc: '2.0',
                                 id: msg.id,
@@ -304,7 +334,11 @@ export class MessageHandler {
             // Responses have ids
             const handler = this.responseHandlers.get(msg.id)
             if (handler) {
-                handler.resolve(msg.result)
+                if (msg?.error) {
+                    handler.reject(new JsonrpcError(msg.error))
+                } else {
+                    handler.resolve(msg.result)
+                }
                 this.responseHandlers.delete(msg.id)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
@@ -341,7 +375,7 @@ export class MessageHandler {
 
     public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
         if (!this.isAlive()) {
-            throw this.processExitedError
+            throw this.processExitedError()
         }
         const id = this.id++
 
@@ -360,7 +394,7 @@ export class MessageHandler {
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
         if (!this.isAlive()) {
-            throw this.processExitedError
+            throw this.processExitedError()
         }
         const data: NotificationMessage<M> = {
             jsonrpc: '2.0',
@@ -376,7 +410,7 @@ export class MessageHandler {
      */
     public clientForThisInstance(): InProcessClient {
         if (!this.isAlive()) {
-            throw this.processExitedError
+            throw this.processExitedError()
         }
         return new InProcessClient(this.requestHandlers, this.notificationHandlers)
     }

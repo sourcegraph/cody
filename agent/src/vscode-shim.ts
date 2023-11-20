@@ -359,14 +359,18 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                     if (!cwd) {
                         return null
                     }
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                    const repository: Partial<Repository> = {
-                        rootUri: Uri.file(toplevel),
-                        state: {
-                            remotes: [],
-                        } as any,
+                    try {
+                        const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                        const repository: Partial<Repository> = {
+                            rootUri: Uri.file(toplevel),
+                            state: {
+                                remotes: [],
+                            } as any,
+                        }
+                        return repository as Repository
+                    } catch {
+                        return null
                     }
-                    return repository as Repository
                 },
             }
             return api as API

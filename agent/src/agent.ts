@@ -266,11 +266,15 @@ export class Agent extends MessageHandler {
 
             await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
-            await client.executeRecipe(data.id, {
-                signal: abortController.signal,
-                humanChatInput: data.humanChatInput,
-                data: data.data,
-            })
+            try {
+                await client.executeRecipe(data.id, {
+                    signal: abortController.signal,
+                    humanChatInput: data.humanChatInput,
+                    data: data.data,
+                })
+            } catch {
+                // ignore, can happen when the client cancels the request
+            }
             return null
         })
         this.registerRequest('autocomplete/execute', async (params, token) => {
