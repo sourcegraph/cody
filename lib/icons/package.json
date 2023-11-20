@@ -6,6 +6,6 @@
     "font": "svgtofont --sources ./svg-outlined --output ./font && rm font/*.{eot,svg}"
   },
   "dependencies": {
-    "svgtofont": "^3.23.1"
+    "svgtofont": "^3.25.4"
   }
 }
