@@ -13,7 +13,8 @@ export interface MessageWithContext {
 export class SimpleChatModel {
     constructor(
         public modelID: string,
-        private messagesWithContext: MessageWithContext[] = []
+        private messagesWithContext: MessageWithContext[] = [],
+        public readonly sessionID: string = new Date(Date.now()).toUTCString()
     ) {}
 
     public isEmpty(): boolean {
@@ -65,6 +66,7 @@ export class SimpleChatModel {
 
     public toJSON(): SimpleChatModelJSON {
         return {
+            sessionID: this.sessionID,
             modelID: this.modelID,
             messagesWithContext: this.messagesWithContext.map(
                 (messageWithContext: MessageWithContext): MessageWithContextJSON => {
@@ -124,11 +126,46 @@ export class SimpleChatModel {
                         }),
                     }
                 }
-            )
+            ),
+            simpleChatModelJSON.sessionID
         )
     }
 
-    private static fromTranscriptJSON(json: TranscriptJSON): SimpleChatModel {
+    public toTranscriptJSON(): TranscriptJSON {
+        const interactions: InteractionJSON[] = []
+        for (let i = 0; i < this.messagesWithContext.length; i += 2) {
+            const humanMessage = this.messagesWithContext[i]
+            const botMessage = this.messagesWithContext[i + 1]
+            if (humanMessage.message.speaker !== 'human') {
+                throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
+            }
+            if (botMessage.message.speaker !== 'assistant') {
+                throw new Error('SimpleChatModel.toTranscriptJSON: expected bot message, got human')
+            }
+            interactions.push({
+                humanMessage: {
+                    speaker: humanMessage.message.speaker,
+                    text: humanMessage.message.text,
+                },
+                assistantMessage: {
+                    speaker: botMessage.message.speaker,
+                    text: botMessage.message.text,
+                },
+                fullContext: [], // TODO(beyang)
+                usedContextFiles: [], // TODO(beyang)
+                usedPreciseContext: [], // TODO(beyang)
+                timestamp: 'n/a',
+            })
+        }
+        return {
+            id: this.sessionID,
+            chatModel: this.modelID,
+            lastInteractionTimestamp: this.sessionID,
+            interactions,
+        }
+    }
+
+    public static fromTranscriptJSON(json: TranscriptJSON): SimpleChatModel {
         const messages: MessageWithContext[] = json.interactions.flatMap(
             (interaction: InteractionJSON): MessageWithContext[] => {
                 return [
@@ -151,7 +188,7 @@ export class SimpleChatModel {
                 ]
             }
         )
-        return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', messages)
+        return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', messages, json.id)
     }
 }
 
@@ -185,7 +222,8 @@ interface MessageWithContextJSON {
     }[]
 }
 
-interface SimpleChatModelJSON {
+export interface SimpleChatModelJSON {
     modelID: string
     messagesWithContext: MessageWithContextJSON[]
+    sessionID: string
 }

@@ -129,10 +129,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                 chatClient: this.chatClient,
                 embeddingsClient: this.embeddingsSearch,
             })
-            const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
-            const sessionID = 'TODO'
+            const webviewPanel = await provider.createWebviewPanel(chatQuestion)
+            if (chatID) {
+                await provider.restoreSession(chatID)
+            }
+
             this.activePanelProvider = provider
-            this.panelProvidersMap.set(sessionID, provider)
+            this.panelProvidersMap.set(provider.sessionID, provider)
 
             webviewPanel?.onDidChangeViewState(e => {
                 if (e.webviewPanel.visible && e.webviewPanel.active) {
@@ -146,7 +149,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                 this.disposeProvider(sessionID)
             })
 
-            this.selectTreeItem(sessionID)
+            this.selectTreeItem(provider.sessionID)
             return provider
         }
 

@@ -5,6 +5,7 @@ import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourc
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
@@ -22,6 +23,7 @@ import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
@@ -37,6 +39,29 @@ interface SimpleChatPanelProviderOptions {
     chatClient: ChatClient
     embeddingsClient: EmbeddingsSearch | null
     editor: VSCodeEditor
+}
+
+class ChatHistoryManager {
+    public getChat(sessionID: string): TranscriptJSON | null {
+        const chatHistory = localStorage.getChatHistory()
+        if (!chatHistory) {
+            return null
+        }
+
+        return chatHistory.chat[sessionID]
+    }
+
+    public async saveChat(chat: TranscriptJSON): Promise<void> {
+        let history = localStorage.getChatHistory()
+        if (!history) {
+            history = {
+                chat: {},
+                input: [],
+            }
+        }
+        history.chat[chat.id] = chat
+        await localStorage.setChatHistory(history)
+    }
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -55,6 +80,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private readonly editor: VSCodeEditor
 
+    private history = new ChatHistoryManager()
+
+    // TODO(beyang): we need awkwardly need to keep this in sync with chatModel.sessionID
+    // It is necessary to satisfy the IChatPanelProvider interface
+    public sessionID: string
+
+    constructor({ extensionUri, authProvider, chatClient, embeddingsClient, editor }: SimpleChatPanelProviderOptions) {
+        this.extensionUri = extensionUri
+        this.authProvider = authProvider
+        this.chatClient = chatClient
+        this.embeddingsClient = embeddingsClient
+        this.editor = editor
+        this.sessionID = this.chatModel.sessionID
+    }
+
     private completionCanceller?: () => void
     private cancelInProgressCompletion(): void {
         if (this.completionCanceller) {
@@ -63,13 +103,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
     }
 
-    constructor({ extensionUri, authProvider, chatClient, embeddingsClient, editor }: SimpleChatPanelProviderOptions) {
-        this.extensionUri = extensionUri
-        this.authProvider = authProvider
-        this.chatClient = chatClient
-        this.embeddingsClient = embeddingsClient
-        this.editor = editor
-    }
     public executeRecipe(recipeID: RecipeID, chatID: string, context: any): Promise<void> {
         console.log('# TODO: executeRecipe')
         return Promise.resolve()
@@ -93,7 +126,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     public triggerNotice(notice: { key: string }): void {
         console.log('# TODO: triggerNotice')
     }
-    public sessionID = 'TODO'
+
     public async setWebviewView(view: View): Promise<void> {
         await this.webview?.postMessage({
             type: 'view',
@@ -101,7 +134,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
 
         if (!this.webviewPanel) {
-            await this.createWebviewPanel(this.sessionID)
+            await this.createWebviewPanel()
         }
         this.webviewPanel?.reveal()
     }
@@ -111,9 +144,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.disposables = []
     }
 
-    public restoreSession(chatID: string): Promise<void> {
-        console.log('# TODO: restoreSession')
-        return Promise.resolve()
+    public async restoreSession(sessionID: string): Promise<void> {
+        // TODO(beyang): save the current chat model
+        this.cancelInProgressCompletion()
+
+        const oldTranscript = this.history.getChat(sessionID)
+        if (!oldTranscript) {
+            throw new Error(`Could not find chat history for sessionID ${sessionID}`)
+        }
+        const newModel = SimpleChatModel.fromTranscriptJSON(oldTranscript)
+        this.chatModel = newModel
+        this.sessionID = newModel.sessionID
+
+        await this.updateViewTranscript()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -213,7 +256,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(chatID?: string, lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
+    public async createWebviewPanel(lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
         if (this.webviewPanel) {
@@ -401,6 +444,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private async reset(): Promise<void> {
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.sessionID = this.chatModel.sessionID
         await this.updateViewTranscript()
     }
 }
