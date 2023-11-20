@@ -296,6 +296,7 @@ export class Agent extends MessageHandler {
                 if (params.triggerKind === 'Invoke') {
                     await provider.manuallyTriggerCompletion()
                 }
+
                 const result = await provider.provideInlineCompletionItems(
                     textDocument,
                     new vscode.Position(params.position.line, params.position.character),
