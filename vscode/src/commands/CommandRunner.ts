@@ -35,9 +35,15 @@ export class CommandRunner implements vscode.Disposable {
         const commandKey = command.slashCommand
         this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
 
+        if (instruction?.startsWith('/edit ')) {
+            command.mode = 'edit'
+        } else {
+            command.mode = command.mode || 'ask'
+        }
+
         // Log commands usage
         telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
-            mode: command.mode || 'ask',
+            mode: command.mode,
             useCodebaseContex: !!command.context?.codebase,
             useShellCommand: !!command.context?.command,
             requestID: command.requestID,
@@ -47,7 +53,7 @@ export class CommandRunner implements vscode.Disposable {
 
         // Commands only work in active editor / workspace unless context specifies otherwise
         this.editor = getActiveEditor()
-        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
+        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
