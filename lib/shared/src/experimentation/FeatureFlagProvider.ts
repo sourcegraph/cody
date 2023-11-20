@@ -20,7 +20,6 @@ export enum FeatureFlag {
     CodyAutocompleteContextBfg = 'cody-autocomplete-context-bfg',
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     CodyAutocompleteContextLocalMixed = 'cody-autocomplete-context-local-mixed',
-    CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
