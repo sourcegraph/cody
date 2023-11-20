@@ -51,7 +51,7 @@ export abstract class SourcegraphCompletionsClient {
                         cb.onComplete()
                     }
                     // reset errorEncountered for next request
-                    this.errorEncountered = false                    
+                    this.errorEncountered = false
                     break
             }
         }
