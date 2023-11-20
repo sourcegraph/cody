@@ -2,4 +2,5 @@
   "cody.codebase": "http://localhost:49300",
   "cody.debug.enable": true,
   "cody.debug.verbose": true,
+  "cody.inlineChat.enabled": true,
 }
