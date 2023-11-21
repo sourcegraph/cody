@@ -11,7 +11,7 @@ import {
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
-import { CompletionEvent } from '../completions/logger'
+import { CompletionBookkeepingEvent } from '../completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -139,7 +139,7 @@ export interface SelectedCompletionInfo {
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
-    completionEvent?: CompletionEvent
+    completionEvent?: CompletionBookkeepingEvent
 }
 
 export interface AutocompleteItem {
