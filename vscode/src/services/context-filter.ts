@@ -82,15 +82,35 @@ async function refresh(uri: vscode.Uri): Promise<void> {
     const ignoreFiles = await vscode.workspace.findFiles(
         new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB)
     )
+    const codebases = new Map<string, string>()
     const filesWithContent = await Promise.all(
-        ignoreFiles.map(async fileUri => ({
-            filePath: fileUri.fsPath,
-            content: await tryReadFile(fileUri),
-        }))
+        ignoreFiles.map(async fileUri => {
+            const codebase = codebaseName || getCodebaseFromWorkspaceUri(fileUri)
+            if (codebase) {
+                // file root is two level above the fileUri location
+                const fileRoot = fileUri.fsPath.replace(/(?:\/[^/]+){2}$/, '')
+                const storedRoot = codebases.get(codebase)
+                if (!storedRoot || storedRoot?.split('/').length > fileRoot.split('/').length) {
+                    codebases.set(codebase, fileRoot)
+                }
+            }
+            return {
+                filePath: fileUri.fsPath,
+                content: await tryReadFile(fileUri),
+                codebase,
+            }
+        })
     )
 
-    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
+    if (codebaseName) {
+        ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
+        logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
+        return
+    }
 
+    for (const cb of codebases) {
+        ignores.setIgnoreFiles(cb[1], filesWithContent, cb[0])
+    }
     logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 }
 

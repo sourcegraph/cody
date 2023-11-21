@@ -10,14 +10,14 @@ import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local
 import { isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
 import { getEditor } from '../editor/active-editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
-import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { secretStorage } from '../services/SecretStorageProvider'
@@ -312,10 +312,9 @@ async function getCodebaseContext(
     if (!workspaceRoot) {
         return null
     }
-    const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-    console.log(config.codebase)
+    const currentFile = editor.getActiveTextEditor()?.fileUri || workspaceRoot
     // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : config.codebase
+    const codebase = currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase
     if (!codebase) {
         return null
     }

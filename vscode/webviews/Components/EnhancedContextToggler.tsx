@@ -21,7 +21,8 @@ export const EnhancedContextToggler: React.FunctionComponent<{
         [setEnhanceContext]
     )
 
-    const codebaseName = contextStatus.codebase ?? 'a local codebase'
+    const codebaseName = contextStatus.codebase || 'a local codebase'
+    const currentFile = contextStatus.filePath === 'ignored' ? 'File was ignored' : contextStatus.filePath
 
     return (
         <div className={styles.container}>
@@ -40,6 +41,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
                     <p className={styles.codebaseConnection}>
                         Connected to <span className={contextStatus.codebase && styles.codebase}>{codebaseName}</span>
                     </p>
+                    <p className={styles.codebaseConnection}>{currentFile || 'loading...'}</p>
                 </div>
             )}
             <VSCodeButton

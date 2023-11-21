@@ -23,17 +23,17 @@ export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', '.
  *
  * `clearIgnoreFiles` should be called for workspace roots as they are removed.
  */
-type ClientWorkspace = string
-type CodyWorkspace = string
+type ClientWorkspaceRoot = string
+type CodyCodebaseName = string
 export class IgnoreHelper {
     /**
      * A map of workspace roots to their ignore rules.
      */
-    private workspaceIgnores = new Map<ClientWorkspace, Ignore>()
+    private workspaceIgnores = new Map<ClientWorkspaceRoot, Ignore>()
     /**
      * A map of codebase to workspace roots with their ignore rules.
      */
-    private workspaceCodebases = new Map<ClientWorkspace, CodyWorkspace>()
+    private workspaceCodebases = new Map<ClientWorkspaceRoot, CodyCodebaseName>()
 
     /**
      * Check if the configuration is enabled or not
@@ -69,12 +69,12 @@ export class IgnoreHelper {
             const ignoreFilePath = ignoreFile.filePath
             this.ensureValidCodyIgnoreFile('ignoreFile.path', ignoreFilePath)
 
-            // Compute the relative path rom the workspace root to the folder this ignore
-            // file applie s to.
+            // Compute the relative path from the workspace root to the folder this ignore
+            // file applies to.
             const folderPath = ignoreFilePath.slice(0, -CODY_IGNORE_FILENAME.length)
             const relativeFolderPath = path.relative(workspaceRoot, folderPath)
 
-            // Build the i gnore rule with the relative folder path applied to the start of each rule.
+            // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
                 // Skip blanks/ comments
                 ignoreLine = ignoreLine.trim()
@@ -89,7 +89,7 @@ export class IgnoreHelper {
                     isInverted = true
                 }
 
-                // Gitignores  always use POSIX/forward slashes, even on Windows.
+                // Gitignores always use POSIX/forward slashes, even on Windows.
                 const ignoreRule = relativeFolderPath.length
                     ? relativeFolderPath.replaceAll(path.sep, path.posix.sep) + path.posix.sep + ignoreLine
                     : ignoreLine
@@ -109,7 +109,7 @@ export class IgnoreHelper {
     }
 
     public isIgnored(uri: URI): boolean {
-        // Do not igno re if the feature is not enabled
+        // Do not ignore if the feature is not enabled
         if (!this.isActive) {
             return false
         }
@@ -118,10 +118,10 @@ export class IgnoreHelper {
         this.ensureAbsolute('uri.fsPath', uri.fsPath)
         const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)
 
-        // Not in work space so just use default rules against the filename.
-        // This ensure s we'll never send something like `.env` but it won't handle
-        // if default  rules include folders like `a/b` because we have nothing to make
-        // a relative  path from.
+        // Not in workspace so just use default rules against the filename.
+        // This ensures we'll never send something like `.env` but it won't handle
+        // if default rules include folders like `a/b` because we have nothing to make
+        // a relative path from.
         if (!workspaceRoot) {
             return this.getDefaultIgnores().ignores(path.basename(uri.fsPath))
         }
@@ -157,8 +157,8 @@ export class IgnoreHelper {
         const candidates = Array.from(this.workspaceIgnores.keys()).filter(workspaceRoot =>
             filePath.toLowerCase().startsWith(workspaceRoot.toLowerCase())
         )
-        // If this fil e was inside multiple workspace roots, take the shortest one since it will include
-        // everything  the nested one does (plus potentially extra rules).
+        // If this file was inside multiple workspace roots, take the shortest one since it will include
+        // everything the nested one does (plus potentially extra rules).
         candidates.sort((a, b) => a.length - b.length)
         return candidates.at(0)
     }
@@ -190,4 +190,5 @@ export class IgnoreHelper {
 interface IgnoreFileContent {
     filePath: string
     content: string
+    codebase?: string
 }
