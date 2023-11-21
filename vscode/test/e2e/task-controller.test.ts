@@ -78,7 +78,8 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await assertEvents(loggedEvents, expectedEvents)
     await assertEvents(loggedV2Events, [
         'cody.auth/failed',
-        'cody.auth/failed',
+        'cody.auth/connected',
+        'cody.auth/connected',
         'cody.auth/connected',
         'cody.command.edit/executed',
         'cody.recipe.fixup/executed',
