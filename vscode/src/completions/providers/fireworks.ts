@@ -37,10 +37,11 @@ const EOT_LLAMA_CODE = ' <EOT>'
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
-    'starcoder-16b': 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16',
-    'starcoder-16b-sourcegraph': 'fireworks/accounts/sourcegraph/models/starcoder-16b',
-    'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
-    'starcoder-7b-sourcegraph': 'fireworks/accounts/sourcegraph/models/starcoder-7b',
+    // Models in production
+    'starcoder-16b': 'fireworks/starcoder-16b',
+    'starcoder-7b': 'fireworks/starcoder-7b',
+
+    // Models in evaluation
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
     'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
@@ -54,12 +55,10 @@ type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
-    | 'starcoder-hybrid-sourcegraph'
 
 function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow?: boolean): number {
     switch (model) {
         case 'starcoder-hybrid':
-        case 'starcoder-hybrid-sourcegraph':
         case 'starcoder-16b':
         case 'starcoder-7b':
         case 'starcoder-3b':
@@ -164,8 +163,6 @@ export class FireworksProvider extends Provider {
         const model =
             this.model === 'starcoder-hybrid'
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                : this.model === 'starcoder-hybrid-sourcegraph'
-                ? MODEL_MAP[multiline ? 'starcoder-16b-sourcegraph' : 'starcoder-7b-sourcegraph']
                 : MODEL_MAP[this.model]
 
         const timeoutMs: number = multiline
@@ -289,8 +286,6 @@ export function createProviderConfig({
             ? 'starcoder-hybrid'
             : model === 'starcoder-hybrid'
             ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid-sourcegraph'
-            ? 'starcoder-hybrid-sourcegraph'
             : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
             ? (model as keyof typeof MODEL_MAP)
             : null
