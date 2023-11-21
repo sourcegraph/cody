@@ -132,9 +132,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     useEffect(() => {
         // Notify the extension host that we are ready to receive events
-        setTimeout(() => {
-            vscodeAPI.postMessage({ command: 'ready' })
-        }, 1000)
+        vscodeAPI.postMessage({ command: 'ready' })
     }, [vscodeAPI])
 
     useEffect(() => {
