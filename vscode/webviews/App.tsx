@@ -144,6 +144,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [view, vscodeAPI])
 
     useEffect(() => {
+        setTimeout(() => {
+            if (!view || !config) {
+                vscodeAPI.postMessage({ command: 'ready' })
+            }
+        }, 2000)
+    }, [config, view, vscodeAPI])
+
+    useEffect(() => {
         if (formInput.endsWith(' ')) {
             setContextSelection([])
         }
@@ -186,12 +194,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
-        // This mean webview is not ready
-        if (!authStatus && !config && !view) {
-            setTimeout(() => {
-                vscodeAPI.postMessage({ command: 'ready' })
-            }, 2000)
-        }
         return <LoadingPage />
     }
 
