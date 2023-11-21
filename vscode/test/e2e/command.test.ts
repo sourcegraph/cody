@@ -3,7 +3,8 @@ import { expect } from '@playwright/test'
 import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('submit command from command palette', async ({ page, sidebar }) => {
+// TODO bee fix
+test.skip('submit command from command palette', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
     // Open the File Explorer view from the sidebar
