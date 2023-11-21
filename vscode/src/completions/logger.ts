@@ -504,11 +504,9 @@ function getSharedParams(event: CompletionEvent): TelemetryEventProperties {
 function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser = false): CompletionItemInfo {
     const { lineCount, charCount } = lineAndCharCount(item)
 
-    return {
+    const completionItemInfo: CompletionItemInfo = {
         lineCount,
         charCount,
-        // 🚨 SECURITY: included only for DotCom users.
-        insertText: isDotComUser ? item.insertText : undefined,
         stopReason: item.stopReason,
         parseErrorCount: item.parseErrorCount,
         lineTruncatedCount: item.lineTruncatedCount,
@@ -516,6 +514,13 @@ function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDot
         nodeTypes: item.nodeTypes,
         nodeTypesWithCompletion: item.nodeTypesWithCompletion,
     }
+
+    if (isDotComUser) {
+        // 🚨 SECURITY: included only for DotCom users.
+        completionItemInfo.insertText = item.insertText
+    }
+
+    return completionItemInfo
 }
 
 const otherCompletionProviders = [

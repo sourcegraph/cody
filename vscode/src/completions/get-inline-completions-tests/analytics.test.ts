@@ -2,12 +2,39 @@ import { omit } from 'lodash'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { vsCodeMocks } from '../../testutils/mocks'
 import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
 import { CompletionEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
+
+const mockServerEndpointRef = vi.hoisted(() => ({
+    endpoint: 'https://sourcegraph.com',
+}))
+
+vi.mock('vscode', () => ({
+    ...vsCodeMocks,
+    workspace: {
+        ...vsCodeMocks.workspace,
+        getConfiguration() {
+            return {
+                get(key: string) {
+                    switch (key) {
+                        case 'cody.debug.filter':
+                            return '.*'
+                        case 'cody.serverEndpoint':
+                            return mockServerEndpointRef.endpoint
+                        default:
+                            return ''
+                    }
+                },
+                update(): void {},
+            }
+        },
+    },
+}))
 
 describe('[getInlineCompletions] completion event', () => {
     beforeAll(async () => {
@@ -155,6 +182,15 @@ describe('[getInlineCompletions] completion event', () => {
                 },
               }
             `)
+        })
+
+        it('logs `insertText` only for DotCom users', async () => {
+            mockServerEndpointRef.endpoint = 'https://example.sourcegraph.com'
+            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+
+            expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(false)
+            expect(eventWithoutTimestamps).not.toHaveProperty('params.insertText')
+            expect(eventWithoutTimestamps).not.toHaveProperty('insertText')
         })
     })
 })
