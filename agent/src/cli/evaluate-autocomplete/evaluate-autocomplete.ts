@@ -252,9 +252,11 @@ async function evaluateGitLogStrategy(
 
                     const isLastFile = index === parsedDiff.files.length - 1
 
-                    // Open all files to simulate local editor context
-                    // @TODO: Move the cursor into the changed sections
-                    client.notify('textDocument/didOpen', { filePath, content })
+                    if (!isLastFile) {
+                        // Open all files to simulate local editor context
+                        // @TODO: Move the cursor into the changed sections
+                        client.notify('textDocument/didOpen', { filePath, content })
+                    }
 
                     if (isLastFile) {
                         const lastAddedLine = file.chunks
