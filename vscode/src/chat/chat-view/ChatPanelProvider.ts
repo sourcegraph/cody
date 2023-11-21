@@ -20,7 +20,13 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import { ExtensionMessage, getChatModelsForWebview, WebviewMessage } from '../protocol'
+import {
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    getChatModelsForWebview,
+    LocalEnv,
+    WebviewMessage,
+} from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 
@@ -51,6 +57,7 @@ export class ChatPanelProvider extends MessageProvider {
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
                 await this.authProvider.announceNewAuthStatus()
+                await this.handleWebviewContext()
                 break
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
@@ -147,6 +154,42 @@ export class ChatPanelProvider extends MessageProvider {
             await this.setWebviewView('chat')
         }
         await this.executeCustomCommand(title, commandType)
+    }
+
+    /**
+     * For Webview panel only
+     * This sent the initiate contextStatus and config to webview
+     */
+    private async handleWebviewContext(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+        const editorContext = this.editor.getActiveTextEditor()
+        const contextStatus = {
+            mode: this.contextProvider.config.useContext,
+            endpoint: authStatus.endpoint || undefined,
+            connection: this.contextProvider.context.checkEmbeddingsConnection(),
+            embeddingsEndpoint: this.contextProvider.context.embeddingsEndpoint,
+            codebase: this.contextProvider.context.getCodebase(),
+            filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+            selectionRange: editorContext?.selectionRange,
+            supportsKeyword: true,
+        }
+        void this.webview?.postMessage({
+            type: 'contextStatus',
+            contextStatus,
+        })
+
+        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const config: ConfigurationSubsetForWebview & LocalEnv = {
+            ...localProcess,
+            debugEnable: this.contextProvider.config.debugEnable,
+            serverEndpoint: this.contextProvider.config.serverEndpoint,
+            experimentalChatPanel: this.contextProvider.config.experimentalChatPanel,
+        }
+        void this.webview?.postMessage({
+            type: 'config',
+            config,
+            authStatus,
+        })
     }
 
     /**

@@ -56,7 +56,6 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await assertEvents(loggedEvents, expectedEvents)
     await assertEvents(loggedV2Events, [
         'cody.auth/failed',
-        'cody.auth/failed',
         'cody.auth/connected',
         'cody.command.edit/executed',
         'cody.recipe.fixup/executed',

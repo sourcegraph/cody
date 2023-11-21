@@ -308,7 +308,6 @@ async function getCodebaseContext(
         return null
     }
     const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-    console.log(config.codebase)
     // Get codebase from config or fallback to getting repository name from git clone URL
     const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
     if (!codebase) {
