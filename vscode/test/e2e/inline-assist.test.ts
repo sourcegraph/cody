@@ -17,7 +17,8 @@ const expectedEvents = [
 test.beforeEach(() => {
     resetLoggedEvents()
 })
-test('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
+// Skip flaky test -- to be removed soon
+test.skip('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

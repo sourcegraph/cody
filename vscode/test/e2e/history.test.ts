@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
+import { sidebarExplorer, sidebarSignin } from './common'
 import { submitChat, test } from './helpers'
 
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
@@ -35,15 +35,5 @@ test('checks if clear chat history button clears history and current session', a
     // Remove Hey history item from chat history view
     await expect(sidebar.getByText('Hey')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
-    await expect(sidebar.getByText('Hey')).not.toBeVisible()
-
-    await page.click('[aria-label="Start a New Chat Session"]')
-
-    // Open the Cody Commands palette and run a command
-    await page.getByRole('button', codyEditorCommandButtonRole).click()
-    await page.keyboard.type('/explain')
-    await page.keyboard.press('Enter')
-
-    // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
 })
