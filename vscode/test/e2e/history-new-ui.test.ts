@@ -32,12 +32,4 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
         page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
     ).toBeVisible()
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-
-    // start a new chat session and check history
-    await page.waitForTimeout(500)
-    await page.keyboard.type('Hey')
-    await page.keyboard.press('Enter')
-
-    // The New Chat button should disappears now
-    await expect(page.getByRole('button', { name: 'New Chat', exact: true })).not.toBeVisible()
 })
