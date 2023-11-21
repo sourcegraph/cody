@@ -5,8 +5,9 @@ import * as path from 'path'
 import * as commander from 'commander'
 import { calcPatch } from 'fast-myers-diff'
 import { minimatch } from 'minimatch'
+import parseGitDiff, { AddedLine } from 'parse-git-diff'
 import { rimraf } from 'rimraf'
-import { Range, Uri } from 'vscode'
+import { Position, Range, Uri } from 'vscode'
 import { QueryCapture } from 'web-tree-sitter'
 
 import { Input } from '@sourcegraph/scip-typescript/src/Input'
@@ -40,6 +41,7 @@ interface EvaluateAutocompleteOptions {
     bfgBinary?: string
     installCommands?: string[]
     testCommands?: string[]
+    gitLogFilter?: string
     fixture: EvaluationFixture
 }
 
@@ -216,7 +218,96 @@ async function evaluateGitLogStrategy(
     options: EvaluateAutocompleteOptions,
     workspace: string
 ): Promise<void> {
-    // TODO: complete this Philipp
+    try {
+        let remainingTests = options.testCount
+        const commits = execSync(
+            `git log --name-only --oneline --diff-filter=AMC --stat --numstat --pretty=format:'%H - %an, %ar : %s' -- ${options.gitLogFilter}`,
+            { cwd: workspace }
+        )
+            .toString()
+            .split('\n')
+            .map(string => string.split(' ')[0])
+            .slice(0, options.testCount)
+            .filter(Boolean)
+        // Reverse the commits list so the first element is the oldest commit
+        commits.reverse()
+        for (const commit of commits) {
+            try {
+                execSync(`git checkout ${commit}`, { cwd: workspace })
+
+                const diff = execSync('git diff HEAD~1', { cwd: workspace }).toString()
+                const parsedDiff = parseGitDiff(diff)
+
+                let index = 0
+                for (const file of parsedDiff.files) {
+                    const filePath: string = file.type === 'RenamedFile' ? file.pathAfter : file.path
+
+                    if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], filePath)) {
+                        continue
+                    }
+                    const fullPath = path.join(workspace, filePath)
+                    const content = (await fspromises.readFile(fullPath)).toString()
+                    const languageid = getLanguageForFileName(filePath)
+                    const document = new scip.scip.Document({ relative_path: filePath, language: languageid })
+
+                    const isLastFile = index === parsedDiff.files.length - 1
+
+                    if (!isLastFile) {
+                        // Open all files to simulate local editor context
+                        // @TODO: Move the cursor into the changed sections
+                        client.notify('textDocument/didOpen', { filePath, content })
+                    }
+
+                    if (isLastFile) {
+                        const lastAddedLine = file.chunks
+                            .flatMap(chunks => (chunks.type === 'BinaryFilesChunk' ? [] : chunks.changes))
+                            .findLast(line => line.type === 'AddedLine' && line.content.trim().length >= 4) as
+                            | AddedLine
+                            | undefined
+
+                        if (!lastAddedLine) {
+                            continue
+                        }
+
+                        if (remainingTests <= 0) {
+                            continue
+                        }
+
+                        const replaceContent = lastAddedLine.content.trimStart()
+
+                        const range: Range = new Range(
+                            lastAddedLine.lineAfter - 1,
+                            lastAddedLine.content.length - replaceContent.length,
+                            lastAddedLine.lineAfter - 1,
+                            lastAddedLine.content.length
+                        )
+
+                        await triggerAutocomplete({ content, filePath, capture: undefined, range, client, document })
+
+                        // Write snapshot file to disk we get non-empty autocomplete results.
+                        if (options.snapshotDirectory && document.occurrences.length > 0) {
+                            const outputPath = path.join(options.snapshotDirectory, filePath)
+                            await fspromises.mkdir(path.dirname(outputPath), { recursive: true })
+                            const input = new Input(filePath, content)
+                            const snapshot = formatSnapshot(input, document)
+                            await fspromises.writeFile(outputPath, snapshot)
+                        }
+
+                        remainingTests--
+                    }
+
+                    index++
+                }
+            } finally {
+                // TODO: Reset all open editor tabs to avoid interference
+            }
+        }
+    } finally {
+        // Reset submodule to initial HEAD
+        const submodulesDir = path.join(workspace, '..')
+        execSync('git submodule deinit -f .', { cwd: submodulesDir }).toString()
+        execSync('it submodule update --init', { cwd: submodulesDir }).toString()
+    }
 }
 
 /**
@@ -276,7 +367,7 @@ async function evaluateBfgStrategy(
                         continue
                     }
                     try {
-                        await triggerAutocomplete({ content, filePath, capture, client, document })
+                        await triggerAutocomplete({ content, filePath, capture, range: undefined, client, document })
                     } catch {
                         // const message = error instanceof Error ? error.message : `${error}`
                         // TODO: push error occurrence
@@ -302,13 +393,18 @@ async function evaluateBfgStrategy(
 }
 
 // TODO: rename to remove fixture from this interface
-interface AutocompleteFixture {
+type AutocompleteFixture = {
     content: string
     filePath: string
-    capture: QueryCapture
     client: MessageHandler
     document: scip.scip.Document
-}
+} & (
+    | {
+          capture: QueryCapture
+          range: undefined
+      }
+    | { range: Range; capture: undefined }
+)
 
 // TODO: complete this interface when we start using graphql/logEvent
 // interface AutocompletePublicArgument {
@@ -324,40 +420,60 @@ interface AutocompleteFixture {
 // }
 
 async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<void> {
-    const { content, filePath, capture, client, document } = fixture
-    // Modify the content by replacing the argument list to the call expression
-    // with an empty argument list. This evaluation is interesting because it
-    // allows us to test how good Cody is at inferring the original argument
-    // list.
-    const modifiedContent = [
-        content.slice(0, capture.node.startIndex),
-        '()',
-        content.slice(capture.node.endIndex),
-    ].join('')
-    const removedContent = content.slice(capture.node.startIndex, capture.node.endIndex)
+    const { content, filePath, capture, range, client, document } = fixture
+
+    let modifiedContent: string
+    let removedContent: string
+    let position: Position
+
+    if (capture === undefined) {
+        // TODO: This only allows single-lined completions
+        if (range.start.line !== range.end.line) {
+            throw new Error('Multi-line ranges not supported yet')
+        }
+
+        const lines = content.split('\n')
+        const currentLine = lines[range.start.line]
+
+        removedContent = currentLine.slice(range.start.character, range.end.character + 1)
+        modifiedContent = [
+            ...lines.slice(0, range.start.line),
+            currentLine.slice(0, range.start.character) + currentLine.slice(range.end.character),
+            ...lines.slice(range.end.line + 1),
+        ].join('\n')
+        position = range.start
+    } else {
+        // Modify the content by replacing the argument list to the call expression
+        // with an empty argument list. This evaluation is interesting because it
+        // allows us to test how good Cody is at inferring the original argument
+        // list.
+        modifiedContent = [content.slice(0, capture.node.startIndex), '()', content.slice(capture.node.endIndex)].join(
+            ''
+        )
+        removedContent = content.slice(capture.node.startIndex, capture.node.endIndex)
+        position = new Position(capture.node.startPosition.row, capture.node.startPosition.column + 1)
+    }
+
     client.notify('textDocument/didChange', { filePath, content: modifiedContent })
     const result = await client.request('autocomplete/execute', {
         filePath,
-        position: {
-            line: capture.node.startPosition.row,
-            character: capture.node.startPosition.column + 1,
-        },
+        position,
         // We don't use the "automatic" trigger to avoid certain code paths like
         // synthetic latency when acceptance rate is low.
         triggerKind: 'Invoke',
     })
+
     const didNotSendNetworkRequest =
         result.items.length === 0 && result.completionEvent?.networkRequestStartedAt === null
     if (didNotSendNetworkRequest) {
         return
     }
+
     const textDocument = new AgentTextDocument({ filePath, content: modifiedContent })
     const pushText = (text: string): void => {
-        const scipRange = [
-            capture.node.startPosition.row,
-            capture.node.startPosition.column,
-            capture.node.endPosition.column,
-        ]
+        const scipRange = capture
+            ? [capture.node.startPosition.row, capture.node.startPosition.column, capture.node.endPosition.column]
+            : [range.start.line, range.start.character, range.end.character]
         const occurrence = new scip.scip.Occurrence({
             symbol: text,
             range: scipRange,
@@ -393,7 +509,7 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<void> 
         }
         if (patches.length > 0) {
             const text = patches.join('')
-            if (['(', text, ')'].join('') === removedContent) {
+            if (range ? text === removedContent : ['(', text, ')'].join('') === removedContent) {
                 pushText('EXACT_MATCH')
             } else {
                 pushText(text)
@@ -401,7 +517,7 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<void> 
         }
     }
     if (result.items.length === 0) {
-        pushText(removedContent === '()' ? 'EXACT_MATCH' : 'EMPTY_RESULT')
+        pushText((range ? removedContent === '' : removedContent === '()') ? 'EXACT_MATCH' : 'EMPTY_RESULT')
     }
 }
 
