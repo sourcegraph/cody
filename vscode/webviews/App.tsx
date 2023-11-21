@@ -21,8 +21,6 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [isWebviewReady, setIsWebviewReady] = useState(false)
-
     const [config, setConfig] = useState<
         (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
     >(null)
@@ -71,7 +69,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
-                        setIsWebviewReady(true)
                         break
                     case 'login':
                         break
@@ -135,13 +132,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     useEffect(() => {
         // Notify the extension host that we are ready to receive events
-        vscodeAPI.postMessage({ command: 'ready' })
+        setTimeout(() => {
+            vscodeAPI.postMessage({ command: 'ready' })
+        }, 1000)
     }, [vscodeAPI])
 
     useEffect(() => {
         if (!view) {
-            vscodeAPI.postMessage({ command: 'initialized' })
-            setIsWebviewReady(true)
+            setTimeout(() => {
+                vscodeAPI.postMessage({ command: 'initialized' })
+            }, 1000)
         }
     }, [view, vscodeAPI])
 
@@ -189,8 +189,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     if (!view || !authStatus || !config) {
         // This mean webview is not ready
-        if (isWebviewReady && !authStatus && !config && !view) {
-            setIsWebviewReady(false)
+        if (!authStatus && !config && !view) {
             setTimeout(() => {
                 vscodeAPI.postMessage({ command: 'ready' })
             }, 2000)
