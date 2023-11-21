@@ -1,6 +1,7 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
+import { ChatContextStatus } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -284,6 +285,20 @@ export class ContextProvider implements vscode.Disposable {
             result.unshift(appClient)
         }
         return result
+    }
+
+    public getContextStatus(): ChatContextStatus {
+        const editorContext = this.editor.getActiveTextEditor()
+        return {
+            mode: this.config.useContext,
+            endpoint: this.authProvider.getAuthStatus().endpoint || undefined,
+            connection: this.codebaseContext.checkEmbeddingsConnection(),
+            embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
+            codebase: this.codebaseContext.getCodebase(),
+            filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+            selectionRange: editorContext?.selectionRange,
+            supportsKeyword: true,
+        }
     }
 }
 

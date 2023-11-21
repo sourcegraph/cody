@@ -137,19 +137,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     useEffect(() => {
         if (!view) {
-            setTimeout(() => {
-                vscodeAPI.postMessage({ command: 'initialized' })
-            }, 1000)
+            vscodeAPI.postMessage({ command: 'initialized' })
         }
     }, [view, vscodeAPI])
-
-    useEffect(() => {
-        setTimeout(() => {
-            if (!view || !config) {
-                vscodeAPI.postMessage({ command: 'ready' })
-            }
-        }, 2000)
-    }, [config, view, vscodeAPI])
 
     useEffect(() => {
         if (formInput.endsWith(' ')) {

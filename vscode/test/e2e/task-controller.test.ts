@@ -15,7 +15,7 @@ const expectedEvents = [
 test.beforeEach(() => {
     resetLoggedEvents()
 })
-test.skip('task tree view for non-stop cody', async ({ page, sidebar }) => {
+test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

@@ -4,7 +4,7 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { submitChat, test } from './helpers'
 
 // Old History View
-test.skip('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
+test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
     // Open the File Explorer view from the sidebar
