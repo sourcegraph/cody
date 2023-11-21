@@ -15,7 +15,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Chat: Replaced uses of deprecated getWorkspaceRootPath that caused Cody to be unable to determine the current workspace in the chat panel. [pull/1793](https://github.com/sourcegraph/cody/pull/1793)
 - Chat: Input history is now preserved between chat sessions. [pull/1826](https://github.com/sourcegraph/cody/pull/1826)
 - Chat: Fixed chat command selection behavior in chat input box. [pull/1828](https://github.com/sourcegraph/cody/pull/1828)
-- Chat: Fix issue with chat panel fails to load when multiple chat panels are opened simultaneously.
+- Chat: Add delays before sending webview ready events to prevent premature sending. This fixes issue where chat panel fails to load when multiple chat panels are opened simultaneously. [pull/1836](https://github.com/sourcegraph/cody/pull/1836)
 
 ### Changed
 
