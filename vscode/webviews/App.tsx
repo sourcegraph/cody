@@ -191,7 +191,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         // This mean webview is not ready
         if (isWebviewReady && !authStatus && !config && !view) {
             setIsWebviewReady(false)
-            vscodeAPI.postMessage({ command: 'ready' })
+            setTimeout(() => {
+                vscodeAPI.postMessage({ command: 'ready' })
+            }, 2000)
         }
         return <LoadingPage />
     }
