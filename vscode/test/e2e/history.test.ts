@@ -12,7 +12,7 @@ test('checks if clear chat history button clears history and current session', a
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
 
     // Bring the cody sidebar to the foreground if it's not already there
-    if (!(await sidebar.isVisible('[aria-label="Chat History"]'))) {
+    if (!(await page.isVisible('[aria-label="Chat History"]'))) {
         await page.click('[aria-label="Cody"]')
     }
     // Click on the Chat History button
@@ -33,7 +33,7 @@ test('checks if clear chat history button clears history and current session', a
     await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
     await expect(sidebar.getByText('Hola')).not.toBeVisible()
 
-    await sidebar.getByRole('button', { name: 'Chat History' }).click()
+    await page.getByRole('button', { name: 'Chat History' }).click()
 
     // Remove Hey history item from chat history view
     await expect(sidebar.getByText('Hey')).toBeVisible()
