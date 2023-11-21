@@ -8,6 +8,7 @@ import { logDebug } from '../../../../log'
 import { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { captureException } from '../../../../services/sentry/sentry'
+import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 // This promise is only used for testing purposes. We don't await on the
@@ -80,20 +81,25 @@ export class BfgRetriever implements ContextRetriever {
             return []
         }
 
-        const responses = await bfg.request('bfg/contextAtPosition', {
-            uri: document.uri.toString(),
-            content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
-            position: { line: position.line, character: position.character },
-            maxChars: hints.maxChars,
-            contextRange: docContext.contextRange,
-        })
+        try {
+            const responses = await bfg.request('bfg/contextAtPosition', {
+                uri: document.uri.toString(),
+                content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
+                position: { line: position.line, character: position.character },
+                maxChars: hints.maxChars, // ignored by BFG server for now
+                contextRange: getContextRange(document, docContext),
+            })
 
-        // Just in case, handle non-object results
-        if (typeof responses !== 'object') {
+            // Just in case, handle non-object results
+            if (typeof responses !== 'object') {
+                return []
+            }
+
+            return [...(responses?.symbols || []), ...(responses?.files || [])]
+        } catch (error) {
+            logDebug('CodyEngine:error', `${error}`)
             return []
         }
-
-        return [...(responses?.symbols || []), ...(responses?.files || [])]
     }
 
     public isSupportedForLanguageId(languageId: string): boolean {
@@ -129,6 +135,7 @@ export class BfgRetriever implements ContextRetriever {
         // This is implemented as a custom promise instead of async/await so that we can reject
         // the promise in the 'exit' handler if we fail to start the bfg process for some reason.
         return new Promise<MessageHandler>((resolve, reject) => {
+            logDebug('CodyEngine', 'loading bfg')
             this.doLoadBFG(reject).then(
                 bfg => resolve(bfg),
                 error => {
@@ -148,7 +155,13 @@ export class BfgRetriever implements ContextRetriever {
             )
         }
         const isVerboseDebug = vscode.workspace.getConfiguration().get<boolean>('cody.debug.verbose', false)
-        const child = child_process.spawn(codyrpc, { stdio: 'pipe', env: { VERBOSE_DEBUG: `${isVerboseDebug}` } })
+        const child = child_process.spawn(codyrpc, {
+            stdio: 'pipe',
+            env: {
+                VERBOSE_DEBUG: `${isVerboseDebug}`,
+                RUST_BACKTRACE: isVerboseDebug ? '1' : '0',
+            },
+        })
         child.stderr.on('data', chunk => {
             logDebug('CodyEngine', 'stderr', chunk.toString())
         })
@@ -159,7 +172,7 @@ export class BfgRetriever implements ContextRetriever {
             bfg.exit()
             reject(code)
         })
-        child.stderr.pipe(process.stdout)
+        child.stderr.pipe(process.stderr)
         child.stdout.pipe(bfg.messageDecoder)
         bfg.messageEncoder.pipe(child.stdin)
         await bfg.request('bfg/initialize', { clientName: 'vscode' })

@@ -1,7 +1,6 @@
 .github/PULL_REQUEST_TEMPLATE.md
 dist/
 vscode/.vscode-test/
-completions-review-tool/data/
 **/__snapshots__
 **/test-data
 vscode/src/testutils/vscode/

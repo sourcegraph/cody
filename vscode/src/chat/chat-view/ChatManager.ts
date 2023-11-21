@@ -42,7 +42,9 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
-            vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item))
+            vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item)),
+            vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
+            vscode.commands.registerCommand('cody.chat.panel.restore', async (id, chat) => this.restorePanel(id, chat))
         )
 
         // Register config change listener
@@ -233,6 +235,19 @@ export class ChatManager implements vscode.Disposable {
         this.options.authProvider.webview = this.sidebarChat.webview
         this.chatPanelsManager?.dispose()
         this.chatPanelsManager = undefined
+    }
+
+    // For registering the commands for chat panels in advance
+    private async createNewWebviewPanel(): Promise<void> {
+        if (this.chatPanelsManager) {
+            await this.chatPanelsManager?.createWebviewPanel()
+        }
+    }
+
+    private async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
+        if (this.chatPanelsManager) {
+            await this.chatPanelsManager?.restorePanel(chatID, chatQuestion)
+        }
     }
 
     public dispose(): void {

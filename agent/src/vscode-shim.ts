@@ -105,8 +105,6 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
-export const customConfiguration: Record<string, any> = {}
-
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
@@ -123,8 +121,8 @@ const configuration: vscode.WorkspaceConfiguration = {
             )[value.toLowerCase()]
         }
 
-        const fromCustomConfiguration = customConfiguration[section]
-        if (fromCustomConfiguration) {
+        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
+        if (fromCustomConfiguration !== undefined) {
             return fromCustomConfiguration
         }
         switch (section) {
@@ -361,14 +359,18 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                     if (!cwd) {
                         return null
                     }
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                    const repository: Partial<Repository> = {
-                        rootUri: Uri.file(toplevel),
-                        state: {
-                            remotes: [],
-                        } as any,
+                    try {
+                        const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                        const repository: Partial<Repository> = {
+                            rootUri: Uri.file(toplevel),
+                            state: {
+                                remotes: [],
+                            } as any,
+                        }
+                        return repository as Repository
+                    } catch {
+                        return null
                     }
-                    return repository as Repository
                 },
             }
             return api as API

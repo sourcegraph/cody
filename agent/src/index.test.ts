@@ -10,6 +10,12 @@ import { MessageHandler } from './jsonrpc-alias'
 import { ClientInfo } from './protocol-alias'
 
 export class TestClient extends MessageHandler {
+    constructor() {
+        super()
+        this.registerNotification('debug/message', message => {
+            console.log(`${message.channel}: ${message.message}`)
+        })
+    }
     public async handshake(clientInfo: ClientInfo) {
         const info = await this.request('initialize', clientInfo)
         this.notify('initialized', null)
@@ -32,8 +38,7 @@ export class TestClient extends MessageHandler {
         this.notify('exit', null)
     }
 }
-
-describe.each([
+const clients: { name: string; clientInfo: ClientInfo }[] = [
     {
         name: 'FullConfig',
         clientInfo: {
@@ -49,7 +54,6 @@ describe.each([
                 autocompleteAdvancedProvider: 'anthropic',
                 autocompleteAdvancedAccessToken: '',
                 autocompleteAdvancedServerEndpoint: '',
-                autocompleteAdvancedServerModel: null,
                 debug: false,
                 verboseDebug: false,
             },
@@ -78,14 +82,15 @@ describe.each([
             workspaceRootUri: 'file:///path/to/foo',
             extensionConfiguration: {
                 anonymousUserID: 'abcde1234',
-                workspaceRootPath: '/path/to/foo',
                 accessToken: '',
                 serverEndpoint: 'https://sourcegraph.com/',
                 customHeaders: {},
             },
         },
     },
-])('describe StandardAgent with $name', ({ name, clientInfo }) => {
+]
+
+describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo }) => {
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
         it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
         return
@@ -99,7 +104,7 @@ describe.each([
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build')
 
-    const agentProcess = spawn('node', ['--inspect', path.join(__dirname, '..', 'dist', 'index.js'), '--inspect'], {
+    const agentProcess = spawn('node', [path.join(__dirname, '..', 'dist', 'index.js'), 'jsonrpc'], {
         stdio: 'pipe',
     })
 

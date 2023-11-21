@@ -44,15 +44,49 @@ const JS_INTENTS_QUERY = dedent`
     ; Atomic intents
     ;--------------------------------
 
+    (comment) @comment!
     (import_statement
         source: (string) @import.source!)
 
-    (comment) @comment!
-    (arguments (_) @argument!)
+    (pair
+        value: [
+            (string (_)*)
+            (template_string)
+            (number)
+            (identifier)
+            (true)
+            (false)
+            (null)
+            (undefined)
+        ] @pair.value!)
+
+    (arguments
+        [
+            (string (_)*)
+            (template_string)
+            (number)
+            (identifier)
+            (true)
+            (false)
+            (null)
+            (undefined)
+        ] @argument!)
+
     (formal_parameters) @parameters!
     (formal_parameters (_) @parameter!)
+
     (return_statement) @return_statement!
-    (return_statement (_) @return_statement.value!)
+    (return_statement
+        [
+            (string (_)*)
+            (template_string)
+            (number)
+            (identifier)
+            (true)
+            (false)
+            (null)
+            (undefined)
+        ] @return_statement.value!)
 `
 
 const JSX_INTENTS_QUERY = dedent`

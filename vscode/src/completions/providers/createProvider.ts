@@ -35,6 +35,7 @@ export async function createProviderConfig(
                     client,
                     model: config.autocompleteAdvancedModel ?? model ?? null,
                     starcoderExtendedTokenWindow,
+                    timeouts: config.autocompleteTimeouts,
                 })
             }
             case 'anthropic': {
@@ -82,6 +83,7 @@ export async function createProviderConfig(
             case 'fireworks':
                 return createFireworksProviderConfig({
                     client,
+                    timeouts: config.autocompleteTimeouts,
                     model: model ?? null,
                 })
             case 'aws-bedrock':

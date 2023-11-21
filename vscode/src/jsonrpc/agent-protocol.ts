@@ -208,6 +208,8 @@ export interface ExtensionConfiguration {
      * @deprecated This is only used for the legacy logEvent - use `telemetry` instead.
      */
     eventProperties?: EventProperties
+
+    customConfiguration?: Record<string, any>
 }
 
 /**

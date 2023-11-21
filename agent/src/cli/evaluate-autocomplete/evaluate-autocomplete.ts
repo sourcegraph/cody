@@ -5,8 +5,9 @@ import * as path from 'path'
 import * as commander from 'commander'
 import { calcPatch } from 'fast-myers-diff'
 import { minimatch } from 'minimatch'
+import parseGitDiff, { AddedLine } from 'parse-git-diff'
 import { rimraf } from 'rimraf'
-import { Range, Uri } from 'vscode'
+import { Position, Range, Uri } from 'vscode'
 import { QueryCapture } from 'web-tree-sitter'
 
 import { Input } from '@sourcegraph/scip-typescript/src/Input'
@@ -18,8 +19,6 @@ import { newAgentClient } from '../../agent'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
-import { AutocompleteResult } from '../../protocol-alias'
-import * as vscode_shim from '../../vscode-shim'
 
 import { formatSnapshot } from './formatSnapshot'
 import { Queries } from './Queries'
@@ -29,6 +28,8 @@ interface EvaluateAutocompleteOptions {
     treeSitterGrammars: string
     queriesDirectory: string
     testCount: number
+    includeFixture: string[]
+    excludeFixture: string[]
     includeWorkspace: string[]
     excludeWorkspace: string[]
     includeFilepath?: string[]
@@ -40,10 +41,24 @@ interface EvaluateAutocompleteOptions {
     bfgBinary?: string
     installCommands?: string[]
     testCommands?: string[]
+    gitLogFilter?: string
+    fixture: EvaluationFixture
 }
 
 interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
     tests: EvaluateAutocompleteOptions[]
+    fixtures?: EvaluationFixture[]
+}
+
+enum EvaluationStrategy {
+    BFG = 'bfg',
+    GitLog = 'git-log',
+}
+
+interface EvaluationFixture {
+    name: string
+    customConfiguration?: Record<string, any>
+    strategy: EvaluationStrategy
 }
 
 async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promise<EvaluateAutocompleteOptions[]> {
@@ -65,12 +80,18 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
             : config.queriesDirectory
             ? path.join(rootDir, config.queriesDirectory)
             : options.queriesDirectory
-        const snapshotDirectory = test.snapshotDirectory
-            ? path.join(rootDir, test.snapshotDirectory, test.workspace)
-            : config.snapshotDirectory
-            ? path.join(rootDir, config.snapshotDirectory, test.workspace)
-            : options.snapshotDirectory
-        result.push({ ...options, ...config, ...test, workspace, queriesDirectory, snapshotDirectory })
+        const fixtures: EvaluationFixture[] = config.fixtures ?? [{ name: 'default', strategy: EvaluationStrategy.BFG }]
+        for (const fixture of fixtures) {
+            if (!fixture.strategy) {
+                throw new Error(`missing: fixture.strategy: ${JSON.stringify(fixture)}`)
+            }
+            const snapshotDirectory = test.snapshotDirectory
+                ? path.join(rootDir, test.snapshotDirectory, fixture.name, test.workspace)
+                : config.snapshotDirectory
+                ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
+                : options.snapshotDirectory
+            result.push({ ...options, ...config, ...test, workspace, queriesDirectory, snapshotDirectory, fixture })
+        }
     }
 
     return result
@@ -121,6 +142,18 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         collect as any,
         []
     )
+    .option(
+        '--include-fixture <glob>',
+        'A glob pattern to determine what fixtures to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-fixture <glob>',
+        'A glob pattern to determine what fixtures exclude in the evaluation',
+        collect as any,
+        []
+    )
     .addOption(new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
     .option(
         '--tree-sitter-grammars <path>',
@@ -130,13 +163,16 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
     .option('--queries-directory <path>', 'Path to a directory containing tree-sitter queries')
     .action(async (options: EvaluateAutocompleteOptions) => {
         const testOptions = await loadEvaluationConfig(options)
-        const workspacesToRun = testOptions.filter(testOptions =>
-            matchesGlobPatterns(options.includeWorkspace, options.excludeWorkspace, testOptions.workspace)
+        const workspacesToRun = testOptions.filter(
+            testOptions =>
+                matchesGlobPatterns(options.includeWorkspace, options.excludeWorkspace, testOptions.workspace) &&
+                matchesGlobPatterns(options.includeFixture, options.excludeFixture, testOptions.fixture.name)
         )
         await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
+    console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
     const workspace = path.normalize(options.workspace)
 
     if (!options.queriesDirectory) {
@@ -161,15 +197,117 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
+            customConfiguration: options.fixture.customConfiguration,
         },
     })
     try {
-        await evaluateWorkspaceOrCrash(client, options, workspace)
+        if (options.fixture.strategy === EvaluationStrategy.BFG) {
+            await evaluateBfgStrategy(client, options, workspace)
+        } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
+            await evaluateGitLogStrategy(client, options, workspace)
+        }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)
     }
     await client.request('shutdown', null)
     client.notify('exit', null)
+}
+
+async function evaluateGitLogStrategy(
+    client: MessageHandler,
+    options: EvaluateAutocompleteOptions,
+    workspace: string
+): Promise<void> {
+    try {
+        let remainingTests = options.testCount
+        const commits = execSync(
+            `git log --name-only --oneline --diff-filter=AMC --stat --numstat --pretty=format:'%H - %an, %ar : %s' -- ${options.gitLogFilter}`,
+            { cwd: workspace }
+        )
+            .toString()
+            .split('\n')
+            .map(string => string.split(' ')[0])
+            .slice(0, options.testCount)
+            .filter(Boolean)
+        // Reverse the commits list so the first element is the oldest commit
+        commits.reverse()
+        for (const commit of commits) {
+            try {
+                execSync(`git checkout ${commit}`, { cwd: workspace })
+
+                const diff = execSync('git diff HEAD~1', { cwd: workspace }).toString()
+                const parsedDiff = parseGitDiff(diff)
+
+                let index = 0
+                for (const file of parsedDiff.files) {
+                    const filePath: string = file.type === 'RenamedFile' ? file.pathAfter : file.path
+
+                    if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], filePath)) {
+                        continue
+                    }
+                    const fullPath = path.join(workspace, filePath)
+                    const content = (await fspromises.readFile(fullPath)).toString()
+                    const languageid = getLanguageForFileName(filePath)
+                    const document = new scip.scip.Document({ relative_path: filePath, language: languageid })
+
+                    const isLastFile = index === parsedDiff.files.length - 1
+
+                    if (!isLastFile) {
+                        // Open all files to simulate local editor context
+                        // @TODO: Move the cursor into the changed sections
+                        client.notify('textDocument/didOpen', { filePath, content })
+                    }
+
+                    if (isLastFile) {
+                        const lastAddedLine = file.chunks
+                            .flatMap(chunks => (chunks.type === 'BinaryFilesChunk' ? [] : chunks.changes))
+                            .findLast(line => line.type === 'AddedLine' && line.content.trim().length >= 4) as
+                            | AddedLine
+                            | undefined
+
+                        if (!lastAddedLine) {
+                            continue
+                        }
+
+                        if (remainingTests <= 0) {
+                            continue
+                        }
+
+                        const replaceContent = lastAddedLine.content.trimStart()
+
+                        const range: Range = new Range(
+                            lastAddedLine.lineAfter - 1,
+                            lastAddedLine.content.length - replaceContent.length,
+                            lastAddedLine.lineAfter - 1,
+                            lastAddedLine.content.length
+                        )
+
+                        await triggerAutocomplete({ content, filePath, capture: undefined, range, client, document })
+
+                        // Write snapshot file to disk we get non-empty autocomplete results.
+                        if (options.snapshotDirectory && document.occurrences.length > 0) {
+                            const outputPath = path.join(options.snapshotDirectory, filePath)
+                            await fspromises.mkdir(path.dirname(outputPath), { recursive: true })
+                            const input = new Input(filePath, content)
+                            const snapshot = formatSnapshot(input, document)
+                            await fspromises.writeFile(outputPath, snapshot)
+                        }
+
+                        remainingTests--
+                    }
+
+                    index++
+                }
+            } finally {
+                // TODO: Reset all open editor tabs to avoid interference
+            }
+        }
+    } finally {
+        // Reset submodule to initial HEAD
+        const submodulesDir = path.join(workspace, '..')
+        execSync('git submodule deinit -f .', { cwd: submodulesDir }).toString()
+        execSync('it submodule update --init', { cwd: submodulesDir }).toString()
+    }
 }
 
 /**
@@ -178,18 +316,11 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
  * code. Eventually, we could make the logic configurable via command-line
  * flags so that we can reuse this command for different kinds of evaluations.
  */
-async function evaluateWorkspaceOrCrash(
+async function evaluateBfgStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions,
     workspace: string
 ): Promise<void> {
-    vscode_shim.customConfiguration['cody.autocomplete.experimental.graphContext'] = 'bfg'
-    vscode_shim.customConfiguration['cody.autocomplete.advanced.provider'] = 'fireworks'
-    vscode_shim.customConfiguration['cody.autocomplete.advanced.model'] = 'starcoder-7b'
-    vscode_shim.customConfiguration['cody.debug.verbose'] = 'true'
-    if (options.bfgBinary) {
-        vscode_shim.customConfiguration['cody.experimental.cody-engine.path'] = options.bfgBinary
-    }
     const queries = new Queries(options.queriesDirectory)
     const grammarDirectory = path.normalize(options.treeSitterGrammars)
     const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
@@ -236,11 +367,16 @@ async function evaluateWorkspaceOrCrash(
                         continue
                     }
                     try {
-                        await triggerAutocomplete({ content, filePath, capture, client, document })
-                        remainingTests--
+                        await triggerAutocomplete({ content, filePath, capture, range: undefined, client, document })
                     } catch {
+                        // const message = error instanceof Error ? error.message : `${error}`
+                        // TODO: push error occurrence
+                        // const range
+                        // const occurrence = new scip.scip.Occurrence({ symbol: message })
+                        // document.occurrences.push(occurrence)
                         // ignore. Most common issue is that autocomplete times out.
                     }
+                    remainingTests--
                 }
             }
         }
@@ -256,46 +392,102 @@ async function evaluateWorkspaceOrCrash(
     }
 }
 
-interface AutocompleteFixture {
+// TODO: rename to remove fixture from this interface
+type AutocompleteFixture = {
     content: string
     filePath: string
-    capture: QueryCapture
     client: MessageHandler
     document: scip.scip.Document
-}
+} & (
+    | {
+          capture: QueryCapture
+          range: undefined
+      }
+    | { range: Range; capture: undefined }
+)
 
-async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<AutocompleteResult> {
-    const { content, filePath, capture, client, document } = fixture
-    // Modify the content by replacing the argument list to the call expression
-    // with an empty argument list. This evaluation is interesting because it
-    // allows us to test how good Cody is at inferring the original argument
-    // list.
-    const modifiedContent = [
-        content.slice(0, capture.node.startIndex),
-        '()',
-        content.slice(capture.node.endIndex),
-    ].join('')
-    const removedContent = content.slice(capture.node.startIndex, capture.node.endIndex)
+// TODO: complete this interface when we start using graphql/logEvent
+// interface AutocompletePublicArgument {
+//     fixture: string
+//     filepath: string
+//     commit: string
+//     completionEvent?: CompletionEvent
+//     error?: string
+//     emptyResult?: boolean
+//     exactMatch?: boolean
+//     didParseSuccessfully?: boolean
+//     didTypecheckSuccessfully?: boolean
+// }
+
+async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<void> {
+    const { content, filePath, capture, range, client, document } = fixture
+
+    let modifiedContent: string
+    let removedContent: string
+    let position: Position
+
+    if (capture === undefined) {
+        // TODO: This only allows single-lined completions
+        if (range.start.line !== range.end.line) {
+            throw new Error('Multi-line ranges not supported yet')
+        }
+
+        const lines = content.split('\n')
+        const currentLine = lines[range.start.line]
+
+        removedContent = currentLine.slice(range.start.character, range.end.character + 1)
+        modifiedContent = [
+            ...lines.slice(0, range.start.line),
+            currentLine.slice(0, range.start.character) + currentLine.slice(range.end.character),
+            ...lines.slice(range.end.line + 1),
+        ].join('\n')
+        position = range.start
+    } else {
+        // Modify the content by replacing the argument list to the call expression
+        // with an empty argument list. This evaluation is interesting because it
+        // allows us to test how good Cody is at inferring the original argument
+        // list.
+        modifiedContent = [content.slice(0, capture.node.startIndex), '()', content.slice(capture.node.endIndex)].join(
+            ''
+        )
+        removedContent = content.slice(capture.node.startIndex, capture.node.endIndex)
+        position = new Position(capture.node.startPosition.row, capture.node.startPosition.column + 1)
+    }
+
     client.notify('textDocument/didChange', { filePath, content: modifiedContent })
     const result = await client.request('autocomplete/execute', {
         filePath,
-        position: {
-            line: capture.node.startPosition.row,
-            character: capture.node.startPosition.column + 1,
-        },
+        position,
+        // We don't use the "automatic" trigger to avoid certain code paths like
+        // synthetic latency when acceptance rate is low.
+        triggerKind: 'Invoke',
     })
+
+    const didNotSendNetworkRequest =
+        result.items.length === 0 && result.completionEvent?.networkRequestStartedAt === null
+    if (didNotSendNetworkRequest) {
+        return
+    }
+
     const textDocument = new AgentTextDocument({ filePath, content: modifiedContent })
     const pushText = (text: string): void => {
-        const scipRange = [
-            capture.node.startPosition.row,
-            capture.node.startPosition.column,
-            capture.node.endPosition.column,
-        ]
+        const scipRange = capture
+            ? [capture.node.startPosition.row, capture.node.startPosition.column, capture.node.endPosition.column]
+            : [range.start.line, range.start.character, range.end.character]
         const occurrence = new scip.scip.Occurrence({
             symbol: text,
             range: scipRange,
             symbol_roles: 0,
         })
+        // TODO: log event
+        // client.request('graphql/logEvent', {
+        //     event: 'CodyEvaluation',
+        //     client: 'evaluate-autocomplete',
+        //     source: 'IDEEXTENSION',
+        //     url: '',
+        //     userCookieID: '',
+        //     publicArgument:
+        // })
         document.occurrences.push(occurrence)
     }
     for (const item of result.items) {
@@ -307,12 +499,17 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<Autoco
         )
         const original = textDocument.getText(range)
         const completion = item.insertText
+        const patches: string[] = []
         for (const [sx, ex, text] of calcPatch(original, completion)) {
             if (sx !== ex) {
                 // TODO: handle non-insert patches
                 continue
             }
-            if (['(', text, ')'].join('') === removedContent) {
+            patches.push(text)
+        }
+        if (patches.length > 0) {
+            const text = patches.join('')
+            if (range ? text === removedContent : ['(', text, ')'].join('') === removedContent) {
                 pushText('EXACT_MATCH')
             } else {
                 pushText(text)
@@ -320,9 +517,8 @@ async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<Autoco
         }
     }
     if (result.items.length === 0) {
-        pushText(removedContent === '()' ? 'EXACT_MATCH' : 'EMPTY_RESULT')
+        pushText((range ? removedContent === '' : removedContent === '()') ? 'EXACT_MATCH' : 'EMPTY_RESULT')
     }
-    return result
 }
 
 function matchesGlobPatterns(includeGlobs: string[], excludeGlobs: string[], value: string): boolean {

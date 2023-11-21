@@ -81,7 +81,7 @@ export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHan
         args.push('jsonrpc')
         const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false' } })
         child.stderr.on('data', chunk => {
-            console.error(`agent stderr ${chunk}`)
+            console.error(`------agent stderr------\n${chunk}\n------------------------`)
         })
         child.on('disconnect', () => reject())
         child.on('close', () => reject())
@@ -90,7 +90,7 @@ export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHan
             serverHandler.exit()
             reject(code)
         })
-        child.stderr.pipe(process.stdout)
+        child.stderr.pipe(process.stderr)
         child.stdout.pipe(serverHandler.messageDecoder)
         serverHandler.messageEncoder.pipe(child.stdin)
         serverHandler.registerNotification('debug/message', params => {
@@ -266,11 +266,15 @@ export class Agent extends MessageHandler {
 
             await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
-            await client.executeRecipe(data.id, {
-                signal: abortController.signal,
-                humanChatInput: data.humanChatInput,
-                data: data.data,
-            })
+            try {
+                await client.executeRecipe(data.id, {
+                    signal: abortController.signal,
+                    humanChatInput: data.humanChatInput,
+                    data: data.data,
+                })
+            } catch {
+                // ignore, can happen when the client cancels the request
+            }
             return null
         })
         this.registerRequest('autocomplete/execute', async (params, token) => {
@@ -292,6 +296,7 @@ export class Agent extends MessageHandler {
                 if (params.triggerKind === 'Invoke') {
                     await provider.manuallyTriggerCompletion()
                 }
+
                 const result = await provider.provideInlineCompletionItems(
                     textDocument,
                     new vscode.Position(params.position.line, params.position.character),

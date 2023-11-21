@@ -390,43 +390,49 @@ export async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<C
  */
 export async function getEditorOpenTabsContext(skipDirectory?: string): Promise<ContextMessage[]> {
     const contextMessages: ContextMessage[] = []
+    try {
+        // Get open tabs
+        const tabGroups = vscode.window.tabGroups.all
+        const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
 
-    // Get open tabs
-    const tabGroups = vscode.window.tabGroups.all
-    const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+        for (const tab of openTabs) {
+            // Skip non-file URIs
+            if (tab.uri?.scheme !== 'file') {
+                continue
+            }
 
-    for (const tab of openTabs) {
-        // Skip non-file URIs
-        if (tab.uri.scheme !== 'file') {
-            continue
+            // Skip tabs in skipDirectory
+            if (skipDirectory && tab.uri.fsPath.includes(skipDirectory)) {
+                continue
+            }
+
+            // Get context using file path for files not in the current workspace
+            if (!isInWorkspace(tab.uri)) {
+                const contextMessage = await getFilePathContext(tab.uri.fsPath)
+                contextMessages.push(...contextMessage)
+                continue
+            }
+
+            // Get file name and extract context from current workspace file
+            const fileUri = tab.uri
+            const fileName = createVSCodeRelativePath(fileUri.fsPath)
+            const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
+
+            // Truncate file text
+            const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
+
+            // Create context message
+            const message = getContextMessageWithResponse(
+                populateCurrentEditorContextTemplate(truncatedText, fileName),
+                {
+                    fileName,
+                }
+            )
+
+            contextMessages.push(...message)
         }
-
-        // Skip tabs in skipDirectory
-        if (skipDirectory && tab.uri.fsPath.includes(skipDirectory)) {
-            continue
-        }
-
-        // Get context using file path for files not in the current workspace
-        if (!isInWorkspace(tab.uri)) {
-            const contextMessage = await getFilePathContext(tab.uri.fsPath)
-            contextMessages.push(...contextMessage)
-            continue
-        }
-
-        // Get file name and extract context from current workspace file
-        const fileUri = tab.uri
-        const fileName = createVSCodeRelativePath(fileUri.fsPath)
-        const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
-
-        // Truncate file text
-        const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
-
-        // Create context message
-        const message = getContextMessageWithResponse(populateCurrentEditorContextTemplate(truncatedText, fileName), {
-            fileName,
-        })
-
-        contextMessages.push(...message)
+    } catch {
+        // no ops
     }
 
     return contextMessages

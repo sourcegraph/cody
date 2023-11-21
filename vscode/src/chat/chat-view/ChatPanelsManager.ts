@@ -45,12 +45,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             vscode.window.registerTreeDataProvider('cody.commands.tree.view', new TreeViewProvider('command'))
         )
 
-        // Register Commands
-        this.disposables.push(
-            vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createWebviewPanel()),
-            vscode.commands.registerCommand('cody.chat.panel.restore', async (id, chat) => this.restorePanel(id, chat))
-        )
-
         // Register config change listener
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
@@ -92,6 +86,21 @@ export class ChatPanelsManager implements vscode.Disposable {
      * Creates a new webview panel for chat.
      */
     public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<ChatPanelProvider> {
+        if (this.activePanelProvider && !this.activePanelProvider?.webviewPanel?.active) {
+            this.activePanelProvider.webviewPanel?.reveal()
+            void vscode.window.showErrorMessage('Please wait for the current panel to load.')
+            return this.activePanelProvider
+        }
+
+        if (chatID && this.panelProvidersMap.has(chatID)) {
+            const provider = this.panelProvidersMap.get(chatID)
+            if (provider) {
+                provider.webviewPanel?.reveal()
+                void this.selectTreeItem(chatID)
+                return provider
+            }
+        }
+
         logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
         const provider = new ChatPanelProvider(this.options)
         const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
@@ -100,7 +109,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.panelProvidersMap.set(sessionID, provider)
 
         webviewPanel?.onDidChangeViewState(e => {
-            if (e.webviewPanel.visible && e.webviewPanel.active) {
+            if (e.webviewPanel.visible) {
                 this.activePanelProvider = provider
                 this.options.contextProvider.webview = provider.webview
                 void this.selectTreeItem(provider.sessionID)
@@ -220,15 +229,19 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
-        logDebug('ChatPanelsManager', 'restorePanel')
-        // Panel already exists, just reveal it
-        const provider = this.panelProvidersMap.get(chatID)
-        if (provider) {
-            provider.webviewPanel?.reveal()
-            return
-        }
+        try {
+            logDebug('ChatPanelsManager', 'restorePanel')
+            // Panel already exists, just reveal it
+            const provider = this.panelProvidersMap.get(chatID)
+            if (provider) {
+                provider.webviewPanel?.reveal()
+                return
+            }
 
-        await this.createWebviewPanel(chatID, chatQuestion)
+            await this.createWebviewPanel(chatID, chatQuestion)
+        } catch (error) {
+            console.error(error, 'errored restoring panel')
+        }
     }
 
     public triggerNotice(notice: { key: string }): void {
