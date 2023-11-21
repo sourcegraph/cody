@@ -30,7 +30,7 @@ vi.mock('vscode', () => ({
                             return ''
                     }
                 },
-                // eslint-disable-next-line
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
                 update(): void {},
             }
         },
