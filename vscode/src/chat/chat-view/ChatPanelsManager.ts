@@ -115,6 +115,19 @@ export class ChatPanelsManager implements vscode.Disposable {
         return provider
     }
 
+    /**
+     * Updates the title of the webview panel associated with the given chat session ID.
+     * @param chatID - The ID of the chat session whose panel title to update.
+     * @param newTitle - The new title to set for the panel.
+     */
+    public updateWebviewPanelTitle(chatID: string, newTitle: string): void {
+        const provider = this.panelProvidersMap.get(chatID)
+        if (provider?.webviewPanel) {
+            provider.webviewPanel.title = newTitle
+        }
+        return
+    }
+
     private selectTreeItem(chatID: ChatID): void {
         // no op if tree view is not visible
         if (!this.treeView.visible) {
@@ -166,12 +179,18 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async editChatHistory(chatID: string): Promise<void> {
-        await vscode.window.showInputBox({ prompt: 'Enter new chat history name' }).then(async message => {
-            if (message) {
-                await updateChatHistoryLastInteractionMessage(chatID, message)
-                this.updateTreeViewHistory()
-            }
-        })
+        await vscode.window
+            .showInputBox({
+                prompt: 'Enter new chat name',
+                value: this.treeViewProvider.getTreeItemLabelByID(chatID)?.label,
+            })
+            .then(async message => {
+                if (message) {
+                    await updateChatHistoryLastInteractionMessage(chatID, message)
+                    this.updateTreeViewHistory()
+                    this.updateWebviewPanelTitle(chatID, message)
+                }
+            })
     }
 
     public async clearHistory(chatID?: string): Promise<void> {

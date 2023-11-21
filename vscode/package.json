@@ -503,9 +503,9 @@
       {
         "command": "cody.chat.history.edit",
         "category": "Cody",
-        "title": "Edit Chat",
+        "title": "Rename Chat",
         "group": "Cody",
-        "icon": "$(wand)",
+        "icon": "$(edit)",
         "when": "cody.activated && cody.hasChatHistory"
       },
       {
