@@ -21,7 +21,9 @@ export class AutocompleteDocument {
         this.textDocument = new AgentTextDocument({ filePath: params.filepath, content: text })
     }
 
-    public pushItem(item: Omit<AutocompleteItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath'>) {
+    public pushItem(
+        item: Omit<AutocompleteItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath'>
+    ): void {
         item.rangeStartLine = item.range.start.line
         item.rangeStartCharacter = item.range.start.character
         item.rangeEndLine = item.range.end.line
@@ -44,20 +46,16 @@ export class AutocompleteDocument {
     // we will need to come up with a good solution for multi-line completions that may not
     // be relevant for scip-typescript.
     private formatSnapshot(): string {
-        const document = this
-        const commentSyntax = commentSyntaxForLanguage(document.params.languageid)
+        const commentSyntax = commentSyntaxForLanguage(this.params.languageid)
         const out: string[] = []
-        document.items.sort(compareItemByRange)
+        this.items.sort(compareItemByRange)
         let occurrenceIndex = 0
-        for (const [lineNumber, line] of document.lines.entries()) {
+        for (const [lineNumber, line] of this.lines.entries()) {
             out.push(' '.repeat(commentSyntax.length))
             out.push(line.replace('\t', ' '))
             out.push('\n')
-            while (
-                occurrenceIndex < document.items.length &&
-                document.items[occurrenceIndex].rangeStartLine === lineNumber
-            ) {
-                const item = document.items[occurrenceIndex]
+            while (occurrenceIndex < this.items.length && this.items[occurrenceIndex].rangeStartLine === lineNumber) {
+                const item = this.items[occurrenceIndex]
                 occurrenceIndex++
                 if (item.rangeStartLine !== item.rangeEndLine) {
                     // Skip multiline occurrences for now.
@@ -67,7 +65,7 @@ export class AutocompleteDocument {
                 out.push(' '.repeat(item.range.start.character))
                 const length = item.range.end.character - item.range.start.character
                 if (length < 0) {
-                    throw new Error(document.format(item.range, 'negative length occurrence!'))
+                    throw new Error(this.format(item.range, 'negative length occurrence!'))
                 }
                 out.push('^'.repeat(length))
                 out.push(' ')
@@ -114,7 +112,7 @@ export class AutocompleteDocument {
                 ? range.end.character - range.start.character
                 : line.length - range.start.character
         const carets = length < 0 ? '<negative length>' : '^'.repeat(length)
-        const multilineSuffix = range.start.line !== range.end.line ? ` ${range.end.line}:${range.end.character}` : ''
+        const multilineSuffix = range.isSingleLine ? '' : ` ${range.end.line}:${range.end.character}`
         const message = diagnostic ? ' ' + diagnostic : ''
         return `${this.params.filepath}:${range.start.line}:${range.start.character}${message}\n${line}\n${indent}${carets}${multilineSuffix}`
     }

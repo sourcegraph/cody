@@ -133,9 +133,9 @@ export async function evaluateBfgStrategy(
         }
 
         if (options.snapshotDirectory && document.items.length > 0) {
-            document.writeSnapshot(options.snapshotDirectory)
+            await document.writeSnapshot(options.snapshotDirectory)
             if (csvWriter) {
-                csvWriter.writeRecords(document.items)
+                await csvWriter.writeRecords(document.items)
             }
         }
     }

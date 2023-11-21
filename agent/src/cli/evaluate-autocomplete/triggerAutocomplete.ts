@@ -7,7 +7,7 @@ import { AutocompleteResult } from '../../protocol-alias'
 
 import { AutocompleteDocument } from './AutocompleteDocument'
 
-export type AutocompleteParameters = {
+export interface AutocompleteParameters {
     client: MessageHandler
     document: AutocompleteDocument
 

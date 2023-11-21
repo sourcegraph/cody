@@ -116,7 +116,7 @@ export async function evaluateGitLogStrategy(
                         })
 
                         if (options.snapshotDirectory) {
-                            document.writeSnapshot(options.snapshotDirectory)
+                            await document.writeSnapshot(options.snapshotDirectory)
                         }
 
                         remainingTests--
