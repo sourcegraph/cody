@@ -24,8 +24,8 @@
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/telemetry": "^0.13.0",
     "@sourcegraph/scip-typescript": "^0.3.9",
+    "@sourcegraph/telemetry": "^0.13.0",
     "commander": "^11.1.0",
     "env-paths": "^3.0.0",
     "fast-myers-diff": "^3.1.0",
@@ -36,6 +36,7 @@
     "@types/google-protobuf": "^3.15.6",
     "@types/minimatch": "^5.1.2",
     "@types/vscode": "^1.80.0",
+    "parse-git-diff": "^0.0.14",
     "pkg": "^5.8.1",
     "rimraf": "^5.0.5"
   }
