@@ -80,7 +80,6 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
         'cody.auth/failed',
         'cody.auth/connected',
         'cody.auth/connected',
-        'cody.auth/connected',
         'cody.command.edit/executed',
         'cody.recipe.fixup/executed',
         'cody.fixup.apply/succeeded',
