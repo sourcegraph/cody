@@ -24,9 +24,9 @@
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/scip-typescript": "^0.3.9",
     "@sourcegraph/telemetry": "^0.13.0",
     "commander": "^11.1.0",
+    "csv-writer": "^1.6.0",
     "env-paths": "^3.0.0",
     "fast-myers-diff": "^3.1.0",
     "minimatch": "^9.0.3",

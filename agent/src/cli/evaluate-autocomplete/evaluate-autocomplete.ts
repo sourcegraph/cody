@@ -1,29 +1,16 @@
-import { execSync } from 'child_process'
 import * as fspromises from 'fs/promises'
 import * as path from 'path'
 
 import * as commander from 'commander'
-import { calcPatch } from 'fast-myers-diff'
 import { minimatch } from 'minimatch'
-import parseGitDiff, { AddedLine } from 'parse-git-diff'
-import { rimraf } from 'rimraf'
-import { Position, Range, Uri } from 'vscode'
-import { QueryCapture } from 'web-tree-sitter'
+import * as vscode from 'vscode'
 
-import { Input } from '@sourcegraph/scip-typescript/src/Input'
-import * as scip from '@sourcegraph/scip-typescript/src/scip'
-
-import { getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
-import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 import { newAgentClient } from '../../agent'
-import { AgentTextDocument } from '../../AgentTextDocument'
-import { MessageHandler } from '../../jsonrpc-alias'
-import { getLanguageForFileName } from '../../language'
 
-import { formatSnapshot } from './formatSnapshot'
-import { Queries } from './Queries'
+import { evaluateBfgStrategy } from './strategy-bfg'
+import { evaluateGitLogStrategy } from './strategy-git-log'
 
-interface EvaluateAutocompleteOptions {
+export interface EvaluateAutocompleteOptions {
     workspace: string
     treeSitterGrammars: string
     queriesDirectory: string
@@ -36,8 +23,10 @@ interface EvaluateAutocompleteOptions {
     excludeFilepath?: string[]
     srcAccessToken: string
     srcEndpoint: string
+
     evaluationConfig: string
     snapshotDirectory: string
+    csvPath?: string
     bfgBinary?: string
     installCommands?: string[]
     testCommands?: string[]
@@ -46,7 +35,7 @@ interface EvaluateAutocompleteOptions {
 }
 
 interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
-    tests: EvaluateAutocompleteOptions[]
+    workspaces: EvaluateAutocompleteOptions[]
     fixtures?: EvaluationFixture[]
 }
 
@@ -68,7 +57,7 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
     const configBuffer = await fspromises.readFile(options.evaluationConfig)
     const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
     const result: EvaluateAutocompleteOptions[] = []
-    for (const test of config?.tests ?? []) {
+    for (const test of config?.workspaces ?? []) {
         if (!test.workspace) {
             console.error(`skipping test, missing required property 'workspace': ${JSON.stringify(test)}`)
             continue
@@ -90,7 +79,16 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
                 : config.snapshotDirectory
                 ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
                 : options.snapshotDirectory
-            result.push({ ...options, ...config, ...test, workspace, queriesDirectory, snapshotDirectory, fixture })
+            result.push({
+                ...options,
+                ...config,
+                ...test,
+                workspace,
+                queriesDirectory,
+                snapshotDirectory,
+                fixture,
+                csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
+            })
         }
     }
 
@@ -188,7 +186,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         process.exit(1)
     }
 
-    const workspaceRootUri = Uri.from({ scheme: 'file', path: workspace })
+    const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: workspace })
     const client = await newAgentClient({
         name: 'evaluate-autocomplete',
         version: '0.1.0',
@@ -213,315 +211,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     client.notify('exit', null)
 }
 
-async function evaluateGitLogStrategy(
-    client: MessageHandler,
-    options: EvaluateAutocompleteOptions,
-    workspace: string
-): Promise<void> {
-    try {
-        let remainingTests = options.testCount
-        const commits = execSync(
-            `git log --name-only --oneline --diff-filter=AMC --stat --numstat --pretty=format:'%H - %an, %ar : %s' -- ${options.gitLogFilter}`,
-            { cwd: workspace }
-        )
-            .toString()
-            .split('\n')
-            .map(string => string.split(' ')[0])
-            .slice(0, options.testCount)
-            .filter(Boolean)
-        // Reverse the commits list so the first element is the oldest commit
-        commits.reverse()
-        for (const commit of commits) {
-            try {
-                execSync(`git checkout ${commit}`, { cwd: workspace })
-
-                const diff = execSync('git diff HEAD~1', { cwd: workspace }).toString()
-                const parsedDiff = parseGitDiff(diff)
-
-                let index = 0
-                for (const file of parsedDiff.files) {
-                    const filePath: string = file.type === 'RenamedFile' ? file.pathAfter : file.path
-
-                    if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], filePath)) {
-                        continue
-                    }
-                    const fullPath = path.join(workspace, filePath)
-                    const content = (await fspromises.readFile(fullPath)).toString()
-                    const languageid = getLanguageForFileName(filePath)
-                    const document = new scip.scip.Document({ relative_path: filePath, language: languageid })
-
-                    const isLastFile = index === parsedDiff.files.length - 1
-
-                    if (!isLastFile) {
-                        // Open all files to simulate local editor context
-                        // @TODO: Move the cursor into the changed sections
-                        client.notify('textDocument/didOpen', { filePath, content })
-                    }
-
-                    if (isLastFile) {
-                        const lastAddedLine = file.chunks
-                            .flatMap(chunks => (chunks.type === 'BinaryFilesChunk' ? [] : chunks.changes))
-                            .findLast(line => line.type === 'AddedLine' && line.content.trim().length >= 4) as
-                            | AddedLine
-                            | undefined
-
-                        if (!lastAddedLine) {
-                            continue
-                        }
-
-                        if (remainingTests <= 0) {
-                            continue
-                        }
-
-                        const replaceContent = lastAddedLine.content.trimStart()
-
-                        const range: Range = new Range(
-                            lastAddedLine.lineAfter - 1,
-                            lastAddedLine.content.length - replaceContent.length,
-                            lastAddedLine.lineAfter - 1,
-                            lastAddedLine.content.length
-                        )
-
-                        await triggerAutocomplete({ content, filePath, capture: undefined, range, client, document })
-
-                        // Write snapshot file to disk we get non-empty autocomplete results.
-                        if (options.snapshotDirectory && document.occurrences.length > 0) {
-                            const outputPath = path.join(options.snapshotDirectory, filePath)
-                            await fspromises.mkdir(path.dirname(outputPath), { recursive: true })
-                            const input = new Input(filePath, content)
-                            const snapshot = formatSnapshot(input, document)
-                            await fspromises.writeFile(outputPath, snapshot)
-                        }
-
-                        remainingTests--
-                    }
-
-                    index++
-                }
-            } finally {
-                // TODO: Reset all open editor tabs to avoid interference
-            }
-        }
-    } finally {
-        // Reset submodule to initial HEAD
-        const submodulesDir = path.join(workspace, '..')
-        execSync('git submodule deinit -f .', { cwd: submodulesDir }).toString()
-        execSync('it submodule update --init', { cwd: submodulesDir }).toString()
-    }
-}
-
-/**
- * Runs autocomplete evaluation. The current logic is specifically optimized
- * to evaluate BFG.  The best way to customize the logic is by changing the
- * code. Eventually, we could make the logic configurable via command-line
- * flags so that we can reuse this command for different kinds of evaluations.
- */
-async function evaluateBfgStrategy(
-    client: MessageHandler,
-    options: EvaluateAutocompleteOptions,
-    workspace: string
-): Promise<void> {
-    const queries = new Queries(options.queriesDirectory)
-    const grammarDirectory = path.normalize(options.treeSitterGrammars)
-    const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
-    files.sort()
-    let remainingTests = options.testCount
-    if (options.snapshotDirectory) {
-        await rimraf(options.snapshotDirectory)
-    }
-    for (const file of files) {
-        if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], file)) {
-            continue
-        }
-        const filePath = path.join(workspace, file)
-        const stat = await fspromises.stat(filePath)
-        if (!stat.isFile()) {
-            continue
-        }
-        const content = (await fspromises.readFile(filePath)).toString()
-        const languageid = getLanguageForFileName(file)
-        const language = getParseLanguage(languageid)
-        if (!language) {
-            continue
-        }
-        client.notify('textDocument/didOpen', { filePath, content })
-        const parser = await createParser({ language, grammarDirectory })
-        const tree = parser.parse(content)
-        const query = await queries.loadQuery(parser, language, 'context')
-        if (!query) {
-            continue
-        }
-
-        const document = new scip.scip.Document({ relative_path: file, language: languageid })
-        for (const match of query.matches(tree.rootNode)) {
-            if (remainingTests <= 0) {
-                break
-            }
-            for (const capture of match.captures) {
-                if (remainingTests <= 0) {
-                    break
-                }
-                if (capture.name === 'range') {
-                    if (capture.node.startPosition.row !== capture.node.endPosition.row) {
-                        // TODO: handle multi-line
-                        continue
-                    }
-                    try {
-                        await triggerAutocomplete({ content, filePath, capture, range: undefined, client, document })
-                    } catch {
-                        // const message = error instanceof Error ? error.message : `${error}`
-                        // TODO: push error occurrence
-                        // const range
-                        // const occurrence = new scip.scip.Occurrence({ symbol: message })
-                        // document.occurrences.push(occurrence)
-                        // ignore. Most common issue is that autocomplete times out.
-                    }
-                    remainingTests--
-                }
-            }
-        }
-
-        // Write snapshot file to disk we get non-empty autocomplete results.
-        if (options.snapshotDirectory && document.occurrences.length > 0) {
-            const outputPath = path.join(options.snapshotDirectory, file)
-            await fspromises.mkdir(path.dirname(outputPath), { recursive: true })
-            const input = new Input(filePath, content)
-            const snapshot = formatSnapshot(input, document)
-            await fspromises.writeFile(outputPath, snapshot)
-        }
-    }
-}
-
-// TODO: rename to remove fixture from this interface
-type AutocompleteFixture = {
-    content: string
-    filePath: string
-    client: MessageHandler
-    document: scip.scip.Document
-} & (
-    | {
-          capture: QueryCapture
-          range: undefined
-      }
-    | { range: Range; capture: undefined }
-)
-
-// TODO: complete this interface when we start using graphql/logEvent
-// interface AutocompletePublicArgument {
-//     fixture: string
-//     filepath: string
-//     commit: string
-//     completionEvent?: CompletionEvent
-//     error?: string
-//     emptyResult?: boolean
-//     exactMatch?: boolean
-//     didParseSuccessfully?: boolean
-//     didTypecheckSuccessfully?: boolean
-// }
-
-async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<void> {
-    const { content, filePath, capture, range, client, document } = fixture
-
-    let modifiedContent: string
-    let removedContent: string
-    let position: Position
-
-    if (capture === undefined) {
-        // TODO: This only allows single-lined completions
-        if (range.start.line !== range.end.line) {
-            throw new Error('Multi-line ranges not supported yet')
-        }
-
-        const lines = content.split('\n')
-        const currentLine = lines[range.start.line]
-
-        removedContent = currentLine.slice(range.start.character, range.end.character + 1)
-        modifiedContent = [
-            ...lines.slice(0, range.start.line),
-            currentLine.slice(0, range.start.character) + currentLine.slice(range.end.character),
-            ...lines.slice(range.end.line + 1),
-        ].join('\n')
-        position = range.start
-    } else {
-        // Modify the content by replacing the argument list to the call expression
-        // with an empty argument list. This evaluation is interesting because it
-        // allows us to test how good Cody is at inferring the original argument
-        // list.
-        modifiedContent = [content.slice(0, capture.node.startIndex), '()', content.slice(capture.node.endIndex)].join(
-            ''
-        )
-        removedContent = content.slice(capture.node.startIndex, capture.node.endIndex)
-        position = new Position(capture.node.startPosition.row, capture.node.startPosition.column + 1)
-    }
-
-    client.notify('textDocument/didChange', { filePath, content: modifiedContent })
-    const result = await client.request('autocomplete/execute', {
-        filePath,
-        position,
-        // We don't use the "automatic" trigger to avoid certain code paths like
-        // synthetic latency when acceptance rate is low.
-        triggerKind: 'Invoke',
-    })
-
-    const didNotSendNetworkRequest =
-        result.items.length === 0 && result.completionEvent?.networkRequestStartedAt === null
-    if (didNotSendNetworkRequest) {
-        return
-    }
-
-    const textDocument = new AgentTextDocument({ filePath, content: modifiedContent })
-    const pushText = (text: string): void => {
-        const scipRange = capture
-            ? [capture.node.startPosition.row, capture.node.startPosition.column, capture.node.endPosition.column]
-            : [range.start.line, range.start.character, range.end.character]
-        const occurrence = new scip.scip.Occurrence({
-            symbol: text,
-            range: scipRange,
-            symbol_roles: 0,
-        })
-        // TODO: log event
-        // client.request('graphql/logEvent', {
-        //     event: 'CodyEvaluation',
-        //     client: 'evaluate-autocomplete',
-        //     source: 'IDEEXTENSION',
-        //     url: '',
-        //     userCookieID: '',
-        //     publicArgument:
-        // })
-        document.occurrences.push(occurrence)
-    }
-    for (const item of result.items) {
-        const range = new Range(
-            item.range.start.line,
-            item.range.start.character,
-            item.range.end.line,
-            item.range.end.character
-        )
-        const original = textDocument.getText(range)
-        const completion = item.insertText
-        const patches: string[] = []
-        for (const [sx, ex, text] of calcPatch(original, completion)) {
-            if (sx !== ex) {
-                // TODO: handle non-insert patches
-                continue
-            }
-            patches.push(text)
-        }
-        if (patches.length > 0) {
-            const text = patches.join('')
-            if (range ? text === removedContent : ['(', text, ')'].join('') === removedContent) {
-                pushText('EXACT_MATCH')
-            } else {
-                pushText(text)
-            }
-        }
-    }
-    if (result.items.length === 0) {
-        pushText((range ? removedContent === '' : removedContent === '()') ? 'EXACT_MATCH' : 'EMPTY_RESULT')
-    }
-}
-
-function matchesGlobPatterns(includeGlobs: string[], excludeGlobs: string[], value: string): boolean {
+export function matchesGlobPatterns(includeGlobs: string[], excludeGlobs: string[], value: string): boolean {
     const matchingIncludePattern =
         includeGlobs.length > 0 ? !!includeGlobs.find(includePattern => minimatch(value, includePattern)) : true
     if (!matchingIncludePattern) {

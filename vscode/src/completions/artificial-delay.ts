@@ -74,7 +74,9 @@ export function getArtificialDelay(
         userMetrics.currentLatency += featureFlags.user ? defaultLatencies.user : 0
     }
 
-    logDebug('CodyCompletionProvider:getLatency', `Delay added: ${total}`)
+    if (total > 0) {
+        logDebug('CodyCompletionProvider:getLatency', `Delay added: ${total}`)
+    }
 
     return total
 }
