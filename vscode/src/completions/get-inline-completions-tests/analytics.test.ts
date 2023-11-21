@@ -61,6 +61,8 @@ describe('[getInlineCompletions] completion event', () => {
                 "items": [
                   {
                     "charCount": 30,
+                    "insertText": "console.log(bar)
+              return false}",
                     "lineCount": 2,
                     "lineTruncatedCount": 0,
                     "nodeTypes": {
@@ -112,6 +114,7 @@ describe('[getInlineCompletions] completion event', () => {
                 "items": [
                   {
                     "charCount": 5,
+                    "insertText": "\\"foo\\"",
                     "lineCount": 1,
                     "lineTruncatedCount": undefined,
                     "nodeTypes": {
