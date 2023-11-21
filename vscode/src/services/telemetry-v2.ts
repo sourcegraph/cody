@@ -83,7 +83,9 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
+    const extDetails = extensionDetails(config)
+
+    if (config.telemetryLevel === 'off' || !extDetails.ide || extDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
     }
@@ -96,13 +98,13 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
+        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extDetails, config, anonymousUserID))
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
     } else {
         updateGlobalInstances(
-            new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
+            new TelemetryRecorderProvider(extDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
         )
     }
 
