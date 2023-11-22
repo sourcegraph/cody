@@ -149,6 +149,7 @@ export class FixupController
         insertMode?: boolean,
         source?: ChatEventSource
     ): FixupTask {
+        console.log('Range', selectionRange);
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)

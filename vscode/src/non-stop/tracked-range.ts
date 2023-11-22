@@ -42,11 +42,11 @@ export function updateRange(range: vscode.Range, change: TextChange): vscode.Ran
 
     // Handle edits
     // ...after
-    if (change.range.start.isAfter(range.end)) {
+    if (change.range.start.isAfterOrEqual(range.end)) {
         return range
     }
     // ...before
-    if (change.range.end.isBefore(range.start)) {
+    if (change.range.end.isBeforeOrEqual(range.start)) {
         range = range.with(
             range.start.translate(
                 change.range.start.line - change.range.end.line + insertedLineBreaks,
@@ -67,7 +67,7 @@ export function updateRange(range: vscode.Range, change: TextChange): vscode.Ran
         )
     }
     // ...around
-    else if (change.range.start.isBefore(range.start) && change.range.end.isAfter(range.end)) {
+    else if (change.range.start.isBeforeOrEqual(range.start) && change.range.end.isAfterOrEqual(range.end)) {
         return new vscode.Range(change.range.start, change.range.start)
     }
     // ...within
