@@ -816,10 +816,8 @@ export function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode
 
 async function newChatModelfromTranscriptJSON(editor: Editor, json: TranscriptJSON): Promise<SimpleChatModel> {
     const repos = json.scope?.repositories
-    console.log('# repos', repos)
     const messages: MessageWithContext[][] = json.interactions.map(
         (interaction: InteractionJSON): MessageWithContext[] => {
-            console.log('# interaction.fullContext', interaction.fullContext)
             return [
                 {
                     message: {
@@ -859,8 +857,12 @@ export function deserializedContextFilesToContextItems2(
 
     return files.map((file: ContextFile): ContextItem => {
         const range = viewRangeToRange(file.range)
-        // TODO: relative path, maybe need special scheme?
-        const uri = file.uri || vscode.Uri.file(file.fileName)
+        const fallbackURI = vscode.Uri.from({
+            scheme: 'file-relative',
+            path: file.fileName,
+            fragment: range && `L${range.start.line}-${range.end.line}`,
+        })
+        const uri = file.uri || fallbackURI
         let text = file.content
         if (!text) {
             const contextMessage = contextByFile.get(file.fileName)
