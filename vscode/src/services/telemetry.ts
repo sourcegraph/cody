@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
@@ -135,4 +137,52 @@ export const telemetryService: TelemetryService = {
     log(eventName, properties, opts) {
         logEvent(eventName, properties, opts)
     },
+}
+
+/**
+ * Syncs Cody chat transcripts with Sourcegraph cloud for dotcom endpoints.
+ * Checks if there are chat transcripts in local storage that need to be synced,
+ * by comparing their last interaction timestamp against the last sync timestamp.
+ * Transcripts more recent than the last sync are stringified and logged as events.
+ */
+export async function syncTranscript(endpoint: string): Promise<void> {
+    // Only sync chat transcripts for dotcom endpoints
+    if (!isDotCom(endpoint)) {
+        return
+    }
+
+    const eventName = 'CodyVSCodeExtension:syncChatTranscript'
+
+    try {
+        // Skip if feature flag is not avaliable
+        const isFeatureEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatTranscript)
+        if (!isFeatureEnabled) {
+            return
+        }
+        // Skip if there are no chat transcripts available
+        const chatFromStore = localStorage.getChatHistory()?.chat
+        if (!chatFromStore) {
+            return
+        }
+
+        // Only sync if the last interaction timestamp is more recent than the last sync time.
+        const lastSyncedTimestamp = await localStorage.lastSyncTimestamp()
+
+        // Skip if lastSyncedTimestamp is today's date
+        if (new Date(lastSyncedTimestamp).toDateString() === new Date().toDateString()) {
+            return
+        }
+
+        Object.entries(chatFromStore).forEach(([id, transcript]) => {
+            // Convert transcript.lastInteractionTimestamp from timestamp string to number
+            const lastInteractionTimestamp = new Date(transcript.lastInteractionTimestamp).getTime()
+
+            if (lastInteractionTimestamp > lastSyncedTimestamp) {
+                const eventData = { id, transcript: JSON.stringify(transcript) }
+                logEvent(eventName, eventData)
+            }
+        })
+    } catch (error: unknown) {
+        logEvent(`${eventName}:failed`, { error: `${error}` })
+    }
 }

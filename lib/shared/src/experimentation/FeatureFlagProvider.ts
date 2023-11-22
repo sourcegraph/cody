@@ -23,6 +23,8 @@ export enum FeatureFlag {
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
+
+    CodyChatTranscript = 'cody-chat-transcript-sync',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

@@ -30,7 +30,7 @@ import { logDebug, logError } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
-import { telemetryService } from '../services/telemetry'
+import { syncTranscript, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { TestSupport } from '../test-support'
 
@@ -748,6 +748,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (localHistory) {
             MessageProvider.chatHistory = localHistory?.chat
             MessageProvider.inputHistory = localHistory.input
+        }
+
+        const endpoint = this.authProvider.getAuthStatus().endpoint
+        if (endpoint) {
+            void syncTranscript(endpoint)
         }
     }
 

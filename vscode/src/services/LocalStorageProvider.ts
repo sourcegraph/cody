@@ -10,6 +10,7 @@ export class LocalStorage {
     protected LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
+    protected LAST_TRANSCRIPT_SYNC_TIMESTAMP = 'SOURCEGRAPH_CODY_DOTCOM_LAST_SYNC_TIMESTAMP'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -117,6 +118,15 @@ export class LocalStorage {
             }
         }
         return { anonymousUserID: id, created }
+    }
+
+    public async lastSyncTimestamp(): Promise<number> {
+        const storedSyncedTime = this.storage.get<number>(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, 0)
+        const newSyncedTime = Date.now()
+        const lastSyncedTime = storedSyncedTime
+        // Update sync time to now
+        await this.storage.update(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, newSyncedTime)
+        return lastSyncedTime
     }
 
     public async setLastUsedCommands(recipes: string[]): Promise<void> {
