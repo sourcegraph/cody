@@ -1,37 +1,24 @@
-import { Position, TextDocument } from 'vscode'
+import { getLanguageConfig } from '../tree-sitter/language'
 
-import { DocumentContext } from './get-current-doc-context'
-import { getLanguageConfig } from './language'
+import { DocumentDependentContext, LinesContext } from './get-current-doc-context'
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,
     indentation,
     OPENING_BRACKET_REGEX,
 } from './text-processing'
-import { execQueryWrapper } from './tree-sitter/query-sdk'
 
 interface DetectMultilineParams {
-    docContext: Omit<DocumentContext, 'multilineTrigger'>
-    document: TextDocument
-    syntacticTriggers?: boolean
-    cursorPosition: Pick<Position, 'line' | 'character'>
+    docContext: LinesContext & DocumentDependentContext
+    languageId: string
 }
 
 export function detectMultiline(params: DetectMultilineParams): string | null {
-    const { syntacticTriggers, docContext, document, cursorPosition } = params
+    const { docContext, languageId } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
-    const blockStart = getLanguageConfig(document.languageId)?.blockStart
+    const blockStart = getLanguageConfig(languageId)?.blockStart
     const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
-
-    if (syntacticTriggers && isBlockStartActive) {
-        const singleLineTriggers = execQueryWrapper(document, cursorPosition, 'getSinglelineTrigger')
-
-        // Don't trigger multiline completion if single line trigger is found.
-        if (singleLineTriggers.length > 0) {
-            return null
-        }
-    }
 
     const checkInvocation =
         currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix

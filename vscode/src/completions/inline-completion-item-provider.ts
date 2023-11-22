@@ -10,8 +10,11 @@ import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { ContextMixer, ContextStrategy } from './context/context-mixer'
+import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
+import { ContextMixer } from './context/context-mixer'
+import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
+import { getCompletionIntent } from './doc-context-getters'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -20,9 +23,8 @@ import {
     LastInlineCompletionCandidate,
     TriggerKind,
 } from './get-inline-completions'
-import { getLatency, LatencyFeatureFlags, lowPerformanceLanguageIds, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
-import { CompletionEvent, CompletionItemID, CompletionLogID, READ_TIMEOUT_MS } from './logger'
+import { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
@@ -33,7 +35,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
     items: AutocompleteItem[]
     /** @deprecated */
-    completionEvent?: CompletionEvent
+    completionEvent?: CompletionBookkeepingEvent
 }
 
 export class AutocompleteItem extends vscode.InlineCompletionItem {
@@ -185,7 +187,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
-        this.contextMixer = new ContextMixer(config.contextStrategy, createBfgRetriever)
+        this.contextMixer = new ContextMixer(
+            new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
+        )
 
         const chatHistory = localStorage.getChatHistory()?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -233,17 +237,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise, lowPerformanceDebouncePromise] = [
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLowPerformanceDebounce),
+        const [languageLatencyPromise, userLatencyPromise] = [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
         ]
-
-        const minLatencyFlagsPromises = {
-            user: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
-            language: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
-            provider: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteProviderLatency),
-        }
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
@@ -296,28 +293,26 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             position,
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-            syntacticTriggers: await syntacticTriggersPromise,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
 
-        const isLowPerformanceLanguage =
-            triggerKind === TriggerKind.Automatic && lowPerformanceLanguageIds.has(document.languageId)
+        const completionIntent = getCompletionIntent({
+            document,
+            position,
+            prefix: docContext.prefix,
+        })
 
-        const isIncreasedDebounceTimeEnabled = await isIncreasedDebounceTimeEnabledPromise
-        const isLowPerformanceDebounceTimeEnabled =
-            (await lowPerformanceDebouncePromise) && !(await minLatencyFlagsPromises.language)
-
-        const debounceInterval =
-            isLowPerformanceDebounceTimeEnabled && isLowPerformanceLanguage
-                ? {
-                      singleLine: 1000,
-                      multiLine: 1500,
-                  }
-                : {
-                      singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25,
-                      multiLine: 125,
-                  }
+        const latencyFeatureFlags: LatencyFeatureFlags = {
+            user: await userLatencyPromise,
+            language: await languageLatencyPromise,
+        }
+        const artificialDelay = getArtificialDelay(
+            latencyFeatureFlags,
+            document.uri.toString(),
+            document.languageId,
+            completionIntent
+        )
 
         try {
             const result = await this.getInlineCompletions({
@@ -330,13 +325,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 contextMixer: this.contextMixer,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,
-                debounceInterval,
+                debounceInterval: {
+                    singleLine: 75,
+                    multiLine: 125,
+                },
                 setIsLoading,
                 abortSignal: abortController.signal,
                 tracer,
                 handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                 handleDidPartiallyAcceptCompletionItem: this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                 completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
+                artificialDelay,
+                completionIntent,
             })
 
             // Avoid any further work if the completion is invalidated already.
@@ -363,42 +363,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 currentPrefix.length < lastTriggeredPrefix.length
             ) {
                 this.handleUnwantedCompletionItem(getRequestParamsFromLastCandidate(document, this.lastCandidate))
-            }
-
-            // Unless the result is from the last candidate, we may want to apply the minimum
-            // latency so that we don't show a result before the user has paused typing for a brief
-            // moment.
-            if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const latencyFeatureFlags: LatencyFeatureFlags = {
-                    user: await minLatencyFlagsPromises.user,
-                    language: (await minLatencyFlagsPromises.language) && !(await lowPerformanceDebouncePromise), // only one language flag should be enabled at a time
-                    provider: await minLatencyFlagsPromises.provider,
-                }
-                // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
-                const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > READ_TIMEOUT_MS
-                this.lastCompletionRequestTimestamp = start
-                const isMinLatencyEnabled =
-                    latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
-                if (isLastSuggestionRead && triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
-                    const minimumLatency = getLatency(
-                        latencyFeatureFlags,
-                        this.config.providerConfig.identifier,
-                        document.uri.fsPath,
-                        document.languageId,
-                        result.items[0]?.nodeTypes?.atCursor
-                    )
-
-                    const delta = performance.now() - start
-                    if (minimumLatency && delta < minimumLatency) {
-                        await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
-                    }
-
-                    // Avoid any further work if the completion is invalidated during the the
-                    // minimum duration pause
-                    if (abortController.signal.aborted) {
-                        return null
-                    }
-                }
             }
 
             const items = processInlineCompletionsForVSCode(
@@ -493,7 +457,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        resetLatency()
+        resetArtificialDelay()
 
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.

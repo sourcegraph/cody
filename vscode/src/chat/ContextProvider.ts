@@ -16,7 +16,6 @@ import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
-import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
@@ -116,7 +115,7 @@ export class ContextProvider implements vscode.Disposable {
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -224,6 +223,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                experimentalChatPanel: this.config.experimentalChatPanel,
             }
 
             // update codebase context on configuration change
@@ -332,7 +332,6 @@ async function getCodebaseContext(
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         symf,
-        undefined,
-        getRerankWithLog(chatClient)
+        undefined
     )
 }

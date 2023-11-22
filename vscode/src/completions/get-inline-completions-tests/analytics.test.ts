@@ -2,10 +2,10 @@ import { omit } from 'lodash'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
-import { CompletionEvent } from '../logger'
+import { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
-import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletions, params } from './helpers'
 
@@ -18,7 +18,7 @@ describe('[getInlineCompletions] completion event', () => {
         resetParsersCache()
     })
 
-    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionEvent>> {
+    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionBookkeepingEvent>> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
@@ -82,6 +82,7 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "function.body",
                   "contextSummary": {
                     "retrieverStats": {},
@@ -96,7 +97,6 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)
@@ -132,6 +132,7 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "return_statement",
                   "contextSummary": {
                     "retrieverStats": {},
@@ -146,7 +147,6 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)

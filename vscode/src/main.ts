@@ -5,7 +5,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
@@ -16,7 +16,6 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
-import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -38,6 +37,7 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -157,6 +157,9 @@ const register = async (
         contextProvider,
         platform,
     }
+
+    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
+    await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)

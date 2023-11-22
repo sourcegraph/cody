@@ -74,7 +74,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
             <div className={styles.sectionsContainer}>
                 <img src={onboardingSplashImage} alt="Hi, I'm Cody" className={styles.logo} />
                 <div className={classNames(styles.section, styles.authMethodScreen)}>
-                    Sign in to get started:
+                    <h1>Sign In to Get Started</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
                             {uiKindIsWeb ? (
@@ -119,17 +119,19 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                <p className={styles.terms}>
-                    By signing in, you agree to our <a href="https://about.sourcegraph.com/terms">Terms of Service</a>{' '}
-                    and <a href="https://about.sourcegraph.com/terms/privacy">Privacy Policy</a>
-                </p>
+                <div className={styles.otherSignInOptions}>
+                    <h2>Using Sourcegraph Enterprise?</h2>
+                    <p>
+                        <button type="button" className={styles.linkButton} onClick={otherSignInClick}>
+                            Sign In to Your Enterprise Instance
+                        </button>
+                    </p>
+                </div>
             </div>
-            <div className={styles.otherSignInOptions}>
-                Use Sourcegraph Enterprise?
-                <br />
-                <button type="button" className={styles.linkButton} onClick={otherSignInClick}>
-                    Sign In to Enterprise Instance
-                </button>
+            <div className={styles.terms}>
+                By signing in to Cody you agree to our{' '}
+                <a href="https://about.sourcegraph.com/terms">Terms of Service</a> and{' '}
+                <a href="https://about.sourcegraph.com/terms/privacy">Privacy Policy</a>
             </div>
         </div>
     )

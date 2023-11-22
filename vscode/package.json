@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.14.5",
+  "version": "0.16.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -37,8 +37,7 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
-    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/query-tests/**/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
   },
   "categories": [
     "Programming Languages",
@@ -225,13 +224,6 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Search (experimental)",
-          "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
-        },
-        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -247,6 +239,13 @@
           "id": "cody.chat.tree.view",
           "name": "Chats",
           "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.newSearch"
         },
         {
           "id": "cody.support.tree.view",
@@ -490,7 +489,7 @@
         "title": "Start a New Chat Panel",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
-        "icon": "$(comment)"
+        "icon": "$(new-comment-icon)"
       },
       {
         "command": "cody.chat.tree.view.focus",
@@ -976,7 +975,7 @@
           "title": "Cody Inline Chat",
           "type": "boolean",
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
-          "default": true
+          "default": false
         },
         "cody.editorTitleCommandIcon": {
           "order": 7,
@@ -1122,7 +1121,8 @@
           "enum": [
             null,
             "lsp-light",
-            "bfg"
+            "bfg",
+            "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
@@ -1148,6 +1148,13 @@
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0042"
         }
+      },
+      "new-comment-icon": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0048"
+        }
       }
     }
   },
@@ -1159,7 +1166,7 @@
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.11.0",
+    "@sourcegraph/telemetry": "^0.13.0",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
