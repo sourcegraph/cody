@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
+import { startAsyncSpan } from '../tracing/tracer'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
@@ -128,9 +129,11 @@ export enum TriggerKind {
 
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     try {
-        const result = await doGetInlineCompletions(params)
-        params.tracer?.({ result })
-        return result
+        return await startAsyncSpan('getInlineCompletions', async () => {
+            const result = await doGetInlineCompletions(params)
+            params.tracer?.({ result })
+            return result
+        })
     } catch (unknownError: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
@@ -230,11 +233,13 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    const interval =
-        ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
-    if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-        await new Promise<void>(resolve => setTimeout(resolve, interval))
-    }
+    await startAsyncSpan('debounce', async () => {
+        const interval =
+            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
+        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
+            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        }
+    })
 
     // We don't need to make a request at all if the signal is already aborted after the debounce.
     if (abortSignal?.aborted) {
@@ -245,12 +250,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await contextMixer.getContext({
-        document,
-        position,
-        docContext,
-        abortSignal,
-        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+    const contextResult = await startAsyncSpan('context', async () => {
+        return contextMixer.getContext({
+            document,
+            position,
+            docContext,
+            abortSignal,
+            maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+        })
     })
     if (abortSignal?.aborted) {
         return null
@@ -283,12 +290,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Get the processed completions from providers
-    const { completions, cacheHit } = await requestManager.request(
-        reqContext,
-        completionProviders,
-        contextResult?.context ?? [],
-        tracer ? createCompletionProviderTracer(tracer) : undefined
-    )
+    const { completions, cacheHit } = await startAsyncSpan('request', async () => {
+        return requestManager.request(
+            reqContext,
+            completionProviders,
+            contextResult?.context ?? [],
+            tracer ? createCompletionProviderTracer(tracer) : undefined
+        )
+    })
 
     const source =
         cacheHit === 'hit'

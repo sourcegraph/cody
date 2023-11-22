@@ -32,6 +32,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
+    initializeOpenTelemetry?: (config: Pick<Configuration, 'serverEndpoint'>) => void
     recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }

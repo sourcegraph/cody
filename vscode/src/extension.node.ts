@@ -18,6 +18,7 @@ import { LocalKeywordContextFetcher } from './local-context/local-keyword-contex
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
 import { NodeSentryService } from './services/sentry/sentry.node'
+import { initialize as initializeOpenTelemetry } from './tracing/initializeOpenTelemetry.node'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -35,6 +36,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         createSymfRunner: (...args) => new SymfRunner(...args),
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
+        initializeOpenTelemetry,
 
         // Include additional recipes that require Node packages (such as `child_process`).
         recipes: [

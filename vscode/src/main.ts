@@ -105,6 +105,8 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
+    platform.initializeOpenTelemetry?.(config)
+
     if (config.chatPreInstruction) {
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
