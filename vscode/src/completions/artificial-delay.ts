@@ -92,5 +92,4 @@ export function resetArtificialDelay(timestamp = 0): void {
         suggested: 0,
         uri: '',
     }
-    logDebug('CodyCompletionProvider:resetArtificialDelay', 'Latency Reset')
 }

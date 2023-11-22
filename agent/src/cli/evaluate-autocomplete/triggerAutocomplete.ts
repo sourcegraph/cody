@@ -67,13 +67,18 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
             patches.push(text)
         }
         if (hasNonInsertPatch) {
-            document.pushItem({ resultText: item.insertText, range, resultNonInsertPatch: true })
+            document.pushItem({
+                resultText: item.insertText,
+                range,
+                resultNonInsertPatch: true,
+                event: result.completionEvent,
+            })
         } else if (patches.length > 0) {
             const text = patches.join('')
             if (text === removedContent) {
-                document.pushItem({ range, resultExact: true })
+                document.pushItem({ range, resultExact: true, event: result.completionEvent })
             } else {
-                document.pushItem({ range, resultText: text })
+                document.pushItem({ range, resultText: text, event: result.completionEvent })
             }
         }
     }

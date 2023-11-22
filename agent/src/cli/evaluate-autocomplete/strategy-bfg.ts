@@ -2,9 +2,6 @@ import { execSync } from 'child_process'
 import * as fspromises from 'fs/promises'
 import * as path from 'path'
 
-import { createObjectCsvWriter } from 'csv-writer'
-import { CsvWriter } from 'csv-writer/src/lib/csv-writer'
-import { rimraf } from 'rimraf'
 import * as vscode from 'vscode'
 
 import { getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
@@ -12,9 +9,10 @@ import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import { AutocompleteDocument, autocompleteItemHeaders } from './AutocompleteDocument'
+import { AutocompleteDocument } from './AutocompleteDocument'
 import { EvaluateAutocompleteOptions, matchesGlobPatterns } from './evaluate-autocomplete'
 import { Queries } from './Queries'
+import { SnapshotWriter } from './SnapshotWriter'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 /**
@@ -33,17 +31,11 @@ export async function evaluateBfgStrategy(
     const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
     files.sort()
     let remainingTests = options.testCount
-    let csvWriter: CsvWriter<any> | undefined
-    if (options.snapshotDirectory) {
-        await rimraf(options.snapshotDirectory)
-        await fspromises.mkdir(options.snapshotDirectory, { recursive: true })
-        if (options.csvPath) {
-            csvWriter = createObjectCsvWriter({
-                header: autocompleteItemHeaders,
-                path: options.csvPath,
-            })
-        }
-    }
+    const snapshots = new SnapshotWriter(options)
+    await snapshots.writeHeader()
+
+    const revision = execSync('git rev-parse HEAD', { cwd: workspace }).toString().trim()
+
     for (const file of files) {
         if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], file)) {
             continue
@@ -74,6 +66,7 @@ export async function evaluateBfgStrategy(
                 strategy: options.fixture.strategy,
                 fixture: options.fixture.name,
                 workspace: path.basename(options.workspace),
+                revision,
             },
             content
         )
@@ -132,11 +125,6 @@ export async function evaluateBfgStrategy(
             }
         }
 
-        if (options.snapshotDirectory && document.items.length > 0) {
-            await document.writeSnapshot(options.snapshotDirectory)
-            if (csvWriter) {
-                await csvWriter.writeRecords(document.items)
-            }
-        }
+        await snapshots.writeDocument(document)
     }
 }
