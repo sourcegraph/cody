@@ -68,3 +68,7 @@
 .codebase {
     border-bottom: 1px solid var(--vscode-selection-background);
 }
+
+.current-file {
+    margin-top: 0.5rem;
+}

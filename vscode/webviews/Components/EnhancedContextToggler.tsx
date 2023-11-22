@@ -41,7 +41,7 @@ export const EnhancedContextToggler: React.FunctionComponent<{
                     <p className={styles.codebaseConnection}>
                         Connected to <span className={contextStatus.codebase && styles.codebase}>{codebaseName}</span>
                     </p>
-                    <p className={styles.codebaseConnection}>{currentFile || 'loading...'}</p>
+                    <p className={styles.currentFile}>{`@${currentFile}` || 'loading...'}</p>
                 </div>
             )}
             <VSCodeButton

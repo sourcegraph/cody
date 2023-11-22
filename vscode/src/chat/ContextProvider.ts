@@ -191,6 +191,7 @@ export class ContextProvider implements vscode.Disposable {
         const send = async (): Promise<void> => {
             const editor = getEditor()
             const activeEditor = editor.active
+            const fileName = vscode.workspace.asRelativePath(activeEditor?.document?.uri.fsPath || '')
 
             await this.webview?.postMessage({
                 type: 'contextStatus',
@@ -200,7 +201,7 @@ export class ContextProvider implements vscode.Disposable {
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
-                    filePath: editor.ignored ? 'ignored' : activeEditor?.document.fileName,
+                    filePath: editor.ignored ? 'ignored' : fileName,
                     selectionRange: editor.ignored ? undefined : activeEditor?.selection,
                     supportsKeyword: true,
                 },
@@ -294,9 +295,6 @@ export class ContextProvider implements vscode.Disposable {
 
 /**
  * Gets codebase context for the current workspace.
- * @param config Cody configuration
- * @param rgPath Path to rg (ripgrep) executable
- * @param editor Editor instance
  * @returns CodebaseContext if a codebase can be determined, else null
  */
 async function getCodebaseContext(
@@ -312,9 +310,10 @@ async function getCodebaseContext(
     if (!workspaceRoot) {
         return null
     }
-    const currentFile = editor.getActiveTextEditor()?.fileUri || workspaceRoot
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase
+    const currentFile = getEditor()?.active?.document?.uri
+    // Get codebase from config or fallback to getting codebase name from current file URL
+    // Always use the codebase from config as this is manually set by the user
+    const codebase = config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
     if (!codebase) {
         return null
     }
