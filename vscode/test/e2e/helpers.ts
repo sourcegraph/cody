@@ -2,7 +2,7 @@ import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
-import { test as base, expect, Frame, Page } from '@playwright/test'
+import { test as base, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -162,8 +162,4 @@ export async function signOut(page: Page): Promise<void> {
 export async function submitChat(sidebar: Frame, text: string): Promise<void> {
     await sidebar.getByRole('textbox', { name: 'Chat message' }).fill(text)
     await sidebar.getByTitle('Send Message').click()
-}
-
-export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect.poll(() => loggedEvents.slice().sort()).toEqual(expectedEvents.slice().sort())
 }
