@@ -102,14 +102,13 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     // Trigger/accept another completion, but don't expect the notification.
     await triggerInlineCompletionAfter(page, firstAcceptedCompletion)
     await acceptInlineCompletion(page)
-    await expect(otherAcceptedCompletion).toBeVisible()
-    await expect(decoration).not.toBeVisible()
-
     // After accepting a completion, a new completion request will be made. Since this can interfere
     // with the expected event order (especially since suggestion events are logged after the
     // completion is hidden), we type a semicolon which will prevent an automatic completion from
     // showing up
     await page.keyboard.press(';')
+    await expect(otherAcceptedCompletion).toBeVisible()
+    await expect(decoration).not.toBeVisible()
 
     await assertEvents(loggedEvents, expectedEvents)
 })
