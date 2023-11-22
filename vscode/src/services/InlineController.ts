@@ -67,9 +67,11 @@ export class InlineController implements VsCodeInlineController {
         this.userIcon = getIconPath('user', this.extensionPath)
 
         const config = vscode.workspace.getConfiguration('cody')
-        const enableInlineChat = config.get('inlineChat.enabled') as boolean
 
-        if (enableInlineChat) {
+        // NOTE: Do not enable inline-chat when experimental.chatPanel is enabled
+        const isNewChatUiEnabled = config.get('experimental.chatPanel') as boolean
+        const enableInlineChat = config.get('inlineChat.enabled') as boolean
+        if (!isNewChatUiEnabled && enableInlineChat) {
             this.commentController = this.init()
         }
 
@@ -77,9 +79,9 @@ export class InlineController implements VsCodeInlineController {
         vscode.workspace.onDidChangeConfiguration(e => {
             const config = vscode.workspace.getConfiguration('cody')
             if (e.affectsConfiguration('cody')) {
-                // Inline Chat
+                const isNewChatUiEnabled = config.get('experimental.chatPanel') as boolean
                 const enableInlineChat = config.get('inlineChat.enabled') as boolean
-                if (enableInlineChat) {
+                if (!isNewChatUiEnabled && enableInlineChat) {
                     this.commentController = this.init()
                     return
                 }

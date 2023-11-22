@@ -101,13 +101,6 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.editorTitleCommandIcon
                 ),
                 createFeatureToggle(
-                    'Inline Chat',
-                    undefined,
-                    'Enable chatting and editing with Cody, directly in your code',
-                    'cody.inlineChat.enabled',
-                    c => c.inlineChat
-                ),
-                createFeatureToggle(
                     'Code Actions',
                     undefined,
                     'Enable Cody fix and explain options in the Quick Fix menu',
