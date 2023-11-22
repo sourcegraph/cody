@@ -115,7 +115,7 @@ export class ContextProvider implements vscode.Disposable {
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -223,6 +223,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                experimentalChatPanel: this.config.experimentalChatPanel,
             }
 
             // update codebase context on configuration change

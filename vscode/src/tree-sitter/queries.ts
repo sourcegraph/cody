@@ -18,6 +18,7 @@ export const intentPriority = [
     'arguments',
     'import.source',
     'comment',
+    'pair.value',
     'argument',
     'parameter',
     'parameters',

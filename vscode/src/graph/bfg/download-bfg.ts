@@ -9,6 +9,7 @@ import * as vscode from 'vscode'
 import { fileExists } from '../../local-context/download-symf'
 import { logDebug } from '../../log'
 import { getOSArch } from '../../os'
+import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
 const defaultBfgVersion = '5.2.6637'
@@ -85,6 +86,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
         )
         void removeOldBfgBinaries(bfgContainingDir, bfgFilename)
     } catch (error) {
+        captureException(error)
         void vscode.window.showErrorMessage(`Failed to download bfg from URL ${bfgURL}: ${error}`)
         return null
     }

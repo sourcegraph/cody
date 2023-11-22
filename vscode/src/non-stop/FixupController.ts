@@ -98,17 +98,25 @@ export class FixupController
         // Observe file edits
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
-            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver)),
-            vscode.workspace.onDidSaveTextDocument(({ uri }) => {
-                // If we save the document, we consider the user to have accepted any applied tasks.
-                // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
-                for (const task of this.tasks.values()) {
-                    if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
-                        this.accept(task.id)
-                    }
-                }
-            })
+            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
         )
+
+        // Only auto-accept tasks on save if the user doesn't have a conflicting autoSave setting.
+        // Otherwise the code lens will just flicker for the user, as it will be accepted almost immediately
+        const autoSaveSetting = vscode.workspace.getConfiguration('files').get<string>('autoSave')
+        if (autoSaveSetting === 'off' || autoSaveSetting === 'onWindowChange') {
+            this._disposables.push(
+                vscode.workspace.onDidSaveTextDocument(({ uri }) => {
+                    // If we save the document, we consider the user to have accepted any applied tasks.
+                    // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
+                    for (const task of this.tasks.values()) {
+                        if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                            this.accept(task.id)
+                        }
+                    }
+                })
+            )
+        }
     }
 
     /**

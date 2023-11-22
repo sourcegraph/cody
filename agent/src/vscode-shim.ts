@@ -3,6 +3,8 @@ import { execSync } from 'child_process'
 
 import type * as vscode from 'vscode'
 
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
@@ -103,15 +105,24 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
-export const customConfiguration: Record<string, any> = {}
-
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
     },
     get: (section, defaultValue?: any) => {
-        const fromCustomConfiguration = customConfiguration[section]
-        if (fromCustomConfiguration) {
+        const clientNameToIDE = (value: string): Configuration['agentIDE'] | undefined => {
+            return (
+                {
+                    vscode: 'VSCode',
+                    jetbrains: 'JetBrains',
+                    emacs: 'Emacs',
+                    neovim: 'Neovim',
+                } as const
+            )[value.toLowerCase()]
+        }
+
+        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
+        if (fromCustomConfiguration !== undefined) {
             return fromCustomConfiguration
         }
         switch (section) {
@@ -122,7 +133,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
             case 'cody.telemetry.level':
-                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // Use the dedicated `telemetry/recordEvent` to send telemetry from
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
@@ -148,6 +159,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return false
             case 'cody.codebase':
                 return connectionConfig?.codebase
+            case 'cody.advanced.agent.ide':
+                return clientNameToIDE(clientInfo?.name ?? '')
             default:
                 return defaultValue
         }
@@ -346,14 +359,18 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                     if (!cwd) {
                         return null
                     }
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                    const repository: Partial<Repository> = {
-                        rootUri: Uri.file(toplevel),
-                        state: {
-                            remotes: [],
-                        } as any,
+                    try {
+                        const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                        const repository: Partial<Repository> = {
+                            rootUri: Uri.file(toplevel),
+                            state: {
+                                remotes: [],
+                            } as any,
+                        }
+                        return repository as Repository
+                    } catch {
+                        return null
                     }
-                    return repository as Repository
                 },
             }
             return api as API

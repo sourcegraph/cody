@@ -8,7 +8,7 @@
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     border-color: var(--vscode-sideBarSectionHeader-border);
-    padding: 15px 15px 15px 20px;
+    padding: 1rem 1rem 1rem 1.25rem;
     color: var(--vscode-foreground);
 }
 
@@ -27,7 +27,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     background-color: var(--vscode-sideBar-foreground, currentColor);
 }
 
-.transcript-item code, .transcript-item pre {
+.transcript-item code,
+.transcript-item pre {
     font-family: var(--vscode-editor-font-family);
     font-size: var(--vscode-editor-font-size);
 }
@@ -105,7 +106,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     color: var(--vscode-input-foreground);
     border: 1px solid transparent;
     border-radius: 2px;
-    padding: 8px 8px 32px 8px;
+    padding: 0.5rem;
     font: inherit;
     width: 100%;
     overflow: hidden;
@@ -114,6 +115,12 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
+}
+
+/* Unset for the new chat ui */
+.new-chat-input,
+.new-chat-input-container::after {
+    min-height: unset;
 }
 
 .chat-input {
@@ -187,7 +194,11 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .submit-button {
-    color: var(--foreground);
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+
+    display: flex;
+    justify-content: center;
 }
 
 .submit-button,
@@ -196,7 +207,8 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .submit-button[disabled] {
-    pointer-events: none;
+    opacity: 0.8;
+    cursor: text;
 }
 
 .stop-generating-button {

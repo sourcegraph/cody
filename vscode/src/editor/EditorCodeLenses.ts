@@ -13,7 +13,7 @@ interface EditorCodeLens {
  */
 export class EditorCodeLenses implements vscode.CodeLensProvider {
     private isEnabled = false
-    private isInlineChatEnabled = true
+    private isInlineChatEnabled = false
 
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
@@ -55,8 +55,11 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
         this.isEnabled = config.get('experimental.commandLenses') as boolean
-        this.isInlineChatEnabled =
-            (config.get('inlineChat.enabled') as boolean) && (config.get('inlineChat.codeLenses') as boolean)
+
+        // NOTE: Do not enable inline-chat when experimental.chatPanel is enabled
+        const isInlineChatEnabled =
+            (config.get('inlineChat.enabled') as boolean) && !(config.get('experimental.chatPanel') as boolean)
+        this.isInlineChatEnabled = isInlineChatEnabled && (config.get('inlineChat.codeLenses') as boolean)
         if (this.isEnabled && !this._disposables.length) {
             this.init()
         }
@@ -108,8 +111,8 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
 
         // Add code lenses for each symbol
         if (symbols) {
-            for (let i = 0; i < symbols.length; i++) {
-                const range = symbols[i].location.range
+            for (const symbol of symbols) {
+                const range = symbol.location.range
                 const selection = new vscode.Selection(range.start, range.end)
                 codeLenses.push(
                     new vscode.CodeLens(range, {
@@ -125,7 +128,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
                         })
                     )
                 }
-                codeLensesMap.set(i.toString(), range)
+                codeLensesMap.set(symbol.location.range.start.line.toString(), range)
             }
         }
 
