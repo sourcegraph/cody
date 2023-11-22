@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -52,8 +52,16 @@ export class CommandRunner implements vscode.Disposable {
         logDebug('CommandRunner:init', this.kind)
 
         // Commands only work in active editor / workspace unless context specifies otherwise
-        this.editor = getActiveEditor()
-        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
+        const editor = getEditor()
+        if (editor.ignored && !editor.active) {
+            const errorMsg = 'Failed to create command: file was ignored by Cody.'
+            logDebug('CommandRunner:int:fail', errorMsg)
+            void vscode.window.showErrorMessage(errorMsg)
+            return
+        }
+
+        this.editor = editor.active
+        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)

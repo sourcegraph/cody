@@ -17,7 +17,7 @@ import { CommandsController } from '../commands/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
-import { getActiveEditor } from './active-editor'
+import { getEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
@@ -30,15 +30,15 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         >
     ) {
         /**
-         * Callback function that calls getActiveEditor() whenever the visible text editors change in VS Code.
+         * Callback function that calls getEditor().active whenever the visible text editors change in VS Code.
          * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
          */
-        vscode.window.onDidChangeActiveTextEditor(() => getActiveEditor())
+        vscode.window.onDidChangeActiveTextEditor(() => getEditor())
         new EditorCodeLenses()
     }
 
     public get fileName(): string {
-        return getActiveEditor()?.document.fileName ?? ''
+        return getEditor().active?.document?.fileName ?? ''
     }
 
     /**
@@ -51,7 +51,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     public getWorkspaceRootUri(): vscode.Uri | null {
-        const uri = getActiveEditor()?.document?.uri
+        const uri = getEditor().active?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
@@ -66,9 +66,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         if (!activeEditor) {
             return null
         }
-        if (isCodyIgnoredFile(activeEditor.document.uri)) {
-            return null
-        }
         const documentUri = activeEditor.document.uri
         const documentText = activeEditor.document.getText()
         const documentSelection = activeEditor.selection
@@ -78,6 +75,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             filePath: documentUri.fsPath,
             fileUri: documentUri,
             selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
+            ignored: isCodyIgnoredFile(activeEditor.document.uri),
         }
     }
 
@@ -117,7 +115,8 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
-        const activeEditor = getActiveEditor()
+        const editor = getEditor()
+        const activeEditor = editor.ignored ? null : getEditor().active
         return activeEditor ?? null
     }
 
