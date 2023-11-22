@@ -288,13 +288,25 @@ export class ChatPanelProvider extends MessageProvider {
 
         const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
             try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
+                const MAX_RESULTS = 20
+                const fileResultsPromise = getFileContextFile(query, 50)
                 const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
 
                 const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
+                // Sort results by alphabatic and the length of the director/file path
+                const sortedFileResults = fileResults
+                    .sort((a, b) => {
+                        if (a.fileName < b.fileName) {
+                            return -1
+                        }
+                        if (a.fileName > b.fileName) {
+                            return 1
+                        }
+                        return 0
+                    })
+                    .slice(0, MAX_RESULTS)
+                // Return the merged results
+                const context = [...new Set([...sortedFileResults, ...symbolResults])]
                 await this.webview?.postMessage({
                     type: 'userContextFiles',
                     context,
