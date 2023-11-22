@@ -32,7 +32,7 @@ export const lowPerformanceLanguageIds = new Set([
     'handlebars',
 ])
 
-const lowPerformanceCompletionIntents = new Set(['comment', 'import.source']) satisfies Set<CompletionIntent>
+const lowPerformanceCompletionIntents = new Set(['comment', 'import.source'])
 
 let userMetrics = {
     sessionTimestamp: 0,
