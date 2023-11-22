@@ -11,7 +11,7 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 import { logDebug } from '../log'
 
 import { localStorage } from './LocalStorageProvider'
-import { extensionDetails } from './telemetry'
+import { getExtensionDetails } from './telemetry'
 
 let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
@@ -83,9 +83,9 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    const extDetails = extensionDetails(config)
+    const extensionDetails = getExtensionDetails(config)
 
-    if (config.telemetryLevel === 'off' || !extDetails.ide || extDetails.ideExtensionType !== 'Cody') {
+    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
     }
@@ -98,13 +98,13 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extDetails, config, anonymousUserID))
+        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
     } else {
         updateGlobalInstances(
-            new TelemetryRecorderProvider(extDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
+            new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)
         )
     }
 

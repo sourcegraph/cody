@@ -18,7 +18,7 @@ let globalAnonymousUserID: string
 const { platform, arch } = getOSArch()
 
 const extensionVersion = vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
-export const extensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
+export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
@@ -45,7 +45,7 @@ export async function createOrUpdateEventLogger(
         }
     }
 
-    const extDetails = extensionDetails(config)
+    const extensionDetails = getExtensionDetails(config)
 
     telemetryLevel = config.telemetryLevel
 
@@ -55,7 +55,7 @@ export async function createOrUpdateEventLogger(
     const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
-        eventLogger = new EventLogger(serverEndpoint, extDetails, config)
+        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
         if (created) {
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
@@ -67,7 +67,7 @@ export async function createOrUpdateEventLogger(
         }
         return
     }
-    eventLogger?.onConfigurationChange(serverEndpoint, extDetails, config)
+    eventLogger?.onConfigurationChange(serverEndpoint, extensionDetails, config)
 }
 
 /**
@@ -102,7 +102,7 @@ function logEvent(
     logDebug(
         `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
         eventName,
-        extensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
+        getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
         JSON.stringify({ properties, opts })
     )
     if (!eventLogger || !globalAnonymousUserID) {
