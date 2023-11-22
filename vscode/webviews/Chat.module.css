@@ -196,6 +196,9 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .submit-button {
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
+
+    display: flex;
+    justify-content: center;
 }
 
 .submit-button,
