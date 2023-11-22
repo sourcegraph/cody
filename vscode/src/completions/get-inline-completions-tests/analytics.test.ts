@@ -97,7 +97,6 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)
@@ -148,7 +147,6 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)
