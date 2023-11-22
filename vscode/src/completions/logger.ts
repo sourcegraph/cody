@@ -106,13 +106,23 @@ interface SuggestedEventPayload extends SharedEventPayload {
 
 /** Emitted when a completion was fully accepted by the user */
 interface AcceptedEventPayload extends SharedEventPayload {
-    /** Information about which item of the suggested items list was being accepted */
+    /**
+     * Information about which item of the suggested items list was being accepted.
+     *
+     * Note: Fields like `acceptedItem.charCount` might differ from the `items[n].charCount` based
+     * on the current document state when the completion was inserted.
+     */
     acceptedItem: CompletionItemInfo
 }
 
 /** Emitted when a completion was partially accepted by the user */
 interface PartiallyAcceptedEventPayload extends SharedEventPayload {
-    /** Information about which item of the suggested items list was being accepted */
+    /**
+     * Information about which item of the suggested items list was being accepted.
+     *
+     * Note: Fields like `acceptedItem.charCount` might differ from the `items[n].charCount` based
+     * on the current document state when the completion was inserted.
+     */
     acceptedItem: CompletionItemInfo
     /** The number of character that were already accepted of the given acceptedItem _in total_. */
     acceptedLength: number
