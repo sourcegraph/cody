@@ -11,7 +11,7 @@ import {
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
-import { CompletionBookkeepingEvent } from '../completions/logger'
+import { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -103,7 +103,12 @@ export type Notifications = {
     // The user no longer wishes to consider the last autocomplete candidate
     // and the current autocomplete id should not be reused.
     'autocomplete/clearLastCandidate': [null]
-
+    // The completion was presented to the user, and will be logged for telemetry
+    // purposes.
+    'autocomplete/completionSuggested': [CompletionItemID]
+    // The completion was accepted by the user, and will be logged for telemetry
+    // purposes.
+    'autocomplete/completionAccepted': [CompletionItemID]
     // Resets the chat transcript and clears any in-progress interactions.
     // This notification should be sent when the user starts a new conversation.
     // The chat transcript grows indefinitely if this notification is never sent.
@@ -139,10 +144,12 @@ export interface SelectedCompletionInfo {
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
+    /** @deprecated */
     completionEvent?: CompletionBookkeepingEvent
 }
 
 export interface AutocompleteItem {
+    id: CompletionItemID
     insertText: string
     range: Range
 }
