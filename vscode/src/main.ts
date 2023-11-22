@@ -63,6 +63,9 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
                 const config = await getFullConfig()
                 onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
+                if (config.chatPreInstruction) {
+                    PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+                }
             }
         })
     )
