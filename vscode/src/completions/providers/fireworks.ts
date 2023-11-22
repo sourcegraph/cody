@@ -25,7 +25,6 @@ export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    starcoderExtendedTokenWindow?: boolean
     timeouts: AutocompleteTimeouts
 }
 
@@ -56,7 +55,7 @@ type FireworksModel =
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
 
-function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow?: boolean): number {
+function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder-hybrid':
         case 'starcoder-16b':
@@ -64,9 +63,8 @@ function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow
         case 'starcoder-3b':
         case 'starcoder-1b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
-            // our current Anthropic prompt but allow for 6k for the extended token window as
-            // defined by the feature flag
-            return starcoderExtendedTokenWindow ? 6144 : 2048
+            // other providers.
+            return 2048
         }
         case 'wizardcoder-15b':
             // TODO: Confirm what the limit is for WizardCoder
@@ -92,10 +90,7 @@ export class FireworksProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private timeouts?: AutocompleteTimeouts
 
-    constructor(
-        options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
-    ) {
+    constructor(options: ProviderOptions, { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>) {
         super(options)
         this.timeouts = timeouts
         this.model = model
@@ -294,7 +289,7 @@ export function createProviderConfig({
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel, otherOptions.starcoderExtendedTokenWindow)
+    const maxContextTokens = getMaxContextTokens(resolvedModel)
 
     return {
         create(options: ProviderOptions) {
