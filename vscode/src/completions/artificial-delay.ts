@@ -3,13 +3,11 @@ import { CompletionIntent } from '../tree-sitter/queries'
 
 export interface LatencyFeatureFlags {
     user?: boolean
-    language?: boolean
 }
 
 const defaultLatencies = {
     user: 200,
     lowPerformance: 1000,
-    comment: 1000,
     max: 2000,
 }
 
@@ -52,7 +50,7 @@ export function getArtificialDelay(
 ): number {
     let baseline = 0
 
-    const isLowPerformanceLanguageId = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
+    const isLowPerformanceLanguageId = lowPerformanceLanguageIds.has(languageId)
     const isLowPerformanceCompletionIntent = completionIntent && lowPerformanceCompletionIntents.has(completionIntent)
     if (isLowPerformanceLanguageId || isLowPerformanceCompletionIntent) {
         baseline = defaultLatencies.lowPerformance
