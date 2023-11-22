@@ -4,7 +4,7 @@ import path from 'path'
 import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import * as vscode from 'vscode'
 
-import { CompletionEvent } from '../../../../vscode/src/completions/logger'
+import { CompletionBookkeepingEvent } from '../../../../vscode/src/completions/logger'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
 export class AutocompleteDocument {
@@ -103,9 +103,8 @@ export class AutocompleteDocument {
      * ```
      * src/hello.ts:LINE:CHARACTER
      * const hello = 42
-     *       ^^^^^
+     * ^^^^^
      * ```
-     *
      * @param range the range to highlight
      * @param diagnostic optional message to include with the formatted string
      */
@@ -151,7 +150,7 @@ export interface AutocompleteItem {
     resultParses?: boolean
     resultTypechecks?: boolean
     resultText?: string
-    event?: CompletionEvent
+    event?: CompletionBookkeepingEvent
     eventJSON?: string
 }
 
