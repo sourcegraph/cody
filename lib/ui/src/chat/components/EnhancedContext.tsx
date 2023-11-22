@@ -12,8 +12,6 @@ export interface FileLinkProps {
     range?: ActiveTextEditorSelectionRange
 }
 
-const enhancedContextSources = new Set(['embeddings', 'keyword', 'symf', 'filename'])
-
 export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
@@ -25,10 +23,11 @@ export const EnhancedContext: React.FunctionComponent<{
 
     const uniqueFiles = new Set<string>()
     const filteredFiles = contextFiles.filter(file => {
-        if (uniqueFiles.has(file.fileName) || !file.source) {
+        if (uniqueFiles.has(file.fileName)) {
             return false
         }
-        if (!enhancedContextSources.has(file.source)) {
+        // Skip files added by user. e.g. @-files
+        if (file.source === 'user') {
             return false
         }
         uniqueFiles.add(file.fileName)
