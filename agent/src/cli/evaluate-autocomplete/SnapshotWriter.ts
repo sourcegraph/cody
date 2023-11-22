@@ -4,8 +4,8 @@ import { createObjectCsvWriter } from 'csv-writer'
 import { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
-import { AutocompleteDocument, autocompleteItemHeaders } from './AutocompleteDocument'
 import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { autocompleteItemHeaders, EvaluationDocument } from './EvaluationDocument'
 
 export class SnapshotWriter {
     public csvWriter: CsvWriter<any> | undefined
@@ -22,7 +22,7 @@ export class SnapshotWriter {
             }
         }
     }
-    public async writeDocument(document: AutocompleteDocument): Promise<void> {
+    public async writeDocument(document: EvaluationDocument): Promise<void> {
         if (!this.options.snapshotDirectory || document.items.length === 0) {
             return
         }
