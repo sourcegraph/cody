@@ -426,27 +426,15 @@ export class FixupController
         // join text with new lines, and then remove everything after the last new line if it only contains white spaces
         const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
 
-        let editOk: boolean
-
         // Insert updated text at selection range
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.insert(document.uri, range.start, replacementText)
-            editOk = await vscode.workspace.applyEdit(edit)
-        } else {
-            editOk = await edit(editBuilder => {
-                editBuilder.insert(range.start, replacementText)
-            }, options)
+            return vscode.workspace.applyEdit(edit)
         }
 
-        if (editOk) {
-            // Expand the selection range to include the newly inserted text
-            task.selectionRange = new vscode.Range(
-                new vscode.Position(range.start.line, 0),
-                range.end.translate(textLines.length - 1)
-            )
-        }
-
-        return editOk
+        return edit(editBuilder => {
+            editBuilder.insert(range.start, replacementText)
+        }, options)
     }
 
     private async formatEdit(
