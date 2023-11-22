@@ -7,6 +7,7 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
@@ -28,12 +29,14 @@ import { AuthProvider } from '../../services/AuthProvider'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { createCodyChatTreeItems } from '../../services/treeViewItems'
+import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { contextItemsToContextFiles, stripContextWrapper } from './serialization'
+import { contextItemsToContextFiles, stripContextWrapper } from './helpers'
 import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
@@ -42,6 +45,7 @@ interface SimpleChatPanelProviderOptions {
     chatClient: ChatClient
     embeddingsClient: EmbeddingsSearch | null
     editor: VSCodeEditor
+    treeView: TreeViewProvider
 }
 
 class ChatHistoryManager {
@@ -54,7 +58,7 @@ class ChatHistoryManager {
         return chatHistory.chat[sessionID]
     }
 
-    public async saveChat(chat: TranscriptJSON): Promise<void> {
+    public async saveChat(chat: TranscriptJSON): Promise<UserLocalHistory> {
         let history = localStorage.getChatHistory()
         if (!history) {
             history = {
@@ -64,6 +68,7 @@ class ChatHistoryManager {
         }
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(history)
+        return history
     }
 }
 
@@ -82,6 +87,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private embeddingsClient: EmbeddingsSearch | null
 
     private readonly editor: VSCodeEditor
+    private readonly treeView: TreeViewProvider
 
     private history = new ChatHistoryManager()
 
@@ -89,12 +95,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     // It is necessary to satisfy the IChatPanelProvider interface
     public sessionID: string
 
-    constructor({ extensionUri, authProvider, chatClient, embeddingsClient, editor }: SimpleChatPanelProviderOptions) {
+    constructor({
+        extensionUri,
+        authProvider,
+        chatClient,
+        embeddingsClient,
+        editor,
+        treeView,
+    }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
         this.editor = editor
+        this.treeView = treeView
         this.sessionID = this.chatModel.sessionID
     }
 
@@ -160,6 +174,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.sessionID = newModel.sessionID
 
         await this.updateViewTranscript()
+    }
+
+    public async saveSession(): Promise<void> {
+        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
+        void this.webview?.postMessage({
+            type: 'history',
+            messages: allHistory,
+        })
+        this.treeView.updateTree(createCodyChatTreeItems(allHistory))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -368,6 +391,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             },
             close: () => {
                 this.chatModel.addBotMessage({ text: lastContent })
+                void this.saveSession()
                 void this.updateViewTranscript()
             },
         })
@@ -445,6 +469,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async reset(): Promise<void> {
+        await this.saveSession()
+
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.sessionID = this.chatModel.sessionID
         await this.updateViewTranscript()
@@ -522,6 +548,7 @@ class ContextProvider implements IContextProvider {
     }
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
         if (!this.embeddingsClient) {
+            throw new Error('# TODO: reset enhanced context selector when chat is reset')
             return []
         }
 

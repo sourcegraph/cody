@@ -4,6 +4,8 @@ import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
+import { contextItemsToContextFiles } from './helpers'
+
 // TODO(beyang): note that context is only associated with human messages (like it is in the underyling LLM)
 export interface MessageWithContext {
     message: Message
@@ -60,6 +62,9 @@ export class SimpleChatModel {
         return this.messagesWithContext
     }
 
+    /**
+     * Serializes to the legacy transcript JSON format
+     */
     public toTranscriptJSON(): TranscriptJSON {
         const interactions: InteractionJSON[] = []
         for (let i = 0; i < this.messagesWithContext.length; i += 2) {
@@ -75,14 +80,18 @@ export class SimpleChatModel {
                 humanMessage: {
                     speaker: humanMessage.message.speaker,
                     text: humanMessage.message.text,
+                    displayText: humanMessage.message.text,
                 },
                 assistantMessage: {
                     speaker: botMessage.message.speaker,
                     text: botMessage.message.text,
+                    displayText: botMessage.message.text,
                 },
-                fullContext: [], // TODO(beyang)
-                usedContextFiles: [], // TODO(beyang)
-                usedPreciseContext: [], // TODO(beyang)
+                usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
+
+                // These fields are unused on deserialization
+                fullContext: [],
+                usedPreciseContext: [],
                 timestamp: 'n/a',
             })
         }
