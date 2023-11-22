@@ -123,9 +123,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         }
     })
 
-    const server = app.listen(SERVER_PORT, () => {
-        console.log(`Mock server listening on port ${SERVER_PORT}`)
-    })
+    const server = app.listen(SERVER_PORT)
 
     const result = await around()
 
@@ -135,6 +133,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 }
 
 export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
+    if (process.env.CI === undefined) {
+        return
+    }
+
     const message = {
         type,
         event: data,

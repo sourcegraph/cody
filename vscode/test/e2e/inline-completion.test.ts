@@ -63,7 +63,6 @@ test('inline completion onboarding notice on first completion accept', async ({ 
         'CodyVSCodeExtension:completion:suggested', // Suggestion that appears immediately after accepting
         'CodyVSCodeExtension:completion:suggested', // Second suggestion after typing "a" to test hiding
         'CodyVSCodeExtension:completion:accepted', // Second accept
-        'CodyVSCodeExtension:completion:suggested', // Suggestion that appears immediately after accepting
     ]
 
     const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
@@ -105,6 +104,13 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(decoration).not.toBeVisible()
+
+    // After accepting a completion, a new completion request will be made. Since this can interfere
+    // with the expected event order (especially since suggestion events are logged after the
+    // completion is hidden), we type a semicolon which will prevent an automatic completion from
+    // showing up
+    await page.keyboard.press(';')
+
     await assertEvents(loggedEvents, expectedEvents)
 })
 
