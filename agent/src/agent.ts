@@ -15,6 +15,7 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/tele
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { activate } from '../../vscode/src/extension.node'
+import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
@@ -27,7 +28,10 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
+export function initializeVscodeExtension(
+    workspaceRoot: vscode.Uri,
+    extensionConfiguration?: ExtensionConfiguration
+): void {
     const paths = envPaths('Cody')
     activate({
         asAbsolutePath(relativePath) {
@@ -43,7 +47,16 @@ export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
         extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
         globalState: {
             keys: () => [],
-            get: () => undefined,
+            get: key => {
+                switch (key) {
+                    case localStorage.ANONYMOUS_USER_ID_KEY:
+                        // cant use vscode_shim.connectionConfig here as this is queried for in extension activation
+                        // and vscode_shim.connectionConfig is set after extension activation.
+                        return extensionConfiguration?.anonymousUserID
+                    default:
+                        return undefined
+                }
+            },
             update: (key, value) => Promise.resolve(),
             setKeysForSync: keys => {},
         },
@@ -169,7 +182,7 @@ export class Agent extends MessageHandler {
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            initializeVscodeExtension(this.workspace.workspaceRootUri)
+            initializeVscodeExtension(this.workspace.workspaceRootUri, clientInfo.extensionConfiguration)
 
             // Register client info
             this.clientInfo = clientInfo

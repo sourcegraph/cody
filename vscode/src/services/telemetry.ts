@@ -60,7 +60,7 @@ export async function createOrUpdateEventLogger(
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
             })
-        } else {
+        } else if (!config.isRunningInsideAgent) {
             logEvent('CodyVSCodeExtension:CodySavedLogin:executed', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
             })
