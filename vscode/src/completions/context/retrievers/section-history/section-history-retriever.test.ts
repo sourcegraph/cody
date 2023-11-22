@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, Mock, vitest } from 'vites
 import { URI } from 'vscode-uri'
 
 import { range } from '../../../../testutils/textDocument'
+import * as docContextGetters from '../../../doc-context-getters'
 
 import { SectionHistoryRetriever } from './section-history-retriever'
 
@@ -49,6 +50,9 @@ describe('GraphSectionObserver', () => {
                 ],
             },
         }
+
+        const getContextRangeSpy = vitest.spyOn(docContextGetters, 'getContextRange')
+        getContextRangeSpy.mockImplementation(() => range(0, 0, 20, 0))
 
         visibleTextEditors = vitest.fn().mockImplementation(() => [{ document: testDocuments.document1 }])
         getDocumentSections = vitest.fn().mockImplementation((document: typeof testDocuments.document1) => {
@@ -217,7 +221,7 @@ describe('GraphSectionObserver', () => {
                     line: 0,
                     character: 0,
                 } as any,
-                docContext: { contextRange: range(0, 0, 20, 0) },
+                docContext: {} as any,
             })
 
             expect(context[0]).toEqual({
@@ -254,7 +258,7 @@ describe('GraphSectionObserver', () => {
                     line: 0,
                     character: 0,
                 } as any,
-                docContext: { contextRange: range(0, 0, 20, 0) },
+                docContext: {} as any,
             })
 
             expect(context.length).toBe(0)

@@ -45,6 +45,12 @@ export interface Configuration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    autocompleteTimeouts: AutocompleteTimeouts
+}
+
+export interface AutocompleteTimeouts {
+    multiline?: number
+    singleline?: number
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

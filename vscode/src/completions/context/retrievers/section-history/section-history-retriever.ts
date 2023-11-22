@@ -8,6 +8,7 @@ import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import { getGraphDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../../../graph/lsp/sections'
+import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 import { createSubscriber } from '../../../utils'
 import { baseLanguageId } from '../../utils'
@@ -80,15 +81,14 @@ export class SectionHistoryRetriever implements ContextRetriever {
     public async retrieve({
         document,
         position,
-        docContext: { contextRange },
+        docContext,
     }: {
         document: ContextRetrieverOptions['document']
         position: ContextRetrieverOptions['position']
-        docContext: {
-            contextRange: ContextRetrieverOptions['docContext']['contextRange']
-        }
+        docContext: ContextRetrieverOptions['docContext']
     }): Promise<ContextSnippet[]> {
         const section = this.getSectionAtPosition(document, position)
+        const contextRange = getContextRange(document, docContext)
 
         function overlapsContextRange(uri: vscode.Uri, range?: { startLine: number; endLine: number }): boolean {
             if (!contextRange || !range || uri.toString() !== document.uri.toString()) {

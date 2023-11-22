@@ -20,7 +20,13 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import { ExtensionMessage, getChatModelsForWebview, WebviewMessage } from '../protocol'
+import {
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    getChatModelsForWebview,
+    LocalEnv,
+    WebviewMessage,
+} from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 
@@ -51,6 +57,7 @@ export class ChatPanelProvider extends MessageProvider {
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
                 await this.authProvider.announceNewAuthStatus()
+                await this.handleWebviewContext()
                 break
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
@@ -58,7 +65,12 @@ export class ChatPanelProvider extends MessageProvider {
                 this.handleChatModel()
                 break
             case 'submit':
-                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
+                return this.onHumanMessageSubmitted(
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
@@ -104,7 +116,7 @@ export class ChatPanelProvider extends MessageProvider {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+                await openFilePath(message.filePath, this.webviewPanel?.viewColumn, message.range)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
@@ -117,7 +129,8 @@ export class ChatPanelProvider extends MessageProvider {
     private async onHumanMessageSubmitted(
         text: string,
         submitType: ChatSubmitType,
-        contextFiles?: ContextFile[]
+        contextFiles?: ContextFile[],
+        addEnhancedContext = true
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
@@ -128,12 +141,7 @@ export class ChatPanelProvider extends MessageProvider {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
 
-        // Add text and context to a command for custom-prompt recipe to run as ask command
-        if (contextFiles?.length) {
-            this.userContextFiles = contextFiles
-        }
-
-        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
+        return this.executeRecipe('chat-question', text, 'chat', contextFiles, addEnhancedContext)
     }
 
     /**
@@ -146,6 +154,42 @@ export class ChatPanelProvider extends MessageProvider {
             await this.setWebviewView('chat')
         }
         await this.executeCustomCommand(title, commandType)
+    }
+
+    /**
+     * For Webview panel only
+     * This sent the initiate contextStatus and config to webview
+     */
+    private async handleWebviewContext(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+        const editorContext = this.editor.getActiveTextEditor()
+        const contextStatus = {
+            mode: this.contextProvider.config.useContext,
+            endpoint: authStatus.endpoint || undefined,
+            connection: this.contextProvider.context.checkEmbeddingsConnection(),
+            embeddingsEndpoint: this.contextProvider.context.embeddingsEndpoint,
+            codebase: this.contextProvider.context.getCodebase(),
+            filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+            selectionRange: editorContext?.selectionRange,
+            supportsKeyword: true,
+        }
+        void this.webview?.postMessage({
+            type: 'contextStatus',
+            contextStatus,
+        })
+
+        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const config: ConfigurationSubsetForWebview & LocalEnv = {
+            ...localProcess,
+            debugEnable: this.contextProvider.config.debugEnable,
+            serverEndpoint: this.contextProvider.config.serverEndpoint,
+            experimentalChatPanel: this.contextProvider.config.experimentalChatPanel,
+        }
+        void this.webview?.postMessage({
+            type: 'config',
+            config,
+            authStatus,
+        })
     }
 
     /**
@@ -182,12 +226,12 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Update chat history in Tree View
      */
-    protected handleHistory(userHistory?: UserLocalHistory): void {
-        const history = userHistory || {
-            chat: MessageProvider.chatHistory,
-            input: MessageProvider.inputHistory,
-        }
-        this.treeView.updateTree(createCodyChatTreeItems(history))
+    protected handleHistory(userHistory: UserLocalHistory): void {
+        void this.webview?.postMessage({
+            type: 'history',
+            messages: userHistory,
+        })
+        this.treeView.updateTree(createCodyChatTreeItems(userHistory))
     }
 
     /**
