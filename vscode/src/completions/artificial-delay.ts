@@ -27,7 +27,12 @@ export const lowPerformanceLanguageIds = new Set([
     'markdown',
     'plaintext',
     'xml',
+    'twig',
+    'jsonc',
+    'handlebars',
 ])
+
+const lowPerformanceCompletionIntents = new Set(['comment', 'import.source']) satisfies Set<CompletionIntent>
 
 let userMetrics = {
     sessionTimestamp: 0,
@@ -47,9 +52,9 @@ export function getArtificialDelay(
 ): number {
     let baseline = 0
 
-    const isLowPerformance = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
-    const isComment = completionIntent === 'comment'
-    if (isLowPerformance || isComment) {
+    const isLowPerformanceLanguageId = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
+    const isLowPerformanceCompletionIntent = completionIntent && lowPerformanceCompletionIntents.has(completionIntent)
+    if (isLowPerformanceLanguageId || isLowPerformanceCompletionIntent) {
         baseline = defaultLatencies.lowPerformance
     }
 
