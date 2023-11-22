@@ -32,4 +32,16 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
         page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
     ).toBeVisible()
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+
+    // Create chat
+    await page.getByRole('tab', { name: 'New Chat' }).getByText('New Chat').click()
+
+    await page.getByRole('textbox', { name: 'New Chat' }).getByLabel('Message (type @ to attach files)').fill('Hey')
+    await page.getByRole('button', { name: 'Send message' }).locator('path').click()
+
+    await page.getByRole('button', { name: 'Rename Chat' }).click()
+    await page.getByRole('combobox', { name: 'input' }).fill('Edited!')
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await page.getByRole('treeitem', { name: 'Edited!' }).locator('div').filter({ hasText: 'Edited!' }).nth(3).click()
+    await page.getByRole('tab', { name: 'Edited!' }).getByText('Edited!').click()
 })
