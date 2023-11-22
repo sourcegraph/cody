@@ -224,13 +224,6 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Search (experimental)",
-          "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
-        },
-        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -246,6 +239,13 @@
           "id": "cody.chat.tree.view",
           "name": "Chats",
           "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.newSearch"
         },
         {
           "id": "cody.support.tree.view",
