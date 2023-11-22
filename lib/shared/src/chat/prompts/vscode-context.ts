@@ -608,8 +608,9 @@ export const getFilesFromDir = async (
  */
 export async function findVSCodeFiles(globalPattern: string, excludePattern?: string, maxResults = 3): Promise<URI[]> {
     try {
-        // const defaultExcludePatterns = ['.*','node_modules','snap*']
-        const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
+        const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri || vscode.Uri.file('~/')
+        const relativePattern = new vscode.RelativePattern(workspaceUri, globalPattern)
+        const excluded = excludePattern || '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules}**'
 
         // set cancellation token to time out after 20s
         const token = new vscode.CancellationTokenSource()
@@ -619,7 +620,7 @@ export async function findVSCodeFiles(globalPattern: string, excludePattern?: st
             token.cancel()
         }, 20000)
 
-        const files = await vscode.workspace.findFiles(globalPattern, excluded, maxResults, token.token)
+        const files = await vscode.workspace.findFiles(relativePattern, excluded, maxResults, token.token)
         return files || []
     } catch {
         return []

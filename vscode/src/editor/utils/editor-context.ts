@@ -13,13 +13,13 @@ export async function getFileContextFile(query: string, maxResults = 15): Promis
     if (!query.trim()) {
         return []
     }
-
+    const workspaceUri = vscode.workspace?.workspaceFolders?.[0].uri || vscode.Uri.file('~/')
     const searchPattern = `**/*${query}{/**,*}*`
+    const relativePattern = new vscode.RelativePattern(workspaceUri, searchPattern)
     const excludePattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules}**'
 
     // Find a list of files that match the text
-    const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, maxResults)
-
+    const matches = await vscode.workspace.findFiles(relativePattern, excludePattern, maxResults)
     if (!matches.length) {
         return []
     }
