@@ -21,7 +21,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: { '*': true, scminput: false },
-    experimentalCommandLenses: false,
+    commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalChatPanel: false,
     experimentalChatPredictions: false,

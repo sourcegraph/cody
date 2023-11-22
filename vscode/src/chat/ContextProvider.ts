@@ -40,7 +40,7 @@ export type Config = Pick<
     | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
-    | 'experimentalCommandLenses'
+    | 'commandCodeLenses'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
     | 'inlineChat'
