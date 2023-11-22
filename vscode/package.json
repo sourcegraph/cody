@@ -224,13 +224,6 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Search (experimental)",
-          "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
-        },
-        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -241,6 +234,13 @@
           "id": "cody.commands.tree.view",
           "name": "Commands",
           "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.newSearch"
         },
         {
           "id": "cody.chat.tree.view",
