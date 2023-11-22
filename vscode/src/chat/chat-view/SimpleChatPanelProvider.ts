@@ -8,6 +8,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
+import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import {
@@ -32,6 +33,7 @@ import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, Webvi
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
+import { contextItemsToContextFiles, stripContextWrapper } from './serialization'
 import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
@@ -225,9 +227,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             // case 'links':
             //     void openExternalLinks(message.value)
             //     break
-            // case 'openFile':
-            //     await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
-            //     break
+            case 'openFile':
+                console.log('# openFile', message)
+                // await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+                break
             // case 'openLocalFileWithRange':
             //     await openLocalFileWithRange(message.filePath, message.range)
             //     break
@@ -532,10 +535,12 @@ class ContextProvider implements IContextProvider {
         } else {
             for (const codeResult of embeddings.codeResults) {
                 const uri = vscode.Uri.from({
-                    scheme: 'file',
-                    path: codeResult.fileName,
-                    fragment: `${codeResult.startLine}:${codeResult.endLine}`,
+                    scheme: 'cody-embeddings',
+                    authority: this.embeddingsClient.repoId,
+                    path: '/' + codeResult.fileName,
+                    fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
                 })
+
                 const range = new vscode.Range(
                     new vscode.Position(codeResult.startLine, 0),
                     new vscode.Position(codeResult.endLine, 0)
@@ -682,6 +687,8 @@ export class GPT4Prompter {
             warnings.push('Ignored additional context items due to context limit')
         }
 
+        // console.log('# active doc uri:', vscode.window.activeTextEditor?.document.uri)
+
         return {
             reversePrompt: promptBuilder.reverseMessages,
             warnings,
@@ -778,20 +785,6 @@ function isEditorContextRequired(input: string): boolean | Error {
     return false
 }
 
-export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
-    const contextFiles: ContextFile[] = []
-    for (const item of items) {
-        contextFiles.push({
-            fileName: item.uri.fsPath,
-            source: 'embeddings',
-            range: rangeToViewRange(item.range),
-
-            // TODO: repoName + revision?
-        })
-    }
-    return contextFiles
-}
-
 export function contextFilesToContextItems(
     editor: Editor,
     files: ContextFile[],
@@ -814,22 +807,6 @@ export function contextFilesToContextItems(
     )
 }
 
-export function rangeToViewRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
-    if (!range) {
-        return undefined
-    }
-    return {
-        start: {
-            line: range.start.line,
-            character: range.start.character,
-        },
-        end: {
-            line: range.end.line,
-            character: range.end.character,
-        },
-    }
-}
-
 export function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
     if (!range) {
         return undefined
@@ -838,17 +815,22 @@ export function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode
 }
 
 async function newChatModelfromTranscriptJSON(editor: Editor, json: TranscriptJSON): Promise<SimpleChatModel> {
-    const messages: Promise<MessageWithContext[]>[] = json.interactions.map(
-        async (interaction: InteractionJSON): Promise<MessageWithContext[]> => {
+    const repos = json.scope?.repositories
+    console.log('# repos', repos)
+    const messages: MessageWithContext[][] = json.interactions.map(
+        (interaction: InteractionJSON): MessageWithContext[] => {
+            console.log('# interaction.fullContext', interaction.fullContext)
             return [
                 {
                     message: {
                         speaker: 'human',
                         text: interaction.humanMessage.text,
                     },
-                    // TODO(beyang): not fetching content here means the loaded chats can't be continued
-                    // should just make the future ones editable and persist the exact context they used
-                    newContextUsed: await contextFilesToContextItems(editor, interaction.usedContextFiles),
+                    newContextUsed: deserializedContextFilesToContextItems2(
+                        interaction.usedContextFiles,
+                        interaction.fullContext,
+                        (repos && repos.length > 0 && repos[0]) || undefined
+                    ),
                 },
                 {
                     message: {
@@ -860,4 +842,36 @@ async function newChatModelfromTranscriptJSON(editor: Editor, json: TranscriptJS
         }
     )
     return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', (await Promise.all(messages)).flat(), json.id)
+}
+
+export function deserializedContextFilesToContextItems2(
+    files: ContextFile[],
+    contextMessages: ContextMessage[],
+    repo?: string
+): ContextItem[] {
+    const contextByFile = new Map<string, ContextMessage>()
+    for (const contextMessage of contextMessages) {
+        if (!contextMessage.file?.fileName) {
+            continue
+        }
+        contextByFile.set(contextMessage.file.fileName, contextMessage)
+    }
+
+    return files.map((file: ContextFile): ContextItem => {
+        const range = viewRangeToRange(file.range)
+        // TODO: relative path, maybe need special scheme?
+        const uri = file.uri || vscode.Uri.file(file.fileName)
+        let text = file.content
+        if (!text) {
+            const contextMessage = contextByFile.get(file.fileName)
+            if (contextMessage) {
+                text = stripContextWrapper(contextMessage.text || '')
+            }
+        }
+        return {
+            uri,
+            range,
+            text: text || '',
+        }
+    })
 }

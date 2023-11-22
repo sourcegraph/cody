@@ -78,10 +78,11 @@ export class Interaction {
     }
 
     public async toJSON(): Promise<InteractionJSON> {
+        const fullContext = await this.fullContext
         return {
             humanMessage: this.humanMessage,
             assistantMessage: this.assistantMessage,
-            fullContext: await this.fullContext,
+            fullContext,
             usedContextFiles: this.usedContextFiles,
             usedPreciseContext: this.usedPreciseContext,
             timestamp: this.timestamp,

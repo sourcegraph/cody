@@ -106,27 +106,3 @@ export function contextItemId(contextItem: ContextItem): string {
         ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
         : contextItem.uri.toString()
 }
-
-interface MessageWithContextJSON {
-    message: Message
-    newContextUsed?: {
-        uri: string
-        range?: {
-            start: {
-                line: number
-                character: number
-            }
-            end: {
-                line: number
-                character: number
-            }
-        }
-        text: string
-    }[]
-}
-
-export interface SimpleChatModelJSON {
-    modelID: string
-    messagesWithContext: MessageWithContextJSON[]
-    sessionID: string
-}

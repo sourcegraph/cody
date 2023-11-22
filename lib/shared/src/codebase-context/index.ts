@@ -136,7 +136,7 @@ export class CodebaseContext {
 
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
-            .flatMap(groupedResults => this.makeContextMessageWithResponse(groupedResults))
+            .flatMap(groupedResults => CodebaseContext.makeContextMessageWithResponse(groupedResults))
             .map(message => contextMessageWithSource(message, 'embeddings'))
     }
 
@@ -163,7 +163,10 @@ export class CodebaseContext {
         return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
     }
 
-    private makeContextMessageWithResponse(groupedResults: { file: ContextFile; results: string[] }): ContextMessage[] {
+    public static makeContextMessageWithResponse(groupedResults: {
+        file: ContextFile
+        results: string[]
+    }): ContextMessage[] {
         const contextTemplateFn = isMarkdownFile(groupedResults.file.fileName)
             ? populateMarkdownContextTemplate
             : populateCodeContextTemplate

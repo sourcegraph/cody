@@ -21,6 +21,30 @@ export interface TranscriptJSON {
     scope?: TranscriptJSONScope
 }
 
+export interface MessageWithContextJSON {
+    message: Message
+    newContextUsed?: {
+        uri: string
+        range?: {
+            start: {
+                line: number
+                character: number
+            }
+            end: {
+                line: number
+                character: number
+            }
+        }
+        text: string
+    }[]
+}
+
+export interface SimpleChatModelJSON {
+    modelID: string
+    messagesWithContext: MessageWithContextJSON[]
+    sessionID: string
+}
+
 /**
  * The "model" class that tracks the call and response of the Cody chat box.
  * Any "controller" logic belongs outside of this class.
