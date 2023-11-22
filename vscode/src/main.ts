@@ -16,9 +16,8 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
-import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
-import { getActiveEditor } from './editor/active-editor'
+import { getEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -39,6 +38,7 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -230,12 +230,17 @@ const register = async (
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
-        const document = args.document || getActiveEditor()?.document
+        const editor = getEditor()
+        if (editor.ignored) {
+            console.error('File was ignored by Cody.')
+            return
+        }
+        const document = args.document || editor.active?.document
         if (!document) {
             return
         }
 
-        const range = args.range || getActiveEditor()?.selection
+        const range = args.range || editor.active?.selection
         if (!range) {
             return
         }

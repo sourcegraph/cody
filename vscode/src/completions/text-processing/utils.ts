@@ -1,7 +1,7 @@
 import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
-import { getLanguageConfig } from '../language'
+import { getLanguageConfig } from '../../tree-sitter/language'
 import { logCompletionEvent } from '../logger'
 
 import { isAlmostTheSameString } from './string-comparator'

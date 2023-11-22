@@ -28,6 +28,7 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
+import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -58,7 +59,9 @@ interface ChatboxProps {
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[]
+    setChatModels?: (models: ChatModelSelection[]) => void
     chatModels?: ChatModelSelection[]
+    enableNewChatUI: boolean
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -78,7 +81,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     isTranscriptError,
     applessOnboarding,
     contextSelection,
+    setChatModels,
     chatModels,
+    enableNewChatUI,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -95,7 +100,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextFiles?: Map<string, ContextFile>,
             addEnhancedContext = true
         ) => {
-            // TODO add UI to toggle enhanced context setting
             const userContextFiles: ContextFile[] = []
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
@@ -117,6 +121,20 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             })
         },
         [vscodeAPI]
+    )
+
+    const onCurrentChatModelChange = useCallback(
+        (selected: ChatModelSelection): void => {
+            if (!chatModels || !setChatModels) {
+                return
+            }
+            vscodeAPI.postMessage({ command: 'chatModel', model: selected.model })
+            const updatedChatModels = chatModels.map(m =>
+                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
+            )
+            setChatModels(updatedChatModels)
+        },
+        [chatModels, setChatModels, vscodeAPI]
     )
 
     const onEditBtnClick = useCallback(
@@ -203,7 +221,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             insertButtonOnSubmit={onInsertBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
-            abortMessageInProgressComponent={AbortMessageInProgress}
             onAbortMessageInProgress={abortMessageInProgress}
             isTranscriptError={isTranscriptError}
             // TODO: We should fetch this from the server and pass a pretty component
@@ -224,26 +241,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
+            onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
+            EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
         />
     )
 }
-
-interface AbortMessageInProgressProps {
-    onAbortMessageInProgress: () => void
-}
-
-const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
-    <div className={classNames(styles.stopGeneratingButtonContainer)}>
-        <VSCodeButton
-            className={classNames(styles.stopGeneratingButton)}
-            onClick={onAbortMessageInProgress}
-            appearance="secondary"
-        >
-            <i className="codicon codicon-stop-circle" /> Stop generating
-        </VSCodeButton>
-    </div>
-)
 
 const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
     <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
@@ -259,6 +262,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (type @ to attach files)'
@@ -267,7 +271,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         if (autoFocus) {
             inputRef.current?.focus()
         }
-    }, [autoFocus, value])
+    }, [autoFocus, value, chatModels])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -292,9 +296,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
 
     return (
-        <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
+        <div
+            className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
+            data-value={value || placeholder}
+        >
             <textarea
-                className={classNames(styles.chatInput, className)}
+                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
                 rows={1}
                 ref={inputRef}
                 value={value}
@@ -309,16 +316,21 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
 }
 
-const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
+const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
+    className,
+    disabled,
+    onClick,
+    onAbortMessageInProgress,
+}) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className)}
-        appearance="icon"
+        className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
+        appearance="primary"
         type="button"
         disabled={disabled}
-        onClick={onClick}
-        title="Send Message"
+        onClick={onAbortMessageInProgress ?? onClick}
+        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? 'Message is empty' : 'Send Message'}
     >
-        <SubmitSvg />
+        {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
     </VSCodeButton>
 )
 
@@ -337,6 +349,7 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
         <VSCodeButton
             className={classNames(styles.editButton)}
             appearance="icon"
+            title={messageBeingEdited ? 'cancel' : 'edit and resend your message'}
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >

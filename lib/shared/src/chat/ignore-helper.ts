@@ -23,22 +23,17 @@ export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', '.
  *
  * `clearIgnoreFiles` should be called for workspace roots as they are removed.
  */
+type ClientWorkspaceRoot = string
+type CodyCodebaseName = string
 export class IgnoreHelper {
     /**
      * A map of workspace roots to their ignore rules.
      */
-    private workspaceIgnores = new Map<string, Ignore>()
-
+    private workspaceIgnores = new Map<ClientWorkspaceRoot, Ignore>()
     /**
-     * The absolute path of the current workspace root folder (last checked workspace)
-     * This is mainly used to construct a file URL for results returned by the embedding clients
-     *
-     * Used as a workaround as IDE clients currently don't support multi-root workspaces at the moment as users
-     * can only define one codebase at a time via cody.codebase
-     *
-     * This can be removed once the embedding clients support .cody/.ignore directly
+     * A map of codebase to workspace roots with their ignore rules.
      */
-    private currentWorkspace: string | undefined
+    private workspaceCodebases = new Map<ClientWorkspaceRoot, CodyCodebaseName>()
 
     /**
      * Check if the configuration is enabled or not
@@ -51,11 +46,22 @@ export class IgnoreHelper {
     }
 
     /**
+     * Updates the mapping of codebase name to workspace root on editor change
+     * @param codebase - The name of the codebase.
+     * @param workspaceRoot - The fs path of the workspace root.
+     */
+    public updateCodebaseWorkspaceMap(codebase: string, workspaceRoot: string): void {
+        if (!this.workspaceCodebases.has(codebase)) {
+            this.workspaceCodebases.set(codebase, workspaceRoot)
+        }
+    }
+
+    /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
      * @param workspaceRoot The full absolute path to the workspace root.
      * @param ignoreFiles The full absolute paths and content of all ignore files within the root.
      */
-    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[]): void {
+    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[], codebaseName?: string): void {
         this.ensureAbsolute('workspaceRoot', workspaceRoot)
 
         const rules = this.getDefaultIgnores()
@@ -63,15 +69,16 @@ export class IgnoreHelper {
             const ignoreFilePath = ignoreFile.filePath
             this.ensureValidCodyIgnoreFile('ignoreFile.path', ignoreFilePath)
 
-            // Compute the relative path rom the workspace root to the folder this ignore
+            // Compute the relative path from the workspace root to the folder this ignore
             // file applies to.
             const folderPath = ignoreFilePath.slice(0, -CODY_IGNORE_FILENAME.length)
             const relativeFolderPath = path.relative(workspaceRoot, folderPath)
 
             // Build the ignore rule with the relative folder path applied to the start of each rule.
             for (let ignoreLine of ignoreFile.content.split('\n')) {
-                // Skip blanks/comments
+                // Skip blanks/ comments
                 ignoreLine = ignoreLine.trim()
+
                 if (!ignoreLine.length || ignoreLine.startsWith('#')) {
                     continue
                 }
@@ -90,12 +97,15 @@ export class IgnoreHelper {
             }
         }
 
+        if (codebaseName) {
+            this.workspaceCodebases.set(codebaseName, workspaceRoot)
+        }
+
         this.workspaceIgnores.set(workspaceRoot, rules)
     }
 
     public clearIgnoreFiles(workspaceRoot: string): void {
         this.workspaceIgnores.delete(workspaceRoot)
-        this.currentWorkspace = workspaceRoot
     }
 
     public isIgnored(uri: URI): boolean {
@@ -116,25 +126,31 @@ export class IgnoreHelper {
             return this.getDefaultIgnores().ignores(path.basename(uri.fsPath))
         }
 
-        // Set current workspace for checking relative paths returned by embedding client
-        // Before each request submitted by a user, we will first run this method to check
-        // the file the user is currently on, which in returns allows us to know which workspace the user is in
-        this.currentWorkspace = workspaceRoot
-
         const relativePath = path.relative(workspaceRoot, uri.fsPath)
         const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
     }
 
-    public isIgnoredInCurrentWorkspace(relativeFilePath: string): boolean {
-        if (this.currentWorkspace) {
-            // create uri from workspace root and relativePath
-            const workspaceRootUri = URI.parse(this.currentWorkspace)
-            const uri = URI.file(path.join(workspaceRootUri.fsPath, relativeFilePath))
-            return this.isIgnored(uri)
-            // throw new Error('Workspace is not configured')
+    /**
+     * Checks if the given file path should be ignored for the provided codebase.
+     *
+     * This checks if ignore rules are enabled, finds the workspace root for the
+     * codebase, gets the ignore rules for that workspace, and checks if those rules
+     * ignore the given relative path.
+     */
+    public isIgnoredByCodebase(codebaseName: string, relativePath: string): boolean {
+        // Do not igno re if the feature is not enabled
+        if (!this.isActive) {
+            return false
         }
-        return false
+
+        const workspaceRoot = this.workspaceCodebases.get(codebaseName)
+        if (!workspaceRoot) {
+            return false
+        }
+
+        const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
+        return rules.ignores(relativePath) ?? false
     }
 
     private findWorkspaceRoot(filePath: string): string | undefined {
@@ -174,4 +190,5 @@ export class IgnoreHelper {
 interface IgnoreFileContent {
     filePath: string
     content: string
+    codebase?: string
 }

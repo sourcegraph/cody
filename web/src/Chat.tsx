@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import { noop } from 'lodash'
 
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
-import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 import { SymbolLinkProps } from '@sourcegraph/cody-ui/src/chat/PreciseContext'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -93,5 +93,5 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
     </button>
 )
 
-const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{`@${path}`}</>
 const SymbolLink: React.FunctionComponent<SymbolLinkProps> = ({ symbol }) => <>{symbol}</>

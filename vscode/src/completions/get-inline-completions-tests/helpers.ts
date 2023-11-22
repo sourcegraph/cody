@@ -8,6 +8,9 @@ import {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { testFilePath } from '../../testutils/textDocument'
+import { SupportedLanguage } from '../../tree-sitter/grammars'
+import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
+import { getParser } from '../../tree-sitter/parser'
 import { CodeCompletionsClient } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
@@ -20,9 +23,6 @@ import {
 import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
-import { SupportedLanguage } from '../tree-sitter/grammars'
-import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
-import { getParser } from '../tree-sitter/parser'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,

@@ -2,8 +2,8 @@ import { LRUCache } from 'lru-cache'
 import { TextDocument } from 'vscode'
 import { Point, SyntaxNode } from 'web-tree-sitter'
 
+import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
-import { getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
 

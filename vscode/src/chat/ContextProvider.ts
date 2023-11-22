@@ -10,14 +10,16 @@ import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local
 import { isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
+import { getEditor } from '../editor/active-editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
-import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -116,7 +118,7 @@ export class ContextProvider implements vscode.Disposable {
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -187,7 +189,10 @@ export class ContextProvider implements vscode.Disposable {
      */
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
-            const editorContext = this.editor.getActiveTextEditor()
+            const editor = getEditor()
+            const activeEditor = editor.active
+            const fileName = vscode.workspace.asRelativePath(activeEditor?.document?.uri.fsPath || '')
+
             await this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
@@ -196,8 +201,8 @@ export class ContextProvider implements vscode.Disposable {
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
-                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selectionRange: editorContext?.selectionRange,
+                    filePath: editor.ignored ? 'ignored' : fileName,
+                    selectionRange: editor.ignored ? undefined : activeEditor?.selection,
                     supportsKeyword: true,
                 },
             })
@@ -224,6 +229,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                experimentalChatPanel: this.config.experimentalChatPanel,
             }
 
             // update codebase context on configuration change
@@ -289,9 +295,6 @@ export class ContextProvider implements vscode.Disposable {
 
 /**
  * Gets codebase context for the current workspace.
- * @param config Cody configuration
- * @param rgPath Path to rg (ripgrep) executable
- * @param editor Editor instance
  * @returns CodebaseContext if a codebase can be determined, else null
  */
 async function getCodebaseContext(
@@ -307,12 +310,16 @@ async function getCodebaseContext(
     if (!workspaceRoot) {
         return null
     }
-    const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
+    const currentFile = getEditor()?.active?.document?.uri
+    // Get codebase from config or fallback to getting codebase name from current file URL
+    // Always use the codebase from config as this is manually set by the user
+    const codebase = config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
     if (!codebase) {
         return null
     }
+
+    // Map the ignore rules for the workspace with the codebase name
+    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot.fsPath)
 
     // Find an embeddings client
     let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)

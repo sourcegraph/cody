@@ -41,14 +41,15 @@ export class Interaction {
             const message = contextMessages[i]
             // Skips the assistant message if the human message is ignored
             if (message.speaker === 'human' && message.file) {
-                if (message.file?.uri && isCodyIgnoredFile(message.file.uri)) {
+                const { uri, repoName, fileName, source } = message.file
+                if (uri && isCodyIgnoredFile(uri)) {
                     i++
                     continue
                 }
-
                 // Filter embedding results from the current workspace
-                if (message.file.source === 'embeddings') {
-                    if (isCodyIgnoredFilePath(message.file.fileName)) {
+                if (source === 'embeddings') {
+                    console.log(fileName, repoName)
+                    if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
                         i++
                         continue
                     }
@@ -99,12 +100,12 @@ export class Interaction {
      */
     public toChat(): ChatMessage[] {
         return [
-            this.humanMessage,
             {
-                ...this.assistantMessage,
+                ...this.humanMessage,
                 contextFiles: this.usedContextFiles,
                 preciseContext: this.usedPreciseContext,
             },
+            this.assistantMessage,
         ]
     }
 
