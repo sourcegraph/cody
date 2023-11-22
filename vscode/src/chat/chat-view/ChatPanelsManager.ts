@@ -86,12 +86,6 @@ export class ChatPanelsManager implements vscode.Disposable {
      * Creates a new webview panel for chat.
      */
     public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<ChatPanelProvider> {
-        if (this.activePanelProvider && !this.activePanelProvider?.webviewPanel?.active) {
-            this.activePanelProvider.webviewPanel?.reveal()
-            void vscode.window.showErrorMessage('Please wait for the current panel to load.')
-            return this.activePanelProvider
-        }
-
         if (chatID && this.panelProvidersMap.has(chatID)) {
             const provider = this.panelProvidersMap.get(chatID)
             if (provider) {
@@ -109,7 +103,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.panelProvidersMap.set(sessionID, provider)
 
         webviewPanel?.onDidChangeViewState(e => {
-            if (e.webviewPanel.visible) {
+            if (e.webviewPanel.visible && e.webviewPanel.active) {
                 this.activePanelProvider = provider
                 this.options.contextProvider.webview = provider.webview
                 void this.selectTreeItem(provider.sessionID)

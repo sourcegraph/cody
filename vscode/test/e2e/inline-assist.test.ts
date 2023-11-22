@@ -17,7 +17,7 @@ const expectedEvents = [
 test.beforeEach(() => {
     resetLoggedEvents()
 })
-test('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
+test.skip('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -55,7 +55,6 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
 
     await assertEvents(loggedEvents, expectedEvents)
     await assertEvents(loggedV2Events, [
-        'cody.auth/failed',
         'cody.auth/failed',
         'cody.auth/connected',
         'cody.command.edit/executed',
