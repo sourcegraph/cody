@@ -30,7 +30,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
         selection?: vscode.Selection
     ): vscode.CodeAction {
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
-        const source = 'code-action'
+        const source = 'code-action:edit'
         action.command = {
             command: 'cody.command.edit-code',
             arguments: [
