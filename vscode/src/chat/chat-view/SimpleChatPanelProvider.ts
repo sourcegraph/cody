@@ -343,8 +343,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             newContextUsed,
         } = await GPT4Prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
 
-        console.log('# promptMessages', promptMessages)
-
         this.chatModel.setNewContextUsed(newContextUsed)
 
         // TODO: send warnings to client

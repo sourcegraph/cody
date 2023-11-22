@@ -5,6 +5,8 @@ import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codeba
 
 import { ContextItem } from './SimpleChatModel'
 
+// TODO(beyang): url constructors for file-relative:// and embeddings://
+
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
 export function contextMessageToContextItem(contextMessage: ContextMessage): ContextItem | null {
     if (!contextMessage.text) {
@@ -59,8 +61,12 @@ export function stripContextWrapper(text: string): string | undefined {
 export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
     const contextFiles: ContextFile[] = []
     for (const item of items) {
+        let relFsPath = item.uri.fsPath
+        if (relFsPath.startsWith('/')) {
+            relFsPath = relFsPath.slice(1)
+        }
         contextFiles.push({
-            fileName: item.uri.fsPath,
+            fileName: relFsPath,
             source: 'embeddings',
             range: rangeToViewRange(item.range),
             content: item.text,
