@@ -29,7 +29,10 @@ async function runCommand(command: string | undefined, cwd: string): Promise<boo
 
 // Same as runCommand but rejects the promise instead of returning false
 async function runVoidCommand(command: string | undefined, cwd: string): Promise<void> {
-    return runCommand(command, cwd).then(ok => (ok ? Promise.resolve() : Promise.reject(`Command failed: ${command}`)))
+    const ok = await runCommand(command, cwd)
+    if (!ok) {
+        throw new Error(`Command failed: ${command}`)
+    }
 }
 
 export async function testCleanup(options: EvaluateAutocompleteOptions): Promise<void> {
