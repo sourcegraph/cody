@@ -4,6 +4,7 @@ import path from 'path'
 import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import * as vscode from 'vscode'
 
+import { CompletionBookkeepingEvent } from '../../../../vscode/src/completions/logger'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
 export class AutocompleteDocument {
@@ -13,21 +14,25 @@ export class AutocompleteDocument {
     constructor(
         public readonly params: Pick<
             AutocompleteItem,
-            'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath'
+            'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
         >,
-        public readonly text: string
+        public readonly text: string,
+        public readonly snapshotDirectory?: string
     ) {
         this.lines = text.split('\n')
         this.textDocument = new AgentTextDocument({ filePath: params.filepath, content: text })
     }
 
     public pushItem(
-        item: Omit<AutocompleteItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath'>
+        item: Omit<AutocompleteItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'>
     ): void {
         item.rangeStartLine = item.range.start.line
         item.rangeStartCharacter = item.range.start.character
         item.rangeEndLine = item.range.end.line
         item.rangeEndCharacter = item.range.end.character
+        if (item.event) {
+            item.eventJSON = JSON.stringify(item.event)
+        }
         this.items.push({
             ...item,
             ...this.params,
@@ -98,9 +103,8 @@ export class AutocompleteDocument {
      * ```
      * src/hello.ts:LINE:CHARACTER
      * const hello = 42
-     *       ^^^^^
+     * ^^^^^
      * ```
-     *
      * @param range the range to highlight
      * @param diagnostic optional message to include with the formatted string
      */
@@ -132,6 +136,7 @@ export interface AutocompleteItem {
     fixture: string
     strategy: string
     filepath: string
+    revision: string
     range: vscode.Range
     rangeStartLine?: number
     rangeStartCharacter?: number
@@ -145,6 +150,8 @@ export interface AutocompleteItem {
     resultParses?: boolean
     resultTypechecks?: boolean
     resultText?: string
+    event?: CompletionBookkeepingEvent
+    eventJSON?: string
 }
 
 export const autocompleteItemHeaders: ObjectHeaderItem[] = [
@@ -153,6 +160,7 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'fixture', title: 'FIXTURE' },
     { id: 'strategy', title: 'STRATEGY' },
     { id: 'filepath', title: 'FILEPATH' },
+    { id: 'revision', title: 'REVISION' },
     { id: 'rangeStartLine', title: 'RANGE_START_LINE' },
     { id: 'rangeStartCharacter', title: 'RANGE_START_CHARACTER' },
     { id: 'rangeEndLine', title: 'RANGE_END_LINE' },
@@ -165,6 +173,7 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultTypechecks', title: 'RESULT_TYPECHECKS' },
     { id: 'resultText', title: 'RESULT_TEXT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
+    { id: 'eventJSON', title: 'EVENT' },
 ]
 
 function commentSyntaxForLanguage(languageid: string): string {
