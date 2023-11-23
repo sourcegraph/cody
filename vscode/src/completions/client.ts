@@ -1,3 +1,5 @@
+import { trace } from '@opentelemetry/api'
+
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import type {
     CompletionLogger,
@@ -71,7 +73,14 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            headers.set('X-Sourcegraph-Should-Trace', 'true')
+            const activeSpan = trace.getActiveSpan()
+            if (activeSpan) {
+                headers.set('X-Trace', activeSpan.spanContext().traceId)
+                headers.set('X-Trace-Span', activeSpan.spanContext().spanId)
+                headers.set('X-Sourcegraph-Should-Trace', 'true')
+            } else {
+                headers.set('X-Sourcegraph-Should-Trace', 'true')
+            }
         }
 
         // We enable streaming only for Node environments right now because it's hard to make
