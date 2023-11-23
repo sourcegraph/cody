@@ -24,7 +24,7 @@ import {
     TriggerKind,
 } from './get-inline-completions'
 import * as CompletionLogger from './logger'
-import { CompletionEvent, CompletionItemID, CompletionLogID } from './logger'
+import { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
@@ -35,7 +35,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
     items: AutocompleteItem[]
     /** @deprecated */
-    completionEvent?: CompletionEvent
+    completionEvent?: CompletionBookkeepingEvent
 }
 
 export class AutocompleteItem extends vscode.InlineCompletionItem {

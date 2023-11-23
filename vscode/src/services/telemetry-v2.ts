@@ -11,7 +11,7 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 import { logDebug } from '../log'
 
 import { localStorage } from './LocalStorageProvider'
-import { extensionDetails } from './telemetry'
+import { getExtensionDetails } from './telemetry'
 
 let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
@@ -83,6 +83,8 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
+    const extensionDetails = getExtensionDetails(config)
+
     if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return

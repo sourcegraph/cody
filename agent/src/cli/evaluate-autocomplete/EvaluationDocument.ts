@@ -4,16 +4,16 @@ import path from 'path'
 import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import * as vscode from 'vscode'
 
-import { CompletionEvent } from '../../../../vscode/src/completions/logger'
+import { CompletionBookkeepingEvent } from '../../../../vscode/src/completions/logger'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
-export class AutocompleteDocument {
-    public items: AutocompleteItem[] = []
+export class EvaluationDocument {
+    public items: EvaluationItem[] = []
     public readonly lines: string[]
     public readonly textDocument: AgentTextDocument
     constructor(
         public readonly params: Pick<
-            AutocompleteItem,
+            EvaluationItem,
             'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
         >,
         public readonly text: string,
@@ -24,7 +24,7 @@ export class AutocompleteDocument {
     }
 
     public pushItem(
-        item: Omit<AutocompleteItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'>
+        item: Omit<EvaluationItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'>
     ): void {
         item.rangeStartLine = item.range.start.line
         item.rangeStartCharacter = item.range.start.character
@@ -73,21 +73,23 @@ export class AutocompleteDocument {
                     throw new Error(this.format(item.range, 'negative length occurrence!'))
                 }
                 out.push('^'.repeat(length))
-                out.push(' ')
-                out.push('AUTOCOMPLETE')
-                out.push(' ')
+                out.push(' AUTOCOMPLETE')
                 if (item.resultEmpty) {
-                    out.push('EMPTY_RESULT')
-                } else if (item.resultTimeout) {
-                    out.push('TIMEOUT')
-                } else if (item.resultExact) {
-                    out.push('EXACT_MATCH')
-                } else if (item.resultTypechecks) {
-                    out.push('TYPECHECKS')
-                } else if (item.resultParses) {
-                    out.push('PARSES')
-                } else if (item.resultText) {
-                    out.push('RESULT ')
+                    out.push(' EMPTY_RESULT')
+                }
+                if (item.resultTimeout) {
+                    out.push(' TIMEOUT')
+                }
+                if (item.resultExact) {
+                    out.push(' EXACT_MATCH')
+                }
+                if (item.resultTypechecks === true) {
+                    out.push(' TYPECHECK_OK')
+                } else if (item.resultTypechecks === false) {
+                    out.push(' TYPECHECK_ERROR')
+                }
+                if (item.resultText) {
+                    out.push(' RESULT ')
                     out.push(item.resultText)
                 }
                 out.push('\n')
@@ -103,9 +105,8 @@ export class AutocompleteDocument {
      * ```
      * src/hello.ts:LINE:CHARACTER
      * const hello = 42
-     *       ^^^^^
+     * ^^^^^
      * ```
-     *
      * @param range the range to highlight
      * @param diagnostic optional message to include with the formatted string
      */
@@ -131,7 +132,7 @@ export class AutocompleteDocument {
  * An AutocompleteItem represents one row in the final CSV file that
  * evaluate-autocomplete emits.
  */
-export interface AutocompleteItem {
+export interface EvaluationItem {
     languageid: string
     workspace: string
     fixture: string
@@ -148,10 +149,9 @@ export interface AutocompleteItem {
     resultError?: string
     resultEmpty?: boolean
     resultExact?: boolean
-    resultParses?: boolean
     resultTypechecks?: boolean
     resultText?: string
-    event?: CompletionEvent
+    event?: CompletionBookkeepingEvent
     eventJSON?: string
 }
 
@@ -170,7 +170,6 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultError', title: 'RESULT_ERROR' },
     { id: 'resultEmpty', title: 'RESULT_EMPTY' },
     { id: 'resultExact', title: 'RESULT_EXACT' },
-    { id: 'resultParses', title: 'RESULT_PARSES' },
     { id: 'resultTypechecks', title: 'RESULT_TYPECHECKS' },
     { id: 'resultText', title: 'RESULT_TEXT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
@@ -195,7 +194,7 @@ function commentSyntaxForLanguage(languageid: string): string {
     }
 }
 
-function compareItemByRange(a: AutocompleteItem, b: AutocompleteItem): number {
+function compareItemByRange(a: EvaluationItem, b: EvaluationItem): number {
     const byStart = a.range.start.compareTo(b.range.start)
     if (byStart !== 0) {
         return byStart

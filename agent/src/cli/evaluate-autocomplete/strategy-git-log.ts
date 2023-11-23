@@ -8,16 +8,17 @@ import * as vscode from 'vscode'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import { AutocompleteDocument } from './AutocompleteDocument'
 import { EvaluateAutocompleteOptions, matchesGlobPatterns } from './evaluate-autocomplete'
+import { EvaluationDocument } from './EvaluationDocument'
 import { SnapshotWriter } from './SnapshotWriter'
+import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 export async function evaluateGitLogStrategy(
     client: MessageHandler,
-    options: EvaluateAutocompleteOptions,
-    workspace: string
+    options: EvaluateAutocompleteOptions
 ): Promise<void> {
+    const { workspace } = options
     try {
         let remainingTests = options.testCount
         const command = `git log --name-only --oneline --diff-filter=AMC --stat --numstat --pretty=format:'%H - %an, %ar : %s' -- ${options.gitLogFilter}`
@@ -30,6 +31,7 @@ export async function evaluateGitLogStrategy(
         // Reverse the commits list so the first element is the oldest commit
         commits.reverse()
 
+        await testInstall(options)
         const snapshots = new SnapshotWriter(options)
         await snapshots.writeHeader()
 
@@ -51,7 +53,7 @@ export async function evaluateGitLogStrategy(
                     const fullPath = path.join(workspace, filePath)
                     const content = (await fspromises.readFile(fullPath)).toString()
                     const languageid = getLanguageForFileName(filePath)
-                    const document = new AutocompleteDocument(
+                    const document = new EvaluationDocument(
                         {
                             languageid,
                             filepath: filePath,
@@ -118,6 +120,7 @@ export async function evaluateGitLogStrategy(
                             range,
                             client,
                             document,
+                            options,
                             emptyMatchContent: '',
                         })
 
@@ -133,6 +136,7 @@ export async function evaluateGitLogStrategy(
             }
         }
     } finally {
+        await testCleanup(options)
         // Reset submodule to initial HEAD
         const submodulesDir = path.join(workspace, '..')
         execSync('git submodule deinit -f .', { cwd: submodulesDir }).toString()
