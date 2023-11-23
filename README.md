@@ -187,6 +187,13 @@ You can configure the plugin on three levels:
 1. **Project-level** On the project level you are able to configure your default account, default branch name and remote url replacements
 2. **Application-level** All other settings are stored here
 
+## System Properties
+
+### Autocomplete system properties
+In order to disable newly introduced features we are giving an option to disable them via system properties:
+
+1. **Disable formatting autocomplete elements** `cody.autocomplete.enableFormatting=false`
+
 ## Managing Custom Keymaps
 
 ![A screenshot of the JetBrains preferences panel inside the Keymap tab](docs/keymaps.png)

@@ -334,6 +334,9 @@ tasks {
     systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
     systemProperty("cody-agent.directory", buildCodyDir.parent)
     systemProperty("sourcegraph.verbose-logging", "true")
+    systemProperty(
+        "cody.autocomplete.enableFormatting",
+        project.property("cody.autocomplete.enableFormatting") ?: "true")
   }
 
   runPluginVerifier {

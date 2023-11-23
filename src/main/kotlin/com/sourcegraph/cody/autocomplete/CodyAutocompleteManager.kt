@@ -42,6 +42,7 @@ import com.sourcegraph.utils.CodyEditorUtil.getTextRange
 import com.sourcegraph.utils.CodyEditorUtil.isCommandExcluded
 import com.sourcegraph.utils.CodyEditorUtil.isEditorValidForAutocomplete
 import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEditor
+import com.sourcegraph.utils.CodyFormatter
 import difflib.Delta
 import difflib.DiffUtils
 import difflib.Patch
@@ -322,7 +323,7 @@ class CodyAutocompleteManager {
       clearAutocompleteSuggestions(editor)
       currentAutocompleteTelemetry?.markCompletionDisplayed()
 
-      displayAgentAutocomplete(editor, offset, items, inlayModel, triggerKind, lookupString)
+      displayAgentAutocomplete(editor, offset, items, inlayModel, triggerKind)
     }
   }
 
@@ -338,8 +339,22 @@ class CodyAutocompleteManager {
       items: List<InlineAutocompleteItem>,
       inlayModel: InlayModel,
       triggerKind: InlineCompletionTriggerKind,
-      lookupString: String?,
   ) {
+    val project = editor.project
+    if (project != null && System.getProperty("cody.autocomplete.enableFormatting") != "false") {
+      items.map { item ->
+        if (item.insertText.lines().size > 1) {
+          item.insertText =
+              item.insertText.lines()[0] +
+                  CodyFormatter.formatStringBasedOnDocument(
+                      item.insertText.lines().drop(1).joinToString(separator = "\n"),
+                      project,
+                      editor.document,
+                      offset)
+        }
+      }
+    }
+
     val defaultItem = items.firstOrNull() ?: return
     val range = getTextRange(editor.document, defaultItem.range)
     val originalText = editor.document.getText(range)
