@@ -140,48 +140,64 @@ export const telemetryService: TelemetryService = {
 }
 
 /**
- * Syncs Cody chat transcripts with Sourcegraph cloud for dotcom endpoints.
- * Checks if there are chat transcripts in local storage that need to be synced,
- * by comparing their last interaction timestamp against the last sync timestamp.
- * Transcripts more recent than the last sync are stringified and logged as events.
+ * Syncs the chat transcript for the given endpoint to telemetry if certain conditions are met:
+ * - The endpoint is a dotcom endpoint
+ * - The feature flag for chat transcript sync is enabled
+ * - A sync has not already occurred in the past 7 days
+ *
+ * It goes through the chat history and uploads transcripts for conversations
+ * that have new interactions since the last sync timestamp.
+ *
+ * It logs various telemetry events related to the sync process and results.
  */
+let syncingProcessStarted = false // We only wants to check this once on start up
 export async function syncTranscript(endpoint: string): Promise<void> {
     // Only sync chat transcripts for dotcom endpoints
-    if (!isDotCom(endpoint)) {
+    if (!isDotCom(endpoint) || syncingProcessStarted) {
         return
     }
 
+    syncingProcessStarted = true
+
+    const TODAYS_DATE = new Date().toISOString().split('T')[0].replaceAll('-', '/')
     const eventName = 'CodyVSCodeExtension:syncChatTranscript'
 
     try {
+        // Feature flag to sync every 7days
+        const isFeatureEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatTranscript1Week)
         // Skip if feature flag is not avaliable
-        const isFeatureEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatTranscript)
         if (!isFeatureEnabled) {
             return
         }
-        // Skip if there are no chat transcripts available
+
+        const lastSyncedTimestamp = await localStorage.lastSyncedTimestamp()
+        // Skip if we have already synced once in the past 7 days (1 week)
+        if (lastSyncedTimestamp && lastSyncedTimestamp > Date.now() - 7 * 24 * 60 * 60 * 1000) {
+            return
+        }
+
         const chatFromStore = localStorage.getChatHistory()?.chat
         if (!chatFromStore) {
+            logEvent(eventName, { status: 'noChatHistory' })
             return
         }
 
-        // Only sync if the last interaction timestamp is more recent than the last sync time.
-        const lastSyncedTimestamp = await localStorage.lastSyncTimestamp()
-
-        // Skip if lastSyncedTimestamp is today's date
-        if (new Date(lastSyncedTimestamp).toDateString() === new Date().toDateString()) {
-            return
-        }
-
+        const { anonymousUserID } = await localStorage.anonymousUserID()
+        let lastSyncedTranscriptTimestamp = 0
         Object.entries(chatFromStore).forEach(([id, transcript]) => {
             // Convert transcript.lastInteractionTimestamp from timestamp string to number
             const lastInteractionTimestamp = new Date(transcript.lastInteractionTimestamp).getTime()
 
+            // Only sync if the last interaction timestamp is more recent than the last sync time.
             if (lastInteractionTimestamp > lastSyncedTimestamp) {
-                const eventData = { id, transcript: JSON.stringify(transcript) }
+                // File location format: "cody/vscode/chatTranscript/YYYY/MM/DD/anonymousUserID.json"
+                const fileLocation = `cody/vscode/chatTranscript/${TODAYS_DATE}/${anonymousUserID}.json`
+                const eventData = { id, transcript: JSON.stringify(transcript), fileLocation }
                 logEvent(eventName, eventData)
+                lastSyncedTranscriptTimestamp = lastInteractionTimestamp
             }
         })
+        void localStorage.lastSyncedTimestamp(lastSyncedTranscriptTimestamp)
     } catch (error: unknown) {
         logEvent(`${eventName}:failed`, { error: `${error}` })
     }

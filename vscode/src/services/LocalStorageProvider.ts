@@ -120,15 +120,6 @@ export class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public async lastSyncTimestamp(): Promise<number> {
-        const storedSyncedTime = this.storage.get<number>(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, 0)
-        const newSyncedTime = Date.now()
-        const lastSyncedTime = storedSyncedTime
-        // Update sync time to now
-        await this.storage.update(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, newSyncedTime)
-        return lastSyncedTime
-    }
-
     public async setLastUsedCommands(recipes: string[]): Promise<void> {
         if (recipes.length === 0) {
             return
@@ -158,6 +149,28 @@ export class LocalStorage {
 
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
+    }
+
+    /**
+     * Gets the last transcript sync timestamp from storage, or the provided
+     * lastSyncedTranscriptTimestamp if it is more recent. Also updates the stored
+     * last sync timestamp if a more recent one was provided.
+     *
+     * @param lastSyncedTranscriptTimestamp - An optional more recent transcript
+     * sync timestamp to use and store instead of the stored one.
+     * @returns The most recent transcript sync timestamp, either the stored one
+     * or the one provided.
+     */
+    public async lastSyncedTimestamp(lastSyncedTranscriptTimestamp?: number): Promise<number> {
+        const storedSyncedTime = this.storage.get<number>(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, 0)
+
+        if (lastSyncedTranscriptTimestamp && lastSyncedTranscriptTimestamp > storedSyncedTime) {
+            // Update last sync time to lastTranscriptTimestamp so that we know when not to sync next time
+            await this.storage.update(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, lastSyncedTranscriptTimestamp)
+            return lastSyncedTranscriptTimestamp
+        }
+
+        return storedSyncedTime
     }
 }
 
