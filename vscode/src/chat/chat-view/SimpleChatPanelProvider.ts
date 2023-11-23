@@ -31,6 +31,7 @@ import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
@@ -120,10 +121,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
     }
 
-    public executeRecipe(recipeID: RecipeID, chatID: string, context: any): Promise<void> {
-        console.log('# TODO: executeRecipe')
-        return Promise.resolve()
+    public async executeRecipe(recipeID: RecipeID): Promise<void> {
+        await vscode.window.showErrorMessage(`command ${recipeID} not supported`)
     }
+
     public executeCustomCommand(title: string, type?: CustomCommandType | undefined): Promise<void> {
         console.log('# TODO: executeCustomCommand')
         return Promise.resolve()
@@ -196,7 +197,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'initialized':
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
-                // await this.init(this.startUpChatID)
                 this.onInitialized()
                 break
             case 'submit':
@@ -207,12 +207,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     message.addEnhancedContext
                 )
                 break
-            // case 'edit':
-            //     this.transcript.removeLastInteraction()
-            //     await this.onHumanMessageSubmitted(message.text, 'user')
-            //     telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
-            //     telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
-            //     break
+            case 'edit':
+                await this.onEdit(message.text)
+                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
+                break
             case 'abort':
                 this.cancelInProgressCompletion()
                 telemetryService.log(
@@ -225,15 +224,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'chatModel':
                 this.chatModel.modelID = message.model
                 break
-            // case 'executeRecipe':
-            //     await this.executeRecipe(message.recipe, '', 'chat')
-            //     break
+            case 'executeRecipe':
+                void this.executeRecipe(message.recipe)
+                break
             case 'getUserContext':
                 await this.handleContextFiles(message.query)
                 break
-            // case 'custom-prompt':
-            //     await this.onCustomPromptClicked(message.title, message.value)
-            //     break
+            case 'custom-prompt':
+                void vscode.window.showErrorMessage('custom-prompt unsupported')
+                break
             // case 'insert':
             //     await handleCodeFromInsertAtCursor(message.text, message.metadata)
             //     break
@@ -251,14 +250,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             //     void openExternalLinks(message.value)
             //     break
             case 'openFile':
-                console.log('# openFile', message)
                 // await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
                 break
             // case 'openLocalFileWithRange':
             //     await openLocalFileWithRange(message.filePath, message.range)
             //     break
-            // default:
-            //     this.handleError('Invalid request type from Webview Panel', 'system')
+            default:
+                this.handleError('Invalid request type from Webview Panel', 'system')
         }
     }
 
@@ -343,18 +341,32 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
+    private async onEdit(text: string): Promise<void> {
+        this.chatModel.updateLastHumanMessage({ text })
+        void this.updateViewTranscript()
+        // TODO(beyang): refetch context files
+        await this.generateAssistantResponse(text)
+    }
+
     private async onHumanMessageSubmitted(
         text: string,
         submitType: 'user' | 'suggestion' | 'example',
         userContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
         this.chatModel.addHumanMessage({ text })
         void this.updateViewTranscript()
+        await this.generateAssistantResponse(text, userContextFiles, addEnhancedContext)
+    }
 
+    private async generateAssistantResponse(
+        text: string,
+        userContextFiles?: ContextFile[],
+        addEnhancedContext = true
+    ): Promise<void> {
         const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
 
+        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
         const contextProvider = new ContextProvider(
             userContextItems,
             this.editor,
@@ -474,6 +486,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.sessionID = this.chatModel.sessionID
         await this.updateViewTranscript()
+    }
+
+    /**
+     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
+     */
+    public handleError(errorMsg: string, type: MessageErrorType): void {
+        if (type === 'transcript') {
+            // TODO(beyang): record error in chat model
+            // this.transcript.addErrorAsAssistantResponse(errorMsg)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
+        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 }
 
