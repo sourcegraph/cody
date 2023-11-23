@@ -10,5 +10,6 @@ export const goQueries = {
             (interface_type ("{") @block_start) @trigger
         `,
         intents: '',
+        documentableNodes: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
