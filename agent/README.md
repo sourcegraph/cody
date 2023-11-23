@@ -66,6 +66,27 @@ The following commands assume you are in the `agent` directory:
 - The Sourcegraph Neovim plugin is defined in the
   [`sourcegraph/sg.nvim`](https://github.com/sourcegraph/sg.nvim) repository.
 
+## Testing with the agent
+
+The agent includes a testing mode where it can either record HTTP requests or
+replay from a directory of recorded HTTP request/response pairs. When running
+in replay mode, the agent should be suitable to use within tests because the results
+should be determinic and work.
+
+To run the agent in testing mode, define the following environment variables:
+
+- `CODY_RECORDING_DIRECTORY=PATH_TO_DIRECTORY`: a directory where the HTTP
+  recordings should be stored. This directory should be committed to git so that
+  other people who clone the repository can replay from the same recording.
+- `CODY_RECORDING_MODE=record|replay`: when set to `record`, will record HTTP
+  requests and persist the results in the recording directory. When set to
+  `replay`, will replay from the recording directory.
+- (optional) `CODY_RECORDING_MODE=TEST_NAME`: if you are running multiple
+  instances of the agent to test different features, then you should provide a
+  unique recording name for each test. Each unique name will get a unique
+  directory avoiding the risk of contaminating recordings between different
+  tests.
+
 ## Miscellaneous notes
 
 - By the nature of using JSON-RPC via stdin/stdout, both the agent server and

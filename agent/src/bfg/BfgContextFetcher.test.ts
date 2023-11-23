@@ -1,10 +1,10 @@
 import * as child_process from 'child_process'
 import * as fs from 'fs'
 import * as fspromises from 'fs/promises'
-import * as os from 'os'
 import path from 'path'
 import * as util from 'util'
 
+import envPaths from 'env-paths'
 import * as rimraf from 'rimraf'
 import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
@@ -27,15 +27,6 @@ const gitdir = path.join(dir, '.git')
 const shouldCreateGitDir = !fs.existsSync(gitdir)
 
 describe('BfgRetriever', async () => {
-    if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
-        // The test runs successfully without these environment variables. We
-        // only have this check enabled for now to skip running BFG tests in CI.
-        // We should prioritize figuring out how to enable these tests to run in
-        // CI alongside other agent tests.
-        it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run BFG tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
-        return
-    }
-    const tmpDir = await fspromises.mkdtemp(path.join(os.tmpdir(), 'bfg-'))
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
@@ -79,9 +70,10 @@ describe('BfgRetriever', async () => {
                 customConfiguration: { 'cody.experimental.bfg.path': bfgBinary },
             })
         }
+        const paths = envPaths('Cody')
         const extensionContext: Partial<vscode.ExtensionContext> = {
             subscriptions: [],
-            globalStorageUri: vscode.Uri.from({ scheme: 'file', path: tmpDir }),
+            globalStorageUri: vscode.Uri.file(paths.data),
         }
         client.notify('textDocument/didOpen', {
             filePath,

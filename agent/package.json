@@ -20,9 +20,12 @@
     "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test": "pnpm run build && vitest"
+    "test": "pnpm run build && vitest || ./scripts/explain-how-to-update-tests.sh"
   },
   "dependencies": {
+    "@pollyjs/adapter-node-http": "^6.0.6",
+    "@pollyjs/core": "^6.0.6",
+    "@pollyjs/persister-fs": "^6.0.6",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.13.0",
     "commander": "^11.1.0",
