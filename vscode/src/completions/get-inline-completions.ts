@@ -4,7 +4,7 @@ import { URI } from 'vscode-uri'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
-import { startAsyncSpan } from '../tracing/tracer'
+import { getActiveTraceAndSpanId, startAsyncSpan } from '../tracing/tracer'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
@@ -129,11 +129,9 @@ export enum TriggerKind {
 
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     try {
-        return await startAsyncSpan('getInlineCompletions', async () => {
-            const result = await doGetInlineCompletions(params)
-            params.tracer?.({ result })
-            return result
-        })
+        const result = await doGetInlineCompletions(params)
+        params.tracer?.({ result })
+        return result
     } catch (unknownError: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
@@ -230,10 +228,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         languageId: document.languageId,
         completionIntent,
         artificialDelay,
+        traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    await startAsyncSpan('debounce', async () => {
+    await startAsyncSpan('autocomplete.debounce', async () => {
         const interval =
             ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
         if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
@@ -250,7 +249,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await startAsyncSpan('context', async () => {
+    const contextResult = await startAsyncSpan('autocomplete.retrieve', async () => {
         return contextMixer.getContext({
             document,
             position,
@@ -290,14 +289,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Get the processed completions from providers
-    const { completions, cacheHit } = await startAsyncSpan('request', async () => {
-        return requestManager.request(
-            reqContext,
-            completionProviders,
-            contextResult?.context ?? [],
-            tracer ? createCompletionProviderTracer(tracer) : undefined
-        )
-    })
+    const { completions, cacheHit } = await requestManager.request(
+        reqContext,
+        completionProviders,
+        contextResult?.context ?? [],
+        tracer ? createCompletionProviderTracer(tracer) : undefined
+    )
 
     const source =
         cacheHit === 'hit'

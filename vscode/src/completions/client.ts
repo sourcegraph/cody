@@ -1,5 +1,3 @@
-import { trace } from '@opentelemetry/api'
-
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import type {
     CompletionLogger,
@@ -18,6 +16,7 @@ import {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { fetch } from '../fetch'
+import { getActiveTraceAndSpanId } from '../tracing/tracer'
 
 import { forkSignal } from './utils'
 
@@ -73,10 +72,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            const activeSpan = trace.getActiveSpan()
-            if (activeSpan) {
-                headers.set('X-Trace', activeSpan.spanContext().traceId)
-                headers.set('X-Trace-Span', activeSpan.spanContext().spanId)
+            const activeIds = getActiveTraceAndSpanId()
+            if (activeIds) {
+                headers.set('X-Trace', activeIds.traceId)
+                headers.set('X-Trace-Span', activeIds.spanId)
                 headers.set('X-Sourcegraph-Should-Trace', 'true')
             } else {
                 headers.set('X-Sourcegraph-Should-Trace', 'true')

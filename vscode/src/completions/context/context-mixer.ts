@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { startAsyncSpan } from '../../tracing/tracer'
 import { DocumentContext } from '../get-current-doc-context'
 import { ContextSnippet } from '../types'
 
@@ -82,13 +83,15 @@ export class ContextMixer implements vscode.Disposable {
         const results = await Promise.all(
             retrievers.map(async retriever => {
                 const retrieverStart = performance.now()
-                const snippets = await retriever.retrieve({
-                    ...options,
-                    hints: {
-                        maxChars: options.maxChars,
-                        maxMs: 150,
-                    },
-                })
+                const snippets = await startAsyncSpan(`autocomplete.retrieve.${retriever.identifier}`, () =>
+                    retriever.retrieve({
+                        ...options,
+                        hints: {
+                            maxChars: options.maxChars,
+                            maxMs: 150,
+                        },
+                    })
+                )
 
                 return {
                     identifier: retriever.identifier,
