@@ -38,37 +38,46 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory.chat)]
     chatHistoryEntries.forEach(([id, entry]) => {
+        const chatTitle = entry?.chatTitle
+        console.log(chatTitle)
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
-        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            let title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
-
+        let title = ''
+        if (chatTitle) {
+            title = chatTitle
+        } else if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
+            title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             // Display command key only
             if (title.startsWith('/')) {
                 title = title.split(' ')[0]
             }
-
-            chatTreeItems.push({
-                id,
-                title,
-                icon: 'comment-discussion',
-                command: { command: 'cody.chat.panel.restore', args: [id, title] },
-            })
         }
+        chatTreeItems.push({
+            id,
+            title,
+            icon: 'comment-discussion',
+            command: { command: 'cody.chat.panel.restore', args: [id, title] },
+        })
     })
     return chatTreeItems.reverse()
 }
 
-export async function updateChatHistoryLastInteractionMessage(chatID: string, message: string): Promise<void> {
+export async function updateChatHistoryTitle(chatID: string, message: string): Promise<void> {
     const userHistory = localStorage.getChatHistory()
     const userChat = userHistory?.chat[chatID]
     if (userChat) {
-        const lastInteraction = userChat.interactions.findLast(interaction => interaction?.humanMessage)
-        if (lastInteraction?.humanMessage) {
-            lastInteraction.humanMessage.displayText = message
-            userHistory.chat[chatID] = userChat
-            await localStorage.setChatHistory(userHistory)
-        }
+        userChat.chatTitle = message
+        userHistory.chat[chatID] = userChat
+        await localStorage.setChatHistory(userHistory)
     }
+}
+
+export function getChatHistoryTitle(chatID: string | undefined): string | undefined {
+    const userHistory = localStorage.getChatHistory()
+    let chatTitle
+    if (chatID) {
+        chatTitle = userHistory?.chat[chatID]?.chatTitle
+    }
+    return chatTitle
 }
 
 const supportItems: CodySidebarTreeItem[] = [

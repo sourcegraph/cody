@@ -16,6 +16,7 @@ export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
     chatModel?: string
+    chatTitle?: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
     scope?: TranscriptJSONScope

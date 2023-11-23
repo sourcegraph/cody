@@ -137,8 +137,9 @@ export class ChatManager implements vscode.Disposable {
 
     public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
         const chatID = treeItem?.id
+        const chatLabel = treeItem?.label as vscode.TreeItemLabel
         if (chatID) {
-            await this.chatPanelsManager?.editChatHistory(chatID)
+            await this.chatPanelsManager?.editChatHistory(chatID, chatLabel.label)
         }
     }
 

@@ -77,11 +77,6 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         return this.treeNodes.find(node => node.id === chatID)
     }
 
-    public getTreeItemLabelByID(chatID: string): vscode.TreeItemLabel {
-        const treeItem = this.getTreeItemByID(chatID)
-        return treeItem?.label as vscode.TreeItemLabel
-    }
-
     /**
      * Empty the tree view
      */
