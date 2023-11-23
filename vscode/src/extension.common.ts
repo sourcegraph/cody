@@ -15,6 +15,7 @@ import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
 import { captureException, SentryService } from './services/sentry/sentry'
+import { OpenTelemetryService } from './tracing/initializeOpenTelemetry.node'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T extends new (...args: any) => any> = T extends new (...args: infer A) => infer R
@@ -32,7 +33,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
-    initializeOpenTelemetry?: (config: Pick<Configuration, 'serverEndpoint'>) => void
+    createOpenTelemetryService?: (config: Pick<Configuration, 'serverEndpoint'>) => OpenTelemetryService
     recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }
