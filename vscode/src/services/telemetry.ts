@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
@@ -17,8 +17,8 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-const config = getConfiguration(vscode.workspace.getConfiguration())
-export const extensionDetails: ExtensionDetails = {
+const extensionVersion = vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
+export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
@@ -26,8 +26,8 @@ export const extensionDetails: ExtensionDetails = {
     // Prefer the runtime package json over the version that is inlined during build times. This
     // way we will be able to include pre-release builds that are published with a different version
     // identifier.
-    version: vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion,
-}
+    version: extensionVersion,
+})
 
 /**
  * Initializes or configures legacy event-logging globals.
@@ -44,6 +44,8 @@ export async function createOrUpdateEventLogger(
             return
         }
     }
+
+    const extensionDetails = getExtensionDetails(config)
 
     telemetryLevel = config.telemetryLevel
 
@@ -100,7 +102,7 @@ function logEvent(
     logDebug(
         `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
         eventName,
-        extensionDetails.ide,
+        getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
         JSON.stringify({ properties, opts })
     )
     if (!eventLogger || !globalAnonymousUserID) {
