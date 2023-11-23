@@ -1,13 +1,13 @@
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { Resource } from '@opentelemetry/resources'
 // import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
-import { NodeSDK } from '@opentelemetry/sdk-node'
+import { BasicTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 export class OpenTelemetryService {
-    private sdk: NodeSDK | undefined
+    private provider: BasicTracerProvider | undefined
     constructor(protected config: Pick<Configuration, 'serverEndpoint'>) {
         void this.reconfigure()
     }
@@ -18,27 +18,41 @@ export class OpenTelemetryService {
     }
 
     private async reconfigure(): Promise<void> {
-        await this.sdk?.shutdown()
+        await this.provider?.shutdown()
 
         const traceUrl = new URL('/-/debug/otlp/v1/traces', this.config.serverEndpoint).toString()
 
         console.log({ traceUrl })
 
-        this.sdk = new NodeSDK({
+        this.provider = new BasicTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
                 [SemanticResourceAttributes.SERVICE_VERSION]: '0.1',
             }),
-            // instrumentations: [new HttpInstrumentation()],
-            traceExporter: new OTLPTraceExporter({
-                url: traceUrl,
-                headers: {},
-                timeoutMillis: 1000,
-            }),
-            // metricReader: new PeriodicExportingMetricReader({
-            //     exporter: new ConsoleMetricExporter(),
-            // }),
         })
-        this.sdk.start()
+
+        const exporter = new OTLPTraceExporter({
+            url: traceUrl,
+        })
+        this.provider.addSpanProcessor(new BatchSpanProcessor(exporter))
+        this.provider.register()
+
+        //  this.provider.getTracer(context.extensionId)
+
+        // this.sdk = new NodeSDK({
+        //     resource: new Resource({
+        //         [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
+        //         [SemanticResourceAttributes.SERVICE_VERSION]: '0.1',
+        //     }),
+        //     // instrumentations: [new HttpInstrumentation()],
+        //     traceExporter: new OTLPTraceExporter({
+        //         url: traceUrl,
+        //         headers: {},
+        //     }),
+        //     // metricReader: new PeriodicExportingMetricReader({
+        //     //     exporter: new ConsoleMetricExporter(),
+        //     // }),
+        // })
+        // this.sdk.start()
     }
 }
