@@ -466,6 +466,7 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
+
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
