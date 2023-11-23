@@ -697,6 +697,7 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
                     ...countCode(text),
                     source: task.source,
+                    response: text,
                 })
                 break
         }

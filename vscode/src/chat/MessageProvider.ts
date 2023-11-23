@@ -22,6 +22,7 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { showAskQuestionQuickPick } from '../commands/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
@@ -189,6 +190,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sessionID = chatID || new Date(Date.now()).toUTCString()
     }
 
+    private get isDotComUser(): boolean {
+        const endpoint = this.authProvider.getAuthStatus()?.endpoint || ''
+        return isDotCom(endpoint)
+    }
+
     private sendPrompt(
         promptMessages: Message[],
         responsePrefix = '',
@@ -234,9 +240,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const codeCount = countGeneratedCode(text)
                 if (codeCount?.charCount) {
                     const metadata = lastInteraction?.getHumanMessage().metadata
+                    const response = this.isDotComUser ? text : undefined
                     telemetryService.log(
                         'CodyVSCodeExtension:chatResponse:hasCode',
-                        { ...codeCount, ...metadata, requestID },
+                        { ...codeCount, ...metadata, requestID, response },
                         { hasV2Event: true }
                     )
                     telemetryRecorder.recordEvent(
@@ -453,8 +460,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 })
             }
         }
-
-        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
+        const prompt = this.isDotComUser ? interaction.getHumanMessage().text : ''
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel, prompt }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }
