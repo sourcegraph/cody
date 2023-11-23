@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -125,24 +124,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await vscode.window.showErrorMessage(`command ${recipeID} not supported`)
     }
 
-    public executeCustomCommand(title: string, type?: CustomCommandType | undefined): Promise<void> {
-        console.log('# TODO: executeCustomCommand')
-        return Promise.resolve()
+    public async executeCustomCommand(title: string): Promise<void> {
+        await vscode.window.showErrorMessage(`custom command ${title} not supported`)
     }
     public async clearAndRestartSession(): Promise<void> {
-        console.log('# TODO: clearAndRestartSession')
         if (this.chatModel.isEmpty()) {
-            return Promise.resolve()
+            return
         }
-        await this.reset()
+        await this.saveSession()
+        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.sessionID = this.chatModel.sessionID
+        await this.updateViewTranscript()
     }
 
-    public clearChatHistory(chatID: string): Promise<void> {
-        console.log('# TODO: clearChatHistory')
+    public clearChatHistory(): Promise<void> {
+        // TODO(beyang): this is a no-op now. This exists only to satisfy the IChatPanelProvider interface,
+        // which should be updated to remove this functionality
         return Promise.resolve()
     }
+
     public triggerNotice(notice: { key: string }): void {
-        console.log('# TODO: triggerNotice')
+        void this.webview?.postMessage({
+            type: 'notice',
+            notice,
+        })
     }
 
     public async setWebviewView(view: View): Promise<void> {
@@ -231,7 +236,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await this.handleContextFiles(message.query)
                 break
             case 'custom-prompt':
-                void vscode.window.showErrorMessage('custom-prompt unsupported')
+                await this.executeCustomCommand(message.title, message.value)
                 break
             // case 'insert':
             //     await handleCodeFromInsertAtCursor(message.text, message.metadata)
@@ -480,14 +485,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
     }
 
-    private async reset(): Promise<void> {
-        await this.saveSession()
-
-        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
-        this.sessionID = this.chatModel.sessionID
-        await this.updateViewTranscript()
-    }
-
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
@@ -574,7 +571,6 @@ class ContextProvider implements IContextProvider {
     }
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
         if (!this.embeddingsClient) {
-            throw new Error('# TODO: reset enhanced context selector when chat is reset')
             return []
         }
 
@@ -582,6 +578,7 @@ class ContextProvider implements IContextProvider {
         const contextItems: ContextItem[] = []
         const embeddings = await this.embeddingsClient.search(text, 2, 2)
         if (isError(embeddings)) {
+            // TODO(beyang): throw and catch this error
             console.error('# TODO: embeddings error', embeddings)
         } else {
             for (const codeResult of embeddings.codeResults) {
