@@ -4,6 +4,7 @@ import com.intellij.dvcs.repo.Repository;
 import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -223,11 +224,22 @@ public class RepoUtil {
   }
 
   private static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
+    // https://intellij-support.jetbrains.com/hc/en-us/community/posts/206105769/comments/206091565
+    Object lock = new Object();
+    ProjectLevelVcsManager.getInstance(project)
+        .runAfterInitialization(
+            () -> {
+              synchronized (lock) {
+                lock.notify();
+              }
+            });
+    synchronized (lock) {
+      try {
+        lock.wait();
+      } catch (InterruptedException ignored) {
+      }
+    }
     Optional<Repository> firstFoundRepository =
-        // NOTE(olafurpg): getRepositories() returns an empty stream in most cases. I made multiple
-        // failed attempts to infer the repository from a project. Ideally, we should just persist
-        // the codebase per project so that we only have to wait until the user has opened a file
-        // once for any given project.
         VcsRepositoryManager.getInstance(project).getRepositories().stream()
             .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))
             .findFirst();
