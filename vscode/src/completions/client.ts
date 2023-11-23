@@ -74,8 +74,8 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         if (tracingFlagEnabled) {
             const activeIds = getActiveTraceAndSpanId()
             if (activeIds) {
-                headers.set('X-Trace', activeIds.traceId)
-                headers.set('X-Trace-Span', activeIds.spanId)
+                console.log({ traceparent: `00-${activeIds.traceId}-${activeIds.spanId}-01` })
+                headers.set('traceparent', `00-${activeIds.traceId}-${activeIds.spanId}-01`)
                 headers.set('X-Sourcegraph-Should-Trace', 'true')
             } else {
                 headers.set('X-Sourcegraph-Should-Trace', 'true')
