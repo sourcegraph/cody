@@ -3,9 +3,9 @@
     bottom: 120%;
     box-sizing: border-box;
     /* 2px above the input */
-    transform: translateY(calc(var(--spacing) - 5px));
+    transform: translateY(calc(var(--spacing)));
     /* Match the input width */
-    width: calc(100vw - 1.5rem);
+    width: calc(100vw - 58px);
 
     max-height: 250%;
     z-index: 101;
@@ -23,12 +23,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.25rem 0.25rem 0 0.5rem;
+    padding: 0.5rem 0.5rem 0 0.5rem;
 }
 
 .heading {
-    font-size: smaller;
-    opacity: 0.6;
+    font-size: 12px;
     font-weight: 500;
     margin: 0;
 }
@@ -96,4 +95,9 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
     all: unset;
     margin: 0.5rem;
     border-bottom: 1px solid var(--vscode-dropdown-border);
+}
+
+.no-matches {
+    padding: 0.25rem 0.5rem;
+    opacity: 0.7;
 }

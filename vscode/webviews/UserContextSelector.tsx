@@ -25,22 +25,30 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         }
     }, [contextSelection, setSelectedChatContext])
 
-    if (!contextSelection?.length) {
+    if (contextSelection === null) {
         return null
     }
 
     return (
         <div className={classNames(styles.container)}>
-            <div className={classNames(styles.headingContainer)}>
-                <h3 className={styles.heading}>Select a file...</h3>
-            </div>
+            {contextSelection?.length === 0 && (
+                <div className={classNames(styles.headingContainer)}>
+                    <h3 className={styles.heading}>
+                        {!formInput.endsWith('@') && !formInput.endsWith('@#')
+                            ? 'No matches found'
+                            : formInput.endsWith('#')
+                            ? 'Search for a symbol to include...'
+                            : 'Search for a file to include, or # to search symbols...'}
+                    </h3>
+                </div>
+            )}
             <div className={classNames(styles.selectionsContainer)}>
                 {contextSelection?.map((match, i) => {
                     const icon =
-                        match.type === 'file' ? 'file' : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+                        match.type === 'file' ? null : match.kind === 'class' ? 'symbol-structure' : 'symbol-method'
                     const title = match.type === 'file' ? match.path?.relative : match.fileName
                     const range = match.range ? `:${match.range.start.line + 1}-${match.range.end.line + 1}` : ''
-                    const description = match.type === 'file' ? match.path?.dirname : match.path?.relative + range
+                    const description = match.type === 'file' ? undefined : match.path?.relative + range
                     return (
                         <React.Fragment key={match.path?.relative}>
                             <button
@@ -51,10 +59,14 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                 title={`${match.kind} @${description}`}
                             >
                                 <p className={styles.selectionTitle}>
-                                    <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
+                                    {icon && (
+                                        <>
+                                            <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
+                                        </>
+                                    )}
                                     <span className={styles.selectionTitleText}>{title}</span>
                                 </p>
-                                <p className={styles.selectionDescription}>{description}</p>
+                                {description && <p className={styles.selectionDescription}>{description}</p>}
                             </button>
                         </React.Fragment>
                     )

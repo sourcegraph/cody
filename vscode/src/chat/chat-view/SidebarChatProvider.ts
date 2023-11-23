@@ -8,7 +8,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
@@ -42,6 +42,7 @@ export interface SidebarChatOptions extends MessageProviderOptions {
 
 export class SidebarChatProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     public webview?: SidebarChatWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
 
@@ -306,27 +307,40 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             return
         }
 
-        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
+        const debouncedContextFilesQuery = debounce(async (query: string): Promise<void> => {
+            if (this.contextFilesQueryCancellation) {
+                this.contextFilesQueryCancellation.cancel()
+            }
+            this.contextFilesQueryCancellation = new vscode.CancellationTokenSource()
+
             try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
-
-                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context,
-                })
+                const MAX_RESULTS = 20
+                if (query.startsWith('#')) {
+                    const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                } else {
+                    const fileResults = await getFileContextFiles(
+                        query,
+                        MAX_RESULTS,
+                        this.contextFilesQueryCancellation.token
+                    )
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             } catch (error) {
                 // Handle or log the error as appropriate
                 console.error('Error retrieving context files:', error)
             }
         }, 100)
 
-        await debouncedContextFileQuery(query)
+        await debouncedContextFilesQuery(query)
     }
+
     /**
      *
      * @param notice Triggers displaying a notice.
