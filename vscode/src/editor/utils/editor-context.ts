@@ -99,7 +99,14 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 }
 
 export function getOpenTabsContextFile(): ContextFile[] {
-    return getOpenTabsUris()?.map(uri => createContextFileFromUri(uri))
+    return getOpenTabsUris()?.map(uri => createContextFileFromUri(
+        uri,
+        'user',
+        'file',
+        undefined,
+        undefined,
+        true
+    ))
 }
 
 function createContextFileFromUri(
@@ -107,7 +114,8 @@ function createContextFileFromUri(
     source: ContextFileSource = 'user',
     type: ContextFileType = 'file',
     selectionRange?: vscode.Range,
-    kind?: SymbolKind
+    kind?: SymbolKind,
+    editorTab?: boolean
 ): ContextFile {
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return {
@@ -118,6 +126,7 @@ function createContextFileFromUri(
         type,
         source,
         kind,
+        editorTab
     }
 }
 

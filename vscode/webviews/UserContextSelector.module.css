@@ -5,8 +5,7 @@
     /* 2px above the input */
     transform: translateY(calc(var(--spacing)));
     /* Match the input width */
-    width: calc(100vw - 58px);
-
+    width: calc(100vw - 64px);
     max-height: 250%;
     z-index: 101;
     background: var(--vscode-sideBar-background);
@@ -14,7 +13,7 @@
     border: 1px solid var(--vscode-widget-border);
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     border-radius: 6px;
-
+    padding: 0.25rem;
     display: flex;
     flex-direction: column;
 }
@@ -23,7 +22,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.5rem 0 0.5rem;
+    padding: .4rem 0.5rem;
 }
 
 .heading {
@@ -35,8 +34,7 @@
 .selections-container {
     display: flex;
     flex-direction: column;
-
-    overflow-x: scroll;
+    overflow-x: auto;
 }
 
 .selection-item {
@@ -49,6 +47,7 @@
     color: currentColor;
     background: transparent;
     padding: 0.25rem 0.5rem;
+    border-radius: 3px;
 
     white-space: nowrap;
 }
