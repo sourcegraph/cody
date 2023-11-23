@@ -30,6 +30,12 @@ import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
+import {
+    handleCodeFromInsertAtCursor,
+    handleCodeFromSaveToNewFile,
+    handleCopiedCode,
+} from '../../services/utils/codeblock-action-tracker'
+import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
@@ -236,30 +242,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await this.handleContextFiles(message.query)
                 break
             case 'custom-prompt':
-                await this.executeCustomCommand(message.title, message.value)
+                await this.executeCustomCommand(message.title)
                 break
-            // case 'insert':
-            //     await handleCodeFromInsertAtCursor(message.text, message.metadata)
-            //     break
-            // case 'newFile':
-            //     handleCodeFromSaveToNewFile(message.text, message.metadata)
-            //     await this.editor.createWorkspaceFile(message.text)
-            //     break
-            // case 'copy':
-            //     await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
-            //     break
+            case 'insert':
+                await handleCodeFromInsertAtCursor(message.text, message.metadata)
+                break
+            case 'newFile':
+                handleCodeFromSaveToNewFile(message.text, message.metadata)
+                await this.editor.createWorkspaceFile(message.text)
+                break
+            case 'copy':
+                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+                break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
                 break
-            // case 'links':
-            //     void openExternalLinks(message.value)
-            //     break
-            case 'openFile':
-                // await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+            case 'links':
+                void openExternalLinks(message.value)
                 break
-            // case 'openLocalFileWithRange':
-            //     await openLocalFileWithRange(message.filePath, message.range)
-            //     break
+            case 'openFile':
+                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+                break
+            case 'openLocalFileWithRange':
+                await openLocalFileWithRange(message.filePath, message.range)
+                break
             default:
                 this.handleError('Invalid request type from Webview Panel', 'system')
         }
