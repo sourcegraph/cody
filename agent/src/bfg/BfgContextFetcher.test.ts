@@ -39,7 +39,7 @@ describe('BfgRetriever', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        initializeVscodeExtension(vscode.Uri.file(process.cwd()))
+        await initializeVscodeExtension(vscode.Uri.file(process.cwd()))
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })

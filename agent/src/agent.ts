@@ -28,12 +28,12 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(
+export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionConfiguration?: ExtensionConfiguration
-): void {
+): Promise<void> {
     const paths = envPaths('Cody')
-    activate({
+    await activate({
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
         },
@@ -182,7 +182,7 @@ export class Agent extends MessageHandler {
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            initializeVscodeExtension(this.workspace.workspaceRootUri, clientInfo.extensionConfiguration)
+            await initializeVscodeExtension(this.workspace.workspaceRootUri, clientInfo.extensionConfiguration)
 
             // Register client info
             this.clientInfo = clientInfo
