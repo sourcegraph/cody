@@ -302,7 +302,7 @@ export class Agent extends MessageHandler {
 
             try {
                 if (params.triggerKind === 'Invoke') {
-                    await provider?.manuallyTriggerCompletion?.()
+                    await provider.manuallyTriggerCompletion()
                 }
 
                 const result = await provider.provideInlineCompletionItems(
