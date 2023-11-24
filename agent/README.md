@@ -92,6 +92,26 @@ To run the agent in testing mode, define the following environment variables:
 Run `pnpm run agent jsonrpc --help` to get more information about all available
 `--recording-*` options.
 
+## Updating agent tests
+
+If agent tests are failing in CI for non-agent related PRs then you may need to update
+the HTTP recordings. For example, this can happen when we make changes to the prompt
+the agent test to not be able to replay the autocomplete requests from old reordigns.
+To fix this problem, update the HTTP recordings with the following command:
+
+```sh
+export SRC_ACCESS_TOKEN=sgp_YOUR_ACCESS_TOKEN # redacted in the recordings
+export SRC_ENDPOINT=https://sourcegraph.com   # tests run against dotcom
+src login                                     # confirm you are authenticated to sourcegraph.com
+CODY_RECORDING_MODE=record pnpm run test      # run tests to update recordings
+pnpm run test                                 # confirm that tests are passing when replaying HTTP traffic
+```
+
+Please post in #wg-cody-agent if you have problems getting the agent tests to pass after recording.
+Worst case, feel free to disable the agent tests by uncomming a block of code in
+`index.test.ts`. Ssee comment in the code for more details about how to disable
+agent tests.
+
 ## Miscellaneous notes
 
 - By the nature of using JSON-RPC via stdin/stdout, both the agent server and

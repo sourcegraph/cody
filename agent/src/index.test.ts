@@ -69,6 +69,15 @@ const recordingDirectory = path.join(agentDir, 'recordings')
 const agentScript = path.join(agentDir, 'dist', 'index.js')
 
 describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo }) => {
+    // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
+    // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
+    // post in #wg-cody-agent to let the team know the tests have been disabled so that we can
+    // investigate the problem and get the passing again.
+    // if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
+    //     it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
+    //     return
+    // }
+
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
         it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
         return
