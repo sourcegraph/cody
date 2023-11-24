@@ -486,8 +486,8 @@ importers:
         specifier: ^1.57.1
         version: 1.57.1
       '@vscode/test-electron':
-        specifier: ^2.3.2
-        version: 2.3.2
+        specifier: ^2.3.8
+        version: 2.3.8
       '@vscode/test-web':
         specifier: ^0.0.47
         version: 0.0.47
@@ -6520,8 +6520,8 @@ packages:
     resolution: {integrity: sha512-AXhTv1nl3r4W5DqAfXXKiawQNW+tLBNlXn/GcsnFCL0j17sQ2AY+az9oB9K6wjkibq1fndNJvmT8RYN712Fdww==}
     dev: false
 
-  /@vscode/test-electron@2.3.2:
-    resolution: {integrity: sha512-CRfQIs5Wi5Ok5SUCC3PTvRRXa74LD43cSXHC8EuNlmHHEPaJa/AGrv76brcA1hVSxrdja9tiYwp95Lq8kwY0tw==}
+  /@vscode/test-electron@2.3.8:
+    resolution: {integrity: sha512-b4aZZsBKtMGdDljAsOPObnAi7+VWIaYl3ylCz1jTs+oV6BZ4TNHcVNC3xUn0azPeszBmwSBDQYfFESIaUQnrOg==}
     engines: {node: '>=16'}
     dependencies:
       http-proxy-agent: 4.0.1

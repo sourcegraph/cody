@@ -1213,7 +1213,7 @@
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
-    "@vscode/test-electron": "^2.3.2",
+    "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
     "cody-icons-font": "workspace:^",
