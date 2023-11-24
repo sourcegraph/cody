@@ -39,10 +39,10 @@ import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../s
 import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
+import { contextItemsToContextFiles, embeddingsUrlScheme, relativeFileUrl, stripContextWrapper } from './chat-helpers'
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { contextItemsToContextFiles, stripContextWrapper } from './helpers'
 import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
@@ -589,7 +589,7 @@ class ContextProvider implements IContextProvider {
         } else {
             for (const codeResult of embeddings.codeResults) {
                 const uri = vscode.Uri.from({
-                    scheme: 'cody-embeddings',
+                    scheme: embeddingsUrlScheme,
                     authority: this.embeddingsClient.repoId,
                     path: '/' + codeResult.fileName,
                     fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
@@ -911,11 +911,7 @@ export function deserializedContextFilesToContextItems2(
 
     return files.map((file: ContextFile): ContextItem => {
         const range = viewRangeToRange(file.range)
-        const fallbackURI = vscode.Uri.from({
-            scheme: 'file-relative',
-            path: file.fileName,
-            fragment: range && `L${range.start.line}-${range.end.line}`,
-        })
+        const fallbackURI = relativeFileUrl(file.fileName, range)
         const uri = file.uri || fallbackURI
         let text = file.content
         if (!text) {

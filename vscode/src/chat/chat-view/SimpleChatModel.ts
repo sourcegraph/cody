@@ -4,7 +4,7 @@ import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
-import { contextItemsToContextFiles } from './helpers'
+import { contextItemsToContextFiles } from './chat-helpers'
 
 export interface MessageWithContext {
     message: Message

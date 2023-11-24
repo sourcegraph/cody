@@ -50,7 +50,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
-                console.log('# webview:message', message.type)
                 switch (message.type) {
                     case 'transcript': {
                         if (message.isMessageInProgress) {

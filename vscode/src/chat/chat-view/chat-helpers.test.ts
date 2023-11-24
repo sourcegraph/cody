@@ -8,7 +8,7 @@ import {
 
 import * as vscode from '../../testutils/mocks'
 
-import { contextItemsToContextFiles, contextMessageToContextItem, stripContextWrapper } from './helpers'
+import { contextItemsToContextFiles, contextMessageToContextItem, stripContextWrapper } from './chat-helpers'
 import { ContextItem } from './SimpleChatModel'
 
 describe('unwrap context snippets', () => {

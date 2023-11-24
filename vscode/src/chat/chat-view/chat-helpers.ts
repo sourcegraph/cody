@@ -5,7 +5,16 @@ import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codeba
 
 import { ContextItem } from './SimpleChatModel'
 
-// TODO(beyang): url constructors for file-relative:// and embeddings://
+export const relativeFileUrlScheme = 'cody-file-relative'
+export const embeddingsUrlScheme = 'cody-embeddings'
+
+export function relativeFileUrl(fileName: string, range?: vscode.Range): vscode.Uri {
+    return vscode.Uri.from({
+        scheme: relativeFileUrlScheme,
+        path: fileName,
+        fragment: range && `L${range.start.line}-${range.end.line}`,
+    })
+}
 
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
 export function contextMessageToContextItem(contextMessage: ContextMessage): ContextItem | null {
@@ -22,8 +31,9 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
     const range = contextMessage.file.range
     return {
         text: contextText,
-        // TODO(beyang): Uri.file isn't correct. Maybe introduce a relative-file:// scheme?
-        uri: contextMessage.file.uri || vscode.Uri.file(contextMessage.file.fileName),
+        uri:
+            contextMessage.file.uri ||
+            relativeFileUrl(contextMessage.file.fileName, activeEditorSelectionRangeToRange(range)),
         range: range && new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
     }
 }
@@ -68,16 +78,16 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
         contextFiles.push({
             fileName: relFsPath,
             source: 'embeddings',
-            range: rangeToViewRange(item.range),
+            range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
-
-            // TODO: repoName + revision?
         })
     }
     return contextFiles
 }
 
-export function rangeToViewRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
+export function rangeToActiveTextEditorSelectionRange(
+    range?: vscode.Range
+): ActiveTextEditorSelectionRange | undefined {
     if (!range) {
         return undefined
     }
@@ -91,4 +101,11 @@ export function rangeToViewRange(range?: vscode.Range): ActiveTextEditorSelectio
             character: range.end.character,
         },
     }
+}
+
+function activeEditorSelectionRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
+    if (!range) {
+        return undefined
+    }
+    return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
 }
