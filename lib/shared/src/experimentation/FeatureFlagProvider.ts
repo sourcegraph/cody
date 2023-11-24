@@ -33,7 +33,7 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
     private lastUpdated = 0
 
-    constructor(private apiClient: SourcegraphGraphQLAPIClient) { }
+    constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
         const now = Date.now()
