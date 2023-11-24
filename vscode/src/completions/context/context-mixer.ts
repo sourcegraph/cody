@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { startAsyncSpan } from '../../tracing/tracer'
+import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+
 import { DocumentContext } from '../get-current-doc-context'
 import { ContextSnippet } from '../types'
 

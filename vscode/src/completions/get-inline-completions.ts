@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { getActiveTraceAndSpanId, startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logError } from '../log'
-import { getActiveTraceAndSpanId, startAsyncSpan } from '../tracing/tracer'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'

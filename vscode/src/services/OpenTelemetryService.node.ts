@@ -2,10 +2,11 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
-// import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
+import { extensionDetails } from './telemetry'
 
 export class OpenTelemetryService {
     private sdk: NodeSDK | undefined
@@ -15,6 +16,7 @@ export class OpenTelemetryService {
 
     public onConfigurationChange(newConfig: Pick<Configuration, 'serverEndpoint'>): void {
         this.config = newConfig
+        // TODO: Fix race condition when this changes
         // void this.reconfigure()
     }
 
@@ -23,35 +25,15 @@ export class OpenTelemetryService {
 
         const traceUrl = new URL('/-/debug/otlp/v1/traces', this.config.serverEndpoint).toString()
 
-        console.log({ traceUrl })
-
-        // this.provider = new BasicTracerProvider({
-        //     resource: new Resource({
-        //         [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
-        //         [SemanticResourceAttributes.SERVICE_VERSION]: '0.1',
-        //     }),
-        // })
-
-        // const exporter = new OTLPTraceExporter({
-        //     url: traceUrl,
-        // })
-        // this.provider.addSpanProcessor(new BatchSpanProcessor(exporter))
-        // this.provider.register()
-
-        //  this.provider.getTracer(context.extensionId)
-
         this.sdk = new NodeSDK({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
-                [SemanticResourceAttributes.SERVICE_VERSION]: '0.1',
+                [SemanticResourceAttributes.SERVICE_VERSION]: extensionDetails.version,
             }),
             instrumentations: [new HttpInstrumentation()],
             traceExporter: new OTLPTraceExporter({
                 url: traceUrl,
             }),
-            // metricReader: new PeriodicExportingMetricReader({
-            //     exporter: new ConsoleMetricExporter(),
-            // }),
         })
         this.sdk.start()
     }

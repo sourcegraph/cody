@@ -14,8 +14,8 @@ import type { LocalKeywordContextFetcher } from './local-context/local-keyword-c
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
+import { OpenTelemetryService } from './services/OpenTelemetryService.node'
 import { captureException, SentryService } from './services/sentry/sentry'
-import { OpenTelemetryService } from './tracing/initializeOpenTelemetry.node'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T extends new (...args: any) => any> = T extends new (...args: infer A) => infer R

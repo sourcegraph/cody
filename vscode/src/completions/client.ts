@@ -14,9 +14,9 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { getTraceparent } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
-import { getActiveTraceAndSpanId } from '../tracing/tracer'
 
 import { forkSignal } from './utils'
 
@@ -72,13 +72,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            const activeIds = getActiveTraceAndSpanId()
-            if (activeIds) {
-                console.log({ traceparent: `00-${activeIds.traceId}-${activeIds.spanId}-01` })
-                headers.set('traceparent', `00-${activeIds.traceId}-${activeIds.spanId}-01`)
-                headers.set('X-Sourcegraph-Should-Trace', 'true')
-            } else {
-                headers.set('X-Sourcegraph-Should-Trace', 'true')
+            headers.set('X-Sourcegraph-Should-Trace', '1')
+            const traceparent = getTraceparent()
+            if (traceparent) {
+                headers.set('traceparent', traceparent)
             }
         }
 

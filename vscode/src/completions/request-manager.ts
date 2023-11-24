@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { startAsyncSpan } from '../tracing/tracer'
+import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'

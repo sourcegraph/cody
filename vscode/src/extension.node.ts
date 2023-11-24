@@ -17,8 +17,8 @@ import { FilenameContextFetcher } from './local-context/filename-context-fetcher
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
+import { OpenTelemetryService } from './services/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
-import { OpenTelemetryService } from './tracing/initializeOpenTelemetry.node'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app

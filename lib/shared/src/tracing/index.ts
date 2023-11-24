@@ -1,6 +1,9 @@
 import opentelemetry, { SpanStatusCode } from '@opentelemetry/api'
 
-export const tracer = opentelemetry.trace.getTracer('cody', '0.1')
+const TRACE_NAME = 'cody'
+const TRACE_VERSION = '0.1'
+
+export const tracer = opentelemetry.trace.getTracer(TRACE_NAME, TRACE_VERSION)
 
 export function getActiveTraceAndSpanId(): { traceId: string; spanId: string } | undefined {
     const activeSpan = opentelemetry.trace.getActiveSpan()
@@ -26,4 +29,12 @@ export function startAsyncSpan<T>(name: string, fn: () => T | Promise<T>): Promi
                 span.end()
             })
     )
+}
+
+export function getTraceparent(): string | null {
+    const activeIds = getActiveTraceAndSpanId()
+    if (activeIds) {
+        return `00-${activeIds.traceId}-${activeIds.spanId}-01`
+    }
+    return null
 }

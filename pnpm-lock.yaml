@@ -227,6 +227,9 @@ importers:
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
+      '@opentelemetry/api':
+        specifier: ^1.7.0
+        version: 1.7.0
       '@sourcegraph/telemetry':
         specifier: ^0.13.0
         version: 0.13.0

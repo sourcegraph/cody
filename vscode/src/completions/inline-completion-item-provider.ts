@@ -5,11 +5,11 @@ import * as vscode from 'vscode'
 
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
-import { startAsyncSpan } from '../tracing/tracer'
 
 import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'

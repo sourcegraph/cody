@@ -3,6 +3,7 @@ import fetch from 'isomorphic-fetch'
 import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
+import { getTraceparent, startAsyncSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
 
@@ -439,7 +440,6 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * logEvent is the legacy event-logging mechanism.
-     *
      * @deprecated use an implementation of implementation TelemetryRecorder
      * from '@sourcegraph/telemetry' instead.
      */
@@ -614,19 +614,27 @@ export class SourcegraphGraphQLAPIClient {
         } else if (this.anonymousUserID) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
+        const traceparent = getTraceparent()
+        if (traceparent) {
+            headers.set('traceparent', traceparent)
+        }
         addCustomUserAgent(headers)
 
+        const queryName = query.match(/^\s*query\s+(\w+)/m)?.[1]
+
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
-        return fetch(url, {
-            method: 'POST',
-            body: JSON.stringify({ query, variables }),
-            headers,
-        })
-            .then(verifyResponseCode)
-            .then(response => response.json() as T)
-            .catch(error => {
-                return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
+        return startAsyncSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
+            fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ query, variables }),
+                headers,
             })
+                .then(verifyResponseCode)
+                .then(response => response.json() as T)
+                .catch(error => {
+                    return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
+                })
+        )
     }
 
     // make an anonymous request to the dotcom API
@@ -634,14 +642,23 @@ export class SourcegraphGraphQLAPIClient {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         const headers = new Headers()
         addCustomUserAgent(headers)
-        return fetch(url, {
-            method: 'POST',
-            body: JSON.stringify({ query, variables }),
-            headers,
-        })
-            .then(verifyResponseCode)
-            .then(response => response.json() as T)
-            .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
+        const traceparent = getTraceparent()
+        if (traceparent) {
+            headers.set('traceparent', traceparent)
+        }
+
+        const queryName = query.match(/^\s*query\s+(\w+)/m)?.[1]
+
+        return startAsyncSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
+            fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ query, variables }),
+                headers,
+            })
+                .then(verifyResponseCode)
+                .then(response => response.json() as T)
+                .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
+        )
     }
 
     // make an anonymous request to the Testing API
