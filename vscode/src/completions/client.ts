@@ -14,7 +14,7 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { getTraceparent } from '@sourcegraph/cody-shared/src/tracing'
+import { getActiveTraceAndSpanId, getTraceparent } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -98,7 +98,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             signal,
         })
 
-        const traceId = response.headers.get('x-trace') ?? undefined
+        const traceId = getActiveTraceAndSpanId()?.traceId
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
