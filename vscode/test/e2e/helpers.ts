@@ -74,10 +74,6 @@ export const test = base
                     await signOut(page)
                 }
 
-                // The code above may record log events which we don't want showing up in the test. Wait a short
-                // period for any pending log events to be flushed to the server, and then clear them before
-                // starting the test.
-                await new Promise(resolve => setTimeout(resolve, 1000))
                 resetLoggedEvents()
                 await use(page)
             })
@@ -169,6 +165,28 @@ export async function submitChat(sidebar: Frame, text: string): Promise<void> {
     await sidebar.getByTitle('Send Message').click()
 }
 
-export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect.poll(() => loggedEvents.slice().sort()).toEqual(expectedEvents.slice().sort())
+/**
+ * Verifies that actualEvents contain expectedEvents in the same order, but allowing extras.
+ */
+export async function assertEvents(actualEvents: string[], expectedEvents: string[]): Promise<void> {
+    await expect(() => {
+        let actualIndex = 0
+        for (const expected of expectedEvents) {
+            // Skip over any extra events.
+            while (actualIndex < actualEvents.length && actualEvents[actualIndex] !== expected) {
+                actualIndex++
+            }
+            // We expect to find a match here.
+            expect(actualIndex < actualEvents.length && actualEvents[actualIndex] === expected, {
+                message:
+                    'Did not find expected events in order in the logged events.\n' +
+                    `Expected:\n    ${expectedEvents.join('\n    ')}\n` +
+                    `Actual:\n    ${actualEvents.join('\n    ')}`,
+            }).toBeTruthy()
+        }
+    }).toPass({
+        // Need a timeout less than the test timeout here, or any failures are just
+        // "test timed out" rather than the last failure message produced here.
+        timeout: 10_000,
+    })
 }
