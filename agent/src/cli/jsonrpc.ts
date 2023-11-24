@@ -51,13 +51,10 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
  *   want to commit the access token into git.
  */
 class CodyPersister extends FSPersister {
-    constructor(polly: any) {
-        super(polly)
-    }
-    static get id() {
+    public static get id(): string {
         return 'cody-fs'
     }
-    public onSaveRecording(recordingId: string, recording: any) {
+    public onSaveRecording(recordingId: string, recording: any): Promise<void> {
         const entries: any[] = recording?.log?.entries ?? []
         for (const entry of entries) {
             const headers: { name: string; value: string }[] = entry?.request?.headers
