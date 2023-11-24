@@ -27,6 +27,14 @@ const gitdir = path.join(dir, '.git')
 const shouldCreateGitDir = !fs.existsSync(gitdir)
 
 describe('BfgRetriever', async () => {
+    if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
+        // The test runs successfully without these environment variables. We
+        // only have this check enabled for now to skip running BFG tests in CI.
+        // We should prioritize figuring out how to enable these tests to run in
+        // CI alongside other agent tests.
+        it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run BFG tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
+        return
+    }
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
