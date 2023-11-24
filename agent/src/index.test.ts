@@ -38,6 +38,8 @@ export class TestClient extends MessageHandler {
         this.notify('exit', null)
     }
 }
+
+const dotcom = 'https://sourcegraph.com'
 const clients: { name: string; clientInfo: ClientInfo }[] = [
     {
         name: 'FullConfig',
@@ -49,7 +51,7 @@ const clients: { name: string; clientInfo: ClientInfo }[] = [
             extensionConfiguration: {
                 anonymousUserID: 'abcde1234',
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: 'https://sourcegraph.com',
+                serverEndpoint: dotcom,
                 customHeaders: {},
                 autocompleteAdvancedProvider: 'anthropic',
                 autocompleteAdvancedAccessToken: '',
@@ -75,8 +77,8 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
         console.log('Recording mode enabled. Validating that you are authenticated to sourcegraph.com')
         execSync('src login', { stdio: 'inherit' })
         assert.strictEqual(
-            clientInfo.extensionConfiguration?.serverEndpoint,
             process.env.SRC_ENDPOINT,
+            clientInfo.extensionConfiguration?.serverEndpoint,
             'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
         )
     }
@@ -105,14 +107,14 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
         // change.
         client.notify('extensionConfiguration/didChange', {
             anonymousUserID: 'abcde1234',
-            accessToken: 'https://sourcegraph.com/',
-            serverEndpoint: '',
+            accessToken: '',
+            serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
         client.notify('extensionConfiguration/didChange', {
             anonymousUserID: 'abcde1234',
-            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
-            serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+            accessToken: clientInfo.extensionConfiguration?.accessToken ?? 'invalid',
+            serverEndpoint: clientInfo.extensionConfiguration?.serverEndpoint ?? dotcom,
             customHeaders: {},
         })
     })

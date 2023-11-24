@@ -124,7 +124,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
             }
             Polly.register(NodeHttpAdapter)
             Polly.register(CodyPersister)
-            console.error({ options })
             polly = new Polly(options.recordingName ?? 'CodyAgent', {
                 flushRequestsOnStop: true,
                 recordIfMissing: options.recordIfMissing ?? options.recordingMode === 'record',
@@ -143,10 +142,8 @@ export const jsonrpcCommand = new Command('jsonrpc')
                     },
                 },
                 matchRequestsBy: {
-                    headers(headers) {
-                        delete headers['authorization']
-                        return headers
-                    },
+                    headers: false,
+                    order: false,
                 },
             })
         } else if (options.recordingMode) {
