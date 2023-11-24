@@ -77,10 +77,9 @@ export class FixupProvider extends MessageProvider {
             return
         }
 
-        const response = contentSanitizer(lastMessage.text)
         return this.task.insertMode
-            ? this.handleFixupInsert(response, isMessageInProgress)
-            : this.handleFixupEdit(contentSanitizer(lastMessage.text), isMessageInProgress)
+            ? this.handleFixupInsert(lastMessage.text, isMessageInProgress)
+            : this.handleFixupEdit(lastMessage.text, isMessageInProgress)
     }
 
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
@@ -88,7 +87,11 @@ export class FixupProvider extends MessageProvider {
         if (!controller) {
             return
         }
-        return controller.didReceiveFixupText(this.task.id, response, isMessageInProgress ? 'streaming' : 'complete')
+        return controller.didReceiveFixupText(
+            this.task.id,
+            contentSanitizer(response),
+            isMessageInProgress ? 'streaming' : 'complete'
+        )
     }
 
     private async handleFixupInsert(response: string, isMessageInProgress: boolean): Promise<void> {
@@ -120,7 +123,7 @@ export class FixupProvider extends MessageProvider {
 
             this.insertionPromise = controller.didReceiveFixupInsertion(
                 this.task.id,
-                responseToSend,
+                contentSanitizer(responseToSend),
                 this.insertionInProgress ? 'streaming' : 'complete'
             )
 

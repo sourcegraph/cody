@@ -198,39 +198,51 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private sendPrompt(
         promptMessages: Message[],
         responsePrefix = '',
-        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC,
-        recipeId: RecipeID,
+        recipe: {
+            id: RecipeID
+            multiplexerTopic: string
+            useTypewriterEffect: boolean
+        },
         requestID: string
     ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
-        const typewriter = new Typewriter({
-            update: content => {
-                const displayText = reformatBotMessage(content, responsePrefix)
-                this.transcript.addAssistantResponse(content, displayText)
-                this.sendTranscript()
-            },
-            close: () => {},
-        })
+        const onTextUpdate = (text: string): void => {
+            const displayText = reformatBotMessage(text, responsePrefix)
+            this.transcript.addAssistantResponse(text, displayText)
+            this.sendTranscript()
+        }
 
         let text = ''
+        let typewriter: Typewriter | null = null
 
-        this.multiplexer.sub(multiplexerTopic, {
+        if (recipe.useTypewriterEffect) {
+            typewriter = new Typewriter({
+                update: onTextUpdate,
+                close: () => {},
+            })
+        }
+
+        this.multiplexer.sub(recipe.multiplexerTopic, {
             onResponse: (content: string) => {
                 text += content
-                typewriter.update(text)
+                if (typewriter) {
+                    typewriter.update(text)
+                } else {
+                    onTextUpdate(text)
+                }
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
-                typewriter.close()
-                typewriter.stop()
+                typewriter?.close()
+                typewriter?.stop()
 
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     // remove display text from last interaction if this is a non-display topic
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    const displayText = nonDisplayTopics.has(multiplexerTopic)
+                    const displayText = nonDisplayTopics.has(recipe.multiplexerTopic)
                         ? undefined
                         : await this.guardrailsAnnotateAttributions(reformatBotMessage(text, responsePrefix))
                     this.transcript.addAssistantResponse(text, displayText)
@@ -248,7 +260,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 if (codeCount?.charCount) {
                     telemetryRecorder.recordEvent(
-                        `cody.messageProvider.chatResponse.${metadata?.source || recipeId}`,
+                        `cody.messageProvider.chatResponse.${metadata?.source || recipe.id}`,
                         'hasCode',
                         {
                             metadata: {
@@ -446,8 +458,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 this.sendPrompt(
                     prompt,
                     interaction.getAssistantMessage().prefix ?? '',
-                    recipe.multiplexerTopic,
-                    recipeId,
+                    {
+                        id: recipeId,
+                        multiplexerTopic: recipe.multiplexerTopic ?? BotResponseMultiplexer.DEFAULT_TOPIC,
+                        useTypewriterEffect: recipe.useTypewriterEffect ?? true,
+                    },
                     requestID
                 )
                 this.sendTranscript()

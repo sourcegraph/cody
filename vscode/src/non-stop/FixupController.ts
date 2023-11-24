@@ -377,26 +377,25 @@ export class FixupController
 
         const partialReplacement = task.inProgressReplacement
         // Immediately apply the text when done
-        if (!partialReplacement || !partialReplacement.endsWith('\n')) {
+        if (!partialReplacement) {
             // Incoming text is not suitable to apply, do nothing
             return
         }
 
-        const latestFullLine = partialReplacement.split('\n').at(-2)
-        if (!latestFullLine) {
-            return
-        }
-
-        const insertionPoint = new vscode.Position(task.insertionLine, 0)
+        task.selectionRange = new vscode.Range(
+            task.selectionRange.start,
+            task.selectionRange.end.translate({ lineDelta: 1 })
+        )
         task.insertionLine++
 
         // Insert updated text at selection range
+        // TOOD: Insert instead of replace?
         if (edit instanceof vscode.WorkspaceEdit) {
-            edit.insert(document.uri, insertionPoint, `${latestFullLine}\n`)
+            edit.replace(document.uri, task.selectionRange, partialReplacement)
             await vscode.workspace.applyEdit(edit)
         } else {
             await edit(editBuilder => {
-                editBuilder.insert(insertionPoint, `${latestFullLine}\n`)
+                editBuilder.replace(task.selectionRange, partialReplacement)
             }, applyEditOptions)
         }
     }
@@ -783,12 +782,15 @@ export class FixupController
             return this.insertTask(task)
         }
 
-        if (!text.endsWith('\n') || text === task.inProgressReplacement) {
-            // Incoming text is not suitable to be applied, do nothing
+        // Match the replacement text up until the last completed line. This ensures that we steadily insert the text line-by-line.
+        const replacementText = text.replace(/\n[^\n]*$/, '')
+
+        if (!replacementText || replacementText === task.inProgressReplacement) {
+            // Incoming text has already been applied, do nothing
             return
         }
 
-        task.inProgressReplacement = text
+        task.inProgressReplacement = replacementText
         return this.insertTask(task)
     }
 
