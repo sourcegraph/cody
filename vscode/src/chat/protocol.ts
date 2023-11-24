@@ -126,8 +126,8 @@ export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
 export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
 // Account
-export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/upgrade') // TODO(dantup): This
-export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/usage') // TODO(dantup): This
+export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
+export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
