@@ -1,5 +1,5 @@
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
-import { MODE, Polly } from '@pollyjs/core'
+import { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
@@ -8,43 +8,47 @@ import { Command, Option } from 'commander'
 
 import { Agent } from '../agent'
 
-// Polly.js silently falls back to recording when we explicitly set the mode to
-// `replay`.  To make it more inconvenient to use this built-in `record`
-// behavior, we introduce a new mode `replay-or-record` that mimics this
-// behavior and customize the behavior of `record` to crash if we try to persist
-// new recordings.
-type CODY_RECORDING_MODE = MODE | 'replay-or-record'
-
 interface JsonrpcCommandOptions {
+    expiresIn?: string | null | undefined
     recordingDirectory?: string
-    recordingMode?: CODY_RECORDING_MODE
+    recordingMode?: MODE
+    recordIfMissing?: boolean
+    expiryStrategy?: EXPIRY_STRATEGY
     recordingName?: string
 }
 
-function recordingModeOption(value: string): CODY_RECORDING_MODE {
+function recordingModeOption(value: string): MODE {
     switch (value) {
         case 'record':
         case 'replay':
         case 'passthrough':
         case 'stopped':
-        case 'replay-or-record':
             return value
         default:
             throw new commander.InvalidArgumentError(
-                'Not a valid recording mode. Valid options are record, record-or-record, replay, passthrough, or stopped.'
+                'Not a valid recording mode. Valid options are record, replay-or-record, replay, passthrough, or stopped.'
             )
     }
 }
 
-let enabledRecordingMode: CODY_RECORDING_MODE | undefined
+function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
+    switch (value) {
+        case 'error':
+        case 'warn':
+        case 'record':
+            return value
+        default:
+            throw new commander.InvalidArgumentError(
+                'Not a valid expiry strategy. Valid options are error, warn, or record.'
+            )
+    }
+}
 
 /**
- * The default file system persister with two customizations
+ * The default file system persister with the following customizations
  *
  * - Replaces Cody access tokens with the string "REDACTED" because we don't
  *   want to commit the access token into git.
- * - Throws an error if the recording mode is `replay` because we don't want
- *   silently fallback to recording when replaying.
  */
 class CodyPersister extends FSPersister {
     constructor(polly: any) {
@@ -54,13 +58,6 @@ class CodyPersister extends FSPersister {
         return 'cody-fs'
     }
     public onSaveRecording(recordingId: string, recording: any) {
-        if (enabledRecordingMode === 'replay') {
-            // See docstring to CODY_RECORDING_MODE for explanation why we throw an error here.
-            throw new Error(
-                'Cannot save HTTP recording because CODY_RECORDING_MODE=replay. ' +
-                    'To fix this problem, set the environment variable CODY_RECORDING_MODE=replay-or-record or CODY_RECORDING_MODE=record.'
-            )
-        }
         const entries: any[] = recording?.log?.entries ?? []
         for (const entry of entries) {
             const headers: { name: string; value: string }[] = entry?.request?.headers
@@ -99,6 +96,25 @@ export const jsonrpcCommand = new Command('jsonrpc')
             'The name of the recording to use. Every unique name results in a unique recording (HAR file). Use a unique name for every unique test in your test suite.'
         ).env('CODY_RECORDING_NAME')
     )
+    .addOption(
+        new Option(
+            '--recording-expiry-strategy <strategy>',
+            'What to do when encountering an expired recording). Use a unique name for every unique test in your test suite.'
+        )
+            .argParser(expiryStrategyOption)
+            .env('CODY_RECORDING_EXPIRY_STRATEGY')
+            .default('error')
+    )
+    .addOption(
+        new Option('--recording-expires-in <duration>', 'When to expire the recordings')
+            .env('CODY_RECORDING_EXPIRES_IN')
+            .default('365d')
+    )
+    .addOption(
+        new Option('--recording-strict-replay <true|false>', 'If false, fails the test instead of recording').env(
+            'CODY_RECORD_IF_MISSING'
+        )
+    )
     .action((options: JsonrpcCommandOptions) => {
         let polly: Polly | undefined
         if (options.recordingDirectory) {
@@ -106,19 +122,30 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 console.error('CODY_RECORDING_MODE is required when CODY_RECORDING_DIRECTORY is set.')
                 process.exit(1)
             }
-            enabledRecordingMode = options.recordingMode
             Polly.register(NodeHttpAdapter)
             Polly.register(CodyPersister)
-            enabledRecordingMode = options.recordingMode
-            const mode = options.recordingMode === 'replay-or-record' ? 'replay' : options.recordingMode
+            console.error({ options })
             polly = new Polly(options.recordingName ?? 'CodyAgent', {
-                mode,
+                flushRequestsOnStop: true,
+                recordIfMissing: options.recordIfMissing ?? options.recordingMode === 'record',
+                mode: options.recordingMode,
                 adapters: ['node-http'],
                 persister: 'cody-fs',
                 recordFailedRequests: true,
+                expiryStrategy: options.expiryStrategy,
+                expiresIn: options.expiresIn,
                 persisterOptions: {
+                    keepUnusedRequests: true,
+                    // For cleaner diffs https://netflix.github.io/pollyjs/#/configuration?id=disablesortingharentries
+                    disableSortingHarEntries: true,
                     fs: {
                         recordingsDir: options.recordingDirectory,
+                    },
+                },
+                matchRequestsBy: {
+                    headers(headers) {
+                        delete headers['authorization']
+                        return headers
                     },
                 },
             })

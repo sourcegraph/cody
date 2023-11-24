@@ -12,7 +12,7 @@
   "main": "src/index.ts",
   "sideEffects": false,
   "scripts": {
-    "build": "cd .. && pnpm build && cd agent && esbuild --sourcemap --bundle --outfile=dist/index.js --platform=node --log-level=warning --alias:vscode=$PWD/src/vscode-shim.ts src/index.ts",
+    "build": "cd .. && pnpm build && cd agent && esbuild --sourcemap=inline --bundle --outfile=dist/index.js --platform=node --log-level=warning --alias:vscode=$PWD/src/vscode-shim.ts src/index.ts",
     "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build && node dist/index.js",
     "agent:debug": "pnpm run build && node --inspect ./dist/index.js",
@@ -20,7 +20,8 @@
     "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test": "pnpm run build && vitest || ./scripts/explain-how-to-update-tests.sh"
+    "test": "pnpm run build && vitest || ./scripts/explain-how-to-update-tests.sh",
+    "test-only": "pnpm run build && vitest"
   },
   "dependencies": {
     "@pollyjs/adapter-node-http": "^6.0.6",

@@ -78,14 +78,19 @@ To run the agent in testing mode, define the following environment variables:
 - `CODY_RECORDING_DIRECTORY=PATH_TO_DIRECTORY`: a directory where the HTTP
   recordings should be stored. This directory should be committed to git so that
   other people who clone the repository can replay from the same recording.
-- `CODY_RECORDING_MODE=record|replay`: when set to `record`, will record HTTP
+- `CODY_RECORDING_MODE=record|replay|passthrough`: when set to `record`, will record HTTP
   requests and persist the results in the recording directory. When set to
-  `replay`, will replay from the recording directory.
+  `replay`, will replay from the recording directory. When set to `passthrough`,
+  will pass through all HTTP requests to the real Sourcegraph instance without
+  recording the responses.
 - (optional) `CODY_RECORDING_MODE=TEST_NAME`: if you are running multiple
   instances of the agent to test different features, then you should provide a
   unique recording name for each test. Each unique name will get a unique
   directory avoiding the risk of contaminating recordings between different
   tests.
+
+Run `pnpm run agent jsonrpc --help` to get more information about all available
+`--recording-*` options.
 
 ## Miscellaneous notes
 

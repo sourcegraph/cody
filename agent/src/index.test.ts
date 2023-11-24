@@ -48,8 +48,8 @@ const clients: { name: string; clientInfo: ClientInfo }[] = [
             workspaceRootPath: '/path/to/foo',
             extensionConfiguration: {
                 anonymousUserID: 'abcde1234',
-                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
-                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
+                serverEndpoint: 'https://sourcegraph.com',
                 customHeaders: {},
                 autocompleteAdvancedProvider: 'anthropic',
                 autocompleteAdvancedAccessToken: '',
@@ -71,6 +71,15 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { stdio: 'inherit' })
     const recordingDirectory = path.join(__dirname, '..', 'recordings')
+    if (process.env.CODY_RECORDING_MODE?.includes('record')) {
+        console.log('Recording mode enabled. Validating that you are authenticated to sourcegraph.com')
+        execSync('src login', { stdio: 'inherit' })
+        assert.strictEqual(
+            clientInfo.extensionConfiguration?.serverEndpoint,
+            process.env.SRC_ENDPOINT,
+            'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
+        )
+    }
     const agentProcess = spawn('node', [path.join(__dirname, '..', 'dist', 'index.js'), 'jsonrpc'], {
         stdio: 'pipe',
         env: {
@@ -163,5 +172,6 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
 
     afterAll(async () => {
         await client.shutdownAndExit()
-    })
+        // Long timeout because to allow Polly.js to persist HTTP recordings
+    }, 20_000)
 })

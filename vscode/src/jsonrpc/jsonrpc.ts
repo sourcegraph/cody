@@ -291,7 +291,10 @@ export class MessageHandler {
             reject?.(new Error(`exit: ${code}`))
             this.exit()
         })
-        child.stderr.pipe(process.stderr)
+        child.stderr.on('data', data => {
+            console.error(`----stderr----\n${data}--------------`)
+        })
+        // child.stderr.pipe(process.stderr)
         child.stdout.pipe(this.messageDecoder)
         this.messageEncoder.pipe(child.stdin)
     }
