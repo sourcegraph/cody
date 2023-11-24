@@ -100,7 +100,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         }
         completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length)
 
-        // Trim to the last word since our mock responses are just triggered by a word.
+        // Trim to the last word since our mock responses are just completing words. If the
+        // request has a trailing space, we won't provide anything since the user hasn't
+        // started typing a word.
         completionPrefix = completionPrefix?.split(/\s/g).at(-1)
 
         // Find a matching mock response that is longer than what we've already
