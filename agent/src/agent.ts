@@ -6,6 +6,7 @@ import { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
+import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
@@ -279,8 +280,12 @@ export class Agent extends MessageHandler {
                     humanChatInput: data.humanChatInput,
                     data: data.data,
                 })
-            } catch {
-                // ignore, can happen when the client cancels the request
+            } catch (error) {
+                // can happen when the client cancels the request
+                if (isRateLimitError(error)) {
+                    throw error
+                }
+                console.log('recipe failed', error)
             }
             return null
         })
@@ -348,6 +353,9 @@ export class Agent extends MessageHandler {
                 return { items, completionEvent: result?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
+                if (isRateLimitError(error)) {
+                    throw error
+                }
                 return Promise.reject(error)
             }
         })
