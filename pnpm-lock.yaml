@@ -334,9 +334,6 @@ importers:
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
-      '@opentelemetry/api':
-        specifier: ^1.7.0
-        version: 1.7.0
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: ^0.45.1
         version: 0.45.1(@opentelemetry/api@1.7.0)
@@ -346,18 +343,9 @@ importers:
       '@opentelemetry/resources':
         specifier: ^1.18.1
         version: 1.18.1(@opentelemetry/api@1.7.0)
-      '@opentelemetry/sdk-metrics':
-        specifier: ^1.18.1
-        version: 1.18.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/sdk-node':
         specifier: ^0.45.1
         version: 0.45.1(@opentelemetry/api@1.7.0)
-      '@opentelemetry/sdk-trace-base':
-        specifier: ^1.18.1
-        version: 1.18.1(@opentelemetry/api@1.7.0)
-      '@opentelemetry/sdk-trace-node':
-        specifier: ^1.18.1
-        version: 1.18.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/semantic-conventions':
         specifier: ^1.18.1
         version: 1.18.1
