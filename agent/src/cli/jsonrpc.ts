@@ -4,8 +4,6 @@ import FSPersister from '@pollyjs/persister-fs'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
-// Register the node http adapter so its accessible by all future polly instances
-
 import { Agent } from '../agent'
 
 interface JsonrpcCommandOptions {
@@ -13,7 +11,7 @@ interface JsonrpcCommandOptions {
     recordingDirectory?: string
     recordingMode?: MODE
     recordIfMissing?: boolean
-    expiryStrategy?: EXPIRY_STRATEGY
+    recordingExpiryStrategy?: EXPIRY_STRATEGY
     recordingName?: string
 }
 
@@ -128,7 +126,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 adapters: ['node-http'],
                 persister: 'cody-fs',
                 recordFailedRequests: true,
-                expiryStrategy: options.expiryStrategy,
+                expiryStrategy: options.recordingExpiryStrategy,
                 expiresIn: options.expiresIn,
                 persisterOptions: {
                     keepUnusedRequests: true,

@@ -87,8 +87,8 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { cwd: agentDir, stdio: 'inherit' })
 
-    if (process.env.CODY_RECORDING_MODE?.includes('record')) {
-        console.log('Recording mode enabled. Validating that you are authenticated to sourcegraph.com')
+    if (process.env.CODY_RECORDING_MODE === 'record') {
+        console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
         execSync('src login', { stdio: 'inherit' })
         assert.strictEqual(
             process.env.SRC_ENDPOINT,
