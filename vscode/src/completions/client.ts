@@ -67,6 +67,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         // Force HTTP connection reuse to reduce latency.
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
+        headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.accessToken) {
             headers.set('Authorization', `token ${config.accessToken}`)
         }
@@ -107,7 +108,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         }
 
         if (!response.ok) {
-            throw new NetworkError(response, traceId)
+            throw new NetworkError(response, await response.text(), traceId)
         }
 
         if (response.body === null) {
@@ -131,6 +132,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 for await (const chunk of iterator) {
                     if (chunk.event === 'completion') {
+                        if (signal?.aborted) {
+                            break // Stop processing the already received chunks.
+                        }
+
                         lastResponse = JSON.parse(chunk.data) as CompletionResponse
                         onPartialResponse?.(lastResponse)
                     }

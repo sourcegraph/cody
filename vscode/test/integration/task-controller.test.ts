@@ -62,7 +62,7 @@ suite.skip('Cody Fixup Task Controller', function () {
         assert.match(selectionText, /.*<title>Hello Cody<\/title>.*/)
 
         // Run the apply command should remove all tasks from the task controller
-        await vscode.commands.executeCommand('cody.fixup.apply')
+        await vscode.commands.executeCommand('cody.fixup.accept')
         // TODO: If this really waited for apply to finish, then there would be 0 fixup tasks.
         assert.ok((await getFixupTasks()).length > 0)
     })
@@ -89,7 +89,7 @@ suite.skip('Cody Fixup Task Controller', function () {
         assert.ok(tasks.length > 0)
 
         // Run the apply command should remove all tasks from the task controller
-        await vscode.commands.executeCommand('cody.fixup.apply-all')
+        await vscode.commands.executeCommand('cody.fixup.accept-all')
         // TODO: Update this test to wait for application, and then check that
         // there are no tasks. Apply all is not implemented so currently this
         // is a no-op.

@@ -3,48 +3,199 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { telemetryService } from '../services/telemetry'
+import { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { ContextSummary } from './context/context'
+import { ContextSummary } from './context/context-mixer'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
 import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
-import { CompletionIntent } from './tree-sitter/query-sdk'
 import { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
-export type CompletionID = string & { _opaque: typeof CompletionID }
-declare const CompletionID: unique symbol
+//
+// Note: This ID is only used by our downstream services and should not be used by the clients.
+export type CompletionAnalyticsID = string & { _opaque: typeof CompletionAnalyticsID }
+declare const CompletionAnalyticsID: unique symbol
 
-// A suggestion ID is a unique identifier for a suggestion lifecycle.
-export type SuggestionID = string & { _opaque: typeof SuggestionID }
-declare const SuggestionID: unique symbol
+// A completion log ID is a unique identifier for a suggestion lifecycle (starting with the key
+// stroke event) and used to sync all events and metrics related to that lifecycle.
+export type CompletionLogID = string & { _opaque: typeof CompletionLogID }
+declare const CompletionLogID: unique symbol
 
-export interface CompletionEvent {
-    id: SuggestionID
-    params: {
-        id: CompletionID | null
-        type: 'inline'
-        multiline: boolean
-        multilineMode: null | 'block'
-        triggerKind: TriggerKind
-        providerIdentifier: string
-        providerModel: string
-        languageId: string
-        contextSummary?: ContextSummary
-        source?: InlineCompletionsResultSource
-        lineCount?: number
-        charCount?: number
-        // Mapping to a higher level abstractions of syntax nodes (e.g., function declaration body)
-        completionIntent?: CompletionIntent
-    }
+// A completion item ID is a unique identifier for an item that is part of the suggested candidates
+// for a suggestion request.
+export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
+declare const CompletionItemID: unique symbol
+
+interface SharedEventPayload {
+    /**
+     * An ID to uniquely identify a suggest completion. Note: It is possible for this ID to be part
+     * of two suggested events. This happens when the exact same completion text is shown again at
+     * the exact same location. We count this as the same completion and thus use the same ID.
+     */
+    id: CompletionAnalyticsID | null
+
+    /** Wether the completion is a singleline or multiline one. */
+    multiline: boolean
+
+    /**
+     * `null` means singleline, `block` means multiline.
+     * @deprecated Use `multiline` instead.
+     */
+    multilineMode: null | 'block'
+
+    /** Describes how the autocomplete request was triggered by the user. */
+    triggerKind: TriggerKind
+
+    /** Information about what provider is used. e.g. `anthropic` or `fireworks`. */
+    providerIdentifier: string
+
+    /** Information about which model was used. e.g. `starcoder-7b` or `claude-instant`. */
+    providerModel: string
+
+    /** Language of the document being completed. */
+    languageId: string
+
+    /**
+     * Information about the context retrieval process that lead to this autocomplete request. Refer
+     * to the documentation of {@link ContextSummary}
+     */
+    contextSummary?: ContextSummary
+
+    /**
+     * Information about the source of the completion (i.e wether it was fetched from network or
+     * from a cache).
+     */
+    source?: InlineCompletionsResultSource
+
+    /** Eventual artificial delay that was used to throttle unwanted completions. */
+    artificialDelay?: number
+
+    /**
+     * Mapping the completion intent to a higher level abstractions of syntax nodes (e.g. function
+     * declaration body)
+     */
+    completionIntent?: CompletionIntent
+
+    /** Information about the suggested items returned as part of this completions */
+    items: CompletionItemInfo[]
+
+    /** If true, another completion provider extension is enabled and the result might be poised */
+    otherCompletionProviderEnabled: boolean
+
+    /** A list of known completion providers that are also enabled with this user. */
+    otherCompletionProviders: string[]
+}
+
+/** Emitted when a completion was suggested to the user and printed onto the screen */
+interface SuggestedEventPayload extends SharedEventPayload {
+    latency: number
+    displayDuration: number
+    read: boolean
+    accepted: boolean
+    completionsStartedSinceLastSuggestion: number
+}
+
+/** Emitted when a completion was fully accepted by the user */
+interface AcceptedEventPayload extends SharedEventPayload {
+    /**
+     * Information about which item of the suggested items list was being accepted.
+     *
+     * Note: Fields like `acceptedItem.charCount` might differ from the `items[n].charCount` based
+     * on the current document state when the completion was inserted.
+     */
+    acceptedItem: CompletionItemInfo
+}
+
+/** Emitted when a completion was partially accepted by the user */
+interface PartiallyAcceptedEventPayload extends SharedEventPayload {
+    /**
+     * Information about which item of the suggested items list was being accepted.
+     *
+     * Note: Fields like `acceptedItem.charCount` might differ from the `items[n].charCount` based
+     * on the current document state when the completion was inserted.
+     */
+    acceptedItem: CompletionItemInfo
+    /** The number of character that were already accepted of the given acceptedItem _in total_. */
+    acceptedLength: number
+    /**
+     * The number of characters that were accepted as part of this partially accepted event (so
+     * if you sum up all the acceptedLengthDelta of a given completion ID, you get acceptedLength.
+     */
+    acceptedLengthDelta: number
+}
+
+/** Emitted when a completion is still present at a specific time interval after insertion */
+interface PersistencePresentEventPayload {
+    /** An ID to uniquely identify an accepted completion. */
+    id: CompletionAnalyticsID
+    /** How many seconds after the acceptance was the check performed */
+    afterSec: number
+    /** Levenshtein distance between the current document state and the accepted completion */
+    difference: number
+    /** Number of lines still in the document */
+    lineCount: number
+    /** Number of characters still in the document */
+    charCount: number
+}
+
+/** Emitted when a completion is no longer present at a specific time interval after insertion */
+interface PersistenceRemovedEventPayload {
+    /** An ID to uniquely identify an accepted completion. */
+    id: CompletionAnalyticsID
+}
+
+/** Emitted when a completion request returned no usable results */
+interface NoResponseEventPayload extends SharedEventPayload {}
+
+/** Emitted when a completion request failed */
+interface ErrorEventPayload {
+    /** The error message */
+    message: string
+    /** Eventual Sourcegraph instance traceId */
+    traceId?: string
+    /** How often the error occurred (added to enable batching) */
+    count: number
+}
+
+export function logCompletionEvent(name: 'suggested', params: SuggestedEventPayload): void
+export function logCompletionEvent(name: 'accepted', params: AcceptedEventPayload): void
+export function logCompletionEvent(name: 'partiallyAccepted', params: PartiallyAcceptedEventPayload): void
+export function logCompletionEvent(name: 'persistence:present', params: PersistencePresentEventPayload): void
+export function logCompletionEvent(name: 'persistence:removed', params: PersistenceRemovedEventPayload): void
+export function logCompletionEvent(name: 'noResponse', params: NoResponseEventPayload): void
+export function logCompletionEvent(name: 'error', params: ErrorEventPayload): void
+/**
+ * The following events are added to ensure the logging bookkeeping works as expected in production
+ * and should not happen under normal circumstances.
+ */
+export function logCompletionEvent(
+    name:
+        | 'acceptedUntrackedCompletion'
+        | 'unexpectedNotLoaded'
+        | 'unexpectedNotStarted'
+        | 'unexpectedNotSuggested'
+        | 'unexpectedAlreadySuggested'
+        | 'containsOpeningTag'
+        | 'synthesizedFromParallelRequest'
+): void
+export function logCompletionEvent(name: string, params: {} = {}): void {
+    // TODO: Clean up this name mismatch when we move to TelemetryV2
+    const prefix = isRunningInsideAgent() ? 'CodyAgent' : 'CodyVSCodeExtension'
+    telemetryService.log(`${prefix}:completion:${name}`, params, { agent: true })
+}
+
+export interface CompletionBookkeepingEvent {
+    id: CompletionLogID
+    params: Omit<SharedEventPayload, 'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'>
     // The timestamp when the completion request started
     startedAt: number
     // The timestamp when the completion fired off an eventual network request
@@ -106,14 +257,14 @@ interface CompletionItemInfo extends ItemPostProcessingInfo {
 
 export const READ_TIMEOUT_MS = 750
 
-// Maintain a cache of active suggestion lifecycle
-const activeSuggestions = new LRUCache<SuggestionID, CompletionEvent>({
+// Maintain a cache of active suggestion requests
+const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkeepingEvent>({
     max: 20,
 })
 
 // Maintain a history of the last n displayed completions and their generated completion IDs. This
 // allows us to reuse the completion ID across multiple suggestions.
-const recentCompletions = new LRUCache<string, CompletionID>({
+const recentCompletions = new LRUCache<string, CompletionAnalyticsID>({
     max: 20,
 })
 function getRecentCompletionsKey(params: RequestParams, completion: string): string {
@@ -124,7 +275,7 @@ function getRecentCompletionsKey(params: RequestParams, completion: string): str
 // completions as suggested. Since we don't have want to maintain a list of all completion IDs in
 // the client, we instead retain the last few completion IDs that were marked as suggested to
 // prevent local over counting.
-const completionIdsMarkedAsSuggested = new LRUCache<CompletionID, true>({
+const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>({
     max: 50,
 })
 
@@ -132,21 +283,17 @@ let persistenceTracker: PersistenceTracker | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
-export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
-}
-
-export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): SuggestionID {
-    const id = uuid.v4() as SuggestionID
-    const params: CompletionEvent['params'] = {
+export function create(
+    inputParams: Omit<CompletionBookkeepingEvent['params'], 'multilineMode' | 'type' | 'id'>
+): CompletionLogID {
+    const id = uuid.v4() as CompletionLogID
+    const params: CompletionBookkeepingEvent['params'] = {
         ...inputParams,
-        type: 'inline',
-        // @deprecated: We only keep the legacy name for backward compatibility in analytics
         multilineMode: inputParams.multiline ? 'block' : null,
         id: null,
     }
 
-    activeSuggestions.set(id, {
+    activeSuggestionRequests.set(id, {
         id,
         params,
         startedAt: performance.now(),
@@ -164,31 +311,38 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
     return id
 }
 
-export function start(id: SuggestionID): void {
-    const event = activeSuggestions.get(id)
+export function start(id: CompletionLogID): void {
+    const event = activeSuggestionRequests.get(id)
     if (event && !event.startLoggedAt) {
         event.startLoggedAt = performance.now()
         completionsStartedSinceLastSuggestion++
     }
 }
 
-export function networkRequestStarted(id: SuggestionID, contextSummary: ContextSummary | undefined): void {
-    const event = activeSuggestions.get(id)
+export function networkRequestStarted(id: CompletionLogID, contextSummary: ContextSummary | undefined): void {
+    const event = activeSuggestionRequests.get(id)
     if (event && !event.networkRequestStartedAt) {
         event.networkRequestStartedAt = performance.now()
         event.params.contextSummary = contextSummary
     }
 }
 
-export function loaded(id: SuggestionID, params: RequestParams, items: InlineCompletionItemWithAnalytics[]): void {
-    const event = activeSuggestions.get(id)
+export function loaded(
+    id: CompletionLogID,
+    params: RequestParams,
+    items: InlineCompletionItemWithAnalytics[],
+    source: InlineCompletionsResultSource
+): void {
+    const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
     }
 
+    event.params.source = source
+
     // Check if we already have a completion id for the loaded completion item
     const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
-    const completionId: CompletionID = recentCompletions.get(key) ?? (uuid.v4() as CompletionID)
+    const completionId: CompletionAnalyticsID = recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
     recentCompletions.set(key, completionId)
     event.params.id = completionId
 
@@ -207,12 +361,8 @@ export function loaded(id: SuggestionID, params: RequestParams, items: InlineCom
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(
-    id: SuggestionID,
-    source: InlineCompletionsResultSource,
-    completion: InlineCompletionItem
-): void {
-    const event = activeSuggestions.get(id)
+export function suggested(id: CompletionLogID, completion: InlineCompletionItemWithAnalytics): void {
+    const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
     }
@@ -223,14 +373,10 @@ export function suggested(
     }
 
     if (!event.suggestedAt) {
-        const { lineCount, charCount } = lineAndCharCount(completion)
-        event.params.source = source
-        event.params.lineCount = lineCount
-        event.params.charCount = charCount
         event.suggestedAt = performance.now()
 
         setTimeout(() => {
-            const event = activeSuggestions.get(id)
+            const event = activeSuggestionRequests.get(id)
             if (!event) {
                 return
             }
@@ -249,8 +395,13 @@ export function suggested(
     }
 }
 
-export function accept(id: SuggestionID, document: vscode.TextDocument, completion: InlineCompletionItem): void {
-    const completionEvent = activeSuggestions.get(id)
+export function accepted(
+    id: CompletionLogID,
+    document: vscode.TextDocument,
+    completion: InlineCompletionItemWithAnalytics,
+    trackedRange: vscode.Range | undefined
+): void {
+    const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
         logCompletionEvent('acceptedUntrackedCompletion')
@@ -303,54 +454,78 @@ export function accept(id: SuggestionID, document: vscode.TextDocument, completi
     logSuggestionEvents()
     logCompletionEvent('accepted', {
         ...getSharedParams(completionEvent),
-        acceptedItem: { ...completionItemToItemInfo(completion) },
+        acceptedItem: completionItemToItemInfo(completion),
     })
     statistics.logAccepted()
 
+    if (trackedRange === undefined || isRunningInsideAgent()) {
+        return
+    }
     if (persistenceTracker === null) {
         persistenceTracker = new PersistenceTracker()
     }
-    persistenceTracker.track({ id: completionEvent.params.id, insertedAt: Date.now(), completion, document })
+    persistenceTracker.track({
+        id: completionEvent.params.id,
+        insertedAt: Date.now(),
+        insertText: completion.insertText,
+        insertRange: trackedRange,
+        document,
+    })
 }
 
-export function partiallyAccept(id: SuggestionID, completion: InlineCompletionItem, acceptedLength: number): void {
-    const completionEvent = activeSuggestions.get(id)
+export function partiallyAccept(
+    id: CompletionLogID,
+    completion: InlineCompletionItemWithAnalytics,
+    acceptedLength: number
+): void {
+    const completionEvent = activeSuggestionRequests.get(id)
     // Only log partial acceptances if the completion was not yet fully accepted
     if (!completionEvent || completionEvent.acceptedAt) {
         return
     }
 
     const loggedPartialAcceptedLength = completionEvent.loggedPartialAcceptedLength
+
+    // Do not log partial acceptances if the length of the accepted completion is not increasing
+    if (acceptedLength <= loggedPartialAcceptedLength) {
+        return
+    }
+
+    const acceptedLengthDelta = acceptedLength - loggedPartialAcceptedLength
     completionEvent.loggedPartialAcceptedLength = acceptedLength
 
     logCompletionEvent('partiallyAccepted', {
         ...getSharedParams(completionEvent),
-        acceptedItem: { ...completionItemToItemInfo(completion) },
+        acceptedItem: completionItemToItemInfo(completion),
         acceptedLength,
-        acceptedLengthDelta: acceptedLength - loggedPartialAcceptedLength,
+        acceptedLengthDelta,
     })
 }
 
-export function getCompletionEvent(id: SuggestionID): CompletionEvent | undefined {
-    return activeSuggestions.get(id)
+/** @deprecated */
+export function getCompletionEvent(id: CompletionLogID): CompletionBookkeepingEvent | undefined {
+    return activeSuggestionRequests.get(id)
 }
 
-export function noResponse(id: SuggestionID): void {
-    const completionEvent = activeSuggestions.get(id)
-    logCompletionEvent('noResponse', completionEvent?.params ?? {})
+export function noResponse(id: CompletionLogID): void {
+    const completionEvent = activeSuggestionRequests.get(id)
+    if (!completionEvent) {
+        return
+    }
+    logCompletionEvent('noResponse', getSharedParams(completionEvent))
 }
 
 /**
  * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
-export function flushActiveSuggestions(): void {
+export function flushActiveSuggestionRequests(): void {
     logSuggestionEvents()
 }
 
 function logSuggestionEvents(): void {
     const now = performance.now()
-    activeSuggestions.forEach(completionEvent => {
+    activeSuggestionRequests.forEach(completionEvent => {
         const {
             params,
             loadedAt,
@@ -402,7 +577,7 @@ function logSuggestionEvents(): void {
 
 // Restores the logger's internals to a pristine state§
 export function reset_testOnly(): void {
-    activeSuggestions.clear()
+    activeSuggestionRequests.clear()
     completionIdsMarkedAsSuggested.clear()
     recentCompletions.clear()
     completionsStartedSinceLastSuggestion = 0
@@ -452,7 +627,7 @@ export function logError(error: Error): void {
     errorCounts.set(message, count + 1)
 }
 
-function getSharedParams(event: CompletionEvent): TelemetryEventProperties {
+function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload {
     const otherCompletionProviders = getOtherCompletionProvider()
     return {
         ...event.params,
@@ -496,4 +671,9 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+function isRunningInsideAgent(): boolean {
+    const config = getConfiguration(vscode.workspace.getConfiguration())
+    return !!config.isRunningInsideAgent
 }

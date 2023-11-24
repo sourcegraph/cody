@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import { range } from '../testutils/textDocument'
 
+import { getContextRange } from './doc-context-getters'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { documentAndPosition } from './test-helpers'
 
@@ -15,7 +16,6 @@ function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletio
         position,
         maxPrefixLength: 100,
         maxSuffixLength: 100,
-        enableExtendedTriggers: true,
         context,
     })
 }
@@ -27,13 +27,13 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'function myFunction() {\n  ',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: '  ',
             currentLineSuffix: '',
             prevNonEmptyLine: 'function myFunction() {',
             nextNonEmptyLine: '',
             multilineTrigger: '{',
             injectedPrefix: null,
+            position: { character: 2, line: 1 },
         })
     })
 
@@ -43,29 +43,29 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'const x = 1\nif (true) {\n  ',
             suffix: '\n}',
-            contextRange: expect.any(Object),
             currentLinePrefix: '  ',
             currentLineSuffix: '',
             prevNonEmptyLine: 'if (true) {',
             nextNonEmptyLine: '}',
             multilineTrigger: '{',
             injectedPrefix: null,
+            position: { character: 2, line: 2 },
         })
     })
 
-    it('returns correct multi-line trigger when `enableExtendedTriggers: true`', () => {
+    it('returns correct multi-line trigger', () => {
         const result = testGetCurrentDocContext('const arr = [█\n];')
 
         expect(result).toEqual({
             prefix: 'const arr = [',
             suffix: '\n];',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'const arr = [',
             currentLineSuffix: '',
             prevNonEmptyLine: '',
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
             injectedPrefix: null,
+            position: { character: 13, line: 0 },
         })
     })
 
@@ -75,13 +75,13 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'console.log(1337);\nconst arr = [',
             suffix: '\n];',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'const arr = [',
             currentLineSuffix: '',
             prevNonEmptyLine: 'console.log(1337);',
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
             injectedPrefix: null,
+            position: { character: 13, line: 1 },
         })
     })
 
@@ -102,13 +102,13 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'console.assert',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'console.assert',
             currentLineSuffix: '',
             prevNonEmptyLine: '',
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: 'ssert',
+            position: { character: 9, line: 0 },
         })
     })
 
@@ -130,13 +130,13 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: '// some line before\nconsole.log',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'console.log',
             currentLineSuffix: '',
             prevNonEmptyLine: '// some line before',
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: 'log',
+            position: { character: 8, line: 1 },
         })
     })
 
@@ -157,13 +157,13 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'console',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'console',
             currentLineSuffix: '',
             prevNonEmptyLine: '',
             nextNonEmptyLine: '',
             multilineTrigger: null,
             injectedPrefix: null,
+            position: { character: 7, line: 0 },
         })
     })
 
@@ -191,9 +191,10 @@ describe('getCurrentDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            enableExtendedTriggers: true,
         })
-        expect(docContext.contextRange).toMatchInlineSnapshot(`
+        const contextRange = getContextRange(document, docContext)
+
+        expect(contextRange).toMatchInlineSnapshot(`
           Range {
             "end": Position {
               "character": 32,

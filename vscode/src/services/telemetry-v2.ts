@@ -11,7 +11,7 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 import { logDebug } from '../log'
 
 import { localStorage } from './LocalStorageProvider'
-import { extensionDetails } from './telemetry'
+import { getExtensionDetails } from './telemetry'
 
 let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
@@ -52,15 +52,17 @@ const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
 const debugLogLabel = 'telemetry-v2'
 
-function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider): void {
-    telemetryRecorderProvider?.complete()
+export function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { noOp?: boolean }): void {
+    telemetryRecorderProvider?.unsubscribe()
     telemetryRecorderProvider = updatedProvider
     telemetryRecorder = updatedProvider.getRecorder([
         // Log all events in debug for reference.
         new CallbackTelemetryProcessor(event => {
             logDebug(
                 debugLogLabel,
-                `recordEvent: ${event.feature}/${event.action}: ${JSON.stringify({
+                `recordEvent${updatedProvider.noOp ? ' (no-op)' : ''}: ${event.feature}/${
+                    event.action
+                }: ${JSON.stringify({
                     parameters: event.parameters,
                 })}`
             )
@@ -81,7 +83,9 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off') {
+    const extensionDetails = getExtensionDetails(config)
+
+    if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
     }

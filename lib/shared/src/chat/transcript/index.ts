@@ -15,6 +15,7 @@ export interface TranscriptJSONScope {
 export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
+    chatModel?: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
     scope?: TranscriptJSONScope
@@ -63,7 +64,8 @@ export class Transcript {
                     )
                 }
             ),
-            json.id
+            json.id,
+            json.chatModel
         )
     }
 
@@ -71,16 +73,27 @@ export class Transcript {
 
     private internalID: string
 
-    constructor(interactions: Interaction[] = [], id?: string) {
+    public chatModel: string | undefined = undefined
+
+    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string) {
         this.interactions = interactions
         this.internalID =
             id ||
             this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
             new Date().toISOString()
+        this.chatModel = chatModel
     }
 
     public get id(): string {
         return this.internalID
+    }
+
+    public setChatModel(chatModel?: string): void {
+        // Set chat model for new transcript only
+        if (!chatModel || this.interactions.length > 1) {
+            return
+        }
+        this.chatModel = chatModel
     }
 
     public get isEmpty(): boolean {
@@ -149,16 +162,6 @@ export class Transcript {
         })
     }
 
-    private async getLastInteractionWithContextIndex(): Promise<number> {
-        for (let index = this.interactions.length - 1; index >= 0; index--) {
-            const hasContext = await this.interactions[index].hasContext()
-            if (hasContext) {
-                return index
-            }
-        }
-        return -1
-    }
-
     public async getPromptForLastInteraction(
         preamble: Message[] = [],
         maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
@@ -168,14 +171,13 @@ export class Transcript {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
 
-        const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
             const interaction = this.interactions[index]
             const humanMessage = PromptMixin.mixInto(interaction.getHumanMessage())
             const assistantMessage = interaction.getAssistantMessage()
             const contextMessages = await interaction.getFullContext()
-            if (index === lastInteractionWithContextIndex && !onlyHumanMessages) {
+            if (index === this.interactions.length - 1 && !onlyHumanMessages) {
                 messages.push(...contextMessages, humanMessage, assistantMessage)
             } else {
                 messages.push(humanMessage, assistantMessage)
@@ -232,6 +234,7 @@ export class Transcript {
 
         return {
             id: this.id,
+            chatModel: this.chatModel,
             interactions,
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
@@ -247,6 +250,7 @@ export class Transcript {
     public toJSONEmpty(scope?: TranscriptJSONScope): TranscriptJSON {
         return {
             id: this.id,
+            chatModel: this.chatModel,
             interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope

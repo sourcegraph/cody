@@ -1,12 +1,12 @@
-import { Position, TextDocument } from 'vscode'
+import { Position, Range, TextDocument } from 'vscode'
 import { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
+import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
+import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
-import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
-import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
 import { dropParserFields, ParsedCompletion } from './parse-completion'
@@ -55,6 +55,10 @@ function processCompletion(completion: ParsedCompletion, params: ProcessItemPara
     const { document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
     let { insertText } = completion
+
+    if (completion.insertText.length === 0) {
+        return completion
+    }
 
     if (docContext.injectedPrefix) {
         insertText = docContext.injectedPrefix + completion.insertText
@@ -138,14 +142,26 @@ export function getRangeAdjustedForOverlappingCharacters(
     item: InlineCompletionItem,
     { position, currentLineSuffix }: AdjustRangeToOverwriteOverlappingCharactersParams
 ): InlineCompletionItem['range'] {
-    // TODO(sqs): This is a very naive implementation that will not work for many cases. It always
-    // just clobbers the rest of the line.
+    const matchingSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
 
-    if (!item.range && currentLineSuffix !== '') {
-        return { start: position, end: position.translate(undefined, currentLineSuffix.length) }
+    if (!item.range && currentLineSuffix !== '' && matchingSuffixLength !== 0) {
+        return new Range(position, position.translate(undefined, matchingSuffixLength))
     }
 
     return undefined
+}
+
+export function getMatchingSuffixLength(insertText: string, currentLineSuffix: string): number {
+    let j = 0
+
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < insertText.length; i++) {
+        if (insertText[i] === currentLineSuffix[j]) {
+            j++
+        }
+    }
+
+    return j
 }
 
 function rankCompletions(completions: ParsedCompletion[]): ParsedCompletion[] {

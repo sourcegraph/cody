@@ -185,6 +185,9 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
     return extract(response.data)
 }
 
+/**
+ * @deprecated Use 'TelemetryEvent' instead.
+ */
 export interface event {
     event: string
     userCookieID: string
@@ -353,14 +356,10 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes))
     }
 
-    public async getRepoId(repoName: string): Promise<string | Error> {
+    public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
-        }).then(response =>
-            extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
-            )
-        )
+        }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
     }
 
     public async getRepoNames(first: number): Promise<string[] | Error> {
@@ -386,7 +385,6 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * Checks if Cody is enabled on the current Sourcegraph instance.
-     *
      * @returns
      * enabled: Whether Cody is enabled.
      * version: The Sourcegraph version.
@@ -428,6 +426,9 @@ export class SourcegraphGraphQLAPIClient {
      * gets exported: https://docs.sourcegraph.com/dev/background-information/telemetry
      *
      * Only available on Sourcegraph 5.2.0 and later.
+     *
+     * DO NOT USE THIS DIRECTLY - use an implementation of implementation
+     * TelemetryRecorder from '@sourcegraph/telemetry' instead.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
@@ -438,6 +439,9 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * logEvent is the legacy event-logging mechanism.
+     *
+     * @deprecated use an implementation of implementation TelemetryRecorder
+     * from '@sourcegraph/telemetry' instead.
      */
     public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {

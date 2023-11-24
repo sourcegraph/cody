@@ -5,10 +5,10 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { CommandsController } from './custom-prompts/CommandsController'
+import { CommandsController } from './commands/CommandsController'
+import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
-import { BfgContextFetcher } from './graph/bfg/BfgContextFetcher'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import type { SymfRunner } from './local-context/symf'
@@ -26,7 +26,7 @@ export interface PlatformContext {
     createCommandsController?: Constructor<typeof CommandsController>
     createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
     createSymfRunner?: Constructor<typeof SymfRunner>
-    createBfgContextFetcher?: Constructor<typeof BfgContextFetcher>
+    createBfgRetriever?: () => BfgRetriever
     createFilenameContextFetcher?: Constructor<typeof FilenameContextFetcher>
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
@@ -36,24 +36,26 @@ export interface PlatformContext {
     onConfigurationChange?: (configuration: Configuration) => void
 }
 
-export function activate(context: vscode.ExtensionContext, platformContext: PlatformContext): ExtensionApi {
+export async function activate(
+    context: vscode.ExtensionContext,
+    platformContext: PlatformContext
+): Promise<ExtensionApi> {
     const api = new ExtensionApi()
 
-    start(context, platformContext)
-        .then(disposable => {
-            if (!context.globalState.get('extension.hasActivatedPreviously')) {
-                void context.globalState.update('extension.hasActivatedPreviously', 'true')
-            }
-            context.subscriptions.push(disposable)
+    try {
+        const disposable = await start(context, platformContext)
+        if (!context.globalState.get('extension.hasActivatedPreviously')) {
+            void context.globalState.update('extension.hasActivatedPreviously', 'true')
+        }
+        context.subscriptions.push(disposable)
 
-            if (context.extensionMode === vscode.ExtensionMode.Development) {
-                onActivationDevelopmentHelpers()
-            }
-        })
-        .catch(error => {
-            captureException(error)
-            console.error(error)
-        })
+        if (context.extensionMode === vscode.ExtensionMode.Development) {
+            onActivationDevelopmentHelpers()
+        }
+    } catch (error) {
+        captureException(error)
+        console.error(error)
+    }
 
     return api
 }

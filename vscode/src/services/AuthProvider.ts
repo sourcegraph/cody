@@ -5,7 +5,7 @@ import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
+import { SidebarChatWebview } from '../chat/chat-view/SidebarChatProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
@@ -34,7 +34,7 @@ export class AuthProvider {
     public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
     private listeners: Set<Listener> = new Set()
 
     constructor(
@@ -161,6 +161,7 @@ export class AuthProvider {
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
+        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
@@ -275,8 +276,9 @@ export class AuthProvider {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
         }
+        const authStatus = this.getAuthStatus()
         for (const listener of this.listeners) {
-            listener(this.getAuthStatus())
+            listener(authStatus)
         }
         await vscode.commands.executeCommand('cody.auth.sync')
     }

@@ -1,65 +1,39 @@
 import * as vscode from 'vscode'
 
 import { detectMultiline } from './detect-multiline'
-import { getLanguageConfig } from './language'
-import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
-import { CompletionIntent, execQueryWrapper } from './tree-sitter/query-sdk'
+import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
 
-export interface DocumentContext {
+export interface DocumentContext extends DocumentDependentContext, LinesContext {
+    position: vscode.Position
+    multilineTrigger: string | null
+}
+
+export interface DocumentDependentContext {
     prefix: string
     suffix: string
-
-    /** The range that overlaps the included prefix and suffix */
-    contextRange: vscode.Range
-
-    /** Text before the cursor on the same line. */
-    currentLinePrefix: string
-    /** Text after the cursor on the same line. */
-    currentLineSuffix: string
-
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
 
     /**
      * This is set when the document context is looking at the selected item in the
      * suggestion widget and injects the item into the prefix.
      */
     injectedPrefix: string | null
-
-    multilineTrigger: string | null
-
-    completionIntent?: CompletionIntent
 }
 
 interface GetCurrentDocContextParams {
     document: vscode.TextDocument
     position: vscode.Position
+    /* A number representing the maximum length of the prefix to get from the document. */
     maxPrefixLength: number
+    /* A number representing the maximum length of the suffix to get from the document. */
     maxSuffixLength: number
-    enableExtendedTriggers: boolean
-    syntacticTriggers?: boolean
     context?: vscode.InlineCompletionContext
 }
 
 /**
  * Get the current document context based on the cursor position in the current document.
- *
- * This function is meant to provide a context around the current position in the document,
- * including a prefix, a suffix, the previous line, the previous non-empty line, and the next non-empty line.
- * The prefix and suffix are obtained by looking around the current position up to a max length
- * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
- * document content in either direction is smaller than these parameters, the entire content will be used.
- *
- * @param document - A `vscode.TextDocument` object, the document in which to find the context.
- * @param position - A `vscode.Position` object, the position in the document from which to find the context.
- * @param maxPrefixLength - A number representing the maximum length of the prefix to get from the document.
- * @param maxSuffixLength - A number representing the maximum length of the suffix to get from the document.
- *
- * @returns An object containing the current document context or null if there are no lines in the document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context, syntacticTriggers } =
-        params
+    const { document, position, maxPrefixLength, maxSuffixLength, context } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -92,9 +66,6 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     const prefixLines = lines(completePrefixWithContextCompletion)
     const suffixLines = lines(completeSuffix)
 
-    const currentLinePrefix = prefixLines.at(-1)!
-    const currentLineSuffix = suffixLines[0]
-
     let prefix: string
     if (offset > maxPrefixLength) {
         let total = 0
@@ -122,44 +93,70 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     }
     const suffix = suffixLines.slice(0, endLine).join('\n')
 
+    return getDerivedDocContext({
+        position,
+        languageId: document.languageId,
+        documentDependentContext: {
+            prefix,
+            suffix,
+            injectedPrefix,
+        },
+    })
+}
+
+interface GetDerivedDocContextParams {
+    languageId: string
+    position: vscode.Position
+    documentDependentContext: DocumentDependentContext
+}
+
+/**
+ * Calculates `DocumentContext` based on the existing prefix and suffix.
+ * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
+ */
+export function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
+    const { position, documentDependentContext, languageId } = params
+    const linesContext = getLinesContext(documentDependentContext)
+
+    return {
+        ...documentDependentContext,
+        ...linesContext,
+        position,
+        multilineTrigger: detectMultiline({
+            docContext: { ...linesContext, ...documentDependentContext },
+            languageId,
+        }),
+    }
+}
+
+export interface LinesContext {
+    /** Text before the cursor on the same line. */
+    currentLinePrefix: string
+    /** Text after the cursor on the same line. */
+    currentLineSuffix: string
+
+    prevNonEmptyLine: string
+    nextNonEmptyLine: string
+}
+
+interface GetLinesContextParams {
+    prefix: string
+    suffix: string
+}
+
+function getLinesContext(params: GetLinesContextParams): LinesContext {
+    const { prefix, suffix } = params
+
+    const currentLinePrefix = getLastLine(prefix)
+    const currentLineSuffix = getFirstLine(suffix)
+
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    const blockStart = getLanguageConfig(document.languageId)?.blockStart
-    const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
-    // Use `blockStart` for the cursor position if it's active.
-    const positionBeforeCursor = isBlockStartActive
-        ? document.positionAt(prefix.lastIndexOf(blockStart))
-        : {
-              line: position.line,
-              character: Math.max(0, position.character - 1),
-          }
-
-    const [completionItent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
-
-    const docContext: Omit<DocumentContext, 'multilineTrigger'> = {
-        prefix,
-        suffix,
-        contextRange: new vscode.Range(
-            document.positionAt(offset - prefix.length),
-            document.positionAt(offset + suffix.length)
-        ),
+    return {
         currentLinePrefix,
         currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
-        injectedPrefix,
-        completionIntent: completionItent?.name,
-    }
-
-    return {
-        ...docContext,
-        multilineTrigger: detectMultiline({
-            docContext,
-            document,
-            enableExtendedTriggers,
-            syntacticTriggers,
-            cursorPosition: positionBeforeCursor,
-        }),
     }
 }

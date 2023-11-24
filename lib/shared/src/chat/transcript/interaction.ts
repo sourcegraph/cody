@@ -1,6 +1,6 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
 
-import { ChatMessage, InteractionMessage } from './messages'
+import { ChatMessage, ChatMetadata, InteractionMessage } from './messages'
 
 export interface InteractionJSON {
     humanMessage: InteractionMessage
@@ -24,13 +24,19 @@ export class Interaction {
         public readonly timestamp: string = new Date().toISOString()
     ) {}
 
+    private metadata?: ChatMetadata
+    public setMetadata(metadata: ChatMetadata): void {
+        this.metadata = metadata
+        this.humanMessage.metadata = this.metadata
+        this.assistantMessage.metadata = this.metadata
+    }
+
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
-        const source = assistantMessage.source || this.assistantMessage.source
-        this.assistantMessage = { ...assistantMessage, source }
+        this.assistantMessage = { ...assistantMessage, metadata: this.metadata }
     }
 
     public getHumanMessage(): InteractionMessage {
@@ -57,12 +63,12 @@ export class Interaction {
      */
     public toChat(): ChatMessage[] {
         return [
-            this.humanMessage,
             {
-                ...this.assistantMessage,
+                ...this.humanMessage,
                 contextFiles: this.usedContextFiles,
                 preciseContext: this.usedPreciseContext,
             },
+            this.assistantMessage,
         ]
     }
 

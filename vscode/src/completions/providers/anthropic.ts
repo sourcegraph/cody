@@ -33,10 +33,10 @@ import {
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
-interface AnthropicOptions {
+export interface AnthropicOptions {
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    mode?: 'infill'
+    model?: 'claude-instant-1.2-cyan' | 'claude-instant-1.2'
 }
 
 const MAX_RESPONSE_TOKENS = 256
@@ -44,12 +44,13 @@ const MAX_RESPONSE_TOKENS = 256
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
+    private model: AnthropicOptions['model']
 
-    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<AnthropicOptions>) {
+    constructor(options: ProviderOptions, { maxContextTokens, client, model }: Required<AnthropicOptions>) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
-
         this.client = client
+        this.model = model
     }
 
     public emptyPromptLength(): number {
@@ -141,21 +142,23 @@ export class AnthropicProvider extends Provider {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
 
-        const requestParams: CodeCompletionsParams = this.options.multiline
-            ? {
-                  temperature: 0.5,
-                  messages: prompt,
-                  maxTokensToSample: MAX_RESPONSE_TOKENS,
-                  stopSequences: MULTI_LINE_STOP_SEQUENCES,
-                  timeoutMs: 15000,
-              }
-            : {
-                  temperature: 0.5,
-                  messages: prompt,
-                  maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
-                  stopSequences: SINGLE_LINE_STOP_SEQUENCES,
-                  timeoutMs: 5000,
-              }
+        const requestParams: CodeCompletionsParams = {
+            temperature: 0.5,
+            messages: prompt,
+            ...(this.model === 'claude-instant-1.2-cyan' ? { model: 'anthropic/claude-instant-1.2-cyan' } : undefined),
+            ...(this.options.multiline
+                ? {
+                      maxTokensToSample: MAX_RESPONSE_TOKENS,
+                      stopSequences: MULTI_LINE_STOP_SEQUENCES,
+                      timeoutMs: 15000,
+                  }
+                : {
+                      maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
+                      stopSequences: SINGLE_LINE_STOP_SEQUENCES,
+                      timeoutMs: 5000,
+                  }),
+        }
+
         tracer?.params(requestParams)
 
         const completions = await Promise.all(
@@ -182,14 +185,12 @@ export class AnthropicProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        if (!this.options.disableStreamingTruncation) {
-                            const processedCompletion = this.postProcess(incompleteResponse.completion)
-                            const completion = canUsePartialCompletion(processedCompletion, this.options)
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
+                        const completion = canUsePartialCompletion(processedCompletion, this.options)
 
-                            if (completion) {
-                                resolve({ ...completion, stopReason: 'streaming-truncation' })
-                                abortController.abort()
-                            }
+                        if (completion) {
+                            resolve({ ...completion, stopReason: 'streaming-truncation' })
+                            abortController.abort()
                         }
                     },
                     abortController.signal
@@ -228,16 +229,28 @@ export class AnthropicProvider extends Provider {
 
 export function createProviderConfig({
     maxContextTokens = 2048,
-    mode = 'infill',
+    model,
     ...otherOptions
-}: AnthropicOptions): ProviderConfig {
+}: Omit<AnthropicOptions, 'model'> & { model: string | null }): ProviderConfig {
+    let definedModel: 'claude-instant-1.2-cyan' | 'claude-instant-1.2'
+    switch (model) {
+        case 'claude-instant-1.2-cyan':
+            definedModel = 'claude-instant-1.2-cyan'
+            break
+        case 'claude-instant-1.2':
+        case null:
+            definedModel = 'claude-instant-1.2'
+            break
+        default:
+            throw new Error(`Invalid model: ${model}`)
+    }
+
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, { maxContextTokens, mode, ...otherOptions })
+            return new AnthropicProvider(options, { maxContextTokens, model: definedModel, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
-        model: 'claude-instant-infill',
+        model: definedModel,
     }
 }

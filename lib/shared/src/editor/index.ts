@@ -1,8 +1,6 @@
 import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
-import { FixupIntent } from '../chat/recipes/fixup'
-import { IntentDetector } from '../intent-detector'
 
 export interface ActiveTextEditor {
     content: string
@@ -52,14 +50,29 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
+export interface TextDocumentContent {
+    content: string
+    fileName: string
+    fileUri?: URI
+    repoName?: string
+    revision?: string
+}
+
 export interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
     selectionRange: ActiveTextEditorSelectionRange | null
     error(): Promise<void>
 }
 
+/**
+ * The intent classification for the fixup.
+ * Manually determined depending on how the fixup is triggered.
+ */
+export type FixupIntent = 'add' | 'edit' | 'fix'
+
 export interface VsCodeFixupTaskRecipeData {
     instruction: string
+    intent: FixupIntent
     fileName: string
     precedingText: string
     selectedText: string
@@ -68,11 +81,7 @@ export interface VsCodeFixupTaskRecipeData {
 }
 
 export interface VsCodeFixupController {
-    getTaskRecipeData(
-        taskId: string,
-        options: { enableSmartSelection?: boolean }
-    ): Promise<VsCodeFixupTaskRecipeData | undefined>
-    getTaskIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent>
+    getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
 }
 
 export interface VsCodeCommandsController {
@@ -100,7 +109,6 @@ export interface Editor<
 
     /**
      * The path of the workspace root if on the file system, otherwise `null`.
-     *
      * @deprecated Use {@link Editor.getWorkspaceRootUri} instead.
      */
     getWorkspaceRootPath(): string | null
@@ -128,6 +136,9 @@ export interface Editor<
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
+
+    getTextEditorContentForFile(uri: URI, range?: ActiveTextEditorSelectionRange): Promise<string | undefined>
+
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
@@ -185,6 +196,13 @@ export class NoopEditor implements Editor {
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return null
+    }
+
+    public getTextEditorContentForFile(
+        _uri: URI,
+        _range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        return Promise.resolve(undefined)
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {

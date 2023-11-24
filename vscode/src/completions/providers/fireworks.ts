@@ -1,11 +1,13 @@
 import * as vscode from 'vscode'
 
+import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { getLanguageConfig } from '../../tree-sitter/language'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { getLanguageConfig } from '../language'
+import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
@@ -23,7 +25,7 @@ export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    starcoderExtendedTokenWindow?: boolean
+    timeouts: AutocompleteTimeouts
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -34,14 +36,18 @@ const EOT_LLAMA_CODE = ' <EOT>'
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
-    'starcoder-16b': 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16',
-    'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
+    // Models in production
+    'starcoder-16b': 'fireworks/starcoder-16b',
+    'starcoder-7b': 'fireworks/starcoder-7b',
+
+    // Models in evaluation
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
     'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
     'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
+    'mistral-7b-instruct-4k': 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k',
 }
 
 type FireworksModel =
@@ -49,7 +55,7 @@ type FireworksModel =
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
 
-function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow?: boolean): number {
+function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder-hybrid':
         case 'starcoder-16b':
@@ -57,9 +63,8 @@ function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow
         case 'starcoder-3b':
         case 'starcoder-1b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
-            // our current Anthropic prompt but allow for 6k for the extended token window as
-            // defined by the feature flag
-            return starcoderExtendedTokenWindow ? 6144 : 2048
+            // other providers.
+            return 2048
         }
         case 'wizardcoder-15b':
             // TODO: Confirm what the limit is for WizardCoder
@@ -69,6 +74,8 @@ function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow
         case 'llama-code-13b-instruct':
             // Llama Code was trained on 16k context windows, we're constraining it here to better
             // compare the results
+            return 2048
+        case 'mistral-7b-instruct-4k':
             return 2048
         default:
             return 1200
@@ -81,12 +88,11 @@ export class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
+    private timeouts?: AutocompleteTimeouts
 
-    constructor(
-        options: ProviderOptions,
-        { model, maxContextTokens, client }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
-    ) {
+    constructor(options: ProviderOptions, { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>) {
         super(options)
+        this.timeouts = timeouts
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
@@ -154,6 +160,17 @@ export class FireworksProvider extends Provider {
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
+        const timeoutMs: number = multiline
+            ? this.timeouts?.multiline === undefined
+                ? 15_000
+                : this.timeouts.multiline
+            : this.timeouts?.singleline === undefined
+            ? 5_000
+            : this.timeouts.singleline
+        if (timeoutMs === 0) {
+            return []
+        }
+
         const args: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
@@ -164,7 +181,7 @@ export class FireworksProvider extends Provider {
             topK: 0,
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
-            timeoutMs: multiline ? 15000 : 5000,
+            timeoutMs,
         }
 
         tracer?.params(args)
@@ -190,6 +207,19 @@ export class FireworksProvider extends Provider {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
+        if (this.model === 'mistral-7b-instruct-4k') {
+            // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
+            const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
+            const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
+            const infillSuffix = this.options.docContext.suffix
+            const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
+            const infillPrefix = head.raw
+            return `<s>[INST] Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
+\`\`\`
+${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
+\`\`\`[/INST]
+ ${OPENING_CODE_TAG}${infillBlock}`
+        }
 
         console.error('Could not generate infilling prompt for', this.model)
         return `${intro}${prefix}`
@@ -209,14 +239,12 @@ export class FireworksProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        if (!this.options.disableStreamingTruncation) {
-                            const processedCompletion = this.postProcess(incompleteResponse.completion)
-                            const completion = canUsePartialCompletion(processedCompletion, this.options)
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
+                        const completion = canUsePartialCompletion(processedCompletion, this.options)
 
-                            if (completion) {
-                                resolve({ ...completion, stopReason: 'streaming-truncation' })
-                                abortController.abort()
-                            }
+                        if (completion) {
+                            resolve({ ...completion, stopReason: 'streaming-truncation' })
+                            abortController.abort()
                         }
                     },
                     abortController.signal
@@ -245,6 +273,7 @@ export class FireworksProvider extends Provider {
 
 export function createProviderConfig({
     model,
+    timeouts,
     ...otherOptions
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
     const resolvedModel =
@@ -260,14 +289,18 @@ export function createProviderConfig({
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel, otherOptions.starcoderExtendedTokenWindow)
+    const maxContextTokens = getMaxContextTokens(resolvedModel)
 
     return {
         create(options: ProviderOptions) {
-            return new FireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
+            return new FireworksProvider(options, {
+                model: resolvedModel,
+                maxContextTokens,
+                timeouts,
+                ...otherOptions,
+            })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         model: resolvedModel,
     }

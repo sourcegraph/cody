@@ -17,14 +17,20 @@ export interface ChatMessage extends Message {
     preciseContext?: PreciseContext[]
     buttons?: ChatButton[]
     data?: any
-    source?: ChatEventSource
+    metadata?: ChatMetadata
 }
 
 export interface InteractionMessage extends Message {
     displayText?: string
     prefix?: string
     error?: string
+    metadata?: ChatMetadata
+}
+
+export interface ChatMetadata {
     source?: ChatEventSource
+    requestID?: string
+    chatModel?: string
 }
 
 export interface UserLocalHistory {

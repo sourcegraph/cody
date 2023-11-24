@@ -22,10 +22,12 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocomplete: true,
     autocompleteLanguages: { '*': true, scminput: false },
     experimentalCommandLenses: false,
-    experimentalEditorTitleCommandIcon: false,
+    editorTitleCommandIcon: true,
+    experimentalChatPanel: false,
     experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
+    experimentalSearchPanel: false,
     inlineChat: true,
     codeActions: true,
     isRunningInsideAgent: false,
@@ -41,6 +43,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
+    autocompleteTimeouts: {},
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({
@@ -79,7 +82,7 @@ describe('createProviderConfig', () => {
                 {}
             )
             expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('claude-instant-infill')
+            expect(provider?.model).toBe('claude-instant-1.2')
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
@@ -118,17 +121,17 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('gpt-35-turbo')
         })
 
-        it('returns "anthropic" provider config if specified in VSCode settings; model is ignored', async () => {
+        it('returns "anthropic" provider config if specified in VSCode settings', async () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'anthropic',
-                    autocompleteAdvancedModel: 'hello-world',
+                    autocompleteAdvancedModel: 'claude-instant-1.2-cyan',
                 }),
                 dummyCodeCompletionsClient,
                 {}
             )
             expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('claude-instant-infill')
+            expect(provider?.model).toBe('claude-instant-1.2-cyan')
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
@@ -154,30 +157,30 @@ describe('createProviderConfig', () => {
                 // sourcegraph
                 { codyLLMConfig: { provider: 'sourcegraph', completionModel: 'hello-world' }, expected: null },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/claude-instant-infill' },
-                    expected: { provider: 'anthropic', model: 'claude-instant-infill' },
+                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/claude-instant-1.2' },
+                    expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
                 },
                 {
                     codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: '/claude-instant-infill' },
+                    codyLLMConfig: { provider: 'sourcegraph', completionModel: '/claude-instant-1.2' },
                     expected: null,
                 },
 
                 // aws-bedrock
                 { codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'hello-world' }, expected: null },
                 {
-                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic.claude-instant-infill' },
-                    expected: { provider: 'anthropic', model: 'claude-instant-infill' },
+                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic.claude-instant-1.2' },
+                    expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
                 },
                 {
                     codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic/claude-instant-infill' },
+                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic/claude-instant-1.2' },
                     expected: null,
                 },
 
@@ -220,7 +223,7 @@ describe('createProviderConfig', () => {
                 // provider not defined (backward compat)
                 {
                     codyLLMConfig: { provider: undefined, completionModel: 'llama-code-7b' },
-                    expected: { provider: 'anthropic', model: 'claude-instant-infill' },
+                    expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
                 },
             ]
 
@@ -247,6 +250,6 @@ describe('createProviderConfig', () => {
     it('returns anthropic provider config if no completions provider specified in VSCode settings or site config', async () => {
         const provider = await createProviderConfig(getVSCodeSettings(), dummyCodeCompletionsClient, {})
         expect(provider?.identifier).toBe('anthropic')
-        expect(provider?.model).toBe('claude-instant-infill')
+        expect(provider?.model).toBe('claude-instant-1.2')
     })
 })

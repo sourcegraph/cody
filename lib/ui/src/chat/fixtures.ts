@@ -21,14 +21,14 @@ export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
             speaker: 'human',
             displayText:
                 "Explain the following code at a high level:\n\n```\nprivate getNonce(): string {\n  let text = ''\n  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'\n  for (let i = 0; i < 32; i++) {\n    text += possible.charAt(Math.floor(Math.random() * possible.length))\n  }\n  return text\n}\n```",
-        },
-        {
-            speaker: 'assistant',
-            displayText: 'This code generates a random 32-character string (nonce) using characters A-Z, a-z, and 0-9.',
             contextFiles: [
                 { fileName: 'vscode/src/chat/ChatViewProvider.ts' },
                 { fileName: 'lib/shared/src/timestamp.ts' },
             ],
+        },
+        {
+            speaker: 'assistant',
+            displayText: 'This code generates a random 32-character string (nonce) using characters A-Z, a-z, and 0-9.',
         },
         {
             speaker: 'human',

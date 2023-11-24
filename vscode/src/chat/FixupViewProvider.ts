@@ -1,43 +1,16 @@
-import * as vscode from 'vscode'
-
 import { contentSanitizer } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { FixupCodeAction } from '../code-actions/fixup'
 import { FixupTask } from '../non-stop/FixupTask'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-export class FixupManager implements vscode.Disposable {
+export class FixupManager {
     private fixupProviders = new Map<FixupTask, FixupProvider>()
     private messageProviderOptions: MessageProviderOptions
-    private configurationChangeListener: vscode.Disposable
-    private codeActionProvider: vscode.Disposable | null = null
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
-        this.configureCodeAction(options.contextProvider.config.codeActions)
-        this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
-            this.configureCodeAction(options.contextProvider.config.codeActions)
-        })
-    }
-
-    private configureCodeAction(enabled: boolean): void {
-        // Disable the code action provider if currently enabled
-        if (!enabled) {
-            this.codeActionProvider?.dispose()
-            this.codeActionProvider = null
-            return
-        }
-
-        // Code action provider already exists, skip re-registering
-        if (this.codeActionProvider) {
-            return
-        }
-
-        this.codeActionProvider = vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
-            providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
-        })
     }
 
     public getProviderForTask(task: FixupTask): FixupProvider {
@@ -58,12 +31,6 @@ export class FixupManager implements vscode.Disposable {
             this.fixupProviders.delete(task)
             provider.dispose()
         }
-    }
-
-    public dispose(): void {
-        this.configurationChangeListener.dispose()
-        this.codeActionProvider?.dispose()
-        this.codeActionProvider = null
     }
 }
 
@@ -98,25 +65,26 @@ export class FixupProvider extends MessageProvider {
             return
         }
 
+        // Error state: The transcript finished but we didn't receive any text
+        if (!lastMessage.text && !isMessageInProgress) {
+            this.handleError('Cody did not respond with any text')
+        }
+
         if (lastMessage.text) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                isMessageInProgress ? lastMessage.text : contentSanitizer(lastMessage.text),
+                contentSanitizer(lastMessage.text),
                 isMessageInProgress ? 'streaming' : 'complete'
             )
         }
     }
 
     /**
-     * TODO: How should we handle errors for fixups?
-     * Should we create a new inline chat with the message?
+     * Display an erred codelens to the user on failed fixup apply.
+     * Will allow the user to view the error in more detail if needed.
      */
     protected handleError(errorMsg: string): void {
-        void this.editor.controllers.inline?.error(errorMsg)
-    }
-
-    protected handleTranscriptErrors(): void {
-        // not implemented
+        this.editor.controllers.fixups?.error(this.task.id, errorMsg)
     }
 
     protected handleCodyCommands(): void {

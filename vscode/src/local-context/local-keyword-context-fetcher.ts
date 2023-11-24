@@ -7,11 +7,15 @@ import * as vscode from 'vscode'
 import winkUtils from 'wink-nlp-utils'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { ContextFileSource, ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
+
+const source: ContextFileSource = 'keyword'
+const type: ContextFileType = 'file'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -98,7 +102,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     /**
      * Returns pieces of context relevant for the given query. Uses a keyword-search-based
      * approach.
-     *
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
@@ -106,7 +109,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
      */
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const startTime = performance.now()
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getWorkspaceRootUri()?.fsPath
         if (!rootPath) {
             return []
         }
@@ -119,7 +122,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 const uri = vscode.Uri.file(path.join(rootPath, filename))
                 try {
                     const content = (await vscode.workspace.openTextDocument(uri)).getText()
-                    return [{ fileName: filename, content }]
+                    return [{ fileName: filename, content, uri, source, type }]
                 } catch (error) {
                     // Handle file reading errors in case of concurrent file deletions or binary files
                     console.error(error)
@@ -207,7 +210,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     // Return context results for the Codebase Context Search recipe
     public async getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getWorkspaceRootUri()?.fsPath
         if (!rootPath) {
             return []
         }
@@ -233,7 +236,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     const endLine = startLine + 5
                     const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
 
-                    return [{ fileName: filename, content }]
+                    return [{ fileName: filename, content, uri, source, type }]
                 } catch (error) {
                     console.error(error)
                     return []

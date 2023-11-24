@@ -1,10 +1,16 @@
+import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { ChatModelSelection, ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
+import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../webviews/NavBar'
 
@@ -19,13 +25,24 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
+    | {
+          command: 'submit'
+          text: string
+          submitType: ChatSubmitType
+          addEnhancedContext?: boolean
+          contextFiles?: ContextFile[]
+      }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openFile'; filePath: string }
+    | { command: 'chatModel'; model: string }
+    | {
+          command: 'openFile'
+          filePath: string
+          range?: ActiveTextEditorSelectionRange
+      }
     | {
           command: 'openLocalFileWithRange'
           filePath: string
@@ -34,9 +51,9 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string; source?: string }
-    | { command: 'newFile'; text: string; source?: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string }
+    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
     | {
           command: 'auth'
           type:
@@ -58,6 +75,13 @@ export type WebviewMessage =
           command: 'simplified-onboarding'
           type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
       }
+    | { command: 'getUserContext'; query: string }
+    | { command: 'search'; query: string }
+    | {
+          command: 'show-search-result'
+          uriJSON: unknown
+          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -75,11 +99,16 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    | { type: 'userContextFiles'; context: ContextFile[]; kind?: ContextFileType }
+    | { type: 'chatModels'; models: ChatModelSelection[] }
+    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | { type: 'index-updated'; scopeDir: string }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -197,3 +226,21 @@ export function archConvertor(arch: string): string {
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
+// NOTE: Only dotcom is supported currently
+export function getChatModelsForWebview(endpoint?: string | null): ChatModelSelection[] {
+    if (endpoint && isDotCom(endpoint)) {
+        return defaultChatModels
+    }
+    return []
+}
+
+// The allowed chat models for dotcom
+// The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
+const defaultChatModels = [
+    { title: 'Claude 2.0', model: 'anthropic/claude-2.0', provider: 'Anthropic', default: true },
+    { title: 'Claude 2.1 Preview', model: 'anthropic/claude-2.1', provider: 'Anthropic', default: false },
+    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2-cyan', provider: 'Anthropic', default: false },
+    { title: 'ChatGPT 3.5 Turbo', model: 'openai/gpt-3.5-turbo', provider: 'OpenAI', default: false },
+    { title: 'ChatGPT 4 Turbo Preview', model: 'openai/gpt-4-1106-preview', provider: 'OpenAI', default: false },
+]

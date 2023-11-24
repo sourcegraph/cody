@@ -1,7 +1,7 @@
 import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
-import { getLanguageConfig } from '../language'
+import { getLanguageConfig } from '../../tree-sitter/language'
 import { logCompletionEvent } from '../logger'
 
 import { isAlmostTheSameString } from './string-comparator'
@@ -18,7 +18,6 @@ export const MULTILINE_STOP_SEQUENCE = '\n\n'
  * Any trailing whitespace is trimmed, but leading whitespace is preserved. Trailing whitespace
  * seems irrelevant to the user experience. Leading whitespace is important, as leading newlines and
  * indentation are relevant.
- *
  * @param completion The raw completion result received from Anthropic
  * @returns the extracted code block
  */
@@ -317,6 +316,28 @@ export function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLin
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
     return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
+}
+
+export function getFirstLine(text: string): string {
+    const firstLf = text.indexOf('\n')
+    const firstCrLf = text.indexOf('\r\n')
+    // There are no line breaks
+    if (firstLf === -1 && firstCrLf === -1) {
+        return text
+    }
+
+    return text.slice(0, firstCrLf >= 0 ? firstCrLf : firstLf)
+}
+
+export function getLastLine(text: string): string {
+    const lastLf = text.lastIndexOf('\n')
+    const lastCrLf = text.lastIndexOf('\r\n')
+    // There are no line breaks
+    if (lastLf === -1 && lastCrLf === -1) {
+        return text
+    }
+
+    return text.slice(lastCrLf >= 0 ? lastCrLf + 2 : lastLf + 1)
 }
 
 export function getNextNonEmptyLine(suffix: string): string {

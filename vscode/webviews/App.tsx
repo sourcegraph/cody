@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
@@ -19,9 +21,9 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -31,7 +33,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
+    const [contextSelection, setContextSelection] = useState<ContextFile[]>([])
+
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
@@ -39,6 +44,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
+
+    const [chatModels, setChatModels] = useState<ChatModelSelection[]>()
 
     useEffect(
         () =>
@@ -71,6 +78,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
+                        break
+                    case 'userContextFiles':
+                        setContextSelection(message.context)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -112,6 +122,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
+                    case 'chatModels':
+                        setChatModels(message.models)
+                        break
                 }
             }),
         [errorMessages, view, vscodeAPI]
@@ -127,6 +140,23 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
         }
     }, [view, vscodeAPI])
+
+    useEffect(() => {
+        if (formInput.endsWith(' ')) {
+            setContextSelection([])
+        }
+        // Regex to check if input ends with the '@' tag format, always get the last @tag
+        // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
+        // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '
+        const addFileRegex = /@\S+$/
+        // Get the string after the last '@' symbol
+        const addFileInput = formInput.match(addFileRegex)?.[0]
+        if (formInput.endsWith('@') || addFileInput) {
+            vscodeAPI.postMessage({ command: 'getUserContext', query: addFileInput?.slice(1) || '' })
+        } else {
+            setContextSelection([])
+        }
+    }, [formInput, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
@@ -189,6 +219,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setMessageBeingEdited={setMessageBeingEdited}
                             transcript={transcript}
                             contextStatus={contextStatus}
+                            contextSelection={contextSelection}
                             formInput={formInput}
                             setFormInput={setFormInput}
                             inputHistory={inputHistory}
@@ -207,6 +238,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     onboardingPopupProps,
                                 },
                             }}
+                            chatModels={chatModels}
+                            enableNewChatUI={config.experimentalChatPanel || false}
+                            setChatModels={setChatModels}
                         />
                     )}
                 </>
