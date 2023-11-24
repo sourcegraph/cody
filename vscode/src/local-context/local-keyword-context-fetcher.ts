@@ -109,7 +109,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
      */
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const startTime = performance.now()
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getWorkspaceRootUri()?.fsPath
         if (!rootPath) {
             return []
         }
@@ -210,7 +210,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     // Return context results for the Codebase Context Search recipe
     public async getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getWorkspaceRootUri()?.fsPath
         if (!rootPath) {
             return []
         }

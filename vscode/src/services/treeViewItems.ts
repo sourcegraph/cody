@@ -42,7 +42,13 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     chatHistoryEntries.forEach(([id, entry]) => {
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            const title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
+            let title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
+
+            // Display command key only
+            if (title.startsWith('/')) {
+                title = title.split(' ')[0]
+            }
+
             chatTreeItems.push({
                 id,
                 title,

@@ -26,10 +26,25 @@ export class EventLogger {
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
         this.setSiteIdentification().catch(error => console.error(error))
-        if (this.extensionDetails.ide === 'VSCode' && this.extensionDetails.ideExtensionType === 'Cody') {
-            this.client = 'VSCODE_CODY_EXTENSION'
-        } else {
-            throw new Error('new extension type not yet accounted for')
+        if (this.extensionDetails.ideExtensionType !== 'Cody') {
+            throw new Error(`new extension type ${this.extensionDetails.ideExtensionType} not yet accounted for`)
+        }
+
+        switch (this.extensionDetails.ide) {
+            case 'VSCode':
+                this.client = 'VSCODE_CODY_EXTENSION'
+                break
+            case 'Emacs':
+                this.client = 'EMACS_CODY_EXTENSION'
+                break
+            case 'JetBrains':
+                this.client = 'JETBRAINS_CODY_EXTENSION'
+                break
+            case 'Neovim':
+                this.client = 'NEOVIM_CODY_EXTENSION'
+                break
+            default:
+                throw new Error(`new IDE ${this.extensionDetails.ide} not yet accounted for`)
         }
     }
 

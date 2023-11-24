@@ -44,5 +44,6 @@ export const pythonQueries = {
             (return_statement) @return_statement!
             (return_statement (_) @return_statement.value!)
         `,
+        documentableNodes: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

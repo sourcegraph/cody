@@ -14,6 +14,7 @@ import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from '.
 import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
+import { getCompletionIntent } from './doc-context-getters'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -23,7 +24,7 @@ import {
     TriggerKind,
 } from './get-inline-completions'
 import * as CompletionLogger from './logger'
-import { CompletionEvent, CompletionItemID, CompletionLogID } from './logger'
+import { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
@@ -34,7 +35,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
     items: AutocompleteItem[]
     /** @deprecated */
-    completionEvent?: CompletionEvent
+    completionEvent?: CompletionBookkeepingEvent
 }
 
 export class AutocompleteItem extends vscode.InlineCompletionItem {
@@ -236,8 +237,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [syntacticTriggersPromise, languageLatencyPromise, userLatencyPromise] = [
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
+        const [languageLatencyPromise, userLatencyPromise] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
         ]
@@ -293,9 +293,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             position,
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-            syntacticTriggers: await syntacticTriggersPromise,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+        })
+
+        const completionIntent = getCompletionIntent({
+            document,
+            position,
+            prefix: docContext.prefix,
         })
 
         const latencyFeatureFlags: LatencyFeatureFlags = {
@@ -306,7 +311,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             latencyFeatureFlags,
             document.uri.toString(),
             document.languageId,
-            docContext
+            completionIntent
         )
 
         try {
@@ -331,6 +336,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 handleDidPartiallyAcceptCompletionItem: this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                 completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                 artificialDelay,
+                completionIntent,
             })
 
             // Avoid any further work if the completion is invalidated already.

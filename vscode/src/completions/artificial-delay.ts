@@ -1,6 +1,5 @@
 import { logDebug } from '../log'
-
-import { DocumentContext } from './get-current-doc-context'
+import { CompletionIntent } from '../tree-sitter/queries'
 
 export interface LatencyFeatureFlags {
     user?: boolean
@@ -28,7 +27,12 @@ export const lowPerformanceLanguageIds = new Set([
     'markdown',
     'plaintext',
     'xml',
+    'twig',
+    'jsonc',
+    'handlebars',
 ])
+
+const lowPerformanceCompletionIntents = new Set(['comment', 'import.source'])
 
 let userMetrics = {
     sessionTimestamp: 0,
@@ -44,13 +48,13 @@ export function getArtificialDelay(
     featureFlags: LatencyFeatureFlags,
     uri: string,
     languageId: string,
-    docContext: Pick<DocumentContext, 'completionIntent'>
+    completionIntent?: CompletionIntent
 ): number {
     let baseline = 0
 
-    const isLowPerformance = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
-    const isComment = docContext.completionIntent === 'comment'
-    if (isLowPerformance || isComment) {
+    const isLowPerformanceLanguageId = featureFlags.language && lowPerformanceLanguageIds.has(languageId)
+    const isLowPerformanceCompletionIntent = completionIntent && lowPerformanceCompletionIntents.has(completionIntent)
+    if (isLowPerformanceLanguageId || isLowPerformanceCompletionIntent) {
         baseline = defaultLatencies.lowPerformance
     }
 
@@ -75,7 +79,9 @@ export function getArtificialDelay(
         userMetrics.currentLatency += featureFlags.user ? defaultLatencies.user : 0
     }
 
-    logDebug('CodyCompletionProvider:getLatency', `Delay added: ${total}`)
+    if (total > 0) {
+        logDebug('CodyCompletionProvider:getLatency', `Delay added: ${total}`)
+    }
 
     return total
 }
@@ -91,5 +97,4 @@ export function resetArtificialDelay(timestamp = 0): void {
         suggested: 0,
         uri: '',
     }
-    logDebug('CodyCompletionProvider:resetArtificialDelay', 'Latency Reset')
 }

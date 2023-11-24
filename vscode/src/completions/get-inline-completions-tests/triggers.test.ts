@@ -169,10 +169,10 @@ describe('[getInlineCompletions] triggers', () => {
     })
 
     describe('closing symbols', () => {
-        it.each(['{}█', '[]█', '()█'])('does not trigger for %s', async prompt =>
+        it.each(['{}█', '[]█', '()█', ';█'])('does not trigger for %s', async prompt =>
             expect(await getInlineCompletions(params(prompt, [completion`bar`]))).toEqual<V>(null)
         )
-        it.each(['{}\n█', '[]\n█', '()\n█'])('does trigger for %s', async prompt =>
+        it.each(['{}\n█', '[]\n█', '()\n█', ';\n█'])('does trigger for %s', async prompt =>
             expect(await getInlineCompletions(params(prompt, [completion`bar`]))).toEqual<V>({
                 items: [{ insertText: 'bar' }],
                 source: InlineCompletionsResultSource.Network,

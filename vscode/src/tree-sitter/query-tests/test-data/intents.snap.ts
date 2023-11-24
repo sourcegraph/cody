@@ -173,3 +173,41 @@
 // Nodes types:
 // arguments[1]: arguments
 
+// ------------------------------------
+
+  const object = {
+      key: "value"
+//         ^^^^^^^ pair.value[1]
+//         █
+  }
+
+// Nodes types:
+// pair.value[1]: string
+
+// ------------------------------------
+
+  returnStatementValue("value", () => {
+//                                    ^ start function.body[1]
+//                                    █
+      const value = "value"
+  })
+//^ end function.body[1]
+
+// Nodes types:
+// function.body[1]: statement_block
+
+// ------------------------------------
+
+  returnStatementValue("value", {key: value})
+//                                    ^^^^^ pair.value[1]
+//                                    █
+
+// Nodes types:
+// pair.value[1]: identifier
+
+// ------------------------------------
+
+returnStatementValue("value", () => {
+    const value = "value"
+   //             |
+})

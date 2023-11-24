@@ -7,7 +7,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -54,6 +54,15 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocompleteAdvancedProvider = 'fireworks'
     }
 
+    // check if the configured enum values are valid
+    const configKeys = ['autocompleteAdvancedProvider', 'autocompleteAdvancedModel'] as (keyof ConfigurationKeysMap)[]
+
+    for (const configVal of configKeys) {
+        const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
+        const value: string | null = config.get(CONFIG_KEY[configVal])
+        checkValidEnumValues(key, value)
+    }
+
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
@@ -74,8 +83,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalChatPanel: config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         experimentalSearchPanel: config.get(CONFIG_KEY.experimentalNewSearch, isTesting),
-        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
-        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
@@ -99,6 +106,11 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         ),
         autocompleteExperimentalGraphContext,
 
+        // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
+        inlineChat:
+            config.get(CONFIG_KEY.inlineChatEnabled, false) !== config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
+        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
+
         /**
          * UNDOCUMENTED FLAGS
          */
@@ -109,6 +121,13 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
         agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
+        autocompleteTimeouts: {
+            multiline: config.get<number | undefined>('cody.autocomplete.advanced.timeout.multiline' as any, undefined),
+            singleline: config.get<number | undefined>(
+                'cody.autocomplete.advanced.timeout.singleline' as any,
+                undefined
+            ),
+        },
     }
 }
 
@@ -142,4 +161,15 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
+}
+
+function checkValidEnumValues(configName: string, value: string | null): void {
+    const validEnumValues = getConfigEnumValues('cody.' + configName)
+    if (value) {
+        if (!validEnumValues.includes(value)) {
+            void vscode.window.showErrorMessage(
+                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(', ')}`
+            )
+        }
+    }
 }

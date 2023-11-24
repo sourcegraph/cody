@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
+import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
 import { DocumentContext } from './get-current-doc-context'
@@ -23,6 +24,7 @@ export interface InlineCompletionsParams {
     triggerKind: TriggerKind
     selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
     docContext: DocumentContext
+    completionIntent?: CompletionIntent
 
     // Prompt parameters
     providerConfig: ProviderConfig
@@ -154,7 +156,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         contextMixer,
         requestManager,
@@ -166,6 +168,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
         artificialDelay,
+        completionIntent,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -181,7 +184,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Do not trigger when the last character is a closing symbol
-    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
+    if (triggerKind !== TriggerKind.Manual && /[);\]}]$/.test(currentLinePrefix.trim())) {
         return null
     }
 
@@ -262,7 +265,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerConfig,
         docContext,
     })
-    tracer?.({ completers: completionProviders.map(({ options }) => options) })
+    tracer?.({
+        completers: completionProviders.map(({ options }) => ({
+            ...options,
+            completionIntent,
+        })),
+    })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 

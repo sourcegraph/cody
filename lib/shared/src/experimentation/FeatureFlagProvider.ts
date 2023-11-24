@@ -12,21 +12,19 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // This flag is only used when `CodyAutocompleteStarCoderHybrid` is also true
-    CodyAutocompleteStarCoderHybridSourcegraph = 'cody-autocomplete-default-starcoder-hybrid-sourcegraph',
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteContextLspLight = 'cody-autocomplete-context-lsp-light',
     CodyAutocompleteContextBfg = 'cody-autocomplete-context-bfg',
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     CodyAutocompleteContextLocalMixed = 'cody-autocomplete-context-local-mixed',
-    CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
     CodyProDecGA = 'cody_pro_dec_ga',
+    CodyChatMockTest = 'cody-chat-mock-test',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -35,7 +33,7 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
     private lastUpdated = 0
 
-    constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
+    constructor(private apiClient: SourcegraphGraphQLAPIClient) { }
 
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
         const now = Date.now()
