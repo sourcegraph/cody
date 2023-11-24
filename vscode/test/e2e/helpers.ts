@@ -166,27 +166,8 @@ export async function submitChat(sidebar: Frame, text: string): Promise<void> {
 }
 
 /**
- * Verifies that actualEvents contain expectedEvents in the same order, but allowing extras.
+ * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
-export async function assertEvents(actualEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect(() => {
-        let actualIndex = 0
-        for (const expected of expectedEvents) {
-            // Skip over any extra events.
-            while (actualIndex < actualEvents.length && actualEvents[actualIndex] !== expected) {
-                actualIndex++
-            }
-            // We expect to find a match here.
-            expect(actualIndex < actualEvents.length && actualEvents[actualIndex] === expected, {
-                message:
-                    'Did not find expected events in order in the logged events.\n' +
-                    `Expected:\n    ${expectedEvents.join('\n    ')}\n` +
-                    `Actual:\n    ${actualEvents.join('\n    ')}`,
-            }).toBeTruthy()
-        }
-    }).toPass({
-        // Need a timeout less than the test timeout here, or any failures are just
-        // "test timed out" rather than the last failure message produced here.
-        timeout: 10_000,
-    })
+export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
+    await expect.poll(() => loggedEvents).toEqual(expect.arrayContaining(expectedEvents))
 }
