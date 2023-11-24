@@ -1,19 +1,17 @@
 import { Position, TextDocument } from 'vscode'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
 import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
-import { truncateParsedCompletion } from './truncate-parsed-completion'
+import { truncateParsedCompletionByNextSibling } from './truncate-parsed-completion'
 
 export interface ParseAndTruncateParams {
     document: TextDocument
     position: Position
     docContext: DocumentContext
     multiline: boolean
-    useTreeSitter?: boolean
 }
 
 export function parseAndTruncateCompletion(
@@ -24,9 +22,7 @@ export function parseAndTruncateCompletion(
         document,
         multiline,
         docContext,
-        position,
-        docContext: { prefix, suffix },
-        useTreeSitter = true,
+        docContext: { prefix },
     } = params
 
     const insertTextBeforeTruncation = multiline ? normalizeStartLine(completion, prefix) : completion
@@ -34,17 +30,18 @@ export function parseAndTruncateCompletion(
     const parsed = parseCompletion({
         completion: { insertText: insertTextBeforeTruncation },
         document,
-        position,
         docContext,
     })
+
+    if (parsed.insertText === '') {
+        return parsed
+    }
 
     if (multiline) {
         const truncationResult = truncateMultilineBlock({
             parsed,
             document,
-            suffix,
-            prefix,
-            useTreeSitter,
+            docContext,
         })
 
         const initialLineCount = insertTextBeforeTruncation.split('\n').length
@@ -60,10 +57,8 @@ export function parseAndTruncateCompletion(
 
 interface TruncateMultilineBlockParams {
     parsed: ParsedCompletion
+    docContext: DocumentContext
     document: TextDocument
-    prefix: string
-    suffix: string
-    useTreeSitter: boolean
 }
 
 interface TruncateMultilineBlockResult {
@@ -72,15 +67,20 @@ interface TruncateMultilineBlockResult {
 }
 
 export function truncateMultilineBlock(params: TruncateMultilineBlockParams): TruncateMultilineBlockResult {
-    const { parsed, document, prefix, suffix, useTreeSitter } = params
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+    const { parsed, docContext, document } = params
 
-    if (useTreeSitter && parsed.tree && documentQuerySDK) {
+    if (parsed.tree) {
         return {
             truncatedWith: 'tree-sitter',
-            insertText: truncateParsedCompletion({ completion: parsed, document, documentQuerySDK }),
+            insertText: truncateParsedCompletionByNextSibling({
+                completion: parsed,
+                docContext,
+                document,
+            }),
         }
     }
+
+    const { prefix, suffix } = docContext
 
     return {
         truncatedWith: 'indentation',

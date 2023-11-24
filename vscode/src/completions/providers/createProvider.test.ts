@@ -22,11 +22,12 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocomplete: true,
     autocompleteLanguages: { '*': true, scminput: false },
     experimentalCommandLenses: false,
-    experimentalEditorTitleCommandIcon: false,
+    editorTitleCommandIcon: true,
     experimentalChatPanel: false,
     experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
+    experimentalSearchPanel: false,
     inlineChat: true,
     codeActions: true,
     isRunningInsideAgent: false,
@@ -42,6 +43,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
+    autocompleteTimeouts: {},
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({

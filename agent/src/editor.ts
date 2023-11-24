@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     ActiveTextEditor,
@@ -48,6 +49,15 @@ export class AgentEditor implements Editor {
             filePath: document.filePath,
             content: document.content || '',
         }
+    }
+
+    public async getTextEditorContentForFile(uri: URI): Promise<string | undefined> {
+        if (!uri) {
+            return Promise.resolve(undefined)
+        }
+
+        const doc = this.agent.workspace.getDocument(uri.fsPath)
+        return Promise.resolve(doc?.content)
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {

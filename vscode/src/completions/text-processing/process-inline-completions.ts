@@ -1,12 +1,12 @@
-import { Position, TextDocument } from 'vscode'
+import { Position, Range, TextDocument } from 'vscode'
 import { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
+import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
+import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
-import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
-import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
 import { dropParserFields, ParsedCompletion } from './parse-completion'
@@ -142,10 +142,10 @@ export function getRangeAdjustedForOverlappingCharacters(
     item: InlineCompletionItem,
     { position, currentLineSuffix }: AdjustRangeToOverwriteOverlappingCharactersParams
 ): InlineCompletionItem['range'] {
-    const matchinSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
+    const matchingSuffixLength = getMatchingSuffixLength(item.insertText, currentLineSuffix)
 
-    if (!item.range && currentLineSuffix !== '' && matchinSuffixLength !== 0) {
-        return { start: position, end: position.translate(undefined, matchinSuffixLength) }
+    if (!item.range && currentLineSuffix !== '' && matchingSuffixLength !== 0) {
+        return new Range(position, position.translate(undefined, matchingSuffixLength))
     }
 
     return undefined

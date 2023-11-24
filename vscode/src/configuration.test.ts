@@ -23,14 +23,16 @@ describe('getConfiguration', () => {
                 scminput: false,
             },
             experimentalCommandLenses: false,
-            experimentalEditorTitleCommandIcon: false,
+            editorTitleCommandIcon: true,
             experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
-            inlineChat: true,
+            experimentalSearchPanel: false,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIDE: undefined,
             experimentalNonStop: false,
             debugEnable: false,
             debugVerbose: false,
@@ -43,6 +45,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: null,
+            autocompleteTimeouts: {},
         })
     })
 
@@ -71,9 +74,11 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.chatPredictions':
                         return true
+                    case 'cody.experimental.newSearch':
+                        return true
                     case 'cody.experimental.commandLenses':
                         return true
-                    case 'cody.experimental.editorTitleCommandIcon':
+                    case 'cody.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -105,6 +110,10 @@ describe('getConfiguration', () => {
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
+                    case 'cody.autocomplete.advanced.timeout.multiline':
+                        return undefined
+                    case 'cody.autocomplete.advanced.timeout.singleline':
+                        return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
@@ -113,6 +122,8 @@ describe('getConfiguration', () => {
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.agent.ide':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -135,13 +146,15 @@ describe('getConfiguration', () => {
             },
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
+            experimentalSearchPanel: true,
             experimentalCommandLenses: true,
-            experimentalEditorTitleCommandIcon: true,
+            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
-            inlineChat: true,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIDE: undefined,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
@@ -154,6 +167,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteTimeouts: {},
         })
     })
 })

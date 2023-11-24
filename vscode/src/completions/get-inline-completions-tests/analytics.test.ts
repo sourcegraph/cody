@@ -2,10 +2,10 @@ import { omit } from 'lodash'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
-import { CompletionEvent } from '../logger'
+import { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
-import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletions, params } from './helpers'
 
@@ -18,7 +18,7 @@ describe('[getInlineCompletions] completion event', () => {
         resetParsersCache()
     })
 
-    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionEvent>> {
+    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionBookkeepingEvent>> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
@@ -32,7 +32,7 @@ describe('[getInlineCompletions] completion event', () => {
         )
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
-        const suggestionId: CompletionLogger.SuggestionID = spy.mock.calls[0][0]
+        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0]
         const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)
 
         return omit(completionEvent, [
@@ -44,6 +44,7 @@ describe('[getInlineCompletions] completion event', () => {
             'suggestedAt',
             'suggestionAnalyticsLoggedAt',
             'suggestionLoggedAt',
+            'params.contextSummary.duration',
         ])
     }
 
@@ -55,45 +56,50 @@ describe('[getInlineCompletions] completion event', () => {
             )
 
             expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
-          {
-            "id": "stable-uuid",
-            "items": [
               {
-                "charCount": 30,
-                "lineCount": 2,
-                "lineTruncatedCount": 0,
-                "nodeTypes": {
-                  "atCursor": "{",
-                  "grandparent": "function_declaration",
-                  "greatGrandparent": "program",
-                  "parent": "statement_block",
+                "id": "stable-uuid",
+                "items": [
+                  {
+                    "charCount": 30,
+                    "lineCount": 2,
+                    "lineTruncatedCount": 0,
+                    "nodeTypes": {
+                      "atCursor": "{",
+                      "grandparent": "function_declaration",
+                      "greatGrandparent": "program",
+                      "parent": "statement_block",
+                    },
+                    "nodeTypesWithCompletion": {
+                      "atCursor": "{",
+                      "grandparent": "function_declaration",
+                      "greatGrandparent": "program",
+                      "parent": "statement_block",
+                    },
+                    "parseErrorCount": 0,
+                    "stopReason": "unit-test",
+                    "truncatedWith": "tree-sitter",
+                  },
+                ],
+                "loggedPartialAcceptedLength": 0,
+                "params": {
+                  "artificialDelay": undefined,
+                  "completionIntent": "function.body",
+                  "contextSummary": {
+                    "retrieverStats": {},
+                    "strategy": "none",
+                    "totalChars": 0,
+                  },
+                  "id": "stable-uuid",
+                  "languageId": "typescript",
+                  "multiline": true,
+                  "multilineMode": "block",
+                  "providerIdentifier": "anthropic",
+                  "providerModel": "claude-instant-1.2",
+                  "source": "Network",
+                  "triggerKind": "Automatic",
                 },
-                "nodeTypesWithCompletion": {
-                  "atCursor": "{",
-                  "grandparent": "function_declaration",
-                  "greatGrandparent": "program",
-                  "parent": "statement_block",
-                },
-                "parseErrorCount": 0,
-                "stopReason": "unit-test",
-                "truncatedWith": "tree-sitter",
-              },
-            ],
-            "loggedPartialAcceptedLength": 0,
-            "params": {
-              "completionIntent": "function.body",
-              "contextSummary": undefined,
-              "id": "stable-uuid",
-              "languageId": "typescript",
-              "multiline": true,
-              "multilineMode": "block",
-              "providerIdentifier": "anthropic",
-              "providerModel": "claude-instant-1.2",
-              "triggerKind": "Automatic",
-              "type": "inline",
-            },
-          }
-        `)
+              }
+            `)
         })
 
         it('for singleline completions', async () => {
@@ -126,16 +132,21 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
+                  "artificialDelay": undefined,
                   "completionIntent": "return_statement",
-                  "contextSummary": undefined,
+                  "contextSummary": {
+                    "retrieverStats": {},
+                    "strategy": "none",
+                    "totalChars": 0,
+                  },
                   "id": "stable-uuid",
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
+                  "source": "Network",
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)

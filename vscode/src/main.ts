@@ -4,7 +4,8 @@ import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
@@ -14,8 +15,8 @@ import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
-import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -23,6 +24,7 @@ import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
@@ -34,7 +36,9 @@ import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/S
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -155,12 +159,17 @@ const register = async (
         platform,
     }
 
+    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
+    await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
+
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
     const chatManager = new ChatManager({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
     })
+
+    disposables.push(new CodeActionProvider({ contextProvider }))
 
     // Register tree views
     disposables.push(
@@ -176,6 +185,17 @@ const register = async (
         })
     )
 
+    if (symfRunner) {
+        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        searchViewProvider.initialize()
+        disposables.push(searchViewProvider)
+        disposables.push(
+            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+    }
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener((authStatus: AuthStatus) => {
         void chatManager.syncAuthStatus(authStatus)
@@ -185,6 +205,7 @@ const register = async (
                     symfRunner.setSourcegraphAuth(authStatus.endpoint, token)
                 })
                 .catch(() => {})
+            workspaceActionsOnConfigChange(editor.getWorkspaceRootUri(), authStatus.endpoint)
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
@@ -203,6 +224,7 @@ const register = async (
         args: {
             document?: vscode.TextDocument
             instruction?: string
+            intent?: FixupIntent
             range?: vscode.Range
             insertMode?: boolean
         } = {},
@@ -220,8 +242,8 @@ const register = async (
             return
         }
 
-        const task = args.instruction?.replace(/^\/edit/, '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode, source)
+        const task = args.instruction?.trim()
+            ? fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -304,6 +326,7 @@ const register = async (
                 args: {
                     range?: vscode.Range
                     instruction?: string
+                    intent?: FixupIntent
                     document?: vscode.TextDocument
                     insertMode?: boolean
                 },
@@ -338,6 +361,12 @@ const register = async (
             return result
         }),
         // Commands
+        vscode.commands.registerCommand('cody.chat.restart', async () => {
+            await chatManager.clearAndRestartSession()
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
+        }),
+        // TODO remove cody.interactive.clear when we remove the old chat
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatManager.clearAndRestartSession()
             await chatManager.setWebviewView('chat')
@@ -504,18 +533,14 @@ const register = async (
                     completionsProvider.dispose()
                 }
 
-                completionsProvider = await createInlineCompletionItemProvider(
-                    {
-                        config,
-                        client: codeCompletionsClient,
-                        statusBar,
-                        contextProvider,
-                        authProvider,
-                        triggerNotice: notice => chatManager.triggerNotice(notice),
-                    },
-                    context,
-                    platform
-                )
+                completionsProvider = await createInlineCompletionItemProvider({
+                    config,
+                    client: codeCompletionsClient,
+                    statusBar,
+                    authProvider,
+                    triggerNotice: notice => chatManager.triggerNotice(notice),
+                    createBfgRetriever: platform.createBfgRetriever,
+                })
             })
             .catch(error => {
                 console.error('Error creating inline completion item provider:', error)

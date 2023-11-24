@@ -9,10 +9,10 @@ import * as rimraf from 'rimraf'
 import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
+import { bfgIndexingPromise, BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
+import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { BfgContextFetcher } from '../../../vscode/src/graph/bfg/BfgContextFetcher'
-import { Agent, initializeVscodeExtension } from '../agent'
-import { MessageHandler } from '../jsonrpc-alias'
+import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
 const exec = util.promisify(child_process.exec)
@@ -26,7 +26,7 @@ const testFile = path.join('src', 'main.ts')
 const gitdir = path.join(dir, '.git')
 const shouldCreateGitDir = !fs.existsSync(gitdir)
 
-describe('BfgContextFetcher', async () => {
+describe('BfgRetriever', async () => {
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         // The test runs successfully without these environment variables. We
         // only have this check enabled for now to skip running BFG tests in CI.
@@ -39,7 +39,7 @@ describe('BfgContextFetcher', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        initializeVscodeExtension()
+        await initializeVscodeExtension(vscode.Uri.file(process.cwd()))
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
@@ -54,43 +54,67 @@ describe('BfgContextFetcher', async () => {
     afterAll(async () => {
         if (shouldCreateGitDir) {
             await rimraf.rimraf(gitdir)
-            // rimraf.rimrafSync(tmpDir)
         }
     })
 
-    const agent = new Agent()
-
-    const debugHandler = new MessageHandler()
-    debugHandler.registerNotification('debug/message', params => console.log(`${params.channel}: ${params.message}`))
-    debugHandler.messageEncoder.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(debugHandler.messageDecoder)
+    const rootUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
+    vscode_shim.addGitRepository(rootUri, 'asdf')
+    const agent = await newEmbeddedAgentClient({
+        name: 'BfgContextFetcher',
+        version: '0.1.0',
+        workspaceRootUri: rootUri.toString(),
+    })
+    const client = agent.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
     const content = await fspromises.readFile(filePath, 'utf8')
     const CURSOR = '/*CURSOR*/'
     it('returns non-empty context', async () => {
-        const gitdirUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
         if (bfgCratePath) {
             const bfgBinary = path.join(bfgCratePath, '..', '..', 'target', 'debug', 'bfg')
-            vscode_shim.customConfiguration['cody.experimental.bfg.path'] = bfgBinary
+            vscode_shim.setConnectionConfig({
+                accessToken: '',
+                serverEndpoint: '',
+                customHeaders: {},
+                customConfiguration: { 'cody.experimental.bfg.path': bfgBinary },
+            })
         }
         const extensionContext: Partial<vscode.ExtensionContext> = {
+            subscriptions: [],
             globalStorageUri: vscode.Uri.from({ scheme: 'file', path: tmpDir }),
         }
-        agent.workspace.addDocument({
+        client.notify('textDocument/didOpen', {
             filePath,
             content: content.replace(CURSOR, ''),
         })
 
-        const bfg = new BfgContextFetcher(extensionContext as vscode.ExtensionContext, () => gitdirUri)
+        const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext)
 
-        const doc = agent.workspace.agentTextDocument({ filePath })
-        assert(doc.getText().length > 0)
+        await bfgIndexingPromise
+
+        const document = agent.workspace.agentTextDocument({ filePath })
+        assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)
-        const position = doc.positionAt(offset)
+        const position = document.positionAt(offset)
+        const docContext = getCurrentDocContext({ document, position, maxPrefixLength: 10_000, maxSuffixLength: 1_000 })
         const maxChars = 1_000
+        const maxMs = 100
 
-        expect(await bfg.getContextAtPosition(doc, position, maxChars, undefined)).toHaveLength(2)
+        const actual = await bfg.retrieve({ document, position, docContext, hints: { maxChars, maxMs } })
+        actual.sort((a, b) => a.content.localeCompare(b.content))
+
+        expect(actual).toMatchInlineSnapshot([
+            {
+                content: 'function distance(a: Point, b: Point): number  { ... }',
+                fileName: 'src/Point.ts',
+                symbol: 'scip-ctags . . . src/`Point.ts`/distance().',
+            },
+            {
+                content: 'interface Point {\n    x: number\n    y: number\n}',
+                fileName: 'src/Point.ts',
+                symbol: 'scip-ctags . . . src/`Point.ts`/Point#',
+            },
+        ])
     })
 })

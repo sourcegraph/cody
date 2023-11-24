@@ -1,6 +1,6 @@
 import detectIndent from 'detect-indent'
 
-import { getLanguageConfig } from '../language'
+import { getLanguageConfig } from '../../tree-sitter/language'
 
 import { getEditorTabSize, indentation, shouldIncludeClosingLine } from './utils'
 

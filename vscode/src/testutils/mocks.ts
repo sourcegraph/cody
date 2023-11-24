@@ -375,7 +375,6 @@ export class Selection extends Range {
 
     /**
      * Create a selection from four coordinates.
-     *
      * @param anchorLine A zero-based line value.
      * @param anchorCharacter A zero-based character value.
      * @param activeLine A zero-based line value.
@@ -651,6 +650,9 @@ export const vsCodeMocks = {
         onDidChangeActiveTextEditor() {},
         createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
     },
+    commands: {
+        registerCommand: () => ({ dispose: () => {} }),
+    },
     workspace: {
         fs: workspaceFs,
         getConfiguration() {
@@ -691,6 +693,8 @@ export const vsCodeMocks = {
     SymbolKind,
     FoldingRange,
     FoldingRangeKind,
+    CodeActionKind,
+    DiagnosticSeverity,
 } as const
 
 export enum UIKind {

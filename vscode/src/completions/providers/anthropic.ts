@@ -185,14 +185,12 @@ export class AnthropicProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        if (!this.options.disableStreamingTruncation) {
-                            const processedCompletion = this.postProcess(incompleteResponse.completion)
-                            const completion = canUsePartialCompletion(processedCompletion, this.options)
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
+                        const completion = canUsePartialCompletion(processedCompletion, this.options)
 
-                            if (completion) {
-                                resolve({ ...completion, stopReason: 'streaming-truncation' })
-                                abortController.abort()
-                            }
+                        if (completion) {
+                            resolve({ ...completion, stopReason: 'streaming-truncation' })
+                            abortController.abort()
                         }
                     },
                     abortController.signal
@@ -252,7 +250,6 @@ export function createProviderConfig({
             return new AnthropicProvider(options, { maxContextTokens, model: definedModel, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
-        enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
         model: definedModel,
     }

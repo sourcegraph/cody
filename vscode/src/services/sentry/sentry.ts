@@ -10,7 +10,7 @@ import {
     NetworkError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { extensionDetails } from '../telemetry'
+import { getExtensionDetails } from '../telemetry'
 
 export * from '@sentry/core'
 export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
@@ -18,7 +18,7 @@ export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.inges
 export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof browserInit>[0]>
 
 export abstract class SentryService {
-    constructor(protected config: Pick<Configuration, 'serverEndpoint' | 'isRunningInsideAgent'>) {
+    constructor(protected config: Pick<Configuration, 'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'>) {
         this.prepareReconfigure()
     }
 
@@ -30,12 +30,16 @@ export abstract class SentryService {
     private prepareReconfigure(): void {
         try {
             const isProd = process.env.NODE_ENV === 'production'
+
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
+            if (!isSentryEnabled) {
+                return
+            }
 
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
-                release: extensionDetails.version,
+                release: getExtensionDetails(this.config).version,
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'
@@ -48,7 +52,7 @@ export abstract class SentryService {
                 // Only send errors when connected to dotcom in the production build.
                 beforeSend: (event, hint) => {
                     if (
-                        (isProd || isSentryEnabled) &&
+                        isProd &&
                         isDotCom(this.config.serverEndpoint) &&
                         shouldErrorBeReported(hint.originalException)
                     ) {

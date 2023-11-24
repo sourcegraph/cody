@@ -1,0 +1,62 @@
+.container {
+    padding: 8px 10px 5px 12px;
+    border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
+}
+
+svg {
+    opacity: 0.8;
+}
+
+.provider {
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+vscode-dropdown {
+    border-radius: 2px;
+    border: none;
+    background: none;
+}
+
+vscode-dropdown:focus, vscode-dropdown:focus-visible, vscode-dropdown:focus-within,
+vscode-dropdown:focus::part(listbox), vscode-dropdown:focus-visible::part(listbox), vscode-dropdown:focus-within::part(listbox) {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+vscode-dropdown::part(indicator) {
+    margin-inline-start: 6px;
+    opacity: 0.8;
+}
+
+vscode-dropdown[disabled] {
+    opacity: 0.6;
+}
+
+vscode-dropdown[disabled]::part(indicator) {
+    display: none;
+}
+
+vscode-dropdown[disabled]::part(control), vscode-dropdown[disabled]::part(listbox) {
+    cursor: default;
+}
+
+vscode-dropdown::part(listbox) {
+    width: auto;
+    border-radius: 2px;
+    padding: 2px;
+    background-color: var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background));
+}
+
+.selected-value {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+vscode-option::part(content) {
+    padding: 6px 12px 6px 8px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
