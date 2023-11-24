@@ -243,11 +243,11 @@ export class ChatPanelProvider extends MessageProvider {
         const allowedModels = getChatModelsForWebview(endpoint)
         const models = this.chatModel
             ? allowedModels.map(model => {
-                return {
-                    ...model,
-                    default: model.model === this.chatModel,
-                }
-            })
+                  return {
+                      ...model,
+                      default: model.model === this.chatModel,
+                  }
+              })
             : allowedModels
 
         void this.webview?.postMessage({
