@@ -22,7 +22,7 @@ export async function getFileContextFiles(
         return []
     }
 
-    const excludesPattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules}**'
+    const excludesPattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
 
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     const uris = await vscode.workspace.findFiles('', excludesPattern, undefined, token)

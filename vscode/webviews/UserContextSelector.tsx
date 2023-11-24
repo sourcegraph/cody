@@ -29,17 +29,25 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return null
     }
 
+    // TODO(toolmantim): Would be nicer to have a Search data type to use
+    // instead of recreating string regex logic
+
+    let headingTitle
+    if (formInput.endsWith('@')) {
+        headingTitle = 'Search for a file to include, or type # to search symbols..'
+    } else if (formInput.endsWith('@#')) {
+        headingTitle = 'Search for a symbol to include...'
+    } else if (formInput.match(/@[^ #]+$/)) {
+        headingTitle = contextSelection?.length ? 'Search for a file to include...' : 'No matches found'
+    } else if (formInput.match(/@#[^ ]+$/)) {
+        headingTitle = contextSelection?.length ? 'Search for a symbol to include...' : 'No matches found'
+    }
+
     return (
         <div className={classNames(styles.container)}>
-            {contextSelection?.length === 0 || contextSelection?.find(context => context.editorTab) ? (
+            {headingTitle ? (
                 <div className={classNames(styles.headingContainer)}>
-                    <h3 className={styles.heading}>
-                        {!formInput.endsWith('@') && !formInput.endsWith('@#')
-                            ? 'No matches found'
-                            : formInput.endsWith('#')
-                            ? 'Search for a symbol to include...'
-                            : 'Search for a file to include, or # to search symbols...'}
-                    </h3>
+                    <h3 className={styles.heading}>{headingTitle}</h3>
                 </div>
             ) : null}
 

@@ -1,4 +1,3 @@
-import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -298,6 +297,8 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async handleContextFiles(query: string): Promise<void> {
+        // TODO(toolmantim): add debounce
+        
         if (!query.length) {
             const tabs = getOpenTabsContextFile()
             await this.webview?.postMessage({
@@ -307,38 +308,36 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             return
         }
 
-        const debouncedContextFilesQuery = debounce(async (query: string): Promise<void> => {
-            if (this.contextFilesQueryCancellation) {
-                // this.contextFilesQueryCancellation.cancel()
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                await this.webview?.postMessage({
+                    type: 'userContextFiles',
+                    context: symbolResults,
+                })
+            } else {
+                const cancellation = new vscode.CancellationTokenSource()
+                const fileResults = await getFileContextFiles(
+                    query,
+                    MAX_RESULTS,
+                    cancellation.token
+                )
+                await this.webview?.postMessage({
+                    type: 'userContextFiles',
+                    context: fileResults,
+                })
+                // Cancel any previous search request after we update the UI
+                // to avoid a flash of empty results as you type
+                this.contextFilesQueryCancellation?.cancel()
+                this.contextFilesQueryCancellation = cancellation
             }
-            this.contextFilesQueryCancellation = new vscode.CancellationTokenSource()
-
-            try {
-                const MAX_RESULTS = 20
-                if (query.startsWith('#')) {
-                    const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
-                    await this.webview?.postMessage({
-                        type: 'userContextFiles',
-                        context: symbolResults,
-                    })
-                } else {
-                    const fileResults = await getFileContextFiles(
-                        query,
-                        MAX_RESULTS,
-                        this.contextFilesQueryCancellation.token
-                    )
-                    await this.webview?.postMessage({
-                        type: 'userContextFiles',
-                        context: fileResults,
-                    })
-                }
-            } catch (error) {
-                // Handle or log the error as appropriate
-                console.error('Error retrieving context files:', error)
-            }
-        }, 100)
-
-        await debouncedContextFilesQuery(query)
+        } catch (error) {
+            // Handle or log the error as appropriate
+            console.error('Error retrieving context files:', error)
+        }
     }
 
     /**
