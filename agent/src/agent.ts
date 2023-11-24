@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
+import { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
@@ -92,20 +93,8 @@ export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHan
         const serverHandler = new MessageHandler()
         const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
         args.push('jsonrpc')
-        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false' } })
-        child.stderr.on('data', chunk => {
-            console.error(`------agent stderr------\n${chunk}\n------------------------`)
-        })
-        child.on('disconnect', () => reject())
-        child.on('close', () => reject())
-        child.on('error', error => reject(error))
-        child.on('exit', code => {
-            serverHandler.exit()
-            reject(code)
-        })
-        child.stderr.pipe(process.stderr)
-        child.stdout.pipe(serverHandler.messageDecoder)
-        serverHandler.messageEncoder.pipe(child.stdin)
+        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
+        serverHandler.connectProcess(child, reject)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
         })
@@ -170,7 +159,7 @@ export class Agent extends MessageHandler {
         },
     ])
 
-    constructor() {
+    constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
@@ -211,7 +200,13 @@ export class Agent extends MessageHandler {
         })
         this.registerNotification('initialized', () => {})
 
-        this.registerRequest('shutdown', () => Promise.resolve(null))
+        this.registerRequest('shutdown', async () => {
+            if (this?.params?.polly) {
+                this.params.polly.disconnectFrom('node-http')
+                await this.params.polly.stop()
+            }
+            return null
+        })
 
         this.registerNotification('exit', () => {
             process.exit(0)
