@@ -6,7 +6,7 @@ import { test as base, expect, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { run, sendTestInfo } from '../fixtures/mock-server'
+import { resetLoggedEvents, run, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
@@ -59,21 +59,26 @@ export const test = base
 
             const page = await app.firstWindow()
 
-            await run(async () => {
-                // Bring the cody sidebar to the foreground
-                await page.click('[aria-label="Cody"]')
-                // Ensure that we remove the hover from the activity icon
-                await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
-                // Wait for Cody to become activated
-                // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
-                // the signed-in and signed-out cases
-                await new Promise(resolve => setTimeout(resolve, 500))
+            // Bring the cody sidebar to the foreground
+            await page.click('[aria-label="Cody"]')
+            // Ensure that we remove the hover from the activity icon
+            await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
+            // Wait for Cody to become activated
+            // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
+            // the signed-in and signed-out cases
+            await new Promise(resolve => setTimeout(resolve, 500))
 
+            await run(async () => {
                 // Ensure we're signed out.
                 if (await page.isVisible('[aria-label="User Settings"]')) {
                     await signOut(page)
                 }
 
+                // The code above may record log events which we don't want showing up in the test. Wait a short
+                // period for any pending log events to be flushed to the server, and then clear them before
+                // starting the test.
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                resetLoggedEvents()
                 await use(page)
             })
 
