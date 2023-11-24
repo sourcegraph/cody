@@ -15,6 +15,7 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/tele
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { activate } from '../../vscode/src/extension.node'
+import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
@@ -27,7 +28,10 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
+export function initializeVscodeExtension(
+    workspaceRoot: vscode.Uri,
+    extensionConfiguration?: ExtensionConfiguration
+): void {
     const paths = envPaths('Cody')
     activate({
         asAbsolutePath(relativePath) {
@@ -43,7 +47,16 @@ export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
         extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
         globalState: {
             keys: () => [],
-            get: () => undefined,
+            get: key => {
+                switch (key) {
+                    case localStorage.ANONYMOUS_USER_ID_KEY:
+                        // cant use vscode_shim.connectionConfig here as this is queried for in extension activation
+                        // and vscode_shim.connectionConfig is set after extension activation.
+                        return extensionConfiguration?.anonymousUserID
+                    default:
+                        return undefined
+                }
+            },
             update: (key, value) => Promise.resolve(),
             setKeysForSync: keys => {},
         },
@@ -169,7 +182,7 @@ export class Agent extends MessageHandler {
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            initializeVscodeExtension(this.workspace.workspaceRootUri)
+            initializeVscodeExtension(this.workspace.workspaceRootUri, clientInfo.extensionConfiguration)
 
             // Register client info
             this.clientInfo = clientInfo
@@ -318,18 +331,35 @@ export class Agent extends MessageHandler {
                     },
                     token
                 )
-                const items: AutocompleteItem[] =
-                    result === null
-                        ? []
-                        : result.items.flatMap(({ insertText, range }) =>
-                              typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
-                          )
 
-                return { items, completionEvent: (result as any)?.completionEvent }
+                const items: AutocompleteItem[] =
+                    result?.items.flatMap(({ insertText, range, id }) =>
+                        typeof insertText === 'string' && range !== undefined ? [{ id, insertText, range }] : []
+                    ) ?? []
+
+                return { items, completionEvent: result?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
                 return Promise.reject(error)
             }
+        })
+
+        this.registerNotification('autocomplete/completionAccepted', async completionID => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const provider = await vscode_shim.completionProvider()
+            provider.handleDidAcceptCompletionItem(completionID)
+        })
+
+        this.registerNotification('autocomplete/completionSuggested', async completionID => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const provider = await vscode_shim.completionProvider()
+            provider.unstable_handleDidShowCompletionItem(completionID)
         })
 
         this.registerRequest('graphql/currentUserId', async () => {
@@ -449,6 +479,7 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
+
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),

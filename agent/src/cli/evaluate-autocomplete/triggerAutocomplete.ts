@@ -5,11 +5,15 @@ import { AgentTextDocument } from '../../AgentTextDocument'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { AutocompleteResult } from '../../protocol-alias'
 
-import { AutocompleteDocument } from './AutocompleteDocument'
+import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { EvaluationDocument } from './EvaluationDocument'
+import { testTypecheck } from './testTypecheck'
 
 export interface AutocompleteParameters {
     client: MessageHandler
-    document: AutocompleteDocument
+    document: EvaluationDocument
+
+    options: EvaluateAutocompleteOptions
 
     range: vscode.Range
     modifiedContent: string
@@ -56,10 +60,10 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                 item.range.end.character
             )
         )
-        const completion = item.insertText
+        const resultTypechecks = await testTypecheck(parameters, item)
         const patches: string[] = []
         let hasNonInsertPatch = false
-        for (const [sx, ex, text] of calcPatch(original, completion)) {
+        for (const [sx, ex, text] of calcPatch(original, item.insertText)) {
             if (sx !== ex) {
                 hasNonInsertPatch = true
                 continue
@@ -70,15 +74,26 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
             document.pushItem({
                 resultText: item.insertText,
                 range,
+                resultTypechecks,
                 resultNonInsertPatch: true,
                 event: result.completionEvent,
             })
         } else if (patches.length > 0) {
             const text = patches.join('')
             if (text === removedContent) {
-                document.pushItem({ range, resultExact: true, event: result.completionEvent })
+                document.pushItem({
+                    range,
+                    resultExact: true,
+                    event: result.completionEvent,
+                    resultTypechecks,
+                })
             } else {
-                document.pushItem({ range, resultText: text, event: result.completionEvent })
+                document.pushItem({
+                    range,
+                    resultText: text,
+                    event: result.completionEvent,
+                    resultTypechecks,
+                })
             }
         }
     }

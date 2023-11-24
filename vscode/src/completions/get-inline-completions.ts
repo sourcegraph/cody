@@ -185,7 +185,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Do not trigger when the last character is a closing symbol
-    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
+    if (triggerKind !== TriggerKind.Manual && /[);\]}]$/.test(currentLinePrefix.trim())) {
         return null
     }
 

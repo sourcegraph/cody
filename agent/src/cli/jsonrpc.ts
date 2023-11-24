@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command, Option } from 'commander'
 
 import { Agent } from '../agent'
 
@@ -6,6 +6,12 @@ export const jsonrpcCommand = new Command('jsonrpc')
     .description(
         'Interact with the Agent using JSON-RPC via stdout/stdin. ' +
             'This is the subcommand that is used by Cody clients like the JetBrains and Neovim plugins.'
+    )
+    .addOption(
+        new Option(
+            '--testing-directory <path>',
+            'Path to the directory where network traffic is recorded or replayed from. This option should only be used in testing environments.'
+        ).env('TESTING_DIRECTORY')
     )
     .action(() => {
         process.stderr.write('Starting Cody Agent...\n')

@@ -45,10 +45,10 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
         const instruction = await this.getCodeActionInstruction(document.getText(range), diagnostics)
-        const source = 'code-action'
+        const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range, intent: 'fix' satisfies FixupIntent }, source],
+            arguments: [{ instruction, range, intent: 'fix' satisfies FixupIntent, document }, source],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
