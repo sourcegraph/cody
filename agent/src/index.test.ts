@@ -63,6 +63,11 @@ const clients: { name: string; clientInfo: ClientInfo }[] = [
     },
 ]
 
+const cwd = process.cwd()
+const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
+const recordingDirectory = path.join(agentDir, 'recordings')
+const agentScript = path.join(agentDir, 'dist', 'index.js')
+
 describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo }) => {
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
         it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
@@ -72,7 +77,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { stdio: 'inherit' })
-    const recordingDirectory = path.join(__dirname, '..', 'recordings')
+
     if (process.env.CODY_RECORDING_MODE?.includes('record')) {
         console.log('Recording mode enabled. Validating that you are authenticated to sourcegraph.com')
         execSync('src login', { stdio: 'inherit' })
@@ -82,8 +87,9 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
             'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
         )
     }
-    const agentProcess = spawn('node', [path.join(__dirname, '..', 'dist', 'index.js'), 'jsonrpc'], {
+    const agentProcess = spawn('node', [agentScript, 'jsonrpc'], {
         stdio: 'pipe',
+        cwd: agentDir,
         env: {
             CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
             CODY_RECORDING_DIRECTORY: recordingDirectory,
@@ -121,7 +127,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
 
     it('lists recipes correctly', async () => {
         const recipes = await client.listRecipes()
-        assert.equal(9, recipes.length)
+        assert.equal(9, recipes.length, JSON.stringify(recipes))
     })
 
     it('returns non-empty autocomplete', async () => {
@@ -137,7 +143,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
             position: { line: 1, character: 3 },
             triggerKind: 'Invoke',
         })
-        assert(completions.items.length > 0)
+        assert(completions.items.length > 0, 'Completions should not be empty')
     }, 10_000)
 
     const streamingChatMessages = new Promise<void>((resolve, reject) => {
