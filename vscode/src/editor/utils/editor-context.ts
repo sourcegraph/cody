@@ -99,14 +99,7 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 }
 
 export function getOpenTabsContextFile(): ContextFile[] {
-    return getOpenTabsUris()?.map(uri => createContextFileFromUri(
-        uri,
-        'user',
-        'file',
-        undefined,
-        undefined,
-        true
-    ))
+    return getOpenTabsUris()?.map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined, true))
 }
 
 function createContextFileFromUri(
@@ -126,7 +119,7 @@ function createContextFileFromUri(
         type,
         source,
         kind,
-        editorTab
+        editorTab,
     }
 }
 

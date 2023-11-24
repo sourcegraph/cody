@@ -42,6 +42,18 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                     </h3>
                 </div>
             ) : null}
+
+            {/* VS Code has no API for whether symbols are loading or
+                unavailable, so we take a guess: there should be some symbols
+                that exist for any given one or two letters, and if not, we give
+                them some help to debug the situation themselves */}
+            {formInput.match(/@#.{1,2}$/) && !contextSelection?.length ? (
+                <p className={styles.emptySymbolSearchTip}>
+                    <i className="codicon codicon-info" /> VS Code may require you to open files and install language
+                    extensions for accurate results
+                </p>
+            ) : null}
+
             {contextSelection?.length ? (
                 <div className={classNames(styles.selectionsContainer)}>
                     {contextSelection?.map((match, i) => {
@@ -72,7 +84,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                         )
                     })}
                 </div>
-            ) : null }
+            ) : null}
         </div>
     )
 }
