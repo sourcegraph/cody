@@ -1,14 +1,15 @@
 package com.sourcegraph.cody.agent
 
 data class ExtensionConfiguration(
-    var serverEndpoint: String,
-    var proxy: String? = null,
-    var accessToken: String,
-    var customHeaders: Map<String, String> = emptyMap(),
-    var autocompleteAdvancedProvider: String? = null,
-    var autocompleteAdvancedServerEndpoint: String? = null,
-    var autocompleteAdvancedAccessToken: String? = null,
-    var debug: Boolean? = false,
-    var verboseDebug: Boolean? = false,
-    var codebase: String? = null
+    val anonymousUserID: String?,
+    val serverEndpoint: String,
+    val proxy: String? = null,
+    val accessToken: String,
+    val customHeaders: Map<String, String> = emptyMap(),
+    val autocompleteAdvancedProvider: String? = null,
+    val autocompleteAdvancedServerEndpoint: String? = null,
+    val autocompleteAdvancedAccessToken: String? = null,
+    val debug: Boolean? = false,
+    val verboseDebug: Boolean? = false,
+    val codebase: String? = null
 )

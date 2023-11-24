@@ -34,24 +34,20 @@ object ConfigUtil {
     val serverAuth = ServerAuthLoader.loadServerAuth(project)
     val codyAgentCodebase = CodyAgent.getClient(project).codebase
 
-    val config =
-        ExtensionConfiguration(
-            serverEndpoint = serverAuth.instanceUrl,
-            accessToken = serverAuth.accessToken,
-            customHeaders = getCustomRequestHeadersAsMap(serverAuth.customRequestHeaders),
-            proxy = UserLevelConfig.getProxy(),
-            autocompleteAdvancedServerEndpoint = UserLevelConfig.getAutocompleteServerEndpoint(),
-            autocompleteAdvancedAccessToken = UserLevelConfig.getAutocompleteAccessToken(),
-            debug = isCodyDebugEnabled(),
-            verboseDebug = isCodyVerboseDebugEnabled(),
-            codebase = codyAgentCodebase?.getUrl(),
-        )
-
-    UserLevelConfig.getAutocompleteProviderType()?.let {
-      config.autocompleteAdvancedProvider = it.vscodeSettingString()
-    }
-
-    return config
+    return ExtensionConfiguration(
+        anonymousUserID = CodyApplicationSettings.instance.anonymousUserId,
+        serverEndpoint = serverAuth.instanceUrl,
+        accessToken = serverAuth.accessToken,
+        customHeaders = getCustomRequestHeadersAsMap(serverAuth.customRequestHeaders),
+        proxy = UserLevelConfig.getProxy(),
+        autocompleteAdvancedServerEndpoint = UserLevelConfig.getAutocompleteServerEndpoint(),
+        autocompleteAdvancedAccessToken = UserLevelConfig.getAutocompleteAccessToken(),
+        autocompleteAdvancedProvider =
+            UserLevelConfig.getAutocompleteProviderType()?.vscodeSettingString(),
+        debug = isCodyDebugEnabled(),
+        verboseDebug = isCodyVerboseDebugEnabled(),
+        codebase = codyAgentCodebase?.getUrl(),
+    )
   }
 
   @JvmStatic
