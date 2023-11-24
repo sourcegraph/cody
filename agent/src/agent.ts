@@ -15,7 +15,6 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { extensionActivated as codyExtensionActivated } from '../../vscode/src/extension.common'
 import { activate } from '../../vscode/src/extension.node'
 import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
@@ -87,7 +86,6 @@ export async function initializeVscodeExtension(
         storagePath: {} as any,
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     })
-    await codyExtensionActivated
 }
 
 export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHandler> {
