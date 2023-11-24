@@ -256,9 +256,6 @@ const register = async (
     }
 
     const statusBar = createStatusBar()
-    if (TestSupport.instance) {
-        TestSupport.instance.statusBar = statusBar
-    }
 
     disposables.push(
         // Inline Chat Provider

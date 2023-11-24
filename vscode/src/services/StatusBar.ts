@@ -13,15 +13,9 @@ interface StatusBarError {
 }
 
 export interface CodyStatusBar {
-    errors: CodyStatusBarError[]
     dispose(): void
     startLoading(label: string): () => void
     addError(error: StatusBarError): () => void
-}
-
-export interface CodyStatusBarError {
-    error: StatusBarError
-    createdAt: number
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -175,7 +169,7 @@ export function createStatusBar(): CodyStatusBar {
     // TODO: Ensure the label is always set to the right value too.
     let openLoadingLeases = 0
 
-    const errors: CodyStatusBarError[] = []
+    const errors: { error: StatusBarError; createdAt: number }[] = []
 
     function rerender(): void {
         if (openLoadingLeases > 0) {
@@ -222,7 +216,6 @@ export function createStatusBar(): CodyStatusBar {
                 rerender()
             }
         },
-        errors,
         addError(error: StatusBarError) {
             const errorObject = { error, createdAt: Date.now() }
             errors.push(errorObject)
