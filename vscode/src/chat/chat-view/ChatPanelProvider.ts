@@ -288,11 +288,6 @@ export class ChatPanelProvider extends MessageProvider {
         }
 
         const debouncedContextFilesQuery = debounce(async (query: string): Promise<void> => {
-            if (this.contextFilesQueryCancellation) {
-                this.contextFilesQueryCancellation.cancel()
-            }
-            this.contextFilesQueryCancellation = new vscode.CancellationTokenSource()
-
             try {
                 const MAX_RESULTS = 20
                 if (query.startsWith('#')) {
@@ -302,15 +297,20 @@ export class ChatPanelProvider extends MessageProvider {
                         context: symbolResults,
                     })
                 } else {
+                    const cancellation = new vscode.CancellationTokenSource()
                     const fileResults = await getFileContextFiles(
                         query,
                         MAX_RESULTS,
-                        this.contextFilesQueryCancellation.token
+                        cancellation.token
                     )
                     await this.webview?.postMessage({
                         type: 'userContextFiles',
                         context: fileResults,
                     })
+                    // cancel any previous search request after we update the UI
+                    // to avoid a flash of empty results as you type
+                    this.contextFilesQueryCancellation?.cancel()
+                    this.contextFilesQueryCancellation = cancellation
                 }
             } catch (error) {
                 // Handle or log the error as appropriate

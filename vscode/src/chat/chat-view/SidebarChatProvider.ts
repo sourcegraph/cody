@@ -309,7 +309,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
 
         const debouncedContextFilesQuery = debounce(async (query: string): Promise<void> => {
             if (this.contextFilesQueryCancellation) {
-                this.contextFilesQueryCancellation.cancel()
+                // this.contextFilesQueryCancellation.cancel()
             }
             this.contextFilesQueryCancellation = new vscode.CancellationTokenSource()
 
