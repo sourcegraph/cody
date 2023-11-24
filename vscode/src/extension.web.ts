@@ -46,7 +46,7 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
  * Activation entrypoint for the VS Code extension when running in VS Code Web (https://vscode.dev,
  * https://github.dev, etc.).
  */
-export function activate(context: vscode.ExtensionContext): ExtensionApi {
+export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
     return activateCommon(context, {
         createCompletionsClient: (...args) => new SourcegraphBrowserCompletionsClient(...args),
         createSentryService: (...args) => new WebSentryService(...args),

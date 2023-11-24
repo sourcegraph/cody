@@ -4,12 +4,12 @@ import { Memento } from 'vscode'
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 export class LocalStorage {
+    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     // Bump this on storage changes so we don't handle incorrectly formatted data
-    protected KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    protected ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    protected LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    protected CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
-    protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
+    protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
+    protected readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    protected readonly KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
