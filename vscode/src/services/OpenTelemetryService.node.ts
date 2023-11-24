@@ -7,7 +7,7 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { extensionDetails } from './telemetry'
+import { extensionVersion } from './telemetry'
 
 export class OpenTelemetryService {
     private sdk: NodeSDK | undefined
@@ -42,7 +42,7 @@ export class OpenTelemetryService {
         this.sdk = new NodeSDK({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
-                [SemanticResourceAttributes.SERVICE_VERSION]: extensionDetails.version,
+                [SemanticResourceAttributes.SERVICE_VERSION]: extensionVersion,
             }),
             instrumentations: [new HttpInstrumentation()],
             traceExporter: new OTLPTraceExporter({
