@@ -48,22 +48,17 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
-    private disableNetworkCache = false
     private disableRecyclingOfPreviousRequests = false
 
     constructor(
         {
-            disableNetworkCache = false,
             disableRecyclingOfPreviousRequests = false,
         }: {
-            disableNetworkCache?: boolean
             disableRecyclingOfPreviousRequests?: boolean
         } = {
-            disableNetworkCache: false,
             disableRecyclingOfPreviousRequests: false,
         }
     ) {
-        this.disableNetworkCache = disableNetworkCache
         this.disableRecyclingOfPreviousRequests = disableRecyclingOfPreviousRequests
     }
 
@@ -73,11 +68,9 @@ export class RequestManager {
         context: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<RequestManagerResult> {
-        if (!this.disableNetworkCache) {
-            const cachedCompletions = this.cache.get(params)
-            if (cachedCompletions) {
-                return { completions: cachedCompletions, cacheHit: 'hit' }
-            }
+        const cachedCompletions = this.cache.get(params)
+        if (cachedCompletions) {
+            return { completions: cachedCompletions, cacheHit: 'hit' }
         }
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
@@ -100,10 +93,8 @@ export class RequestManager {
                 return processInlineCompletions(completions, params)
             })
             .then(processedCompletions => {
-                if (!this.disableNetworkCache) {
-                    // Cache even if the request was aborted or already fulfilled.
-                    this.cache.set(params, processedCompletions)
-                }
+                // Cache even if the request was aborted or already fulfilled.
+                this.cache.set(params, processedCompletions)
 
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.

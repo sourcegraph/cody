@@ -115,7 +115,6 @@ export interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    disableNetworkCache?: boolean
     disableRecyclingOfPreviousRequests?: boolean
 }
 
@@ -153,7 +152,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     constructor({
         completeSuggestWidgetSelection = true,
-        disableNetworkCache = false,
         disableRecyclingOfPreviousRequests = false,
         tracer = null,
         createBfgRetriever,
@@ -162,7 +160,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config = {
             ...config,
             completeSuggestWidgetSelection,
-            disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
@@ -184,7 +181,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         this.requestManager = new RequestManager({
-            disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
         this.contextMixer = new ContextMixer(

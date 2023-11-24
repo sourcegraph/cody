@@ -56,7 +56,6 @@ export async function createInlineCompletionItemProvider({
         bfgContextFlag,
         bfgMixedContextFlag,
         localMixedContextFlag,
-        disableNetworkCache,
         disableRecyclingOfPreviousRequests,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
@@ -64,7 +63,6 @@ export async function createInlineCompletionItemProvider({
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfg),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
     ])
     if (providerConfig) {
@@ -89,7 +87,6 @@ export async function createInlineCompletionItemProvider({
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
