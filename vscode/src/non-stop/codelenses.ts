@@ -14,6 +14,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
+        case CodyTaskState.inserting: {
+            const title = getInsertingLens(codeLensRange)
+            return [title]
+        }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
             return [title]
@@ -55,6 +59,15 @@ function getWorkingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Cody is working...',
+        command: 'cody.focus',
+    }
+    return lens
+}
+
+function getInsertingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Inserting...',
         command: 'cody.focus',
     }
     return lens

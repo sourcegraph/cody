@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
+import { ExecuteEditArguments } from '../edit/execute'
 import { getActiveEditor } from '../editor/active-editor'
 
 import { FixupTask } from './FixupTask'
@@ -50,12 +51,13 @@ export class FixupTypingUI {
         )
     }
 
-    public async show(): Promise<FixupTask | null> {
+    public async show(args: ExecuteEditArguments): Promise<FixupTask | null> {
         const editor = getActiveEditor()
-        if (!editor) {
+        const document = args.document || editor?.document
+        const range = args.range || editor?.selection
+        if (!document || !range) {
             return null
         }
-        const range = editor.selection
         const instruction = (await this.getInstructionFromQuickPick())?.trim()
         if (!instruction) {
             return null
@@ -68,10 +70,10 @@ export class FixupTypingUI {
             return null
         }
 
-        const task = this.taskFactory.createTask(editor.document.uri, instruction, range)
+        const task = this.taskFactory.createTask(document.uri, instruction, range, args.intent, args.insertMode)
 
         // Return focus to the editor
-        void vscode.window.showTextDocument(editor.document)
+        void vscode.window.showTextDocument(document)
 
         return task
     }

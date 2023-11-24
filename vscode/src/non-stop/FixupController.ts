@@ -5,6 +5,7 @@ import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
+import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -143,8 +144,8 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    public async promptUserForTask(): Promise<FixupTask | null> {
-        const task = await this.typingUI.show()
+    public async promptUserForTask(args: ExecuteEditArguments): Promise<FixupTask | null> {
+        const task = await this.typingUI.show(args)
         return task
     }
 
@@ -267,6 +268,139 @@ export class FixupController
         )
     }
 
+    private async insertTask(task: FixupTask): Promise<void> {
+        if (task.state !== CodyTaskState.inserting) {
+            return
+        }
+
+        let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
+        let document: vscode.TextDocument
+
+        const visibleEditor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri === task.fixupFile.uri
+        )
+
+        if (visibleEditor) {
+            document = visibleEditor.document
+            edit = visibleEditor.edit.bind(this)
+        } else {
+            // Perform the edit in the background
+            document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+            edit = new vscode.WorkspaceEdit()
+        }
+
+        // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
+        const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+
+        const fullReplacement = task.replacement
+        if (fullReplacement) {
+            let editOk: boolean
+            // TODO: What if the selectionRange updates? we would need to update activeInsertionLine too
+            const replacementRange = new vscode.Range(task.selectionRange.start.line, 0, task.insertionLine, 0)
+
+            if (edit instanceof vscode.WorkspaceEdit) {
+                edit.replace(document.uri, replacementRange, fullReplacement)
+                editOk = await vscode.workspace.applyEdit(edit)
+            } else {
+                editOk = await edit(editBuilder => {
+                    editBuilder.replace(replacementRange, fullReplacement)
+                }, applyEditOptions)
+            }
+
+            if (!editOk) {
+                telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+
+                // TODO: Try to recover, for example by respinning
+                void vscode.window.showWarningMessage('edit did not apply')
+                return
+            }
+
+            const replacementText = task.replacement
+            if (replacementText) {
+                const codeCount = countCode(replacementText.trim())
+                const source = task.source
+
+                telemetryService.log(
+                    'CodyVSCodeExtension:fixup:applied',
+                    { ...codeCount, source },
+                    { hasV2Event: true }
+                )
+                telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+                    metadata: {
+                        lineCount: codeCount.lineCount,
+                        charCount: codeCount.charCount,
+                    },
+                    privateMetadata: {
+                        // TODO: generate numeric ID representing source so that it
+                        // can be included in metadata for default export.
+                        source,
+                    },
+                })
+
+                // Add the missing undo stop after this change.
+                // Now when the user hits 'undo', the entire format and edit will be undone at once
+                const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+                this.setTaskState(task, CodyTaskState.formatting)
+                await new Promise((resolve, reject) => {
+                    task.formattingResolver = resolve
+                    this.formatEdit(
+                        visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                        document,
+                        task,
+                        formatEditOptions
+                    )
+                        .then(resolve)
+                        .catch(reject)
+                        .finally(() => (task.formattingResolver = null))
+                })
+            }
+
+            // TODO: See if we can discard a FixupFile now.
+            this.setTaskState(task, CodyTaskState.applied)
+
+            // Inform the user about the change if it happened in the background
+            // TODO: This will show a new notification for each unique file name.
+            // Consider only ever showing 1 notification that opens a UI to display all fixups.
+            if (!visibleEditor) {
+                const showChangesButton = 'Show Changes'
+                const result = await vscode.window.showInformationMessage(
+                    `Edit applied to ${task.fixupFile.fileName}`,
+                    showChangesButton
+                )
+                if (result === showChangesButton) {
+                    const editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+                    editor.revealRange(task.selectionRange)
+                }
+            }
+        }
+
+        const partialReplacement = task.inProgressReplacement
+        // Immediately apply the text when done
+        if (!partialReplacement || !partialReplacement.endsWith('\n')) {
+            // Incoming text is not suitable to apply, do nothing
+            return
+        }
+
+        const latestFullLine = partialReplacement.split('\n').at(-2)
+        if (!latestFullLine) {
+            return
+        }
+
+        const insertionPoint = new vscode.Position(task.insertionLine, 0)
+        task.insertionLine++
+
+        // Insert updated text at selection range
+        if (edit instanceof vscode.WorkspaceEdit) {
+            edit.insert(document.uri, insertionPoint, `${latestFullLine}\n`)
+            await vscode.workspace.applyEdit(edit)
+        } else {
+            await edit(editBuilder => {
+                editBuilder.insert(insertionPoint, `${latestFullLine}\n`)
+            }, applyEditOptions)
+        }
+    }
+
     private async applyTask(task: FixupTask): Promise<void> {
         if (task.state !== CodyTaskState.applying) {
             return
@@ -300,9 +434,7 @@ export class FixupController
 
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-        const editOk = task.insertMode
-            ? await this.insertEdit(edit, document, task, applyEditOptions)
-            : await this.replaceEdit(edit, diff, task, applyEditOptions)
+        const editOk = await this.replaceEdit(edit, diff, task, applyEditOptions)
 
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
@@ -401,38 +533,6 @@ export class FixupController
                     diffEdit.text
                 )
             }
-        }, options)
-    }
-
-    // Insert edit returned by Cody at task selection range
-    private async insertEdit(
-        edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
-        document: vscode.TextDocument,
-        task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
-    ): Promise<boolean> {
-        logDebug('FixupController:edit', 'inserting')
-        const text = task.replacement
-        const range = task.selectionRange
-        if (!text) {
-            return false
-        }
-
-        // add correct indentation based on first non empty character index
-        const nonEmptyStartIndex = document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
-        // add indentation to each line
-        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
-        // join text with new lines, and then remove everything after the last new line if it only contains white spaces
-        const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
-
-        // Insert updated text at selection range
-        if (edit instanceof vscode.WorkspaceEdit) {
-            edit.insert(document.uri, range.start, replacementText)
-            return vscode.workspace.applyEdit(edit)
-        }
-
-        return edit(editBuilder => {
-            editBuilder.insert(range.start, replacementText)
         }, options)
     }
 
@@ -661,6 +761,35 @@ export class FixupController
             followingText,
             selectionRange: task.selectionRange,
         }
+    }
+
+    public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        if (task.state !== CodyTaskState.inserting) {
+            this.setTaskState(task, CodyTaskState.inserting)
+        }
+
+        if (state === 'complete') {
+            task.inProgressReplacement = undefined
+            task.replacement = text
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+                ...countCode(text),
+                source: task.source,
+            })
+            return this.insertTask(task)
+        }
+
+        if (!text.endsWith('\n') || text === task.inProgressReplacement) {
+            // Incoming text is not suitable to be applied, do nothing
+            return
+        }
+
+        task.inProgressReplacement = text
+        return this.insertTask(task)
     }
 
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {

@@ -38,7 +38,8 @@ export interface FixupTaskFactory {
         documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
-        intent?: FixupIntent
+        intent?: FixupIntent,
+        insertMode?: boolean
     ): FixupTask
 }
 
