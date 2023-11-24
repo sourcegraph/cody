@@ -3,7 +3,7 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { ACCOUNT_UPGRADE_URL } from '../chat/protocol'
@@ -108,6 +108,7 @@ const suggestedCompletionItemIDs = new LRUCache<CompletionItemID, AutocompleteIt
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     authProvider: AuthProvider
+    featureFlagProvider: FeatureFlagProvider
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
     triggerNotice: ((notice: { key: string }) => void) | null
@@ -241,8 +242,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
         const [languageLatencyPromise, userLatencyPromise] = [
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
         ]
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
@@ -581,7 +582,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
             const canUpgrade =
                 this.config.authProvider.getAuthStatus().userCanUpgrade &&
-                (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyProDecGA))
+                (await this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyProDecGA))
             let errorTitle: string
             let errorUrl: string
             if (canUpgrade) {

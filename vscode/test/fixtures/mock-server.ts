@@ -88,22 +88,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     })
 
     let isFirstCompletion = true
-    let isCompletionRateLimited = false
     app.post('/.api/completions/code', (req, res) => {
-        if (isCompletionRateLimited) {
-            res.setHeader('retry-after', new Date().toString())
-            res.setHeader('x-ratelimit-limit', '12345')
-            res.sendStatus(429)
-            return
-        }
-
         const response = isFirstCompletion ? responses.firstCode : responses.code
         isFirstCompletion = false
         res.send(JSON.stringify(response))
-    })
-    app.post('/.api/completions/code/triggerRateLimit', (req, res) => {
-        isCompletionRateLimited = true
-        res.sendStatus(200)
     })
 
     app.post('/.api/graphql', (req, res) => {

@@ -16,6 +16,8 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -714,3 +716,21 @@ export enum ProgressLocation {
     Window = 10,
     Notification = 15,
 }
+
+export class MockFeatureFlagProvider extends FeatureFlagProvider {
+    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
+        super(null as any)
+    }
+
+    public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
+        return Promise.resolve(this.enabledFlags.has(flag))
+    }
+    public syncAuthStatus(): void {
+        return
+    }
+}
+
+export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
+export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(
+    new Set<FeatureFlag>([FeatureFlag.CodyProDecGA])
+)

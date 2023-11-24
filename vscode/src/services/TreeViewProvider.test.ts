@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-
 import { newAuthStatus } from '../chat/utils'
-import { vsCodeMocks } from '../testutils/mocks'
+import { decGaMockFeatureFlagProvider, emptyMockFeatureFlagProvider, vsCodeMocks } from '../testutils/mocks'
 
 import { TreeViewProvider } from './TreeViewProvider'
 
@@ -20,9 +18,6 @@ describe('TreeViewProvider', () => {
     const codyEnabled = true
     const validUser = true
     const endpoint = 'https://example.com'
-
-    const emptyFeatureFlags = new DummyFeatureFlagProvider(false)
-    const decGaFeatureFlags = new DummyFeatureFlagProvider(true)
 
     let tree: TreeViewProvider
 
@@ -60,19 +55,19 @@ describe('TreeViewProvider', () => {
 
     describe('Cody Pro Upgrade', () => {
         it('is shown when GA + user can upgrade', async () => {
-            tree = new TreeViewProvider('support', decGaFeatureFlags)
+            tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true })
             expect(findTreeItem('Upgrade')).not.toBeUndefined()
         })
 
         it('is not shown when user cannot upgrade', async () => {
-            tree = new TreeViewProvider('support', decGaFeatureFlags)
+            tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: false })
             expect(findTreeItem('Upgrade')).toBeUndefined()
         })
 
         it('is not shown when not GA', async () => {
-            tree = new TreeViewProvider('support', emptyFeatureFlags)
+            tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true })
             expect(findTreeItem('Upgrade')).toBeUndefined()
         })
@@ -80,28 +75,15 @@ describe('TreeViewProvider', () => {
 
     describe('Usage', () => {
         it('is shown when GA', async () => {
-            tree = new TreeViewProvider('support', decGaFeatureFlags)
+            tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true })
             expect(findTreeItem('Usage')).not.toBeUndefined()
         })
 
         it('is not shown when not GA', async () => {
-            tree = new TreeViewProvider('support', emptyFeatureFlags)
+            tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true })
             expect(findTreeItem('Usage')).toBeUndefined()
         })
     })
 })
-
-class DummyFeatureFlagProvider extends FeatureFlagProvider {
-    constructor(private readonly ga: boolean) {
-        super(null as any)
-    }
-
-    public evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        return Promise.resolve(flagName === FeatureFlag.CodyProDecGA && this.ga)
-    }
-    public syncAuthStatus(): void {
-        return
-    }
-}
