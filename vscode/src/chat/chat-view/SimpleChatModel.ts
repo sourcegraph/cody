@@ -6,9 +6,12 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { contextItemsToContextFiles } from './helpers'
 
-// TODO(beyang): note that context is only associated with human messages (like it is in the underyling LLM)
 export interface MessageWithContext {
     message: Message
+
+    // The additional context items attached to this message (which should not
+    // duplicate any previous context items in the transcript). This should
+    // only be defined on human messages.
     newContextUsed?: ContextItem[]
 }
 
