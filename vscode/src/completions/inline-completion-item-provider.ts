@@ -582,7 +582,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
             const canUpgrade =
                 this.config.authProvider.getAuthStatus().userCanUpgrade &&
-                (await this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyProDecGA))
+                (await this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro))
             let errorTitle: string
             let errorUrl: string
             if (canUpgrade) {

@@ -731,6 +731,4 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 }
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(
-    new Set<FeatureFlag>([FeatureFlag.CodyProDecGA])
-)
+export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
