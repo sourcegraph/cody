@@ -4,6 +4,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
@@ -19,6 +20,8 @@ import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string
 
+export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails'>
+
 export interface IChatPanelProvider extends vscode.Disposable {
     executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
     executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
@@ -29,7 +32,8 @@ export interface IChatPanelProvider extends vscode.Disposable {
     webview?: ChatViewProviderWebview
     sessionID: string
     setWebviewView(view: View): Promise<void>
-    restoreSession(chatID: string): Promise<void>
+    restoreSession(chatIDj: string): Promise<void>
+    updateConfiguration?: (config: Config) => void
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
@@ -83,6 +87,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                     provider.dispose()
                     this.panelProvidersMap.delete(id)
                 }
+                provider.updateConfiguration?.(options.contextProvider.config)
             })
 
             this.useSimpleChatPanelProvider = options.contextProvider.config.experimentalSimpleChatContext

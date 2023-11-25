@@ -10,7 +10,6 @@ import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/in
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
@@ -40,11 +39,9 @@ import { embeddingsUrlScheme, relativeFileUrl, stripContextWrapper } from './cha
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
-import { IChatPanelProvider } from './ChatPanelsManager'
+import { Config, IChatPanelProvider } from './ChatPanelsManager'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
-
-type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails'>
 
 interface SimpleChatPanelProviderOptions {
     config: Config
@@ -534,6 +531,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         return result.text
+    }
+
+    public updateConfiguration(newConfig: Config): void {
+        this.config = newConfig
     }
 }
 
