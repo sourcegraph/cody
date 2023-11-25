@@ -1,4 +1,5 @@
 import { debounce } from 'lodash'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
@@ -7,6 +8,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
+import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
@@ -30,6 +32,7 @@ import {
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
+import { countGeneratedCode } from '../utils'
 
 import { contextItemsToContextFiles, embeddingsUrlScheme, relativeFileUrl, stripContextWrapper } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
@@ -358,16 +361,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         this.chatModel.setNewContextUsed(newContextUsed)
 
-        // TODO: send warnings to client
-        console.error('# warnings', warnings)
+        if (warnings.length > 0) {
+            void this.webview?.postMessage({
+                type: 'errors',
+                errors: 'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' '),
+            })
+        }
 
         void this.updateViewTranscript()
 
         let lastContent = ''
         const typewriter = new Typewriter({
             update: content => {
-                // TODO(beyang): set display text as content? does reformatting affect future response quality?
-                // const displayText = reformatBotMessage(content, '')
                 lastContent = content
                 void this.updateViewTranscript(
                     toViewMessage({
@@ -383,10 +388,27 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.chatModel.addBotMessage({ text: lastContent })
                 void this.saveSession()
                 void this.updateViewTranscript()
+
+                // Count code generated from response
+                const codeCount = countGeneratedCode(lastContent)
+                if (codeCount?.charCount) {
+                    // const metadata = lastInteraction?.getHumanMessage().metadata
+                    telemetryService.log(
+                        'CodyVSCodeExtension:chatResponse:hasCode',
+                        { ...codeCount, requestID },
+                        { hasV2Event: true }
+                    )
+                    telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
+                        metadata: {
+                            ...codeCount,
+                        },
+                    })
+                }
             },
         })
 
         this.cancelInProgressCompletion()
+        const requestID = uuid.v4()
         this.completionCanceller = this.chatClient.chat(
             promptMessages,
             {
@@ -399,7 +421,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     typewriter.stop()
 
                     // TODO(beyang): guardrails annotate attributions
-                    // TODO(beyang): count lines of generated code
                 },
                 onError: error => {
                     this.completionCanceller = undefined
@@ -474,10 +495,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 }
 
 function toViewMessage(mwc: MessageWithContext): ChatMessage {
+    let displayText = mwc.message.text
+    if (mwc.message.speaker === 'assistant' && mwc.message.text) {
+        displayText = reformatBotMessage(mwc.message.text, '')
+    }
     return {
         ...mwc.message,
-
-        displayText: mwc.message.text,
+        displayText,
         contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
     }
 }
