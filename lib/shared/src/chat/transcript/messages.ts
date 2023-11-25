@@ -3,7 +3,7 @@ import { Message } from '../../sourcegraph-api'
 import { CodyDefaultCommands } from '../prompts'
 import { RecipeID } from '../recipes/recipe'
 
-import { SimpleChatModelJSON, TranscriptJSON } from '.'
+import { TranscriptJSON } from '.'
 
 export interface ChatButton {
     label: string
@@ -40,10 +40,6 @@ export interface UserLocalHistory {
 
 export interface ChatHistory {
     [chatID: string]: TranscriptJSON
-}
-
-export interface ChatHistory2 {
-    [chatID: string]: SimpleChatModelJSON
 }
 
 export interface OldChatHistory {
