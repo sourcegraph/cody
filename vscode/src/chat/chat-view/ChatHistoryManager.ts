@@ -1,6 +1,8 @@
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { localStorage } from '../../services/LocalStorageProvider'
+
 export class ChatHistoryManager {
     public getChat(sessionID: string): TranscriptJSON | null {
         const chatHistory = localStorage.getChatHistory()
