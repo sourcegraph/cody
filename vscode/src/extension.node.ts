@@ -14,8 +14,8 @@ import { activate as activateCommon } from './extension.common'
 import { VSCODE_WEB_RECIPES } from './extension.web'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
+import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { SymfRunner } from './local-context/symf'
-import { SymfContextFetcher } from './local-context/symf-context-fetcher'
 import { getRgPath } from './rg'
 import { NodeSentryService } from './services/sentry/sentry.node'
 
@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     return activateCommon(context, {
         getRgPath,
         createCommandsController: (...args) => new CommandsController(...args),
-        createLocalKeywordContextFetcher: (...args) => new SymfContextFetcher(...args),
+        createLocalKeywordContextFetcher: (...args) => new LocalKeywordContextFetcher(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createSymfRunner: (...args) => new SymfRunner(...args),
