@@ -99,7 +99,7 @@ class DummyFeatureFlagProvider extends FeatureFlagProvider {
     }
 
     public evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        return Promise.resolve(flagName === FeatureFlag.CodyPro && this.ga)
+        return Promise.resolve(flagName === FeatureFlag.CodyProDecGA && this.ga)
     }
     public syncAuthStatus(): void {
         return

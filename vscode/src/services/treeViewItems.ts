@@ -67,13 +67,13 @@ const supportItems: CodySidebarTreeItem[] = [
         icon: 'zap',
         command: { command: 'vscode.open', args: [ACCOUNT_UPGRADE_URL.href] },
         requireUpgradeAvailable: true,
-        requireFeature: FeatureFlag.CodyPro,
+        requireFeature: FeatureFlag.CodyProDecGA,
     },
     {
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'vscode.open', args: [ACCOUNT_USAGE_URL.href] },
-        requireFeature: FeatureFlag.CodyPro,
+        requireFeature: FeatureFlag.CodyProDecGA,
     },
     {
         title: 'Settings',
