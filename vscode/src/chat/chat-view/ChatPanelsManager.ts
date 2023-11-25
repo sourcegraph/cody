@@ -77,7 +77,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                 return
             }
 
-            // Remove provider  that doesn't have webPanel anymore
+            // Remove provider that doesn't have webPanel anymore
             this.panelProvidersMap.forEach((provider, id) => {
                 if (!provider.webviewPanel) {
                     provider.dispose()
@@ -126,6 +126,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         if (this.useSimpleChatPanelProvider) {
             const provider = new SimpleChatPanelProvider({
                 ...this.options,
+                config: this.options.contextProvider.config,
                 chatClient: this.chatClient,
                 embeddingsClient: this.embeddingsSearch,
             })

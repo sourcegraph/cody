@@ -1,13 +1,20 @@
 import * as vscode from 'vscode'
 
+import { ChatMessage } from '@sourcegraph/cody-shared'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { contextItemsToContextFiles } from './chat-helpers'
 
 export interface MessageWithContext {
     message: Message
+
+    // If set, this should be used as the display text for the message.
+    // Do not access directly, prefer using the getDisplayText function
+    // instead.
+    displayText?: string
 
     // The additional context items attached to this message (which should not
     // duplicate any previous context items in the transcript). This should
@@ -49,11 +56,12 @@ export class SimpleChatModel {
         })
     }
 
-    public addBotMessage(message: Omit<Message, 'speaker'>): void {
+    public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
         if (this.messagesWithContext.at(-1)?.message.speaker === 'assistant') {
             throw new Error('Cannot add a bot message after a bot message')
         }
         this.messagesWithContext.push({
+            displayText,
             message: {
                 speaker: 'assistant',
                 ...message,
@@ -96,12 +104,12 @@ export class SimpleChatModel {
                 humanMessage: {
                     speaker: humanMessage.message.speaker,
                     text: humanMessage.message.text,
-                    displayText: humanMessage.message.text,
+                    displayText: getDisplayText(humanMessage),
                 },
                 assistantMessage: {
                     speaker: botMessage.message.speaker,
                     text: botMessage.message.text,
-                    displayText: botMessage.message.text,
+                    displayText: getDisplayText(botMessage),
                 },
                 usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
 
@@ -130,4 +138,23 @@ export function contextItemId(contextItem: ContextItem): string {
     return contextItem.range
         ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
         : contextItem.uri.toString()
+}
+
+export function toViewMessage(mwc: MessageWithContext): ChatMessage {
+    const displayText = getDisplayText(mwc)
+    return {
+        ...mwc.message,
+        displayText,
+        contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
+    }
+}
+
+function getDisplayText(mwc: MessageWithContext): string | undefined {
+    if (mwc.displayText) {
+        return mwc.displayText
+    }
+    if (mwc.message.speaker === 'assistant' && mwc.message.text) {
+        return reformatBotMessage(mwc.message.text, '')
+    }
+    return mwc.message.text
 }
