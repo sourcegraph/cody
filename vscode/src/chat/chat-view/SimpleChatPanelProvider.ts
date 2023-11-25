@@ -31,7 +31,6 @@ import {
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
-import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
@@ -251,7 +250,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
             default:
-                this.handleError('Invalid request type from Webview Panel', 'system')
+                this.handleError('Invalid request type from Webview Panel')
         }
     }
 
@@ -355,96 +354,97 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         userContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
+        try {
+            const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
 
-        const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
-        const contextProvider = new ContextProvider(
-            userContextItems,
-            this.editor,
-            addEnhancedContext ? this.embeddingsClient : null
-        )
-        const {
-            prompt: promptMessages,
-            warnings,
-            newContextUsed,
-        } = await this.prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
+            const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
+            const contextProvider = new ContextProvider(
+                userContextItems,
+                this.editor,
+                addEnhancedContext ? this.embeddingsClient : null
+            )
+            const {
+                prompt: promptMessages,
+                warnings,
+                newContextUsed,
+            } = await this.prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
 
-        this.chatModel.setNewContextUsed(newContextUsed)
+            this.chatModel.setNewContextUsed(newContextUsed)
 
-        if (warnings.length > 0) {
-            void this.webview?.postMessage({
-                type: 'errors',
-                errors: 'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' '),
+            if (warnings.length > 0) {
+                const warningMsg =
+                    'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' ')
+                this.handleError(warningMsg)
+            }
+
+            void this.updateViewTranscript()
+
+            let lastContent = ''
+            const typewriter = new Typewriter({
+                update: content => {
+                    lastContent = content
+                    void this.updateViewTranscript(
+                        toViewMessage({
+                            message: {
+                                speaker: 'assistant',
+                                text: content,
+                            },
+                            newContextUsed,
+                        })
+                    )
+                },
+                close: () => {
+                    this.guardrailsAnnotateAttributions(reformatBotMessage(lastContent, ''))
+                        .then(displayText => {
+                            this.chatModel.addBotMessage({ text: lastContent }, displayText)
+                            void this.saveSession()
+                            void this.updateViewTranscript()
+
+                            // Count code generated from response
+                            const codeCount = countGeneratedCode(lastContent)
+                            if (codeCount?.charCount) {
+                                // const metadata = lastInteraction?.getHumanMessage().metadata
+                                telemetryService.log(
+                                    'CodyVSCodeExtension:chatResponse:hasCode',
+                                    { ...codeCount, requestID },
+                                    { hasV2Event: true }
+                                )
+                                telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
+                                    metadata: {
+                                        ...codeCount,
+                                    },
+                                })
+                            }
+                        })
+                        .catch(error => {
+                            throw error
+                        })
+                },
             })
+
+            this.cancelInProgressCompletion()
+            const requestID = uuid.v4()
+            this.completionCanceller = this.chatClient.chat(
+                promptMessages,
+                {
+                    onChange: (content: string) => {
+                        typewriter.update(content)
+                    },
+                    onComplete: () => {
+                        this.completionCanceller = undefined
+                        typewriter.close()
+                        typewriter.stop()
+                    },
+                    onError: error => {
+                        this.completionCanceller = undefined
+                        this.handleError(error)
+                    },
+                },
+                { model: this.chatModel.modelID }
+            )
+        } catch (error) {
+            this.handleError(`${error}`)
         }
-
-        void this.updateViewTranscript()
-
-        let lastContent = ''
-        const typewriter = new Typewriter({
-            update: content => {
-                lastContent = content
-                void this.updateViewTranscript(
-                    toViewMessage({
-                        message: {
-                            speaker: 'assistant',
-                            text: content,
-                        },
-                        newContextUsed,
-                    })
-                )
-            },
-            close: () => {
-                this.guardrailsAnnotateAttributions(reformatBotMessage(lastContent, ''))
-                    .then(displayText => {
-                        this.chatModel.addBotMessage({ text: lastContent }, displayText)
-                        void this.saveSession()
-                        void this.updateViewTranscript()
-
-                        // Count code generated from response
-                        const codeCount = countGeneratedCode(lastContent)
-                        if (codeCount?.charCount) {
-                            // const metadata = lastInteraction?.getHumanMessage().metadata
-                            telemetryService.log(
-                                'CodyVSCodeExtension:chatResponse:hasCode',
-                                { ...codeCount, requestID },
-                                { hasV2Event: true }
-                            )
-                            telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
-                                metadata: {
-                                    ...codeCount,
-                                },
-                            })
-                        }
-                    })
-                    .catch(error => {
-                        throw error
-                    })
-            },
-        })
-
-        this.cancelInProgressCompletion()
-        const requestID = uuid.v4()
-        this.completionCanceller = this.chatClient.chat(
-            promptMessages,
-            {
-                onChange: (content: string) => {
-                    typewriter.update(content)
-                },
-                onComplete: () => {
-                    this.completionCanceller = undefined
-                    typewriter.close()
-                    typewriter.stop()
-                },
-                onError: error => {
-                    this.completionCanceller = undefined
-                    console.error('TODO: handle error', error)
-                },
-            },
-            { model: this.chatModel.modelID }
-        )
-
-        return Promise.resolve()
     }
 
     // Handler to fetch context files candidates
@@ -496,14 +496,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string, type: MessageErrorType): void {
-        if (type === 'transcript') {
-            // TODO(beyang): record error in chat model
-            // this.transcript.addErrorAsAssistantResponse(errorMsg)
-            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
-            return
-        }
-
+    public handleError(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
@@ -572,7 +565,7 @@ class ContextProvider implements IContextProvider {
 
         return [
             {
-                text: selection.selectedText, // TODO: maybe go to nearest line boundaries?
+                text: selection.selectedText,
                 uri: selection.fileUri || vscode.Uri.file(selection.fileName),
                 range,
             },
@@ -588,7 +581,6 @@ class ContextProvider implements IContextProvider {
             {
                 text: visible.content,
                 uri: visible.fileUri || vscode.Uri.file(visible.fileName),
-                // TODO(beyang): include range
             },
         ]
     }
@@ -601,8 +593,7 @@ class ContextProvider implements IContextProvider {
         const contextItems: ContextItem[] = []
         const embeddings = await this.embeddingsClient.search(text, 2, 2)
         if (isError(embeddings)) {
-            // TODO(beyang): throw and catch this error
-            console.error('# TODO: embeddings error', embeddings)
+            throw new Error(`Error retrieving embeddings: ${embeddings}`)
         } else {
             for (const codeResult of embeddings.codeResults) {
                 const uri = vscode.Uri.from({
