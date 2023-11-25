@@ -6,17 +6,10 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
-import {
-    isMarkdownFile,
-    populateCodeContextTemplate,
-    populateMarkdownContextTemplate,
-} from '@sourcegraph/cody-shared/src/prompt/templates'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -25,7 +18,6 @@ import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -40,10 +32,12 @@ import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 
 import { contextItemsToContextFiles, embeddingsUrlScheme, relativeFileUrl, stripContextWrapper } from './chat-helpers'
+import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { IChatPanelProvider } from './ChatPanelsManager'
-import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
+import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
+import { ContextItem, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
@@ -52,30 +46,6 @@ interface SimpleChatPanelProviderOptions {
     embeddingsClient: EmbeddingsSearch | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
-}
-
-class ChatHistoryManager {
-    public getChat(sessionID: string): TranscriptJSON | null {
-        const chatHistory = localStorage.getChatHistory()
-        if (!chatHistory) {
-            return null
-        }
-
-        return chatHistory.chat[sessionID]
-    }
-
-    public async saveChat(chat: TranscriptJSON): Promise<UserLocalHistory> {
-        let history = localStorage.getChatHistory()
-        if (!history) {
-            history = {
-                chat: {},
-                input: [],
-            }
-        }
-        history.chat[chat.id] = chat
-        await localStorage.setChatHistory(history)
-        return history
-    }
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -97,8 +67,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private history = new ChatHistoryManager()
 
-    // TODO(beyang): we need awkwardly need to keep this in sync with chatModel.sessionID
-    // It is necessary to satisfy the IChatPanelProvider interface
+    private prompter: IPrompter = new DefaultPrompter()
+
+    // HACK: for now, we need awkwardly need to keep this in sync with chatModel.sessionID,
+    // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
 
     constructor({
@@ -144,8 +116,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public clearChatHistory(): Promise<void> {
-        // TODO(beyang): this is a no-op now. This exists only to satisfy the IChatPanelProvider interface,
-        // which should be updated to remove this functionality
+        // HACK: this is a no-op now. This exists only to satisfy the IChatPanelProvider interface
+        // and can be removed once we retire the old ChatPanelProvider
         return Promise.resolve()
     }
 
@@ -174,8 +146,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public async restoreSession(sessionID: string): Promise<void> {
-        // TODO(beyang): save the current chat model
         this.cancelInProgressCompletion()
+        await this.saveSession()
 
         const oldTranscript = this.history.getChat(sessionID)
         if (!oldTranscript) {
@@ -198,7 +170,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        console.log('# onDidReceiveMessage', message.command)
         switch (message.command) {
             case 'ready':
                 // The web view is ready to receive events. We need to make sure that it has an up
@@ -324,8 +295,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
-        // TODO(beyang): seems weird to set webview here -- is authProvider shared?
-        this.authProvider.webview = panel.webview
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
@@ -355,8 +324,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async onEdit(text: string): Promise<void> {
         this.chatModel.updateLastHumanMessage({ text })
         void this.updateViewTranscript()
-        // TODO(beyang): refetch context files
-        await this.generateAssistantResponse(text)
+        await this.generateAssistantResponse()
     }
 
     private async onHumanMessageSubmitted(
@@ -367,11 +335,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     ): Promise<void> {
         this.chatModel.addHumanMessage({ text })
         void this.updateViewTranscript()
-        await this.generateAssistantResponse(text, userContextFiles, addEnhancedContext)
+        await this.generateAssistantResponse(userContextFiles, addEnhancedContext)
     }
 
     private async generateAssistantResponse(
-        text: string,
         userContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
@@ -387,7 +354,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             prompt: promptMessages,
             warnings,
             newContextUsed,
-        } = await GPT4Prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
+        } = await this.prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
 
         this.chatModel.setNewContextUsed(newContextUsed)
 
@@ -515,12 +482,6 @@ function toViewMessage(mwc: MessageWithContext): ChatMessage {
     }
 }
 
-interface IContextProvider {
-    getUserAttentionContext(): ContextItem[]
-    getEnhancedContext(query: string): Promise<ContextItem[]>
-    getUserContext(): ContextItem[]
-}
-
 class ContextProvider implements IContextProvider {
     constructor(
         private userContext: ContextItem[],
@@ -630,213 +591,6 @@ class ContextProvider implements IContextProvider {
     public getUserContext(): ContextItem[] {
         return this.userContext
     }
-}
-
-// TODO(beyang): move to separate module?
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class GPT4Prompter {
-    public static async makePrompt(
-        chat: SimpleChatModel,
-        contextProvider: ContextProvider,
-        byteLimit: number
-    ): Promise<{
-        prompt: Message[]
-        warnings: string[]
-        newContextUsed: ContextItem[]
-    }> {
-        const { reversePrompt, warnings, newContextUsed } = await this.makeReversePrompt(
-            chat,
-            contextProvider,
-            byteLimit
-        )
-        return {
-            prompt: [...reversePrompt].reverse(),
-            warnings,
-            newContextUsed,
-        }
-    }
-
-    // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
-    // an array with the most important messages (which appear most important first in the reverse-prompt.
-    //
-    // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
-    // the new context that was used in the prompt for the current message.
-    private static async makeReversePrompt(
-        chat: SimpleChatModel,
-        contextProvider: ContextProvider,
-        byteLimit: number
-    ): Promise<{
-        reversePrompt: Message[]
-        warnings: string[]
-        newContextUsed: ContextItem[]
-    }> {
-        const promptBuilder = new PromptBuilder(byteLimit)
-        const newContextUsed: ContextItem[] = []
-        const warnings: string[] = []
-
-        // Add existing transcript messages
-        const reverseTranscript: MessageWithContext[] = [...chat.getMessagesWithContext()].reverse()
-        for (let i = 0; i < reverseTranscript.length; i++) {
-            const messageWithContext = reverseTranscript[i]
-            const contextLimitReached = promptBuilder.tryAdd(messageWithContext.message)
-            if (!contextLimitReached) {
-                warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
-                return {
-                    reversePrompt: promptBuilder.reverseMessages,
-                    warnings,
-                    newContextUsed,
-                }
-            }
-        }
-
-        {
-            // Add context from new user-specified context items
-            const { limitReached, used } = promptBuilder.tryAddContext(
-                contextProvider.getUserContext(),
-                (item: ContextItem) => this.renderContextItem(item)
-            )
-            newContextUsed.push(...used)
-            if (limitReached) {
-                warnings.push('Ignored current user-specified context items due to context limit')
-                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
-            }
-        }
-
-        {
-            // Add context from previous messages
-            const { limitReached } = promptBuilder.tryAddContext(
-                reverseTranscript.flatMap((message: MessageWithContext) => message.newContextUsed || []),
-                (item: ContextItem) => this.renderContextItem(item)
-            )
-            if (limitReached) {
-                warnings.push('Ignored prior context items due to context limit')
-                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
-            }
-        }
-
-        // If not the first message, don't add additional context
-        const firstMessageWithContext = chat.getMessagesWithContext().at(0)
-        if (!firstMessageWithContext?.message.text || chat.getMessagesWithContext().length !== 1) {
-            return {
-                reversePrompt: promptBuilder.reverseMessages,
-                warnings,
-                newContextUsed,
-            }
-        }
-
-        // Add additional context from current editor or broader search
-        const additionalContextItems: ContextItem[] = []
-        if (isEditorContextRequired(firstMessageWithContext.message.text)) {
-            additionalContextItems.push(...contextProvider.getUserAttentionContext())
-        } else {
-            additionalContextItems.push(
-                ...(await contextProvider.getEnhancedContext(firstMessageWithContext.message.text))
-            )
-        }
-        const { limitReached, used } = promptBuilder.tryAddContext(additionalContextItems, (item: ContextItem) =>
-            this.renderContextItem(item)
-        )
-        newContextUsed.push(...used)
-        if (limitReached) {
-            warnings.push('Ignored additional context items due to context limit')
-        }
-
-        // console.log('# active doc uri:', vscode.window.activeTextEditor?.document.uri)
-
-        return {
-            reversePrompt: promptBuilder.reverseMessages,
-            warnings,
-            newContextUsed,
-        }
-    }
-
-    private static renderContextItem(contextItem: ContextItem): Message[] {
-        let messageText: string
-        if (isMarkdownFile(contextItem.uri.fsPath)) {
-            // TODO(beyang): pass in repo name?, make fsPath relative to repo root?
-            messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri.fsPath)
-        } else {
-            messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
-        }
-        return [
-            { speaker: 'human', text: messageText },
-            { speaker: 'assistant', text: 'Ok.' },
-        ]
-    }
-}
-
-class PromptBuilder {
-    public reverseMessages: Message[] = []
-    private bytesUsed = 0
-    private seenContext = new Set<string>()
-    constructor(private readonly byteLimit: number) {}
-    public tryAdd(message: Message): boolean {
-        // TODO: check for speaker alternation here
-
-        const msgLen = message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
-        if (this.bytesUsed + msgLen > this.byteLimit) {
-            return false
-        }
-        this.reverseMessages.push(message)
-        this.bytesUsed += msgLen
-        return true
-    }
-
-    public tryAddContext(
-        contextItems: ContextItem[],
-        renderContextItem: (contextItem: ContextItem) => Message[]
-    ): {
-        limitReached: boolean
-        used: ContextItem[]
-        ignored: ContextItem[]
-        duplicate: ContextItem[]
-    } {
-        let limitReached = false
-        const used: ContextItem[] = []
-        const ignored: ContextItem[] = []
-        const duplicate: ContextItem[] = []
-        for (const contextItem of contextItems) {
-            const id = contextItemId(contextItem)
-            if (this.seenContext.has(id)) {
-                duplicate.push(contextItem)
-                continue
-            }
-            const contextMessages = renderContextItem(contextItem).reverse()
-            const contextLen = contextMessages.reduce(
-                (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
-                0
-            )
-            if (this.bytesUsed + contextLen > this.byteLimit) {
-                ignored.push(contextItem)
-                limitReached = true
-                continue
-            }
-            this.seenContext.add(id)
-            this.reverseMessages.push(...contextMessages)
-            this.bytesUsed += contextLen
-            used.push(contextItem)
-        }
-        return {
-            limitReached,
-            used,
-            ignored,
-            duplicate,
-        }
-    }
-}
-
-const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
-
-function isEditorContextRequired(input: string): boolean | Error {
-    const inputLowerCase = input.toLowerCase()
-    // If the input matches any of the `editorRegexps` we assume that we have to include
-    // the editor context (e.g., currently open file) to the overall message context.
-    for (const regexp of editorRegexps) {
-        if (inputLowerCase.match(regexp)) {
-            return true
-        }
-    }
-    return false
 }
 
 export function contextFilesToContextItems(
