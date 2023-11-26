@@ -19,7 +19,7 @@ const meta: Meta<typeof UserContextSelectorComponent> = {
 			const [{ formInput }, updateArgs] = useArgs()
 
 			return (
-				<div style={{ position: 'relative' }}>
+				<div style={{ position: 'absolute', bottom: 100, left: 0, padding: 30 }}>
 					{formInput ? <Story /> : null }
 					<p>
 						<input placeholder="Message" value={formInput} onChange={e => updateArgs({
