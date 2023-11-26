@@ -12,15 +12,20 @@ import { evaluateGitLogStrategy } from './strategy-git-log'
 
 export interface EvaluateAutocompleteOptions {
     workspace: string
+    worktree?: string
     treeSitterGrammars: string
     queriesDirectory: string
     testCount: number
+    maxFileTestCount: number
     includeFixture: string[]
     excludeFixture: string[]
     includeWorkspace: string[]
     excludeWorkspace: string[]
     includeFilepath?: string[]
     excludeFilepath?: string[]
+    includeLanguage?: string[]
+    excludeLanguage?: string[]
+    runTestCommand?: boolean
     srcAccessToken: string
     srcEndpoint: string
 
@@ -28,8 +33,8 @@ export interface EvaluateAutocompleteOptions {
     snapshotDirectory: string
     csvPath?: string
     bfgBinary?: string
-    installCommands?: string[]
-    testCommands?: string[]
+    installCommand?: string
+    testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
 }
@@ -111,6 +116,12 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
     .description('Evaluate Cody autocomplete by running the Agent in headless mode')
     .option('--workspace <path>', 'The workspace directory where to run the autocomplete evaluation', process.cwd())
     .option('--test-count <number>', 'The number of autocomplete requests to run in this evaluation', intOption)
+    .option(
+        '--max-file-test-count <number>',
+        'The maximum number of autocomplete requests to evaluate in a single document',
+        intOption,
+        10
+    )
     .option('--evaluation-config <path>', 'Path to a JSON with configuration for this evaluation', '')
     .option(
         '--snapshot-directory <path>',
@@ -141,6 +152,18 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         []
     )
     .option(
+        '--include-language <glob>',
+        'A glob pattern to determine what language paths to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-language <glob>',
+        'A glob pattern to determine what language paths to exclude in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
         '--include-fixture <glob>',
         'A glob pattern to determine what fixtures to include in the evaluation',
         collect as any,
@@ -152,6 +175,18 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         collect as any,
         []
     )
+    .option(
+        '--include-filepath <glob>',
+        'A glob pattern to determine what files to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-filepath <glob>',
+        'A glob pattern to determine what files exclude in the evaluation',
+        collect as any,
+        []
+    )
     .addOption(new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
     .option(
         '--tree-sitter-grammars <path>',
@@ -159,6 +194,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         path.resolve(__dirname, '../../vscode/dist')
     )
     .option('--queries-directory <path>', 'Path to a directory containing tree-sitter queries')
+    .option('--run-test-command', 'If enabled, runs the test command to typecheck the generated code')
     .action(async (options: EvaluateAutocompleteOptions) => {
         const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(
@@ -171,7 +207,6 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
-    const workspace = path.normalize(options.workspace)
 
     if (!options.queriesDirectory) {
         console.error('missing required options: --queries-directory')
@@ -186,7 +221,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         process.exit(1)
     }
 
-    const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: workspace })
+    const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
     const client = await newAgentClient({
         name: 'evaluate-autocomplete',
         version: '0.1.0',
@@ -200,9 +235,9 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     })
     try {
         if (options.fixture.strategy === EvaluationStrategy.BFG) {
-            await evaluateBfgStrategy(client, options, workspace)
+            await evaluateBfgStrategy(client, options)
         } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
-            await evaluateGitLogStrategy(client, options, workspace)
+            await evaluateGitLogStrategy(client, options)
         }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)

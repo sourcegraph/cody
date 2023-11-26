@@ -237,10 +237,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [languageLatencyPromise, userLatencyPromise] = [
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
-        ]
+        const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency)
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
@@ -305,7 +302,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         const latencyFeatureFlags: LatencyFeatureFlags = {
             user: await userLatencyPromise,
-            language: await languageLatencyPromise,
         }
         const artificialDelay = getArtificialDelay(
             latencyFeatureFlags,

@@ -91,6 +91,11 @@ export interface QueryWrappers {
         start: Point,
         end?: Point
     ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: CompletionIntent }]
+    getDocumentableNode: (
+        node: SyntaxNode,
+        start: Point,
+        end?: Point
+    ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' }]
 }
 
 /**
@@ -118,6 +123,28 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             }
 
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
+        },
+        getDocumentableNode: (root, start, end) => {
+            const captures = queries.documentableNodes.compiled.captures(root, start, end)
+
+            const cursorCapture = findLast(captures, ({ node }) => {
+                return (
+                    node.startPosition.row === start.row &&
+                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                )
+            })
+
+            if (!cursorCapture) {
+                return []
+            }
+
+            return [
+                {
+                    node: cursorCapture.node,
+                    name: cursorCapture.name === 'export' ? 'documentableExport' : 'documentableNode',
+                },
+            ] as const
         },
     }
 }
