@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/react'
+import { useArgs } from '@storybook/preview-api';
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
@@ -7,11 +8,27 @@ import { UserContextSelectorComponent } from './UserContextSelector'
 const meta: Meta<typeof UserContextSelectorComponent> = {
     title: 'cody/User Context Selector',
     component: UserContextSelectorComponent,
+	args: {
+		contextSelection: [],
+		formInput: '@',
+		selected: 0
+	},
     decorators: [
 		VSCodeStoryDecorator,
-		Story => (
-			<div style={{ position: 'relative' }}><Story /></div>
-		),
+		(Story, context) => {
+			const [{ formInput }, updateArgs] = useArgs()
+
+			return (
+				<div style={{ position: 'relative' }}>
+					{formInput ? <Story /> : null }
+					<p>
+						<input placeholder="Message" value={formInput} onChange={e => updateArgs({
+							formInput: e.target.value
+						})} />
+					</p>
+				</div>
+			)
+		},
 	],
 	argTypes: {
 		onSelected: { action: 'selected' },
