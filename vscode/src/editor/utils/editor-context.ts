@@ -7,6 +7,21 @@ import { ContextFile } from '@sourcegraph/cody-shared'
 import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import _ from 'lodash'
+
+const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
+    const defaultExcludes = ['.', '*.env', '.git', 'out/', 'dist/', 'bin/', 'snap', 'node_modules', '__pycache__' ]
+    const vscodeSearchExcludes = Object.keys(vscode.workspace.getConfiguration().get('search.exclude', {}))
+    const fileExcludesPattern = `**/${[...defaultExcludes, ...vscodeSearchExcludes].join(',')}**`
+    console.log(fileExcludesPattern)
+    // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
+    return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
+}
+
+// This is expensive for large repos, so we only do it max once every 10
+// seconds. This also provides a cancellation callback, which we can use with
+// the cancellation token to discard old requests.
+const throttledFindFiles = _.throttle(findWorkspaceFiles, 10000)
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
@@ -21,21 +36,23 @@ export async function getFileContextFiles(
     if (!query.trim()) {
         return []
     }
+    token.onCancellationRequested(() => { throttledFindFiles.cancel() })
 
-    const excludesPattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
-
-    // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
-    const uris = await vscode.workspace.findFiles('', excludesPattern, undefined, token)
+    const uris = await throttledFindFiles(token)
+    if (!uris) {
+        return []
+    }
 
     const results = fuzzysort.go(query, uris, {
         key: 'path',
         limit: maxResults,
-        // Somewhere over 10k threshold is where it seems to return
-        // results that make no sense for sg/sg. VS Code’s own fuzzy finder seems to cap
-        // out much higher. To be safer and to account for longer paths from
-        // even deeper source trees we use 100k. We may want to revisit this
-        // number if we get reports of missing file results from very large
-        // repos.
+        // We add a threshold for performance as per fuzzysort’s
+        // recommendations. Testing with sg/sg path strings, somewhere over 10k
+        // threshold is where it seems to return results that make no sense. VS
+        // Code’s own fuzzy finder seems to cap out much higher. To be safer and
+        // to account for longer paths from even deeper source trees we use
+        // 100k. We may want to revisit this number if we get reports of missing
+        // file results from very large repos.
         threshold: -100000,
     })
 
@@ -49,7 +66,7 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
         return []
     }
 
-    const queryResults = await getWorkspaceSymbols(query) // doesn't support cancellation tokens
+    const queryResults = await getWorkspaceSymbols(query) // doesn't support cancellation tokens :(
 
     const relevantQueryResults = queryResults?.filter(
         symbol =>
