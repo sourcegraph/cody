@@ -10,17 +10,17 @@ import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 import _ from 'lodash'
 
 const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
-    const defaultExcludes = ['.', '*.env', '.git', 'out/', 'dist/', 'bin/', 'snap', 'node_modules', '__pycache__' ]
-    const vscodeSearchExcludes = Object.keys(vscode.workspace.getConfiguration().get('search.exclude', {}))
-    const fileExcludesPattern = `**/${[...defaultExcludes, ...vscodeSearchExcludes].join(',')}**`
-    console.log(fileExcludesPattern)
+    // TODO(toolmantim): Add support for the search.exclude option, e.g.
+    // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
+    // {}))
+    const fileExcludesPattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
 }
 
-// This is expensive for large repos, so we only do it max once every 10
-// seconds. This also provides a cancellation callback, which we can use with
-// the cancellation token to discard old requests.
+// This is expensive for large repos (e.g. Chromium), so we only do it max once
+// every 10 seconds. It also handily supports a cancellation callback to use
+// with the cancellation token to discard old requests.
 const throttledFindFiles = _.throttle(findWorkspaceFiles, 10000)
 
 /**
@@ -39,6 +39,7 @@ export async function getFileContextFiles(
     token.onCancellationRequested(() => { throttledFindFiles.cancel() })
 
     const uris = await throttledFindFiles(token)
+
     if (!uris) {
         return []
     }
