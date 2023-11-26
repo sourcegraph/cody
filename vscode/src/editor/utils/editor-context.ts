@@ -7,7 +7,7 @@ import { ContextFile } from '@sourcegraph/cody-shared'
 import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
-import _ from 'lodash'
+import { throttle } from 'lodash'
 
 const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
     // TODO(toolmantim): Add support for the search.exclude option, e.g.
@@ -21,7 +21,7 @@ const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): 
 // This is expensive for large repos (e.g. Chromium), so we only do it max once
 // every 10 seconds. It also handily supports a cancellation callback to use
 // with the cancellation token to discard old requests.
-const throttledFindFiles = _.throttle(findWorkspaceFiles, 10000)
+const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
