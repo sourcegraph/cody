@@ -11,14 +11,15 @@ export interface ActiveTextEditor {
     selectionRange?: ActiveTextEditorSelectionRange
 }
 
-export interface ActiveTextEditorPosition {
-    line: number
-    character: number
-}
-
 export interface ActiveTextEditorSelectionRange {
-    start: ActiveTextEditorPosition
-    end: ActiveTextEditorPosition
+    start: {
+        line: number
+        character: number
+    }
+    end: {
+        line: number
+        character: number
+    }
 }
 
 export interface ActiveTextEditorSelection {
@@ -39,13 +40,6 @@ export interface ActiveTextEditorDiagnostic {
     range: ActiveTextEditorSelectionRange
     text: string
     message: string
-}
-
-export interface LSPReference {
-    uri: URI
-    fileName: string
-    range: ActiveTextEditorSelectionRange
-    text: string
 }
 
 export interface ActiveTextEditorVisibleContent {
@@ -140,10 +134,6 @@ export interface Editor<
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
-    /**
-     * Get references for any symbol at the given position in the active text editor.
-     */
-    getLSPReferencesForPosition(position: ActiveTextEditorPosition): Promise<LSPReference[]>
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
 
@@ -202,10 +192,6 @@ export class NoopEditor implements Editor {
 
     public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
         return null
-    }
-
-    public getLSPReferencesForPosition(): Promise<LSPReference[]> {
-        return Promise.resolve([])
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {

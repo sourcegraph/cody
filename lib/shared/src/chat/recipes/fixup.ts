@@ -100,6 +100,11 @@ export class Fixup implements Recipe {
              * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
              */
             case 'fix':
+            /**
+             * Very narrow set of possible instructions.
+             * Fetching context is unlikely to be very helpful or optimal.
+             */
+            case 'doc': {
                 const contextMessages = []
                 if (truncatedPrecedingText.trim().length > 0) {
                     contextMessages.push(
@@ -118,6 +123,7 @@ export class Fixup implements Recipe {
                     )
                 }
                 return contextMessages
+            }
             /**
              * Broad set of possible instructions.
              * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
@@ -143,41 +149,6 @@ export class Fixup implements Recipe {
                         )
                     ),
                 ]
-            /**
-             * Very narrow set of possible instructions.
-             * Fetching context is unlikely to be very helpful or optimal.
-             * Instead, we can fetch editor specific context as we likely have a much more constrained range.
-             */
-            case 'doc':
-                const docContext = []
-                const symbolContext = await context.editor.getLSPReferencesForPosition(task.selectionRange.start)
-
-                if (symbolContext.length > 0) {
-                    docContext.push(
-                        ...symbolContext.flatMap(({ text, fileName }) => {
-                            return getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), {
-                                fileName,
-                            })
-                        })
-                    )
-                }
-                if (truncatedPrecedingText.trim().length > 0) {
-                    docContext.push(
-                        ...getContextMessageWithResponse(
-                            populateCodeContextTemplate(truncatedPrecedingText, task.fileName),
-                            task
-                        )
-                    )
-                }
-                if (truncatedFollowingText.trim().length > 0) {
-                    docContext.push(
-                        ...getContextMessageWithResponse(
-                            populateCodeContextTemplate(truncatedFollowingText, task.fileName),
-                            task
-                        )
-                    )
-                }
-                return docContext
         }
         /* eslint-enable no-case-declarations */
     }
