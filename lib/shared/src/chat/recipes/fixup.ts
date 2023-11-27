@@ -34,9 +34,12 @@ export class Fixup implements Recipe {
 
         const promptText = this.getPrompt(fixupTask)
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
+        const promptPrefix = `<${this.multiplexerTopic}>`
 
         return newInteraction({
             text: promptText,
+            assistantText: `${this.getResponsePreamble(fixupTask)}${promptPrefix}`,
+            assistantPrefix: promptPrefix,
             source: this.id,
             contextMessages: this.getContextFromIntent(fixupTask.intent, fixupTask, quarterFileContext, context),
         })
@@ -61,6 +64,14 @@ export class Fixup implements Recipe {
                     .replace('{selectedText}', task.selectedText)
                     .replace('{fileName}', task.fileName)
         }
+    }
+
+    public getResponsePreamble(task: VsCodeFixupTaskRecipeData): string {
+        if (task.precedingText.length === 0) {
+            return ''
+        }
+
+        return `<precedingText>${task.precedingText}</precedingText>`
     }
 
     private async getContextFromIntent(

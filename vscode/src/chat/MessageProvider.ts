@@ -51,11 +51,6 @@ import { countGeneratedCode } from './utils'
 const SAFETY_PROMPT_TOKENS = 100
 
 /**
- * Multiplexer topics that should not be displayed in chat view
- */
-const nonDisplayTopics = new Set(['fixup'])
-
-/**
  * The types of errors that should be handled from MessageProvider.
  * `transcript`: Errors that can be displayed directly within a chat transcript, if available.
  * `system`: Errors that should be handled differently, e.g. alerted to the user.
@@ -224,9 +219,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (lastInteraction) {
                     // remove display text from last interaction if this is a non-display topic
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    const displayText = nonDisplayTopics.has(multiplexerTopic)
-                        ? undefined
-                        : await this.guardrailsAnnotateAttributions(reformatBotMessage(text, responsePrefix))
+                    const displayText = await this.guardrailsAnnotateAttributions(
+                        reformatBotMessage(text, responsePrefix)
+                    )
                     this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
@@ -259,6 +254,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             promptMessages,
             {
                 onChange: text => {
+                    if (textConsumed === 0 && responsePrefix) {
+                        void this.multiplexer.publish(responsePrefix)
+                    }
+
                     // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                     text = text.slice(textConsumed)
                     textConsumed += text.length
