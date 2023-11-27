@@ -465,8 +465,8 @@ importers:
         version: 2.1.0
     devDependencies:
       '@google-cloud/pubsub':
-        specifier: ^3.7.3
-        version: 3.7.3
+        specifier: ^3.7.5
+        version: 3.7.5
       '@playwright/test':
         specifier: ^1.33.0
         version: 1.33.0
@@ -3866,8 +3866,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /@google-cloud/pubsub@3.7.3:
-    resolution: {integrity: sha512-ZRDC4g7tpIJ8fkAp4MiU+tDfousM/q6pXK6ytFn0cbYEdNQuWOf4wqopNYMOUJ+AIjaTbgmNw77dStOKTc9Acg==}
+  /@google-cloud/pubsub@3.7.5:
+    resolution: {integrity: sha512-4Qrry4vIToth5mqduVslltWVsyb7DR8OhnkBA3F7XiE0jgQsiuUfwp/RB2F559aXnRbwcfmjvP4jSuEaGcjrCQ==}
     engines: {node: '>=12.0.0'}
     dependencies:
       '@google-cloud/paginator': 4.0.1
@@ -6450,7 +6450,7 @@ packages:
   /@types/rimraf@3.0.2:
     resolution: {integrity: sha512-F3OznnSLAUxFrCEu/L5PY8+ny8DtcFRjx7fZZ9bycvXRi3KPTRS9HOitGZwvPg0juRhXFWIeKX58cnX5YqLohQ==}
     dependencies:
-      '@types/glob': 7.2.0
+      '@types/glob': 8.1.0
       '@types/node': 20.4.0
     dev: true
 
@@ -9138,6 +9138,7 @@ packages:
   /escodegen@1.14.3:
     resolution: {integrity: sha512-qFcX0XJkdg+PB3xjZZG/wKSuT1PnQWx57+TVSjIMmILd2yC/6ByYElPwJnslDsuWuSAp4AwJGumarAAmJch5Kw==}
     engines: {node: '>=4.0'}
+    hasBin: true
     dependencies:
       esprima: 4.0.1
       estraverse: 4.3.0
@@ -9525,15 +9526,6 @@ packages:
       - supports-color
     dev: true
 
-  /espree@9.5.2:
-    resolution: {integrity: sha512-7OASN1Wma5fum5SrNhFMAMJxOUAbhyfQ8dQ//PJaJbNw0URTPWqIghHWt1MmAANKhHZIYOHruW4Kw4ruUWOdGw==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-    dependencies:
-      acorn: 8.10.0
-      acorn-jsx: 5.3.2(acorn@8.10.0)
-      eslint-visitor-keys: 3.4.3
-    dev: true
-
   /espree@9.6.1:
     resolution: {integrity: sha512-oruZaFkjorTpF32kDSI5/75ViwGeZginGGy2NoOSg3Q9bnwlnmDm4HLnkl0RE3n+njDXR037aY1+x58Z/zFdwQ==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -9546,6 +9538,7 @@ packages:
   /esprima@4.0.1:
     resolution: {integrity: sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==}
     engines: {node: '>=4'}
+    hasBin: true
     dev: true
 
   /esquery@1.5.0:
@@ -10407,6 +10400,7 @@ packages:
   /google-gax@3.6.1:
     resolution: {integrity: sha512-g/lcUjGcB6DSw2HxgEmCDOrI/CByOwqRvsuUvNalHUK2iPPPlmAIpbMbl62u0YufGMr8zgE3JL7th6dCb1Ry+w==}
     engines: {node: '>=12'}
+    hasBin: true
     dependencies:
       '@grpc/grpc-js': 1.8.20
       '@grpc/proto-loader': 0.7.8
@@ -10431,6 +10425,7 @@ packages:
   /google-p12-pem@4.0.1:
     resolution: {integrity: sha512-WPkN4yGtz05WZ5EhtlxNDWPhC4JIic6G8ePitwUWy4l+XPVYec+a0j0Ts47PDtW59y3RwAhUd9/h9ZZ63px6RQ==}
     engines: {node: '>=12.0.0'}
+    hasBin: true
     dependencies:
       node-forge: 1.3.1
     dev: true
@@ -11460,6 +11455,7 @@ packages:
   /jsdoc@4.0.2:
     resolution: {integrity: sha512-e8cIg2z62InH7azBBi3EsSEqrKx+nUtAS5bBcYTSpZFA+vhNPyhv8PTFZ0WsjOPDj04/dOLlm08EDcQJDqaGQg==}
     engines: {node: '>=12.0.0'}
+    hasBin: true
     dependencies:
       '@babel/parser': 7.22.7
       '@jsdoc/salty': 0.2.5
@@ -12714,6 +12710,7 @@ packages:
   /mkdirp@1.0.4:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
+    hasBin: true
 
   /mkdirp@3.0.1:
     resolution: {integrity: sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==}
@@ -13904,7 +13901,7 @@ packages:
     dependencies:
       chalk: 4.1.2
       escodegen: 1.14.3
-      espree: 9.5.2
+      espree: 9.6.1
       estraverse: 5.3.0
       glob: 8.1.0
       jsdoc: 4.0.2
@@ -15773,6 +15770,7 @@ packages:
   /uglify-js@3.17.4:
     resolution: {integrity: sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==}
     engines: {node: '>=0.8.0'}
+    hasBin: true
     dev: true
 
   /unbox-primitive@1.0.2:
