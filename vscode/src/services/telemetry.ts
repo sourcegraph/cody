@@ -139,3 +139,15 @@ export const telemetryService: TelemetryService = {
         logEvent(eventName, properties, opts)
     },
 }
+
+// TODO: Clean up this name mismatch when we move to TelemetryV2
+export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | undefined): string {
+    return ide
+        ? {
+              VSCode: 'CodyVSCodeExtension',
+              JetBrains: 'CodyJetBrainsPlugin',
+              Emacs: 'CodyEmacsPlugin',
+              Neovim: 'CodyNeovimPlugin',
+          }[ide]
+        : 'CodyVSCodeExtension'
+}

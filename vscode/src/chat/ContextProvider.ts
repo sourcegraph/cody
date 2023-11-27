@@ -19,7 +19,7 @@ import { logDebug } from '../log'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
-import { telemetryService } from '../services/telemetry'
+import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
@@ -176,7 +176,11 @@ export class ContextProvider implements vscode.Disposable {
         // this.sendEvent(ContextEvent.Auth, isAppEvent, eventValue)
         switch (ContextEvent.Auth) {
             case 'auth':
-                telemetryService.log(`CodyVSCodeExtension:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`)
+                telemetryService.log(
+                    `${logPrefix(newConfig.agentIDE)}:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`,
+                    undefined,
+                    { agent: true }
+                )
                 telemetryRecorder.recordEvent(`cody.auth${isAppEvent}`, eventValue)
                 break
         }
