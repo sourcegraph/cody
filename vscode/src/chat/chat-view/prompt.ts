@@ -66,7 +66,6 @@ export class DefaultPrompter implements IPrompter {
         warnings: string[]
         newContextUsed: ContextItem[]
     }> {
-        // MARK: new context
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
