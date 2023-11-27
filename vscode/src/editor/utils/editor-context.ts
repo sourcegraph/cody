@@ -129,7 +129,7 @@ export function getOpenTabsContextFile(): ContextFile[] {
             }
             return false
         })
-        .map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined, true))
+        .map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined))
 }
 
 function createContextFileFromUri(
