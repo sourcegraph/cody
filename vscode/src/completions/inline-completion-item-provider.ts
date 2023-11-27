@@ -239,6 +239,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
+            let stopLoading: () => void | undefined
+            const setIsLoading = (isLoading: boolean): void => {
+                if (isLoading) {
+                    stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+                } else {
+                    stopLoading?.()
+                }
+            }
+
             const abortController = new AbortController()
             if (token) {
                 if (token.isCancellationRequested) {
