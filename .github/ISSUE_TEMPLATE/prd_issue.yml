@@ -1,0 +1,70 @@
+name: PRD Feature Request (Internal Only)
+description: User story for completing items on the PRD.
+title: 'PRD: Example user story from PRD'
+labels:
+  - prd-issue
+  - clients/vscode
+projects:
+  - sourcegraph/387
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Note:** Title must have prefix `PRD:`
+
+        Welcome! Please use this template to provide a detailed description of the feature you would like to see implemented. 
+
+        Your request should follow these guidelines:
+        - The PRD Issue should be framed as a User Story where it clearly explains what value it provides to our users. After reading a user story, the team should clearly know what they're building, why they are building, and the value it creates. 
+        - Acceptance criteria are the conditions that the feature must meet to be accepted by a user and defines what needs to be implemented to be considered complete.
+  - type: textarea
+    id: Description
+    attributes:
+      label: 'Description:'
+      description: What is the problem we are trying to solve?
+      value: |
+        <!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat. -->
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: 'Objectives:'
+      description: What is the end goal?
+      value: |
+        <!-- Example: The goal is to create an intuitive, uncluttered chat experience that delights users and facilitates seamless communication. It needs to be as fast as existing AI chatbots, and give the user control of what is used as context. The redesigned chat should increase lovability by removing the complication of context mixing and making it lightning fast for users. -->
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 'Acceptance Criteria:'
+      description: Conditions that the feature must meet to be accepted by a user
+      value: |
+        <!-- Example:
+        - The chat window has a clean, uncluttered interface with plenty of white space
+        - The user should have the option to select whether Cody or the user chooses the context
+        - The user should be able to use "@ commands" to select files or symbols for context
+        -->
+  - type: textarea
+    id: design-tasklist
+    attributes:
+      label: 'Design Tasks:'
+      description: DO NOT REMOVE - Design to fill out
+      value: |
+        ```[tasklist]
+        ### Design Tasks
+        ```
+  - type: textarea
+    id: engineering-tasklist
+    attributes:
+      label: 'Engineering Tasks:'
+      description: DO NOT REMOVE - Engineering to fill out
+      value: |
+        ```[tasklist]
+        ### Engineering Tasks
+        ```
+  - type: textarea
+    id: related-docs
+    attributes:
+      label: 'Related Docs:'
+      value: |
+        - [PRD: Your-Title]()

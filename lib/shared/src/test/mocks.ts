@@ -17,6 +17,8 @@ import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
+    public readonly repoId = 'test-repo-id'
+
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
     public get endpoint(): string {

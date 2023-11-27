@@ -8,6 +8,7 @@ import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
+import { captureException } from '../services/sentry/sentry'
 
 const symfVersion = 'v0.0.2'
 
@@ -71,6 +72,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
         )
         void removeOldSymfBinaries(symfContainingDir, symfFilename)
     } catch (error) {
+        captureException(error)
         void vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
         return null
     }

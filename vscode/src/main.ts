@@ -5,16 +5,17 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ChatManager } from './chat/chat-view/ChatManager'
-import { ContextProvider } from './chat/ContextProvider'
+import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { getActiveEditor } from './editor/active-editor'
@@ -147,6 +148,18 @@ const register = async (
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
+    // Hack to get embeddings search client
+    const codebaseContext = await hackGetCodebaseContext(
+        initialConfig,
+        rgPath,
+        symfRunner,
+        editor,
+        chatClient,
+        platform,
+        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig)
+    )
+    const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
+
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
@@ -158,12 +171,21 @@ const register = async (
         platform,
     }
 
+    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
+    await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
+
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
-    const chatManager = new ChatManager({
-        ...messageProviderOptions,
-        extensionUri: context.extensionUri,
-    })
+    const chatManager = new ChatManager(
+        {
+            ...messageProviderOptions,
+            extensionUri: context.extensionUri,
+        },
+        chatClient,
+        embeddingsSearch
+    )
+
+    disposables.push(new CodeActionProvider({ contextProvider }))
 
     // Register tree views
     disposables.push(

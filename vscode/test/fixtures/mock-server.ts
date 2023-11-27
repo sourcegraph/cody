@@ -24,8 +24,10 @@ export const VALID_TOKEN = 'abcdefgh1234'
 const responses = {
     chat: 'hello from the assistant',
     fixup: '<fixup><title>Goodbye Cody</title></fixup>',
-    firstCode: { completion: 'myFirstCompletion', stopReason: 'stop_sequence' },
-    code: { completion: 'myNotFirstCompletion', stopReason: 'stop_sequence' },
+    code: {
+        template: { completion: '', stopReason: 'stop_sequence' },
+        mockResponses: ['myFirstCompletion', 'myNotFirstCompletion'],
+    },
 }
 
 const FIXUP_PROMPT_TAG = '<selectedCode>'
@@ -87,10 +89,35 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
     })
 
-    let isFirstCompletion = true
     app.post('/.api/completions/code', (req, res) => {
-        const response = isFirstCompletion ? responses.firstCode : responses.code
-        isFirstCompletion = false
+        const OPENING_CODE_TAG = '<CODE5711>'
+        const request = req as MockRequest
+
+        // Extract the code from the last message.
+        let completionPrefix = request.body.messages.at(-1)?.text
+        if (!completionPrefix?.startsWith(OPENING_CODE_TAG)) {
+            throw new Error(`Last completion message did not contain code starting with ${OPENING_CODE_TAG}`)
+        }
+        completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length)
+
+        // Trim to the last word since our mock responses are just completing words. If the
+        // request has a trailing space, we won't provide anything since the user hasn't
+        // started typing a word.
+        completionPrefix = completionPrefix?.split(/\s/g).at(-1)
+
+        // Find a matching mock response that is longer than what we've already
+        // typed.
+        const completion =
+            responses.code.mockResponses
+                .find(
+                    candidate =>
+                        completionPrefix?.length &&
+                        candidate.startsWith(completionPrefix) &&
+                        candidate.length > completionPrefix.length
+                )
+                ?.slice(completionPrefix?.length) ?? ''
+
+        const response = { ...responses.code.template, completion }
         res.send(JSON.stringify(response))
     })
 
@@ -123,9 +150,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         }
     })
 
-    const server = app.listen(SERVER_PORT, () => {
-        console.log(`Mock server listening on port ${SERVER_PORT}`)
-    })
+    const server = app.listen(SERVER_PORT)
 
     const result = await around()
 
@@ -135,6 +160,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 }
 
 export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
+    if (process.env.CI === undefined) {
+        return
+    }
+
     const message = {
         type,
         event: data,

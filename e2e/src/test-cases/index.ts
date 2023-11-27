@@ -40,6 +40,7 @@ export function initialize(): void {
     require('./codesearchai')
     require('./numpy')
     require('./pytorch')
+    require('./embeddings')
     /* eslint-enable @typescript-eslint/no-require-imports */
 }
 

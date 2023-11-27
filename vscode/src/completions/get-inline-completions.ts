@@ -2,8 +2,10 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { getActiveTraceAndSpanId, startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logError } from '../log'
+import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
 import { DocumentContext } from './get-current-doc-context'
@@ -23,6 +25,7 @@ export interface InlineCompletionsParams {
     triggerKind: TriggerKind
     selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
     docContext: DocumentContext
+    completionIntent?: CompletionIntent
 
     // Prompt parameters
     providerConfig: ProviderConfig
@@ -134,6 +137,11 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+        if (process.env.NODE_ENV === 'development') {
+            // Log errors to the console in the development mode to see the stack traces with source maps
+            // in Chrome dev tools.
+            console.error(error)
+        }
         logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
         CompletionLogger.logError(error)
 
@@ -154,7 +162,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         contextMixer,
         requestManager,
@@ -166,6 +174,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
         artificialDelay,
+        completionIntent,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -181,7 +190,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Do not trigger when the last character is a closing symbol
-    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
+    if (triggerKind !== TriggerKind.Manual && /[);\]}]$/.test(currentLinePrefix.trim())) {
         return null
     }
 
@@ -224,14 +233,17 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         languageId: document.languageId,
         completionIntent,
         artificialDelay,
+        traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    const interval =
-        ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
-    if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-        await new Promise<void>(resolve => setTimeout(resolve, interval))
-    }
+    await startAsyncSpan('autocomplete.debounce', async () => {
+        const interval =
+            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
+        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
+            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        }
+    })
 
     // We don't need to make a request at all if the signal is already aborted after the debounce.
     if (abortSignal?.aborted) {
@@ -242,12 +254,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await contextMixer.getContext({
-        document,
-        position,
-        docContext,
-        abortSignal,
-        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+    const contextResult = await startAsyncSpan('autocomplete.retrieve', async () => {
+        return contextMixer.getContext({
+            document,
+            position,
+            docContext,
+            abortSignal,
+            maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+        })
     })
     if (abortSignal?.aborted) {
         return null
@@ -262,7 +276,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerConfig,
         docContext,
     })
-    tracer?.({ completers: completionProviders.map(({ options }) => options) })
+    tracer?.({
+        completers: completionProviders.map(({ options }) => ({
+            ...options,
+            completionIntent,
+        })),
+    })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 

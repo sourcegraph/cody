@@ -37,7 +37,6 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts"
   },
   "categories": [
@@ -225,13 +224,6 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Search (experimental)",
-          "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
-        },
-        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -247,6 +239,13 @@
           "id": "cody.chat.tree.view",
           "name": "Chats",
           "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.newSearch"
         },
         {
           "id": "cody.support.tree.view",
@@ -976,7 +975,7 @@
           "title": "Cody Inline Chat",
           "type": "boolean",
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
-          "default": true
+          "default": false
         },
         "cody.editorTitleCommandIcon": {
           "order": 7,
@@ -1033,6 +1032,12 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "New search UI",
+          "default": false
+        },
+        "cody.experimental.simpleChatContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Uses the new simplifed chat context fetcher",
           "default": false
         },
         "cody.experimental.symf.path": {
@@ -1162,12 +1167,17 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
+    "@opentelemetry/instrumentation-http": "^0.45.1",
+    "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/semantic-conventions": "^1.18.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.11.0",
+    "@sourcegraph/telemetry": "^0.13.0",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
@@ -17,8 +17,9 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-const config = getConfiguration(vscode.workspace.getConfiguration())
-export const extensionDetails: ExtensionDetails = {
+export const extensionVersion =
+    vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
+export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
@@ -26,8 +27,8 @@ export const extensionDetails: ExtensionDetails = {
     // Prefer the runtime package json over the version that is inlined during build times. This
     // way we will be able to include pre-release builds that are published with a different version
     // identifier.
-    version: vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion,
-}
+    version: extensionVersion,
+})
 
 /**
  * Initializes or configures legacy event-logging globals.
@@ -45,6 +46,8 @@ export async function createOrUpdateEventLogger(
         }
     }
 
+    const extensionDetails = getExtensionDetails(config)
+
     telemetryLevel = config.telemetryLevel
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
@@ -58,7 +61,7 @@ export async function createOrUpdateEventLogger(
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
             })
-        } else {
+        } else if (!config.isRunningInsideAgent) {
             logEvent('CodyVSCodeExtension:CodySavedLogin:executed', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
             })
@@ -100,7 +103,7 @@ function logEvent(
     logDebug(
         `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
         eventName,
-        extensionDetails.ide,
+        getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
         JSON.stringify({ properties, opts })
     )
     if (!eventLogger || !globalAnonymousUserID) {
@@ -135,4 +138,16 @@ export const telemetryService: TelemetryService = {
     log(eventName, properties, opts) {
         logEvent(eventName, properties, opts)
     },
+}
+
+// TODO: Clean up this name mismatch when we move to TelemetryV2
+export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | undefined): string {
+    return ide
+        ? {
+              VSCode: 'CodyVSCodeExtension',
+              JetBrains: 'CodyJetBrainsPlugin',
+              Emacs: 'CodyEmacsPlugin',
+              Neovim: 'CodyNeovimPlugin',
+          }[ide]
+        : 'CodyVSCodeExtension'
 }

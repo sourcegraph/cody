@@ -19,7 +19,7 @@ import { logDebug } from '../log'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
-import { telemetryService } from '../services/telemetry'
+import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
@@ -40,6 +40,7 @@ export type Config = Pick<
     | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'experimentalSimpleChatContext'
     | 'experimentalCommandLenses'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
@@ -115,7 +116,7 @@ export class ContextProvider implements vscode.Disposable {
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -175,7 +176,11 @@ export class ContextProvider implements vscode.Disposable {
         // this.sendEvent(ContextEvent.Auth, isAppEvent, eventValue)
         switch (ContextEvent.Auth) {
             case 'auth':
-                telemetryService.log(`CodyVSCodeExtension:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`)
+                telemetryService.log(
+                    `${logPrefix(newConfig.agentIDE)}:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`,
+                    undefined,
+                    { agent: true }
+                )
                 telemetryRecorder.recordEvent(`cody.auth${isAppEvent}`, eventValue)
                 break
         }
@@ -267,6 +272,12 @@ export class ContextProvider implements vscode.Disposable {
         return (this.appClient = new SourcegraphGraphQLAPIClient(clientConfig))
     }
 
+    public async hackGetEmbeddingClientCandidates(
+        config: GraphQLAPIClientConfig
+    ): Promise<SourcegraphGraphQLAPIClient[]> {
+        return this.getEmbeddingClientCandidates(config)
+    }
+
     // Gets a list of GraphQL clients to interrogate for embeddings
     // availability.
     private async getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
@@ -285,6 +296,18 @@ export class ContextProvider implements vscode.Disposable {
         }
         return result
     }
+}
+
+export function hackGetCodebaseContext(
+    config: Config,
+    rgPath: string | null,
+    symf: IndexedKeywordContextFetcher | undefined,
+    editor: Editor,
+    chatClient: ChatClient,
+    platform: PlatformContext,
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
+): Promise<CodebaseContext | null> {
+    return getCodebaseContext(config, rgPath, symf, editor, chatClient, platform, embeddingsClientCandidates)
 }
 
 /**

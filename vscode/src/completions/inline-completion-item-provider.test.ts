@@ -55,7 +55,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
-                model: null,
             }),
             triggerNotice: null,
             contextStrategy: 'none',
@@ -124,17 +123,6 @@ describe('InlineCompletionItemProvider', () => {
         expect(provider.lastCandidate).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
-              "completionIntent": undefined,
-              "contextRange": Range {
-                "end": Position {
-                  "character": 14,
-                  "line": 2,
-                },
-                "start": Position {
-                  "character": 0,
-                  "line": 0,
-                },
-              },
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
               "injectedPrefix": null,

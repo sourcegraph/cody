@@ -13,6 +13,7 @@ import { getParser } from '../../tree-sitter/parser'
 import { CodeCompletionsClient } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
+import { getCompletionIntent } from '../doc-context-getters'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
     getInlineCompletions as _getInlineCompletions,
@@ -65,10 +66,7 @@ export function params(
                 : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
         },
     }
-    const providerConfig = createProviderConfig({
-        client,
-        model: null,
-    })
+    const providerConfig = createProviderConfig({ client })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
 
@@ -103,6 +101,11 @@ export function params(
         providerConfig,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
+        completionIntent: getCompletionIntent({
+            document,
+            position,
+            prefix: docContext.prefix,
+        }),
         ...params,
     }
 }
