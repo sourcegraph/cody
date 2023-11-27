@@ -1,16 +1,14 @@
 import * as vscode from 'vscode'
 
+import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { ContextGroup } from '../../webviews/Components/EnhancedContextSettings'
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
 import { QueryResultSet } from '../jsonrpc/embeddings-protocol'
 import { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
-
-import { ContextStatusProvider } from './enhanced-context-status'
 
 // TODO(dpc): Until PR1717 lands, use this global controller; after it lands,
 // split the controller up into a shared part and a per-client part.

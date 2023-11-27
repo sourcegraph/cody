@@ -28,7 +28,7 @@ export class GraphContextProvider implements GraphContextFetcher {
     public get status(): ContextGroup[] {
         return [
             {
-                name: this.editor.getWorkspaceRootUri().fsPath,
+                name: this.editor.getWorkspaceRootUri()?.fsPath || 'Workspace',
                 providers: [
                     {
                         kind: 'graph',

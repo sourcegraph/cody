@@ -98,9 +98,7 @@ export class ContextProvider implements vscode.Disposable {
             this.statusAggregator.onDidChangeStatus(_ => {
                 void this.webview?.postMessage({
                     type: 'enhanced-context',
-                    // TODO: Do not hard-code enabled: true here, but record
-                    // accurate status.
-                    context: { enabled: true, groups: this.statusAggregator.status },
+                    context: { groups: this.statusAggregator.status },
                 })
             })
         )

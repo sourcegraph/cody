@@ -16,7 +16,6 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
     render: () => (
         <EnhancedContextContext.Provider
             value={{
-                enabled: true,
                 groups: [
                     {
                         name: '~/projects/foo',

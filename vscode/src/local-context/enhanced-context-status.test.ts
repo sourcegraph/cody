@@ -2,20 +2,20 @@ import { expect } from '@playwright/test'
 import { describe, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import * as view from '../../webviews/Components/EnhancedContextSettings'
+import * as status from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
-import { ContextStatusAggregator, ContextStatusProvider } from './enhanced-context-status'
+import { ContextStatusAggregator } from './enhanced-context-status'
 
-class TestProvider implements ContextStatusProvider {
-    public emitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter()
+class TestProvider implements status.ContextStatusProvider {
+    public emitter: vscode.EventEmitter<status.ContextStatusProvider> = new vscode.EventEmitter()
 
-    constructor(private status_: view.ContextGroup[] | undefined = undefined) {}
+    constructor(private status_: status.ContextGroup[] | undefined = undefined) {}
 
-    public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
+    public onDidChangeStatus(callback: (provider: status.ContextStatusProvider) => void): vscode.Disposable {
         return this.emitter.event(callback)
     }
 
-    public get status(): view.ContextGroup[] {
+    public get status(): status.ContextGroup[] {
         return (
             this.status_ || [
                 {
@@ -31,7 +31,7 @@ class TestProvider implements ContextStatusProvider {
             ]
         )
     }
-    public set status(status: view.ContextGroup[]) {
+    public set status(status: status.ContextGroup[]) {
         this.status_ = status
     }
 }
