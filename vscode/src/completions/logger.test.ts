@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder, useNoOpTelemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
 import { ContextSummary } from './context/context-mixer'
@@ -42,8 +43,11 @@ const completionItemId = 'completion-item-id' as CompletionLogger.CompletionItem
 
 describe('logger', () => {
     let logSpy: MockInstance
+    let recordSpy: MockInstance
     beforeEach(() => {
         logSpy = vi.spyOn(telemetryService, 'log')
+        useNoOpTelemetryRecorder()
+        recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
     })
     afterEach(() => {
         CompletionLogger.reset_testOnly()
@@ -99,8 +103,9 @@ describe('logger', () => {
                 read: true,
                 latency: expect.any(Number),
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:accepted',
@@ -115,8 +120,9 @@ describe('logger', () => {
                     truncatedWith: undefined,
                 },
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'accepted', expect.anything())
     })
 
     it('reuses the completion ID for the same completion', () => {
@@ -148,8 +154,9 @@ describe('logger', () => {
                 id: loggerItem?.params.id,
                 source: 'Network',
             }),
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
@@ -157,15 +164,18 @@ describe('logger', () => {
                 id: loggerItem?.params.id,
                 source: 'Cache',
             }),
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
+
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
             expect.objectContaining({
                 id: loggerItem?.params.id,
             }),
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
 
         // After accepting the completion, the ID won't be reused a third time
         const id3 = CompletionLogger.create(defaultArgs)
@@ -191,8 +201,9 @@ describe('logger', () => {
                 acceptedLength: 5,
                 acceptedLengthDelta: 5,
             }),
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'partiallyAccepted', expect.anything())
 
         CompletionLogger.partiallyAccept(id, item, 10)
 
@@ -202,8 +213,9 @@ describe('logger', () => {
                 acceptedLength: 10,
                 acceptedLengthDelta: 5,
             }),
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'partiallyAccepted', expect.anything())
 
         CompletionLogger.partiallyAccept(id, item, 5)
         CompletionLogger.partiallyAccept(id, item, 8)

@@ -12,6 +12,7 @@ import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph
 
 import { AuthStatus, defaultAuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
+import { useNoOpTelemetryRecorder } from '../services/telemetry-v2'
 import { decGaMockFeatureFlagProvider, emptyMockFeatureFlagProvider, vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
@@ -76,6 +77,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', () => {
+    beforeEach(() => {
+        useNoOpTelemetryRecorder()
+    })
+
     it('returns results that span the whole line', async () => {
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({

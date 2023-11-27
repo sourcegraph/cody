@@ -1,8 +1,9 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test } from 'vitest'
 
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { useNoOpTelemetryRecorder } from '../../services/telemetry-v2'
 import { vsCodeMocks } from '../../testutils/mocks'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { RequestManager } from '../request-manager'
@@ -12,6 +13,10 @@ import { MULTILINE_STOP_SEQUENCE } from '../text-processing'
 import { getInlineCompletions, params, V } from './helpers'
 
 describe('[getInlineCompletions] common', () => {
+    beforeEach(() => {
+        useNoOpTelemetryRecorder()
+    })
+
     test('single-line mode only completes one line', async () =>
         expect(
             await getInlineCompletions(

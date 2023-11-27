@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'v
 import type * as vscode from 'vscode'
 
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder, useNoOpTelemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
 import { CompletionAnalyticsID } from './logger'
@@ -12,6 +13,7 @@ const completionId = '123' as CompletionAnalyticsID
 
 describe('PersistenceTracker', () => {
     let logSpy: MockInstance
+    let recordSpy: MockInstance
     let tracker: PersistenceTracker
 
     // Mock workspace APIs to trigger document changes
@@ -20,7 +22,11 @@ describe('PersistenceTracker', () => {
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
     beforeEach(() => {
         vi.useFakeTimers()
+
         logSpy = vi.spyOn(telemetryService, 'log')
+        useNoOpTelemetryRecorder()
+        recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
+
         tracker = new PersistenceTracker({
             onDidChangeTextDocument(listener) {
                 onDidChangeTextDocument = listener
@@ -66,8 +72,9 @@ describe('PersistenceTracker', () => {
                 ...sharedArgs,
                 afterSec: 30,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
 
         vi.advanceTimersByTime(90 * 1000)
         expect(logSpy).toHaveBeenCalledWith(
@@ -76,8 +83,9 @@ describe('PersistenceTracker', () => {
                 ...sharedArgs,
                 afterSec: 120,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
 
         vi.advanceTimersByTime(3 * 60 * 1000)
         expect(logSpy).toHaveBeenCalledWith(
@@ -86,8 +94,9 @@ describe('PersistenceTracker', () => {
                 ...sharedArgs,
                 afterSec: 300,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
 
         vi.advanceTimersByTime(5 * 60 * 1000)
         expect(logSpy).toHaveBeenCalledWith(
@@ -96,8 +105,9 @@ describe('PersistenceTracker', () => {
                 ...sharedArgs,
                 afterSec: 600,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
     })
 
     it('tracks changes to the document', () => {
@@ -126,8 +136,9 @@ describe('PersistenceTracker', () => {
                 afterSec: 30,
                 difference: 0,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
 
         vi.spyOn(doc, 'getText').mockImplementationOnce(() => 'fo0')
         onDidChangeTextDocument({
@@ -151,8 +162,9 @@ describe('PersistenceTracker', () => {
                 afterSec: 120,
                 difference: 1 / 3,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
     })
 
     it('tracks changes after renaming a document', () => {
@@ -201,8 +213,9 @@ describe('PersistenceTracker', () => {
                 id: '123',
                 lineCount: 1,
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:present', expect.anything())
     })
 
     it('gracefully handles file deletions', () => {
@@ -221,6 +234,7 @@ describe('PersistenceTracker', () => {
 
         vi.advanceTimersToNextTimer()
         expect(logSpy).not.toHaveBeenCalled()
+        expect(recordSpy).not.toHaveBeenCalled()
     })
 
     it('tracks the deletion of a range', () => {
@@ -241,7 +255,8 @@ describe('PersistenceTracker', () => {
             {
                 id: '123',
             },
-            { agent: true }
+            { agent: true, hasV2Event: true }
         )
+        expect(recordSpy).toHaveBeenCalledWith('completion', 'persistence:removed', expect.anything())
     })
 })
