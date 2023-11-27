@@ -136,6 +136,11 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+        if (process.env.NODE_ENV === 'development') {
+            // Log errors to the console in the development mode to see the stack traces with source maps
+            // in Chrome dev tools.
+            console.error(error)
+        }
         logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
         CompletionLogger.logError(error)
 
