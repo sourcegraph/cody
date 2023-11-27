@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { getSmartSelection } from '../editor/utils'
 
