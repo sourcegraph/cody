@@ -2,7 +2,6 @@ import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
 
-import { PROMPT_TOPICS } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 // create interface for the request
@@ -24,15 +23,15 @@ export const VALID_TOKEN = 'abcdefgh1234'
 
 const responses = {
     chat: 'hello from the assistant',
-    fixup: `<${PROMPT_TOPICS.OUTPUT}><title>Goodbye Cody</title></${PROMPT_TOPICS.OUTPUT}>`,
+    fixup: '<CODE5711><title>Goodbye Cody</title></CODE5711>',
     code: {
         template: { completion: '', stopReason: 'stop_sequence' },
         mockResponses: ['myFirstCompletion', 'myNotFirstCompletion'],
     },
 }
 
-const FIXUP_PROMPT_TAG = `<${PROMPT_TOPICS.SELECTED}>`
-const NON_STOP_FIXUP_PROMPT_TAG = `<${PROMPT_TOPICS.OUTPUT}>`
+const FIXUP_PROMPT_TAG = '<SELECTEDCODE7662>'
+const NON_STOP_FIXUP_PROMPT_TAG = '<CODE5711>'
 
 const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
