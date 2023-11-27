@@ -19,7 +19,7 @@ const meta: Meta<typeof UserContextSelectorComponent> = {
     argTypes: {
         onSelected: { action: 'selected' },
         setSelectedChatContext: { action: 'setSelectedChatContext' },
-    }
+    },
 }
 
 export default meta
@@ -28,32 +28,32 @@ export const FileSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: undefined,
         selected: 0,
-        formInput: '@'
-    }
+        formInput: '@',
+    },
 }
 
 export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [],
         selected: 0,
-        formInput: '@missing'
-    }
+        formInput: '@missing',
+    },
 }
 
 export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [{ fileName: 'open-file.py' }, { fileName: 'open-file.go' }],
         selected: 0,
-        formInput: '@file'
-    }
+        formInput: '@file',
+    },
 }
 
 export const SymbolSearchNoMatchesWarning: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [],
         selected: 0,
-        formInput: '@#a'
-    }
+        formInput: '@#a',
+    },
 }
 
 export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
@@ -70,6 +70,6 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
             { fileName: 'handleLogin', type: 'symbol', kind: 'method', path: { relative: 'lib/src/LoginDialog.tsx' } },
         ],
         selected: 0,
-        formInput: '@#login'
-    }
+        formInput: '@#login',
+    },
 }
