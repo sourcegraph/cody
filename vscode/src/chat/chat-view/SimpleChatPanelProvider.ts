@@ -107,173 +107,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private completionCanceller?: () => void
+
     private cancelInProgressCompletion(): void {
         if (this.completionCanceller) {
             this.completionCanceller()
             this.completionCanceller = undefined
         }
-    }
-
-    public async executeRecipe(recipeID: RecipeID): Promise<void> {
-        await vscode.window.showErrorMessage(`command ${recipeID} not supported`)
-    }
-
-    public async executeCustomCommand(title: string): Promise<void> {
-        await vscode.window.showErrorMessage(`custom command ${title} not supported`)
-    }
-    public async clearAndRestartSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
-        }
-        await this.saveSession()
-        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
-        this.sessionID = this.chatModel.sessionID
-        await this.updateViewTranscript()
-    }
-
-    public clearChatHistory(): Promise<void> {
-        // HACK: this is a no-op now. This exists only to satisfy the IChatPanelProvider interface
-        // and can be removed once we retire the old ChatPanelProvider
-        return Promise.resolve()
-    }
-
-    public triggerNotice(notice: { key: string }): void {
-        void this.webview?.postMessage({
-            type: 'notice',
-            notice,
-        })
-    }
-
-    public async setWebviewView(view: View): Promise<void> {
-        await this.webview?.postMessage({
-            type: 'view',
-            messages: view,
-        })
-
-        if (!this.webviewPanel) {
-            await this.createWebviewPanel()
-        }
-        this.webviewPanel?.reveal()
-    }
-
-    public dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose())
-        this.disposables = []
-    }
-
-    public async restoreSession(sessionID: string): Promise<void> {
-        this.cancelInProgressCompletion()
-        await this.saveSession()
-
-        const oldTranscript = this.history.getChat(sessionID)
-        if (!oldTranscript) {
-            throw new Error(`Could not find chat history for sessionID ${sessionID}`)
-        }
-        const newModel = await newChatModelfromTranscriptJSON(this.editor, oldTranscript)
-        this.chatModel = newModel
-        this.sessionID = newModel.sessionID
-
-        await this.updateViewTranscript()
-    }
-
-    public async saveSession(): Promise<void> {
-        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: allHistory,
-        })
-        this.treeView.updateTree(createCodyChatTreeItems(allHistory))
-    }
-
-    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        switch (message.command) {
-            case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
-                await this.updateViewConfig()
-                break
-            case 'initialized':
-                logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
-                this.onInitialized()
-                break
-            case 'submit':
-                await this.onHumanMessageSubmitted(
-                    message.text,
-                    message.submitType,
-                    message.contextFiles,
-                    message.addEnhancedContext
-                )
-                break
-            case 'edit':
-                await this.onEdit(message.text)
-                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
-                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
-                break
-            case 'abort':
-                this.cancelInProgressCompletion()
-                telemetryService.log(
-                    'CodyVSCodeExtension:abortButton:clicked',
-                    { source: 'sidebar' },
-                    { hasV2Event: true }
-                )
-                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
-                break
-            case 'chatModel':
-                this.chatModel.modelID = message.model
-                break
-            case 'executeRecipe':
-                void this.executeRecipe(message.recipe)
-                break
-            case 'getUserContext':
-                await this.handleContextFiles(message.query)
-                break
-            case 'custom-prompt':
-                await this.executeCustomCommand(message.title)
-                break
-            case 'insert':
-                await handleCodeFromInsertAtCursor(message.text, message.metadata)
-                break
-            case 'newFile':
-                handleCodeFromSaveToNewFile(message.text, message.metadata)
-                await this.editor.createWorkspaceFile(message.text)
-                break
-            case 'copy':
-                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
-                break
-            case 'event':
-                telemetryService.log(message.eventName, message.properties)
-                break
-            case 'links':
-                void openExternalLinks(message.value)
-                break
-            case 'openFile':
-                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
-                break
-            case 'openLocalFileWithRange':
-                await openLocalFileWithRange(message.filePath, message.range)
-                break
-            default:
-                this.handleError('Invalid request type from Webview Panel')
-        }
-    }
-
-    private onInitialized(): void {
-        const endpoint = this.authProvider.getAuthStatus()?.endpoint
-        const allowedModels = getChatModelsForWebview(endpoint)
-        const models = this.chatModel
-            ? allowedModels.map(model => {
-                  return {
-                      ...model,
-                      default: model.model === this.chatModel.modelID,
-                  }
-              })
-            : allowedModels
-
-        void this.webview?.postMessage({
-            type: 'chatModels',
-            models,
-        })
     }
 
     /**
@@ -323,7 +162,193 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return panel
     }
 
-    private async updateViewConfig(): Promise<void> {
+    public async setWebviewView(view: View): Promise<void> {
+        await this.webview?.postMessage({
+            type: 'view',
+            messages: view,
+        })
+
+        if (!this.webviewPanel) {
+            await this.createWebviewPanel()
+        }
+        this.webviewPanel?.reveal()
+    }
+
+    /**
+     * This is the entrypoint for handling messages from the webview.
+     */
+    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        switch (message.command) {
+            case 'ready':
+                // The web view is ready to receive events. We need to make sure that it has an up
+                // to date config, even if it was already published
+                await this.authProvider.announceNewAuthStatus()
+                await this.postViewConfig()
+                break
+            case 'initialized':
+                logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
+                this.handleInitialized()
+                break
+            case 'submit': {
+                const requestID = uuid.v4()
+                await this.handleHumanMessageSubmitted(
+                    requestID,
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
+                break
+            }
+            case 'edit': {
+                const requestID = uuid.v4()
+                await this.handleEdit(requestID, message.text)
+                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
+                break
+            }
+            case 'abort':
+                this.cancelInProgressCompletion()
+                telemetryService.log(
+                    'CodyVSCodeExtension:abortButton:clicked',
+                    { source: 'sidebar' },
+                    { hasV2Event: true }
+                )
+                telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+                break
+            case 'chatModel':
+                this.chatModel.modelID = message.model
+                break
+            case 'executeRecipe':
+                void this.executeRecipe(message.recipe)
+                break
+            case 'getUserContext':
+                await this.handleContextFiles(message.query)
+                break
+            case 'custom-prompt':
+                await this.executeCustomCommand(message.title)
+                break
+            case 'insert':
+                await handleCodeFromInsertAtCursor(message.text, message.metadata)
+                break
+            case 'newFile':
+                handleCodeFromSaveToNewFile(message.text, message.metadata)
+                await this.editor.createWorkspaceFile(message.text)
+                break
+            case 'copy':
+                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+                break
+            case 'event':
+                telemetryService.log(message.eventName, message.properties)
+                break
+            case 'links':
+                void openExternalLinks(message.value)
+                break
+            case 'openFile':
+                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+                break
+            case 'openLocalFileWithRange':
+                await openLocalFileWithRange(message.filePath, message.range)
+                break
+            default:
+                this.postError('Invalid request type from Webview Panel')
+        }
+    }
+
+    public dispose(): void {
+        this.disposables.forEach(disposable => disposable.dispose())
+        this.disposables = []
+    }
+
+    public async restoreSession(sessionID: string): Promise<void> {
+        this.cancelInProgressCompletion()
+        await this.saveSession()
+
+        const oldTranscript = this.history.getChat(sessionID)
+        if (!oldTranscript) {
+            throw new Error(`Could not find chat history for sessionID ${sessionID}`)
+        }
+        const newModel = await newChatModelfromTranscriptJSON(this.editor, oldTranscript)
+        this.chatModel = newModel
+        this.sessionID = newModel.sessionID
+
+        await this.postViewTranscript()
+    }
+
+    public async saveSession(): Promise<void> {
+        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
+        void this.webview?.postMessage({
+            type: 'history',
+            messages: allHistory,
+        })
+        this.treeView.updateTree(createCodyChatTreeItems(allHistory))
+    }
+
+    public async clearAndRestartSession(): Promise<void> {
+        if (this.chatModel.isEmpty()) {
+            return
+        }
+        await this.saveSession()
+        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.sessionID = this.chatModel.sessionID
+        await this.postViewTranscript()
+    }
+
+    public clearChatHistory(): Promise<void> {
+        // HACK: this is a no-op now. This exists only to satisfy the IChatPanelProvider interface
+        // and can be removed once we retire the old ChatPanelProvider
+        return Promise.resolve()
+    }
+
+    public triggerNotice(notice: { key: string }): void {
+        void this.webview?.postMessage({
+            type: 'notice',
+            notice,
+        })
+    }
+
+    private handleInitialized(): void {
+        const endpoint = this.authProvider.getAuthStatus()?.endpoint
+        const allowedModels = getChatModelsForWebview(endpoint)
+        const models = this.chatModel
+            ? allowedModels.map(model => {
+                  return {
+                      ...model,
+                      default: model.model === this.chatModel.modelID,
+                  }
+              })
+            : allowedModels
+
+        void this.webview?.postMessage({
+            type: 'chatModels',
+            models,
+        })
+    }
+
+    private async handleHumanMessageSubmitted(
+        requestID: string,
+        text: string,
+        submitType: 'user' | 'suggestion' | 'example',
+        userContextFiles?: ContextFile[],
+        addEnhancedContext = true
+    ): Promise<void> {
+        if (submitType === 'suggestion') {
+            const args = { requestID }
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
+        }
+
+        this.chatModel.addHumanMessage({ text })
+        void this.postViewTranscript()
+        await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
+    }
+
+    private async handleEdit(requestID: string, text: string): Promise<void> {
+        this.chatModel.updateLastHumanMessage({ text })
+        void this.postViewTranscript()
+        await this.generateAssistantResponse(requestID)
+    }
+
+    private async postViewConfig(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
         const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
@@ -337,24 +362,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
-    private async onEdit(text: string): Promise<void> {
-        this.chatModel.updateLastHumanMessage({ text })
-        void this.updateViewTranscript()
-        await this.generateAssistantResponse()
-    }
-
-    private async onHumanMessageSubmitted(
-        text: string,
-        submitType: 'user' | 'suggestion' | 'example',
-        userContextFiles?: ContextFile[],
-        addEnhancedContext = true
-    ): Promise<void> {
-        this.chatModel.addHumanMessage({ text })
-        void this.updateViewTranscript()
-        await this.generateAssistantResponse(userContextFiles, addEnhancedContext)
-    }
-
     private async generateAssistantResponse(
+        requestID: string,
         userContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
@@ -378,16 +387,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             if (warnings.length > 0) {
                 const warningMsg =
                     'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' ')
-                this.handleError(warningMsg)
+                this.postError(warningMsg)
             }
 
-            void this.updateViewTranscript()
+            void this.postViewTranscript()
 
             let lastContent = ''
             const typewriter = new Typewriter({
                 update: content => {
                     lastContent = content
-                    void this.updateViewTranscript(
+                    void this.postViewTranscript(
                         toViewMessage({
                             message: {
                                 speaker: 'assistant',
@@ -402,7 +411,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         .then(displayText => {
                             this.chatModel.addBotMessage({ text: lastContent }, displayText)
                             void this.saveSession()
-                            void this.updateViewTranscript()
+                            void this.postViewTranscript()
 
                             // Count code generated from response
                             const codeCount = countGeneratedCode(lastContent)
@@ -427,7 +436,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             })
 
             this.cancelInProgressCompletion()
-            const requestID = uuid.v4()
             this.completionCanceller = this.chatClient.chat(
                 promptMessages,
                 {
@@ -441,13 +449,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     },
                     onError: error => {
                         this.completionCanceller = undefined
-                        this.handleError(error)
+                        this.postError(error)
                     },
                 },
                 { model: this.chatModel.modelID }
             )
         } catch (error) {
-            this.handleError(`${error}`)
+            this.postError(`${error}`)
         }
     }
 
@@ -476,14 +484,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     context,
                 })
             } catch (error) {
-                this.handleError(`Error retrieving explicit context: ${error}`)
+                this.postError(`Error retrieving explicit context: ${error}`)
             }
         }, 100)
 
         await debouncedContextFileQuery(query)
     }
 
-    private async updateViewTranscript(messageInProgress?: ChatMessage): Promise<void> {
+    private async postViewTranscript(messageInProgress?: ChatMessage): Promise<void> {
         const messages: ChatMessage[] = this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
         if (messageInProgress) {
             messages.push(messageInProgress)
@@ -499,7 +507,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string): void {
+    private postError(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
@@ -529,8 +537,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return result.text
     }
 
-    public updateConfiguration(newConfig: Config): void {
+    public setConfiguration(newConfig: Config): void {
         this.config = newConfig
+    }
+
+    public async executeRecipe(recipeID: RecipeID): Promise<void> {
+        await vscode.window.showErrorMessage(`command ${recipeID} not supported`)
+    }
+
+    public async executeCustomCommand(title: string): Promise<void> {
+        await vscode.window.showErrorMessage(`custom command ${title} not supported`)
     }
 }
 

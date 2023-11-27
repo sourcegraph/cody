@@ -22,6 +22,9 @@ type ChatID = string
 
 export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails'>
 
+/**
+ * An interface to swap out SimpleChatPanelProvider for ChatPanelProvider
+ */
 export interface IChatPanelProvider extends vscode.Disposable {
     executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
     executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
@@ -33,7 +36,7 @@ export interface IChatPanelProvider extends vscode.Disposable {
     sessionID: string
     setWebviewView(view: View): Promise<void>
     restoreSession(chatIDj: string): Promise<void>
-    updateConfiguration?: (config: Config) => void
+    setConfiguration?: (config: Config) => void
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
@@ -87,7 +90,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                     provider.dispose()
                     this.panelProvidersMap.delete(id)
                 }
-                provider.updateConfiguration?.(options.contextProvider.config)
+                provider.setConfiguration?.(options.contextProvider.config)
             })
 
             this.useSimpleChatPanelProvider = options.contextProvider.config.experimentalSimpleChatContext
