@@ -21,6 +21,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Chat: Add delays before sending webview ready events to prevent premature sending. This fixes issue where chat panel fails to load when multiple chat panels are opened simultaneously. [pull/1836](https://github.com/sourcegraph/cody/pull/1836)
 - Autocomplete: Fixes a bug that caused autocomplete to be triggered at the end of a block or function invocation. [pull/1864](https://github.com/sourcegraph/cody/pull/1864)
 - Edit: Incoming edits that are afixed to the selected code and now handled properly (e.g. docstrings). [pull/1724](https://github.com/sourcegraph/cody/pull/1724)
+- Chat: Allowed backspace and delete keys to remove characters in chat messages input box.
 
 ### Changed
 
@@ -29,6 +30,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Commands: The Custom Commands Menu now closes on click outside of the menu. [pull/1854](https://github.com/sourcegraph/cody/pull/1854)
 - Autocomplete: Remove the frequency of unhelpful autocompletions. [pull/1862](https://github.com/sourcegraph/cody/pull/1862)
 - Chat: The default chat model `claude-2` has been replaced with the pinned version `claude-2.0`. [pull/1860](https://github.com/sourcegraph/cody/pull/1860)
+- Command: Editor title icon will only show up in non-readonly file editor views. [pull/1909](https://github.com/sourcegraph/cody/pull/1909)
 - Chat: Include text in dotCom chat events. [pull/1910](https://github.com/sourcegraph/cody/pull/1910)
 
 ## [0.16.1]
