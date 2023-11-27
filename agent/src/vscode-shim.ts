@@ -137,7 +137,7 @@ const configuration: vscode.WorkspaceConfiguration = {
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
-                return 'off'
+                return 'agent'
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
