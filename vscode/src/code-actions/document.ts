@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 export class DocumentCodeAction implements vscode.CodeActionProvider {
@@ -33,7 +35,16 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
         const source = 'code-action:document'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction: this.instruction, range, intent: 'edit', document, insertMode: true }, source],
+            arguments: [
+                {
+                    instruction: this.instruction,
+                    range,
+                    intent: 'doc' satisfies FixupIntent,
+                    document,
+                    insertMode: true,
+                },
+                source,
+            ],
             title: displayText,
         }
         return action
