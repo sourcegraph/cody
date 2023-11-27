@@ -60,7 +60,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null
+        private readonly embeddingsSearch: EmbeddingsSearch | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }

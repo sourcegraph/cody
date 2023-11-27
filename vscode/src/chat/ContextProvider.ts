@@ -336,7 +336,8 @@ export function hackGetCodebaseContext(
     platform: PlatformContext,
     embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
 ): Promise<CodebaseContext | null> {
-    return getCodebaseContext(config, rgPath, symf, editor, chatClient, platform, embeddingsClientCandidates)
+    // TODO: Replace last undefined with local embeddings
+    return getCodebaseContext(config, rgPath, symf, editor, chatClient, platform, embeddingsClientCandidates, undefined)
 }
 
 /**
