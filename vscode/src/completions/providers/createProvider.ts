@@ -5,7 +5,7 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import { logError } from '../../log'
 import { CodeCompletionsClient } from '../client'
 
-import { AnthropicOptions, createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { createProviderConfig as createFireworksProviderConfig, FireworksOptions } from './fireworks'
 import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
@@ -38,10 +38,7 @@ export async function createProviderConfig(
                 })
             }
             case 'anthropic': {
-                return createAnthropicProviderConfig({
-                    model: config.autocompleteAdvancedModel ?? model ?? null,
-                    client,
-                })
+                return createAnthropicProviderConfig({ client })
             }
             default:
                 logError(
@@ -87,10 +84,7 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return createAnthropicProviderConfig({
-                    client,
-                    model: null,
-                })
+                return createAnthropicProviderConfig({ client })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
@@ -101,27 +95,23 @@ export async function createProviderConfig(
      * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
      * use the default provider config ("anthropic").
      */
-    return createAnthropicProviderConfig({
-        client,
-        model: null,
-    })
+    return createAnthropicProviderConfig({ client })
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredProvider: string | null): Promise<{
     provider: string
-    model?: FireworksOptions['model'] | AnthropicOptions['model']
+    model?: FireworksOptions['model']
 } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b, anthropicCyan] = await Promise.all([
+    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteAnthropicCyan),
     ])
 
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
@@ -135,10 +125,6 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
             ? 'llama-code-7b'
             : 'llama-code-13b'
         return { provider: 'fireworks', model }
-    }
-
-    if (anthropicCyan) {
-        return { provider: 'anthropic', model: 'claude-instant-1.2-cyan' }
     }
 
     return null
