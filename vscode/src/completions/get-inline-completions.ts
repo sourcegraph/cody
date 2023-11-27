@@ -45,7 +45,6 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    dynamicMultlilineCompletions?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
