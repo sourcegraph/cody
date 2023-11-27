@@ -203,7 +203,7 @@ Provide your generated code using the following instructions:
 - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
 - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
 
-This is part of the file {fileName}
+This is part of the file: {fileName}
 
 The user has the following code in their selection:
 <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>

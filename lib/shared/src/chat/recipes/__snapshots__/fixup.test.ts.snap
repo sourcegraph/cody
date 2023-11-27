@@ -55,7 +55,7 @@ exports[`Fixup > builds prompt correctly for fixing 1`] = `
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
 
-This is part of the file src/file/index.ts
+This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
