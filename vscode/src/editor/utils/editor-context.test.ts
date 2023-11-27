@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-// import { vsCodeMocks } from '../../testutils/mocks'
 import { getFileContextFiles } from './editor-context'
 
 vi.mock('lodash', () => ({
