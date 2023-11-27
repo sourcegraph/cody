@@ -10,7 +10,7 @@ import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ChatManager } from './chat/chat-view/ChatManager'
-import { ContextProvider } from './chat/ContextProvider'
+import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
@@ -148,6 +148,18 @@ const register = async (
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
+    // Hack to get embeddings search client
+    const codebaseContext = await hackGetCodebaseContext(
+        initialConfig,
+        rgPath,
+        symfRunner,
+        editor,
+        chatClient,
+        platform,
+        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig)
+    )
+    const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
+
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
@@ -164,10 +176,14 @@ const register = async (
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
-    const chatManager = new ChatManager({
-        ...messageProviderOptions,
-        extensionUri: context.extensionUri,
-    })
+    const chatManager = new ChatManager(
+        {
+            ...messageProviderOptions,
+            extensionUri: context.extensionUri,
+        },
+        chatClient,
+        embeddingsSearch
+    )
 
     disposables.push(new CodeActionProvider({ contextProvider }))
 

@@ -1034,6 +1034,12 @@
           "markdownDescription": "New search UI",
           "default": false
         },
+        "cody.experimental.simpleChatContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Uses the new simplifed chat context fetcher",
+          "default": false
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
