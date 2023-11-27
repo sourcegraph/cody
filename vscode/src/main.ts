@@ -250,6 +250,7 @@ const register = async (
         telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
         const document = args.document || getActiveEditor()?.document
         if (!document) {
+            void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
         }
 
