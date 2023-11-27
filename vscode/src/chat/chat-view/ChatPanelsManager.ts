@@ -9,6 +9,7 @@ import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { View } from '../../../webviews/NavBar'
+import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -60,7 +61,8 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private readonly embeddingsSearch: EmbeddingsSearch | null
+        private readonly embeddingsSearch: EmbeddingsSearch | null,
+        private readonly localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
@@ -149,6 +151,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                 config: this.options.contextProvider.config,
                 chatClient: this.chatClient,
                 embeddingsClient: this.embeddingsSearch,
+                localEmbeddings: this.localEmbeddings,
             })
             const webviewPanel = await provider.createWebviewPanel(activePanelViewColumn, chatQuestion)
             if (chatID) {

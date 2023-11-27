@@ -26,7 +26,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (...args: 
 export interface PlatformContext {
     getRgPath?: typeof getRgPath
     createCommandsController?: Constructor<typeof CommandsController>
-    createLocalEmbeddingsController?: () => Promise<LocalEmbeddingsController>
+    createLocalEmbeddingsController?: () => LocalEmbeddingsController
     createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever

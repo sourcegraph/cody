@@ -66,10 +66,6 @@ export class ContextProvider implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = []
 
     private localEmbeddings: LocalEmbeddingsController | undefined = undefined
-    // TODO: Multi-view chats hammers ContextProvider.init. This guards against
-    // creating multiple cody-engine processes as a result. Remove this when
-    // the chat : context provider lifetime is clarified in #1717.
-    private localEmbeddingsPromise: Promise<void> | undefined
 
     private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
     private statusEmbeddings: vscode.Disposable | undefined = undefined
@@ -113,31 +109,18 @@ export class ContextProvider implements vscode.Disposable {
     // - Once on extension activation.
     // - With every MessageProvider, including ChatPanelProvider.
     public async init(): Promise<void> {
-        // We do not wait for this so we do not delay startup.
-        void this.initLocalEmbeddings()
+        this.initLocalEmbeddings()
         await this.updateCodebaseContext()
         await this.publishContextStatus()
     }
 
-    private async initLocalEmbeddings(): Promise<void> {
+    private initLocalEmbeddings(): void {
         // TODO: Multi-window chat sends multiple calls to `init`. Remove this
         // guard when that is fixed.
-        if (this.localEmbeddingsPromise) {
-            await this.localEmbeddingsPromise
-            // When the extra calls to init() reset the webview, we need to
-            // push state to them by calling `updateCodebaseContext`.
-            await this.updateCodebaseContext()
+        if (this.localEmbeddings) {
             return
         }
-        this.localEmbeddingsPromise = (async () => {
-            if (this.platform.createLocalEmbeddingsController) {
-                this.localEmbeddings = await this.platform.createLocalEmbeddingsController()
-                // TODO(dpc): Handle failure.
-                logDebug('ContextProvider', 'LocalEmbeddingsController initialized')
-                await this.updateCodebaseContext()
-            }
-        })()
-        await this.localEmbeddingsPromise
+        // this.localEmbeddings = this.platform.createLocalEmbeddingsController?.()
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -332,10 +315,19 @@ export function hackGetCodebaseContext(
     editor: Editor,
     chatClient: ChatClient,
     platform: PlatformContext,
-    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[],
+    localEmbeddings: LocalEmbeddingsController | undefined
 ): Promise<CodebaseContext | null> {
-    // TODO: Replace last undefined with local embeddings
-    return getCodebaseContext(config, rgPath, symf, editor, chatClient, platform, embeddingsClientCandidates, undefined)
+    return getCodebaseContext(
+        config,
+        rgPath,
+        symf,
+        editor,
+        chatClient,
+        platform,
+        embeddingsClientCandidates,
+        localEmbeddings
+    )
 }
 
 /**
@@ -366,6 +358,9 @@ async function getCodebaseContext(
         return null
     }
 
+    // TODO: When SimpleChatContextProvider stops using hackGetCodebaseContext,
+    // it must start sending localEmbeddings.load and setAccessToken directly to
+    // the embeddings controller.
     let [embeddingsSearch, hasLocalEmbeddings, _] = await Promise.all([
         // Find a embeddings clients
         EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase, workspaceRoot.fsPath),

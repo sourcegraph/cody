@@ -10,17 +10,18 @@ import { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 
-// TODO(dpc): Until PR1717 lands, use this global controller; after it lands,
-// split the controller up into a shared part and a per-client part.
-let globalLocalEmbeddingsController: Promise<LocalEmbeddingsController> | undefined
+export function createLocalEmbeddingsController(context: vscode.ExtensionContext): LocalEmbeddingsController {
+    return new LocalEmbeddingsController(context)
+}
 
-export async function createLocalEmbeddingsController(
-    context: vscode.ExtensionContext
-): Promise<LocalEmbeddingsController> {
-    if (globalLocalEmbeddingsController) {
-        return globalLocalEmbeddingsController
+export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
+    private readonly service: Promise<MessageHandler>
+
+    constructor(context: vscode.ExtensionContext) {
+        this.service = this.spawnAndBindService(context)
     }
-    globalLocalEmbeddingsController = (async () => {
+
+    private async spawnAndBindService(context: vscode.ExtensionContext): Promise<MessageHandler> {
         const service = await new Promise<MessageHandler>((resolve, reject) => {
             spawnBfg(context, reject).then(
                 bfg => resolve(bfg),
@@ -30,13 +31,7 @@ export async function createLocalEmbeddingsController(
                 }
             )
         })
-        return new LocalEmbeddingsController(service)
-    })()
-    return globalLocalEmbeddingsController
-}
-
-export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
-    constructor(private readonly service: MessageHandler) {
+        // TODO: Add more states for cody-engine fetching and trigger status updates here
         service.registerNotification('embeddings/progress', obj => {
             if (!this.statusBar) {
                 return
@@ -70,6 +65,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 void vscode.window.showInformationMessage(JSON.stringify(obj))
             }
         })
+        return service
     }
 
     // ContextStatusProvider implementation
@@ -122,12 +118,13 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private lastAccessToken: string | undefined
     private statusBar: vscode.StatusBarItem | undefined
 
-    public setAccessToken(token: string): Promise<void> {
+    public async setAccessToken(token: string): Promise<void> {
         if (token === this.lastAccessToken) {
             return Promise.resolve()
         }
         this.lastAccessToken = token
-        return this.service.request('embeddings/set-token', token)
+        // TODO: Make the cody-engine reply to set-token.
+        void (await this.service).request('embeddings/set-token', token)
     }
 
     public async index(): Promise<void> {
@@ -138,10 +135,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         const repoPath = this.lastRepo.path
         logDebug('Indexing repository', repoPath)
         try {
-            // TODO(dpc): Add a configuration parameter to override the embedding model.
+            // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
             // const model = 'stub/stub'
             const model = 'openai/text-embedding-ada-002'
-            await this.service.request('embeddings/index', { path: repoPath, model, dimension: 1536 })
+            await (await this.service).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
                 'cody-local-embeddings',
@@ -162,21 +159,21 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
         this.lastRepo = {
             path: repoPath,
-            loadResult: await this.service.request('embeddings/load', repoPath),
+            loadResult: await (await this.service).request('embeddings/load', repoPath),
         }
         this.statusEvent.fire(this)
         return this.lastRepo.loadResult
     }
 
-    public query(query: string): Promise<QueryResultSet> {
-        return this.service.request('embeddings/query', query)
+    public async query(query: string): Promise<QueryResultSet> {
+        return (await this.service).request('embeddings/query', query)
     }
 
     // LocalEmbeddingsFetcher
     public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
         try {
             const results = (await this.query(query)).results
-            logDebug('LocalEmbeddingsController', 'returning {results.len} results')
+            logDebug('LocalEmbeddingsController', `returning ${results.length} results`)
             return results
         } catch (error) {
             logDebug('LocalEmbeddingsController', captureException(error))
