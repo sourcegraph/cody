@@ -333,7 +333,7 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     /**
-     * S et webview view
+     * Set webview view
      * NOTE: Panel doesn't support view other than 'chat' currently
      */
     public async setWebviewView(view: View): Promise<void> {
@@ -364,18 +364,18 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     /**
-     * C reates the webview panel for the Cody chat interface if it doesn't already exist.
+     * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
     public async createWebviewPanel(chatID?: string, lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
-        // Create th e webview panel only if the user is logged in.
-        // Allows us ers to login via the sidebar webview.
+        // Create the webview panel only if the user is logged in.
+        // Allows users to login via the sidebar webview.
         if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
             await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
             return
         }
 
         // Checks if the webview panel already exists and is visible.
-        // If so, re turns early to avoid creating a duplicate.
+        // If so, returns early to avoid creating a duplicate.
         if (this.webviewPanel) {
             return this.webviewPanel
         }
@@ -383,7 +383,7 @@ export class ChatPanelProvider extends MessageProvider {
         this.startUpChatID = chatID
 
         const viewType = 'cody.chatPanel'
-        // truncate  firstQuestion to first 10 chars
+        // truncate firstQuestion to first 10 chars
         const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
         const panelTitle = text || 'New Chat'
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
@@ -404,13 +404,13 @@ export class ChatPanelProvider extends MessageProvider {
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
         await addWebviewViewHTML(this.extensionUri, panel)
 
-        // Register  webview
+        // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
         this.contextProvider.webview = panel.webview
         this.authProvider.webview = panel.webview
 
-        // Dispose p anel when the panel is closed
+        // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
             this.webviewPanel = undefined
             panel.dispose()
@@ -418,7 +418,7 @@ export class ChatPanelProvider extends MessageProvider {
 
         this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
 
-        // Used for  keeping sidebar chat view closed when webview panel is enabled
+        // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', 'cody.chatPanel', true)
         telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
 

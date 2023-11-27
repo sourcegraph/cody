@@ -58,9 +58,8 @@
     --vscode-list-warningForeground: #855600;
     --vscode-problemsErrorIcon-foreground: #f48771;
     --vscode-widget-shadow: rgba(0, 0, 0, 0.2);
-	--vscode-list-activeSelectionForeground: #FFFFFF;
+    --vscode-list-activeSelectionForeground: #FFFFFF;
     --vscode-list-activeSelectionBackground: #04395E;
-
 }
 
 @font-face {
