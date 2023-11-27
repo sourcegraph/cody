@@ -137,7 +137,7 @@ function createContextFileFromUri(
     source: ContextFileSource = 'user',
     type: ContextFileType = 'file',
     selectionRange?: vscode.Range,
-    kind?: SymbolKind,
+    kind?: SymbolKind
 ): ContextFile {
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return {
