@@ -283,10 +283,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
                     ? TriggerKind.Manual
                     : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
-                        ? TriggerKind.Automatic
-                        : takeSuggestWidgetSelectionIntoAccount
-                            ? TriggerKind.SuggestWidget
-                            : TriggerKind.Hover
+                    ? TriggerKind.Automatic
+                    : takeSuggestWidgetSelectionIntoAccount
+                    ? TriggerKind.SuggestWidget
+                    : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
