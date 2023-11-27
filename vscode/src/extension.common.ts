@@ -10,7 +10,7 @@ import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
-import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
+import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
@@ -38,24 +38,26 @@ export interface PlatformContext {
     onConfigurationChange?: (configuration: Configuration) => void
 }
 
-export function activate(context: vscode.ExtensionContext, platformContext: PlatformContext): ExtensionApi {
+export async function activate(
+    context: vscode.ExtensionContext,
+    platformContext: PlatformContext
+): Promise<ExtensionApi> {
     const api = new ExtensionApi()
 
-    start(context, platformContext)
-        .then(disposable => {
-            if (!context.globalState.get('extension.hasActivatedPreviously')) {
-                void context.globalState.update('extension.hasActivatedPreviously', 'true')
-            }
-            context.subscriptions.push(disposable)
+    try {
+        const disposable = await start(context, platformContext)
+        if (!context.globalState.get('extension.hasActivatedPreviously')) {
+            void context.globalState.update('extension.hasActivatedPreviously', 'true')
+        }
+        context.subscriptions.push(disposable)
 
-            if (context.extensionMode === vscode.ExtensionMode.Development) {
-                onActivationDevelopmentHelpers()
-            }
-        })
-        .catch(error => {
-            captureException(error)
-            console.error(error)
-        })
+        if (context.extensionMode === vscode.ExtensionMode.Development) {
+            onActivationDevelopmentHelpers()
+        }
+    } catch (error) {
+        captureException(error)
+        console.error(error)
+    }
 
     return api
 }

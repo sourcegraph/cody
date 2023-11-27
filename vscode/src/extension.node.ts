@@ -24,7 +24,7 @@ import { NodeSentryService } from './services/sentry/sentry.node'
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).
  */
-export function activate(context: vscode.ExtensionContext): ExtensionApi {
+export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
     initializeNetworkAgent()
 
     return activateCommon(context, {

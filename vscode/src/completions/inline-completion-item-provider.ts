@@ -116,7 +116,6 @@ export interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    disableNetworkCache?: boolean
     disableRecyclingOfPreviousRequests?: boolean
 }
 
@@ -154,7 +153,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     constructor({
         completeSuggestWidgetSelection = true,
-        disableNetworkCache = false,
         disableRecyclingOfPreviousRequests = false,
         tracer = null,
         createBfgRetriever,
@@ -163,7 +161,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config = {
             ...config,
             completeSuggestWidgetSelection,
-            disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
@@ -185,7 +182,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         this.requestManager = new RequestManager({
-            disableNetworkCache: this.config.disableNetworkCache,
             disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
         this.contextMixer = new ContextMixer(
@@ -239,21 +235,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             // We start feature flag requests early so that we have a high chance of getting a response
             // before we need it.
-            const [languageLatencyPromise, userLatencyPromise] = [
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
-            ]
+            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency)
 
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
-
-            let stopLoading: () => void | undefined
-            const setIsLoading = (isLoading: boolean): void => {
-                if (isLoading) {
-                    stopLoading = this.config.statusBar.startLoading('Completions are being generated')
-                } else {
-                    stopLoading?.()
-                }
-            }
 
             const abortController = new AbortController()
             if (token) {
@@ -290,43 +274,29 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
-            const { docContext, completionIntent, artificialDelay } = await startAsyncSpan(
-                'autocomplete.plan',
-                async () => {
-                    const docContext = await startAsyncSpan('autocomplete.plan.docContext', () =>
-                        getCurrentDocContext({
-                            document,
-                            position,
-                            maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
-                            maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-                            // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
-                            context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-                        })
-                    )
+            const docContext = getCurrentDocContext({
+                document,
+                position,
+                maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
+                maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
+                // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+                context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+            })
 
-                    const completionIntent = await startAsyncSpan('autocomplete.plan.completionIntent', () =>
-                        getCompletionIntent({
-                            document,
-                            position,
-                            prefix: docContext.prefix,
-                        })
-                    )
+            const completionIntent = getCompletionIntent({
+                document,
+                position,
+                prefix: docContext.prefix,
+            })
 
-                    const artificialDelay = await startAsyncSpan('autocomplete.plan.artificialDelay', async () => {
-                        const latencyFeatureFlags: LatencyFeatureFlags = {
-                            user: await userLatencyPromise,
-                            language: await languageLatencyPromise,
-                        }
-                        return getArtificialDelay(
-                            latencyFeatureFlags,
-                            document.uri.toString(),
-                            document.languageId,
-                            completionIntent
-                        )
-                    })
-
-                    return { docContext, completionIntent, artificialDelay }
-                }
+            const latencyFeatureFlags: LatencyFeatureFlags = {
+                user: await userLatencyPromise,
+            }
+            const artificialDelay = getArtificialDelay(
+                latencyFeatureFlags,
+                document.uri.toString(),
+                document.languageId,
+                completionIntent
             )
 
             try {
