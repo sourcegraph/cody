@@ -50,24 +50,16 @@
     border: none;
     color: currentColor;
     background: transparent;
-    padding: 0.75rem 0.5rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 3px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
     gap: 0.3rem;
-}
-
-.selection-item:has(i) {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
 }
 
 .title-and-description-container {
     display: flex;
     align-items: baseline;
+    text-align: left;
     gap: 0.1rem;
-    flex-grow: 1;
     overflow: hidden;
 }
 
@@ -81,6 +73,10 @@
     margin-left: 0.25rem;
     font-size: smaller;
     opacity: 0.7;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    flex: 1;
 }
 
 .selection-item:hover {

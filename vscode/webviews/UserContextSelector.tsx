@@ -85,7 +85,9 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                     )}
                                     <span className={styles.titleAndDescriptionContainer}>
                                         <span className={styles.selectionTitle}>{title}</span>
-                                        {description && <span className={styles.selectionDescription}>{description}</span>}
+                                        {description && (
+                                            <span className={styles.selectionDescription}>{description}</span>
+                                        )}
                                     </span>
                                 </button>
                             </React.Fragment>

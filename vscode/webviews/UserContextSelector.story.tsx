@@ -43,7 +43,11 @@ export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> 
 export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         // Long enough to test text-overflow
-        contextSelection: Array.from(new Array(20).keys()).map(i => ({ fileName: `file-${i}.py`, path: { relative: `${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py` }, type: 'file' })),
+        contextSelection: Array.from(new Array(20).keys()).map(i => ({
+            fileName: `file-${i}.py`,
+            path: { relative: `${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py` },
+            type: 'file',
+        })),
         selected: 0,
         formInput: '@file',
     },
@@ -68,7 +72,36 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
                 path: { relative: 'src/login.go' },
                 range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
             },
-            { fileName: 'handleLogin', type: 'symbol', kind: 'method', path: { relative: 'lib/src/LoginDialog.tsx' } },
+            {
+                fileName: 'handleLogin',
+                type: 'symbol',
+                kind: 'method',
+                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+            },
+            {
+                fileName: 'handleLogin',
+                type: 'symbol',
+                kind: 'method',
+                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+            },
+            {
+                fileName: 'handleLogin',
+                type: 'symbol',
+                kind: 'method',
+                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+            },
+            {
+                fileName: 'handleLogin',
+                type: 'symbol',
+                kind: 'method',
+                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+            },
+            {
+                fileName: 'handleLogin',
+                type: 'symbol',
+                kind: 'method',
+                path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
+            },
         ],
         selected: 0,
         formInput: '@#login',
