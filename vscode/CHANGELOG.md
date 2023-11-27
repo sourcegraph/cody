@@ -30,6 +30,16 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Autocomplete: Remove the frequency of unhelpful autocompletions. [pull/1862](https://github.com/sourcegraph/cody/pull/1862)
 - Chat: The default chat model `claude-2` has been replaced with the pinned version `claude-2.0`. [pull/1860](https://github.com/sourcegraph/cody/pull/1860)
 
+## [0.16.1]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Move decision about which autocomplete deployment to use for StarCoder to the server. [pull/1845](https://github.com/sourcegraph/cody/pull/1845)
+
 ## [0.16.0]
 
 ### Added
