@@ -36,7 +36,6 @@ export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_
 export interface AnthropicOptions {
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    model?: 'claude-instant-1.2-cyan' | 'claude-instant-1.2'
 }
 
 const MAX_RESPONSE_TOKENS = 256
@@ -44,13 +43,11 @@ const MAX_RESPONSE_TOKENS = 256
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
-    private model: AnthropicOptions['model']
 
-    constructor(options: ProviderOptions, { maxContextTokens, client, model }: Required<AnthropicOptions>) {
+    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<AnthropicOptions>) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
-        this.model = model
     }
 
     public emptyPromptLength(): number {
@@ -145,7 +142,6 @@ export class AnthropicProvider extends Provider {
         const requestParams: CodeCompletionsParams = {
             temperature: 0.5,
             messages: prompt,
-            ...(this.model === 'claude-instant-1.2-cyan' ? { model: 'anthropic/claude-instant-1.2-cyan' } : undefined),
             ...(this.options.multiline
                 ? {
                       maxTokensToSample: MAX_RESPONSE_TOKENS,
@@ -227,30 +223,13 @@ export class AnthropicProvider extends Provider {
     }
 }
 
-export function createProviderConfig({
-    maxContextTokens = 2048,
-    model,
-    ...otherOptions
-}: Omit<AnthropicOptions, 'model'> & { model: string | null }): ProviderConfig {
-    let definedModel: 'claude-instant-1.2-cyan' | 'claude-instant-1.2'
-    switch (model) {
-        case 'claude-instant-1.2-cyan':
-            definedModel = 'claude-instant-1.2-cyan'
-            break
-        case 'claude-instant-1.2':
-        case null:
-            definedModel = 'claude-instant-1.2'
-            break
-        default:
-            throw new Error(`Invalid model: ${model}`)
-    }
-
+export function createProviderConfig({ maxContextTokens = 2048, ...otherOptions }: AnthropicOptions): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, { maxContextTokens, model: definedModel, ...otherOptions })
+            return new AnthropicProvider(options, { maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: 'anthropic',
-        model: definedModel,
+        model: 'claude-instant-1.2',
     }
 }

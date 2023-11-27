@@ -48,9 +48,11 @@ export async function configureExternalServices(
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
+        | 'createOpenTelemetryService'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
+    const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClint(initialConfig, logger)
 
@@ -87,6 +89,7 @@ export async function configureExternalServices(
         guardrails,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
+            openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)

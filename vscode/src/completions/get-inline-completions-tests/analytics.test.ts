@@ -96,6 +96,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
+                  "traceId": undefined,
                   "triggerKind": "Automatic",
                 },
               }
@@ -146,6 +147,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
+                  "traceId": undefined,
                   "triggerKind": "Automatic",
                 },
               }

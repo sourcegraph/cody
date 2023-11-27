@@ -1,17 +1,18 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { AuthStatus } from '../protocol'
 
-import { ChatPanelProvider } from './ChatPanelProvider'
-import { ChatPanelsManager } from './ChatPanelsManager'
+import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
 import { SidebarChatOptions, SidebarChatProvider } from './SidebarChatProvider'
 
 /**
@@ -28,7 +29,11 @@ export class ChatManager implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    constructor({ extensionUri, ...options }: SidebarChatOptions) {
+    constructor(
+        { extensionUri, ...options }: SidebarChatOptions,
+        private chatClient: ChatClient,
+        private embeddingsSearch: EmbeddingsSearch | null
+    ) {
         logDebug('ChatManager:constructor', 'init')
         this.options = { extensionUri, ...options }
 
@@ -60,7 +65,7 @@ export class ChatManager implements vscode.Disposable {
         })
     }
 
-    private async getChatProvider(): Promise<SidebarChatProvider | ChatPanelProvider> {
+    private async getChatProvider(): Promise<SidebarChatProvider | IChatPanelProvider> {
         if (!this.chatPanelsManager) {
             return this.sidebarChat
         }
@@ -195,7 +200,7 @@ export class ChatManager implements vscode.Disposable {
 
     private createChatPanelsManger(): void {
         if (!this.chatPanelsManager) {
-            this.chatPanelsManager = new ChatPanelsManager(this.options)
+            this.chatPanelsManager = new ChatPanelsManager(this.options, this.chatClient, this.embeddingsSearch)
             telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
         }
     }
@@ -203,7 +208,7 @@ export class ChatManager implements vscode.Disposable {
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<ChatPanelProvider | undefined> {
+    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider | undefined> {
         if (!this.chatPanelsManager) {
             return undefined
         }

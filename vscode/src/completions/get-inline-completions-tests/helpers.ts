@@ -66,10 +66,7 @@ export function params(
                 : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
         },
     }
-    const providerConfig = createProviderConfig({
-        client,
-        model: null,
-    })
+    const providerConfig = createProviderConfig({ client })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
 
