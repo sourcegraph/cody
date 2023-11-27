@@ -461,7 +461,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const promptText = this.isDotComUser ? interaction.getHumanMessage().text : ''
+        const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
         const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
