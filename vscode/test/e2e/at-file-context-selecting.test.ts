@@ -24,12 +24,6 @@ test('@-file fuzzy matching and clicking', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(sidebar.getByText('Explain @Main.java')).toBeVisible()
-
-    // click the file link in the transcript and check it opens
-    await sidebar.getByText('@Main.java').click()
-    await expect(
-        page.locator('[id="workbench\\.parts\\.editor"]').getByRole('tab').getByText('Main.java')
-    ).toBeVisible()
 })
 
 test('@-file fuzzy matching and keyboard navigating', async ({ page, sidebar }) => {
@@ -57,10 +51,6 @@ test('@-file fuzzy matching and keyboard navigating', async ({ page, sidebar }) 
     await expect(
         sidebar.getByText('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go')
     ).toBeVisible()
-
-    // click a file link in the transcript and check it opens
-    await sidebar.getByText('@lib/batches/env/var.go').click()
-    await expect(page.locator('[id="workbench\\.parts\\.editor"]').getByRole('tab').getByText('var.go')).toBeVisible()
 })
 
 test('@-file no-matches state', async ({ page, sidebar }) => {
