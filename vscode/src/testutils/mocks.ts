@@ -624,6 +624,11 @@ const languages: Partial<typeof vscode_types.languages> = {
     },
 }
 
+export enum UIKind {
+    Desktop = 1,
+    Web = 2,
+}
+
 export const vsCodeMocks = {
     Range,
     Position,
@@ -632,7 +637,10 @@ export const vsCodeMocks = {
     EndOfLine,
     CancellationTokenSource,
     ThemeColor,
+    ThemeIcon,
+    TreeItem,
     WorkspaceEdit,
+    UIKind,
     Uri,
     languages,
     window: {
@@ -696,11 +704,6 @@ export const vsCodeMocks = {
     CodeActionKind,
     DiagnosticSeverity,
 } as const
-
-export enum UIKind {
-    Desktop = 1,
-    Web = 2,
-}
 
 export function emptyEvent<T>(): vscode_types.Event<T> {
     return () => emptyDisposable

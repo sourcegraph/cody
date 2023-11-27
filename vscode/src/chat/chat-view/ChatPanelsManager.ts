@@ -6,6 +6,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
@@ -48,8 +49,10 @@ export class ChatPanelsManager implements vscode.Disposable {
     private onConfigurationChange: vscode.Disposable
 
     // Tree view for chat history
-    public treeViewProvider = new TreeViewProvider('chat')
+    public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
     public treeView
+
+    public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
     protected disposables: vscode.Disposable[] = []
 
@@ -69,8 +72,11 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Register Tree View
         this.disposables.push(
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeViewProvider),
-            vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support')),
-            vscode.window.registerTreeDataProvider('cody.commands.tree.view', new TreeViewProvider('command'))
+            vscode.window.registerTreeDataProvider('cody.support.tree.view', this.supportTreeViewProvider),
+            vscode.window.registerTreeDataProvider(
+                'cody.commands.tree.view',
+                new TreeViewProvider('command', featureFlagProvider)
+            )
         )
 
         // Register config change listener
@@ -100,6 +106,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        this.supportTreeViewProvider.syncAuthStatus(authStatus)
         if (!authStatus.isLoggedIn) {
             this.disposePanels()
         }
@@ -225,7 +232,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     private updateTreeViewHistory(): void {
         const localHistory = localStorage.getChatHistory()
         if (localHistory) {
-            this.treeViewProvider.updateTree(
+            void this.treeViewProvider.updateTree(
                 createCodyChatTreeItems({
                     chat: localHistory?.chat,
                     input: localHistory.input,

@@ -14,6 +14,7 @@ import {
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
@@ -60,6 +61,10 @@ interface CurrentUserIdResponse {
 
 interface CurrentUserIdHasVerifiedEmailResponse {
     currentUser: { id: string; hasVerifiedEmail: boolean } | null
+}
+
+interface CurrentUserIdHasVerifiedEmailHasCodyProResponse {
+    currentUser: { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | null
 }
 
 interface CodyLLMSiteConfigurationResponse {
@@ -323,6 +328,21 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response =>
             extractDataOrError(response, data =>
                 data.currentUser ? { ...data.currentUser } : new Error('current user not found with verified email')
+            )
+        )
+    }
+
+    public async getCurrentUserIdAndVerifiedEmailAndCodyPro(): Promise<
+        { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailHasCodyProResponse>>(
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser
+                    ? { ...data.currentUser }
+                    : new Error('current user not found with verified email and cody pro')
             )
         )
     }
