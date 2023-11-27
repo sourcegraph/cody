@@ -43,6 +43,9 @@ interface SharedEventPayload {
      */
     id: CompletionAnalyticsID | null
 
+    /** Eventual Sourcegraph instance OpenTelemetry trace id */
+    traceId?: string
+
     /** Wether the completion is a singleline or multiline one. */
     multiline: boolean
 

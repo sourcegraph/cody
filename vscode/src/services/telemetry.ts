@@ -17,7 +17,8 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-const extensionVersion = vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
+export const extensionVersion =
+    vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
 export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { getActiveTraceAndSpanId, startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logError } from '../log'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -232,14 +233,17 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         languageId: document.languageId,
         completionIntent,
         artificialDelay,
+        traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    const interval =
-        ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
-    if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
-        await new Promise<void>(resolve => setTimeout(resolve, interval))
-    }
+    await startAsyncSpan('autocomplete.debounce', async () => {
+        const interval =
+            ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
+        if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
+            await new Promise<void>(resolve => setTimeout(resolve, interval))
+        }
+    })
 
     // We don't need to make a request at all if the signal is already aborted after the debounce.
     if (abortSignal?.aborted) {
@@ -250,12 +254,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await contextMixer.getContext({
-        document,
-        position,
-        docContext,
-        abortSignal,
-        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+    const contextResult = await startAsyncSpan('autocomplete.retrieve', async () => {
+        return contextMixer.getContext({
+            document,
+            position,
+            docContext,
+            abortSignal,
+            maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+        })
     })
     if (abortSignal?.aborted) {
         return null
