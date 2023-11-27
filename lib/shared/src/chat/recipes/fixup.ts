@@ -34,7 +34,7 @@ export class Fixup implements Recipe {
 
         const promptText = this.getPrompt(fixupTask)
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        const promptPrefix = `<${this.multiplexerTopic}>`
+        const promptPrefix = `<${this.multiplexerTopic}>\n`
 
         return newInteraction({
             text: promptText,

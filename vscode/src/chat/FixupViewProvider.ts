@@ -66,14 +66,14 @@ export class FixupProvider extends MessageProvider {
         }
 
         // Error state: The transcript finished but we didn't receive any text
-        if (!lastMessage.displayText && !isMessageInProgress) {
+        if (!lastMessage.text && !isMessageInProgress) {
             this.handleError('Cody did not respond with any text')
         }
 
-        if (lastMessage.displayText) {
+        if (lastMessage.text) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                contentSanitizer(lastMessage.displayText),
+                contentSanitizer(lastMessage.text),
                 isMessageInProgress ? 'streaming' : 'complete'
             )
         }
