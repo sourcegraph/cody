@@ -118,7 +118,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
+    public async createWebviewPanel(
+        activePanelViewColumn?: vscode.ViewColumn,
+        lastQuestion?: string
+    ): Promise<vscode.WebviewPanel | undefined> {
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
         if (this.webviewPanel) {
@@ -129,18 +132,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // truncate firstQuestion to first 10 chars
         const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
         const panelTitle = text || 'New Chat'
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
 
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
-            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+            { viewColumn, preserveFocus: true },
             {
-                enableScripts: true,
                 retainContextWhenHidden: true,
                 enableFindWidget: true,
-                localResourceRoots: [webviewPath],
-                enableCommandUris: true,
             }
         )
 
