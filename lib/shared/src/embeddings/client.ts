@@ -5,7 +5,7 @@ import { EmbeddingsSearch } from '.'
 export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     constructor(
         private client: SourcegraphGraphQLAPIClient,
-        private repoId: string,
+        public readonly repoId: string,
         private web: boolean = false
     ) {}
 

@@ -10,10 +10,11 @@ import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
-import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
+import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
+import { OpenTelemetryService } from './services/OpenTelemetryService.node'
 import { captureException, SentryService } from './services/sentry/sentry'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,6 +33,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
+    createOpenTelemetryService?: (config: Pick<Configuration, 'serverEndpoint'>) => OpenTelemetryService
     recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -1034,6 +1034,12 @@
           "markdownDescription": "New search UI",
           "default": false
         },
+        "cody.experimental.simpleChatContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Uses the new simplifed chat context fetcher",
+          "default": false
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
@@ -1161,6 +1167,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
+    "@opentelemetry/instrumentation-http": "^0.45.1",
+    "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/semantic-conventions": "^1.18.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",

@@ -255,7 +255,7 @@ export function getChatModelsForWebview(endpoint?: string | null): ChatModelSele
 const defaultChatModels = [
     { title: 'Claude 2.0', model: 'anthropic/claude-2.0', provider: 'Anthropic', default: true },
     { title: 'Claude 2.1 Preview', model: 'anthropic/claude-2.1', provider: 'Anthropic', default: false },
-    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2-cyan', provider: 'Anthropic', default: false },
+    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2', provider: 'Anthropic', default: false },
     { title: 'ChatGPT 3.5 Turbo', model: 'openai/gpt-3.5-turbo', provider: 'OpenAI', default: false },
     { title: 'ChatGPT 4 Turbo Preview', model: 'openai/gpt-4-1106-preview', provider: 'OpenAI', default: false },
 ]
