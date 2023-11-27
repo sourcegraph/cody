@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { FixupIntent, PROMPT_TOPICS } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 
 import { getSmartSelection } from '../editor/utils'
 
@@ -57,16 +57,16 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
 
     // Public for testing
     public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
-        const prompt: string[] = [`<problemCode>${code}</problemCode>\n`]
+        const prompt: string[] = [`<${PROMPT_TOPICS.PROBLEM.INPUT}>${code}</${PROMPT_TOPICS.PROBLEM.INPUT}>\n`]
 
         for (let i = 0; i < diagnostics.length; i++) {
             const { message, source, severity, relatedInformation } = diagnostics[i]
 
             const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
             prompt.push(
-                `Fix the following ${
-                    source ? `${source} ` : ''
-                }${diagnosticType} from within <problemCode></problemCode>: ${message}`
+                `Fix the following ${source ? `${source} ` : ''}${diagnosticType} from within <${
+                    PROMPT_TOPICS.PROBLEM.INPUT
+                }}></${PROMPT_TOPICS.PROBLEM.INPUT}}> : ${message}`
             )
 
             if (relatedInformation?.length) {
@@ -87,10 +87,15 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         relatedInformation: vscode.DiagnosticRelatedInformation[]
     ): Promise<string[]> {
         const prompt: string[] = []
-        for (const { location, message } of relatedInformation) {
+        for (let index = 0; index < relatedInformation.length; index++) {
+            const { location, message } = relatedInformation[index]
             prompt.push(message)
             const document = await vscode.workspace.openTextDocument(location.uri)
-            prompt.push(`<relatedCode>${document.getText(location.range)}</relatedCode>\n`)
+            prompt.push(
+                `<${PROMPT_TOPICS.PROBLEM.RELATED}${index}>${document.getText(location.range)}</${
+                    PROMPT_TOPICS.PROBLEM.RELATED
+                }${index}>\n`
+            )
         }
         return prompt
     }
