@@ -4,13 +4,11 @@ import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorDiagnosticType,
-    ActiveTextEditorPosition,
     ActiveTextEditorSelection,
     ActiveTextEditorSelectionRange,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
-    LSPReference,
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
@@ -217,8 +215,8 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
 
         let range: vscode.Range | undefined
         if (selectionRange) {
-            const startLine = selectionRange.start.line
-            let endLine = selectionRange.end.line
+            const startLine = selectionRange?.start?.line
+            let endLine = selectionRange?.end?.line
             if (startLine === endLine) {
                 endLine++
             }
@@ -266,33 +264,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
                 text: activeEditor.document.getText(range),
                 message,
             }))
-    }
-
-    public async getLSPReferencesForPosition({ line, character }: ActiveTextEditorPosition): Promise<LSPReference[]> {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
-            return []
-        }
-        const position = new vscode.Position(line, character)
-        const references = await vscode.commands.executeCommand<vscode.Location[]>(
-            'vscode.executeReferenceProvider',
-            activeEditor.document.uri,
-            position
-        )
-
-        const result: LSPReference[] = []
-        for (const { uri, range } of references) {
-            const text = await this.getTextEditorContentForFile(uri, range)
-            if (text) {
-                result.push({
-                    uri,
-                    fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
-                    range,
-                    text,
-                })
-            }
-        }
-        return result
     }
 
     private createActiveTextEditorSelection(

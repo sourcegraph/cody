@@ -623,8 +623,8 @@ export class FixupController
             return undefined
         }
 
-        // Expand the selection range for edits and fixes
-        const getSmartSelection = task.intent === 'edit' || task.intent === 'fix'
+        // Support expanding the selection range for intents where it is useful
+        const getSmartSelection = task.intent !== 'add'
         if (getSmartSelection && task.selectionRange) {
             const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
