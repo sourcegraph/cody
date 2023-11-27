@@ -522,10 +522,17 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * Code API of the same name, it's prefixed with `unstable_` to avoid a clash when the new API
      * goes GA.
      */
-    private unstable_handleDidPartiallyAcceptCompletionItem(
-        completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
+    public unstable_handleDidPartiallyAcceptCompletionItem(
+        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem'> | CompletionItemID,
         acceptedLength: number
     ): void {
+        const completion =
+            typeof completionOrItemId === 'string'
+                ? suggestedCompletionItemIDs.get(completionOrItemId)
+                : completionOrItemId
+        if (!completion) {
+            return
+        }
         CompletionLogger.partiallyAccept(completion.logId, completion.analyticsItem, acceptedLength)
     }
 

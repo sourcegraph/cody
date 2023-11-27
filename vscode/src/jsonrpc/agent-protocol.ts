@@ -109,6 +109,7 @@ export type Notifications = {
     // The completion was accepted by the user, and will be logged for telemetry
     // purposes.
     'autocomplete/completionAccepted': [CompletionItemParams]
+    'autocomplete/completionPartiallyAccepted': [CompletionItemParams & { acceptedLength: number }]
     // Resets the chat transcript and clears any in-progress interactions.
     // This notification should be sent when the user starts a new conversation.
     // The chat transcript grows indefinitely if this notification is never sent.
