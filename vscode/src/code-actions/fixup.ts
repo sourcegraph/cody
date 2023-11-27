@@ -1,8 +1,13 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent, PROMPT_TOPICS } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 
 import { getSmartSelection } from '../editor/utils'
+
+export const FIX_PROMPT_TOPICS = {
+    SOURCE: 'PROBLEMCODE4179',
+    RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
+}
 
 export class FixupCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
@@ -57,7 +62,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
 
     // Public for testing
     public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
-        const prompt: string[] = [`<${PROMPT_TOPICS.PROBLEM.INPUT}>${code}</${PROMPT_TOPICS.PROBLEM.INPUT}>\n`]
+        const prompt: string[] = [`<${FIX_PROMPT_TOPICS.SOURCE}>${code}</${FIX_PROMPT_TOPICS.SOURCE}>\n`]
 
         for (let i = 0; i < diagnostics.length; i++) {
             const { message, source, severity, relatedInformation } = diagnostics[i]
@@ -65,8 +70,8 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
             prompt.push(
                 `Fix the following ${source ? `${source} ` : ''}${diagnosticType} from within <${
-                    PROMPT_TOPICS.PROBLEM.INPUT
-                }}></${PROMPT_TOPICS.PROBLEM.INPUT}}> : ${message}`
+                    FIX_PROMPT_TOPICS.SOURCE
+                }></${FIX_PROMPT_TOPICS.SOURCE}>: ${message}`
             )
 
             if (relatedInformation?.length) {
@@ -87,14 +92,14 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         relatedInformation: vscode.DiagnosticRelatedInformation[]
     ): Promise<string[]> {
         const prompt: string[] = []
-        for (let index = 0; index < relatedInformation.length; index++) {
-            const { location, message } = relatedInformation[index]
+        for (let i = 0; i < relatedInformation.length; i++) {
+            const { location, message } = relatedInformation[i]
             prompt.push(message)
             const document = await vscode.workspace.openTextDocument(location.uri)
             prompt.push(
-                `<${PROMPT_TOPICS.PROBLEM.RELATED}${index}>${document.getText(location.range)}</${
-                    PROMPT_TOPICS.PROBLEM.RELATED
-                }${index}>\n`
+                `<${FIX_PROMPT_TOPICS.RELATED}${i}>${document.getText(location.range)}</${
+                    FIX_PROMPT_TOPICS.RELATED
+                }${i}>\n`
             )
         }
         return prompt

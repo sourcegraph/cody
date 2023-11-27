@@ -19,11 +19,7 @@ export const PROMPT_TOPICS = {
     OUTPUT: 'CODE5711',
     SELECTED: 'SELECTEDCODE7662',
     PRECEDING: 'PRECEDINGCODE3493',
-    PROBLEM: {
-        INPUT: 'PROBLEMCODE4179',
-        RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
-    },
-} as const
+}
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'

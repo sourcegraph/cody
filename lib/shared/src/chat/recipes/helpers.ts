@@ -72,13 +72,12 @@ export function getFileExtension(fileName: string): string {
     return path.extname(fileName).slice(1).toLowerCase()
 }
 
-const FIXUP_TAG_TOPICS = `(${PROMPT_TOPICS.OUTPUT}|${PROMPT_TOPICS.SELECTED}|${PROMPT_TOPICS.PROBLEM.INPUT}|${PROMPT_TOPICS.PROBLEM.RELATED}})`
-const FIXUP_TAG_REGEX = new RegExp(`^\\s*<${FIXUP_TAG_TOPICS}>|<\\/${FIXUP_TAG_TOPICS}>\\s*$`, 'g')
-
 // This cleans up the code returned by Cody based on current behavior
 // ex. Remove  `tags:` that Cody sometimes include in the returned content
 // It also removes all spaces before a new line to keep the indentations
 export function contentSanitizer(text: string): string {
+    const FIXUP_TAG_TOPICS = `(${PROMPT_TOPICS.OUTPUT}|${PROMPT_TOPICS.SELECTED}|${PROMPT_TOPICS.PRECEDING})`
+    const FIXUP_TAG_REGEX = new RegExp(`^\\s*<${FIXUP_TAG_TOPICS}>|<\\/${FIXUP_TAG_TOPICS}>\\s*$`, 'g')
     let output = text.replaceAll(FIXUP_TAG_REGEX, '')
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
