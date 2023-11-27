@@ -339,7 +339,7 @@ export class Agent extends MessageHandler {
             }
         })
 
-        this.registerNotification('autocomplete/completionAccepted', async completionID => {
+        this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const client = await this.client
             if (!client) {
                 throw new Error('Cody client not initialized')
@@ -348,7 +348,7 @@ export class Agent extends MessageHandler {
             provider.handleDidAcceptCompletionItem(completionID)
         })
 
-        this.registerNotification('autocomplete/completionSuggested', async completionID => {
+        this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const client = await this.client
             if (!client) {
                 throw new Error('Cody client not initialized')
