@@ -78,15 +78,15 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                     onClick={() => onSelected(match, formInput)}
                                     type="button"
                                 >
-                                    <p className={styles.selectionTitle}>
-                                        {icon && (
-                                            <>
-                                                <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
-                                            </>
-                                        )}
-                                        <span className={styles.selectionTitleText}>{title}</span>
-                                    </p>
-                                    {description && <p className={styles.selectionDescription}>{description}</p>}
+                                    {icon && (
+                                        <>
+                                            <i className={`codicon codicon-${icon}`} title={match.kind} />{' '}
+                                        </>
+                                    )}
+                                    <span className={styles.titleAndDescriptionContainer}>
+                                        <span className={styles.selectionTitle}>{title}</span>
+                                        {description && <span className={styles.selectionDescription}>{description}</span>}
+                                    </span>
                                 </button>
                             </React.Fragment>
                         )

@@ -42,7 +42,8 @@ export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> 
 
 export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
-        contextSelection: [{ fileName: 'open-file.py' }, { fileName: 'open-file.go' }, { fileName: 'open-file-2.go' }, { fileName: 'open-file-3.go' }, { fileName: 'open-file-4.go' }, { fileName: 'open-file-5.go' }, { fileName: 'open-file-6.go' }, { fileName: 'open-file-7.go' }, { fileName: 'open-file-8.go' }],
+        // Long enough to test text-overflow
+        contextSelection: Array.from(new Array(20).keys()).map(i => ({ fileName: `file-${i}.py`, path: { relative: `${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py` }, type: 'file' })),
         selected: 0,
         formInput: '@file',
     },
