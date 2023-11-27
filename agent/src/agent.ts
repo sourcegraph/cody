@@ -16,7 +16,6 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/tele
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { activate } from '../../vscode/src/extension.node'
-import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
@@ -29,10 +28,7 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export async function initializeVscodeExtension(
-    workspaceRoot: vscode.Uri,
-    extensionConfiguration?: ExtensionConfiguration
-): Promise<void> {
+export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
     await activate({
         asAbsolutePath(relativePath) {
@@ -48,18 +44,9 @@ export async function initializeVscodeExtension(
         extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
         globalState: {
             keys: () => [],
-            get: key => {
-                switch (key) {
-                    case localStorage.ANONYMOUS_USER_ID_KEY:
-                        // cant use vscode_shim.connectionConfig here as this is queried for in extension activation
-                        // and vscode_shim.connectionConfig is set after extension activation.
-                        return extensionConfiguration?.anonymousUserID
-                    default:
-                        return undefined
-                }
-            },
-            update: (key, value) => Promise.resolve(),
-            setKeysForSync: keys => {},
+            get: () => undefined,
+            update: () => Promise.resolve(),
+            setKeysForSync: () => {},
         },
         logUri: {} as any,
         logPath: {} as any,
@@ -167,19 +154,27 @@ export class Agent extends MessageHandler {
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
-            vscode_shim.setClientInfo(clientInfo)
-            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            await initializeVscodeExtension(this.workspace.workspaceRootUri, clientInfo.extensionConfiguration)
 
+            vscode_shim.setClientInfo(clientInfo)
             // Register client info
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             if (clientInfo.extensionConfiguration) {
+                // this must be done before initializing the vscode extension below, as extensionConfiguration
+                // is queried in a number of places.
                 await this.setClientAndTelemetry(clientInfo.extensionConfiguration)
             }
+
+            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
+                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+            await initializeVscodeExtension(this.workspace.workspaceRootUri)
+
+            // must be done here, as the commands are not registered when calling setClientAndTelemetry above
+            // but setClientAndTelemetry must called before initializing the vscode extension.
+            await this.reloadAuth()
+
             const codyClient = await this.client
             if (!codyClient) {
                 return {
@@ -466,7 +461,7 @@ export class Agent extends MessageHandler {
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange) {
-            await vscode_shim.commands.executeCommand('agent.auth.reload')
+            await this.reloadAuth()
         }
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>
@@ -489,6 +484,11 @@ export class Agent extends MessageHandler {
         })
         this.oldClient = client
         return client
+    }
+
+    private async reloadAuth(): Promise<void> {
+        await vscode_shim.commands.executeCommand('agent.auth.reload')
+        await vscode_shim.commands.executeCommand('cody.auth.sync')
     }
 
     /**
