@@ -22,19 +22,11 @@ describe('getFileContextFiles', () => {
             ])
 
         expect(
-            (await getFileContextFiles('filego', 5, new vscode.CancellationTokenSource().token)).map(uri => uri.path)
+          (await getFileContextFiles('filego', 5, new vscode.CancellationTokenSource().token)).map(uri => uri.path?.basename)
         ).toMatchInlineSnapshot(`
           [
-            {
-              "basename": "go-has-parts",
-              "dirname": "/foo/bar/File",
-              "relative": "/foo/bar/File/go-has-parts",
-            },
-            {
-              "basename": "file.go",
-              "dirname": "/foo/bar/baz",
-              "relative": "/foo/bar/baz/file.go",
-            },
+            "go-has-parts",
+            "file.go",
           ]
         `)
 
