@@ -38,7 +38,6 @@ export interface ContextFile {
     source?: ContextFileSource
     type?: ContextFileType
     kind?: SymbolKind
-    editorTab?: boolean
 }
 
 export interface ContextMessage extends Message {

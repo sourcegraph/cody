@@ -138,7 +138,6 @@ function createContextFileFromUri(
     type: ContextFileType = 'file',
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
-    editorTab?: boolean
 ): ContextFile {
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return {
@@ -149,7 +148,6 @@ function createContextFileFromUri(
         type,
         source,
         kind,
-        editorTab,
     }
 }
 
