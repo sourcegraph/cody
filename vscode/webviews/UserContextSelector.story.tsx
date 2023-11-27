@@ -42,7 +42,7 @@ export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> 
 
 export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
-        contextSelection: [{ fileName: 'open-file.py' }, { fileName: 'open-file.go' }],
+        contextSelection: [{ fileName: 'open-file.py' }, { fileName: 'open-file.go' }, { fileName: 'open-file-2.go' }, { fileName: 'open-file-3.go' }, { fileName: 'open-file-4.go' }, { fileName: 'open-file-5.go' }, { fileName: 'open-file-6.go' }, { fileName: 'open-file-7.go' }, { fileName: 'open-file-8.go' }],
         selected: 0,
         formInput: '@file',
     },

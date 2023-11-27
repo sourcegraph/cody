@@ -5,7 +5,8 @@
     box-sizing: border-box;
     /* Match the input width */
     width: calc(100vw - 64px);
-    max-height: 250%;
+    /* Fit in 6 results with the 7th peeking in */
+    max-height: 11.8rem;
     z-index: 101;
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
