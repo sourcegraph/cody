@@ -829,7 +829,7 @@
       "editor/title": [
         {
           "command": "cody.action.commands.menu",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon && resourceScheme == file && !editorReadonly",
           "group": "navigation",
           "visibility": "visible"
         },
