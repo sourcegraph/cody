@@ -33,8 +33,7 @@ export function canUsePartialCompletion(
         return null
     }
 
-    // The last line might not be complete yet, so we discard it
-    const item = parseAndTruncateCompletion(partialResponse.slice(0, lastNewlineIndex), params)
+    const item = parseAndTruncateCompletion(partialResponse, params)
 
     if (params.multiline) {
         return (item.lineTruncatedCount || 0) > 0 ? item : null

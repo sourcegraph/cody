@@ -233,7 +233,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency)
+        const [userLatencyPromise, dynamicMultlilineCompletions] = [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
+        ]
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
@@ -288,6 +291,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+            dynamicMultlilineCompletions: await dynamicMultlilineCompletions,
         })
 
         const completionIntent = getCompletionIntent({
@@ -327,6 +331,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                 handleDidPartiallyAcceptCompletionItem: this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                 completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
+                dynamicMultlilineCompletions: await dynamicMultlilineCompletions,
                 artificialDelay,
                 completionIntent,
             })

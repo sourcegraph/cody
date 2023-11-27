@@ -1,6 +1,7 @@
 import { getLanguageConfig } from '../tree-sitter/language'
 
 import { DocumentDependentContext, LinesContext } from './get-current-doc-context'
+import { completionPostProcessLogger } from './post-process-logger'
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,
@@ -11,11 +12,19 @@ import {
 interface DetectMultilineParams {
     docContext: LinesContext & DocumentDependentContext
     languageId: string
+    dynamicMultlilineCompletions?: boolean
 }
 
 export function detectMultiline(params: DetectMultilineParams): string | null {
-    const { docContext, languageId } = params
-    const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
+    const { docContext, languageId, dynamicMultlilineCompletions } = params
+    const {
+        prefix,
+        prevNonEmptyLine,
+        nextNonEmptyLine,
+        currentLinePrefix,
+        currentLineSuffix,
+        completionPostProcessId,
+    } = docContext
 
     const blockStart = getLanguageConfig(languageId)?.blockStart
     const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
@@ -26,11 +35,13 @@ export function detectMultiline(params: DetectMultilineParams): string | null {
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
     if (
+        !dynamicMultlilineCompletions &&
         !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
         checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
     ) {
         return null
     }
+    completionPostProcessLogger.info({ completionPostProcessId, stage: 'detectMultiline', text: currentLinePrefix })
 
     const openingBracketMatch = currentLinePrefix.match(OPENING_BRACKET_REGEX)
     if (

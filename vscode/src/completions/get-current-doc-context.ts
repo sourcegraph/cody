@@ -11,12 +11,16 @@ export interface DocumentContext extends DocumentDependentContext, LinesContext 
 export interface DocumentDependentContext {
     prefix: string
     suffix: string
-
     /**
      * This is set when the document context is looking at the selected item in the
      * suggestion widget and injects the item into the prefix.
      */
     injectedPrefix: string | null
+    /**
+     * @deprecated
+     * will be removed after migrating `completionPostProcessLogger` to OpenTelemtry exporter.
+     */
+    completionPostProcessId?: string
 }
 
 interface GetCurrentDocContextParams {
@@ -27,6 +31,7 @@ interface GetCurrentDocContextParams {
     /* A number representing the maximum length of the suffix to get from the document. */
     maxSuffixLength: number
     context?: vscode.InlineCompletionContext
+    dynamicMultlilineCompletions?: boolean
 }
 
 /**
@@ -108,6 +113,7 @@ interface GetDerivedDocContextParams {
     languageId: string
     position: vscode.Position
     documentDependentContext: DocumentDependentContext
+    dynamicMultlilineCompletions?: boolean
 }
 
 /**
@@ -115,7 +121,7 @@ interface GetDerivedDocContextParams {
  * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
  */
 export function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
-    const { position, documentDependentContext, languageId } = params
+    const { position, documentDependentContext, languageId, dynamicMultlilineCompletions } = params
     const linesContext = getLinesContext(documentDependentContext)
 
     return {
@@ -125,6 +131,7 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
         multilineTrigger: detectMultiline({
             docContext: { ...linesContext, ...documentDependentContext },
             languageId,
+            dynamicMultlilineCompletions,
         }),
     }
 }

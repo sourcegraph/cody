@@ -7,6 +7,7 @@ import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
+import { completionPostProcessLogger } from '../post-process-logger'
 import { InlineCompletionItem } from '../types'
 
 import { dropParserFields, ParsedCompletion } from './parse-completion'
@@ -30,6 +31,12 @@ export function processInlineCompletions(
     items: ParsedCompletion[],
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItemWithAnalytics[] {
+    completionPostProcessLogger.info({
+        completionPostProcessId: 'constant',
+        stage: 'enter',
+        text: items[0]?.insertText,
+        isCollapsedGroup: true,
+    })
     // Shared post-processing logic
     const completionItems = items.map(item => processCompletion(item, params))
 
@@ -41,6 +48,11 @@ export function processInlineCompletions(
 
     // Rank results
     const rankedResults = rankCompletions(uniqueResults)
+    completionPostProcessLogger.info({
+        completionPostProcessId: 'constant',
+        stage: 'exit',
+        text: rankedResults[0]?.insertText,
+    })
 
     return rankedResults.map(dropParserFields)
 }

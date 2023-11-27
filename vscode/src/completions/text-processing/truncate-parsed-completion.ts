@@ -1,11 +1,12 @@
-import { LRUCache } from 'lru-cache'
 import { TextDocument } from 'vscode'
 import { Point, SyntaxNode } from 'web-tree-sitter'
 
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
+import { completionPostProcessLogger } from '../post-process-logger'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
+import { BRACKET_PAIR, getFirstLine, OpeningBracket } from './utils'
 
 interface CompletionContext {
     completion: ParsedCompletion
@@ -13,72 +14,85 @@ interface CompletionContext {
     docContext: DocumentContext
 }
 
-class ParsedCompletionCache {
-    private cache = new LRUCache<string, ParsedCompletion>({ max: 12 })
-
-    private toCacheKey(key: CompletionContext): string {
-        return `${key.docContext.prefix}█${key.completion.insertText}█${key.docContext.nextNonEmptyLine}`
-    }
-
-    /**
-     * Use the LRU cache to avoid re-parsing the completion's first line multiple times when
-     * it is being streamed to the client.
-     */
-    public parse(context: CompletionContext): ParsedCompletion {
-        const cacheKey = this.toCacheKey(context)
-
-        if (!this.cache.has(cacheKey)) {
-            this.cache.set(cacheKey, parseCompletion(context))
-        }
-
-        return this.cache.get(cacheKey)!
-    }
+interface InsertMissingBracketParams {
+    textToCheck: string
+    textToComplete: string
+    docContext: DocumentContext
 }
 
-const parsedCompletionCache = new ParsedCompletionCache()
+/**
+ * Inserts a closing bracket if the text to check ends with an opening bracket
+ * but the next non-empty line does not start with the corresponding closing bracket.
+ * This handles cases where a missing bracket breaks the incomplete parse-tree.
+ */
+function insertMissingBracketIfNeeded(params: InsertMissingBracketParams): string {
+    const {
+        textToCheck,
+        textToComplete,
+        docContext: { nextNonEmptyLine },
+    } = params
+
+    const openingBracket = Object.keys(BRACKET_PAIR).find(openingBracket =>
+        textToCheck.trimEnd().endsWith(openingBracket)
+    ) as OpeningBracket
+
+    if (openingBracket && !nextNonEmptyLine.startsWith(BRACKET_PAIR[openingBracket])) {
+        return textToComplete + BRACKET_PAIR[openingBracket]
+    }
+
+    return textToComplete
+}
 
 /**
- * Truncates the `insertText` of a `ParsedCompletion` based on the next sibling inserted
- * into the parse tree.
- *
- * Uses `tree-sitter` to walk the parse tree from the node at the end of the current line
- * and looks for a node with the updated number of children.
+ * Truncates the insert text of a parsed completion based on context.
+ * Uses tree-sitter to walk the parse-tree with the inserted completion and truncate it.
  */
-export function truncateParsedCompletionByNextSibling(context: CompletionContext): string {
+export function truncateParsedCompletion(context: CompletionContext): string {
     const { completion, document, docContext } = context
+    const { completionPostProcessId } = docContext
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
-    // We insert the first line of the multiline completion into the existing document
-    // to insert the potential start of the multiline block so that we can walk upwards from it.
-    //
-    // Required for multiline completions triggered from the parameters list. E.g.,:
-    // function test(█)
-    // function test(one, two) {...}
-    //
-    // In this case, the logic will find the parameter list as a node with the updated number
-    // of siblings. We get the expected result if we start from the "{" node.
-    const firstLine = completion.insertText.split('\n').shift() || completion.insertText
-    const parsedFirstLine = parsedCompletionCache.parse({
-        completion: { insertText: firstLine },
-        document,
-        docContext,
-    })
-
-    if (!completion.tree || !completion.points || !parseTreeCache || !parsedFirstLine.tree) {
+    if (!completion.tree || !completion.points || !parseTreeCache) {
         throw new Error('Expected completion and document to have tree-sitter data for truncation')
     }
 
     const { insertText, points } = completion
+    completionPostProcessLogger.info({ completionPostProcessId, stage: 'truncate', text: insertText })
 
-    const queryStart = points?.trigger || points.start
-    const nodeToInsert = findChildBeforeTheNewSibling(
-        parsedFirstLine.tree.rootNode,
-        completion.tree.rootNode,
-        queryStart
-    )
+    let fixedCompletion = completion
+    let updatedText = insertMissingBracketIfNeeded({
+        textToCheck: getFirstLine(insertText),
+        textToComplete: insertText,
+        docContext,
+    })
+    updatedText = insertMissingBracketIfNeeded({
+        textToCheck: updatedText,
+        textToComplete: updatedText,
+        docContext,
+    })
+
+    if (updatedText.length !== insertText.length) {
+        const updatedCompletion = parseCompletion({
+            completion: { insertText: updatedText },
+            document,
+            docContext,
+        })
+
+        if (fixedCompletion?.tree) {
+            fixedCompletion = updatedCompletion
+        }
+    }
+
+    const nodeToInsert = findLastAncestorOnTheSameRow(fixedCompletion.tree!.rootNode, points.trigger || points.start)
+    completionPostProcessLogger.info({
+        completionPostProcessId,
+        stage: 'truncate node',
+        text: nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text,
+    })
 
     if (nodeToInsert) {
         const overlap = findLargestSuffixPrefixOverlap(nodeToInsert.text, insertText)
+        completionPostProcessLogger.info({ completionPostProcessId, stage: 'truncate overlap', text: String(overlap) })
 
         if (overlap) {
             return overlap
@@ -88,55 +102,25 @@ export function truncateParsedCompletionByNextSibling(context: CompletionContext
     return insertText
 }
 
-// Number of ancestor nodes to check for changes in child count.
-// Set by heuristic: higher values add unnecessary performance cost with no benefit.
-const PARENTS_TO_CHECK = 7
-const NODE_TYPES_WITH_MULTIPLE_BLOCK_STATEMENTS = new Set(['if_statement', 'try_statement'])
+function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point): SyntaxNode | null {
+    console.log('root', root.type, root.text)
+    console.log('-----------')
+    const initial = root.namedDescendantForPosition(position)
+    let current = initial
+    console.log('initial', initial.type, initial.text)
+    console.log('-------------')
 
-/**
- * Finds the nearest sibling node before an insertion point in a syntax tree.
- *
- * This function compares two syntax trees: one before and one after a change. It starts
- * at the cursor position and moves up the tree, checking a fixed number of ancestor nodes
- * to find where the new sibling would be inserted. The comparison stops if the number of
- * children changes, indicating the potential point of insertion. This is used to inform
- * how completion suggestions should be truncated.
- */
-function findChildBeforeTheNewSibling(
-    prevRoot: SyntaxNode,
-    currentRoot: SyntaxNode,
-    cursorPosition: Point
-): SyntaxNode | null {
-    let prevNode = namedNodeOrParent(prevRoot.descendantForPosition(cursorPosition))
-    let currentNode = namedNodeOrParent(currentRoot.descendantForPosition(cursorPosition))
-
-    for (let i = 0; i < PARENTS_TO_CHECK; i++) {
-        if (!currentNode?.parent || !prevNode?.parent) {
-            // If we are already at the tip of the tree, check if the current node
-            // has the updated number of children.
-            if (prevNode?.childCount !== currentNode?.childCount) {
-                return currentNode
-            }
-
-            break
+    while (current?.parent?.startPosition.row === initial?.startPosition.row && current.parent.id !== root.id) {
+        current = current.parent
+        if (current.type === 'module') {
+            console.log(current.id)
+            console.log(root.id)
         }
-
-        if (prevNode.parent.childCount !== currentNode.parent.childCount) {
-            if (NODE_TYPES_WITH_MULTIPLE_BLOCK_STATEMENTS.has(currentNode.parent.type)) {
-                return currentNode.parent
-            }
-            return currentNode
-        }
-
-        currentNode = currentNode.parent
-        prevNode = prevNode.parent
+        console.log('current', current.type, current.text)
+        console.log('-------------')
     }
 
-    return null
-}
-
-function namedNodeOrParent(node: SyntaxNode): SyntaxNode | null {
-    return node.isNamed() ? node : node.parent
+    return current
 }
 
 /**

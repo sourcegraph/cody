@@ -252,7 +252,10 @@ export const BRACKET_PAIR = {
     '(': ')',
     '[': ']',
     '{': '}',
+    '<': '>',
 } as const
+export type OpeningBracket = keyof typeof BRACKET_PAIR
+export type ClosingBracket = (typeof BRACKET_PAIR)[OpeningBracket]
 
 export function getEditorTabSize(): number {
     return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2
