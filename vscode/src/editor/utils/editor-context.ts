@@ -119,7 +119,17 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 }
 
 export function getOpenTabsContextFile(): ContextFile[] {
-    return getOpenTabsUris()?.map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined, true))
+    // de-dupe by fspath in case if they have a file open in two tabs
+    const fsPaths = new Set()
+    return getOpenTabsUris().
+        filter(uri => {
+            if (!fsPaths.has(uri.fsPath)) {
+                fsPaths.add(uri.fsPath)
+                return true
+            } 
+            return false            
+        }).
+        map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined, true))
 }
 
 function createContextFileFromUri(
