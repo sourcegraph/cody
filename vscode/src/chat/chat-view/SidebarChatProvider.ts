@@ -298,7 +298,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
 
     private async handleContextFiles(query: string): Promise<void> {
         // TODO(toolmantim): add debounce
-        
+
         if (!query.length) {
             const tabs = getOpenTabsContextFile()
             await this.webview?.postMessage({
@@ -320,11 +320,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 })
             } else {
                 const cancellation = new vscode.CancellationTokenSource()
-                const fileResults = await getFileContextFiles(
-                    query,
-                    MAX_RESULTS,
-                    cancellation.token
-                )
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
                 await this.webview?.postMessage({
                     type: 'userContextFiles',
                     context: fileResults,

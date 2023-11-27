@@ -298,20 +298,16 @@ export class ChatPanelProvider extends MessageProvider {
                 })
             } else {
                 const cancellation = new vscode.CancellationTokenSource()
-                const fileResults = await getFileContextFiles(
-                    query,
-                    MAX_RESULTS,
-                    cancellation.token
-                )
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
                 // Check if cancellation was requested while getFileContextFiles
                 // was executing, which means a new request has already begun
                 // (i.e. prevent race conditions where slow old requests get
                 // processed after later faster requests)
                 // if (!cancellation.token.isCancellationRequested) {
-                    await this.webview?.postMessage({
-                        type: 'userContextFiles',
-                        context: fileResults,
-                    })
+                await this.webview?.postMessage({
+                    type: 'userContextFiles',
+                    context: fileResults,
+                })
                 // }
                 // Cancel any previous search request after we update the UI
                 // to avoid a flash of empty results as you type

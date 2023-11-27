@@ -97,6 +97,9 @@ export const TranscriptItem: React.FunctionComponent<
                     required={true}
                     onInput={event => setFormInput((event.target as HTMLInputElement).value)}
                     onKeyDown={event => {
+                        // eslint-disable-next-line no-debugger
+                        debugger
+
                         if (event.key === 'Escape') {
                             setBeingEdited(false)
                         }

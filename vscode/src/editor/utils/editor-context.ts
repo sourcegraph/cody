@@ -1,13 +1,13 @@
 import { basename, dirname } from 'path'
 
 import fuzzysort from 'fuzzysort'
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
 import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
-import { throttle } from 'lodash'
 
 const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
     // TODO(toolmantim): Add support for the search.exclude option, e.g.
@@ -36,7 +36,9 @@ export async function getFileContextFiles(
     if (!query.trim()) {
         return []
     }
-    token.onCancellationRequested(() => { throttledFindFiles.cancel() })
+    token.onCancellationRequested(() => {
+        throttledFindFiles.cancel()
+    })
 
     const uris = await throttledFindFiles(token)
 
