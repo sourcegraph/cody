@@ -148,5 +148,5 @@ export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | und
               Emacs: 'CodyEmacsPlugin',
               Neovim: 'CodyNeovimPlugin',
           }[ide]
-        : 'CodyAgent'
+        : 'CodyVSCodeExtension'
 }
