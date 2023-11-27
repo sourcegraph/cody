@@ -1,4 +1,3 @@
-import { useArgs } from '@storybook/preview-api'
 import { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
@@ -7,30 +6,12 @@ import { UserContextSelectorComponent } from './UserContextSelector'
 const meta: Meta<typeof UserContextSelectorComponent> = {
     title: 'cody/User Context Selector',
     component: UserContextSelectorComponent,
-    args: {
-        contextSelection: [],
-        formInput: '@',
-        selected: 0,
-    },
     decorators: [
         VSCodeStoryDecorator,
-        (Story, context) => {
-            const [{ formInput }, updateArgs] = useArgs()
-
+        Story => {
             return (
-                <div style={{ position: 'absolute', bottom: 100, left: 0, padding: 30 }}>
-                    {formInput ? <Story /> : null}
-                    <p>
-                        <input
-                            placeholder="Message"
-                            value={formInput}
-                            onChange={e =>
-                                updateArgs({
-                                    formInput: e.target.value,
-                                })
-                            }
-                        />
-                    </p>
+                <div style={{ position: 'absolute', bottom: 0 }}>
+                    <Story />
                 </div>
             )
         },
@@ -38,57 +19,41 @@ const meta: Meta<typeof UserContextSelectorComponent> = {
     argTypes: {
         onSelected: { action: 'selected' },
         setSelectedChatContext: { action: 'setSelectedChatContext' },
-    },
+    }
 }
 
 export default meta
 
-export const EmptySearchNoTabs: StoryObj<typeof UserContextSelectorComponent> = {
+export const FileSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
-        contextSelection: [],
-        formInput: '@',
+        contextSelection: undefined,
         selected: 0,
-    },
-}
-
-export const EmptySearchTabs: StoryObj<typeof UserContextSelectorComponent> = {
-    args: {
-        contextSelection: [{ fileName: 'open-file.py' }, { fileName: 'open-file.go' }],
-        formInput: '@',
-        selected: 0,
-    },
+        formInput: '@'
+    }
 }
 
 export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [],
-        formInput: '@filetsx',
         selected: 0,
-    },
+        formInput: '@missing'
+    }
 }
 
 export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [{ fileName: 'open-file.py' }, { fileName: 'open-file.go' }],
-        formInput: '@filetsx',
         selected: 0,
-    },
+        formInput: '@file'
+    }
 }
 
-export const SymbolSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
+export const SymbolSearchNoMatchesWarning: StoryObj<typeof UserContextSelectorComponent> = {
     args: {
         contextSelection: [],
-        formInput: '@#',
         selected: 0,
-    },
-}
-
-export const SymbolSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> = {
-    args: {
-        contextSelection: [],
-        formInput: '@#invalid',
-        selected: 0,
-    },
+        formInput: '@#a'
+    }
 }
 
 export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
@@ -104,7 +69,7 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
             },
             { fileName: 'handleLogin', type: 'symbol', kind: 'method', path: { relative: 'lib/src/LoginDialog.tsx' } },
         ],
-        formInput: '@#login',
         selected: 0,
-    },
+        formInput: '@#login'
+    }
 }

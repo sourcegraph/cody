@@ -1199,7 +1199,6 @@
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
     "@playwright/test": "^1.40.0",
-    "@storybook/preview-api": "^7.5.3",
     "@types/axios": "^0.14.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",

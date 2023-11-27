@@ -65,12 +65,12 @@ test('@-file fuzzy matching and keyboard navigating', async ({ page, sidebar }) 
 
 test('@-file no-matches state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
-    await sidebar.getByRole('textbox').type('@definitelydoesntexist')
-    await expect(sidebar.getByRole('heading', { name: 'No matches found' })).toBeVisible()
+    await sidebar.getByRole('textbox').fill('@definitelydoesntexist')
+    await expect(sidebar.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 })
 
 test('@-file symbol empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
-    await sidebar.getByRole('textbox').type('@#')
+    await sidebar.getByRole('textbox').fill('@#')
     await expect(sidebar.getByRole('heading', { name: 'Search for a symbol to include..' })).toBeVisible()
 })

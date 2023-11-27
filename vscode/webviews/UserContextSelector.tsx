@@ -38,9 +38,9 @@ export const UserContextSelectorComponent: React.FunctionComponent<
     } else if (formInput.endsWith('@#')) {
         headingTitle = 'Search for a symbol to include...'
     } else if (formInput.match(/@[^ #]+$/)) {
-        headingTitle = contextSelection?.length ? 'Search for a file to include...' : 'No matches found'
+        headingTitle = contextSelection?.length ? 'Search for a file to include...' : 'No matching files found'
     } else if (formInput.match(/@#[^ ]+$/)) {
-        headingTitle = contextSelection?.length ? 'Search for a symbol to include...' : 'No matches found'
+        headingTitle = contextSelection?.length ? 'Search for a symbol to include...' : 'No matching symbols found'
     }
 
     return (
