@@ -29,14 +29,14 @@ test('@-file fuzzy matching and clicking', async ({ page, sidebar }) => {
 test('@-file fuzzy matching and keyboard navigating', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     const chatInput = sidebar.getByRole('textbox')
-    await chatInput.pressSequentially('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
+    await chatInput.type('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
 
     // Hitting Enter on the default selection (first item)
     await chatInput.press('Enter')
     await expect(chatInput).toHaveValue('Explain @lib/batches/env/var.go ')
 
     // Navigating with the arrow keys and looping around
-    await chatInput.pressSequentially('and @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
+    await chatInput.type('and @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
     await chatInput.press('ArrowDown') // second item
     await chatInput.press('ArrowDown') // wraps back to first item
     await chatInput.press('ArrowDown') // second item again
