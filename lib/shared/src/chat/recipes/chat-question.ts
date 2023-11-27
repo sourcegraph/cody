@@ -61,6 +61,8 @@ export class ChatQuestion implements Recipe {
         selection: ActiveTextEditorSelection | null,
         contextFiles?: ContextFile[]
     ): Promise<ContextMessage[]> {
+        // MARK: old context
+
         const contextMessages: ContextMessage[] = []
         // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
         // e,g. "hey", "hi", "why", "explain" etc.

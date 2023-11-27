@@ -8,9 +8,14 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 
 export interface IContextProvider {
-    getUserAttentionContext(): ContextItem[]
-    getEnhancedContext(query: string): Promise<ContextItem[]>
+    // Context explicitly specified by user
     getUserContext(): ContextItem[]
+
+    // Context reflecting the current editor state
+    getUserAttentionContext(): ContextItem[]
+
+    // Context fetched from the broader repository
+    getEnhancedContext(query: string): Promise<ContextItem[]>
 }
 
 export interface IPrompter {
@@ -61,6 +66,7 @@ export class DefaultPrompter implements IPrompter {
         warnings: string[]
         newContextUsed: ContextItem[]
     }> {
+        // MARK: new context
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
@@ -218,7 +224,7 @@ class PromptBuilder {
 
 const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
 
-function isEditorContextRequired(input: string): boolean | Error {
+function isEditorContextRequired(input: string): boolean {
     const inputLowerCase = input.toLowerCase()
     // If the input matches any of the `editorRegexps` we assume that we have to include
     // the editor context (e.g., currently open file) to the overall message context.

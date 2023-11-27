@@ -1,3 +1,5 @@
+import * as path from 'path'
+
 import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -13,6 +15,8 @@ import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/me
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -472,8 +476,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     context,
                 })
             } catch (error) {
-                // Handle or log the error as appropriate
-                console.error('Error retrieving context files:', error)
+                this.handleError(`Error retrieving explicit context: ${error}`)
             }
         }, 100)
 
@@ -538,7 +541,9 @@ class ContextProvider implements IContextProvider {
         private embeddingsClient: EmbeddingsSearch | null
     ) {}
 
-    // TODO(beyang): implement max-per-file truncation
+    public getUserContext(): ContextItem[] {
+        return this.userContext
+    }
 
     public getUserAttentionContext(): ContextItem[] {
         const selectionContext = this.getCurrentSelectionContext()
@@ -589,9 +594,9 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
-        console.log('debug: fetching embeddings')
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const contextItems: ContextItem[] = []
-        const embeddings = await this.embeddingsClient.search(text, 2, 2)
+        const embeddings = await this.embeddingsClient.search(text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
         if (isError(embeddings)) {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
         } else {
@@ -631,12 +636,103 @@ class ContextProvider implements IContextProvider {
                 })
             }
         }
-        console.log('debug: finished fetching embeddings', embeddings)
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+
+        // Include root README if it seems necessary and is not already present
+        if (this.shouldIncludeReadmeContext(text)) {
+            let containsREADME = false
+            for (const contextItem of contextItems) {
+                const basename = path.basename(contextItem.uri.fsPath)
+                if (basename.toLocaleLowerCase() === 'readme' || basename.toLocaleLowerCase().startsWith('readme.')) {
+                    containsREADME = true
+                    break
+                }
+            }
+            if (!containsREADME) {
+                const readmeContextItems = await this.getReadmeContext()
+                return readmeContextItems.concat(contextItems)
+            }
+        }
+
         return contextItems
     }
 
-    public getUserContext(): ContextItem[] {
-        return this.userContext
+    private shouldIncludeReadmeContext(input: string): boolean {
+        input = input.toLowerCase()
+        const question = extractQuestion(input)
+        if (!question) {
+            return false
+        }
+
+        // split input into words, discarding spaces and punctuation
+        const words = input.split(/\W+/).filter(w => w.length > 0)
+        const bagOfWords = Object.fromEntries(words.map(w => [w, true]))
+
+        const projectSignifiers = ['project', 'repository', 'repo', 'library', 'package', 'module', 'codebase']
+        const questionIndicators = ['what', 'how', 'describe', 'explain', '?']
+
+        const workspaceUri = this.editor.getWorkspaceRootUri()
+        if (workspaceUri) {
+            const rootBase = workspaceUri.toString().split('/').at(-1)
+            if (rootBase) {
+                projectSignifiers.push(rootBase.toLowerCase())
+            }
+        }
+
+        let containsProjectSignifier = false
+        for (const p of projectSignifiers) {
+            if (bagOfWords[p]) {
+                containsProjectSignifier = true
+                break
+            }
+        }
+
+        let containsQuestionIndicator = false
+        for (const q of questionIndicators) {
+            if (bagOfWords[q]) {
+                containsQuestionIndicator = true
+                break
+            }
+        }
+
+        return containsQuestionIndicator && containsProjectSignifier
+    }
+
+    private async getReadmeContext(): Promise<ContextItem[]> {
+        let readmeUri
+        const patterns = ['README', 'README.*', 'Readme.*', 'readme.*']
+        for (const pattern of patterns) {
+            const files = await vscode.workspace.findFiles(pattern)
+            if (files.length > 0) {
+                readmeUri = files[0]
+            }
+        }
+        if (!readmeUri) {
+            return []
+        }
+        const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)
+        const readmeText = readmeDoc.getText()
+        const { truncated: truncatedReadmeText, range } = truncateTextNearestLine(readmeText, MAX_BYTES_PER_FILE)
+        if (truncatedReadmeText.length === 0) {
+            return []
+        }
+
+        let readmeDisplayUri = readmeUri
+        const wsFolder = vscode.workspace.getWorkspaceFolder(readmeUri)
+        if (wsFolder) {
+            const readmeRelPath = path.relative(wsFolder.uri.fsPath, readmeUri.fsPath)
+            if (readmeRelPath) {
+                readmeDisplayUri = relativeFileUrl(readmeRelPath)
+            }
+        }
+
+        return [
+            {
+                uri: readmeDisplayUri,
+                text: truncatedReadmeText,
+                range: viewRangeToRange(range),
+            },
+        ]
     }
 }
 
@@ -726,4 +822,16 @@ export function deserializedContextFilesToContextItems(
             text: text || '',
         }
     })
+}
+
+function extractQuestion(input: string): string | undefined {
+    input = input.trim()
+    const q = input.indexOf('?')
+    if (q !== -1) {
+        return input.slice(0, q + 1).trim()
+    }
+    if (input.length < 100) {
+        return input
+    }
+    return undefined
 }
