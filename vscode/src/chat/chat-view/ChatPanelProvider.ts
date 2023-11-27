@@ -286,37 +286,45 @@ export class ChatPanelProvider extends MessageProvider {
             return
         }
 
+        const cancellation = new vscode.CancellationTokenSource()
+
         try {
             const MAX_RESULTS = 20
             if (query.startsWith('#')) {
                 // It would be nice if the VS Code symbols API supports
                 // cancellation, but it doesn't
                 const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context: symbolResults,
-                })
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
             } else {
-                const cancellation = new vscode.CancellationTokenSource()
                 const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
                 // Check if cancellation was requested while getFileContextFiles
                 // was executing, which means a new request has already begun
                 // (i.e. prevent race conditions where slow old requests get
                 // processed after later faster requests)
-                // if (!cancellation.token.isCancellationRequested) {
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context: fileResults,
-                })
-                // }
-                // Cancel any previous search request after we update the UI
-                // to avoid a flash of empty results as you type
-                this.contextFilesQueryCancellation?.cancel()
-                this.contextFilesQueryCancellation = cancellation
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             }
         } catch (error) {
             // Handle or log the error as appropriate
             console.error('Error retrieving context files:', error)
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
         }
     }
 
