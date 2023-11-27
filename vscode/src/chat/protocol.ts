@@ -12,6 +12,7 @@ import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/tele
 import { ChatModelSelection, ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
+import { EnhancedContextContextT } from '../../webviews/Components/EnhancedContextSettings'
 import { View } from '../../webviews/NavBar'
 
 /**
@@ -51,6 +52,7 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
+    | { command: 'embeddings/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
     | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
@@ -91,10 +93,12 @@ export type ExtensionMessage =
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
+    // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
+    // TODO(dpc): Remove app install status when the app install toasts are... toast.
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
@@ -103,6 +107,7 @@ export type ExtensionMessage =
     | { type: 'chatModels'; models: ChatModelSelection[] }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
+    | { type: 'enhanced-context'; context: EnhancedContextContextT }
 
 /**
  * The subset of configuration that is visible to the webview.

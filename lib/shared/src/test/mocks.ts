@@ -35,6 +35,15 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
             Promise.resolve({ codeResults: [], textResults: [] })
         )
     }
+
+    public onDidChangeStatus(): { dispose: () => void } {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        return { dispose() {} }
+    }
+
+    public get status(): never[] {
+        return []
+    }
 }
 
 export class MockIntentDetector implements IntentDetector {
@@ -168,6 +177,7 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,
+                null,
                 null,
                 null
             ),
