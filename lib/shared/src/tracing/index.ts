@@ -31,6 +31,10 @@ export function startAsyncSpan<T>(name: string, fn: () => T | Promise<T>): Promi
     )
 }
 
+/**
+ * Create a Trace Context compliant traceparent header value.
+ * c.f. https://www.w3.org/TR/trace-context/#examples-of-http-traceparent-headers
+ */
 export function getTraceparent(): string | null {
     const activeIds = getActiveTraceAndSpanId()
     if (activeIds) {

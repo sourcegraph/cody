@@ -217,6 +217,8 @@ export function setUserAgent(newUseragent: string): void {
     customUserAgent = newUseragent
 }
 
+const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
     public anonymousUserID: string | undefined
@@ -620,7 +622,7 @@ export class SourcegraphGraphQLAPIClient {
         }
         addCustomUserAgent(headers)
 
-        const queryName = query.match(/^\s*query\s+(\w+)/m)?.[1]
+        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return startAsyncSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
@@ -647,7 +649,7 @@ export class SourcegraphGraphQLAPIClient {
             headers.set('traceparent', traceparent)
         }
 
-        const queryName = query.match(/^\s*query\s+(\w+)/m)?.[1]
+        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
         return startAsyncSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
