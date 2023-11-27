@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { VsCodeFixupTaskRecipeData } from '../../editor'
 
-import { Fixup, PROMPT_TOPICS } from './fixup'
-
-console.log(PROMPT_TOPICS)
+import { Fixup } from './fixup'
 
 describe('Fixup', () => {
     const fixupTask: Omit<VsCodeFixupTaskRecipeData, 'intent'> = {
