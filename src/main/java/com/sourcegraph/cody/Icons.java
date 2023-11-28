@@ -18,6 +18,8 @@ public interface Icons {
 
   interface Actions {
     Icon Hide = IconLoader.getIcon("/icons/actions/hide.svg", Icons.class);
+    Icon Send = IconLoader.getIcon("/icons/actions/send.svg", Icons.class);
+    Icon DisabledSend = IconLoader.getIcon("/icons/actions/disabledSend.svg", Icons.class);
   }
 
   interface StatusBar {

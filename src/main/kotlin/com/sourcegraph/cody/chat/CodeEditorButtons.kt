@@ -34,7 +34,7 @@ class CodeEditorButtons(val buttons: Array<JButton>) {
   fun updateBounds(editorWidth: Int) {
     var shift = 0
     for (jButton in buttons) {
-      val jButtonPreferredSize = jButton.getPreferredSize()
+      val jButtonPreferredSize = jButton.preferredSize
       jButton.setBounds(
           editorWidth - jButtonPreferredSize.width - shift,
           0,

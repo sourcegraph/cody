@@ -33,6 +33,7 @@ import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.EmbeddingStatusView
 import com.sourcegraph.cody.ui.ChatScrollPane
+import com.sourcegraph.cody.ui.SendButton
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.awt.*
@@ -82,9 +83,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
             ::sendChatMessage,
             sendButton,
             isGenerating = stopGeneratingButton::isVisible)
-
     val stopGeneratingButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 5))
-    val controlsPanel = ControlsPanel(promptPanel, sendButton)
     stopGeneratingButtonPanel.preferredSize =
         Dimension(Short.MAX_VALUE.toInt(), stopGeneratingButton.getPreferredSize().height + 10)
     stopGeneratingButton.addActionListener {
@@ -95,7 +94,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     stopGeneratingButtonPanel.add(stopGeneratingButton)
     stopGeneratingButtonPanel.isOpaque = false
     embeddingStatusView = EmbeddingStatusView(project)
-    val lowerPanel = LowerPanel(stopGeneratingButtonPanel, controlsPanel, embeddingStatusView)
+    val lowerPanel = LowerPanel(stopGeneratingButtonPanel, promptPanel, embeddingStatusView)
 
     // Main content panel
     contentPanel.layout = BorderLayout(0, 0)
@@ -258,16 +257,14 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   private fun createSendButton(): JButton {
-    val sendButton = JButton("Send")
-    sendButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, java.lang.Boolean.TRUE)
-    val buttonUI = DarculaButtonUI.createUI(sendButton) as ButtonUI
-    sendButton.setUI(buttonUI)
-    sendButton.addActionListener { _: ActionEvent? ->
+    val myButton = SendButton()
+
+    myButton.addActionListener { _: ActionEvent? ->
       GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "clicked")
       sendChatMessage()
     }
-    sendButton.isEnabled = false
-    return sendButton
+
+    return myButton
   }
 
   @Synchronized

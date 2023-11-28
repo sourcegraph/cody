@@ -6,31 +6,36 @@ import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.ui.DocumentAdapter
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.chat.CodyChatMessageHistory
 import com.sourcegraph.cody.ui.AutoGrowingTextArea
-import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
-import javax.swing.BorderFactory
-import javax.swing.JButton
-import javax.swing.JPanel
-import javax.swing.KeyStroke
+import javax.swing.*
+import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.text.DefaultEditorKit
 
 class PromptPanel(
     chatMessageHistory: CodyChatMessageHistory,
     onSendMessageAction: () -> Unit,
-    sendButton: JButton,
-    isGenerating: () -> Boolean
-) : JPanel(BorderLayout()) {
+    val sendButton: JButton,
+    isGenerating: () -> Boolean,
+) : JLayeredPane() {
 
-  private val autoGrowingTextArea = AutoGrowingTextArea(3, 9, this)
-  val textArea = autoGrowingTextArea.textArea
   private var isInHistoryMode = true
+  private val autoGrowingTextArea = AutoGrowingTextArea(3, 9, this)
+  private val scrollPane = autoGrowingTextArea.scrollPane
+  private val margin = 14
+  val textArea = autoGrowingTextArea.textArea
 
   init {
     textArea.emptyText.text = "Ask a question about this code..."
+    textArea.border = EmptyBorder(JBUI.insets(4, 4, 4, 24))
 
     val upperMessageAction: AnAction =
         object : DumbAwareAction() {
@@ -82,8 +87,40 @@ class PromptPanel(
             sendButton.isEnabled = !empty && !isGenerating()
           }
         })
-    add(autoGrowingTextArea.scrollPane, BorderLayout.CENTER)
-    border = BorderFactory.createEmptyBorder(0, 0, 10, 0)
+    scrollPane.border = EmptyBorder(JBUI.insets(0, margin, margin, margin))
+    scrollPane.background = UIUtil.getPanelBackground()
+
+    // Set initial bounds for the scrollPane (100x100) to ensure proper initialization;
+    // later adjusted dynamically based on component resizing in the component listener.
+    scrollPane.setBounds(0, 0, 100, 100)
+
+    add(scrollPane, DEFAULT_LAYER)
+
+    add(sendButton, PALETTE_LAYER, 0)
+
+    scrollPane.setBounds(0, 0, width, scrollPane.preferredSize.height + margin)
+
+    preferredSize = Dimension(scrollPane.width, scrollPane.height)
+
+    addComponentListener(
+        object : ComponentAdapter() {
+          override fun componentResized(e: ComponentEvent?) {
+            revalidate()
+            val jButtonPreferredSize = sendButton.preferredSize
+            sendButton.setBounds(
+                scrollPane.width - jButtonPreferredSize.width - margin,
+                scrollPane.height - jButtonPreferredSize.height - margin,
+                jButtonPreferredSize.width,
+                jButtonPreferredSize.height)
+          }
+        })
+  }
+
+  override fun revalidate() {
+    super.revalidate()
+
+    scrollPane.setBounds(0, 0, width, scrollPane.preferredSize.height + margin)
+    preferredSize = Dimension(scrollPane.width, scrollPane.height)
   }
 
   fun reset() {

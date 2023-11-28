@@ -10,7 +10,7 @@ import javax.swing.JPanel
 
 class LowerPanel(
     stopGeneratingButtonPanel: JPanel,
-    controlsPanel: ControlsPanel,
+    promptPanel: PromptPanel,
     embeddingStatusView: EmbeddingStatusView
 ) : JPanel(BorderLayout()) {
   init {
@@ -20,7 +20,7 @@ class LowerPanel(
     border = embeddingStatusView.border
     layout = BoxLayout(this, BoxLayout.Y_AXIS)
     add(stopGeneratingButtonPanel)
-    add(controlsPanel)
+    add(promptPanel)
     add(embeddingStatusView)
   }
 }

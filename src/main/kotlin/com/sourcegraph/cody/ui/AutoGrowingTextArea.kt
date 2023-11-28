@@ -13,7 +13,7 @@ import com.intellij.util.ui.UIUtil
 import java.awt.Dimension
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
-import javax.swing.JPanel
+import javax.swing.JComponent
 import javax.swing.KeyStroke
 import javax.swing.ScrollPaneConstants
 import javax.swing.plaf.basic.BasicTextAreaUI
@@ -23,7 +23,7 @@ import javax.swing.text.PlainDocument
 import kotlin.math.max
 import kotlin.math.min
 
-class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JPanel) {
+class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JComponent) {
   val textArea: JBTextArea
   val scrollPane: JBScrollPane
   private val initialPreferredSize: Dimension
@@ -49,6 +49,7 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JP
           }
         }
     textArea.document = document
+    updateTextAreaSize()
   }
 
   private fun createTextArea(): JBTextArea {
