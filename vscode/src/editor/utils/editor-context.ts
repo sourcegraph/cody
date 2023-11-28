@@ -59,9 +59,18 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
+    // Some results will have the same scores and flip in order with the same
+    // query, so we sort again by score and then by path
+    const sortedResults = [...results].sort((a, b) => {
+        if (a.score === b.score) {
+            return new Intl.Collator().compare(a.obj.path, b.obj.path)
+        }
+        return b.score - a.score
+    })
+
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return results.map(result => createContextFileFromUri(result.obj))
+    return sortedResults.map(result => createContextFileFromUri(result.obj))
 }
 
 export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFile[]> {

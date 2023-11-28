@@ -71,7 +71,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                         const range = match.range ? `:${match.range.start.line + 1}-${match.range.end.line + 1}` : ''
                         const description = match.type === 'file' ? undefined : match.path?.relative + range
                         return (
-                            <React.Fragment key={i}>
+                            <React.Fragment key={`${icon}${title}${range}${description}`}>
                                 <button
                                     ref={selected === i ? selectionRef : null}
                                     className={classNames(styles.selectionItem, selected === i && styles.selected)}
