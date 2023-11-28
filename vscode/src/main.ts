@@ -603,9 +603,8 @@ const register = async (
     // Clean up old onboarding experiment state
     void OnboardingExperiment.cleanUpCachedSelection()
 
+    // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
-        console.log('Registering webview serializer')
-        // Make sure we register a serializer in activation event
         vscode.window.registerWebviewPanelSerializer('cody.chatPanel', {
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
                 if (chatID && webviewPanel.title) {
