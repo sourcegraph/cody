@@ -297,15 +297,15 @@ export class FixupController
         const fullReplacement = task.replacement
         if (fullReplacement) {
             let editOk: boolean
-            // TODO: What if the selectionRange updates? we would need to update activeInsertionLine too
-            const replacementRange = new vscode.Range(task.selectionRange.start.line, 0, task.insertionLine, 0)
+
+            const fullReplacementText = task.insertMode ? `${fullReplacement}\n` : fullReplacement
 
             if (edit instanceof vscode.WorkspaceEdit) {
-                edit.replace(document.uri, replacementRange, fullReplacement)
+                edit.replace(document.uri, task.selectionRange, fullReplacementText)
                 editOk = await vscode.workspace.applyEdit(edit)
             } else {
                 editOk = await edit(editBuilder => {
-                    editBuilder.replace(replacementRange, fullReplacement)
+                    editBuilder.replace(task.selectionRange, fullReplacement)
                 }, applyEditOptions)
             }
 
@@ -388,7 +388,6 @@ export class FixupController
             task.selectionRange.start,
             task.selectionRange.end.translate({ lineDelta: 1 })
         )
-        task.insertionLine++
 
         // Insert updated text at selection range
         // TOOD: Insert instead of replace?

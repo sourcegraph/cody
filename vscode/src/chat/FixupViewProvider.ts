@@ -69,17 +69,17 @@ export class FixupProvider extends MessageProvider {
         }
 
         // Error state: The transcript finished but we didn't receive any text
-        if (!lastMessage.text && !isMessageInProgress) {
+        if (!lastMessage.displayText && !isMessageInProgress) {
             this.handleError('Cody did not respond with any text')
         }
 
-        if (!lastMessage.text) {
+        if (!lastMessage.displayText || !lastMessage.text) {
             return
         }
 
         return this.task.intent === 'add'
-            ? this.handleFixupInsert(lastMessage.text, isMessageInProgress)
-            : this.handleFixupEdit(lastMessage.text, isMessageInProgress)
+            ? this.handleFixupInsert(lastMessage.displayText, isMessageInProgress)
+            : this.handleFixupEdit(lastMessage.displayText, isMessageInProgress)
     }
 
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {

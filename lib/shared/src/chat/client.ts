@@ -16,7 +16,7 @@ import { getRecipe } from './recipes/browser-recipes'
 import { RecipeID } from './recipes/recipe'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
-import { reformatBotMessage } from './viewHelpers'
+import { reformatBotMessageForChat } from './viewHelpers'
 
 export type { TranscriptJSON }
 export { Transcript }
@@ -155,7 +155,7 @@ export async function createClient({
                     onChange(_rawText) {
                         rawText = _rawText
 
-                        const text = reformatBotMessage(rawText, responsePrefix)
+                        const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
 
                         sendTranscript(options?.data)
@@ -163,7 +163,7 @@ export async function createClient({
                     onComplete() {
                         isMessageInProgress = false
 
-                        const text = reformatBotMessage(rawText, responsePrefix)
+                        const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
                         sendTranscript(options?.data)
                         resolve()

@@ -36,9 +36,12 @@ export type RecipeID =
     | 'release-notes'
     | 'translate-to-language'
 
+export type RecipeType = 'ask' | 'edit'
+
 export interface Recipe {
     id: RecipeID
     title: string // Title Case
     multiplexerTopic?: string
+    type: RecipeType
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

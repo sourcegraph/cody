@@ -7,7 +7,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { Recipe, RecipeID, RecipeType } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import {
@@ -17,7 +17,7 @@ import {
     UserLocalHistory,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
-import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -199,7 +199,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         promptMessages: Message[],
         responsePrefix = '',
         multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC,
-        recipeId: RecipeID,
+        recipe: {
+            id: RecipeID
+            type: RecipeType
+        },
         requestID: string
     ): void {
         this.cancelCompletion()
@@ -207,7 +210,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const typewriter = new Typewriter({
             update: content => {
-                const displayText = reformatBotMessage(content, responsePrefix)
+                const displayText =
+                    recipe.type === 'ask'
+                        ? reformatBotMessageForChat(content, responsePrefix)
+                        : reformatBotMessageForEdit(content, responsePrefix)
                 this.transcript.addAssistantResponse(content, displayText)
                 this.sendTranscript()
             },
@@ -230,9 +236,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (lastInteraction) {
                     // remove display text from last interaction if this is a non-display topic
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    const displayText = nonDisplayTopics.has(multiplexerTopic)
-                        ? undefined
-                        : await this.guardrailsAnnotateAttributions(reformatBotMessage(text, responsePrefix))
+                    const displayText = await this.guardrailsAnnotateAttributions(
+                        recipe.type === 'ask'
+                            ? reformatBotMessageForChat(text, responsePrefix)
+                            : reformatBotMessageForEdit(text, responsePrefix)
+                    )
                     this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
@@ -248,7 +256,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 if (codeCount?.charCount) {
                     telemetryRecorder.recordEvent(
-                        `cody.messageProvider.chatResponse.${metadata?.source || recipeId}`,
+                        `cody.messageProvider.chatResponse.${metadata?.source || recipe.id}`,
                         'hasCode',
                         {
                             metadata: {
@@ -447,7 +455,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     prompt,
                     interaction.getAssistantMessage().prefix ?? '',
                     recipe.multiplexerTopic,
-                    recipeId,
+                    { id: recipeId, type: recipe.type },
                     requestID
                 )
                 this.sendTranscript()

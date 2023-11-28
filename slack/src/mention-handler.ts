@@ -3,7 +3,7 @@ import { Message as SlackReplyMessage } from '@slack/web-api/dist/response/Chann
 import { throttle } from 'lodash'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { Message as PromptMessage } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { AppContext } from './constants'
@@ -121,7 +121,7 @@ function startCompletionStreaming(
         onChange: text => {
             // console.log('Stream update: ', text)
             lastInteraction.setAssistantMessage({ ...lastInteraction.getAssistantMessage(), text })
-            onBotMessageChange(channel, inProgressMessageTs, reformatBotMessage(text, '') + suffix)?.catch(
+            onBotMessageChange(channel, inProgressMessageTs, reformatBotMessageForChat(text, '') + suffix)?.catch(
                 console.error
             )
         },
