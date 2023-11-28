@@ -37,11 +37,8 @@ export function processInlineCompletions(
         text: items[0]?.insertText,
         isCollapsedGroup: true,
     })
-    // Shared post-processing logic
-    const completionItems = items.map(item => processCompletion(item, params))
-
     // Remove low quality results
-    const visibleResults = removeLowQualityCompletions(completionItems)
+    const visibleResults = removeLowQualityCompletions(items)
 
     // Remove duplicate results
     const uniqueResults = dedupeWith(visibleResults, 'insertText')
@@ -53,6 +50,7 @@ export function processInlineCompletions(
         stage: 'exit',
         text: rankedResults[0]?.insertText,
     })
+    completionPostProcessLogger.flush()
 
     return rankedResults.map(dropParserFields)
 }
@@ -63,7 +61,7 @@ interface ProcessItemParams {
     docContext: DocumentContext
 }
 
-function processCompletion(completion: ParsedCompletion, params: ProcessItemParams): ParsedCompletion {
+export function processCompletion(completion: ParsedCompletion, params: ProcessItemParams): ParsedCompletion {
     const { document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
     let { insertText } = completion

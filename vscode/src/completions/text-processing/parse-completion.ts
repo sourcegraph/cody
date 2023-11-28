@@ -74,8 +74,11 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     }
 
     if (multilineTrigger) {
+        const existingTextBeforeTheCursor = document.getText(new Range(new Position(0, 0), position))
+
+        // Append the completion `insertText` because the multiline trigger can be at the end of the first completion line.
         const triggerPosition = document.positionAt(
-            document.getText(new Range(new Position(0, 0), position)).lastIndexOf(multilineTrigger)
+            (existingTextBeforeTheCursor + completion.insertText).lastIndexOf(multilineTrigger)
         )
 
         points.trigger = {

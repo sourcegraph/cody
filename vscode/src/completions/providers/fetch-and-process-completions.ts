@@ -4,13 +4,14 @@ import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api
 
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { getDerivedDocContext } from '../get-current-doc-context'
+import { DocumentContext, getDerivedDocContext } from '../get-current-doc-context'
 import { completionPostProcessLogger } from '../post-process-logger'
-import { getFirstLine, lines } from '../text-processing'
+import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
     getMatchingSuffixLength,
     InlineCompletionItemWithAnalytics,
+    processCompletion,
 } from '../text-processing/process-inline-completions'
 import { forkSignal } from '../utils'
 
@@ -28,13 +29,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
     params: FetchAndProcessCompletionsParams
 ): Promise<InlineCompletionItemWithAnalytics> {
     const { client, requestParams, abortSignal, providerOptions, providerSpecificPostProcess } = params
-    const {
-        multiline,
-        position,
-        document,
-        docContext,
-        docContext: { prefix, suffix, currentLineSuffix },
-    } = providerOptions
+    const { multiline, docContext } = providerOptions
 
     // The Async executor is required to return the completion early if a partial result from SSE can be used.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
@@ -60,12 +55,12 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                         stage: `start ${responseChunkNumber}`,
                     })
 
-                    const processedCompletion = providerSpecificPostProcess(incompleteResponse.completion)
+                    const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
 
                     completionPostProcessLogger.info({
                         completionPostProcessId,
                         stage: 'incomplete response',
-                        text: processedCompletion,
+                        text: initialCompletion,
                         obj: {
                             multiline,
                         },
@@ -77,8 +72,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                      */
                     if (multiline) {
                         completionPostProcessLogger.info({ completionPostProcessId, stage: 'multiline', text: '' })
-                        const completion = canUsePartialCompletion(processedCompletion, {
-                            ...providerOptions,
+                        const completion = canUsePartialCompletion(initialCompletion, {
+                            document: providerOptions.document,
                             docContext: {
                                 completionPostProcessId,
                                 ...docContext,
@@ -86,7 +81,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                         })
 
                         if (completion) {
-                            stopStreamingAndUsePartialResponse(completion)
+                            const processedCompletion = processCompletion(completion, providerOptions)
+                            stopStreamingAndUsePartialResponse(processedCompletion)
                         }
                     } else {
                         /**
@@ -94,50 +90,19 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                          * Check if the the first completion line ends with the multline trigger. If that's the case
                          * continue streaming and pretend like this completion was multiline in the first place:
                          *
-                         * 1. Set `multiline` to true
-                         * 2. Move set the cursor position to the position of the multiline trigger.
+                         * 1. Update `docContext` with the `multilineTrigger` value.
+                         * 2. Set the cursor position to the multiline trigger.
                          */
-                        const firstLine = getFirstLine(processedCompletion)
-                        const matchingSuffixLength = getMatchingSuffixLength(firstLine, currentLineSuffix)
-                        const updatedPosition = position.translate(0, firstLine.length - 1)
-
-                        completionPostProcessLogger.info({
+                        const updatedDocContext = getUpdatedDocContext({
+                            ...params,
+                            initialCompletion,
                             completionPostProcessId,
-                            stage: 'getDerivedDocContext',
-                            text: processedCompletion,
                         })
 
-                        const updatedDocContext = getDerivedDocContext({
-                            languageId: document.languageId,
-                            position: updatedPosition,
-                            documentDependentContext: {
-                                prefix: prefix + firstLine,
-                                // Remove the characters that are being replaced by the completion to avoid having
-                                // to reduce the chances of breaking the parse tree with redundant symbols.
-                                suffix: suffix.slice(matchingSuffixLength),
-                                injectedPrefix: null,
-                                completionPostProcessId,
-                            },
-                        })
-
-                        const isMultilineBasedOnFirstLine = Boolean(updatedDocContext.multilineTrigger)
-
-                        if (isMultilineBasedOnFirstLine) {
-                            completionPostProcessLogger.info({
-                                completionPostProcessId,
-                                stage: 'isMultilineBasedOnFirstLine',
-                                text: processedCompletion,
-                            })
-
-                            const completion = canUsePartialCompletion(processedCompletion, {
-                                ...providerOptions,
-                                multiline: true,
-                                docContext: {
-                                    ...docContext,
-                                    completionPostProcessId,
-                                    position: updatedDocContext.position,
-                                    multilineTrigger: updatedDocContext.multilineTrigger,
-                                },
+                        if (updatedDocContext.multilineTrigger) {
+                            const completion = canUsePartialCompletion(initialCompletion, {
+                                document: providerOptions.document,
+                                docContext: updatedDocContext,
                             })
 
                             if (completion) {
@@ -147,10 +112,17 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                                     text: completion.insertText,
                                 })
 
-                                stopStreamingAndUsePartialResponse({
-                                    ...completion,
-                                    insertText: completion.insertText,
-                                })
+                                const processedCompletion = processCompletion(
+                                    {
+                                        ...completion,
+                                        insertText: completion.insertText,
+                                    },
+                                    {
+                                        ...providerOptions,
+                                        docContext: updatedDocContext,
+                                    }
+                                )
+                                stopStreamingAndUsePartialResponse(processedCompletion)
                             }
                         } else {
                             /**
@@ -159,7 +131,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                              *
                              * Process this completion as a singleline completion: cut-off after the first new line char.
                              */
-                            const completion = canUsePartialCompletion(processedCompletion, providerOptions)
+                            const completion = canUsePartialCompletion(initialCompletion, providerOptions)
 
                             if (completion) {
                                 const firstLine = getFirstLine(completion.insertText)
@@ -170,10 +142,14 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                                     text: firstLine,
                                 })
 
-                                stopStreamingAndUsePartialResponse({
-                                    ...completion,
-                                    insertText: firstLine,
-                                })
+                                const processedCompletion = processCompletion(
+                                    {
+                                        ...completion,
+                                        insertText: firstLine,
+                                    },
+                                    providerOptions
+                                )
+                                stopStreamingAndUsePartialResponse(processedCompletion)
                             }
                         }
                     }
@@ -189,16 +165,22 @@ export async function fetchAndProcessDynamicMultilineCompletions(
              * We were not able to use a partial streaming response as a completion and receive the full
              * compeltion text generated by the LLM.
              */
-            const processedCompletion = providerSpecificPostProcess(result.completion)
+            const initialCompletion = providerSpecificPostProcess(result.completion)
             completionPostProcessLogger.info({
                 completionPostProcessId,
                 stage: 'full response',
-                text: processedCompletion,
+                text: initialCompletion,
             })
 
-            const completion = parseAndTruncateCompletion(processedCompletion, {
-                ...providerOptions,
-                multiline: lines(processedCompletion).length > 0,
+            const updatedDocContext = getUpdatedDocContext({
+                ...params,
+                completionPostProcessId,
+                initialCompletion,
+            })
+
+            const completion = parseAndTruncateCompletion(initialCompletion, {
+                document: providerOptions.document,
+                docContext: updatedDocContext,
             })
 
             completionPostProcessLogger.info({
@@ -207,7 +189,12 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                 text: completion.insertText,
             })
 
-            resolve({ ...completion, stopReason: result.stopReason })
+            const processedCompletion = processCompletion(completion, {
+                document: providerOptions.document,
+                position: updatedDocContext.position,
+                docContext: updatedDocContext,
+            })
+            resolve({ ...processedCompletion, stopReason: result.stopReason })
         } catch (error) {
             reject(error)
         }
@@ -228,23 +215,82 @@ export async function fetchAndProcessCompletions(
             const result = await client.complete(
                 requestParams,
                 (incompleteResponse: CompletionResponse) => {
-                    const processedCompletion = providerSpecificPostProcess(incompleteResponse.completion)
-                    const completion = canUsePartialCompletion(processedCompletion, providerOptions)
+                    const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
+                    const completion = canUsePartialCompletion(initialCompletion, providerOptions)
 
                     if (completion) {
-                        resolve({ ...completion, stopReason: 'streaming-truncation' })
+                        const processedCompletion = processCompletion(completion, providerOptions)
+                        resolve({ ...processedCompletion, stopReason: 'streaming-truncation' })
                         abortController.abort()
                     }
                 },
                 abortController.signal
             )
 
-            const processedCompletion = providerSpecificPostProcess(result.completion)
-            const completion = parseAndTruncateCompletion(processedCompletion, providerOptions)
+            const initialCompletion = providerSpecificPostProcess(result.completion)
+            const completion = parseAndTruncateCompletion(initialCompletion, providerOptions)
 
-            resolve({ ...completion, stopReason: result.stopReason })
+            const processedCompletion = processCompletion(completion, providerOptions)
+            resolve({ ...processedCompletion, stopReason: result.stopReason })
         } catch (error) {
             reject(error)
         }
     })
+}
+
+interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsParams {
+    completionPostProcessId: string
+    initialCompletion: string
+}
+
+function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
+    const { completionPostProcessId, initialCompletion, providerOptions } = params
+    const {
+        position,
+        document,
+        docContext,
+        docContext: { prefix, suffix, currentLineSuffix },
+    } = providerOptions
+
+    const firstLine = getFirstLine(initialCompletion)
+    const matchingSuffixLength = getMatchingSuffixLength(firstLine, currentLineSuffix)
+    const updatedPosition = position.translate(0, firstLine.length - 1)
+
+    completionPostProcessLogger.info({
+        completionPostProcessId,
+        stage: 'getDerivedDocContext',
+        text: initialCompletion,
+    })
+
+    const updatedDocContext = getDerivedDocContext({
+        languageId: document.languageId,
+        position: updatedPosition,
+        documentDependentContext: {
+            prefix: prefix + firstLine,
+            // Remove the characters that are being replaced by the completion to avoid having
+            // to reduce the chances of breaking the parse tree with redundant symbols.
+            suffix: suffix.slice(matchingSuffixLength),
+            injectedPrefix: null,
+            completionPostProcessId,
+        },
+    })
+
+    const isMultilineBasedOnFirstLine = Boolean(updatedDocContext.multilineTrigger)
+
+    if (isMultilineBasedOnFirstLine) {
+        completionPostProcessLogger.info({
+            completionPostProcessId,
+            stage: 'isMultilineBasedOnFirstLine',
+            text: initialCompletion,
+        })
+
+        return {
+            ...docContext,
+            completionPostProcessId,
+            position: updatedDocContext.position,
+            multilineTrigger: updatedDocContext.multilineTrigger,
+        }
+    }
+
+    return docContext
 }

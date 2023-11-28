@@ -1,4 +1,4 @@
-import { Position, TextDocument } from 'vscode'
+import { TextDocument } from 'vscode'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { completionPostProcessLogger } from '../post-process-logger'
@@ -10,9 +10,7 @@ import { truncateParsedCompletion } from './truncate-parsed-completion'
 
 export interface ParseAndTruncateParams {
     document: TextDocument
-    position: Position
     docContext: DocumentContext
-    multiline: boolean
 }
 
 export function parseAndTruncateCompletion(
@@ -21,11 +19,11 @@ export function parseAndTruncateCompletion(
 ): InlineCompletionItemWithAnalytics {
     const {
         document,
-        multiline,
         docContext,
-        docContext: { completionPostProcessId, prefix },
+        docContext: { multilineTrigger, completionPostProcessId, prefix },
     } = params
 
+    const multiline = Boolean(multilineTrigger)
     const insertTextBeforeTruncation = (multiline ? normalizeStartLine(completion, prefix) : completion).trimEnd()
 
     const parsed = parseCompletion({
