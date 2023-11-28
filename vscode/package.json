@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -224,13 +224,6 @@
           "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
         },
         {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Search (experimental)",
-          "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
-        },
-        {
           "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
@@ -246,6 +239,13 @@
           "id": "cody.chat.tree.view",
           "name": "Chats",
           "when": "cody.activated && config.cody.experimental.chatPanel"
+        },
+        {
+          "type": "webview",
+          "id": "cody.search",
+          "name": "Search (experimental)",
+          "visibility": "visible",
+          "when": "cody.activated && config.cody.experimental.newSearch"
         },
         {
           "id": "cody.support.tree.view",
@@ -829,7 +829,7 @@
       "editor/title": [
         {
           "command": "cody.action.commands.menu",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon && resourceScheme == file && !editorReadonly",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -1034,6 +1034,12 @@
           "markdownDescription": "New search UI",
           "default": false
         },
+        "cody.experimental.simpleChatContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Uses the new simplifed chat context fetcher",
+          "default": false
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
@@ -1161,6 +1167,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
+    "@opentelemetry/instrumentation-http": "^0.45.1",
+    "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/semantic-conventions": "^1.18.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
@@ -1221,6 +1232,7 @@
     "dedent": "^0.7.0",
     "envalid": "^7.3.1",
     "express": "^4.18.2",
+    "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "path-browserify": "^1.0.1",

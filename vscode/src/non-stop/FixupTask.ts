@@ -29,8 +29,6 @@ export class FixupTask {
     public diff: Diff | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
-    // The edited range of the applied replacement
-    public editedRange: vscode.Range | undefined
     public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(

@@ -28,6 +28,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSearchPanel: false,
+    experimentalSimpleChatContext: false,
     inlineChat: true,
     codeActions: true,
     isRunningInsideAgent: false,
@@ -125,13 +126,12 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'anthropic',
-                    autocompleteAdvancedModel: 'claude-instant-1.2-cyan',
                 }),
                 dummyCodeCompletionsClient,
                 {}
             )
             expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('claude-instant-1.2-cyan')
+            expect(provider?.model).toBe('claude-instant-1.2')
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {

@@ -58,7 +58,7 @@ interface ChatboxProps {
         embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
-    contextSelection?: ContextFile[]
+    contextSelection?: ContextFile[] | null
     setChatModels?: (models: ChatModelSelection[]) => void
     chatModels?: ChatModelSelection[]
     enableNewChatUI: boolean
@@ -265,7 +265,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = 'Message (type @ to attach files)'
+    const placeholder = 'Message (type @ to include files)'
 
     useEffect(() => {
         if (autoFocus) {

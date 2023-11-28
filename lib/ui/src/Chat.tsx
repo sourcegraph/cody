@@ -68,7 +68,7 @@ interface ChatProps extends ChatClassNames {
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
-    contextSelection?: ContextFile[]
+    contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
     EnhancedContextToggler?: React.FunctionComponent<{
@@ -384,6 +384,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Clear & reset session on CMD+K
             if (event.metaKey && event.key === 'k') {
                 onSubmit('/r', 'user', chatContextFiles)
+                return
+            }
+
+            // Allows backspace and delete keystrokes to remove characters
+            const deleteKeysList = new Set(['Backspace', 'Delete'])
+            if (deleteKeysList.has(event.key)) {
                 return
             }
 

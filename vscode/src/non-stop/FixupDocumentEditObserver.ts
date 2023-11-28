@@ -7,7 +7,7 @@ import { TextChange, updateRangeMultipleChanges } from './tracked-range'
 // This does some thunking to manage the two range types: diff ranges, and
 // text change ranges.
 function updateDiffRange(range: Range, changes: TextChange[]): Range {
-    return toDiffRange(updateRangeMultipleChanges(toVsCodeRange(range), changes))
+    return toDiffRange(updateRangeMultipleChanges(toVsCodeRange(range), changes, { supportRangeAffix: true }))
 }
 
 function toDiffRange(range: vscode.Range): Range {
@@ -61,19 +61,16 @@ export class FixupDocumentEditObserver {
         const tasks = this.provider_.tasksForFile(file)
         // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
-            const targetRange = task.editedRange || task.selectionRange
+            const targetRange = task.selectionRange
             for (const edit of event.contentChanges) {
-                if (
-                    edit.range.end.isBeforeOrEqual(targetRange.start) ||
-                    edit.range.start.isAfterOrEqual(targetRange.end)
-                ) {
+                if (edit.range.end.isBefore(targetRange.start) || edit.range.start.isAfter(targetRange.end)) {
                     continue
                 }
                 this.provider_.textDidChange(task)
                 break
             }
             const changes = new Array<TextChange>(...event.contentChanges)
-            const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes)
+            const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, { supportRangeAffix: true })
             if (task.diff) {
                 updateRanges(task.diff.conflicts, changes)
                 updateEdits(task.diff.edits, changes)

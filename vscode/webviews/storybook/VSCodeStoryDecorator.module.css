@@ -58,6 +58,8 @@
     --vscode-list-warningForeground: #855600;
     --vscode-problemsErrorIcon-foreground: #f48771;
     --vscode-widget-shadow: rgba(0, 0, 0, 0.2);
+    --vscode-list-activeSelectionForeground: #FFFFFF;
+    --vscode-list-activeSelectionBackground: #04395E;
 }
 
 @font-face {
@@ -91,3 +93,7 @@
 :global .codicon-thumbsdown::before { content: '\eb6b' }
 :global .codicon-thumbsup::before { content: '\eb6c' }
 :global .codicon-trash::before { content: '\ea81' }
+:global .codicon-info::before { content: '\ea74' }
+
+:global .codicon-symbol-structure::before { content: '\ea91' }
+:global .codicon-symbol-method::before { content: '\ea8c' }

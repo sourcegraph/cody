@@ -1,5 +1,7 @@
 import { basename, dirname } from 'path'
 
+import fuzzysort from 'fuzzysort'
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -7,43 +9,98 @@ import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cod
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 
-// Create context files from editor sources
+const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
+    // TODO(toolmantim): Add support for the search.exclude option, e.g.
+    // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
+    // {}))
+    const fileExcludesPattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
+    // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
+    return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
+}
 
-export async function getFileContextFile(query: string, maxResults = 15): Promise<ContextFile[]> {
+// This is expensive for large repos (e.g. Chromium), so we only do it max once
+// every 10 seconds. It also handily supports a cancellation callback to use
+// with the cancellation token to discard old requests.
+const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
+
+/**
+ * Searches all workspaces for files matching the given string. VS Code doesn't
+ * provide an API for fuzzy file searching, only precise globs, so we recreate
+ * it by getting a list of all files across all workspaces and using fuzzysort.
+ */
+export async function getFileContextFiles(
+    query: string,
+    maxResults: number,
+    token: vscode.CancellationToken
+): Promise<ContextFile[]> {
+    if (!query.trim()) {
+        return []
+    }
+    token.onCancellationRequested(() => {
+        throttledFindFiles.cancel()
+    })
+
+    const uris = await throttledFindFiles(token)
+
+    if (!uris) {
+        return []
+    }
+
+    const results = fuzzysort.go(query, uris, {
+        key: 'fsPath',
+        limit: maxResults,
+        // We add a threshold for performance as per fuzzysort’s
+        // recommendations. Testing with sg/sg path strings, somewhere over 10k
+        // threshold is where it seems to return results that make no sense. VS
+        // Code’s own fuzzy finder seems to cap out much higher. To be safer and
+        // to account for longer paths from even deeper source trees we use
+        // 100k. We may want to revisit this number if we get reports of missing
+        // file results from very large repos.
+        threshold: -100000,
+    })
+
+    // fuzzysort can return results in different order for the same query if
+    // they have the same score :( So we do this hacky post-limit sorting (first
+    // by score, then by path) to ensure the order stays the same
+    const sortedResults = [...results].sort((a, b) => {
+        return b.score - a.score || new Intl.Collator(undefined, { numeric: true }).compare(a.obj.fsPath, b.obj.fsPath)
+    })
+
+    // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
+
+    return sortedResults.map(result => createContextFileFromUri(result.obj))
+}
+
+export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFile[]> {
     if (!query.trim()) {
         return []
     }
 
-    const searchPattern = `**/*${query}{/**,*}*`
-    const excludePattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules}**'
+    const queryResults = await getWorkspaceSymbols(query) // doesn't support cancellation tokens :(
 
-    // Find a list of files that match the text
-    const matches = await vscode.workspace.findFiles(searchPattern, excludePattern, maxResults)
+    const relevantQueryResults = queryResults?.filter(
+        symbol =>
+            (symbol.kind === vscode.SymbolKind.Function ||
+                symbol.kind === vscode.SymbolKind.Method ||
+                symbol.kind === vscode.SymbolKind.Class ||
+                symbol.kind === vscode.SymbolKind.Interface ||
+                symbol.kind === vscode.SymbolKind.Enum ||
+                symbol.kind === vscode.SymbolKind.Struct ||
+                symbol.kind === vscode.SymbolKind.Constant ||
+                // in TS an export const is considered a variable
+                symbol.kind === vscode.SymbolKind.Variable) &&
+            // TODO(toolmantim): Remove once https://github.com/microsoft/vscode/pull/192798 is in use (test: do a symbol search and check no symbols exist from node_modules)
+            !symbol.location?.uri?.fsPath.includes('node_modules/')
+    )
 
-    if (!matches.length) {
-        return []
-    }
-    // sort by having less '/' in path to prioritize top-level matches
-    return matches?.map(uri => createContextFileFromUri(uri))
-}
+    const results = fuzzysort.go(query, relevantQueryResults, {
+        key: 'name',
+        limit: maxResults,
+    })
 
-export async function getSymbolContextFile(query: string, maxResults = 10): Promise<ContextFile[]> {
-    // NOTE: Symbol search is resources extensive, so only search if query is long enough
-    // Five is an arbitrary minimum length
-    if (!query.trim() || query.trim().length < 5) {
-        return []
-    }
+    // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    // Find symbols matching the query text
-    const symbols = (await getWorkspaceSymbols(query))
-        ?.filter(
-            symbol =>
-                (symbol.kind === vscode.SymbolKind.Function ||
-                    symbol.kind === vscode.SymbolKind.Method ||
-                    symbol.kind === vscode.SymbolKind.Class) &&
-                !symbol.location?.uri?.fsPath.includes('node_modules/')
-        )
-        .slice(0, maxResults)
+    const symbols = results.map(result => result.obj)
 
     if (!symbols.length) {
         return []
@@ -51,6 +108,7 @@ export async function getSymbolContextFile(query: string, maxResults = 10): Prom
 
     const matches = []
     for (const symbol of symbols) {
+        // TODO(toolmantim): Update the kinds to match above
         const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
         const source: ContextFileSource = 'user'
         const contextFile: ContextFile = createContextFileFromUri(
@@ -68,7 +126,17 @@ export async function getSymbolContextFile(query: string, maxResults = 10): Prom
 }
 
 export function getOpenTabsContextFile(): ContextFile[] {
-    return getOpenTabsUris()?.map(uri => createContextFileFromUri(uri))
+    // de-dupe by fspath in case if they have a file open in two tabs
+    const fsPaths = new Set()
+    return getOpenTabsUris()
+        .filter(uri => {
+            if (!fsPaths.has(uri.fsPath)) {
+                fsPaths.add(uri.fsPath)
+                return true
+            }
+            return false
+        })
+        .map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined))
 }
 
 function createContextFileFromUri(

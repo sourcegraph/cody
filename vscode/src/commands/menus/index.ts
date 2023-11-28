@@ -138,7 +138,7 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
         quickPick.items = items
         quickPick.title = CustomCommandsMenuOptions.title
         quickPick.placeholder = CustomCommandsMenuOptions.placeHolder
-        quickPick.ignoreFocusOut = true
+        quickPick.ignoreFocusOut = false
 
         quickPick.buttons = [menu_buttons.back]
 

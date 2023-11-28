@@ -77,7 +77,6 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
     await assertEvents(loggedEvents, expectedEvents)
     await assertEvents(loggedV2Events, [
-        'cody.auth/failed',
         'cody.auth/connected',
         'cody.command.edit/executed',
         'cody.recipe.fixup/executed',

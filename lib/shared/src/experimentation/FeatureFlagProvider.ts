@@ -8,7 +8,6 @@ export enum FeatureFlag {
     TestFlagDoNotUse = 'test-flag-do-not-use',
 
     CodyAutocompleteTracing = 'cody-autocomplete-tracing',
-    CodyAutocompleteAnthropicCyan = 'cody-autocomplete-anthropic-cyan',
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
@@ -19,10 +18,10 @@ export enum FeatureFlag {
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     CodyAutocompleteContextLocalMixed = 'cody-autocomplete-context-local-mixed',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
-    CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
+    CodyPro = 'cody-pro',
+    CodyChatMockTest = 'cody-chat-mock-test',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

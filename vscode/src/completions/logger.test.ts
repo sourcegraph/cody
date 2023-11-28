@@ -65,7 +65,6 @@ describe('logger', () => {
             languageId: 'typescript',
             source: 'Network',
             triggerKind: 'Automatic',
-            type: 'inline',
             multiline: false,
             multilineMode: null,
             otherCompletionProviderEnabled: false,

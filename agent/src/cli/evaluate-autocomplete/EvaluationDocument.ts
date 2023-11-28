@@ -4,30 +4,35 @@ import path from 'path'
 import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import * as vscode from 'vscode'
 
+import { CompletionBookkeepingEvent } from '../../../../vscode/src/completions/logger'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
-export class AutocompleteDocument {
-    public items: AutocompleteItem[] = []
+export class EvaluationDocument {
+    public items: EvaluationItem[] = []
     public readonly lines: string[]
     public readonly textDocument: AgentTextDocument
     constructor(
         public readonly params: Pick<
-            AutocompleteItem,
-            'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath'
+            EvaluationItem,
+            'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
         >,
-        public readonly text: string
+        public readonly text: string,
+        public readonly snapshotDirectory?: string
     ) {
         this.lines = text.split('\n')
         this.textDocument = new AgentTextDocument({ filePath: params.filepath, content: text })
     }
 
     public pushItem(
-        item: Omit<AutocompleteItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath'>
+        item: Omit<EvaluationItem, 'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'>
     ): void {
         item.rangeStartLine = item.range.start.line
         item.rangeStartCharacter = item.range.start.character
         item.rangeEndLine = item.range.end.line
         item.rangeEndCharacter = item.range.end.character
+        if (item.event) {
+            item.eventJSON = JSON.stringify(item.event)
+        }
         this.items.push({
             ...item,
             ...this.params,
@@ -68,21 +73,23 @@ export class AutocompleteDocument {
                     throw new Error(this.format(item.range, 'negative length occurrence!'))
                 }
                 out.push('^'.repeat(length))
-                out.push(' ')
-                out.push('AUTOCOMPLETE')
-                out.push(' ')
+                out.push(' AUTOCOMPLETE')
                 if (item.resultEmpty) {
-                    out.push('EMPTY_RESULT')
-                } else if (item.resultTimeout) {
-                    out.push('TIMEOUT')
-                } else if (item.resultExact) {
-                    out.push('EXACT_MATCH')
-                } else if (item.resultTypechecks) {
-                    out.push('TYPECHECKS')
-                } else if (item.resultParses) {
-                    out.push('PARSES')
-                } else if (item.resultText) {
-                    out.push('RESULT ')
+                    out.push(' EMPTY_RESULT')
+                }
+                if (item.resultTimeout) {
+                    out.push(' TIMEOUT')
+                }
+                if (item.resultExact) {
+                    out.push(' EXACT_MATCH')
+                }
+                if (item.resultTypechecks === true) {
+                    out.push(' TYPECHECK_OK')
+                } else if (item.resultTypechecks === false) {
+                    out.push(' TYPECHECK_ERROR')
+                }
+                if (item.resultText) {
+                    out.push(' RESULT ')
                     out.push(item.resultText)
                 }
                 out.push('\n')
@@ -98,9 +105,8 @@ export class AutocompleteDocument {
      * ```
      * src/hello.ts:LINE:CHARACTER
      * const hello = 42
-     *       ^^^^^
+     * ^^^^^
      * ```
-     *
      * @param range the range to highlight
      * @param diagnostic optional message to include with the formatted string
      */
@@ -126,12 +132,13 @@ export class AutocompleteDocument {
  * An AutocompleteItem represents one row in the final CSV file that
  * evaluate-autocomplete emits.
  */
-export interface AutocompleteItem {
+export interface EvaluationItem {
     languageid: string
     workspace: string
     fixture: string
     strategy: string
     filepath: string
+    revision: string
     range: vscode.Range
     rangeStartLine?: number
     rangeStartCharacter?: number
@@ -142,9 +149,10 @@ export interface AutocompleteItem {
     resultError?: string
     resultEmpty?: boolean
     resultExact?: boolean
-    resultParses?: boolean
     resultTypechecks?: boolean
     resultText?: string
+    event?: CompletionBookkeepingEvent
+    eventJSON?: string
 }
 
 export const autocompleteItemHeaders: ObjectHeaderItem[] = [
@@ -153,6 +161,7 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'fixture', title: 'FIXTURE' },
     { id: 'strategy', title: 'STRATEGY' },
     { id: 'filepath', title: 'FILEPATH' },
+    { id: 'revision', title: 'REVISION' },
     { id: 'rangeStartLine', title: 'RANGE_START_LINE' },
     { id: 'rangeStartCharacter', title: 'RANGE_START_CHARACTER' },
     { id: 'rangeEndLine', title: 'RANGE_END_LINE' },
@@ -161,10 +170,10 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultError', title: 'RESULT_ERROR' },
     { id: 'resultEmpty', title: 'RESULT_EMPTY' },
     { id: 'resultExact', title: 'RESULT_EXACT' },
-    { id: 'resultParses', title: 'RESULT_PARSES' },
     { id: 'resultTypechecks', title: 'RESULT_TYPECHECKS' },
     { id: 'resultText', title: 'RESULT_TEXT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
+    { id: 'eventJSON', title: 'EVENT' },
 ]
 
 function commentSyntaxForLanguage(languageid: string): string {
@@ -185,7 +194,7 @@ function commentSyntaxForLanguage(languageid: string): string {
     }
 }
 
-function compareItemByRange(a: AutocompleteItem, b: AutocompleteItem): number {
+function compareItemByRange(a: EvaluationItem, b: EvaluationItem): number {
     const byStart = a.range.start.compareTo(b.range.start)
     if (byStart !== 0) {
         return byStart
