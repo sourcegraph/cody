@@ -5,7 +5,6 @@
       "prompt": "Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not output any other code or comments besides the documentation. Output only the comment and do not enclose it in markdown.",
       "context": {
         "currentFile": true,
-        "currentDir": true,
         "selection": true
       },
       "mode": "insert"
