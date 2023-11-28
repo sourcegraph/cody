@@ -92,6 +92,10 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
     }
 }
 
+/**
+ * Precalculate the multiline trigger position based on `prefix` and `cursorPosition` to be
+ * able to change it during streaming to the end of the first line of the completion.
+ */
 function getPrefixLastNonEmptyCharPosition(prefix: string, cursorPosition: Position): Position {
     const trimmedPrefix = prefix.trimEnd()
     const diffLength = prefix.length - trimmedPrefix.length
