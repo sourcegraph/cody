@@ -343,7 +343,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         this.chatModel.addHumanMessage({ text })
-        void this.postViewTranscript()
+        // trigger the context progress indicator
+        void this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
     }
 
