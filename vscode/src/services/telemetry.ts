@@ -17,7 +17,8 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-const extensionVersion = vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
+export const extensionVersion =
+    vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
 export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
@@ -137,4 +138,16 @@ export const telemetryService: TelemetryService = {
     log(eventName, properties, opts) {
         logEvent(eventName, properties, opts)
     },
+}
+
+// TODO: Clean up this name mismatch when we move to TelemetryV2
+export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | undefined): string {
+    return ide
+        ? {
+              VSCode: 'CodyVSCodeExtension',
+              JetBrains: 'CodyJetBrainsPlugin',
+              Emacs: 'CodyEmacsPlugin',
+              Neovim: 'CodyNeovimPlugin',
+          }[ide]
+        : 'CodyVSCodeExtension'
 }

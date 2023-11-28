@@ -231,7 +231,7 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
-        this.treeView.updateTree(createCodyChatTreeItems(userHistory))
+        void this.treeView.updateTree(createCodyChatTreeItems(userHistory))
     }
 
     /**

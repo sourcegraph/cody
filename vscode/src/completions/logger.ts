@@ -6,7 +6,7 @@ import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
-import { telemetryService } from '../services/telemetry'
+import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextSummary } from './context/context-mixer'
@@ -42,6 +42,9 @@ interface SharedEventPayload {
      * the exact same location. We count this as the same completion and thus use the same ID.
      */
     id: CompletionAnalyticsID | null
+
+    /** Eventual Sourcegraph instance OpenTelemetry trace id */
+    traceId?: string
 
     /** Wether the completion is a singleline or multiline one. */
     multiline: boolean
@@ -188,9 +191,8 @@ export function logCompletionEvent(
         | 'synthesizedFromParallelRequest'
 ): void
 export function logCompletionEvent(name: string, params: {} = {}): void {
-    // TODO: Clean up this name mismatch when we move to TelemetryV2
-    const prefix = isRunningInsideAgent() ? 'CodyAgent' : 'CodyVSCodeExtension'
-    telemetryService.log(`${prefix}:completion:${name}`, params, { agent: true })
+    const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
+    telemetryService.log(`${logPrefix(extDetails.ide)}:completion:${name}`, params, { agent: true })
 }
 
 export interface CompletionBookkeepingEvent {

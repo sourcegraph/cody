@@ -281,7 +281,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'history',
             messages: allHistory,
         })
-        this.treeView.updateTree(createCodyChatTreeItems(allHistory))
+        await this.treeView.updateTree(createCodyChatTreeItems(allHistory))
     }
 
     public async clearAndRestartSession(): Promise<void> {

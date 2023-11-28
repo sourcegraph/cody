@@ -105,10 +105,10 @@ export type Notifications = {
     'autocomplete/clearLastCandidate': [null]
     // The completion was presented to the user, and will be logged for telemetry
     // purposes.
-    'autocomplete/completionSuggested': [CompletionItemID]
+    'autocomplete/completionSuggested': [CompletionItemParams]
     // The completion was accepted by the user, and will be logged for telemetry
     // purposes.
-    'autocomplete/completionAccepted': [CompletionItemID]
+    'autocomplete/completionAccepted': [CompletionItemParams]
     // Resets the chat transcript and clears any in-progress interactions.
     // This notification should be sent when the user starts a new conversation.
     // The chat transcript grows indefinitely if this notification is never sent.
@@ -127,6 +127,10 @@ export type Notifications = {
 
 export interface CancelParams {
     id: string | number
+}
+
+export interface CompletionItemParams {
+    completionID: CompletionItemID
 }
 
 export interface AutocompleteParams {
