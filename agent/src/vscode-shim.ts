@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { execSync } from 'child_process'
+import path from 'path'
 
 import type * as vscode from 'vscode'
 
@@ -34,6 +35,11 @@ import {
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+
+// Not using CODY_TESTING because it changes the URL endpoint we send requests
+// to and we want to send requests to sourcegraph.com because we record the HTTP
+// traffic.
+const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export {
     emptyEvent,
@@ -237,7 +243,24 @@ const _workspace: Partial<typeof vscode.workspace> = {
     onDidRenameFiles: onDidRenameFiles.event,
     onDidDeleteFiles: onDidDeleteFiles.event,
     registerTextDocumentContentProvider: () => emptyDisposable,
-    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
+    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => {
+        const uri: vscode.Uri | undefined =
+            typeof pathOrUri === 'string' ? Uri.file(pathOrUri) : pathOrUri instanceof Uri ? pathOrUri : undefined
+        if (uri === undefined) {
+            // Not sure what to do about non-string/non-uri arguments.
+            return `${pathOrUri}`
+        }
+
+        const relativePath = workspaceDocuments?.workspaceRootUri?.fsPath
+            ? path.relative(workspaceDocuments?.workspaceRootUri?.path ?? '', uri.path)
+            : uri.path
+        if (isTesting) {
+            // We insert relative paths in a lot of places like prompts that influence HTTP requests.
+            // When testing, we try to normalize the file paths across Windows/Linux/macOS.
+            return relativePath.replaceAll('\\', '/')
+        }
+        return relativePath
+    },
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
 }

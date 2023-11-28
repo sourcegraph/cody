@@ -294,7 +294,7 @@ export interface Range {
 export interface TextDocument {
     // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
     uri: string
-    /* @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
+    /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
     filePath?: string
     content?: string
     selection?: Range

@@ -101,6 +101,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
         stdio: 'pipe',
         cwd: agentDir,
         env: {
+            CODY_SHIM_TESTING: 'true',
             CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
             CODY_RECORDING_DIRECTORY: recordingDirectory,
             CODY_RECORDING_NAME: name,
