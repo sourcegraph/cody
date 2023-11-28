@@ -7,6 +7,10 @@ interface Log {
     isCollapsedGroup?: boolean
 }
 
+/**
+ * Used to log the stages of the completion post-processing during streaming.
+ * Logs for each response chunk are grouped together by `console.group` and `completionPostProcessId`.
+ */
 class GroupedLogger {
     private logs: Map<string, Log[]> = new Map()
 
