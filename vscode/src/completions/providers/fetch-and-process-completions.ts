@@ -25,6 +25,10 @@ interface FetchAndProcessCompletionsParams {
     providerOptions: Readonly<ProviderOptions>
 }
 
+/**
+ * Uses the first line of the completion to figure out if it start the new multiline syntax node.
+ * If it does, continues streaming until the completion is truncated or we reach the token sample limit.
+ */
 export async function fetchAndProcessDynamicMultilineCompletions(
     params: FetchAndProcessCompletionsParams
 ): Promise<InlineCompletionItemWithAnalytics> {
