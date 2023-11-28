@@ -49,7 +49,8 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
-            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat))
+            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
+            vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
         )
 
         // Register config change listener
@@ -226,6 +227,16 @@ export class ChatManager implements vscode.Disposable {
         this.getChatProvider()
             .then(provider => provider.triggerNotice(notice))
             .catch(error => console.error(error))
+    }
+
+    private async openFileFromChat(fsPath: string): Promise<void> {
+        const rangeIndex = fsPath.indexOf(':range:')
+        const range = rangeIndex ? fsPath.slice(Math.max(0, rangeIndex + 7)) : undefined
+        const filteredFsPath = range ? fsPath.slice(0, rangeIndex) : fsPath
+        const uri = vscode.Uri.file(filteredFsPath)
+        const doc = await vscode.workspace.openTextDocument(uri)
+        const viewColumn = vscode.ViewColumn.Beside - 2 > 1 ? vscode.ViewColumn.Beside - 2 : vscode.ViewColumn.Beside
+        await vscode.window.showTextDocument(doc, viewColumn)
     }
 
     private disposeChatPanelsManager(): void {
