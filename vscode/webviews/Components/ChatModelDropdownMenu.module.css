@@ -18,8 +18,12 @@ vscode-dropdown {
     background: none;
 }
 
-vscode-dropdown:focus, vscode-dropdown:focus-visible, vscode-dropdown:focus-within,
-vscode-dropdown:focus::part(listbox), vscode-dropdown:focus-visible::part(listbox), vscode-dropdown:focus-within::part(listbox) {
+vscode-dropdown:focus,
+vscode-dropdown:focus-visible,
+vscode-dropdown:focus-within,
+vscode-dropdown:focus::part(listbox),
+vscode-dropdown:focus-visible::part(listbox),
+vscode-dropdown:focus-within::part(listbox) {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
 }
@@ -37,7 +41,8 @@ vscode-dropdown[disabled]::part(indicator) {
     display: none;
 }
 
-vscode-dropdown[disabled]::part(control), vscode-dropdown[disabled]::part(listbox) {
+vscode-dropdown[disabled]::part(control),
+vscode-dropdown[disabled]::part(listbox) {
     cursor: default;
 }
 
@@ -59,4 +64,8 @@ vscode-option::part(content) {
     display: flex;
     gap: 6px;
     align-items: center;
+}
+
+.title {
+    text-transform: capitalize;
 }
