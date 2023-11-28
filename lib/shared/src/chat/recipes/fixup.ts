@@ -21,7 +21,6 @@ export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
     public title = 'Fixup'
     public multiplexerTopic = PROMPT_TOPICS.OUTPUT
-    public useTypewriterEffect = false
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
         const fixupController = context.editor.controllers?.fixups

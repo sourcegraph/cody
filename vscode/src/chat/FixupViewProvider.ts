@@ -77,7 +77,7 @@ export class FixupProvider extends MessageProvider {
             return
         }
 
-        return this.task.insertMode
+        return this.task.intent === 'add'
             ? this.handleFixupInsert(lastMessage.text, isMessageInProgress)
             : this.handleFixupEdit(lastMessage.text, isMessageInProgress)
     }

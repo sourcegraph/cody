@@ -30,7 +30,6 @@ export class FixupTask {
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
     public formattingResolver: ((value: boolean) => void) | null = null
-    public insertionLine: number
 
     constructor(
         public readonly fixupFile: FixupFile,
@@ -45,7 +44,6 @@ export class FixupTask {
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
-        this.insertionLine = selectionRange.start.line
     }
 
     /**

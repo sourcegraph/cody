@@ -40,6 +40,5 @@ export interface Recipe {
     id: RecipeID
     title: string // Title Case
     multiplexerTopic?: string
-    useTypewriterEffect?: boolean
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

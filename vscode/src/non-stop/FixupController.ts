@@ -158,7 +158,9 @@ export class FixupController
         source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
+        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
+        const adjustedIntent = selectionRange.isEmpty ? 'add' : intent
+        const task = new FixupTask(fixupFile, instruction, adjustedIntent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -433,7 +435,9 @@ export class FixupController
 
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-        const editOk = await this.replaceEdit(edit, diff, task, applyEditOptions)
+        const editOk = task.insertMode
+            ? await this.insertEdit(edit, document, task, applyEditOptions)
+            : await this.replaceEdit(edit, diff, task, applyEditOptions)
 
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
@@ -532,6 +536,38 @@ export class FixupController
                     diffEdit.text
                 )
             }
+        }, options)
+    }
+
+    // Insert edit returned by Cody at task selection range
+    private async insertEdit(
+        edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
+        document: vscode.TextDocument,
+        task: FixupTask,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+    ): Promise<boolean> {
+        logDebug('FixupController:edit', 'inserting')
+        const text = task.replacement
+        const range = task.selectionRange
+        if (!text) {
+            return false
+        }
+
+        // add correct indentation based on first non empty character index
+        const nonEmptyStartIndex = document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
+        // add indentation to each line
+        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
+        // join text with new lines, and then remove everything after the last new line if it only contains white spaces
+        const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
+
+        // Insert updated text at selection range
+        if (edit instanceof vscode.WorkspaceEdit) {
+            edit.insert(document.uri, range.start, replacementText)
+            return vscode.workspace.applyEdit(edit)
+        }
+
+        return edit(editBuilder => {
+            editBuilder.insert(range.start, replacementText)
         }, options)
     }
 
@@ -748,12 +784,9 @@ export class FixupController
             new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
         )
 
-        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
-        const intent: FixupIntent = selectedText.trim().length === 0 ? 'add' : task.intent
-
         return {
             instruction: task.instruction,
-            intent,
+            intent: task.intent,
             fileName: task.fixupFile.uri.fsPath,
             precedingText,
             selectedText,
