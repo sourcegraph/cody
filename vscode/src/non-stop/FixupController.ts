@@ -861,7 +861,7 @@ export class FixupController
         if (!task) {
             return
         }
-        const previousRange = task.selectionRange
+        const previousRange = task.originalRange
         const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 

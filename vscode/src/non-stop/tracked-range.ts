@@ -151,3 +151,13 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
     }
     return range
 }
+
+/**
+ * Given a range and an edit, shifts the range for the edit.
+ * Only handles edits that are outside of the range, as it is purely focused on shifting a fixed range in a document.
+ * Does not expand or shrink the original rank.
+ */
+export function updateFixedRange(range: vscode.Range, change: TextChange): vscode.Range | null {
+    // todo
+    return null
+}
