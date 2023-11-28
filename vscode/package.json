@@ -972,7 +972,7 @@
           }
         },
         "cody.inlineChat.enabled": {
-          "order": 6,
+          "order": 10,
           "title": "Cody Inline Chat",
           "type": "boolean",
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
@@ -990,10 +990,10 @@
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
-        "cody.experimental.commandLenses": {
+        "cody.commandCodeLenses": {
           "order": 8,
           "type": "boolean",
-          "markdownDescription": "[Experimental] Adds code lenses to current file for quick access to Cody commands.",
+          "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
           "default": false
         },
         "cody.experimental.guardrails": {
@@ -1015,7 +1015,7 @@
           "markdownDescription": "Experimental feature for internal use."
         },
         "cody.chat.preInstruction": {
-          "order": 10,
+          "order": 6,
           "type": "string",
           "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
           "examples": [
