@@ -7,6 +7,7 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
+import { arrayOption, intOption } from './cli-parsers'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
@@ -100,18 +101,6 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
     return result
 }
 
-function intOption(value: string): number {
-    const parsedValue = Number.parseInt(value, 10)
-    if (isNaN(parsedValue)) {
-        throw new commander.InvalidArgumentError('Not a number.')
-    }
-    return parsedValue
-}
-
-function collect<T>(value: T, previous: T[]): T[] {
-    return previous.concat([value])
-}
-
 export const evaluateAutocompleteCommand = new commander.Command('evaluate-autocomplete')
     .description('Evaluate Cody autocomplete by running the Agent in headless mode')
     .option('--workspace <path>', 'The workspace directory where to run the autocomplete evaluation', process.cwd())
@@ -142,49 +131,49 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
     .option(
         '--include-workspace <glob>',
         'A glob pattern to determine what workspace paths to include in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--exclude-workspace <glob>',
         'A glob pattern to determine what workspace paths to exclude in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--include-language <glob>',
         'A glob pattern to determine what language paths to include in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--exclude-language <glob>',
         'A glob pattern to determine what language paths to exclude in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--include-fixture <glob>',
         'A glob pattern to determine what fixtures to include in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--exclude-fixture <glob>',
         'A glob pattern to determine what fixtures exclude in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--include-filepath <glob>',
         'A glob pattern to determine what files to include in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .option(
         '--exclude-filepath <glob>',
         'A glob pattern to determine what files exclude in the evaluation',
-        collect as any,
+        arrayOption as any,
         []
     )
     .addOption(new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
@@ -222,6 +211,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     }
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
+
     const client = await newAgentClient({
         name: 'evaluate-autocomplete',
         version: '0.1.0',

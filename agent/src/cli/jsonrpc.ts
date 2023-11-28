@@ -6,6 +6,8 @@ import { Command, Option } from 'commander'
 
 import { Agent } from '../agent'
 
+import { booleanOption } from './evaluate-autocomplete/cli-parsers'
+
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
     recordingDirectory?: string
@@ -106,9 +108,10 @@ export const jsonrpcCommand = new Command('jsonrpc')
             .default('365d')
     )
     .addOption(
-        new Option('--recording-strict-replay <true|false>', 'If false, fails the test instead of recording').env(
-            'CODY_RECORD_IF_MISSING'
-        )
+        new Option('--record-if-missing <true|false>', 'If false, fails the test instead of recording')
+            .env('CODY_RECORD_IF_MISSING')
+            .argParser(booleanOption)
+            .default(false)
     )
     .action((options: JsonrpcCommandOptions) => {
         let polly: Polly | undefined

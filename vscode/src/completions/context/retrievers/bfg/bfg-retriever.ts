@@ -19,10 +19,14 @@ export let bfgIndexingPromise = Promise.resolve<void>(undefined)
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
+    private awaitIndexing: boolean
     private didFailLoading = false
     // Keys are repository URIs, values are revisions (commit hashes).
     private indexedRepositoryRevisions = new Map<string, string>()
     constructor(private context: vscode.ExtensionContext) {
+        this.awaitIndexing = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.experimental.cody-engine.await-indexing', false)
         this.loadedBFG = this.loadBFG()
 
         this.loadedBFG.then(
@@ -72,6 +76,7 @@ export class BfgRetriever implements ContextRetriever {
         docContext,
         hints,
     }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+        await this.loadedBFG
         if (this.didFailLoading) {
             return []
         }
@@ -79,6 +84,9 @@ export class BfgRetriever implements ContextRetriever {
         if (!bfg.isAlive()) {
             logDebug('CodyEngine', 'not alive')
             return []
+        }
+        if (this.awaitIndexing) {
+            await bfgIndexingPromise
         }
 
         try {

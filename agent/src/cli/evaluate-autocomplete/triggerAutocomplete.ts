@@ -1,6 +1,7 @@
 import { calcPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 
+import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { AutocompleteResult } from '../../protocol-alias'
@@ -24,12 +25,11 @@ export interface AutocompleteParameters {
 
 export async function triggerAutocomplete(parameters: AutocompleteParameters): Promise<void> {
     const { range, client, document, modifiedContent, removedContent, position, emptyMatchContent } = parameters
-
-    client.notify('textDocument/didChange', { filePath: document.params.filepath, content: modifiedContent })
+    client.notify('textDocument/didChange', { uri: document.uri.toString(), content: modifiedContent })
     let result: AutocompleteResult
     try {
         result = await client.request('autocomplete/execute', {
-            filePath: document.params.filepath,
+            uri: document.uri.toString(),
             position,
             // We don't use the "automatic" trigger to avoid certain code paths like
             // synthetic latency when acceptance rate is low.
@@ -50,7 +50,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         return
     }
 
-    const textDocument = new AgentTextDocument({ filePath: document.params.filepath, content: modifiedContent })
+    const textDocument = new AgentTextDocument(TextDocumentWithUri.from(document.uri, { content: modifiedContent }))
     for (const item of result.items) {
         const original = textDocument.getText(
             new vscode.Range(
@@ -95,6 +95,12 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                     resultTypechecks,
                 })
             }
+        } else {
+            document.pushItem({
+                range,
+                resultEmpty: true,
+                event: result.completionEvent,
+            })
         }
     }
     if (result.items.length === 0) {

@@ -87,6 +87,9 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
+    if (newClientInfo.extensionConfiguration) {
+        setConnectionConfig(newClientInfo.extensionConfiguration)
+    }
 }
 
 export let connectionConfig: ExtensionConfiguration | undefined
@@ -184,7 +187,7 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
-    openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
+    openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
@@ -198,11 +201,19 @@ const workspaceFolders: vscode.WorkspaceFolder[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
-    openTextDocument: uri => {
-        // We currently treat filePath the same as uri for now, but will need to
-        // properly pass around URIs once the agent protocol supports URIs
-        const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
-        return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    openTextDocument: uriOrString => {
+        if (!workspaceDocuments) {
+            return Promise.reject(new Error('workspaceDocuments is uninitialized'))
+        }
+        if (typeof uriOrString === 'string') {
+            return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
+        }
+        if (uriOrString instanceof Uri) {
+            return workspaceDocuments.openTextDocument(uriOrString)
+        }
+        return Promise.reject(
+            new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
+        )
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
