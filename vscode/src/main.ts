@@ -9,7 +9,7 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { ChatManager } from './chat/chat-view/ChatManager'
+import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
@@ -22,6 +22,7 @@ import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -605,11 +606,11 @@ const register = async (
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
-        vscode.window.registerWebviewPanelSerializer('cody.chatPanel', {
+        vscode.window.registerWebviewPanelSerializer(CodyChatPanelViewType, {
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
                 if (chatID && webviewPanel.title) {
-                    await chatManager.createWebviewPanel(chatID, webviewPanel.title)
-                    webviewPanel.dispose()
+                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
+                    await chatManager.revive(webviewPanel, chatID)
                 }
             },
         })

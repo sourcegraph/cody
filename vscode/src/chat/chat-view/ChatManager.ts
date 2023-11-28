@@ -15,6 +15,7 @@ import { AuthStatus } from '../protocol'
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
 import { SidebarChatOptions, SidebarChatProvider } from './SidebarChatProvider'
 
+export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
  * Manages chat view providers and panels.
  */
@@ -56,7 +57,7 @@ export class ChatManager implements vscode.Disposable {
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
-            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', isChatPanelEnabled)
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
             if (isChatPanelEnabled) {
                 this.createChatPanelsManger()
             } else {
@@ -213,6 +214,14 @@ export class ChatManager implements vscode.Disposable {
             return undefined
         }
         return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
+    }
+
+    public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        this.createChatPanelsManger()
+        if (this.chatPanelsManager) {
+            await this.chatPanelsManager.revive(panel, chatID)
+            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revive', undefined, { hasV2Event: true })
+        }
     }
 
     private lastDisplayedNotice = ''
