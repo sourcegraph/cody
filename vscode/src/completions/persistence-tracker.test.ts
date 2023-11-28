@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'v
 import type * as vscode from 'vscode'
 
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder, useNoOpTelemetryRecorder } from '../services/telemetry-v2'
+import { telemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
 import { CompletionAnalyticsID } from './logger'
@@ -24,7 +24,6 @@ describe('PersistenceTracker', () => {
         vi.useFakeTimers()
 
         logSpy = vi.spyOn(telemetryService, 'log')
-        useNoOpTelemetryRecorder()
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
 
         tracker = new PersistenceTracker({

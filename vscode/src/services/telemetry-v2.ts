@@ -6,7 +6,7 @@ import {
     TelemetryRecorder,
     TelemetryRecorderProvider,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { CallbackTelemetryProcessor, TelemetryProcessor } from '@sourcegraph/telemetry'
+import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
 
@@ -27,7 +27,9 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  */
 export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
     new CallbackTelemetryProcessor(() => {
-        throw new Error('telemetry-v2: recorder used before initialization')
+        if (!process.env.VITEST) {
+            throw new Error('telemetry-v2: recorder used before initialization')
+        }
     }),
 ])
 
@@ -62,18 +64,6 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { no
             )
         }),
     ])
-}
-
-/**
- * Exported for use in tests only to initialize the global telemetryRecorder to
- * a no-op implementation. By default, the telemetryRecorder will throw an error
- * if used before some form of initialization, such as this function or
- * createOrUpdateTelemetryRecorderProvider().
- *
- * TelemetryProcessors can optionally be provided to hook into recorded events.
- */
-export function useNoOpTelemetryRecorder(processors?: TelemetryProcessor[]): void {
-    updateGlobalInstances(new NoOpTelemetryRecorderProvider(processors))
 }
 
 /**

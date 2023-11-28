@@ -1,6 +1,4 @@
-import { beforeEach, describe, expect, it, test } from 'vitest'
-
-import { useNoOpTelemetryRecorder } from '../services/telemetry-v2'
+import { describe, expect, it, test } from 'vitest'
 
 import {
     CLOSING_CODE_TAG,
@@ -12,10 +10,6 @@ import {
 } from './text-processing'
 
 describe('extractFromCodeBlock', () => {
-    beforeEach(() => {
-        useNoOpTelemetryRecorder()
-    })
-
     it('extracts value from code completion XML tags', () => {
         expect(extractFromCodeBlock(`hello world${CLOSING_CODE_TAG}`)).toBe('hello world')
         expect(extractFromCodeBlock(`<randomTag>hello world</randomTag>${CLOSING_CODE_TAG}`)).toBe(

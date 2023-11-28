@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder, useNoOpTelemetryRecorder } from '../services/telemetry-v2'
+import { telemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
 import { ContextSummary } from './context/context-mixer'
@@ -46,7 +46,6 @@ describe('logger', () => {
     let recordSpy: MockInstance
     beforeEach(() => {
         logSpy = vi.spyOn(telemetryService, 'log')
-        useNoOpTelemetryRecorder()
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
     })
     afterEach(() => {
