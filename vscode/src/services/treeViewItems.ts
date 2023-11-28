@@ -133,7 +133,7 @@ const commandsItems: CodySidebarTreeItem[] = [
         title: 'Edit',
         icon: 'wand',
         command: { command: 'cody.command.edit-code' },
-        description: 'Edit Code with Instructions',
+        description: 'Edit code with instructions',
     },
     {
         title: 'Explain',
