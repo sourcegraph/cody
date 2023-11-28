@@ -1,6 +1,8 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
 import { CompletionLogID, logCompletionEvent } from './logger'
@@ -85,12 +87,16 @@ export class RequestManager {
         this.inflightRequests.add(request)
 
         Promise.all(
-            providers.map(provider => provider.generateCompletions(request.abortController.signal, context, tracer))
+            providers.map(provider =>
+                startAsyncSpan('autocomplete.generate', () =>
+                    provider.generateCompletions(request.abortController.signal, context, tracer)
+                )
+            )
         )
             .then(res => res.flat())
             .then(completions => {
                 // Shared post-processing logic
-                return processInlineCompletions(completions, params)
+                return startAsyncSpan('autocomplete.post-process', () => processInlineCompletions(completions, params))
             })
             .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.

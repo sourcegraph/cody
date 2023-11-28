@@ -1,6 +1,5 @@
 import * as path from 'path'
 
-import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -21,7 +20,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
@@ -81,6 +80,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private prompter: IPrompter = new DefaultPrompter()
 
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
+
     // HACK: for now, we need awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
@@ -118,7 +119,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
+    public async createWebviewPanel(
+        activePanelViewColumn?: vscode.ViewColumn,
+        lastQuestion?: string
+    ): Promise<vscode.WebviewPanel | undefined> {
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
         if (this.webviewPanel) {
@@ -130,11 +134,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
         const panelTitle = text || 'New Chat'
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
 
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
-            { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
+            { viewColumn, preserveFocus: true },
             {
                 enableScripts: true,
                 retainContextWhenHidden: true,
@@ -281,7 +286,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'history',
             messages: allHistory,
         })
-        this.treeView.updateTree(createCodyChatTreeItems(allHistory))
+        await this.treeView.updateTree(createCodyChatTreeItems(allHistory))
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -470,25 +475,46 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             return
         }
 
-        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
-            try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+        const cancellation = new vscode.CancellationTokenSource()
 
-                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context,
-                })
-            } catch (error) {
-                this.postError(`Error retrieving explicit context: ${error}`)
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
+            } else {
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             }
-        }, 100)
-
-        await debouncedContextFileQuery(query)
+        } catch (error) {
+            // Handle or log the error as appropriate
+            console.error('Error retrieving context files:', error)
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
+        }
     }
 
     private async postViewTranscript(messageInProgress?: ChatMessage): Promise<void> {
