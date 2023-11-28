@@ -50,7 +50,8 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
-            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat))
+            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
+            vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
         )
 
         // Register config change listener
@@ -235,6 +236,20 @@ export class ChatManager implements vscode.Disposable {
         this.getChatProvider()
             .then(provider => provider.triggerNotice(notice))
             .catch(error => console.error(error))
+    }
+
+    private async openFileFromChat(fsPath: string): Promise<void> {
+        const rangeIndex = fsPath.indexOf(':range:')
+        const range = rangeIndex ? fsPath.slice(Math.max(0, rangeIndex + 7)) : 0
+        const filteredFsPath = range ? fsPath.slice(0, rangeIndex) : fsPath
+        const uri = vscode.Uri.file(filteredFsPath)
+        // If the active editor is undefined, that means the chat panel is the active editor
+        // so we will open the file in the first visible editor instead
+        const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
+        // If there is no editor or visible editor found, then we will open the file next to chat panel
+        const viewColumn = editor ? editor.viewColumn : vscode.ViewColumn.Beside
+        const doc = await vscode.workspace.openTextDocument(uri)
+        await vscode.window.showTextDocument(doc, { viewColumn })
     }
 
     private disposeChatPanelsManager(): void {

@@ -267,6 +267,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             promptMessages,
             {
                 onChange: text => {
+                    if (textConsumed === 0 && responsePrefix) {
+                        void this.multiplexer.publish(responsePrefix)
+                    }
+
                     // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                     text = text.slice(textConsumed)
                     textConsumed += text.length
