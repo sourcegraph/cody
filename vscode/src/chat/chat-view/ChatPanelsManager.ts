@@ -1,35 +1,67 @@
 import * as vscode from 'vscode'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
+import { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
-import { ChatPanelProvider, ChatPanelProviderOptions } from './ChatPanelProvider'
+import { CodyChatPanelViewType } from './ChatManager'
+import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
+import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string
 
+export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails'>
+
+/**
+ * An interface to swap out SimpleChatPanelProvider for ChatPanelProvider
+ */
+export interface IChatPanelProvider extends vscode.Disposable {
+    executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
+    executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
+    clearAndRestartSession(): Promise<void>
+    clearChatHistory(chatID: ChatID): Promise<void>
+    triggerNotice(notice: { key: string }): void
+    webviewPanel?: vscode.WebviewPanel
+    webview?: ChatViewProviderWebview
+    sessionID: string
+    setWebviewView(view: View): Promise<void>
+    restoreSession(chatIDj: string): Promise<void>
+    setConfiguration?: (config: Config) => void
+}
+
 export class ChatPanelsManager implements vscode.Disposable {
     // Chat views in editor panels when experimentalChatPanel is enabled
-    private activePanelProvider: ChatPanelProvider | undefined = undefined
-    private panelProvidersMap: Map<ChatID, ChatPanelProvider> = new Map()
+    private activePanelProvider: IChatPanelProvider | undefined = undefined
+    private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
 
     private options: ChatPanelProviderOptions
     private onConfigurationChange: vscode.Disposable
 
     // Tree view for chat history
-    public treeViewProvider = new TreeViewProvider('chat')
+    public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
     public treeView
+
+    public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
     protected disposables: vscode.Disposable[] = []
 
-    constructor({ extensionUri, ...options }: SidebarChatOptions) {
+    constructor(
+        { extensionUri, ...options }: SidebarChatOptions,
+        private chatClient: ChatClient,
+        private embeddingsSearch: EmbeddingsSearch | null
+    ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
 
@@ -41,61 +73,151 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Register Tree View
         this.disposables.push(
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeViewProvider),
-            vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support')),
-            vscode.window.registerTreeDataProvider('cody.commands.tree.view', new TreeViewProvider('command'))
-        )
-
-        // Register Commands
-        this.disposables.push(
-            vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createWebviewPanel()),
-            vscode.commands.registerCommand('cody.chat.panel.restore', async (id, chat) => this.restorePanel(id, chat))
+            vscode.window.registerTreeDataProvider('cody.support.tree.view', this.supportTreeViewProvider),
+            vscode.window.registerTreeDataProvider(
+                'cody.commands.tree.view',
+                new TreeViewProvider('command', featureFlagProvider)
+            )
         )
 
         // Register config change listener
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
-            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', isChatPanelEnabled)
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
             // when config is disabled, remove all current panels
             if (!isChatPanelEnabled) {
                 this.disposePanels()
                 return
             }
 
-            // Remove provider  that doesn't have webPanel anymore
+            // Remove provider that doesn't have webPanel anymore
             this.panelProvidersMap.forEach((provider, id) => {
                 if (!provider.webviewPanel) {
                     provider.dispose()
                     this.panelProvidersMap.delete(id)
                 }
+                provider.setConfiguration?.(options.contextProvider.config)
             })
+
+            this.useSimpleChatPanelProvider = options.contextProvider.config.experimentalSimpleChatContext
         })
 
         this.updateTreeViewHistory()
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        this.supportTreeViewProvider.syncAuthStatus(authStatus)
         if (!authStatus.isLoggedIn) {
             this.disposePanels()
         }
 
-        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', authStatus.isLoggedIn)
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
     }
 
-    public async getChatPanel(): Promise<ChatPanelProvider> {
+    public async getChatPanel(): Promise<IChatPanelProvider> {
         const provider = await this.createWebviewPanel()
         // Check if any existing panel is available
         return this.activePanelProvider || provider
     }
 
+    // Sync feature flag for cody.experimental.simpleChatContext to this variable
+    private useSimpleChatPanelProvider = false
+
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<ChatPanelProvider> {
+    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider> {
+        if (chatID && this.panelProvidersMap.has(chatID)) {
+            const provider = this.panelProvidersMap.get(chatID)
+            if (provider) {
+                provider.webviewPanel?.reveal()
+                this.activePanelProvider = provider
+                void this.selectTreeItem(chatID)
+                return provider
+            }
+        }
+
         logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
+
+        // Get the view column of the current active chat panel so that we can open a new one on top of it
+        const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
+
+        if (this.useSimpleChatPanelProvider) {
+            const provider = new SimpleChatPanelProvider({
+                ...this.options,
+                config: this.options.contextProvider.config,
+                chatClient: this.chatClient,
+                embeddingsClient: this.embeddingsSearch,
+            })
+            const webviewPanel = await provider.createWebviewPanel(activePanelViewColumn, chatQuestion)
+            if (chatID) {
+                await provider.restoreSession(chatID)
+            }
+
+            this.activePanelProvider = provider
+            this.panelProvidersMap.set(provider.sessionID, provider)
+
+            webviewPanel?.onDidChangeViewState(e => {
+                if (e.webviewPanel.visible) {
+                    this.activePanelProvider = provider
+                    this.options.contextProvider.webview = provider.webview
+                    void this.selectTreeItem(provider.sessionID)
+                }
+            })
+
+            webviewPanel?.onDidDispose(() => {
+                this.disposeProvider(sessionID)
+            })
+
+            this.selectTreeItem(provider.sessionID)
+            return provider
+        }
+
         const provider = new ChatPanelProvider(this.options)
-        const webviewPanel = await provider.createWebviewPanel(chatID, chatQuestion)
+        const webviewPanel = await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
         const sessionID = chatID || provider.sessionID
+        this.activePanelProvider = provider
+        this.panelProvidersMap.set(sessionID, provider)
+
+        webviewPanel?.onDidChangeViewState(e => {
+            if (e.webviewPanel.visible && e.webviewPanel.active) {
+                this.activePanelProvider = provider
+                this.options.contextProvider.webview = provider.webview
+                void this.selectTreeItem(provider.sessionID)
+            }
+        })
+
+        webviewPanel?.onDidDispose(() => {
+            this.disposeProvider(sessionID)
+        })
+
+        this.selectTreeItem(sessionID)
+        return provider
+    }
+
+    public async revive(
+        panel: vscode.WebviewPanel,
+        sessionID: string,
+        chatQuestion?: string
+    ): Promise<IChatPanelProvider> {
+        logDebug('ChatPanelsManager:revive', sessionID, chatQuestion)
+
+        const provider = this.useSimpleChatPanelProvider
+            ? new SimpleChatPanelProvider({
+                  ...this.options,
+                  config: this.options.contextProvider.config,
+                  chatClient: this.chatClient,
+                  embeddingsClient: this.embeddingsSearch,
+              })
+            : new ChatPanelProvider(this.options)
+
+        const webviewPanel = await provider.revive(panel, sessionID)
+
+        if (this.useSimpleChatPanelProvider) {
+            await provider.restoreSession(sessionID)
+        }
+
         this.activePanelProvider = provider
         this.panelProvidersMap.set(sessionID, provider)
 
@@ -156,7 +278,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     private updateTreeViewHistory(): void {
         const localHistory = localStorage.getChatHistory()
         if (localHistory) {
-            this.treeViewProvider.updateTree(
+            void this.treeViewProvider.updateTree(
                 createCodyChatTreeItems({
                     chat: localHistory?.chat,
                     input: localHistory.input,
@@ -192,15 +314,18 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
-        logDebug('ChatPanelsManager', 'restorePanel')
-        // Panel already exists, just reveal it
-        const provider = this.panelProvidersMap.get(chatID)
-        if (provider) {
-            provider.webviewPanel?.reveal()
-            return
+        try {
+            logDebug('ChatPanelsManager', 'restorePanel')
+            // Panel already exists, just reveal it
+            const provider = this.panelProvidersMap.get(chatID)
+            if (provider) {
+                provider.webviewPanel?.reveal()
+                return
+            }
+            await this.createWebviewPanel(chatID, chatQuestion)
+        } catch (error) {
+            console.error(error, 'errored restoring panel')
         }
-
-        await this.createWebviewPanel(chatID, chatQuestion)
     }
 
     public triggerNotice(notice: { key: string }): void {

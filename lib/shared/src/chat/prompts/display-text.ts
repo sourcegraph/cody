@@ -56,9 +56,9 @@ export function replaceFileNameWithMarkdownLink(
     startLine = 0
 ): string {
     // Create markdown link to the file
-    const range = startLine ? `:${startLine}` : ''
-    const fileLink = `vscode://file${fsPath}${range}`
-    const markdownText = `[_${fileName.trim()}_](${fileLink})`
+    const range = startLine ? `:range:${startLine}` : ''
+    const fileLink = `${fsPath}${range}`
+    const markdownText = `[_${fileName.trim()}_](command:cody.chat.open.file?"${fileLink}")`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
     const textToBeReplaced = new RegExp(`\\s*${fileName.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`, 'g')

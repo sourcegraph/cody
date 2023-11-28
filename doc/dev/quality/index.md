@@ -15,12 +15,6 @@ Cody autocompletion (code completions in your editor) can be powered by two type
 
 For chat-based models, we can influence the performance by altering the prompting AND context. For code-based models, we can typically influence the performance by adjusting the amount and relevancy of context only, as there is no prompting to adjust.
 
-### Autocomplete review tool
-
-The autocomplete review tool let's us (manually, visually) inspect autocomplete behavior in a bunch of different scenarios, with different LLM models, to see how we've affected its performance - or to see how its performs with a new LLM.
-
-[Autocomplete review tool](./autocomplete-review-tool)
-
 ## Chat
 
 ### Influencing chat performance

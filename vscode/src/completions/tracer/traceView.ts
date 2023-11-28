@@ -109,7 +109,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 ## Completers
 
 ${data.completers?.map(
-    ({ id, docContext: { prefix, suffix, completionIntent }, position, document, ...otherOptions }) =>
+    ({ id, docContext: { prefix, suffix }, completionIntent, position, document, ...otherOptions }) =>
         `
 ### ${id}
 

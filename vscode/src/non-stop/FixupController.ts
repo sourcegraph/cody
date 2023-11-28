@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
@@ -98,17 +97,25 @@ export class FixupController
         // Observe file edits
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
-            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver)),
-            vscode.workspace.onDidSaveTextDocument(({ uri }) => {
-                // If we save the document, we consider the user to have accepted any applied tasks.
-                // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
-                for (const task of this.tasks.values()) {
-                    if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
-                        this.accept(task.id)
-                    }
-                }
-            })
+            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
         )
+
+        // Only auto-accept tasks on save if the user doesn't have a conflicting autoSave setting.
+        // Otherwise the code lens will just flicker for the user, as it will be accepted almost immediately
+        const autoSaveSetting = vscode.workspace.getConfiguration('files').get<string>('autoSave')
+        if (autoSaveSetting === 'off' || autoSaveSetting === 'onWindowChange') {
+            this._disposables.push(
+                vscode.workspace.onDidSaveTextDocument(({ uri }) => {
+                    // If we save the document, we consider the user to have accepted any applied tasks.
+                    // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
+                    for (const task of this.tasks.values()) {
+                        if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                            this.accept(task.id)
+                        }
+                    }
+                })
+            )
+        }
     }
 
     /**
@@ -324,14 +331,6 @@ export class FixupController
                 },
             })
 
-            task.editedRange = new vscode.Range(
-                new vscode.Position(task.selectionRange.start.line, 0),
-                new vscode.Position(
-                    task.selectionRange.start.line + codeCount.lineCount,
-                    task.selectionRange.end.character
-                )
-            )
-
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
@@ -443,7 +442,7 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.editedRange
+        const rangeToFormat = task.selectionRange
 
         if (!rangeToFormat) {
             return false
@@ -556,11 +555,9 @@ export class FixupController
             return
         }
 
-        const revertRange = task.editedRange || task.selectionRange
-
-        editor.revealRange(revertRange)
+        editor.revealRange(task.selectionRange)
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(revertRange, task.original)
+            editBuilder.replace(task.selectionRange, task.original)
         })
 
         if (!editOk) {
@@ -626,8 +623,8 @@ export class FixupController
             return undefined
         }
 
-        // Expand the selection range for edits and fixes
-        const getSmartSelection = task.intent === 'edit' || task.intent === 'fix'
+        // Support expanding the selection range for intents where it is useful
+        const getSmartSelection = task.intent !== 'add'
         if (getSmartSelection && task.selectionRange) {
             const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
@@ -837,8 +834,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.editedRange || task.selectionRange
-        edit.replace(tempDocUri, range, diff.originalText)
+        edit.replace(tempDocUri, task.selectionRange, diff.originalText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
@@ -851,7 +847,7 @@ export class FixupController
             {
                 preview: true,
                 preserveFocus: false,
-                selection: range,
+                selection: task.selectionRange,
                 label: 'Cody Fixup Diff View',
                 description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
             }

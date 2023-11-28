@@ -2,12 +2,17 @@ import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
+import {
+    featureFlagProvider,
+    FeatureFlagProvider,
+} from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { AuthStatus, defaultAuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
-import { vsCodeMocks } from '../testutils/mocks'
+import { decGaMockFeatureFlagProvider, emptyMockFeatureFlagProvider, vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -43,10 +48,14 @@ graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
         mockGetInlineCompletions: typeof getInlineCompletions,
-        superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>
+        superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>,
+        featureFlagProviderOverride?: FeatureFlagProvider,
+        authStatus?: AuthStatus
     ) {
         super({
             completeSuggestWidgetSelection: true,
+            featureFlagProvider: featureFlagProviderOverride ?? featureFlagProvider,
+            authProvider: { getAuthStatus: () => authStatus ?? defaultAuthStatus } as any,
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
@@ -55,7 +64,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
-                model: null,
             }),
             triggerNotice: null,
             contextStrategy: 'none',
@@ -124,17 +132,6 @@ describe('InlineCompletionItemProvider', () => {
         expect(provider.lastCandidate).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
-              "completionIntent": undefined,
-              "contextRange": Range {
-                "end": Position {
-                  "character": 14,
-                  "line": 2,
-                },
-                "start": Position {
-                  "character": 0,
-                  "line": 0,
-                },
-              },
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
               "injectedPrefix": null,
@@ -512,7 +509,7 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     describe('error reporting', () => {
-        it('reports rate limit errors to the user once', async () => {
+        it('reports standard rate limit errors to the user once', async () => {
             const { document, position } = documentAndPosition('█')
             const fn = vi.fn(getInlineCompletions).mockRejectedValue(new RateLimitError('rate limited oh no', 1234))
             const addError = vi.fn()
@@ -533,6 +530,42 @@ describe('InlineCompletionItemProvider', () => {
             )
             expect(addError).toHaveBeenCalledTimes(1)
         })
+
+        it.each([
+            { gaFlag: true, canUpgrade: true, expectUpgrade: true },
+            { gaFlag: false, canUpgrade: true, expectUpgrade: false },
+            { gaFlag: true, canUpgrade: false, expectUpgrade: false },
+        ])(
+            'reports correct message (GA:$gaFlag, canUpgrade:$canUpgrade) -> expected upgrade? $expectUpgrade',
+            async ({ gaFlag, canUpgrade, expectUpgrade }) => {
+                const { document, position } = documentAndPosition('█')
+                const fn = vi.fn(getInlineCompletions).mockRejectedValue(new RateLimitError('rate limited oh no', 1234))
+                const addError = vi.fn()
+                const provider = new MockableInlineCompletionItemProvider(
+                    fn,
+                    { statusBar: { addError } as any },
+                    gaFlag ? decGaMockFeatureFlagProvider : emptyMockFeatureFlagProvider,
+                    { ...defaultAuthStatus, userCanUpgrade: canUpgrade }
+                )
+
+                await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
+                    'rate limited oh no'
+                )
+                expect(addError).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        title: expectUpgrade
+                            ? 'Upgrade to Continue Using Cody Autocomplete'
+                            : 'Cody Autocomplete Disabled Due to Rate Limit',
+                        description: "You've used all 1234 daily autocompletions.",
+                    })
+                )
+
+                await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
+                    'rate limited oh no'
+                )
+                expect(addError).toHaveBeenCalledTimes(1)
+            }
+        )
 
         it.skip('reports unexpected errors grouped by their message once', async () => {
             const { document, position } = documentAndPosition('█')

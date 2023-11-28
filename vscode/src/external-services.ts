@@ -14,7 +14,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
 import { logDebug, logger } from './log'
-import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -49,9 +48,11 @@ export async function configureExternalServices(
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
+        | 'createOpenTelemetryService'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
+    const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClint(initialConfig, logger)
 
@@ -75,8 +76,7 @@ export async function configureExternalServices(
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         symf,
-        undefined,
-        getRerankWithLog(chatClient)
+        undefined
     )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
@@ -89,6 +89,7 @@ export async function configureExternalServices(
         guardrails,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
+            openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)

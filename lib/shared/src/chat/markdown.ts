@@ -49,6 +49,7 @@ const DOMPURIFY_CONFIG = {
         // Disallow heading ids, or any ids
         'id',
     ],
+    FORBID_TAGS: ['style'],
 }
 
 /**

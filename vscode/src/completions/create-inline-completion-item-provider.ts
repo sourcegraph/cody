@@ -8,6 +8,7 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
+import { ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
@@ -51,34 +52,43 @@ export async function createInlineCompletionItemProvider({
 
     const [
         providerConfig,
-        lspGraphContextFlag,
-        bfgGraphContextFlag,
-        disableNetworkCache,
+        lspLightContextFlag,
+        bfgContextFlag,
+        bfgMixedContextFlag,
+        localMixedContextFlag,
         disableRecyclingOfPreviousRequests,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContextBfg),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLspLight),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfg),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
     ])
     if (providerConfig) {
-        const contextStrategy =
+        const contextStrategy: ContextStrategy =
             config.autocompleteExperimentalGraphContext === 'lsp-light'
                 ? 'lsp-light'
                 : config.autocompleteExperimentalGraphContext === 'bfg'
                 ? 'bfg'
-                : lspGraphContextFlag
+                : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
+                ? 'bfg-mixed'
+                : lspLightContextFlag
                 ? 'lsp-light'
-                : bfgGraphContextFlag
+                : bfgContextFlag
                 ? 'bfg'
+                : bfgMixedContextFlag
+                ? 'bfg-mixed'
+                : localMixedContextFlag
+                ? 'local-mixed'
                 : 'jaccard-similarity'
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
+            featureFlagProvider,
+            authProvider,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,

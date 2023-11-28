@@ -36,6 +36,15 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+        hasVerifiedEmail
+        codyProEnabled
+    }
+}`
+
 export const CURRENT_SITE_CODY_LLM_PROVIDER = `
 query CurrentSiteCodyLlmConfiguration {
     site {

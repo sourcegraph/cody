@@ -3,7 +3,7 @@ import assert from 'assert'
 import { describe, expect, it } from 'vitest'
 import { Position, Range } from 'vscode'
 
-import { updateRange, updateRangeMultipleChanges } from './tracked-range'
+import { updateRange, updateRangeMultipleChanges, UpdateRangeOptions } from './tracked-range'
 
 // Creates a position.
 function pos(line: number, character: number): Position {
@@ -131,10 +131,10 @@ function edit(text: string, range: Range, replacement: string): string {
 // Given a spec with a tracked range in [], an edited range in (),
 // replaces () with the specified text; applies range tracking;
 // and serializes the resulting text and tracked range.
-function track(spec: string, replacement: string): string {
+function track(spec: string, replacement: string, options?: UpdateRangeOptions): string {
     const scenario = parse(spec)
     const editedText = edit(scenario.text, scenario.edited, replacement)
-    const updatedRange = updateRange(scenario.tracked, { range: scenario.edited, text: replacement })
+    const updatedRange = updateRange(scenario.tracked, { range: scenario.edited, text: replacement }, options)
     return updatedRange ? show(editedText, updatedRange) : editedText
 }
 
@@ -201,6 +201,24 @@ describe('Tracked Range', () => {
     })
     it('should track multiline insertions before the range, starting and ending on the same line as the range', () => {
         expect(track('hello(,) [world]!', ' everybody\naround the')).toBe('hello everybody\naround the [world]!')
+    })
+
+    describe('when supporting range affix', () => {
+        it('should track single character insertion before the range as a range expansion', () => {
+            expect(track('( )[llo] world', 'he', { supportRangeAffix: true })).toBe('[hello] world')
+        })
+
+        it('should track single character insertion before the range as a range expansion', () => {
+            expect(track('()[ello] world', 'h', { supportRangeAffix: true })).toBe('[hello] world')
+        })
+
+        it('should track single character insertion after the range as a range expansion', () => {
+            expect(track('[he]( ) world', 'llo', { supportRangeAffix: true })).toBe('[hello] world')
+        })
+
+        it('should track single character insertion after the range as a range expansion', () => {
+            expect(track('[hell]() world', 'o', { supportRangeAffix: true })).toBe('[hello] world')
+        })
     })
 })
 

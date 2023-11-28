@@ -22,8 +22,9 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
+import { showAskQuestionQuickPick } from '../commands/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
@@ -111,7 +112,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected contextProvider: ContextProvider
     protected platform: Pick<PlatformContext, 'recipes'>
 
-    protected userContextFiles: ContextFile[] = []
     protected chatModel: string | undefined = undefined
 
     constructor(options: MessageProviderOptions) {
@@ -143,6 +143,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (chatID) {
             await this.restoreSession(chatID)
         }
+    }
+
+    private get isDotComUser(): boolean {
+        const endpoint = this.authProvider.getAuthStatus()?.endpoint || ''
+        return isDotCom(endpoint)
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -233,13 +238,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.onCompletionEnd()
                 // Count code generated from response
                 const codeCount = countGeneratedCode(text)
+                const metadata = lastInteraction?.getHumanMessage().metadata
+                const responseText = this.isDotComUser ? text : undefined
+                telemetryService.log(
+                    'CodyVSCodeExtension:chatResponse:hasCode',
+                    { ...codeCount, ...metadata, requestID, responseText },
+                    { hasV2Event: true }
+                )
+
                 if (codeCount?.charCount) {
-                    const metadata = lastInteraction?.getHumanMessage().metadata
-                    telemetryService.log(
-                        'CodyVSCodeExtension:chatResponse:hasCode',
-                        { ...codeCount, ...metadata, requestID },
-                        { hasV2Event: true }
-                    )
                     telemetryRecorder.recordEvent(
                         `cody.messageProvider.chatResponse.${metadata?.source || recipeId}`,
                         'hasCode',
@@ -260,6 +267,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             promptMessages,
             {
                 onChange: text => {
+                    if (textConsumed === 0 && responsePrefix) {
+                        void this.multiplexer.publish(responsePrefix)
+                    }
+
                     // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                     text = text.slice(textConsumed)
                     textConsumed += text.length
@@ -340,7 +351,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         recipeId: RecipeID,
         humanChatInput = '',
         source?: ChatEventSource,
-        userInputContextFiles?: ContextFile[]
+        userInputContextFiles?: ContextFile[],
+        addEnhancedContext = true
     ): Promise<void> {
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple actions. Please wait for the current action to finish.', 'system')
@@ -356,7 +368,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
-        const command = await this.chatCommandsFilter(humanChatInput, recipeId, { source, requestID })
+        const command = await this.chatCommandsFilter(
+            humanChatInput,
+            recipeId,
+            { source, requestID },
+            userInputContextFiles
+        )
         if (!command) {
             return
         }
@@ -382,7 +399,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 intentDetector: this.intentDetector,
                 codebaseContext: this.contextProvider.context,
                 responseMultiplexer: this.multiplexer,
-                firstInteraction: this.transcript.isEmpty,
+                addEnhancedContext,
                 userInputContextFiles,
             })
         } catch (error) {
@@ -408,8 +425,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const contextSummary = {
             embeddings: 0,
             local: 0,
+            user: 0, // context added by user with @ command
         }
-
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -433,11 +450,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     recipeId,
                     requestID
                 )
+                this.sendTranscript()
                 await this.saveTranscriptToChatHistory()
 
                 contextFiles.map(file => {
-                    if (file.source) {
+                    if (file.source === 'embeddings') {
                         contextSummary.embeddings++
+                    } else if (file.source === 'user') {
+                        contextSummary.user++
                     } else {
                         contextSummary.local++
                     }
@@ -445,7 +465,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
+        const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }
@@ -468,7 +489,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             intentDetector: this.intentDetector,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
-            firstInteraction: this.transcript.isEmpty,
+            addEnhancedContext: this.transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -586,7 +607,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
-        eventTrace?: { requestID?: string; source?: ChatEventSource }
+        eventTrace?: { requestID?: string; source?: ChatEventSource },
+        userContextFiles?: ContextFile[]
     ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
         const source = eventTrace?.source || undefined
         // Inline chat has its own filter for slash commands
@@ -642,12 +664,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     const assistantResponse = 'Command failed. Please open a file and try again.'
                     return this.addCustomInteraction({ assistantResponse, text, source })
                 }
-
                 const commandRunnerID = await this.editor.controllers.command?.addCommand(
                     text,
-                    '',
                     eventTrace?.requestID,
-                    this.userContextFiles
+                    userContextFiles
                 )
                 // no op
                 if (!commandRunnerID) {

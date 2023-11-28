@@ -34,7 +34,7 @@ export class CodeQuestion implements Recipe {
                 this.getContextMessages(
                     truncatedText,
                     context.editor,
-                    context.firstInteraction,
+                    context.addEnhancedContext,
                     context.intentDetector,
                     context.codebaseContext,
                     context.editor.getActiveTextEditorSelection() || null
@@ -47,7 +47,7 @@ export class CodeQuestion implements Recipe {
     private async getContextMessages(
         text: string,
         editor: Editor,
-        firstInteraction: boolean,
+        addEnhancedContext: boolean,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
         selection: ActiveTextEditorSelection | null
@@ -60,7 +60,7 @@ export class CodeQuestion implements Recipe {
             return contextMessages
         }
 
-        const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
+        const isCodebaseContextRequired = addEnhancedContext || (await intentDetector.isCodebaseContextRequired(text))
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {

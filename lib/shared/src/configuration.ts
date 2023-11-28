@@ -30,7 +30,8 @@ export interface Configuration {
     experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
     experimentalSearchPanel: boolean
-    experimentalCommandLenses: boolean
+    commandCodeLenses: boolean
+    experimentalSimpleChatContext: boolean
     editorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
@@ -41,9 +42,15 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    autocompleteTimeouts: AutocompleteTimeouts
+}
+
+export interface AutocompleteTimeouts {
+    multiline?: number
+    singleline?: number
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

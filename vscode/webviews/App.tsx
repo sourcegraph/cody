@@ -21,9 +21,9 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -35,7 +35,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
 
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
-    const [contextSelection, setContextSelection] = useState<ContextFile[]>([])
+    const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
@@ -61,6 +61,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
+                        vscodeAPI.setState(message.chatID)
                         break
                     }
                     case 'config':
@@ -142,7 +143,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [view, vscodeAPI])
 
     useEffect(() => {
-        setContextSelection([])
+        if (formInput.endsWith(' ')) {
+            setContextSelection(null)
+        }
+
+        // TODO(toolmantim): Allow using @ mid-message by using cursor position not endsWith
+
         // Regex to check if input ends with the '@' tag format, always get the last @tag
         // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
         // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '
@@ -152,7 +158,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         if (formInput.endsWith('@') || addFileInput) {
             vscodeAPI.postMessage({ command: 'getUserContext', query: addFileInput?.slice(1) || '' })
         } else {
-            setContextSelection([])
+            setContextSelection(null)
         }
     }, [formInput, vscodeAPI])
 
@@ -237,6 +243,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                 },
                             }}
                             chatModels={chatModels}
+                            enableNewChatUI={config.experimentalChatPanel || false}
+                            setChatModels={setChatModels}
                         />
                     )}
                 </>

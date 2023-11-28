@@ -17,6 +17,8 @@ import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
+    public readonly repoId = 'test-repo-id'
+
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
     public get endpoint(): string {
@@ -170,6 +172,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
-        firstInteraction: args.firstInteraction ?? false,
+        addEnhancedContext: args.addEnhancedContext ?? false,
     }
 }

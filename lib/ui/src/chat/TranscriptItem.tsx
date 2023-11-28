@@ -13,9 +13,10 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { BlinkingCursor } from './BlinkingCursor'
+import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
-import { ContextFiles, FileLinkProps } from './ContextFiles'
+import { FileLinkProps } from './components/ContextFiles'
+import { EnhancedContext } from './components/EnhancedContext'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -85,7 +86,7 @@ export const TranscriptItem: React.FunctionComponent<
     ChatButtonComponent,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    const textarea =
+    const EditTextArea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
             <div className={styles.textAreaContainer}>
                 <TextArea
@@ -131,29 +132,16 @@ export const TranscriptItem: React.FunctionComponent<
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
-            {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
-            {EditButtonContainer && beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
             {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
-                <header
-                    className={classNames(
-                        beingEdited ? styles.editingContainer : styles.headerContainer,
-                        transcriptItemParticipantClassName
-                    )}
-                >
-                    <EditButtonContainer
-                        className={styles.FeedbackEditButtonsContainer}
-                        messageBeingEdited={beingEdited}
-                        setMessageBeingEdited={setBeingEdited}
-                    />
-                </header>
-            )}
-            {message.contextFiles && message.contextFiles.length > 0 && (
-                <div className={styles.actions}>
-                    <ContextFiles
-                        contextFiles={message.contextFiles}
-                        fileLinkComponent={fileLinkComponent}
-                        className={transcriptActionClassName}
-                    />
+                <div className={beingEdited ? styles.editingContainer : styles.editingButtonContainer}>
+                    <header className={classNames(styles.transcriptItemHeader, transcriptItemParticipantClassName)}>
+                        {beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
+                        <EditButtonContainer
+                            className={styles.FeedbackEditButtonsContainer}
+                            messageBeingEdited={beingEdited}
+                            setMessageBeingEdited={setBeingEdited}
+                        />
+                    </header>
                 </div>
             )}
             {message.preciseContext && message.preciseContext.length > 0 && (
@@ -165,15 +153,11 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div
-                className={classNames(
-                    styles.contentPadding,
-                    textarea ? undefined : styles.content,
-                    inProgress && styles.rowInProgress
-                )}
-            >
+            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                 {message.displayText ? (
-                    textarea ?? (
+                    EditTextArea ? (
+                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
+                    ) : (
                         <CodeBlocks
                             displayText={message.displayText}
                             copyButtonClassName={codeBlocksCopyButtonClassName}
@@ -184,12 +168,25 @@ export const TranscriptItem: React.FunctionComponent<
                             inProgress={inProgress}
                         />
                     )
-                ) : inProgress ? (
-                    <BlinkingCursor />
-                ) : null}
+                ) : (
+                    inProgress && <BlinkingCursor />
+                )}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
+            )}
+            {message.speaker === 'human' && (
+                <div className={styles.contextFilesContainer}>
+                    {message.contextFiles && message.contextFiles.length > 0 ? (
+                        <EnhancedContext
+                            contextFiles={message.contextFiles}
+                            fileLinkComponent={fileLinkComponent}
+                            className={transcriptActionClassName}
+                        />
+                    ) : (
+                        inProgress && <LoadingContext />
+                    )}
+                </div>
             )}
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&

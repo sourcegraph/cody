@@ -1,4 +1,4 @@
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -38,7 +38,11 @@ export type WebviewMessage =
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'chatModel'; model: string }
-    | { command: 'openFile'; filePath: string }
+    | {
+          command: 'openFile'
+          filePath: string
+          range?: ActiveTextEditorSelectionRange
+      }
     | {
           command: 'openLocalFileWithRange'
           filePath: string
@@ -86,7 +90,7 @@ export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
+    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
@@ -95,7 +99,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[]; kind?: ContextFileType }
+    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
     | { type: 'chatModels'; models: ChatModelSelection[] }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
@@ -103,7 +107,8 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -120,6 +125,9 @@ export const CODY_FEEDBACK_URL = new URL(
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
 export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
+// Account
+export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
+export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
@@ -137,6 +145,15 @@ export interface AuthStatus {
     siteVersion: string
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
+    /**
+     * Whether the users account can be upgraded.
+     *
+     * This is `true` if the user is on dotCom and has
+     * not already upgraded. It is used to customise
+     * rate limit messages and show additional upgrade
+     * buttons in the UI.
+     */
+    userCanUpgrade: boolean
 }
 
 export const defaultAuthStatus = {
@@ -148,6 +165,7 @@ export const defaultAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 export const unauthenticatedStatus = {
@@ -159,6 +177,7 @@ export const unauthenticatedStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 export const networkErrorAuthStatus = {
@@ -170,6 +189,7 @@ export const networkErrorAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 /** The local environment of the editor. */
@@ -233,8 +253,9 @@ export function getChatModelsForWebview(endpoint?: string | null): ChatModelSele
 // The allowed chat models for dotcom
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 const defaultChatModels = [
-    { title: 'Claude 2', model: 'anthropic/claude-2', provider: 'Anthropic', default: true },
-    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2-cyan', provider: 'Anthropic', default: false },
-    { title: 'Chat GPT 3.5 Turbo', model: 'openai/gpt-3.5-turbo', provider: 'Open AI', default: false },
-    { title: 'Chat GPT 4 Turbo Preview', model: 'openai/gpt-4-1106-preview', provider: 'Open AI', default: false },
+    { title: 'Claude 2.0', model: 'anthropic/claude-2.0', provider: 'Anthropic', default: true },
+    { title: 'Claude 2.1 Preview', model: 'anthropic/claude-2.1', provider: 'Anthropic', default: false },
+    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2', provider: 'Anthropic', default: false },
+    { title: 'ChatGPT 3.5 Turbo', model: 'openai/gpt-3.5-turbo', provider: 'OpenAI', default: false },
+    { title: 'ChatGPT 4 Turbo Preview', model: 'openai/gpt-4-1106-preview', provider: 'OpenAI', default: false },
 ]

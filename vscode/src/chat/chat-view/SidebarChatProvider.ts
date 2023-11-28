@@ -1,4 +1,3 @@
-import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -8,7 +7,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../../services/LocalAppWatcher'
@@ -42,6 +41,7 @@ export interface SidebarChatOptions extends MessageProviderOptions {
 
 export class SidebarChatProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     public webview?: SidebarChatWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
 
@@ -221,7 +221,8 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     private async onHumanMessageSubmitted(
         text: string,
         submitType: ChatSubmitType,
-        contextFiles?: ContextFile[]
+        contextFiles?: ContextFile[],
+        addEnhancedContext = true
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
@@ -232,12 +233,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
 
-        // Add text and context to a command for custom-prompt recipe to run as ask command
-        if (contextFiles?.length) {
-            this.userContextFiles = contextFiles
-        }
-
-        return this.executeRecipe('chat-question', text, 'chat', contextFiles)
+        return this.executeRecipe('chat-question', text, 'chat', contextFiles, addEnhancedContext)
     }
 
     /**
@@ -260,6 +256,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             type: 'transcript',
             messages: transcript,
             isMessageInProgress,
+            chatID: this.sessionID,
         })
     }
 
@@ -310,27 +307,48 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             return
         }
 
-        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
-            try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+        const cancellation = new vscode.CancellationTokenSource()
 
-                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context,
-                })
-            } catch (error) {
-                // Handle or log the error as appropriate
-                console.error('Error retrieving context files:', error)
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
+            } else {
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             }
-        }, 100)
-
-        await debouncedContextFileQuery(query)
+        } catch (error) {
+            // Handle or log the error as appropriate
+            console.error('Error retrieving context files:', error)
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
+        }
     }
+
     /**
      *
      * @param notice Triggers displaying a notice.

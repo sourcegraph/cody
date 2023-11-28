@@ -21,13 +21,14 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: { '*': true, scminput: false },
-    experimentalCommandLenses: false,
+    commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalChatPanel: false,
     experimentalChatPredictions: false,
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSearchPanel: false,
+    experimentalSimpleChatContext: false,
     inlineChat: true,
     codeActions: true,
     isRunningInsideAgent: false,
@@ -43,6 +44,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
+    autocompleteTimeouts: {},
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({
@@ -124,13 +126,12 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'anthropic',
-                    autocompleteAdvancedModel: 'claude-instant-1.2-cyan',
                 }),
                 dummyCodeCompletionsClient,
                 {}
             )
             expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('claude-instant-1.2-cyan')
+            expect(provider?.model).toBe('claude-instant-1.2')
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {

@@ -1,253 +1,258 @@
-import { execSync } from 'child_process'
 import * as fspromises from 'fs/promises'
 import * as path from 'path'
 
-import { Command, Option } from 'commander'
-import { calcPatch } from 'fast-myers-diff'
+import * as commander from 'commander'
 import { minimatch } from 'minimatch'
-import { rimraf } from 'rimraf'
-import { Range, Uri } from 'vscode'
-import { QueryCapture } from 'web-tree-sitter'
+import * as vscode from 'vscode'
 
-import { Input } from '@sourcegraph/scip-typescript/src/Input'
-import * as scip from '@sourcegraph/scip-typescript/src/scip'
-import { formatSnapshot } from '@sourcegraph/scip-typescript/src/SnapshotTesting'
+import { newAgentClient } from '../../agent'
 
-import { getParseLanguage } from '../../../../vscode/src/completions/tree-sitter/grammars'
-import { createParser } from '../../../../vscode/src/completions/tree-sitter/parser'
-import { newEmbeddedAgentClient } from '../../agent'
-import { AgentTextDocument } from '../../AgentTextDocument'
-import { InProcessClient } from '../../jsonrpc-alias'
-import { getLanguageForFileName } from '../../language'
-import { AutocompleteResult } from '../../protocol-alias'
-import * as vscode_shim from '../../vscode-shim'
+import { evaluateBfgStrategy } from './strategy-bfg'
+import { evaluateGitLogStrategy } from './strategy-git-log'
 
-import { Queries } from './Queries'
-
-interface EvaluateAutocompleteOptions {
+export interface EvaluateAutocompleteOptions {
     workspace: string
+    worktree?: string
     treeSitterGrammars: string
-    queries: string
-    testCount: string
-    includePattern: string
-    excludePattern: string
+    queriesDirectory: string
+    testCount: number
+    maxFileTestCount: number
+    includeFixture: string[]
+    excludeFixture: string[]
+    includeWorkspace: string[]
+    excludeWorkspace: string[]
+    includeFilepath?: string[]
+    excludeFilepath?: string[]
+    includeLanguage?: string[]
+    excludeLanguage?: string[]
+    runTestCommand?: boolean
     srcAccessToken: string
     srcEndpoint: string
+
+    evaluationConfig: string
     snapshotDirectory: string
+    csvPath?: string
     bfgBinary?: string
+    installCommand?: string
+    testCommand?: string
+    gitLogFilter?: string
+    fixture: EvaluationFixture
 }
 
-export const evaluateAutocompleteCommand = new Command('evaluate-autocomplete')
+interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
+    workspaces: EvaluateAutocompleteOptions[]
+    fixtures?: EvaluationFixture[]
+}
+
+enum EvaluationStrategy {
+    BFG = 'bfg',
+    GitLog = 'git-log',
+}
+
+interface EvaluationFixture {
+    name: string
+    customConfiguration?: Record<string, any>
+    strategy: EvaluationStrategy
+}
+
+async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promise<EvaluateAutocompleteOptions[]> {
+    if (!options?.evaluationConfig) {
+        return [options]
+    }
+    const configBuffer = await fspromises.readFile(options.evaluationConfig)
+    const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
+    const result: EvaluateAutocompleteOptions[] = []
+    for (const test of config?.workspaces ?? []) {
+        if (!test.workspace) {
+            console.error(`skipping test, missing required property 'workspace': ${JSON.stringify(test)}`)
+            continue
+        }
+        const rootDir = path.dirname(options.evaluationConfig)
+        const workspace = path.normalize(path.join(rootDir, test.workspace))
+        const queriesDirectory = test.queriesDirectory
+            ? path.join(rootDir, test.queriesDirectory)
+            : config.queriesDirectory
+            ? path.join(rootDir, config.queriesDirectory)
+            : options.queriesDirectory
+        const fixtures: EvaluationFixture[] = config.fixtures ?? [{ name: 'default', strategy: EvaluationStrategy.BFG }]
+        for (const fixture of fixtures) {
+            if (!fixture.strategy) {
+                throw new Error(`missing: fixture.strategy: ${JSON.stringify(fixture)}`)
+            }
+            const snapshotDirectory = test.snapshotDirectory
+                ? path.join(rootDir, test.snapshotDirectory, fixture.name, test.workspace)
+                : config.snapshotDirectory
+                ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
+                : options.snapshotDirectory
+            result.push({
+                ...options,
+                ...config,
+                ...test,
+                workspace,
+                queriesDirectory,
+                snapshotDirectory,
+                fixture,
+                csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
+            })
+        }
+    }
+
+    return result
+}
+
+function intOption(value: string): number {
+    const parsedValue = Number.parseInt(value, 10)
+    if (isNaN(parsedValue)) {
+        throw new commander.InvalidArgumentError('Not a number.')
+    }
+    return parsedValue
+}
+
+function collect<T>(value: T, previous: T[]): T[] {
+    return previous.concat([value])
+}
+
+export const evaluateAutocompleteCommand = new commander.Command('evaluate-autocomplete')
     .description('Evaluate Cody autocomplete by running the Agent in headless mode')
     .option('--workspace <path>', 'The workspace directory where to run the autocomplete evaluation', process.cwd())
-    .option('--test-count <number>', 'The number of autocomplete requests to run in this evaluation', '10')
+    .option('--test-count <number>', 'The number of autocomplete requests to run in this evaluation', intOption)
+    .option(
+        '--max-file-test-count <number>',
+        'The maximum number of autocomplete requests to evaluate in a single document',
+        intOption,
+        10
+    )
+    .option('--evaluation-config <path>', 'Path to a JSON with configuration for this evaluation', '')
     .option(
         '--snapshot-directory <path>',
         'Directory where to write snapshot files to document autocomplete results',
         ''
     )
     .addOption(
-        new Option('--src-access-token <token>', 'The Sourcegraph access token to use for authentication').env(
-            'SRC_ACCESS_TOKEN'
-        )
+        new commander.Option(
+            '--src-access-token <token>',
+            'The Sourcegraph access token to use for authentication'
+        ).env('SRC_ACCESS_TOKEN')
     )
     .addOption(
-        new Option('--src-endpoint <url>', 'The Sourcegraph URL endpoint to use for authentication').env('SRC_ENDPOINT')
+        new commander.Option('--src-endpoint <url>', 'The Sourcegraph URL endpoint to use for authentication').env(
+            'SRC_ENDPOINT'
+        )
     )
     .option(
-        '--include-pattern <glob>',
-        'A glob pattern to determine what file paths to include in the evaluation',
-        '**'
+        '--include-workspace <glob>',
+        'A glob pattern to determine what workspace paths to include in the evaluation',
+        collect as any,
+        []
     )
-    .option('--exclude-pattern <glob>', 'A glob pattern to determine what file paths to exclude in the evaluation', '')
-    .addOption(new Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
+    .option(
+        '--exclude-workspace <glob>',
+        'A glob pattern to determine what workspace paths to exclude in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--include-language <glob>',
+        'A glob pattern to determine what language paths to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-language <glob>',
+        'A glob pattern to determine what language paths to exclude in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--include-fixture <glob>',
+        'A glob pattern to determine what fixtures to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-fixture <glob>',
+        'A glob pattern to determine what fixtures exclude in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--include-filepath <glob>',
+        'A glob pattern to determine what files to include in the evaluation',
+        collect as any,
+        []
+    )
+    .option(
+        '--exclude-filepath <glob>',
+        'A glob pattern to determine what files exclude in the evaluation',
+        collect as any,
+        []
+    )
+    .addOption(new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY'))
     .option(
         '--tree-sitter-grammars <path>',
         'Path to a directory containing tree-sitter grammars',
         path.resolve(__dirname, '../../vscode/dist')
     )
-    .option('--queries <path>', 'Path to a directory containing tree-sitter queries')
+    .option('--queries-directory <path>', 'Path to a directory containing tree-sitter queries')
+    .option('--run-test-command', 'If enabled, runs the test command to typecheck the generated code')
     .action(async (options: EvaluateAutocompleteOptions) => {
-        // canonicalize and make path absolute
-        const workspace = path.normalize(options.workspace)
-
-        if (!options.queries) {
-            console.log('missing required options: --queries')
-            process.exit(1)
-        }
-        if (!options.srcAccessToken) {
-            console.log('environment variable SRC_ACCESS_TOKEN must be non-empty')
-            process.exit(1)
-        }
-        if (!options.srcEndpoint) {
-            console.log('environment variable SRC_ENDPOINT must be non-empty')
-            process.exit(1)
-        }
-
-        const workspaceRootUri = Uri.from({ scheme: 'file', path: workspace })
-        const agent = await newEmbeddedAgentClient({
-            name: 'evaluate-autocomplete',
-            version: '0.1.0',
-            workspaceRootUri: workspaceRootUri.toString(),
-            extensionConfiguration: {
-                accessToken: options.srcAccessToken,
-                serverEndpoint: options.srcEndpoint,
-                customHeaders: {},
-            },
-        })
-        const client = agent.clientForThisInstance()
-        try {
-            await runEvalution(client, options, workspace)
-        } catch (error) {
-            console.error('unexpected error running evaluate-autocomplete', error)
-        }
-        await client.request('shutdown', null)
-        client.notify('exit', null)
+        const testOptions = await loadEvaluationConfig(options)
+        const workspacesToRun = testOptions.filter(
+            testOptions =>
+                matchesGlobPatterns(options.includeWorkspace, options.excludeWorkspace, testOptions.workspace) &&
+                matchesGlobPatterns(options.includeFixture, options.excludeFixture, testOptions.fixture.name)
+        )
+        await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })
 
-/**
- * Runs autocomplete evaluation. The current logic is specifically optimized
- * to evaluate BFG.  The best way to customize the logic is by changing the
- * code. Eventually, we could make the logic configurable via command-line
- * flags so that we can reuse this command for different kinds of evaluations.
- */
-async function runEvalution(
-    client: InProcessClient,
-    options: EvaluateAutocompleteOptions,
-    workspace: string
-): Promise<void> {
-    vscode_shim.customConfiguration['cody.autocomplete.experimental.graphContext'] = 'bfg'
-    vscode_shim.customConfiguration['cody.autocomplete.advanced.provider'] = 'fireworks'
-    vscode_shim.customConfiguration['cody.autocomplete.advanced.model'] = 'starcoder-7b'
-    vscode_shim.customConfiguration['cody.debug.verbose'] = 'true'
-    if (options.bfgBinary) {
-        vscode_shim.customConfiguration['cody.experimental.bfg.path'] = options.bfgBinary
+async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
+    console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
+
+    if (!options.queriesDirectory) {
+        console.error('missing required options: --queries-directory')
+        process.exit(1)
     }
-    const queries = new Queries(options.queries)
-    const grammarDirectory = path.normalize(options.treeSitterGrammars)
-    const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
-    let remainingTests = Number.parseInt(options.testCount, 10)
-    if (options.snapshotDirectory) {
-        await rimraf(options.snapshotDirectory)
+    if (!options.srcAccessToken) {
+        console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
+        process.exit(1)
     }
-    for (const file of files) {
-        if (!minimatch(file, options.includePattern)) {
-            continue
-        }
-        if (options.excludePattern && minimatch(file, options.excludePattern)) {
-            continue
-        }
-        const filePath = path.join(workspace, file)
-        const stat = await fspromises.stat(filePath)
-        if (!stat.isFile()) {
-            continue
-        }
-        const content = (await fspromises.readFile(filePath)).toString()
-        const language = getParseLanguage(getLanguageForFileName(file))
-        if (!language) {
-            continue
-        }
-        client.notify('textDocument/didOpen', { filePath, content })
-        const parser = await createParser({ language, grammarDirectory })
-        const tree = parser.parse(content)
-        const query = await queries.loadQuery(parser, language, 'context')
-        if (!query) {
-            continue
-        }
-
-        const document = new scip.scip.Document({ relative_path: file })
-        for (const match of query.matches(tree.rootNode)) {
-            if (remainingTests <= 0) {
-                break
-            }
-            for (const capture of match.captures) {
-                if (remainingTests <= 0) {
-                    break
-                }
-                if (capture.name === 'range') {
-                    if (capture.node.startPosition.row !== capture.node.endPosition.row) {
-                        // TODO: handle multi-line
-                        continue
-                    }
-                    try {
-                        const result = await triggerAutocomplete({ content, filePath, capture, client, document })
-                        if (result.items.length > 0) {
-                            remainingTests--
-                        }
-                    } catch {
-                        // ignore. Most common issue is that autocomplete times out.
-                    }
-                }
-            }
-        }
-
-        // Write snapshot file to disk we get non-empty autocomplete results.
-        if (options.snapshotDirectory && document.occurrences.length > 0) {
-            const outputPath = path.join(options.snapshotDirectory, file)
-            await fspromises.mkdir(path.dirname(outputPath), { recursive: true })
-            const input = new Input(filePath, content)
-            const snapshot = formatSnapshot(input, document)
-            await fspromises.writeFile(outputPath, snapshot)
-        } else if (options.snapshotDirectory) {
-            console.error(`Empty autocomplete: ${document.relative_path}`)
-        }
+    if (!options.srcEndpoint) {
+        console.error('environment variable SRC_ENDPOINT must be non-empty')
+        process.exit(1)
     }
-}
 
-interface AutocompleteFixture {
-    content: string
-    filePath: string
-    capture: QueryCapture
-    client: InProcessClient
-    document: scip.scip.Document
-}
-
-async function triggerAutocomplete(fixture: AutocompleteFixture): Promise<AutocompleteResult> {
-    const { content, filePath, capture, client, document } = fixture
-    // Modify the content by replacing the argument list to the call expression
-    // with an empty argument list. This evaluation is interesting because it
-    // allows us to test how good Cody is at inferring the original argument
-    // list.
-    const modifiedContent = [
-        content.slice(0, capture.node.startIndex),
-        '()',
-        content.slice(capture.node.endIndex),
-    ].join('')
-    client.notify('textDocument/didChange', { filePath, content: modifiedContent })
-    const result = await client.request('autocomplete/execute', {
-        filePath,
-        position: {
-            line: capture.node.startPosition.row,
-            character: capture.node.startPosition.column + 1,
+    const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
+    const client = await newAgentClient({
+        name: 'evaluate-autocomplete',
+        version: '0.1.0',
+        workspaceRootUri: workspaceRootUri.toString(),
+        extensionConfiguration: {
+            accessToken: options.srcAccessToken,
+            serverEndpoint: options.srcEndpoint,
+            customHeaders: {},
+            customConfiguration: options.fixture.customConfiguration,
         },
     })
-    const textDocument = new AgentTextDocument({ filePath, content: modifiedContent })
-    for (const item of result.items) {
-        const range = new Range(
-            item.range.start.line,
-            item.range.start.character,
-            item.range.end.line,
-            item.range.end.character
-        )
-        const original = textDocument.getText(range)
-        const completion = item.insertText
-        for (const [sx, ex, text] of calcPatch(original, completion)) {
-            if (sx !== ex) {
-                // TODO: handle non-insert patches
-                continue
-            }
-            const scipRange = [
-                capture.node.startPosition.row,
-                capture.node.startPosition.column,
-                capture.node.endPosition.column,
-            ]
-            const occurrence = new scip.scip.Occurrence({
-                symbol: text,
-                range: scipRange,
-                symbol_roles: 0,
-            })
-            document.occurrences.push(occurrence)
+    try {
+        if (options.fixture.strategy === EvaluationStrategy.BFG) {
+            await evaluateBfgStrategy(client, options)
+        } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
+            await evaluateGitLogStrategy(client, options)
         }
+    } catch (error) {
+        console.error('unexpected error running evaluate-autocomplete', error)
     }
-    return result
+    await client.request('shutdown', null)
+    client.notify('exit', null)
+}
+
+export function matchesGlobPatterns(includeGlobs: string[], excludeGlobs: string[], value: string): boolean {
+    const matchingIncludePattern =
+        includeGlobs.length > 0 ? !!includeGlobs.find(includePattern => minimatch(value, includePattern)) : true
+    if (!matchingIncludePattern) {
+        return false
+    }
+
+    const matchingExcludePatttern = excludeGlobs.find(excludePattern => minimatch(value, excludePattern))
+    return !matchingExcludePatttern
 }

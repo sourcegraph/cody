@@ -7,7 +7,7 @@ import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jacc
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
 
-export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'none'
+export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'bfg-mixed' | 'local-mixed' | 'none'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
@@ -26,9 +26,10 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
         switch (contextStrategy) {
             case 'none':
                 break
+            case 'bfg-mixed':
             case 'bfg':
                 // The bfg strategy uses jaccard similarity as a fallback if no results are found or
-                // the language is not supported.
+                // the language is not supported by BFG
                 this.localRetriever = new JaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
                 if (createBfgRetriever) {
@@ -37,7 +38,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 }
                 break
             case 'lsp-light':
-                this.localRetriever = SectionHistoryRetriever.createInstance()
+                this.localRetriever = new JaccardSimilarityRetriever()
                 this.graphRetriever = new LspLightRetriever()
                 this.disposables.push(this.localRetriever, this.graphRetriever)
                 break
@@ -45,6 +46,12 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 this.localRetriever = new JaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
                 break
+            case 'local-mixed':
+                this.localRetriever = new JaccardSimilarityRetriever()
+                // Filling the graphRetriever field with another local retriever but that's alright
+                // we simply mix them later anyways.
+                this.graphRetriever = SectionHistoryRetriever.createInstance()
+                this.disposables.push(this.localRetriever, this.graphRetriever)
         }
     }
 
@@ -67,14 +74,36 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
             }
 
-            // The bfg strategy only uses the graph based retriever and falls through to the local
-            // retriever if the graph based retriever is not available for the requested language.
+            // The bfg strategy exclusively uses bfg strategy when the language is supported
             case 'bfg':
                 if (this.graphRetriever && this.graphRetriever.isSupportedForLanguageId(document.languageId)) {
                     retrievers.push(this.graphRetriever)
-                    break
+                } else if (this.localRetriever) {
+                    retrievers.push(this.localRetriever)
                 }
+                break
 
+            // The bfg mixed strategy mixes local and graph based retrievers
+            case 'bfg-mixed':
+                if (this.graphRetriever && this.graphRetriever.isSupportedForLanguageId(document.languageId)) {
+                    retrievers.push(this.graphRetriever)
+                }
+                if (this.localRetriever) {
+                    retrievers.push(this.localRetriever)
+                }
+                break
+
+            // The local mixed strategy combines two local retrievers
+            case 'local-mixed':
+                if (this.localRetriever) {
+                    retrievers.push(this.localRetriever)
+                }
+                if (this.graphRetriever) {
+                    retrievers.push(this.graphRetriever)
+                }
+                break
+
+            // The jaccard similarity strategy only uses the local retriever
             case 'jaccard-similarity': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)

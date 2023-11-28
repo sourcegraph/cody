@@ -11,7 +11,7 @@ export interface RecipeContext {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
-    firstInteraction: boolean
+    addEnhancedContext: boolean
     userInputContextFiles?: ContextFile[]
 }
 
