@@ -335,7 +335,7 @@ export class ChatPanelProvider extends MessageProvider {
         }
 
         if (!this.webviewPanel) {
-            await this.createWebviewPanel(this.sessionID)
+            await this.createWebviewPanel(vscode.ViewColumn.Beside, this.sessionID)
         }
         this.webviewPanel?.reveal()
     }
@@ -354,7 +354,11 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(chatID?: string, lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
+    public async createWebviewPanel(
+        activePanelViewColumn?: vscode.ViewColumn,
+        chatID?: string,
+        lastQuestion?: string
+    ): Promise<vscode.WebviewPanel | undefined> {
         // Create the webview panel only if the user is logged in.
         // Allows users to login via the sidebar webview.
         if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
@@ -375,11 +379,12 @@ export class ChatPanelProvider extends MessageProvider {
         const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
         const panelTitle = text || 'New Chat'
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
 
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
-            { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
+            { viewColumn, preserveFocus: true },
             {
                 enableScripts: true,
                 retainContextWhenHidden: true,
