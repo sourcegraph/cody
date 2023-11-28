@@ -103,21 +103,11 @@ export function truncateParsedCompletion(context: CompletionContext): string {
 }
 
 function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point): SyntaxNode | null {
-    console.log('root', root.type, root.text)
-    console.log('-----------')
     const initial = root.namedDescendantForPosition(position)
     let current = initial
-    console.log('initial', initial.type, initial.text)
-    console.log('-------------')
 
     while (current?.parent?.startPosition.row === initial?.startPosition.row && current.parent.id !== root.id) {
         current = current.parent
-        if (current.type === 'module') {
-            console.log(current.id)
-            console.log(root.id)
-        }
-        console.log('current', current.type, current.text)
-        console.log('-------------')
     }
 
     return current

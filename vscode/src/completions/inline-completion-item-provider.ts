@@ -121,6 +121,7 @@ export interface CodyCompletionItemProviderConfig {
     // Feature flags
     completeSuggestWidgetSelection?: boolean
     disableRecyclingOfPreviousRequests?: boolean
+    dynamicMultlilineCompletions?: boolean
 }
 
 interface CompletionRequest {
@@ -158,6 +159,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     constructor({
         completeSuggestWidgetSelection = true,
         disableRecyclingOfPreviousRequests = false,
+        dynamicMultlilineCompletions = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -166,6 +168,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             completeSuggestWidgetSelection,
             disableRecyclingOfPreviousRequests,
+            dynamicMultlilineCompletions,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
         }
@@ -241,9 +244,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // before we need it.
             const userLatencyPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteUserLatency
-            )
-            const dynamicMultlilineCompletions = this.config.featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteDynamicMultilineCompletions
             )
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
@@ -340,7 +340,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
                     completionIntent,
-                    dynamicMultlilineCompletions: await dynamicMultlilineCompletions,
+                    dynamicMultlilineCompletions: this.config.dynamicMultlilineCompletions,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
