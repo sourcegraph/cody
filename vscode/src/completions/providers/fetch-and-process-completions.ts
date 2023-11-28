@@ -247,6 +247,11 @@ interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsPara
     initialCompletion: string
 }
 
+/**
+ * 1. Generates the updated document context pretending like the first line of the completion is already in the document.
+ * 2. If the updated document context has the multiline trigger, returns the updated document context.
+ * 3. Otherwise, returns the initial document context.
+ */
 function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
     const { completionPostProcessId, initialCompletion, providerOptions } = params
     const {
