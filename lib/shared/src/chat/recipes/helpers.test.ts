@@ -53,4 +53,34 @@ describe('contentSanitizer', () => {
         const sanitizedPrompt = contentSanitizer('\n   <selectedCode>' + correctResponse + '</selectedCode>   \n')
         expect(sanitizedPrompt).toBe(correctResponse)
     })
+
+    it('removes fixup tags', () => {
+        const text = '<fixup>Hello</fixup>'
+        const result = contentSanitizer(text)
+        expect(result).toBe('Hello')
+    })
+
+    it('removes code blocks', () => {
+        const text = '```js\ncode\n```'
+        const result = contentSanitizer(text)
+        expect(result).toBe('')
+    })
+
+    it('removes CDATA tags', () => {
+        const text = '<![CDATA[]]>\nexample'
+        const result = contentSanitizer(text)
+        expect(result).toBe('example')
+    })
+
+    it('removes tags prefix', () => {
+        const text = 'tags: hello'
+        const result = contentSanitizer(text)
+        expect(result).toBe('hello')
+    })
+
+    it('keeps preceding whitespace from lines', () => {
+        const text = '\n    hello'
+        const result = contentSanitizer(text)
+        expect(result).toBe('    hello')
+    })
 })

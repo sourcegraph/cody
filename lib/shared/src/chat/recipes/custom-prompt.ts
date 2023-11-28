@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '../../codebase-context'
@@ -5,8 +6,10 @@ import { ContextFile, ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
+import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { CodyPromptContext, defaultCodyPromptContext, getCommandEventSource } from '../prompts'
 import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../prompts/display-text'
+import { convertFsPathToTestFile } from '../prompts/new-test-file'
 import {
     extractTestType,
     getHumanLLMText,
@@ -15,6 +18,7 @@ import {
     newInteractionWithError,
 } from '../prompts/utils'
 import {
+    doesFileExist,
     getCurrentDirContext,
     getCurrentFileContextFromEditorSelection,
     getCurrentFileImportsContext,
@@ -28,7 +32,7 @@ import {
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { getFileExtension, numResults } from './helpers'
+import { contentSanitizer, getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /**
@@ -108,8 +112,12 @@ export class CustomPrompt implements Recipe {
             commandOutput
         )
 
+        context.responseMultiplexer.sub('codyresponse', createBotSub(selection?.fileUri?.fsPath, this.codebaseTestFile))
+
         return newInteraction({ text: truncatedText, displayText, contextMessages, source })
     }
+
+    private codebaseTestFile: string | undefined = undefined
 
     private async getContextMessages(
         promptText: string,
@@ -120,6 +128,7 @@ export class CustomPrompt implements Recipe {
         contextFiles?: ContextFile[],
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
+        this.codebaseTestFile = undefined
         const contextMessages: ContextMessage[] = []
         const workspaceRootUri = editor.getWorkspaceRootUri()
         const isUnitTestRequest = extractTestType(promptText) === 'unit'
@@ -178,6 +187,10 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...contextFileMessages)
         }
 
+        if (isUnitTestRequest && selection?.fileUri) {
+            this.codebaseTestFile = contextMessages.find(m => m.file?.fileName.includes('test'))?.file?.fileName
+        }
+
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
@@ -206,4 +219,25 @@ export class CustomPrompt implements Recipe {
 
         return contextMessages
     }
+}
+
+function createBotSub(currentFileUri?: string, codebaseTestFile?: string): BufferedBotResponseSubscriber {
+    const sub = new BufferedBotResponseSubscriber(async content => {
+        if (!content || !currentFileUri) {
+            return
+        }
+        const testFsPath = convertFsPathToTestFile(currentFileUri, codebaseTestFile)
+        const isFileExists = await doesFileExist(vscode.Uri.file(testFsPath))
+        // if testFileUri is undefine, add context to a temporary untitled file instead
+        const docUri = vscode.Uri.parse(isFileExists ? testFsPath : `untitled:${testFsPath}`)
+        const doc = await vscode.workspace.openTextDocument(docUri)
+        await vscode.window.showTextDocument(doc)
+
+        // Start workspace edit
+        const edit = new vscode.WorkspaceEdit()
+        edit.insert(doc.uri, new vscode.Position(doc.lineCount, 0), contentSanitizer(content))
+        await vscode.workspace.applyEdit(edit)
+        await vscode.commands.executeCommand('vscode.executeFormatDocumentProvider', doc.uri)
+    })
+    return sub
 }

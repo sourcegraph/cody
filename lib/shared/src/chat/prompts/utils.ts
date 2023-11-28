@@ -231,3 +231,10 @@ export function isValidTestFileName(fsPath: string): boolean {
 
     return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
 }
+
+/**
+ * Checks if a character is alphanumeric.
+ */
+export function isAlphanumeric(char: string): boolean {
+    return /^[\dA-Za-z]+$/.test(char)
+}

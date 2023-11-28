@@ -38,7 +38,9 @@ export function getActiveEditorFromVisibleEditors(): vscode.TextEditor | undefin
     // vscode.window.activeTextEditor to get the current active editor
     // when a user has moved to their webview panel for chat
     // We will use the first visible editor that is not a
-    return visibleTextEditors.find(editor => !editor.selection.isEmpty)
+    const activeEditor = vscode.window.activeTextEditor
+    const editorWithSelection = visibleTextEditors.find(editor => !editor.selection.isEmpty)
+    return activeEditor || editorWithSelection
 }
 
 /**
@@ -753,4 +755,13 @@ export function createHumanDisplayTextWithDocLink(
     const fileLink = `vscode://file${fsPath}:${start}`
 
     return `${input}\n\nFile: [_${fileName}:${range}_](${fileLink})`
+}
+
+export async function doesFileExist(uri: vscode.Uri): Promise<boolean> {
+    try {
+        await vscode.workspace.fs.stat(uri)
+        return true
+    } catch {
+        return false
+    }
 }

@@ -7,6 +7,8 @@ import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
+import { commandLenses } from './utils/CoreCommandCodeLenses'
+
 /**
  * CommandRunner class implements disposable interface.
  * Manages executing a Cody command and optional fixup.
@@ -63,6 +65,10 @@ export class CommandRunner implements vscode.Disposable {
         if (command.mode === 'inline') {
             void this.handleInlineRequest()
             return
+        }
+
+        if (command.slashCommand === '/test' && this.editor?.document) {
+            commandLenses.addCommand(this.editor?.document?.fileName, this.editor.selection)
         }
 
         // Run fixup if this is a edit command
