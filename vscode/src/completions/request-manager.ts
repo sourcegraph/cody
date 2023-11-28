@@ -5,7 +5,7 @@ import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { CompletionLogID, logCompletionBookingEvent } from './logger'
+import { CompletionLogID, logCompletionBookkeepingEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
@@ -167,7 +167,7 @@ export class RequestManager {
             if (synthesizedCandidate) {
                 const synthesizedItems = synthesizedCandidate.items
 
-                logCompletionBookingEvent('synthesizedFromParallelRequest')
+                logCompletionBookkeepingEvent('synthesizedFromParallelRequest')
                 request.resolve({ completions: synthesizedItems, cacheHit: 'hit-after-request-started' })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)

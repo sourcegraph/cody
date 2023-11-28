@@ -251,7 +251,7 @@ export function logCompletionErrorEvent(params: ErrorEventPayload): void {
  * The following events are added to ensure the logging bookkeeping works as expected in production
  * and should not happen under normal circumstances.
  */
-export function logCompletionBookingEvent(
+export function logCompletionBookkeepingEvent(
     name:
         | 'acceptedUntrackedCompletion'
         | 'unexpectedNotLoaded'
@@ -502,20 +502,20 @@ export function accepted(
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
-        logCompletionBookingEvent('acceptedUntrackedCompletion')
+        logCompletionBookkeepingEvent('acceptedUntrackedCompletion')
         return
     }
 
     // Some additional logging to ensure the invariant is correct. I expect these branches to never
     // hit but if they do, they might help debug analytics issues
     if (!completionEvent.loadedAt) {
-        logCompletionBookingEvent('unexpectedNotLoaded')
+        logCompletionBookkeepingEvent('unexpectedNotLoaded')
     }
     if (!completionEvent.startLoggedAt) {
-        logCompletionBookingEvent('unexpectedNotStarted')
+        logCompletionBookkeepingEvent('unexpectedNotStarted')
     }
     if (!completionEvent.suggestedAt) {
-        logCompletionBookingEvent('unexpectedNotSuggested')
+        logCompletionBookkeepingEvent('unexpectedNotSuggested')
     }
     // It is still possible to accept a completion before it was logged as suggested. This is
     // because we do not have direct access to know when a completion is being shown or hidden from
@@ -528,7 +528,7 @@ export function accepted(
     // However, we do log the completion as rejected with the keystroke leaving a small window where
     // the completion can be accepted after it was marked as suggested.
     if (completionEvent.suggestionLoggedAt) {
-        logCompletionBookingEvent('unexpectedAlreadySuggested')
+        logCompletionBookkeepingEvent('unexpectedAlreadySuggested')
     }
 
     if (!completionEvent.params.id) {
