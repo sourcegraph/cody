@@ -47,7 +47,7 @@ export async function getFileContextFiles(
     }
 
     const results = fuzzysort.go(query, uris, {
-        key: 'path',
+        key: 'fsPath',
         limit: maxResults,
         // We add a threshold for performance as per fuzzysort’s
         // recommendations. Testing with sg/sg path strings, somewhere over 10k
@@ -59,13 +59,12 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Some results will have the same scores and flip in order with the same
-    // query, so we sort again by score and then by path
+    // fuzzysort can return results in different order for the same query if
+    // they have the same score :( So we do this hacky post-limit sorting (first
+    // by score, then by path) to ensure the order stays the same
+    const collator = new Intl.Collator(undefined, { numeric: true })
     const sortedResults = [...results].sort((a, b) => {
-        if (a.score === b.score) {
-            return new Intl.Collator().compare(a.obj.path, b.obj.path)
-        }
-        return b.score - a.score
+        return b.score - a.score || collator.compare(a.obj.fsPath, b.obj.fsPath)
     })
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
