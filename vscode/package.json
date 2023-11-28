@@ -1232,6 +1232,7 @@
     "dedent": "^0.7.0",
     "envalid": "^7.3.1",
     "express": "^4.18.2",
+    "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "path-browserify": "^1.0.1",

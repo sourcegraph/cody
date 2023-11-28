@@ -68,7 +68,7 @@ interface ChatProps extends ChatClassNames {
     filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
-    contextSelection?: ContextFile[]
+    contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
     EnhancedContextToggler?: React.FunctionComponent<{

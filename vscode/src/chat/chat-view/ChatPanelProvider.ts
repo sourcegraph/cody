@@ -1,4 +1,3 @@
-import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -7,7 +6,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -41,6 +40,7 @@ export interface ChatPanelProviderOptions extends MessageProviderOptions {
 
 export class ChatPanelProvider extends MessageProvider {
     private extensionUri: vscode.Uri
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     public webview?: ChatViewProviderWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
     public treeView: TreeViewProvider
@@ -286,26 +286,46 @@ export class ChatPanelProvider extends MessageProvider {
             return
         }
 
-        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
-            try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+        const cancellation = new vscode.CancellationTokenSource()
 
-                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context,
-                })
-            } catch (error) {
-                // Handle or log the error as appropriate
-                console.error('Error retrieving context files:', error)
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
+            } else {
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             }
-        }, 100)
-
-        await debouncedContextFileQuery(query)
+        } catch (error) {
+            // Handle or log the error as appropriate
+            console.error('Error retrieving context files:', error)
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
+        }
     }
 
     /**

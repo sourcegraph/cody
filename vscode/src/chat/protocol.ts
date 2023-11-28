@@ -99,7 +99,7 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'userContextFiles'; context: ContextFile[]; kind?: ContextFileType }
+    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
     | { type: 'chatModels'; models: ChatModelSelection[] }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
