@@ -1,5 +1,5 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { VsCodeFixupTaskRecipeData } from '../../editor'
+import { FixupIntent, VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
@@ -8,12 +8,6 @@ import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
-
-/**
- * The intent classification.
- * Inferred from the prefix provided to the fixup command, e.g. `/edit` or `/fix`
- */
-export type FixupIntent = 'add' | 'edit' | 'fix'
 
 export const PROMPT_TOPICS = {
     OUTPUT: 'CODE5711',
@@ -57,6 +51,7 @@ export class Fixup implements Recipe {
             case 'add':
                 return Fixup.addPrompt.replace('{instruction}', task.instruction).replace('{fileName}', task.fileName)
             case 'edit':
+            case 'doc':
                 return Fixup.editPrompt
                     .replace('{instruction}', promptInstruction)
                     .replace('{selectedText}', task.selectedText)
@@ -105,6 +100,11 @@ export class Fixup implements Recipe {
              * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
              */
             case 'fix':
+            /**
+             * Very narrow set of possible instructions.
+             * Fetching context is unlikely to be very helpful or optimal.
+             */
+            case 'doc': {
                 const contextMessages = []
                 if (truncatedPrecedingText.trim().length > 0) {
                     contextMessages.push(
@@ -123,6 +123,7 @@ export class Fixup implements Recipe {
                     )
                 }
                 return contextMessages
+            }
             /**
              * Broad set of possible instructions.
              * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
