@@ -90,7 +90,7 @@ export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
+    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }

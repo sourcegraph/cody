@@ -12,6 +12,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Edit: Added context-aware code actions for "Generate", "Edit" and "Document" commands. [pull/1724](https://github.com/sourcegraph/cody/pull/1724)
 - Chat: @'ing files now uses a case insensitive fuzzy search. [pull/1889](https://github.com/sourcegraph/cody/pull/1889)
 - Edit: Added a faster, more optimized response for the "document" command. [pull/1900](https://github.com/sourcegraph/cody/pull/1900)
+- Chat: Restore last opened chat panel on reload. [pull/1918](https://github.com/sourcegraph/cody/pull/1918)
 
 ### Fixed
 

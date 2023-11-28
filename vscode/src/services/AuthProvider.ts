@@ -5,6 +5,7 @@ import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import { SidebarChatWebview } from '../chat/chat-view/SidebarChatProvider'
 import {
     AuthStatus,
@@ -161,7 +162,7 @@ export class AuthProvider {
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
-        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 

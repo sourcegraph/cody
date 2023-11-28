@@ -61,6 +61,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
+                        vscodeAPI.setState(message.chatID)
                         break
                     }
                     case 'config':
