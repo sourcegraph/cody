@@ -256,6 +256,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             type: 'transcript',
             messages: transcript,
             isMessageInProgress,
+            chatID: this.sessionID,
         })
     }
 

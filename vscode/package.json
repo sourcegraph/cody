@@ -96,7 +96,8 @@
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onWebviewPanel:cody.chatPanel"
   ],
   "contributes": {
     "walkthroughs": [

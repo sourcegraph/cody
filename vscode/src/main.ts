@@ -603,6 +603,19 @@ const register = async (
     // Clean up old onboarding experiment state
     void OnboardingExperiment.cleanUpCachedSelection()
 
+    if (vscode.window.registerWebviewPanelSerializer) {
+        console.log('Registering webview serializer')
+        // Make sure we register a serializer in activation event
+        vscode.window.registerWebviewPanelSerializer('cody.chatPanel', {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
+                if (chatID && webviewPanel.title) {
+                    await chatManager.createWebviewPanel(chatID, webviewPanel.title)
+                    webviewPanel.dispose()
+                }
+            },
+        })
+    }
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {

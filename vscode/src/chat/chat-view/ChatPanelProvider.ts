@@ -200,6 +200,7 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'transcript',
             messages: transcript,
             isMessageInProgress,
+            chatID: this.sessionID,
         })
 
         // Update / reset webview panel title

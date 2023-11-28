@@ -527,6 +527,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'transcript',
             messages,
             isMessageInProgress: !!messageInProgress,
+            chatID: this.sessionID,
         })
     }
 
