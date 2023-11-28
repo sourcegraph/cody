@@ -873,7 +873,7 @@ export class FixupController
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document, intent: task.intent },
+            { range: previousRange, instruction, document, intent: task.intent, insertMode: task.insertMode },
             'code-lens'
         )
     }

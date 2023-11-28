@@ -29,7 +29,8 @@ export interface UpdateRangeOptions {
 export function updateRangeMultipleChanges(
     range: vscode.Range,
     changes: TextChange[],
-    options: UpdateRangeOptions = {}
+    options: UpdateRangeOptions = {},
+    rangeUpdater = updateRange
 ): vscode.Range {
     changes.sort((a, b) => (b.range.start.isBefore(a.range.start) ? -1 : 1))
     for (let i = 0; i < changes.length - 1; i++) {
@@ -39,7 +40,7 @@ export function updateRangeMultipleChanges(
         )
     }
     for (const change of changes) {
-        range = updateRange(range, change, options)
+        range = rangeUpdater(range, change, options)
     }
     return range
 }
@@ -157,7 +158,36 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
  * Only handles edits that are outside of the range, as it is purely focused on shifting a fixed range in a document.
  * Does not expand or shrink the original rank.
  */
-export function updateFixedRange(range: vscode.Range, change: TextChange): vscode.Range | null {
-    // todo
-    return null
+export function updateFixedRange(range: vscode.Range, change: TextChange): vscode.Range {
+    const lines = change.text.split(/\r\n|\r|\n/m)
+    const insertedLastLine = lines.at(-1)?.length
+    if (insertedLastLine === undefined) {
+        throw new TypeError('unreachable') // Any string .split produces a non-empty array.
+    }
+    const insertedLineBreaks = lines.length - 1
+
+    // The only case where a range should be shifted is when the change happens before the range.
+    // In this case, we just need to adjust the start and end position depending on if the incoming change added or removed text.
+    if (change.range.end.isBefore(range.start)) {
+        range = range.with(
+            range.start.translate(
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
+                change.range.end.line === range.start.line
+                    ? insertedLastLine +
+                          -change.range.end.character +
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
+                    : 0
+            ),
+            range.end.translate(
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
+                change.range.end.line === range.end.line
+                    ? insertedLastLine -
+                          change.range.end.character +
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
+                    : 0
+            )
+        )
+    }
+
+    return range
 }

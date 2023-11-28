@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { Edit, Position, Range } from './diff'
 import { FixupFileCollection, FixupTextChanged } from './roles'
-import { TextChange, updateRangeMultipleChanges } from './tracked-range'
+import { TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 
 // This does some thunking to manage the two range types: diff ranges, and
 // text change ranges.
@@ -61,9 +61,11 @@ export class FixupDocumentEditObserver {
         const tasks = this.provider_.tasksForFile(file)
         // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
-            const targetRange = task.selectionRange
             for (const edit of event.contentChanges) {
-                if (edit.range.end.isBefore(targetRange.start) || edit.range.start.isAfter(targetRange.end)) {
+                if (
+                    edit.range.end.isBefore(task.selectionRange.start) ||
+                    edit.range.start.isAfter(task.selectionRange.end)
+                ) {
                     continue
                 }
                 this.provider_.textDidChange(task)
@@ -82,6 +84,13 @@ export class FixupDocumentEditObserver {
             if (!updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
                 this.provider_.rangeDidChange(task)
+            }
+
+            // We keep track of where the original range should be, so we can re-use it for retries.
+            // Note: This range doesn't expand or shrink, it needs to match the original range as applied to `task.original`
+            const updatedFixedRange = updateRangeMultipleChanges(task.originalRange, changes, {}, updateFixedRange)
+            if (!updatedFixedRange.isEqual(task.originalRange)) {
+                task.originalRange = updatedFixedRange
             }
         }
     }
