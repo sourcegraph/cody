@@ -62,9 +62,8 @@ export async function getFileContextFiles(
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
     // by score, then by path) to ensure the order stays the same
-    const collator = new Intl.Collator(undefined, { numeric: true })
     const sortedResults = [...results].sort((a, b) => {
-        return b.score - a.score || collator.compare(a.obj.fsPath, b.obj.fsPath)
+        return b.score - a.score || new Intl.Collator(undefined, { numeric: true }).compare(a.obj.fsPath, b.obj.fsPath)
     })
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
