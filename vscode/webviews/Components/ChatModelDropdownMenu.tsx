@@ -9,8 +9,9 @@ import styles from './ChatModelDropdownMenu.module.css'
 
 export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({
     models,
-    disabled,
+    disabled, // disabled is true when transcript length is > 1
     onCurrentChatModelChange,
+    userInfo,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
     const handleChange = useCallback(
@@ -26,16 +27,32 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         return null
     }
 
+    const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
+    const isEnterpriseUser = !userInfo.isDotComUser
+
+    const tooltips = {
+        enabled: 'Select a chat model',
+        disabled: {
+            codyProUser: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
+            dotComUser: 'Upgrade to Cody Pro to use a different chat model.',
+            enterpriseUser: `${currentModel.title} is the default chat model on your Sourcegraph instance.`,
+        },
+    }
+
     return (
         <div className={styles.container}>
             <VSCodeDropdown
-                disabled={disabled}
+                disabled={!isCodyProUser || disabled}
                 className={styles.dropdownContainer}
                 onChange={handleChange}
                 title={
-                    disabled
-                        ? `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`
-                        : undefined
+                    isCodyProUser
+                        ? disabled
+                            ? tooltips.disabled.codyProUser
+                            : tooltips.enabled
+                        : isEnterpriseUser
+                        ? tooltips.disabled.enterpriseUser
+                        : tooltips.disabled.dotComUser
                 }
             >
                 {models?.map((option, index) => (

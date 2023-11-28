@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
@@ -29,7 +30,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
+
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
+    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>({
+        isDotComUser: true,
+        isCodyProUser: false,
+    })
+
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
@@ -45,7 +52,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [chatModels, setChatModels] = useState<ChatModelSelection[]>()
+    const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
 
     useEffect(
         () =>
@@ -68,9 +75,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setIsAppInstalled(message.config.isAppInstalled)
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
+                        setUserAccountInfo({
+                            isCodyProUser: !message.authStatus.userCanUpgrade,
+                            isDotComUser: isDotCom(message.authStatus.endpoint || ''),
+                        })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
-                        break
-                    case 'login':
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -217,6 +226,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     )}
                     {view === 'chat' && (
                         <Chat
+                            userInfo={userAccountInfo}
                             messageInProgress={messageInProgress}
                             messageBeingEdited={messageBeingEdited}
                             setMessageBeingEdited={setMessageBeingEdited}

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
@@ -19,13 +19,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import {
-    ConfigurationSubsetForWebview,
-    ExtensionMessage,
-    getChatModelsForWebview,
-    LocalEnv,
-    WebviewMessage,
-} from '../protocol'
+import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 
@@ -62,7 +56,6 @@ export class ChatPanelProvider extends MessageProvider {
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
-                this.handleChatModel()
                 break
             case 'submit':
                 return this.onHumanMessageSubmitted(
@@ -190,6 +183,10 @@ export class ChatPanelProvider extends MessageProvider {
             config,
             authStatus,
         })
+
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(authStatus?.configOverwrites?.chatModel)
+        }
     }
 
     /**
@@ -232,28 +229,6 @@ export class ChatPanelProvider extends MessageProvider {
             messages: userHistory,
         })
         void this.treeView.updateTree(createCodyChatTreeItems(userHistory))
-    }
-
-    /**
-     * Sends the available chat models to the webview based on the authenticated endpoint.
-     * Maps over the allowed models, adding a 'default' property if the model matches the currently selected chatModel.
-     */
-    protected handleChatModel(): void {
-        const endpoint = this.authProvider.getAuthStatus()?.endpoint
-        const allowedModels = getChatModelsForWebview(endpoint)
-        const models = this.chatModel
-            ? allowedModels.map(model => {
-                  return {
-                      ...model,
-                      default: model.model === this.chatModel,
-                  }
-              })
-            : allowedModels
-
-        void this.webview?.postMessage({
-            type: 'chatModels',
-            models,
-        })
     }
 
     /**

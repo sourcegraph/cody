@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -11,7 +11,6 @@ import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environme
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
-    ChatModelSelection,
     ChatSubmitType,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
@@ -19,6 +18,7 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -59,9 +59,10 @@ interface ChatboxProps {
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[] | null
-    setChatModels?: (models: ChatModelSelection[]) => void
-    chatModels?: ChatModelSelection[]
+    setChatModels?: (models: ChatModelProvider[]) => void
+    chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
+    userInfo: UserAccountInfo
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -84,6 +85,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setChatModels,
     chatModels,
     enableNewChatUI,
+    userInfo,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -124,7 +126,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ChatModelSelection): void => {
+        (selected: ChatModelProvider): void => {
             if (!chatModels || !setChatModels) {
                 return
             }
@@ -243,6 +245,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
+            userInfo={userInfo}
             EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
         />
     )

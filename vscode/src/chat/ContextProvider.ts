@@ -1,6 +1,7 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
+import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -234,6 +235,7 @@ export class ContextProvider implements vscode.Disposable {
             // update codebase context on configuration change
             await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+            await this.webview?.postMessage({ type: 'chatModels', models: ChatModelProvider.get(authStatus.endpoint) })
             logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
