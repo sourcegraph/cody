@@ -187,6 +187,7 @@ export class ChatPanelProvider extends MessageProvider {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(authStatus?.configOverwrites?.chatModel)
         }
+        await this.webview?.postMessage({ type: 'chatModels', models: ChatModelProvider.get(authStatus.endpoint) })
     }
 
     /**
@@ -324,10 +325,6 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'view',
             messages: view,
         })
-
-        if (view !== 'chat') {
-            return
-        }
 
         if (!this.webviewPanel) {
             await this.createWebviewPanel(vscode.ViewColumn.Beside, this.sessionID)
