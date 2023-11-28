@@ -26,6 +26,8 @@ class GroupedLogger {
 
     public flush(): void {
         for (const [id, msgs] of this.logs) {
+            // Many requests are aborted right after the start stage, and seeing logs for them is not helpful.
+            // This check declutters the conosle output.
             if (msgs.length < 2) {
                 break
             }
