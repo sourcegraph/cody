@@ -188,7 +188,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 </div>
             </PopupFrame>
             <VSCodeButton
-                className={classNames(popupStyles.popupHost)}
+                className={classNames(popupStyles.popupHost, styles.settingsBtn, enabled && styles.settingsBtnActive)}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!isOpen)}

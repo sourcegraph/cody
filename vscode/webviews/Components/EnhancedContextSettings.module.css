@@ -120,3 +120,12 @@ vscode-button:focus-within::part(control) {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: 2px;
 }
+
+.settings-btn {
+    color: var(--vscode-editor-foreground);
+}
+
+.settings-btn-active {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
