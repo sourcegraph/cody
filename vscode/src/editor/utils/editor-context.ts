@@ -62,17 +62,8 @@ export async function getFileContextFiles(
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
     // Sort the fsPath of the results alphabetically
-    const resultsSortedByFsPath = results
-        .map(result => result.obj)
-        .sort((a, b) => {
-            if (a.fsPath < b.fsPath) {
-                return -1
-            }
-            if (a.fsPath > b.fsPath) {
-                return 1
-            }
-            return 0
-        })
+    const resultsSortedByFsPath = results.map(result => result.obj).sort((a, b) => a.fsPath.localeCompare(b.fsPath))
+
     return resultsSortedByFsPath.map(result => createContextFileFromUri(result))
 }
 
