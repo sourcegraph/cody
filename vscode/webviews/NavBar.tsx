@@ -2,7 +2,7 @@ import React from 'react'
 
 import styles from './NavBar.module.css'
 
-export type View = 'chat' | 'login' | 'history'
+export type View = 'chat' | 'login' | 'history' | 'codyPro'
 
 interface NavBarProps {
     setView: (selectedView: View) => void

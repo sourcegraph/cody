@@ -62,6 +62,12 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
 
 const supportItems: CodySidebarTreeItem[] = [
     {
+        title: 'Cody Pro',
+        description: 'Lean more about Cody Pro',
+        icon: 'cody-logo',
+        command: { command: 'cody.chat.set.view', args: ['codyPro'] },
+    },
+    {
         title: 'Upgrade',
         description: 'Upgrade to Pro',
         icon: 'zap',

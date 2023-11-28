@@ -12,6 +12,7 @@ import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
+import { CodyPro } from './CodyPro'
 import { LoadingPage } from './LoadingPage'
 import { View } from './NavBar'
 import { Notices } from './Notices'
@@ -68,7 +69,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setIsAppInstalled(message.config.isAppInstalled)
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
-                        setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        setView(message.authStatus.isLoggedIn ? view || 'chat' : 'login')
                         break
                     case 'login':
                         break
@@ -206,6 +207,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
                     />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                    {view === 'codyPro' && <CodyPro />}
                     {view === 'history' && (
                         <UserHistory
                             userHistory={userHistory}

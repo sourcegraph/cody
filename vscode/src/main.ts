@@ -9,6 +9,8 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { View } from '../webviews/NavBar'
+
 import { ChatManager } from './chat/chat-view/ChatManager'
 import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
@@ -384,6 +386,9 @@ const register = async (
             await chatManager.clearAndRestartSession()
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
+        }),
+        vscode.commands.registerCommand('cody.chat.set.view', async (view: View) => {
+            await chatManager.setWebviewView(view)
         }),
         // TODO remove cody.interactive.clear when we remove the old chat
         vscode.commands.registerCommand('cody.interactive.clear', async () => {

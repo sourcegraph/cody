@@ -345,19 +345,14 @@ export class ChatPanelProvider extends MessageProvider {
      * NOTE: Panel doesn't support view other than 'chat' currently
      */
     public async setWebviewView(view: View): Promise<void> {
-        await this.webview?.postMessage({
-            type: 'view',
-            messages: view,
-        })
-
-        if (view !== 'chat') {
-            return
-        }
-
         if (!this.webviewPanel) {
             await this.createWebviewPanel(vscode.ViewColumn.Beside, this.sessionID)
         }
         this.webviewPanel?.reveal()
+        await this.webview?.postMessage({
+            type: 'view',
+            messages: view,
+        })
     }
 
     private startUpChatID?: string = undefined
