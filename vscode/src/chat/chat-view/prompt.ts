@@ -98,6 +98,8 @@ export class DefaultPrompter implements IPrompter {
             }
         }
 
+        // TODO(beyang): Decide whether context from previous messages is less
+        // important than user added context, and if so, reorder this.
         {
             // Add context from previous messages
             const { limitReached } = promptBuilder.tryAddContext(
@@ -110,24 +112,8 @@ export class DefaultPrompter implements IPrompter {
             }
         }
 
-        // If not the first message, don't add additional context
-        // const firstMessageWithContext = chat.getMessagesWithContext().at(0)
-
-        // TODO(beyang): This condition is not correct; if enhanced context is
-        // turned on then additional context should be included.
-
-        // if (!firstMessageWithContext?.message.text || chat.getMessagesWithContext().length !== 1) {
-        //    return {
-        //        reversePrompt: promptBuilder.reverseMessages,
-        //        warnings,
-        //        newContextUsed,
-        //    }
-        // }
-
-        // Note, this is not the first message but the most recent message;
-        // minimizing the diff with #1717.
-        const firstMessageWithContext = reverseTranscript[0]
-        if (!firstMessageWithContext?.message.text) {
+        const lastMessage = reverseTranscript[0]
+        if (!lastMessage?.message.text) {
             return {
                 reversePrompt: promptBuilder.reverseMessages,
                 warnings,
@@ -137,12 +123,10 @@ export class DefaultPrompter implements IPrompter {
 
         // Add additional context from current editor or broader search
         const additionalContextItems: ContextItem[] = []
-        // TODO(beyang): This should consider the most recent message, not the first.
-        if (isEditorContextRequired(firstMessageWithContext.message.text)) {
+        if (isEditorContextRequired(lastMessage.message.text)) {
             additionalContextItems.push(...contextProvider.getUserAttentionContext())
         }
-        // TODO(beyang): This search query should be for the most recent message, not the first.
-        additionalContextItems.push(...(await contextProvider.getEnhancedContext(firstMessageWithContext.message.text)))
+        additionalContextItems.push(...(await contextProvider.getEnhancedContext(lastMessage.message.text)))
         const { limitReached, used } = promptBuilder.tryAddContext(additionalContextItems, (item: ContextItem) =>
             this.renderContextItem(item)
         )

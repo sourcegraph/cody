@@ -114,7 +114,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.guardrails = guardrails
 
         // Push context status to the webview when it changes.
-        this.disposables.push(this.contextStatusAggregator.onDidChangeStatus(() => this.sendContextStatusToWebView()))
+        this.disposables.push(this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatusToWebView()))
         this.disposables.push(this.contextStatusAggregator)
         if (this.localEmbeddings) {
             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
@@ -196,7 +196,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
-        this.sendContextStatusToWebView()
+        this.postContextStatusToWebView()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
@@ -213,7 +213,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return panel
     }
 
-    private sendContextStatusToWebView(): void {
+    private postContextStatusToWebView(): void {
         void this.webview?.postMessage({
             type: 'enhanced-context',
             context: {
@@ -690,72 +690,13 @@ class ContextProvider implements IContextProvider {
             },
         ]
     }
+
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
-        const contextItems: ContextItem[] = []
-        if (this.localEmbeddings) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings (start)')
-            const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
-            for (const result of embeddingsResults) {
-                const uri = vscode.Uri.from({
-                    scheme: 'file',
-                    path: result.fileName,
-                    fragment: `${result.startLine}:${result.endLine}`,
-                })
-                const range = new vscode.Range(
-                    new vscode.Position(result.startLine, 0),
-                    new vscode.Position(result.endLine, 0)
-                )
-                contextItems.push({
-                    uri,
-                    range,
-                    text: result.content,
-                })
-            }
-        } else if (this.embeddingsClient) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings (start)')
-            const embeddings = await this.embeddingsClient.search(text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
-            if (isError(embeddings)) {
-                throw new Error(`Error retrieving embeddings: ${embeddings}`)
-            }
-            for (const codeResult of embeddings.codeResults) {
-                const uri = vscode.Uri.from({
-                    scheme: embeddingsUrlScheme,
-                    authority: this.embeddingsClient.repoId,
-                    path: '/' + codeResult.fileName,
-                    fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
-                })
-
-                const range = new vscode.Range(
-                    new vscode.Position(codeResult.startLine, 0),
-                    new vscode.Position(codeResult.endLine, 0)
-                )
-                contextItems.push({
-                    uri,
-                    range,
-                    text: codeResult.content,
-                })
-            }
-
-            for (const textResult of embeddings.textResults) {
-                const uri = vscode.Uri.from({
-                    scheme: 'file',
-                    path: textResult.fileName,
-                    fragment: `${textResult.startLine}:${textResult.endLine}`,
-                })
-                const range = new vscode.Range(
-                    new vscode.Position(textResult.startLine, 0),
-                    new vscode.Position(textResult.endLine, 0)
-                )
-                contextItems.push({
-                    uri,
-                    range,
-                    text: textResult.content,
-                })
-            }
-        } else {
-            return []
-        }
-
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
+        const contextItems: ContextItem[] = [
+            ...(await this.searchEmbeddingsLocal(text)),
+            ...(await this.searchEmbeddingsRemote(text)),
+        ]
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
 
         // Include root README if it seems necessary and is not already present
@@ -772,6 +713,81 @@ class ContextProvider implements IContextProvider {
                 const readmeContextItems = await this.getReadmeContext()
                 return readmeContextItems.concat(contextItems)
             }
+        }
+
+        return contextItems
+    }
+
+    private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {
+        if (!this.localEmbeddings) {
+            return []
+        }
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
+        const contextItems = []
+        const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
+        for (const result of embeddingsResults) {
+            const uri = vscode.Uri.from({
+                scheme: 'file',
+                path: result.fileName,
+                fragment: `${result.startLine}:${result.endLine}`,
+            })
+            const range = new vscode.Range(
+                new vscode.Position(result.startLine, 0),
+                new vscode.Position(result.endLine, 0)
+            )
+            contextItems.push({
+                uri,
+                range,
+                text: result.content,
+            })
+        }
+        return contextItems
+    }
+
+    private async searchEmbeddingsRemote(text: string): Promise<ContextItem[]> {
+        if (!this.embeddingsClient) {
+            return []
+        }
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
+        const contextItems = []
+        const embeddings = await this.embeddingsClient.search(text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
+        if (isError(embeddings)) {
+            throw new Error(`Error retrieving embeddings: ${embeddings}`)
+        }
+        for (const codeResult of embeddings.codeResults) {
+            const uri = vscode.Uri.from({
+                scheme: embeddingsUrlScheme,
+                authority: this.embeddingsClient.repoId,
+                path: '/' + codeResult.fileName,
+                fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
+            })
+
+            const range = new vscode.Range(
+                new vscode.Position(codeResult.startLine, 0),
+                new vscode.Position(codeResult.endLine, 0)
+            )
+            contextItems.push({
+                uri,
+                range,
+                text: codeResult.content,
+            })
+        }
+
+        for (const textResult of embeddings.textResults) {
+            const uri = vscode.Uri.from({
+                scheme: 'file',
+                path: textResult.fileName,
+                fragment: `${textResult.startLine}:${textResult.endLine}`,
+            })
+            const range = new vscode.Range(
+                new vscode.Position(textResult.startLine, 0),
+                new vscode.Position(textResult.endLine, 0)
+            )
+            contextItems.push({
+                uri,
+                range,
+                text: textResult.content,
+            })
         }
 
         return contextItems
