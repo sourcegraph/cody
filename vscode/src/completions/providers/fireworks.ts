@@ -82,9 +82,13 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences'> = {
+const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
     maxTokensToSample: MAX_RESPONSE_TOKENS,
     stopSequences: undefined,
+    timeoutMs: 15_000,
 }
 
 export class FireworksProvider extends Provider {

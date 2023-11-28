@@ -43,7 +43,7 @@ const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
 > = {
     maxTokensToSample: MAX_RESPONSE_TOKENS,
     stopSequences: MULTI_LINE_STOP_SEQUENCES,
-    timeoutMs: 15000,
+    timeoutMs: 15_000,
 }
 
 export class AnthropicProvider extends Provider {
