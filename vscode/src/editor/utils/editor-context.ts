@@ -47,7 +47,7 @@ export async function getFileContextFiles(
     }
 
     const results = fuzzysort.go(query, uris, {
-        key: 'path',
+        key: 'fsPath',
         limit: maxResults,
         // We add a threshold for performance as per fuzzysort’s
         // recommendations. Testing with sg/sg path strings, somewhere over 10k
@@ -61,7 +61,19 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return results.map(result => createContextFileFromUri(result.obj))
+    // Sort the fsPath of the results alphabetically
+    const resultsSortedByFsPath = results
+        .map(result => result.obj)
+        .sort((a, b) => {
+            if (a.fsPath < b.fsPath) {
+                return -1
+            }
+            if (a.fsPath > b.fsPath) {
+                return 1
+            }
+            return 0
+        })
+    return resultsSortedByFsPath.map(result => createContextFileFromUri(result))
 }
 
 export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFile[]> {
