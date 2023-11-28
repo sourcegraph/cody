@@ -142,7 +142,7 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
     properties: Properties
 ): {
     metadata: { [key in keyof Properties]?: number }
-    privateMetadata: {}
+    privateMetadata: { [key in keyof Properties]?: any }
 } {
     const safe: { [key in keyof Properties]?: number } = {}
     const unsafe: { [key in keyof Properties]?: any } = {}
