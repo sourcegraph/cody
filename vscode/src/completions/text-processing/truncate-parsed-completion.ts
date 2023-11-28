@@ -34,10 +34,11 @@ function insertMissingBracketIfNeeded(params: InsertMissingBracketParams): strin
 
     const openingBracket = Object.keys(BRACKET_PAIR).find(openingBracket =>
         textToCheck.trimEnd().endsWith(openingBracket)
-    ) as OpeningBracket
+    ) as OpeningBracket | undefined
 
-    if (openingBracket && !nextNonEmptyLine.startsWith(BRACKET_PAIR[openingBracket])) {
-        return textToComplete + BRACKET_PAIR[openingBracket]
+    const closingBracket = openingBracket && BRACKET_PAIR[openingBracket]
+    if (closingBracket && !nextNonEmptyLine.startsWith(closingBracket) && !textToComplete.endsWith(closingBracket)) {
+        return textToComplete + closingBracket
     }
 
     return textToComplete

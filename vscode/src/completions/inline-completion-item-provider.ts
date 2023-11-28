@@ -298,6 +298,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+                dynamicMultlilineCompletions: this.config.dynamicMultlilineCompletions,
             })
 
             const completionIntent = getCompletionIntent({

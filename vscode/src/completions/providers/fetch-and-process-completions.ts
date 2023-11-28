@@ -265,9 +265,10 @@ function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): Document
     const updatedDocContext = getDerivedDocContext({
         languageId: document.languageId,
         position: updatedPosition,
+        dynamicMultlilineCompletions: true,
         documentDependentContext: {
             prefix: prefix + firstLine,
-            // Remove the characters that are being replaced by the completion to avoid having
+            // Remove the characters that are being replaced by the completion
             // to reduce the chances of breaking the parse tree with redundant symbols.
             suffix: suffix.slice(matchingSuffixLength),
             injectedPrefix: null,
@@ -287,8 +288,8 @@ function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): Document
         return {
             ...docContext,
             completionPostProcessId,
-            position: updatedDocContext.position,
             multilineTrigger: updatedDocContext.multilineTrigger,
+            multilineTriggerPosition: updatedDocContext.multilineTriggerPosition,
         }
     }
 

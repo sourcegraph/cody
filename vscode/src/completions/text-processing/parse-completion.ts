@@ -37,7 +37,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
         completion,
         document,
         docContext,
-        docContext: { position, multilineTrigger },
+        docContext: { position, multilineTriggerPosition },
     } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
@@ -73,18 +73,8 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
         },
     }
 
-    if (multilineTrigger) {
-        const existingTextBeforeTheCursor = document.getText(new Range(new Position(0, 0), position))
-
-        // Append the completion `insertText` because the multiline trigger can be at the end of the first completion line.
-        const triggerPosition = document.positionAt(
-            (existingTextBeforeTheCursor + completion.insertText).lastIndexOf(multilineTrigger)
-        )
-
-        points.trigger = {
-            row: triggerPosition.line,
-            column: triggerPosition.character,
-        }
+    if (multilineTriggerPosition) {
+        points.trigger = asPoint(multilineTriggerPosition)
     }
 
     // Search for ERROR nodes in the completion range.

@@ -97,7 +97,13 @@ describe('BfgRetriever', async () => {
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)
         const position = document.positionAt(offset)
-        const docContext = getCurrentDocContext({ document, position, maxPrefixLength: 10_000, maxSuffixLength: 1_000 })
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 10_000,
+            maxSuffixLength: 1_000,
+            dynamicMultlilineCompletions: false,
+        })
         const maxChars = 1_000
         const maxMs = 100
 

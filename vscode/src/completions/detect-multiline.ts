@@ -1,3 +1,5 @@
+import { Position } from 'vscode'
+
 import { getLanguageConfig } from '../tree-sitter/language'
 
 import { DocumentDependentContext, LinesContext } from './get-current-doc-context'
@@ -5,18 +7,26 @@ import { completionPostProcessLogger } from './post-process-logger'
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,
+    getLastLine,
     indentation,
+    lines,
     OPENING_BRACKET_REGEX,
 } from './text-processing'
 
 interface DetectMultilineParams {
     docContext: LinesContext & DocumentDependentContext
     languageId: string
-    dynamicMultlilineCompletions?: boolean
+    dynamicMultlilineCompletions: boolean
+    position: Position
 }
 
-export function detectMultiline(params: DetectMultilineParams): string | null {
-    const { docContext, languageId, dynamicMultlilineCompletions } = params
+interface DetectMultilineResult {
+    multilineTrigger: string | null
+    multilineTriggerPosition: Position | null
+}
+
+export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
+    const { docContext, languageId, dynamicMultlilineCompletions, position } = params
     const {
         prefix,
         prevNonEmptyLine,
@@ -39,7 +49,10 @@ export function detectMultiline(params: DetectMultilineParams): string | null {
         !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
         checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
     ) {
-        return null
+        return {
+            multilineTrigger: null,
+            multilineTriggerPosition: null,
+        }
     }
     completionPostProcessLogger.info({ completionPostProcessId, stage: 'detectMultiline', text: currentLinePrefix })
 
@@ -50,7 +63,10 @@ export function detectMultiline(params: DetectMultilineParams): string | null {
         // than the block start line (the newly created block is empty).
         indentation(currentLinePrefix) >= indentation(nextNonEmptyLine)
     ) {
-        return openingBracketMatch[0]
+        return {
+            multilineTrigger: openingBracketMatch[0],
+            multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),
+        }
     }
 
     if (
@@ -64,8 +80,25 @@ export function detectMultiline(params: DetectMultilineParams): string | null {
         // than the block start line (the newly created block is empty).
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
     ) {
-        return blockStart
+        return {
+            multilineTrigger: blockStart,
+            multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),
+        }
     }
 
-    return null
+    return {
+        multilineTrigger: null,
+        multilineTriggerPosition: null,
+    }
+}
+
+function getPrefixLastNonEmptyCharPosition(prefix: string, cursorPosition: Position): Position {
+    const trimmedPrefix = prefix.trimEnd()
+    const diffLength = prefix.length - trimmedPrefix.length
+    if (diffLength === 0) {
+        return cursorPosition
+    }
+
+    const prefixDiff = prefix.slice(-diffLength)
+    return cursorPosition.translate(-(lines(prefixDiff).length - 1), getLastLine(trimmedPrefix).length - 2)
 }
