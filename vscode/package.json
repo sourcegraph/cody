@@ -1208,7 +1208,7 @@
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
-    "@playwright/test": "^1.33.0",
+    "@playwright/test": "^1.40.1",
     "@types/axios": "^0.14.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
@@ -1236,7 +1236,7 @@
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "path-browserify": "^1.0.1",
-    "playwright": "^1.33.0",
+    "playwright": "^1.40.1",
     "progress": "^2.0.3",
     "semver": "^7.5.4"
   }

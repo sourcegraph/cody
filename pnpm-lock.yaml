@@ -468,8 +468,8 @@ importers:
         specifier: ^3.7.3
         version: 3.7.3
       '@playwright/test':
-        specifier: ^1.33.0
-        version: 1.33.0
+        specifier: ^1.40.1
+        version: 1.40.1
       '@types/axios':
         specifier: ^0.14.0
         version: 0.14.0
@@ -552,8 +552,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       playwright:
-        specifier: ^1.33.0
-        version: 1.33.0
+        specifier: ^1.40.1
+        version: 1.40.1
       progress:
         specifier: ^2.0.3
         version: 2.0.3
@@ -4795,14 +4795,12 @@ packages:
       playwright-core: 1.39.0
     dev: true
 
-  /@playwright/test@1.33.0:
-    resolution: {integrity: sha512-YunBa2mE7Hq4CfPkGzQRK916a4tuZoVx/EpLjeWlTVOnD4S2+fdaQZE0LJkbfhN5FTSKNLdcl7MoT5XB37bTkg==}
-    engines: {node: '>=14'}
+  /@playwright/test@1.40.1:
+    resolution: {integrity: sha512-EaaawMTOeEItCRvfmkI9v6rBkF1svM8wjl/YPRrg2N2Wmp+4qJYkWtJsbew1szfKKDm6fPLy4YAanBhIlf9dWw==}
+    engines: {node: '>=16'}
+    hasBin: true
     dependencies:
-      '@types/node': 20.5.7
-      playwright-core: 1.33.0
-    optionalDependencies:
-      fsevents: 2.3.2
+      playwright: 1.40.1
     dev: true
 
   /@pollyjs/adapter-node-http@6.0.6:
@@ -6931,7 +6929,7 @@ packages:
       koa-mount: 4.0.0
       koa-static: 5.0.0
       minimist: 1.2.8
-      playwright: 1.39.0
+      playwright: 1.40.1
       tar-fs: 3.0.4
       vscode-uri: 3.0.7
     transitivePeerDependencies:
@@ -13666,28 +13664,24 @@ packages:
       - supports-color
     dev: true
 
-  /playwright-core@1.33.0:
-    resolution: {integrity: sha512-aizyPE1Cj62vAECdph1iaMILpT0WUDCq3E6rW6I+dleSbBoGbktvJtzS6VHkZ4DKNEOG9qJpiom/ZxO+S15LAw==}
-    engines: {node: '>=14'}
-    dev: true
-
   /playwright-core@1.39.0:
     resolution: {integrity: sha512-+k4pdZgs1qiM+OUkSjx96YiKsXsmb59evFoqv8SKO067qBA+Z2s/dCzJij/ZhdQcs2zlTAgRKfeiiLm8PQ2qvw==}
     engines: {node: '>=16'}
+    hasBin: true
     dev: true
 
-  /playwright@1.33.0:
-    resolution: {integrity: sha512-+zzU3V2TslRX2ETBRgQKsKytYBkJeLZ2xzUj4JohnZnxQnivoUvOvNbRBYWSYykQTO0Y4zb8NwZTYFUO+EpPBQ==}
-    engines: {node: '>=14'}
-    dependencies:
-      playwright-core: 1.33.0
-    dev: true
-
-  /playwright@1.39.0:
-    resolution: {integrity: sha512-naE5QT11uC/Oiq0BwZ50gDmy8c8WLPRTEWuSSFVG2egBka/1qMoSqYQcROMT9zLwJ86oPofcTH2jBY/5wWOgIw==}
+  /playwright-core@1.40.1:
+    resolution: {integrity: sha512-+hkOycxPiV534c4HhpfX6yrlawqVUzITRKwHAmYfmsVreltEl6fAZJ3DPfLMOODw0H3s1Itd6MDCWmP1fl/QvQ==}
     engines: {node: '>=16'}
+    hasBin: true
+    dev: true
+
+  /playwright@1.40.1:
+    resolution: {integrity: sha512-2eHI7IioIpQ0bS1Ovg/HszsN/XKNwEG1kbzSDDmADpclKc7CyqkHw7Mg2JCz/bbCxg25QUPcjksoMW7JcIFQmw==}
+    engines: {node: '>=16'}
+    hasBin: true
     dependencies:
-      playwright-core: 1.39.0
+      playwright-core: 1.40.1
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
