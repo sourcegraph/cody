@@ -132,6 +132,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // truncate firstQuestion to first 10 chars
         const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
         const panelTitle = text || 'New Chat'
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
 
         const panel = vscode.window.createWebviewPanel(
@@ -139,8 +140,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             panelTitle,
             { viewColumn, preserveFocus: true },
             {
+                enableScripts: true,
                 retainContextWhenHidden: true,
                 enableFindWidget: true,
+                localResourceRoots: [webviewPath],
+                enableCommandUris: true,
             }
         )
 
