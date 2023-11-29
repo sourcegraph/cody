@@ -23,15 +23,15 @@ export const VALID_TOKEN = 'abcdefgh1234'
 
 const responses = {
     chat: 'hello from the assistant',
-    fixup: '<fixup><title>Goodbye Cody</title></fixup>',
+    fixup: '<CODE5711><title>Goodbye Cody</title></CODE5711>',
     code: {
         template: { completion: '', stopReason: 'stop_sequence' },
         mockResponses: ['myFirstCompletion', 'myNotFirstCompletion'],
     },
 }
 
-const FIXUP_PROMPT_TAG = '<selectedCode>'
-const NON_STOP_FIXUP_PROMPT_TAG = '<fixup>'
+const FIXUP_PROMPT_TAG = '<SELECTEDCODE7662>'
+const NON_STOP_FIXUP_PROMPT_TAG = '<CODE5711>'
 
 const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',

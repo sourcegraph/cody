@@ -15,6 +15,7 @@ import { AuthStatus } from '../protocol'
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
 import { SidebarChatOptions, SidebarChatProvider } from './SidebarChatProvider'
 
+export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
  * Manages chat view providers and panels.
  */
@@ -49,14 +50,15 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
-            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat))
+            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
+            vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
         )
 
         // Register config change listener
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
-            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', isChatPanelEnabled)
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
             if (isChatPanelEnabled) {
                 this.createChatPanelsManger()
             } else {
@@ -215,6 +217,14 @@ export class ChatManager implements vscode.Disposable {
         return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
     }
 
+    public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        this.createChatPanelsManger()
+        if (this.chatPanelsManager) {
+            await this.chatPanelsManager.revive(panel, chatID)
+            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revive', undefined, { hasV2Event: true })
+        }
+    }
+
     private lastDisplayedNotice = ''
     public triggerNotice(notice: { key: string }): void {
         // we don't want to trigger the same notice twice to different views
@@ -226,6 +236,20 @@ export class ChatManager implements vscode.Disposable {
         this.getChatProvider()
             .then(provider => provider.triggerNotice(notice))
             .catch(error => console.error(error))
+    }
+
+    private async openFileFromChat(fsPath: string): Promise<void> {
+        const rangeIndex = fsPath.indexOf(':range:')
+        const range = rangeIndex ? fsPath.slice(Math.max(0, rangeIndex + 7)) : 0
+        const filteredFsPath = range ? fsPath.slice(0, rangeIndex) : fsPath
+        const uri = vscode.Uri.file(filteredFsPath)
+        // If the active editor is undefined, that means the chat panel is the active editor
+        // so we will open the file in the first visible editor instead
+        const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
+        // If there is no editor or visible editor found, then we will open the file next to chat panel
+        const viewColumn = editor ? editor.viewColumn : vscode.ViewColumn.Beside
+        const doc = await vscode.workspace.openTextDocument(uri)
+        await vscode.window.showTextDocument(doc, { viewColumn })
     }
 
     private disposeChatPanelsManager(): void {
