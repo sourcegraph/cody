@@ -144,6 +144,10 @@ export const jsonrpcCommand = new Command('jsonrpc')
                     order: false,
                 },
             })
+            // Automatically pass through requests to download bfg binaries
+            // because we don't want to record the binary downloads for
+            // macOS/Windows/Linux
+            polly.server.get('https://github.com/sourcegraph/bfg/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)
