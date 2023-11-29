@@ -19,28 +19,44 @@ export class EditCodeAction implements vscode.CodeActionProvider {
 
         if (editor.selection.isEmpty) {
             // Empty selection and empty line, show generate action
-            return [this.createCommandCodeAction(document, 'Ask Cody to Generate')]
+            return [this.createGenerateCodeAction(document, editor.selection)]
         }
 
         // Non-empty selection, show edit action
-        return [this.createCommandCodeAction(document, 'Ask Cody to Edit', editor.selection)]
+        return [this.createEditCommandCodeAction(document, editor.selection)]
     }
 
-    private createCommandCodeAction(
-        document: vscode.TextDocument,
-        displayText: string,
-        selection?: vscode.Selection
-    ): vscode.CodeAction {
+    private createGenerateCodeAction(document: vscode.TextDocument, selection: vscode.Selection): vscode.CodeAction {
+        const displayText = 'Ask Cody to Generate'
+        const source = 'code-action:generate'
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
-        const source = 'code-action:edit'
         action.command = {
             command: 'cody.command.edit-code',
             arguments: [
                 {
-                    range: selection ? new vscode.Range(selection.start, selection.end) : undefined,
-                    intent: 'edit',
+                    range: new vscode.Range(selection.start, selection.end),
+                    intent: 'add',
                     document,
                     insertMode: true,
+                } satisfies ExecuteEditArguments,
+                source,
+            ],
+            title: displayText,
+        }
+        return action
+    }
+
+    private createEditCommandCodeAction(document: vscode.TextDocument, selection: vscode.Selection): vscode.CodeAction {
+        const displayText = 'Ask Cody to Edit'
+        const source = 'code-action:edit'
+        const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
+        action.command = {
+            command: 'cody.command.edit-code',
+            arguments: [
+                {
+                    range: new vscode.Range(selection.start, selection.end),
+                    intent: 'edit',
+                    document,
                 } satisfies ExecuteEditArguments,
                 source,
             ],

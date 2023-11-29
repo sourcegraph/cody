@@ -829,14 +829,6 @@ export class FixupController
             return
         }
 
-        // TODO:
-        // // add correct indentation based on first non empty character index
-        // const nonEmptyStartIndex = document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
-        // // add indentation to each line
-        // const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
-        // // join text with new lines, and then remove everything after the last new line if it only contains white spaces
-        // const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
-
         task.inProgressReplacement = replacementText
         return this.insertTask(task)
     }
