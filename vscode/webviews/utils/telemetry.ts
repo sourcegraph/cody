@@ -10,5 +10,10 @@ export function createWebviewTelemetryService(vscodeAPI: VSCodeWrapper): Telemet
         log: (eventName, properties) => {
             vscodeAPI.postMessage({ command: 'event', eventName, properties })
         },
+        sync: async (chat, fileLocation) => {
+            // no-op - sync currently supports large chat history stored in local storage
+            console.log(chat, fileLocation)
+            await new Promise(resolve => setTimeout(resolve, 1000))
+        },
     }
 }

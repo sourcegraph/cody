@@ -54,7 +54,7 @@ export const NOOP_TELEMETRY_SERVICE: TelemetryService = {
     log() {
         /* noop */
     },
-    sync() {
+    async sync() {
         return Promise.resolve()
     },
 }
