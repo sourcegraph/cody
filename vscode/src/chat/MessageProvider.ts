@@ -234,14 +234,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    // remove display text from last interaction if this is a non-display topic
-                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    const displayText = await this.guardrailsAnnotateAttributions(
+                    const displayText =
                         recipe.type === 'ask'
                             ? reformatBotMessageForChat(text, responsePrefix)
                             : reformatBotMessageForEdit(text, responsePrefix)
-                    )
-                    this.transcript.addAssistantResponse(text, displayText)
+                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                    const annotatedText = await this.guardrailsAnnotateAttributions(displayText)
+                    this.transcript.addAssistantResponse(text, annotatedText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response

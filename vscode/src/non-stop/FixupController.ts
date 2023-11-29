@@ -384,20 +384,27 @@ export class FixupController
             return
         }
 
-        task.selectionRange = new vscode.Range(
-            task.selectionRange.start,
-            task.selectionRange.end.translate({ lineDelta: 1 })
-        )
-
         // Insert updated text at selection range
-        // TOOD: Insert instead of replace?
+        let editOk: boolean
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.replace(document.uri, task.selectionRange, partialReplacement)
-            await vscode.workspace.applyEdit(edit)
+            editOk = await vscode.workspace.applyEdit(edit)
         } else {
-            await edit(editBuilder => {
+            editOk = await edit(editBuilder => {
                 editBuilder.replace(task.selectionRange, partialReplacement)
             }, applyEditOptions)
+        }
+
+        if (editOk) {
+            const insertedLines = partialReplacement.split(/\r\n|\r|\n/m).length - 1
+            // Expand the selection range to accompany the edit
+            task.selectionRange = task.selectionRange.with(
+                task.selectionRange.start,
+                task.selectionRange.end.translate({
+                    lineDelta: task.selectionRange.start.line - task.selectionRange.end.line + insertedLines,
+                    characterDelta: insertedLines < 1 ? partialReplacement.length : 0,
+                })
+            )
         }
     }
 
@@ -821,6 +828,14 @@ export class FixupController
             // Incoming text has already been applied, do nothing
             return
         }
+
+        // TODO:
+        // // add correct indentation based on first non empty character index
+        // const nonEmptyStartIndex = document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
+        // // add indentation to each line
+        // const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
+        // // join text with new lines, and then remove everything after the last new line if it only contains white spaces
+        // const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
 
         task.inProgressReplacement = replacementText
         return this.insertTask(task)
