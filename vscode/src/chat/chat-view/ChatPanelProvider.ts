@@ -27,6 +27,7 @@ import {
     WebviewMessage,
 } from '../protocol'
 
+import { getChatPanelTitle } from './chat-helpers'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -209,7 +210,7 @@ export class ChatPanelProvider extends MessageProvider {
         // Update / reset webview panel title
         const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
         if (this.webviewPanel) {
-            this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
+            this.webviewPanel.title = getChatPanelTitle(text)
         }
     }
 
@@ -401,9 +402,7 @@ export class ChatPanelProvider extends MessageProvider {
         this.startUpChatID = chatID
 
         const viewType = CodyChatPanelViewType
-        // truncate firstQuestion to first 10 chars
-        const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
-        const panelTitle = text || 'New Chat'
+        const panelTitle = getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
