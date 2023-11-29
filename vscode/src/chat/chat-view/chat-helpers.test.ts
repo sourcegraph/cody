@@ -8,7 +8,12 @@ import {
 
 import * as vscode from '../../testutils/mocks'
 
-import { contextItemsToContextFiles, contextMessageToContextItem, stripContextWrapper } from './chat-helpers'
+import {
+    contextItemsToContextFiles,
+    contextMessageToContextItem,
+    getChatPanelTitle,
+    stripContextWrapper,
+} from './chat-helpers'
 import { ContextItem } from './SimpleChatModel'
 
 describe('unwrap context snippets', () => {
@@ -78,3 +83,41 @@ function prettyJSON(obj: any): string {
     }
     return JSON.stringify(obj, Object.keys(obj).sort())
 }
+
+describe('getChatPanelTitle', () => {
+    test('returns default title when no lastDisplayText', () => {
+        const result = getChatPanelTitle()
+        expect(result).toEqual('New Chat')
+    })
+
+    test('truncates long titles', () => {
+        const longTitle = 'This is a very long title that should get truncated'
+        const result = getChatPanelTitle(longTitle)
+        expect(result).toEqual('This is a very long title...')
+    })
+
+    test('keeps command key', () => {
+        const title = '/explain this is the title'
+        const result = getChatPanelTitle(title)
+        expect(result).toEqual('/explain')
+    })
+
+    test('removes markdown links', () => {
+        const title = 'Summarize this file [_@a.ts_](a.ts)'
+        const result = getChatPanelTitle(title)
+        expect(result).toEqual('Summarize this file @a.ts')
+    })
+
+    test('removes multiple markdown links', () => {
+        const title = '[_@a.py_](a.py) [_@b.py_](b.py) explain'
+        const result = getChatPanelTitle(title)
+        expect(result).toEqual('@a.py @b.py explain')
+    })
+
+    test('truncates long title with multiple markdown links', () => {
+        const title =
+            'Explain the relationship between [_@foo/bar.py_](command:vscode.open?foo/bar.py) and [_@foo/bar_test.py_](command:vscode.open?foo/bar_test.py)'
+        const result = getChatPanelTitle(title)
+        expect(result).toEqual('Explain the relationship...')
+    })
+})
