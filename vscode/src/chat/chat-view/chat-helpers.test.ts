@@ -97,9 +97,15 @@ describe('getChatPanelTitle', () => {
     })
 
     test('keeps command key', () => {
-        const title = '/explain this is the title'
+        const title = '/explain this symbol'
         const result = getChatPanelTitle(title)
-        expect(result).toEqual('/explain')
+        expect(result).toEqual('/explain this symbol')
+    })
+
+    test('keeps command key with file path', () => {
+        const title = '/explain [_@a.ts_](a.ts)'
+        const result = getChatPanelTitle(title)
+        expect(result).toEqual('/explain @a.ts')
     })
 
     test('removes markdown links', () => {

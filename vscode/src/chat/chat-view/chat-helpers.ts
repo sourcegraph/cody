@@ -117,8 +117,6 @@ export function getChatPanelTitle(lastDisplayText?: string): string {
     // Regex to remove the markdown formatted links with this format: '[_@FILENAME_]()'
     const MARKDOWN_LINK_REGEX = /\[_(.+?)_]\((.+?)\)/g
     lastDisplayText = lastDisplayText.replaceAll(MARKDOWN_LINK_REGEX, '$1')?.trim()
-    // truncate firstQuestion to first 25 chars
-    const title = lastDisplayText.length > 25 ? `${lastDisplayText?.slice(0, 25)?.trim()}...` : lastDisplayText
-    // Display command key only
-    return title.startsWith('/') ? title.split(' ')[0] : title
+    // truncate title that is too long
+    return lastDisplayText.length > 25 ? `${lastDisplayText?.slice(0, 25)?.trim()}...` : lastDisplayText
 }
