@@ -286,9 +286,10 @@ function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
     })
     /**
      * New telemetry automatically adds extension context - we do not need to
-     * include platform in the name of the event.
+     * include platform in the name of the event. However, we MUST prefix the
+     * event with 'cody.' to have the event be categorized as a Cody event.
      */
-    telemetryRecorder.recordEvent('completion', name, params)
+    telemetryRecorder.recordEvent('cody.completion', name, params)
 }
 
 export interface CompletionBookkeepingEvent {
