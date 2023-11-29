@@ -12,8 +12,7 @@ export function createDisplayTextWithFileLinks(files: ContextFile[], text: strin
                 formattedText,
                 file?.fileName.trim(),
                 file?.uri?.fsPath,
-                file.range?.start?.line,
-                file.range?.end?.line
+                file.range?.start?.line
             )
         }
     }
@@ -44,7 +43,7 @@ export function createDisplayTextWithFileSelection(
     }
 
     // Create markdown link to the file
-    return replaceFileNameWithMarkdownLink(displayText, `@${fileName}`, fsPath, startLine, endLine)
+    return replaceFileNameWithMarkdownLink(displayText, `@${fileName}`, fsPath, startLine)
 }
 
 /**
@@ -55,11 +54,10 @@ export function replaceFileNameWithMarkdownLink(
     humanInput: string,
     fileName: string,
     fsPath: string,
-    startLine = 0,
-    endLine = 0
+    startLine = 0
 ): string {
     // Create markdown link to the file
-    const fileLink = `${fsPath}:range:${startLine}-${endLine}`
+    const fileLink = `${fsPath}:range:${startLine}`
     const markdownText = `[_${fileName.trim()}_](command:cody.chat.open.file?"${fileLink}")`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
