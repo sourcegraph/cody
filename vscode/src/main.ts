@@ -7,6 +7,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -35,7 +36,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
-import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { createOrUpdateEventLogger, syncTranscript, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
@@ -228,6 +229,9 @@ const register = async (
             workspaceActionsOnConfigChange(editor.getWorkspaceRootUri(), authStatus.endpoint)
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
+        }
+        if (authStatus.endpoint && isDotCom(authStatus.endpoint)) {
+            void syncTranscript(authStatus.endpoint)
         }
     })
     // Sync initial auth status

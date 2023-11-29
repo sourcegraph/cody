@@ -10,6 +10,7 @@ export class LocalStorage {
     protected readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
+    protected LAST_TRANSCRIPT_SYNC_TIMESTAMP = 'SOURCEGRAPH_CODY_DOTCOM_LAST_SYNC_TIMESTAMP'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -148,6 +149,27 @@ export class LocalStorage {
 
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
+    }
+
+    /**
+     * Gets the last transcript sync timestamp from storage, or the provided
+     * lastSyncedTranscriptTimestamp if it is more recent. Also updates the stored
+     * last sync timestamp if a more recent one was provided.
+     * @param lastSyncedTranscriptTimestamp - An optional more recent transcript
+     * sync timestamp to use and store instead of the stored one.
+     * @returns The most recent transcript sync timestamp, either the stored one
+     * or the one provided.
+     */
+    public async lastSyncedTimestamp(lastSyncedTranscriptTimestamp?: number): Promise<number> {
+        const storedSyncedTime = this.storage.get<number>(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, 0)
+
+        if (lastSyncedTranscriptTimestamp && lastSyncedTranscriptTimestamp > storedSyncedTime) {
+            // Update last sync time to lastTranscriptTimestamp so that we know when not to sync next time
+            await this.storage.update(this.LAST_TRANSCRIPT_SYNC_TIMESTAMP, lastSyncedTranscriptTimestamp)
+            return lastSyncedTranscriptTimestamp
+        }
+
+        return storedSyncedTime
     }
 }
 

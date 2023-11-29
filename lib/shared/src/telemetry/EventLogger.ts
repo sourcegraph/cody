@@ -1,3 +1,5 @@
+import { Storage } from '@google-cloud/storage'
+
 import { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
@@ -148,5 +150,21 @@ export class EventLogger {
                 }
             })
             .catch(error => console.error('Error logging event', error))
+    }
+
+    /**
+     * Uploads the given stringified chat history string to Google Cloud Storage.
+     * @param history - The history string to upload.
+     * @param filePath - The path of the file to upload the history to.
+     */
+    public async sync(history: string, fileLocation: string): Promise<void> {
+        const gcs = new Storage()
+        const bucketName = 'sourcegraph-cody'
+
+        async function upload(): Promise<void> {
+            await gcs.bucket(bucketName).file(fileLocation).save(history)
+        }
+
+        await upload().catch(console.error)
     }
 }

@@ -1,6 +1,9 @@
+import { format } from 'date-fns'
 import * as vscode from 'vscode'
 
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
@@ -45,7 +48,6 @@ export async function createOrUpdateEventLogger(
             return
         }
     }
-
     const extensionDetails = getExtensionDetails(config)
 
     telemetryLevel = config.telemetryLevel
@@ -116,6 +118,18 @@ function logEvent(
     }
 }
 
+async function syncChat(chat: string, fileLocation: string): Promise<void> {
+    if (telemetryLevel === 'agent' || !eventLogger || !globalAnonymousUserID) {
+        return
+    }
+
+    try {
+        await eventLogger.sync(chat, fileLocation)
+    } catch (error) {
+        console.error(error)
+    }
+}
+
 /**
  * telemetryService logs events using the legacy event-logging mutations.
  *
@@ -138,6 +152,9 @@ export const telemetryService: TelemetryService = {
     log(eventName, properties, opts) {
         logEvent(eventName, properties, opts)
     },
+    async sync(chat, fileLocation) {
+        await syncChat(chat, fileLocation)
+    },
 }
 
 // TODO: Clean up this name mismatch when we move to TelemetryV2
@@ -150,4 +167,66 @@ export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | und
               Neovim: 'CodyNeovimPlugin',
           }[ide]
         : 'CodyVSCodeExtension'
+}
+
+/**
+ * Syncs the chat transcript for the given endpoint to telemetry if certain conditions are met:
+ * - The endpoint is a dotcom endpoint
+ * - The feature flag for chat transcript sync is enabled
+ * - A sync has not already occurred in the past 7 days
+ *
+ * It goes through the chat history and uploads transcripts for conversations
+ * that have new interactions since the last sync timestamp.
+ *
+ * It logs various telemetry events related to the sync process and results.
+ */
+let syncingProcessStarted = false // We only wants to check this once on start up
+export async function syncTranscript(endpoint: string): Promise<void> {
+    const eventName = 'CodyVSCodeExtension:syncChatTranscript'
+    // Only sync chat transcripts for dotcom endpoints
+    if (!isDotCom(endpoint) || syncingProcessStarted || !globalAnonymousUserID) {
+        return
+    }
+
+    try {
+        syncingProcessStarted = true
+        // Feature flag to sync every 7days
+        const isFeatureEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatTranscript1Week)
+        // Skip if feature flag is not avaliable
+        if (!isFeatureEnabled) {
+            return
+        }
+
+        // Skip if we have already synced once in the past 7 days (1 week)
+        const lastStoredTimestamp = await localStorage.lastSyncedTimestamp()
+        const sevenDays = 7 * 24 * 60 * 60 * 1000
+        if (lastStoredTimestamp > Date.now() - sevenDays) {
+            return
+        }
+
+        // Skip if no history available
+        const chatFromStore = localStorage.getChatHistory()?.chat
+        if (!chatFromStore) {
+            throw new Error('No chat history available')
+        }
+
+        const filteredChats = Object.entries(chatFromStore).filter(
+            chat => new Date(chat[1].lastInteractionTimestamp).getTime() > lastStoredTimestamp
+        )
+
+        const lastSyncedTranscriptTimestamp = filteredChats.at(-1)?.[1]?.lastInteractionTimestamp
+        if (lastSyncedTranscriptTimestamp) {
+            // File location format: "cody/vscode/chatTranscript/YYYY/MM/DD/anonymousUserID.json"
+            const TODAYS_DATE = format(new Date(), 'yyyy/MM/dd')
+            const fileLocation = `cody/vscode/chatTranscript/${TODAYS_DATE}/${globalAnonymousUserID}.json`
+
+            // Sync and store the chats and timestamp
+            await syncChat(JSON.stringify(filteredChats), fileLocation)
+            await localStorage.lastSyncedTimestamp(new Date(lastSyncedTranscriptTimestamp).getTime())
+
+            logEvent(`${eventName}:uploaded`, { fileLocation })
+        }
+    } catch (error: unknown) {
+        logEvent(`${eventName}:failed`, { error: `${error}` })
+    }
 }

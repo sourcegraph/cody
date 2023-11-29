@@ -30,6 +30,8 @@ export interface TelemetryService {
             agent?: true
         }
     ): void
+
+    sync(chat: string, fileLocation: string): Promise<void>
 }
 
 /**
@@ -51,5 +53,8 @@ export interface TelemetryEventProperties {
 export const NOOP_TELEMETRY_SERVICE: TelemetryService = {
     log() {
         /* noop */
+    },
+    sync() {
+        return Promise.resolve()
     },
 }

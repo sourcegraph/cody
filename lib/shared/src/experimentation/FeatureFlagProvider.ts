@@ -22,6 +22,8 @@ export enum FeatureFlag {
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
     CodyPro = 'cody-pro',
     CodyChatMockTest = 'cody-chat-mock-test',
+
+    CodyChatTranscript1Week = 'cody-chat-transcript-sync-since-1-week',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
