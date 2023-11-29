@@ -121,7 +121,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             break
                         }
 
-                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions)
+                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions).sort()
 
                         // mark last prompts as last in group before adding another group
                         const lastPrompt = prompts.at(-1)
