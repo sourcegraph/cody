@@ -67,4 +67,49 @@ describe('splitSafeMetadata', () => {
         // sanity-check original parameters are not mutated
         expect(parameters).toStrictEqual(originalParameters)
     })
+
+    it('arrays', () => {
+        const parameters = {
+            array: [
+                {
+                    safe: 1,
+                    unsafe: 'foobar',
+                },
+                {
+                    safe: 2,
+                    unsafe: 'alsofoobar',
+                },
+            ],
+        }
+        const originalParameters = { ...parameters }
+        const { metadata, privateMetadata } = splitSafeMetadata(parameters)
+
+        // retains safe values in metadata
+        expect(metadata).toEqual({
+            'array.0.safe': 1,
+            'array.1.safe': 2,
+        })
+
+        // retains arbitrary values in privateMetadata
+        expect(privateMetadata).toEqual({
+            array: [
+                {
+                    safe: 1,
+                    unsafe: 'foobar',
+                },
+                {
+                    safe: 2,
+                    unsafe: 'alsofoobar',
+                },
+            ],
+        })
+
+        // accounts for all values
+        expect(Object.keys({ ...metadata, ...privateMetadata })).toEqual(
+            expect.arrayContaining(Object.keys(originalParameters))
+        )
+
+        // sanity-check original parameters are not mutated
+        expect(parameters).toStrictEqual(originalParameters)
+    })
 })
