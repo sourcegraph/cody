@@ -1,7 +1,11 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { FixupIntent, VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
-import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
+import {
+    populateCodeContextTemplate,
+    populateCodeGenerationContextTemplate,
+    populateCurrentEditorDiagnosticsTemplate,
+} from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
@@ -13,6 +17,7 @@ export const PROMPT_TOPICS = {
     OUTPUT: 'CODE5711',
     SELECTED: 'SELECTEDCODE7662',
     PRECEDING: 'PRECEDINGCODE3493',
+    FOLLOWING: 'FOLLOWINGCODE2472',
     INSTRUCTIONS: 'INSTRUCTIONS7390',
     DIAGNOSTICS: 'DIAGNOSTICS5668',
 }
@@ -95,7 +100,19 @@ export class Fixup implements Recipe {
              * Include the following code from the current file.
              * The preceding code is already included as part of the response to better guide the output.
              */
-            case 'add':
+            case 'add': {
+                return [
+                    ...getContextMessageWithResponse(
+                        populateCodeGenerationContextTemplate(
+                            `<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
+                            `<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
+                            task.fileName,
+                            PROMPT_TOPICS.OUTPUT
+                        ),
+                        task
+                    ),
+                ]
+            }
             /**
              * Specific case where a user is explciitly trying to "fix" a problem in their code.
              * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
