@@ -10,7 +10,7 @@ import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } fr
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems, getChatHistoryTitle } from '../../services/treeViewItems'
+import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -27,6 +27,7 @@ import {
     WebviewMessage,
 } from '../protocol'
 
+import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -44,6 +45,7 @@ export class ChatPanelProvider extends MessageProvider {
     public webview?: ChatViewProviderWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
     public treeView: TreeViewProvider
+    private history = new ChatHistoryManager()
 
     constructor({ treeView, extensionUri, ...options }: ChatPanelProviderOptions) {
         super(options)
@@ -195,7 +197,7 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Send transcript to webview
      */
-    protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean, chatID?: string): void {
+    protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         void this.webview?.postMessage({
             type: 'transcript',
             messages: transcript,
@@ -204,16 +206,15 @@ export class ChatPanelProvider extends MessageProvider {
         })
 
         // Update / reset webview panel title
-        const chatTitle = getChatHistoryTitle(chatID)
+        const chatTitle = this.history.getChatTitle(this.sessionID)
         const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
 
         if (this.webviewPanel) {
             if (chatTitle) {
                 this.webviewPanel.title = chatTitle
-            } /* else {
-                // this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
-                this.webviewPanel.title = chatTitle
-            }*/
+            } else {
+                this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
+            }
         }
     }
 
@@ -404,10 +405,15 @@ export class ChatPanelProvider extends MessageProvider {
 
         this.startUpChatID = chatID
 
+        let chatTitle
+        if (chatID) {
+            chatTitle = this.history.getChatTitle(chatID)
+        }
+
         const viewType = CodyChatPanelViewType
         // truncate firstQuestion to first 10 chars
         const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
-        const panelTitle = text || 'New Chat'
+        const panelTitle = chatTitle || text || 'New Chat'
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(

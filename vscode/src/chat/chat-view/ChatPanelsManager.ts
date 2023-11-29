@@ -11,10 +11,11 @@ import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 import { View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
-import { createCodyChatTreeItems, updateChatHistoryTitle } from '../../services/treeViewItems'
+import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
+import { ChatHistoryManager } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
@@ -54,6 +55,8 @@ export class ChatPanelsManager implements vscode.Disposable {
     public treeView
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
+
+    private history = new ChatHistoryManager()
 
     protected disposables: vscode.Disposable[] = []
 
@@ -275,6 +278,14 @@ export class ChatPanelsManager implements vscode.Disposable {
         await chatProvider.executeCustomCommand(title, type)
     }
 
+    private updateWebviewPanelTitle(chatID: string, newTitle: string): void {
+        const provider = this.panelProvidersMap.get(chatID)
+        if (provider?.webviewPanel) {
+            provider.webviewPanel.title = newTitle
+        }
+        return
+    }
+
     private updateTreeViewHistory(): void {
         const localHistory = localStorage.getChatHistory()
         if (localHistory) {
@@ -295,7 +306,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             })
             .then(async message => {
                 if (message) {
-                    await updateChatHistoryTitle(chatID, message)
+                    await this.history.updateChatHistoryTitle(chatID, message)
                     this.updateTreeViewHistory()
                     this.updateWebviewPanelTitle(chatID, message)
                 }

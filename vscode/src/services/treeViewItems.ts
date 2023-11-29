@@ -4,7 +4,6 @@ import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/Featur
 import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
-import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -42,7 +41,6 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     const chatHistoryEntries = [...Object.entries(userHistory.chat)]
     chatHistoryEntries.forEach(([id, entry]) => {
         const chatTitle = entry?.chatTitle
-        console.log(chatTitle)
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         let title = ''
         if (chatTitle) {
@@ -62,25 +60,6 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
         })
     })
     return chatTreeItems.reverse()
-}
-
-export async function updateChatHistoryTitle(chatID: string, message: string): Promise<void> {
-    const userHistory = localStorage.getChatHistory()
-    const userChat = userHistory?.chat[chatID]
-    if (userChat) {
-        userChat.chatTitle = message
-        userHistory.chat[chatID] = userChat
-        await localStorage.setChatHistory(userHistory)
-    }
-}
-
-export function getChatHistoryTitle(chatID: string | undefined): string | undefined {
-    const userHistory = localStorage.getChatHistory()
-    let chatTitle
-    if (chatID) {
-        chatTitle = userHistory?.chat[chatID]?.chatTitle
-    }
-    return chatTitle
 }
 
 const supportItems: CodySidebarTreeItem[] = [
