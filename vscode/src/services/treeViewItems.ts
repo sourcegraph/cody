@@ -1,6 +1,7 @@
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
 
@@ -16,6 +17,8 @@ export interface CodySidebarTreeItem {
         args?: string[] | { [key: string]: string }[]
     }
     isNestedItem?: string
+    requireFeature?: FeatureFlag
+    requireUpgradeAvailable?: boolean
 }
 
 /**
@@ -39,7 +42,13 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     chatHistoryEntries.forEach(([id, entry]) => {
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            const title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
+            let title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
+
+            // Display command key only
+            if (title.startsWith('/')) {
+                title = title.split(' ')[0]
+            }
+
             chatTreeItems.push({
                 id,
                 title,
@@ -52,6 +61,20 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
 }
 
 const supportItems: CodySidebarTreeItem[] = [
+    {
+        title: 'Upgrade',
+        description: 'Upgrade to Pro',
+        icon: 'zap',
+        command: { command: 'vscode.open', args: [ACCOUNT_UPGRADE_URL.href] },
+        requireUpgradeAvailable: true,
+        requireFeature: FeatureFlag.CodyPro,
+    },
+    {
+        title: 'Usage',
+        icon: 'pulse',
+        command: { command: 'vscode.open', args: [ACCOUNT_USAGE_URL.href] },
+        requireFeature: FeatureFlag.CodyPro,
+    },
     {
         title: 'Settings',
         icon: 'settings-gear',
@@ -110,7 +133,7 @@ const commandsItems: CodySidebarTreeItem[] = [
         title: 'Edit',
         icon: 'wand',
         command: { command: 'cody.command.edit-code' },
-        description: 'Edit Code with Instructions',
+        description: 'Edit code with instructions',
     },
     {
         title: 'Explain',

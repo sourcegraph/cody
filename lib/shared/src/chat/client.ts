@@ -87,8 +87,10 @@ export async function createClient({
             )
         }
 
-        const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
-        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null)
+        const embeddingsSearch = repoId
+            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, config.codebase || repoId, repoId, undefined, true)
+            : null
+        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null, null)
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
@@ -135,7 +137,7 @@ export async function createClient({
                 intentDetector,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
-                firstInteraction: transcript.isEmpty,
+                addEnhancedContext: transcript.isEmpty,
             })
             if (!interaction) {
                 return

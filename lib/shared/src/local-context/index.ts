@@ -1,4 +1,7 @@
-export interface ContextResult {
+import { ContextFile } from '../codebase-context/messages'
+import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+
+export interface ContextResult extends ContextFile {
     repoName?: string
     revision?: string
     fileName: string
@@ -12,6 +15,10 @@ export interface KeywordContextFetcher {
 
 export interface FilenameContextFetcher {
     getContext(query: string, numResults: number): Promise<ContextResult[]>
+}
+
+export interface LocalEmbeddingsFetcher {
+    getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
 
 export interface Point {

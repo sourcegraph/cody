@@ -15,22 +15,24 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     setSelectedChatCommand,
     onSubmit,
 }) => {
+    const commands = chatCommands?.filter(([key]) => key !== 'separator')
+
     const commandRef = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
-        const container = commandRef.current?.parentElement
+        const selectedContainer = commandRef.current
 
-        // If selected command is first, scroll to top. Otherwise, scroll to bottom
-        if (container) {
-            if (selectedChatCommand === chatCommands?.length || selectedChatCommand === 0) {
-                container.scrollTop = 0
-            } else {
-                container.scrollTop = container.scrollHeight - container.clientHeight
-            }
+        if (selectedContainer) {
+            selectedContainer.scrollIntoView({ block: 'nearest' })
         }
+    }, [selectedChatCommand])
 
-        commandRef.current?.focus()
-    }, [chatCommands, chatCommands?.length, selectedChatCommand, setFormInput])
+    useEffect(() => {
+        // Set the selected to the first item whenever the length changes
+        if (commands?.length) {
+            setSelectedChatCommand(0)
+        }
+    }, [commands?.length, setSelectedChatCommand])
 
     const onCommandClick = (slashCommand: string): void => {
         if (!slashCommand) {
@@ -41,7 +43,6 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         setSelectedChatCommand(-1)
     }
 
-    const commands = chatCommands?.filter(([key]) => key !== 'separator')
     if (!commands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
@@ -79,8 +80,10 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                                         onClick={() => onCommandClick(prompt.slashCommand)}
                                         type="button"
                                     >
-                                        <p className={styles.commandTitle}>{title}</p>
-                                        <p className={styles.commandDescription}>{prompt.description}</p>
+                                        <span className={styles.titleAndDescriptionContainer}>
+                                            <span className={styles.commandTitle}>{title}</span>
+                                            <span className={styles.commandDescription}>{prompt.description}</span>
+                                        </span>
                                     </button>
                                     {hasSeparator ? <hr className={styles.separator} /> : null}
                                 </React.Fragment>

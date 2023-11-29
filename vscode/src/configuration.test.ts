@@ -22,14 +22,15 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
-            experimentalCommandLenses: false,
+            commandCodeLenses: false,
             editorTitleCommandIcon: true,
             experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             experimentalSearchPanel: false,
-            inlineChat: true,
+            experimentalSimpleChatContext: false,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
@@ -44,7 +45,9 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalGraphContext: null,
+            autocompleteTimeouts: {},
         })
     })
 
@@ -75,7 +78,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.newSearch':
                         return true
-                    case 'cody.experimental.commandLenses':
+                    case 'cody.commandCodeLenses':
                         return true
                     case 'cody.editorTitleCommandIcon':
                         return true
@@ -91,6 +94,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
+                    case 'cody.experimental.simpleChatContext':
+                        return false
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -109,10 +114,16 @@ describe('getConfiguration', () => {
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
+                    case 'cody.autocomplete.advanced.timeout.multiline':
+                        return undefined
+                    case 'cody.autocomplete.advanced.timeout.singleline':
+                        return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
+                    case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
+                        return false
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
@@ -142,14 +153,15 @@ describe('getConfiguration', () => {
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
             experimentalSearchPanel: true,
-            experimentalCommandLenses: true,
+            commandCodeLenses: true,
+            experimentalSimpleChatContext: false,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
-            inlineChat: true,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
-            agentIde: undefined,
+            agentIDE: undefined,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
@@ -161,7 +173,9 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteTimeouts: {},
         })
     })
 })

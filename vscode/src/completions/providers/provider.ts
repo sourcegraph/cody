@@ -63,8 +63,8 @@ export interface ProviderOptions {
     // Number of parallel LLM requests per completion.
     n: number
 
-    // Use indentation-based or tree-sitter-based truncation strategies to stop streaming early.
-    disableStreamingTruncation?: boolean
+    // feature flags
+    dynamicMultlilineCompletions?: boolean
 }
 
 export abstract class Provider {

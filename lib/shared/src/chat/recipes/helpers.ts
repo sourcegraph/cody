@@ -5,6 +5,8 @@ import { ContextMessage, getContextMessageWithResponse } from '../../codebase-co
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
 
+import { PROMPT_TOPICS } from './fixup'
+
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
 
 const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
@@ -54,13 +56,15 @@ export async function getContextMessagesFromSelection(
     })
 
     return selectedTextContext.concat(
-        [precedingText, followingText].flatMap(text =>
-            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName, repoName), {
-                fileName,
-                repoName,
-                revision,
-            })
-        )
+        [precedingText, followingText]
+            .filter(text => text.trim().length > 0)
+            .flatMap(text =>
+                getContextMessageWithResponse(populateCodeContextTemplate(text, fileName, repoName), {
+                    fileName,
+                    repoName,
+                    revision,
+                })
+            )
     )
 }
 
@@ -72,7 +76,9 @@ export function getFileExtension(fileName: string): string {
 // ex. Remove  `tags:` that Cody sometimes include in the returned content
 // It also removes all spaces before a new line to keep the indentations
 export function contentSanitizer(text: string): string {
-    let output = text.replace(/<\/(fixup|selectedCode)>\s$/, '')
+    const FIXUP_TAG_TOPICS = `(${PROMPT_TOPICS.OUTPUT}|${PROMPT_TOPICS.SELECTED}|${PROMPT_TOPICS.PRECEDING})`
+    const FIXUP_TAG_REGEX = new RegExp(`^\\s*<${FIXUP_TAG_TOPICS}>|<\\/${FIXUP_TAG_TOPICS}>\\s*$`, 'g')
+    let output = text.replaceAll(FIXUP_TAG_REGEX, '')
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
         // NOTE: 6 is the length of `tags:` + 1 space

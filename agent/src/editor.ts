@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     ActiveTextEditor,
@@ -9,9 +10,10 @@ import {
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 
+import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
-import { TextDocument } from './protocol-alias'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
@@ -32,7 +34,7 @@ export class AgentEditor implements Editor {
         return this.agent.workspace.workspaceRootUri ?? null
     }
 
-    private activeDocument(): TextDocument | undefined {
+    private activeDocument(): TextDocumentWithUri | undefined {
         if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
@@ -45,9 +47,20 @@ export class AgentEditor implements Editor {
             return null
         }
         return {
-            filePath: document.filePath,
+            filePath: document.uri.fsPath,
+            fileUri: document.uri,
+            selectionRange: document.selection,
             content: document.content || '',
         }
+    }
+
+    public async getTextEditorContentForFile(uri: URI): Promise<string | undefined> {
+        if (!uri) {
+            return Promise.resolve(undefined)
+        }
+
+        const doc = this.agent.workspace.getDocumentFromUriString(uri.toString())
+        return Promise.resolve(doc?.content)
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
@@ -55,10 +68,12 @@ export class AgentEditor implements Editor {
         if (document?.content === undefined || document.selection === undefined) {
             return null
         }
-        const offsets = new DocumentOffsets(document)
+        const offsets = new DocumentOffsets(document.underlying)
         if (!document.selection) {
             return {
-                fileName: document.filePath ?? '',
+                fileName: document.uri.fsPath,
+                fileUri: document.uri,
+                selectionRange: document.selection,
                 precedingText: document.content ?? '',
                 selectedText: '',
                 followingText: '',
@@ -67,7 +82,9 @@ export class AgentEditor implements Editor {
         const from = offsets.offset(document.selection.start)
         const to = offsets.offset(document.selection.end)
         return {
-            fileName: document.filePath || '',
+            fileName: document.uri.fsPath,
+            fileUri: document.uri,
+            selectionRange: document.selection,
             precedingText: document.content.slice(0, from),
             selectedText: document.content.slice(from, to),
             followingText: document.content.slice(to, document.content.length),
@@ -78,7 +95,8 @@ export class AgentEditor implements Editor {
         const document = this.activeDocument()
         if (document !== undefined && document.selection === undefined) {
             return {
-                fileName: document.filePath || '',
+                fileName: document.uri.fsPath,
+                fileUri: document.uri,
                 precedingText: '',
                 selectedText: document.content || '',
                 followingText: '',
@@ -114,7 +132,8 @@ export class AgentEditor implements Editor {
         }
         return {
             content: document.content || '',
-            fileName: document.filePath,
+            fileName: document.uri.fsPath,
+            fileUri: document.uri,
         }
     }
 

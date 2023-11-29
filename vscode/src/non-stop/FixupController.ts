@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
@@ -98,17 +97,25 @@ export class FixupController
         // Observe file edits
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
-            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver)),
-            vscode.workspace.onDidSaveTextDocument(({ uri }) => {
-                // If we save the document, we consider the user to have accepted any applied tasks.
-                // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
-                for (const task of this.tasks.values()) {
-                    if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
-                        this.accept(task.id)
-                    }
-                }
-            })
+            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
         )
+
+        // Only auto-accept tasks on save if the user doesn't have a conflicting autoSave setting.
+        // Otherwise the code lens will just flicker for the user, as it will be accepted almost immediately
+        const autoSaveSetting = vscode.workspace.getConfiguration('files').get<string>('autoSave')
+        if (autoSaveSetting === 'off' || autoSaveSetting === 'onWindowChange') {
+            this._disposables.push(
+                vscode.workspace.onDidSaveTextDocument(({ uri }) => {
+                    // If we save the document, we consider the user to have accepted any applied tasks.
+                    // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
+                    for (const task of this.tasks.values()) {
+                        if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                            this.accept(task.id)
+                        }
+                    }
+                })
+            )
+        }
     }
 
     /**
@@ -145,11 +152,12 @@ export class FixupController
         documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
+        intent?: FixupIntent,
         insertMode?: boolean,
         source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode, source)
+        const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -212,33 +220,6 @@ export class FixupController
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
         return undefined
-    }
-
-    /**
-     * Retrieves the intent for a specific task based on the selected text and other contextual information.
-     * @param taskId - The ID of the task for which the intent is to be determined.
-     * @returns A promise that resolves to a `FixupIntent` which can be one of the intents 'add' or 'edit'.
-     * @throws
-     * - Will throw an error if the selected text exceeds the defined maximum limit.
-     */
-    public async getTaskIntent(taskId: string): Promise<FixupIntent> {
-        const task = this.tasks.get(taskId)
-        if (!task) {
-            throw new Error('Select some code to fixup.')
-        }
-        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        const selectedText = document.getText(task.selectionRange)
-        if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
-            const msg = "The amount of text selected exceeds Cody's current capacity."
-            throw new Error(msg)
-        }
-
-        if (selectedText.trim().length === 0) {
-            // Nothing selected, assume this is always 'add'.
-            return 'add'
-        }
-
-        return 'edit'
     }
 
     /**
@@ -349,14 +330,6 @@ export class FixupController
                     source,
                 },
             })
-
-            task.editedRange = new vscode.Range(
-                new vscode.Position(task.selectionRange.start.line, 0),
-                new vscode.Position(
-                    task.selectionRange.start.line + codeCount.lineCount,
-                    task.selectionRange.end.character
-                )
-            )
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -469,7 +442,7 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.editedRange
+        const rangeToFormat = task.selectionRange
 
         if (!rangeToFormat) {
             return false
@@ -582,11 +555,9 @@ export class FixupController
             return
         }
 
-        const revertRange = task.editedRange || task.selectionRange
-
-        editor.revealRange(revertRange)
+        editor.revealRange(task.selectionRange)
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(revertRange, task.original)
+            editBuilder.replace(task.selectionRange, task.original)
         })
 
         if (!editOk) {
@@ -646,20 +617,20 @@ export class FixupController
     }
 
     // Called by the non-stop recipe to gather current state for the task.
-    public async getTaskRecipeData(
-        id: string,
-        options: { enableSmartSelection?: boolean }
-    ): Promise<VsCodeFixupTaskRecipeData | undefined> {
+    public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
         }
-        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        if (options.enableSmartSelection && task.selectionRange) {
+
+        // Support expanding the selection range for intents where it is useful
+        const getSmartSelection = task.intent !== 'add'
+        if (getSmartSelection && task.selectionRange) {
             const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
         }
 
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         const precedingText = document.getText(
             new vscode.Range(
                 task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),
@@ -667,6 +638,10 @@ export class FixupController
             )
         )
         const selectedText = document.getText(task.selectionRange)
+        if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
+            throw new Error("The amount of text selected exceeds Cody's current capacity.")
+        }
+
         // TODO: original text should be a property of the diff so that we
         // can apply diffs even while re-spinning
         task.original = selectedText
@@ -674,8 +649,12 @@ export class FixupController
             new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
         )
 
+        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
+        const intent: FixupIntent = selectedText.trim().length === 0 ? 'add' : task.intent
+
         return {
             instruction: task.instruction,
+            intent,
             fileName: task.fixupFile.uri.fsPath,
             precedingText,
             selectedText,
@@ -855,8 +834,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.editedRange || task.selectionRange
-        edit.replace(tempDocUri, range, diff.originalText)
+        edit.replace(tempDocUri, task.selectionRange, diff.originalText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
@@ -869,7 +847,7 @@ export class FixupController
             {
                 preview: true,
                 preserveFocus: false,
-                selection: range,
+                selection: task.selectionRange,
                 label: 'Cody Fixup Diff View',
                 description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
             }
@@ -894,7 +872,7 @@ export class FixupController
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document },
+            { range: previousRange, instruction, document, intent: task.intent },
             'code-lens'
         )
     }

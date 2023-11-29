@@ -1,0 +1,85 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fixup code action > produces correct prompt for a limited diagnostic 1`] = `
+"<PROBLEMCODE4179>export function getRerankWithLog(
+    chatClient: ChatClient
+): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
+    if (TestSupport.instance) {
+        const reranker = TestSupport.instance.getReranker()
+        return (query: string, results: ContextResult[]): Promise<ContextResult[]> => reranker.rerank(query, results)
+    }
+
+    const reranker = new LLMReranker(chatClient)
+    return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
+        const start = performance.now()
+        const rerankedResults = await reranker.rerank(userQuery, results)
+        const duration = performance.now() - start
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
+        const rerank
+    }
+}</PROBLEMCODE4179>
+
+Fix the following warning from within <PROBLEMCODE4179></PROBLEMCODE4179>: Type 'null' is not assignable to type 'ContextResult[]'."
+`;
+
+exports[`fixup code action > produces correct prompt for code with a single diagnostic 1`] = `
+"<PROBLEMCODE4179>export function getRerankWithLog(
+    chatClient: ChatClient
+): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
+    if (TestSupport.instance) {
+        const reranker = TestSupport.instance.getReranker()
+        return (query: string, results: ContextResult[]): Promise<ContextResult[]> => reranker.rerank(query, results)
+    }
+
+    const reranker = new LLMReranker(chatClient)
+    return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
+        const start = performance.now()
+        const rerankedResults = await reranker.rerank(userQuery, results)
+        const duration = performance.now() - start
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
+        const rerank
+    }
+}</PROBLEMCODE4179>
+
+Fix the following ts error from within <PROBLEMCODE4179></PROBLEMCODE4179>: Type 'null' is not assignable to type 'ContextResult[]'."
+`;
+
+exports[`fixup code action > produces correct prompt for code with multiple diagnostics and overlapping ranges 1`] = `
+"<PROBLEMCODE4179>export function getRerankWithLog(
+    chatClient: ChatClient
+): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
+    if (TestSupport.instance) {
+        const reranker = TestSupport.instance.getReranker()
+        return (query: string, results: ContextResult[]): Promise<ContextResult[]> => reranker.rerank(query, results)
+    }
+
+    const reranker = new LLMReranker(chatClient)
+    return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
+        const start = performance.now()
+        const rerankedResults = await reranker.rerank(userQuery, results)
+        const duration = performance.now() - start
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
+        const rerank
+    }
+}</PROBLEMCODE4179>
+
+Fix the following ts error from within <PROBLEMCODE4179></PROBLEMCODE4179>: 'const' declarations must be initialized.
+
+
+Fix the following ts warning from within <PROBLEMCODE4179></PROBLEMCODE4179>: 'rerank' is declared but its value is never read.
+
+
+Fix the following ts error from within <PROBLEMCODE4179></PROBLEMCODE4179>: Variable 'rerank' implicitly has an 'any' type."
+`;
+
+exports[`fixup code action > produces correct prompt for diagnostics with related information 1`] = `
+"<PROBLEMCODE4179>         .taur</PROBLEMCODE4179>
+
+Fix the following rustc error from within <PROBLEMCODE4179></PROBLEMCODE4179>: no field \`taur\` on type \`&mut tauri::Config\`
+Code related to this diagnostic:
+a field with a similar name exists: \`tauri\`
+<RELATEDCODE500>foo
+bar
+foo</RELATEDCODE500>
+"
+`;

@@ -2,7 +2,8 @@ import * as vscode from 'vscode'
 
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
-import { DocumentContext, getCurrentLinePrefixWithoutInjectedPrefix } from './get-current-doc-context'
+import { getCurrentLinePrefixWithoutInjectedPrefix } from './doc-context-getters'
+import { DocumentContext } from './get-current-doc-context'
 import {
     InlineCompletionsParams,
     InlineCompletionsResult,
@@ -90,6 +91,20 @@ export function reuseLastCandidate({
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
                 const remaining = lastCompletion.slice(currentLinePrefix.length)
+                const alreadyInsertedText = item.insertText.slice(0, -remaining.length)
+
+                // Shift the range by the already inserted characters to the right
+                const prevRange = item.range
+                let newRange
+                if (prevRange) {
+                    const rangeShift = alreadyInsertedText.length
+                    newRange = new vscode.Range(
+                        prevRange.start.line,
+                        prevRange.start.character + rangeShift,
+                        prevRange.end.line,
+                        prevRange.end.character + rangeShift
+                    )
+                }
 
                 // When the remaining text is empty, the user has forward-typed the full text of the
                 // completion. We mark this as an accepted completion.
@@ -116,7 +131,7 @@ export function reuseLastCandidate({
                     )
                 }
 
-                return { ...item, insertText: remaining }
+                return { ...item, insertText: remaining, range: newRange }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.

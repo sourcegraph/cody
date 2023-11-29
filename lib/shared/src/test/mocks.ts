@@ -17,6 +17,8 @@ import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
+    public readonly repoId = 'test-repo-id'
+
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
     public get endpoint(): string {
@@ -32,6 +34,15 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
             this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
             Promise.resolve({ codeResults: [], textResults: [] })
         )
+    }
+
+    public onDidChangeStatus(): { dispose: () => void } {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        return { dispose() {} }
+    }
+
+    public get status(): never[] {
+        return []
     }
 }
 
@@ -137,6 +148,13 @@ export class MockEditor implements Editor {
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
     }
+
+    public async getTextEditorContentForFile(
+        uri: URI,
+        range?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve(undefined)
+    }
 }
 
 export const defaultEmbeddingsClient = new MockEmbeddingsClient()
@@ -160,9 +178,10 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,
                 null,
+                null,
                 null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
-        firstInteraction: args.firstInteraction ?? false,
+        addEnhancedContext: args.addEnhancedContext ?? false,
     }
 }

@@ -17,7 +17,8 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         lastTriggerSelectedCompletionInfo?: {
             text: string
             range: vscode.Range
-        }
+        },
+        range?: vscode.Range
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
         const lastDocContext = getCurrentDocContext({
@@ -25,6 +26,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             position,
             maxPrefixLength: 100,
             maxSuffixLength: 100,
+            dynamicMultlilineCompletions: false,
             context: lastTriggerSelectedCompletionInfo
                 ? {
                       triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
@@ -39,7 +41,9 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             result: {
                 logId: '1' as CompletionLogID,
                 source: InlineCompletionsResultSource.Network,
-                items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
+                items: Array.isArray(insertText)
+                    ? insertText.map(insertText => ({ insertText }))
+                    : [{ insertText, range }],
             },
             lastTriggerDocContext: lastDocContext,
         }
@@ -55,6 +59,18 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             )
         ).toEqual<V>({
             items: [{ insertText: '23' }],
+            source: InlineCompletionsResultSource.LastCandidate,
+        }))
+
+    it('updates the insertion range when typing forward as suggested', async () =>
+        expect(
+            await getInlineCompletions(
+                params('\nconst x = 1█;', [], {
+                    lastCandidate: lastCandidate('\nconst x = █;', '123', undefined, range(1, 10, 1, 10)),
+                })
+            )
+        ).toEqual<V>({
+            items: [{ insertText: '23', range: range(1, 11, 1, 11) }],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 

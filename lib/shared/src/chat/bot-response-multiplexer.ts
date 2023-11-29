@@ -4,7 +4,6 @@
 export interface BotResponseSubscriber {
     /**
      * Processes incremental content from the bot. This may be called multiple times during a turn.
-     *
      * @param content the incremental text from the bot that was addressed to the subscriber
      */
     onResponse(content: string): Promise<void>
@@ -27,7 +26,6 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
      * turn with the bot's entire output provided in one shot. If the topic
      * was not mentioned, `callback` is called with `undefined` signifying the
      * end of a turn.
-     *
      * @param callback the callback to handle content from the bot, if any.
      */
     constructor(private callback: (content: string | undefined) => Promise<void>) {}
@@ -50,7 +48,6 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
  *
  * For example, `splitAt('banana!', 2) => ['ba', 'nana!']`
  * but `splitAt('banana!', 2, 4) => ['ba', 'na!']`
- *
  * @param str the string to split.
  * @param startIndex the index to break the left substring from the rest.
  * @param endIndex the index to break the right substring from the rest, for
@@ -64,13 +61,12 @@ function splitAt(str: string, startIndex: number, endIndex?: number): [string, s
 /**
  * Extracts the tag name from something that looks like a simple XML tag. This is
  * how BotResponseMultiplexer informs the LLM to address specific topics.
- *
  * @param tag the tag, including angle brackets, to extract the topic name from.
  * @returns the topic name.
  */
 function topicName(tag: string): string {
     // TODO(dpc): Consider allowing the LLM to put junk in tags like attributes, space, etc.
-    const match = tag.match(/^<\/?([A-Za-z-]+)>$/)
+    const match = tag.match(/^<\/?([\dA-Za-z-]+)>$/)
     if (!match) {
         throw new Error(`topic tag "${tag}" is malformed`)
     }
@@ -89,7 +85,7 @@ export class BotResponseMultiplexer {
     public static readonly DEFAULT_TOPIC = 'Assistant'
 
     // Matches topic open or close tags
-    private static readonly TOPIC_RE = /<$|<\/?([A-Za-z-]?$|[A-Za-z-]+>?)/m
+    private static readonly TOPIC_RE = /<$|<\/?([\dA-Za-z-]?$|[\dA-Za-z-]+>?)/m
 
     private subs_ = new Map<string, BotResponseSubscriber>()
 
@@ -107,14 +103,13 @@ export class BotResponseMultiplexer {
 
     /**
      * Subscribes to a topic in the bot response. Each topic can have only one subscriber at a time. New subscribers overwrite old ones.
-     *
      * @param topic the string prefix to subscribe to.
      * @param subscriber the handler for the content produced by the bot.
      */
     public sub(topic: string, subscriber: BotResponseSubscriber): void {
         // This test needs to be kept in sync with `TOPIC_RE`
-        if (!/^[A-Za-z-]+$/.test(topic)) {
-            throw new Error(`topics must be A-Za-z-, was "${topic}`)
+        if (!/^[\dA-Za-z-]+$/.test(topic)) {
+            throw new Error(`topics must be \\dA-Za-z-, was "${topic}`)
         }
         this.subs_.set(topic, subscriber)
     }
@@ -143,7 +138,6 @@ export class BotResponseMultiplexer {
     /**
      * Parses part of a compound response from the bot and forwards as much as possible to
      * subscribers.
-     *
      * @param response the text of the next incremental response from the bot.
      */
     public publish(response: string): Promise<void> {
