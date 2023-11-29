@@ -13,7 +13,7 @@ import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
 // Do not include 'v' in this string.
-const defaultBfgVersion = '5.2.9998'
+const defaultBfgVersion = '5.2.10094'
 
 export async function downloadBfg(context: vscode.ExtensionContext): Promise<string | null> {
     const config = vscode.workspace.getConfiguration()

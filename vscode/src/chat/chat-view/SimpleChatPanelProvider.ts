@@ -310,6 +310,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
+            case 'embeddings/index':
+                void this.localEmbeddings?.index()
+                break
             default:
                 this.postError('Invalid request type from Webview Panel')
         }
