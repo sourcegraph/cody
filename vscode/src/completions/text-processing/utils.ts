@@ -2,7 +2,7 @@ import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { logCompletionEvent } from '../logger'
+import { logCompletionBookkeepingEvent } from '../logger'
 
 import { isAlmostTheSameString } from './string-comparator'
 
@@ -23,7 +23,7 @@ export const MULTILINE_STOP_SEQUENCE = '\n\n'
  */
 export function extractFromCodeBlock(completion: string): string {
     if (completion.includes(OPENING_CODE_TAG)) {
-        logCompletionEvent('containsOpeningTag')
+        logCompletionBookkeepingEvent('containsOpeningTag')
         return ''
     }
 
