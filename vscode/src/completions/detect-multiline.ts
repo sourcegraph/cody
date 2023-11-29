@@ -69,7 +69,12 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         }
     }
 
-    if (
+    const nonEmptyLineEndsWithBlockStart =
+        currentLinePrefix.length > 0 &&
+        isBlockStartActive &&
+        indentation(currentLinePrefix) >= indentation(nextNonEmptyLine)
+
+    const isEmptyLineAfterBlockStart =
         currentLinePrefix.trim() === '' &&
         currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
@@ -79,7 +84,8 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         // Only trigger multiline suggestions when the next non-empty line is indented less
         // than the block start line (the newly created block is empty).
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
-    ) {
+
+    if ((dynamicMultlilineCompletions && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
         return {
             multilineTrigger: blockStart,
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),

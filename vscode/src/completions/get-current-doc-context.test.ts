@@ -228,4 +228,19 @@ describe('getCurrentDocContext', () => {
           }
         `)
     })
+
+    it('detect the multiline trigger for python with `dynamicMultlilineCompletions` enabled', () => {
+        const { document, position } = documentAndPosition('def greatest_common_divisor(a, b):█', 'python')
+
+        const { multilineTrigger, multilineTriggerPosition } = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            dynamicMultlilineCompletions: true,
+        })
+
+        expect(multilineTrigger).toBe(':')
+        expect(multilineTriggerPosition).toEqual({ line: 0, character: 34 })
+    })
 })
