@@ -144,8 +144,8 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    public async promptUserForTask(args: ExecuteEditArguments): Promise<FixupTask | null> {
-        const task = await this.typingUI.show(args)
+    public async promptUserForTask(args: ExecuteEditArguments, source: ChatEventSource): Promise<FixupTask | null> {
+        const task = await this.typingUI.show(args, source)
         return task
     }
 

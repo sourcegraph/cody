@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
 import { ExecuteEditArguments } from '../edit/execute'
 import { getActiveEditor } from '../editor/active-editor'
@@ -51,7 +53,7 @@ export class FixupTypingUI {
         )
     }
 
-    public async show(args: ExecuteEditArguments): Promise<FixupTask | null> {
+    public async show(args: ExecuteEditArguments, source: ChatEventSource): Promise<FixupTask | null> {
         const editor = getActiveEditor()
         const document = args.document || editor?.document
         const range = args.range || editor?.selection
@@ -70,7 +72,7 @@ export class FixupTypingUI {
             return null
         }
 
-        const task = this.taskFactory.createTask(document.uri, instruction, range, args.intent, args.insertMode)
+        const task = this.taskFactory.createTask(document.uri, instruction, range, args.intent, args.insertMode, source)
 
         // Return focus to the editor
         void vscode.window.showTextDocument(document)
