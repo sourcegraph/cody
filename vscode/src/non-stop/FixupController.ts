@@ -627,6 +627,10 @@ export class FixupController
         if (!task) {
             return
         }
+        return this.cancelTask(task)
+    }
+
+    public cancelTask(task: FixupTask): void {
         this.setTaskState(task, task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.finished)
         this.discard(task)
     }

@@ -50,4 +50,5 @@ export interface FixupTaskFactory {
 export interface FixupTextChanged {
     textDidChange(task: FixupTask): void
     rangeDidChange(task: FixupTask): void
+    cancelTask(task: FixupTask): void
 }

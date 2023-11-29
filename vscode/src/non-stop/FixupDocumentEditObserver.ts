@@ -61,6 +61,12 @@ export class FixupDocumentEditObserver {
         const tasks = this.provider_.tasksForFile(file)
         // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
+            // Cancel any ongoing `add` tasks on undo.
+            // This is to avoid a scenario where a user is trying to undo a specific part of text, but cannot because the streamed text continues to come in as the latest addition.
+            if (task.intent === 'add' && event.reason === vscode.TextDocumentChangeReason.Undo) {
+                this.provider_.cancelTask(task)
+            }
+
             const targetRange = task.selectionRange
             for (const edit of event.contentChanges) {
                 if (edit.range.end.isBefore(targetRange.start) || edit.range.start.isAfter(targetRange.end)) {
