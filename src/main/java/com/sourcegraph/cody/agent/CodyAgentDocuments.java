@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent;
 
 import com.sourcegraph.cody.agent.protocol.TextDocument;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,17 +12,17 @@ import java.util.Map;
 // another application than IntelliJ, and then focuses back on the original document.
 public class CodyAgentDocuments {
   private final CodyAgentServer underlying;
-  private String focusedPath = null;
-  private Map<String, TextDocument> documents = new HashMap<>();
+  private URI focusedPath = null;
+  private Map<URI, TextDocument> documents = new HashMap<>();
 
   public CodyAgentDocuments(CodyAgentServer underlying) {
     this.underlying = underlying;
   }
 
   private void handleDocument(TextDocument document) {
-    TextDocument old = this.documents.get(document.getFilePath());
+    TextDocument old = this.documents.get(document.getUri());
     if (old == null) {
-      this.documents.put(document.getFilePath(), document);
+      this.documents.put(document.getUri(), document);
       return;
     }
     if (document.getContent() == null) {
@@ -30,16 +31,16 @@ public class CodyAgentDocuments {
     if (document.getSelection() == null) {
       document.setSelection(old.getSelection());
     }
-    this.documents.put(document.getFilePath(), document);
+    this.documents.put(document.getUri(), document);
   }
 
   public void didOpen(TextDocument document) {
-    this.documents.put(document.getFilePath(), document);
+    this.documents.put(document.getUri(), document);
     underlying.textDocumentDidOpen(document);
   }
 
   public void didFocus(TextDocument document) {
-    this.documents.put(document.getFilePath(), document);
+    this.documents.put(document.getUri(), document);
   }
 
   public void didChange(TextDocument document) {}
