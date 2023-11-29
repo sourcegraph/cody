@@ -85,7 +85,7 @@ describe('BfgRetriever', async () => {
                 accessToken: '',
                 serverEndpoint: '',
                 customHeaders: {},
-                customConfiguration: { 'cody.experimental.cody-engine.path': bfgBinary },
+                customConfiguration: { 'cody.experimental.bfg.path': bfgBinary },
             })
         }
         const paths = envPaths('Cody')
