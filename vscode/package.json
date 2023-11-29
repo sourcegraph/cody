@@ -493,7 +493,7 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "Start a New Chat Panel",
+        "title": "New Chat",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
