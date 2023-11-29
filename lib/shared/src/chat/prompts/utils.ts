@@ -233,4 +233,4 @@ export function isValidTestFileName(fsPath: string): boolean {
 }
 
 // REGEX for trailing non-alphanumeric characters
-export const trailingNonAlphaNumericRegex = /[^\dA-Za-z]+$/
+export const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/

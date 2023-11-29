@@ -11,6 +11,16 @@ describe('replaceFileNameWithMarkdownLink', () => {
         expect(result).toEqual('Hello [_@test.js_](command:cody.chat.open.file?"/path/to/test.js:range:0")')
     })
 
+    it('replaces file name with symbol with markdown link', () => {
+        const text = 'What is @e2e/cody.ts:2-2#codySymbol?'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@e2e/cody.ts:2-2#codySymbol', '/foo/test/e2e/cody.ts', 2)
+
+        expect(result).toEqual(
+            'What is [_@e2e/cody.ts:2-2#codySymbol_](command:cody.chat.open.file?"/foo/test/e2e/cody.ts:range:2")?'
+        )
+    })
+
     it('respects spaces in file name', () => {
         const text = 'Loaded @my file.js'
 
