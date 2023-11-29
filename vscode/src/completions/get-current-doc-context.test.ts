@@ -275,7 +275,7 @@ describe('getCurrentDocContext', () => {
                 code: 'const something = true\nfunction bubbleSort(█)',
                 triggerPosition: { line: 1, character: 19 },
             },
-        ])('returns correct multiline trigger position', async ({ code, triggerPosition }) => {
+        ])('returns correct multiline trigger position', ({ code, triggerPosition }) => {
             const { document, position } = documentAndPosition(code)
 
             const { multilineTrigger, multilineTriggerPosition } = getCurrentDocContext({
