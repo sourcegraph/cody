@@ -473,6 +473,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     event.preventDefault()
                     const selected = contextSelection[selectedChatContext]
                     onChatContextSelected(selected, formInput)
+                    return
                 }
             }
 
