@@ -134,7 +134,7 @@ export interface CompletionItemParams {
 }
 
 export interface AutocompleteParams {
-    filePath: string
+    uri: string
     position: Position
     // Defaults to 'Automatic' for autocompletions which were not explicitly
     // triggered.
@@ -292,7 +292,10 @@ export interface Range {
 }
 
 export interface TextDocument {
-    filePath: string
+    // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
+    uri: string
+    /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
+    filePath?: string
     content?: string
     selection?: Range
 }

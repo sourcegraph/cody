@@ -12,6 +12,7 @@ import * as vscode from 'vscode'
 import { bfgIndexingPromise, BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
+import { TextDocumentWithUri } from '../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -62,10 +63,19 @@ describe('BfgRetriever', async () => {
         name: 'BfgContextFetcher',
         version: '0.1.0',
         workspaceRootUri: rootUri.toString(),
+        extensionConfiguration: {
+            accessToken: '',
+            serverEndpoint: '',
+            customHeaders: {},
+            customConfiguration: {
+                'cody.experimental.cody-engine.await-indexing': true,
+            },
+        },
     })
     const client = agent.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
+    const uri = vscode.Uri.file(filePath)
     const content = await fspromises.readFile(filePath, 'utf8')
     const CURSOR = '/*CURSOR*/'
     it('returns non-empty context', async () => {
@@ -84,7 +94,7 @@ describe('BfgRetriever', async () => {
             globalStorageUri: vscode.Uri.file(paths.data),
         }
         client.notify('textDocument/didOpen', {
-            filePath,
+            uri: uri.toString(),
             content: content.replace(CURSOR, ''),
         })
 
@@ -92,7 +102,7 @@ describe('BfgRetriever', async () => {
 
         await bfgIndexingPromise
 
-        const document = agent.workspace.agentTextDocument({ filePath })
+        const document = agent.workspace.agentTextDocument(new TextDocumentWithUri(uri))
         assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)
