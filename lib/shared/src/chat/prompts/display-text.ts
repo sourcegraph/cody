@@ -37,7 +37,8 @@ export function createDisplayTextWithFileSelection(
     const displayText = `${humanInput} @${fileName}`
     const fsPath = selection?.fileUri?.fsPath
     const startLine = selection?.selectionRange?.start?.line
-    if (!fsPath || !selection?.selectionRange?.end?.line) {
+    const endLine = selection?.selectionRange?.end?.line
+    if (!fsPath || !endLine) {
         return displayText
     }
 
@@ -56,8 +57,7 @@ export function replaceFileNameWithMarkdownLink(
     startLine = 0
 ): string {
     // Create markdown link to the file
-    const range = startLine ? `:range:${startLine}` : ''
-    const fileLink = `${fsPath}${range}`
+    const fileLink = `${fsPath}:range:${startLine}`
     const markdownText = `[_${fileName.trim()}_](command:cody.chat.open.file?"${fileLink}")`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name

@@ -8,7 +8,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/to/test.js')
 
-        expect(result).toEqual('Hello [_@test.js_](command:cody.chat.open.file?"/path/to/test.js")')
+        expect(result).toEqual('Hello [_@test.js_](command:cody.chat.open.file?"/path/to/test.js:range:0")')
     })
 
     it('respects spaces in file name', () => {
@@ -16,7 +16,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@my file.js', '/path/to/my file.js')
 
-        expect(result).toEqual('Loaded [_@my file.js_](command:cody.chat.open.file?"/path/to/my file.js")')
+        expect(result).toEqual('Loaded [_@my file.js_](command:cody.chat.open.file?"/path/to/my file.js:range:0")')
     })
 
     it('returns original text if no match', () => {
@@ -32,7 +32,9 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/with/@#special$chars.js')
 
-        expect(result).toEqual('Loaded [_@test.js_](command:cody.chat.open.file?"/path/with/@#special$chars.js")')
+        expect(result).toEqual(
+            'Loaded [_@test.js_](command:cody.chat.open.file?"/path/with/@#special$chars.js:range:0")'
+        )
     })
 
     it('handles line numbers', () => {
@@ -48,7 +50,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 0)
 
-        expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?"/path/test.js")')
+        expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:0")')
     })
 
     it('handles names that showed up more than once', () => {
