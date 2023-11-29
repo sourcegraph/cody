@@ -21,6 +21,7 @@ export class TextDocumentWithUri {
         if (document?.uri === undefined && typeof document.filePath === 'string') {
             // TODO: remove support for `document.filePath` once the migration to URIs is complete
             const uri = vscode.Uri.file(document.filePath)
+            document.uri = uri.toString()
             return new TextDocumentWithUri(uri, document)
         }
         return new TextDocumentWithUri(vscode.Uri.parse(document.uri), document)
