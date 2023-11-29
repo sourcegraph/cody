@@ -105,7 +105,7 @@ describe('logger', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:accepted',
@@ -122,7 +122,7 @@ describe('logger', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'accepted', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'accepted', expect.anything())
     })
 
     it('reuses the completion ID for the same completion', () => {
@@ -156,7 +156,7 @@ describe('logger', () => {
             }),
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
@@ -166,7 +166,7 @@ describe('logger', () => {
             }),
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
@@ -175,7 +175,7 @@ describe('logger', () => {
             }),
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'suggested', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         // After accepting the completion, the ID won't be reused a third time
         const id3 = CompletionLogger.create(defaultArgs)
@@ -203,7 +203,7 @@ describe('logger', () => {
             }),
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'partiallyAccepted', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
         CompletionLogger.partiallyAccept(id, item, 10)
 
@@ -215,7 +215,7 @@ describe('logger', () => {
             }),
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('completion', 'partiallyAccepted', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
         CompletionLogger.partiallyAccept(id, item, 5)
         CompletionLogger.partiallyAccept(id, item, 8)
