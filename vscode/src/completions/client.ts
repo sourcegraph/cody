@@ -73,7 +73,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            headers.set('X-Sourcegraph-Should-Trace', '1')
+            headers.set('X-Sourcegraph-Should-Trace', 'true')
             const traceparent = getTraceparent()
             if (traceparent) {
                 headers.set('traceparent', traceparent)
