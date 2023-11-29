@@ -113,6 +113,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected chatModel: string | undefined = undefined
+    protected chatTitle: string | undefined = 'init'
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -139,7 +140,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendHistory()
         await this.contextProvider.init()
         await this.sendCodyCommands()
-
+        this.chatTitle = undefined
         if (chatID) {
             await this.restoreSession(chatID)
         }
@@ -184,6 +185,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
         this.chatModel = this.transcript.chatModel
+        this.chatTitle = this.transcript.chatTitle
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -569,6 +571,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private sendTranscript(): void {
         const chatTranscript = this.transcript.toChat()
+        this.chatTitle = this.transcript.chatTitle
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
@@ -725,6 +728,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
+        this.transcript.chatTitle = this.chatTitle
         MessageProvider.chatHistory[this.sessionID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()

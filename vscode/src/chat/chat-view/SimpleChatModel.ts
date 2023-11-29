@@ -26,7 +26,8 @@ export class SimpleChatModel {
     constructor(
         public modelID: string,
         private messagesWithContext: MessageWithContext[] = [],
-        public readonly sessionID: string = new Date(Date.now()).toUTCString()
+        public readonly sessionID: string = new Date(Date.now()).toUTCString(),
+        public chatTitle?: string
     ) {}
 
     public isEmpty(): boolean {

@@ -146,7 +146,7 @@ export class ChatManager implements vscode.Disposable {
         const chatID = treeItem?.id
         const chatLabel = treeItem?.label as vscode.TreeItemLabel
         if (chatID) {
-            await this.chatPanelsManager?.editChatHistory(chatID, chatLabel.label)
+            await this.chatPanelsManager?.handleChatTitle(chatID, chatLabel.label)
         }
     }
 

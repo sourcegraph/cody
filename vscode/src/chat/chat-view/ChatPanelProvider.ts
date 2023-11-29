@@ -206,15 +206,9 @@ export class ChatPanelProvider extends MessageProvider {
         })
 
         // Update / reset webview panel title
-        const chatTitle = this.history.getChatTitle(this.sessionID)
-        const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
-
-        if (this.webviewPanel) {
-            if (chatTitle) {
-                this.webviewPanel.title = chatTitle
-            } else {
-                this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
-            }
+        if (this.webviewPanel && this.chatTitle !== 'init') {
+            const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
+            this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
         }
     }
 
@@ -240,7 +234,19 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
+        const currentTitle = userHistory.chat[this.sessionID]?.chatTitle
+        if (currentTitle) {
+            this.handleChatTitle(currentTitle)
+        }
         void this.treeView.updateTree(createCodyChatTreeItems(userHistory))
+    }
+
+    public handleChatTitle(title: string): void {
+        this.chatTitle = title
+        this.transcript.setChatTitle(title)
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
+        }
     }
 
     /**
@@ -404,11 +410,7 @@ export class ChatPanelProvider extends MessageProvider {
         }
 
         this.startUpChatID = chatID
-
-        let chatTitle
-        if (chatID) {
-            chatTitle = this.history.getChatTitle(chatID)
-        }
+        const chatTitle = chatID ? this.history.getChat(chatID)?.chatTitle : lastQuestion
 
         const viewType = CodyChatPanelViewType
         // truncate firstQuestion to first 10 chars
@@ -439,6 +441,11 @@ export class ChatPanelProvider extends MessageProvider {
     public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<vscode.WebviewPanel | undefined> {
         telemetryService.log('CodyVSCodeExtension:ChatPanelProvider:revive', undefined, { hasV2Event: true })
         this.startUpChatID = chatID
+        const title = this.history.getChat(chatID)?.chatTitle
+        if (chatID && title) {
+            this.chatTitle = title
+            webviewPanel.title = title
+        }
         return this.registerWebviewPanel(webviewPanel)
     }
 

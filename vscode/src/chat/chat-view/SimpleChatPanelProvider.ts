@@ -307,6 +307,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.postViewTranscript()
     }
 
+    public handleChatTitle(title: string): void {
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
+        }
+    }
+
     public async saveSession(): Promise<void> {
         const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
         void this.webview?.postMessage({
@@ -861,7 +867,12 @@ async function newChatModelfromTranscriptJSON(editor: Editor, json: TranscriptJS
             ]
         }
     )
-    return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', (await Promise.all(messages)).flat(), json.id)
+    return new SimpleChatModel(
+        json.chatModel || 'anthropic/claude-2',
+        (await Promise.all(messages)).flat(),
+        json.id,
+        json.chatTitle
+    )
 }
 
 export function deserializedContextFilesToContextItems(
