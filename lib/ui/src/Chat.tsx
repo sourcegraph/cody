@@ -391,6 +391,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Allows backspace and delete keystrokes to remove characters
             const deleteKeysList = new Set(['Backspace', 'Delete'])
             if (deleteKeysList.has(event.key)) {
+                setSelectedChatCommand(-1)
+                setSelectedChatContext(0)
                 return
             }
 

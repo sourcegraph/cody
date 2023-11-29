@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
@@ -24,11 +23,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         if (contextSelection?.length) {
             setSelectedChatContext(0)
         }
-        // If the input ends with a non-alphanumeric character, set it to -1 so we don't display the popup
-        if (!contextSelection?.length && trailingNonAlphaNumericRegex.test(formInput)) {
-            setSelectedChatContext(-1)
-        }
-    }, [contextSelection, formInput, setSelectedChatContext])
+    }, [contextSelection?.length, setSelectedChatContext])
 
     if (contextSelection === null || selected === -1) {
         return null
