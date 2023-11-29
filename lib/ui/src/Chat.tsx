@@ -30,12 +30,7 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (
-        text: string,
-        submitType: ChatSubmitType,
-        userContextFiles?: Map<string, ContextFile>,
-        enhanceContext?: boolean
-    ) => void
+    onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
@@ -71,11 +66,7 @@ interface ChatProps extends ChatClassNames {
     contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelSelection[]
-    EnhancedContextToggler?: React.FunctionComponent<{
-        enhanceContext: boolean
-        setEnhanceContext: (arg: boolean) => void
-        contextStatus: ChatContextStatus
-    }>
+    EnhancedContextSettings?: React.FunctionComponent<{}>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelSelection) => void
 }
@@ -226,7 +217,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextSelection,
     chatModels,
     ChatModelDropdownMenu,
-    EnhancedContextToggler,
+    EnhancedContextSettings,
     onCurrentChatModelChange,
 }) => {
     const [inputRows, setInputRows] = useState(1)
@@ -239,8 +230,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     // The context files added via the chat input by user
     const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
-    // Toggle between enabling and disabling enhanceContext
-    const [enhanceContext, setEnhanceContext] = useState(transcript.length < 2)
 
     /**
      * Callback function called when a chat context file is selected from the context selector.
@@ -329,7 +318,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress) {
                 return
             }
-            onSubmit(input, submitType, chatContextFiles, enhanceContext)
+            onSubmit(input, submitType, chatContextFiles)
             setSuggestions?.(undefined)
             setChatContextFiles(new Map())
             setSelectedChatContext(0)
@@ -337,23 +326,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputHistory([...inputHistory, input])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
-
-            // Automatically turn off enhance context when the user has submitted their first message.
-            if (transcript.length < 2) {
-                setEnhanceContext(false)
-                return
-            }
         },
-        [
-            messageInProgress,
-            onSubmit,
-            chatContextFiles,
-            enhanceContext,
-            setSuggestions,
-            inputHistory,
-            setInputHistory,
-            transcript.length,
-        ]
+        [messageInProgress, onSubmit, chatContextFiles, setSuggestions, inputHistory, setInputHistory]
     )
     const onChatInput = useCallback(
         ({ target }: React.SyntheticEvent) => {
@@ -632,13 +606,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             setValue={inputHandler}
                             chatModels={chatModels}
                         />
-                        {ContextStatusComponent && EnhancedContextToggler && contextStatus && (
+                        {EnhancedContextSettings && (
                             <div className={styles.contextButton}>
-                                <EnhancedContextToggler
-                                    setEnhanceContext={setEnhanceContext}
-                                    enhanceContext={enhanceContext}
-                                    contextStatus={contextStatus}
-                                />
+                                <EnhancedContextSettings />
                             </div>
                         )}
                     </div>
@@ -651,10 +621,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         }
                     />
                 </div>
-                {!EnhancedContextToggler && ContextStatusComponent && (
+                {!EnhancedContextSettings && ContextStatusComponent && (
                     <ContextStatusComponent {...contextStatusComponentProps} />
                 )}
-                {!EnhancedContextToggler && !ContextStatusComponent && contextStatus && (
+                {!EnhancedContextSettings && !ContextStatusComponent && contextStatus && (
                     <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
                 )}
             </form>

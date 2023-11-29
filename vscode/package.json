@@ -485,6 +485,12 @@
         "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
       },
       {
+        "command": "cody.autocomplete.manual-trigger",
+        "category": "Cody",
+        "title": "Trigger Autocomplete at Cursor",
+        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+      },
+      {
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "Start a New Chat Panel",
@@ -1121,6 +1127,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
+        },
+        "cody.autocomplete.experimental.dynamicMultilineCompletions": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
         },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",

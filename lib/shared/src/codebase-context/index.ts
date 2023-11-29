@@ -7,6 +7,7 @@ import {
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     KeywordContextFetcher,
+    LocalEmbeddingsFetcher,
 } from '../local-context'
 import {
     isMarkdownFile,
@@ -31,10 +32,11 @@ export class CodebaseContext {
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
         private readonly codebase: string | undefined,
-        private embeddings: EmbeddingsSearch | null,
+        public embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
+        public localEmbeddings: LocalEmbeddingsFetcher | null,
         public symf?: IndexedKeywordContextFetcher,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
@@ -89,10 +91,11 @@ export class CodebaseContext {
                 return this.getLocalContextMessages(query, options)
             case 'none':
                 return []
-            default:
-                return this.embeddings
+            default: {
+                return this.localEmbeddings || this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getLocalContextMessages(query, options)
+            }
         }
     }
 
@@ -144,23 +147,27 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
-        if (!this.embeddings) {
-            return []
+        if (this.localEmbeddings) {
+            // TODO(dpc): Check whether the local embeddings index exists for
+            // this repo before relying on it.
+            // TODO(dpc): Fetch code and text results.
+            return this.localEmbeddings.getContext(query, options.numCodeResults)
         }
-
-        const embeddingsSearchResults = await this.embeddings.search(
-            query,
-            options.numCodeResults,
-            options.numTextResults
-        )
-
-        if (isError(embeddingsSearchResults)) {
-            console.error('Error retrieving embeddings:', embeddingsSearchResults)
-            this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
-            return []
+        if (this.embeddings) {
+            const embeddingsSearchResults = await this.embeddings.search(
+                query,
+                options.numCodeResults,
+                options.numTextResults
+            )
+            if (isError(embeddingsSearchResults)) {
+                console.error('Error retrieving embeddings:', embeddingsSearchResults)
+                this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
+                return []
+            }
+            this.embeddingResultsError = ''
+            return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
         }
-        this.embeddingResultsError = ''
-        return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
+        return []
     }
 
     public static makeContextMessageWithResponse(groupedResults: {

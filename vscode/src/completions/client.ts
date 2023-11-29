@@ -14,7 +14,7 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { getActiveTraceAndSpanId, getTraceparent } from '@sourcegraph/cody-shared/src/tracing'
+import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -74,10 +74,8 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         }
         if (tracingFlagEnabled) {
             headers.set('X-Sourcegraph-Should-Trace', '1')
-            const traceparent = getTraceparent()
-            if (traceparent) {
-                headers.set('traceparent', traceparent)
-            }
+
+            addTraceparent(headers)
         }
 
         // We enable streaming only for Node environments right now because it's hard to make

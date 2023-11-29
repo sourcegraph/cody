@@ -12,6 +12,7 @@ import * as vscode from 'vscode'
 import { bfgIndexingPromise, BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
+import { TextDocumentWithUri } from '../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -27,12 +28,8 @@ const gitdir = path.join(dir, '.git')
 const shouldCreateGitDir = !fs.existsSync(gitdir)
 
 describe('BfgRetriever', async () => {
-    if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
-        // The test runs successfully without these environment variables. We
-        // only have this check enabled for now to skip running BFG tests in CI.
-        // We should prioritize figuring out how to enable these tests to run in
-        // CI alongside other agent tests.
-        it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run BFG tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
+    if (process.env.BFG_TEST !== 'true') {
+        it('Skipping BFG tests because they are disabled in CI for now. To run the tests manually locally, set BFG_TEST=true.', () => {})
         return
     }
     beforeAll(async () => {
@@ -62,10 +59,19 @@ describe('BfgRetriever', async () => {
         name: 'BfgContextFetcher',
         version: '0.1.0',
         workspaceRootUri: rootUri.toString(),
+        extensionConfiguration: {
+            accessToken: '',
+            serverEndpoint: '',
+            customHeaders: {},
+            customConfiguration: {
+                'cody.experimental.cody-engine.await-indexing': true,
+            },
+        },
     })
     const client = agent.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
+    const uri = vscode.Uri.file(filePath)
     const content = await fspromises.readFile(filePath, 'utf8')
     const CURSOR = '/*CURSOR*/'
     it('returns non-empty context', async () => {
@@ -84,7 +90,7 @@ describe('BfgRetriever', async () => {
             globalStorageUri: vscode.Uri.file(paths.data),
         }
         client.notify('textDocument/didOpen', {
-            filePath,
+            uri: uri.toString(),
             content: content.replace(CURSOR, ''),
         })
 
@@ -92,12 +98,18 @@ describe('BfgRetriever', async () => {
 
         await bfgIndexingPromise
 
-        const document = agent.workspace.agentTextDocument({ filePath })
+        const document = agent.workspace.agentTextDocument(new TextDocumentWithUri(uri))
         assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)
         const position = document.positionAt(offset)
-        const docContext = getCurrentDocContext({ document, position, maxPrefixLength: 10_000, maxSuffixLength: 1_000 })
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 10_000,
+            maxSuffixLength: 1_000,
+            dynamicMultlilineCompletions: false,
+        })
         const maxChars = 1_000
         const maxMs = 100
 

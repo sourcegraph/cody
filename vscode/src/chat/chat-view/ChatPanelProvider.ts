@@ -121,6 +121,9 @@ export class ChatPanelProvider extends MessageProvider {
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
+            case 'embeddings/index':
+                this.contextProvider.localEmbeddingsIndexRepository()
+                break
             default:
                 this.handleError('Invalid request type from Webview Panel', 'system')
         }

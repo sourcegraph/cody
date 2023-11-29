@@ -15,6 +15,8 @@ export type Requests = {
     ]
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]
     'bfg/shutdown': [null, void]
+
+    'embeddings/hello': [null, string]
 }
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions

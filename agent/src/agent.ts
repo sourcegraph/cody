@@ -16,6 +16,7 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/tele
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { activate } from '../../vscode/src/extension.node'
+import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
@@ -30,6 +31,15 @@ const secretStorage = new Map<string, string>()
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
+    try {
+        const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
+        const gitdir = await fspromises.stat(gitdirPath)
+        if (gitdir.isDirectory()) {
+            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
+        }
+    } catch {
+        /* ignore */
+    }
     await activate({
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
@@ -107,15 +117,6 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
     debugHandler.messageEncoder.pipe(agent.messageDecoder)
     agent.messageEncoder.pipe(debugHandler.messageDecoder)
     const client = agent.clientForThisInstance()
-    const workspaceRoot = vscode.Uri.parse(clientInfo.workspaceRootUri)
-    try {
-        const gitdir = await fspromises.stat(path.join(workspaceRoot.fsPath, '.git'))
-        if (gitdir.isDirectory()) {
-            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
-        }
-    } catch {
-        /* ignore */
-    }
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
     return agent
@@ -208,17 +209,21 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
+            this.workspace.setActiveTextEditor(
+                newTextEditor(this.workspace.agentTextDocument(TextDocumentWithUri.fromDocument(document)))
+            )
         })
         this.registerNotification('textDocument/didOpen', document => {
-            this.workspace.addDocument(document)
-            const textDocument = this.workspace.agentTextDocument(document)
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            this.workspace.addDocument(documentWithUri)
+            const textDocument = this.workspace.agentTextDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
-            const textDocument = this.workspace.agentTextDocument(document)
-            this.workspace.addDocument(document)
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const textDocument = this.workspace.agentTextDocument(documentWithUri)
+            this.workspace.addDocument(documentWithUri)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
@@ -227,8 +232,9 @@ export class Agent extends MessageHandler {
             })
         })
         this.registerNotification('textDocument/didClose', document => {
-            this.workspace.deleteDocument(document.filePath)
-            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            this.workspace.deleteDocument(documentWithUri.uri)
+            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(documentWithUri))
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
@@ -287,9 +293,23 @@ export class Agent extends MessageHandler {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const document = this.workspace.getDocument(params.filePath)
+            const uri =
+                typeof params.uri === 'string'
+                    ? vscode.Uri.parse(params.uri)
+                    : params?.filePath
+                    ? vscode.Uri.file(params.filePath)
+                    : undefined
+            if (!uri) {
+                console.log(
+                    `No uri provided for autocomplete request ${JSON.stringify(
+                        params
+                    )}. To fix this problem, set the 'uri' property.`
+                )
+                return { items: [] }
+            }
+            const document = this.workspace.getDocument(uri)
             if (!document) {
-                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
+                console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
                 return { items: [] }
             }
 
@@ -297,7 +317,7 @@ export class Agent extends MessageHandler {
 
             try {
                 if (params.triggerKind === 'Invoke') {
-                    await provider.manuallyTriggerCompletion()
+                    await provider?.manuallyTriggerCompletion?.()
                 }
 
                 const result = await provider.provideInlineCompletionItems(

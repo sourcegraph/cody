@@ -28,7 +28,11 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
+import {
+    EnhancedContextSettings,
+    useEnhancedContextEnabled,
+    useEnhancedContextEventHandlers,
+} from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -93,13 +97,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         setAbortMessageInProgress(() => () => undefined)
     }, [abortMessageInProgressInternal, vscodeAPI])
 
+    const addEnhancedContext = useEnhancedContextEnabled()
+    const enhancedContextEventHandlers = useEnhancedContextEventHandlers()
+
     const onSubmit = useCallback(
-        (
-            text: string,
-            submitType: ChatSubmitType,
-            contextFiles?: Map<string, ContextFile>,
-            addEnhancedContext = true
-        ) => {
+        (text: string, submitType: ChatSubmitType, contextFiles?: Map<string, ContextFile>) => {
             const userContextFiles: ContextFile[] = []
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
@@ -119,8 +121,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 addEnhancedContext,
                 contextFiles: userContextFiles,
             })
+
+            // Automatically turn off enhance context when the user has submitted their first message.
+            if (addEnhancedContext && transcript.length < 2) {
+                enhancedContextEventHandlers.onEnabledChange(false)
+            }
         },
-        [vscodeAPI]
+        [vscodeAPI, enhancedContextEventHandlers, addEnhancedContext, transcript.length]
     )
 
     const onCurrentChatModelChange = useCallback(
@@ -243,7 +250,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
-            EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
+            EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
         />
     )
 }
@@ -324,11 +331,10 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 }) => (
     <VSCodeButton
         className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
-        appearance="primary"
         type="button"
         disabled={disabled}
         onClick={onAbortMessageInProgress ?? onClick}
-        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? 'Message is empty' : 'Send Message'}
+        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? '' : 'Send Message'}
     >
         {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
     </VSCodeButton>
