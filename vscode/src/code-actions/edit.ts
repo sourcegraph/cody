@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+
 export class EditCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
 
@@ -36,7 +38,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
             arguments: [
                 {
                     range: selection ? new vscode.Range(selection.start, selection.end) : undefined,
-                    intent: 'edit',
+                    intent: 'edit' satisfies FixupIntent,
                     document,
                 },
                 source,

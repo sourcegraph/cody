@@ -35,6 +35,7 @@ const docContext = getCurrentDocContext({
     position,
     maxPrefixLength: 100,
     maxSuffixLength: 100,
+    dynamicMultlilineCompletions: false,
 })
 
 const defaultOptions = {

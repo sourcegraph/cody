@@ -34,6 +34,7 @@ const defaultRequestParams: RequestParams = {
         position,
         maxPrefixLength: 100,
         maxSuffixLength: 100,
+        dynamicMultlilineCompletions: false,
     }),
     selectedCompletionInfo: undefined,
 }

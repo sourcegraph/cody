@@ -88,7 +88,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
-        experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
+        commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
@@ -106,6 +106,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
         autocompleteExperimentalGraphContext,
+        autocompleteExperimentalDynamicMultilineCompletions: config.get(
+            CONFIG_KEY.autocompleteExperimentalDynamicMultilineCompletions,
+            false
+        ),
 
         // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
         inlineChat:

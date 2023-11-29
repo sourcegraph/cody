@@ -1,4 +1,4 @@
-import opentelemetry, { SpanStatusCode } from '@opentelemetry/api'
+import opentelemetry, { context, propagation, SpanStatusCode } from '@opentelemetry/api'
 
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'
@@ -35,10 +35,10 @@ export function startAsyncSpan<T>(name: string, fn: () => T | Promise<T>): Promi
  * Create a Trace Context compliant traceparent header value.
  * c.f. https://www.w3.org/TR/trace-context/#examples-of-http-traceparent-headers
  */
-export function getTraceparent(): string | null {
-    const activeIds = getActiveTraceAndSpanId()
-    if (activeIds) {
-        return `00-${activeIds.traceId}-${activeIds.spanId}-01`
-    }
-    return null
+export function addTraceparent(headers: Headers): void {
+    propagation.inject(context.active(), headers, {
+        set(carrier, key, value) {
+            carrier.set(key, value)
+        },
+    })
 }

@@ -7,7 +7,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
@@ -15,10 +15,11 @@ import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-sha
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
+import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
+import { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
-import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
+import { gitDirectoryUri, repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
-import { secretStorage } from '../services/SecretStorageProvider'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
@@ -40,8 +41,8 @@ export type Config = Pick<
     | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
-    | 'experimentalCommandLenses'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
     | 'inlineChat'
@@ -64,6 +65,11 @@ export class ContextProvider implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
+    private localEmbeddings: LocalEmbeddingsController | undefined = undefined
+
+    private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
+    private statusEmbeddings: vscode.Disposable | undefined = undefined
+
     constructor(
         public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
@@ -83,6 +89,13 @@ export class ContextProvider implements vscode.Disposable {
             }),
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
+            }),
+            this.statusAggregator,
+            this.statusAggregator.onDidChangeStatus(_ => {
+                void this.webview?.postMessage({
+                    type: 'enhanced-context',
+                    context: { groups: this.statusAggregator.status },
+                })
             })
         )
     }
@@ -91,9 +104,23 @@ export class ContextProvider implements vscode.Disposable {
         return this.codebaseContext
     }
 
+    // Initializes context provider state. This blocks extension activation and
+    // chat startup. Despite being called 'init', this is called multiple times:
+    // - Once on extension activation.
+    // - With every MessageProvider, including ChatPanelProvider.
     public async init(): Promise<void> {
+        this.initLocalEmbeddings()
         await this.updateCodebaseContext()
         await this.publishContextStatus()
+    }
+
+    private initLocalEmbeddings(): void {
+        // TODO: Multi-window chat sends multiple calls to `init`. Remove this
+        // guard when that is fixed.
+        if (this.localEmbeddings) {
+            return
+        }
+        // this.localEmbeddings = this.platform.createLocalEmbeddingsController?.()
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -129,7 +156,8 @@ export class ContextProvider implements vscode.Disposable {
             this.editor,
             this.chat,
             this.platform,
-            await this.getEmbeddingClientCandidates(this.config)
+            await this.getEmbeddingClientCandidates(this.config),
+            this.localEmbeddings
         )
         if (!codebaseContext) {
             return
@@ -140,6 +168,22 @@ export class ContextProvider implements vscode.Disposable {
         }
 
         this.codebaseContext = codebaseContext
+
+        // TODO: CodebaseContext should be a CodebaseContextStatusProvider,
+        // but aggregator uses vscode EventEmitter and can't live in lib/shared.
+        // After #1717 move the status aggregation close to the context.
+        this.statusEmbeddings?.dispose()
+        if (this.localEmbeddings && !this.codebaseContext.embeddings) {
+            // Add status from local embeddings when:
+            // - CodebaseContext has *no* embeddings. This lets us display the
+            //   promotion to set up local embeddings.
+            // - CodebaseContext has local embeddings (in this case,
+            //   this.codebaseContext.embeddings will be null.)
+            this.statusEmbeddings = this.statusAggregator.addProvider(this.localEmbeddings)
+        } else if (this.codebaseContext.embeddings) {
+            this.statusEmbeddings = this.statusAggregator.addProvider(this.codebaseContext.embeddings)
+        }
+
         await this.publishContextStatus()
     }
 
@@ -160,7 +204,8 @@ export class ContextProvider implements vscode.Disposable {
                 this.editor,
                 this.chat,
                 this.platform,
-                await this.getEmbeddingClientCandidates(newConfig)
+                await this.getEmbeddingClientCandidates(newConfig),
+                this.localEmbeddings
             )
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
@@ -172,8 +217,6 @@ export class ContextProvider implements vscode.Disposable {
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
         const isAppEvent = isLocalApp(authStatus.endpoint || '') ? '.app' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
-        // e.g. auth:app:connected, auth:app:disconnected, auth:failed
-        // this.sendEvent(ContextEvent.Auth, isAppEvent, eventValue)
         switch (ContextEvent.Auth) {
             case 'auth':
                 telemetryService.log(
@@ -192,6 +235,7 @@ export class ContextProvider implements vscode.Disposable {
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
             const editorContext = this.editor.getActiveTextEditor()
+            // TODO(dpc): Remove this when enhanced context status encapsulates this information.
             await this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
@@ -247,31 +291,6 @@ export class ContextProvider implements vscode.Disposable {
         this.disposables = []
     }
 
-    // If set, a client to talk to app directly.
-    private appClient?: SourcegraphGraphQLAPIClient
-
-    // Tries to get a GraphQL client config to talk to app. If there's no app
-    // token, we can't do that; in that case, returns `undefined`. Caches the
-    // client.
-    private async maybeAppClient(): Promise<SourcegraphGraphQLAPIClient | undefined> {
-        if (this.appClient) {
-            return this.appClient
-        }
-
-        // App access tokens are written to secret storage by LocalAppDetector.
-        // Retrieve this token here.
-        const accessToken = await secretStorage.get(LOCAL_APP_URL.href)
-        if (!accessToken) {
-            return undefined
-        }
-        const clientConfig = {
-            serverEndpoint: LOCAL_APP_URL.href,
-            accessToken,
-            customHeaders: {},
-        }
-        return (this.appClient = new SourcegraphGraphQLAPIClient(clientConfig))
-    }
-
     public async hackGetEmbeddingClientCandidates(
         config: GraphQLAPIClientConfig
     ): Promise<SourcegraphGraphQLAPIClient[]> {
@@ -280,21 +299,12 @@ export class ContextProvider implements vscode.Disposable {
 
     // Gets a list of GraphQL clients to interrogate for embeddings
     // availability.
-    private async getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
-        const result = [new SourcegraphGraphQLAPIClient(config)]
-        if (isLocalApp(config.serverEndpoint)) {
-            // We will just talk to app.
-            return result
-        }
-        // The other client is talking to non-app (dotcom, etc.) so create a
-        // client to talk to app.
-        const appClient = await this.maybeAppClient()
-        if (appClient) {
-            // By putting the app client first, we prefer to talk to app if
-            // both app and server have embeddings.
-            result.unshift(appClient)
-        }
-        return result
+    private getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
+        return Promise.resolve([new SourcegraphGraphQLAPIClient(config)])
+    }
+
+    public localEmbeddingsIndexRepository(): void {
+        void this.localEmbeddings?.index()
     }
 }
 
@@ -305,9 +315,19 @@ export function hackGetCodebaseContext(
     editor: Editor,
     chatClient: ChatClient,
     platform: PlatformContext,
-    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[],
+    localEmbeddings: LocalEmbeddingsController | undefined
 ): Promise<CodebaseContext | null> {
-    return getCodebaseContext(config, rgPath, symf, editor, chatClient, platform, embeddingsClientCandidates)
+    return getCodebaseContext(
+        config,
+        rgPath,
+        symf,
+        editor,
+        chatClient,
+        platform,
+        embeddingsClientCandidates,
+        localEmbeddings
+    )
 }
 
 /**
@@ -324,7 +344,8 @@ async function getCodebaseContext(
     editor: Editor,
     chatClient: ChatClient,
     platform: PlatformContext,
-    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[],
+    localEmbeddings: LocalEmbeddingsController | undefined
 ): Promise<CodebaseContext | null> {
     const workspaceRoot = editor.getWorkspaceRootUri()
     if (!workspaceRoot) {
@@ -337,8 +358,16 @@ async function getCodebaseContext(
         return null
     }
 
-    // Find an embeddings client
-    let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
+    // TODO: When SimpleChatContextProvider stops using hackGetCodebaseContext,
+    // it must start sending localEmbeddings.load and setAccessToken directly to
+    // the embeddings controller.
+    let [embeddingsSearch, hasLocalEmbeddings, _] = await Promise.all([
+        // Find a embeddings clients
+        EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase, workspaceRoot.fsPath),
+        // Instruct local embeddings to load the index for this codebase, if it exists
+        localEmbeddings?.load(gitDirectoryUri(workspaceRoot)?.fsPath),
+        config.accessToken ? localEmbeddings?.setAccessToken(config.accessToken) : Promise.resolve(undefined),
+    ])
     if (isError(embeddingsSearch)) {
         logDebug(
             'ContextProvider:getCodebaseContext',
@@ -350,10 +379,13 @@ async function getCodebaseContext(
     return new CodebaseContext(
         config,
         codebase,
-        embeddingsSearch || null,
+        // Use embeddings search if there are no local embeddings.
+        (!hasLocalEmbeddings && embeddingsSearch) || null,
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
+        // Use local embeddings if we have them.
+        (hasLocalEmbeddings && localEmbeddings) || null,
         symf,
         undefined
     )

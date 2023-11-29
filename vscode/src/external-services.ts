@@ -65,7 +65,9 @@ export async function configureExternalServices(
         )
     }
     const embeddingsSearch =
-        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+        repoId && !isError(repoId)
+            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
+            : null
 
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
@@ -74,6 +76,7 @@ export async function configureExternalServices(
         embeddingsSearch,
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        null,
         null,
         symf,
         undefined

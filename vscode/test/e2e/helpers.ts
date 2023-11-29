@@ -133,7 +133,7 @@ function escapeToPath(text: string): string {
 export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
-        'cody.experimental.commandLenses': true,
+        'cody.commandCodeLenses': true,
         'cody.editorTitleCommandIcon': true,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory

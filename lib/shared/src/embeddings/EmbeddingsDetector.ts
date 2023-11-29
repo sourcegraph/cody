@@ -11,11 +11,12 @@ export const EmbeddingsDetector = {
     // fail, returns the first error.
     async newEmbeddingsSearchClient(
         clients: readonly SourcegraphGraphQLAPIClient[],
-        codebase: string
+        codebase: string,
+        codebaseLocalName: string
     ): Promise<SourcegraphEmbeddingsSearchClient | Error | undefined> {
         let firstError: Error | undefined
         let allFailed = true
-        for (const promise of clients.map(client => this.detectEmbeddings(client, codebase))) {
+        for (const promise of clients.map(client => this.detectEmbeddings(client, codebase, codebaseLocalName))) {
             const result = await promise
             const isError = result instanceof Error
             allFailed &&= isError
@@ -43,12 +44,15 @@ export const EmbeddingsDetector = {
     // - An error.
     async detectEmbeddings(
         client: SourcegraphGraphQLAPIClient,
-        codebase: string
+        codebase: string,
+        codebaseLocalName: string
     ): Promise<(() => SourcegraphEmbeddingsSearchClient) | Error | undefined> {
         const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
         if (repoId instanceof Error) {
             return repoId
         }
-        return repoId ? () => new SourcegraphEmbeddingsSearchClient(client, repoId) : undefined
+        return repoId
+            ? () => new SourcegraphEmbeddingsSearchClient(client, codebase, repoId, codebaseLocalName)
+            : undefined
     },
 }
