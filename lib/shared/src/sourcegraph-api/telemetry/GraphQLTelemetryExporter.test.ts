@@ -2,16 +2,22 @@ import { describe, expect, it } from 'vitest'
 
 import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { ExportMode, handleExportModeTransforms } from './GraphQLTelemetryExporter'
+import { handleExportModeTransforms } from './GraphQLTelemetryExporter'
 
 describe('handleExportModeTransforms', () => {
-    it('pre-5.2.2', () => {
+    it('5.2.0-5.2.1', () => {
         const events: TelemetryEventInput[] = [
             {
                 action: 'Foo',
                 feature: 'Bar',
                 parameters: {
                     version: 0,
+                    metadata: [
+                        {
+                            key: 'foo',
+                            value: 1.234,
+                        },
+                    ],
                     privateMetadata: {
                         foo: 'bar',
                     },
@@ -22,35 +28,65 @@ describe('handleExportModeTransforms', () => {
 
         handleExportModeTransforms('5.2.0-5.2.1', events)
 
+        // Modified
         expect(events[0].parameters.privateMetadata).toBeUndefined()
+        expect(events[0].parameters.metadata?.pop()?.value).toBe(1)
     })
 
-    it('5.2.0 to 5.2.4', () => {
-        const testModes: ExportMode[] = ['5.2.0-5.2.1', '5.2.2-5.2.3']
-        for (const mode of testModes) {
-            const events: TelemetryEventInput[] = [
-                {
-                    action: 'Foo',
-                    feature: 'Bar',
-                    parameters: {
-                        version: 0,
-                        metadata: [
-                            {
-                                key: 'foo',
-                                value: 1.234,
-                            },
-                        ],
-                        privateMetadata: {
-                            foo: 'bar',
+    it('5.2.2-5.2.3', () => {
+        const events: TelemetryEventInput[] = [
+            {
+                action: 'Foo',
+                feature: 'Bar',
+                parameters: {
+                    version: 0,
+                    metadata: [
+                        {
+                            key: 'foo',
+                            value: 1.234,
                         },
+                    ],
+                    privateMetadata: {
+                        foo: 'bar',
                     },
-                    source: { client: 'vscode', clientVersion: '1.2.3' },
                 },
-            ]
+                source: { client: 'vscode', clientVersion: '1.2.3' },
+            },
+        ]
 
-            handleExportModeTransforms(mode, events)
+        handleExportModeTransforms('5.2.2-5.2.3', events)
 
-            expect(events[0].parameters.metadata?.pop()?.value).toBe(1)
-        }
+        // Modified
+        expect(events[0].parameters.metadata?.pop()?.value).toBe(1)
+        // Not modified
+        expect(events[0].parameters.privateMetadata).toBeDefined()
+    })
+
+    it('5.2.4+', () => {
+        const events: TelemetryEventInput[] = [
+            {
+                action: 'Foo',
+                feature: 'Bar',
+                parameters: {
+                    version: 0,
+                    metadata: [
+                        {
+                            key: 'foo',
+                            value: 1.234,
+                        },
+                    ],
+                    privateMetadata: {
+                        foo: 'bar',
+                    },
+                },
+                source: { client: 'vscode', clientVersion: '1.2.3' },
+            },
+        ]
+
+        handleExportModeTransforms('5.2.4+', events)
+
+        // Not modified
+        expect(events[0].parameters.metadata?.pop()?.value).toBe(1.234)
+        expect(events[0].parameters.privateMetadata).toBeDefined()
     })
 })

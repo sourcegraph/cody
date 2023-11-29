@@ -3,8 +3,6 @@ import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 import { isError } from '../../utils'
 import { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
 
-export type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2-5.2.3' | '5.2.3+'
-
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
  * framework: https://docs.sourcegraph.com/dev/background-information/telemetry
@@ -50,13 +48,13 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
 
             const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
             if (insiderBuild) {
-                this.exportMode = '5.2.3+' // use full export, set to 'legacy' to test backcompat mode
+                this.exportMode = '5.2.4+' // use full export, set to 'legacy' to test backcompat mode
             } else if (siteVersion === '5.2.0' || siteVersion === '5.2.1') {
                 this.exportMode = '5.2.0-5.2.1' // special handling required for https://github.com/sourcegraph/sourcegraph/pull/57719
             } else if (siteVersion === '5.2.2' || siteVersion === '5.2.3') {
                 this.exportMode = '5.2.2-5.2.3' // special handling required for https://github.com/sourcegraph/sourcegraph/pull/58643
             } else if (siteVersion > '5.2.2') {
-                this.exportMode = '5.2.3+'
+                this.exportMode = '5.2.4+'
             } else {
                 this.exportMode = 'legacy'
             }
@@ -138,6 +136,8 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
     }
 }
 
+type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2-5.2.3' | '5.2.4+'
+
 /**
  * handleExportModeTransforms mutates events in-place based on any workarounds
  * required for exportMode.
@@ -165,7 +165,6 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
             event.parameters.metadata?.forEach(entry => {
                 entry.value = Math.round(entry.value)
             })
-            event.parameters.privateMetadata = undefined
         })
     }
 }
