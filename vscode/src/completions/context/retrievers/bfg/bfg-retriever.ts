@@ -1,8 +1,6 @@
-import * as child_process from 'node:child_process'
-
 import * as vscode from 'vscode'
 
-import { downloadBfg } from '../../../../graph/bfg/download-bfg'
+import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import { Repository } from '../../../../repository/builtinGitExtension'
@@ -19,10 +17,14 @@ export let bfgIndexingPromise = Promise.resolve<void>(undefined)
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
+    private awaitIndexing: boolean
     private didFailLoading = false
     // Keys are repository URIs, values are revisions (commit hashes).
     private indexedRepositoryRevisions = new Map<string, string>()
     constructor(private context: vscode.ExtensionContext) {
+        this.awaitIndexing = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.experimental.cody-engine.await-indexing', false)
         this.loadedBFG = this.loadBFG()
 
         this.loadedBFG.then(
@@ -72,6 +74,7 @@ export class BfgRetriever implements ContextRetriever {
         docContext,
         hints,
     }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+        await this.loadedBFG
         if (this.didFailLoading) {
             return []
         }
@@ -79,6 +82,9 @@ export class BfgRetriever implements ContextRetriever {
         if (!bfg.isAlive()) {
             logDebug('CodyEngine', 'not alive')
             return []
+        }
+        if (this.awaitIndexing) {
+            await bfgIndexingPromise
         }
 
         try {
@@ -147,34 +153,7 @@ export class BfgRetriever implements ContextRetriever {
     }
 
     private async doLoadBFG(reject: (reason?: any) => void): Promise<MessageHandler> {
-        const bfg = new MessageHandler()
-        const codyrpc = await downloadBfg(this.context)
-        if (!codyrpc) {
-            throw new Error(
-                'Failed to download BFG binary. To fix this problem, set the "cody.experimental.cody-engine.path" configuration to the path of your BFG binary'
-            )
-        }
-        const isVerboseDebug = vscode.workspace.getConfiguration().get<boolean>('cody.debug.verbose', false)
-        const child = child_process.spawn(codyrpc, {
-            stdio: 'pipe',
-            env: {
-                VERBOSE_DEBUG: `${isVerboseDebug}`,
-                RUST_BACKTRACE: isVerboseDebug ? '1' : '0',
-            },
-        })
-        child.stderr.on('data', chunk => {
-            logDebug('CodyEngine', 'stderr', chunk.toString())
-        })
-        child.on('disconnect', () => reject())
-        child.on('close', () => reject())
-        child.on('error', error => reject(error))
-        child.on('exit', code => {
-            bfg.exit()
-            reject(code)
-        })
-        child.stderr.pipe(process.stderr)
-        child.stdout.pipe(bfg.messageDecoder)
-        bfg.messageEncoder.pipe(child.stdin)
+        const bfg = await spawnBfg(this.context, reject)
         await bfg.request('bfg/initialize', { clientName: 'vscode' })
         return bfg
     }

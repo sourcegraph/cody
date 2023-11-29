@@ -11,9 +11,10 @@ import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/
 
 import * as agent from './agent-protocol'
 import * as bfg from './bfg-protocol'
+import * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests
-type Notifications = bfg.Notifications & agent.Notifications
+type Requests = bfg.Requests & agent.Requests & embeddings.Requests
+type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
 
 // This file is a standalone implementation of JSON-RPC for Node.js
 // ReadStream/WriteStream, which conventionally map to stdin/stdout.

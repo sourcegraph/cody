@@ -68,9 +68,15 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.init()
                 break
             case 'submit':
-                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
+                return this.onHumanMessageSubmitted(
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
             case 'edit':
                 this.transcript.removeLastInteraction()
+                // TODO: This should replay the submitted context files and/or enhanced context fetching
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
@@ -224,7 +230,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         contextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', {
+            verbose: { text, submitType, addEnhancedContext },
+        })
 
         MessageProvider.inputHistory.push(text)
 

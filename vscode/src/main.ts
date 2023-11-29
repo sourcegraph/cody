@@ -152,6 +152,7 @@ const register = async (
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
+    const localEmbeddings = platform.createLocalEmbeddingsController?.()
     // Hack to get embeddings search client
     const codebaseContext = await hackGetCodebaseContext(
         initialConfig,
@@ -160,7 +161,8 @@ const register = async (
         editor,
         chatClient,
         platform,
-        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig)
+        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
+        localEmbeddings
     )
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
 
@@ -186,7 +188,8 @@ const register = async (
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsSearch
+        embeddingsSearch,
+        localEmbeddings || null
     )
 
     disposables.push(new CodeActionProvider({ contextProvider }))

@@ -1,17 +1,16 @@
-import { Position, TextDocument } from 'vscode'
+import { TextDocument } from 'vscode'
 
 import { DocumentContext } from '../get-current-doc-context'
+import { completionPostProcessLogger } from '../post-process-logger'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
 import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
-import { truncateParsedCompletionByNextSibling } from './truncate-parsed-completion'
+import { truncateParsedCompletion } from './truncate-parsed-completion'
 
 export interface ParseAndTruncateParams {
     document: TextDocument
-    position: Position
     docContext: DocumentContext
-    multiline: boolean
 }
 
 export function parseAndTruncateCompletion(
@@ -20,18 +19,20 @@ export function parseAndTruncateCompletion(
 ): InlineCompletionItemWithAnalytics {
     const {
         document,
-        multiline,
         docContext,
-        docContext: { prefix },
+        docContext: { multilineTrigger, completionPostProcessId, prefix },
     } = params
 
-    const insertTextBeforeTruncation = multiline ? normalizeStartLine(completion, prefix) : completion
+    const multiline = Boolean(multilineTrigger)
+    const insertTextBeforeTruncation = (multiline ? normalizeStartLine(completion, prefix) : completion).trimEnd()
 
     const parsed = parseCompletion({
         completion: { insertText: insertTextBeforeTruncation },
         document,
         docContext,
     })
+
+    completionPostProcessLogger.info({ completionPostProcessId, stage: 'parsed', text: parsed.insertText })
 
     if (parsed.insertText === '') {
         return parsed
@@ -48,6 +49,12 @@ export function parseAndTruncateCompletion(
         const truncatedLineCount = truncationResult.insertText.split('\n').length
 
         parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
+        completionPostProcessLogger.info({
+            completionPostProcessId,
+            stage: 'lineTruncatedCount',
+            text: String(parsed.lineTruncatedCount),
+        })
+
         parsed.insertText = truncationResult.insertText
         parsed.truncatedWith = truncationResult.truncatedWith
     }
@@ -72,7 +79,7 @@ export function truncateMultilineBlock(params: TruncateMultilineBlockParams): Tr
     if (parsed.tree) {
         return {
             truncatedWith: 'tree-sitter',
-            insertText: truncateParsedCompletionByNextSibling({
+            insertText: truncateParsedCompletion({
                 completion: parsed,
                 docContext,
                 document,

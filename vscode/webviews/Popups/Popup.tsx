@@ -8,44 +8,32 @@ export interface PopupOpenProps {
     onDismiss: () => void
 }
 
-interface PopupProps extends PopupOpenProps {
+interface PopupFrameProps {
+    classNames?: string[]
+    actionButtons?: React.ReactNode
+}
+
+interface PopupProps extends Omit<PopupFrameProps, 'classNames'>, PopupOpenProps {
     className?: string
     title: React.ReactNode
     text: React.ReactNode
     linkText: React.ReactNode
     linkHref: string
     linkTarget?: '_blank'
-    actionButtons?: React.ReactNode
 }
 
-// Note, if the popup's parent is interactive, the button's event handlers should prevent event
-// propagation.
-export const Popup: React.FunctionComponent<React.PropsWithChildren<PopupProps>> = ({
-    className,
-    title,
-    text,
-    linkText,
-    linkHref,
-    linkTarget,
+export const PopupFrame: React.FunctionComponent<React.PropsWithChildren<PopupFrameProps & PopupOpenProps>> = ({
     actionButtons,
-    onDismiss,
+    classNames: extraClassNames,
     isOpen,
+    onDismiss,
+    children,
 }) =>
     isOpen && (
         <>
-            <div className={classNames(styles.popup, className)}>
+            <div className={classNames(styles.popup, ...(extraClassNames || []))}>
                 <div className={styles.row}>
-                    <div className={styles.noticeText}>
-                        <h1>{title}</h1>
-                        {text && <p>{text}</p>}
-                        {linkText && linkHref && (
-                            <p>
-                                <VSCodeLink href={linkHref} target={linkTarget}>
-                                    {linkText}
-                                </VSCodeLink>
-                            </p>
-                        )}
-                    </div>
+                    {children}
                     <div className={styles.noticeClose}>
                         <VSCodeButton appearance="icon" onClick={onDismiss}>
                             <i className="codicon codicon-close" />
@@ -59,3 +47,36 @@ export const Popup: React.FunctionComponent<React.PropsWithChildren<PopupProps>>
             <div className={styles.pointyBit} />
         </>
     )
+
+// Note, if the popup's parent is interactive, the button's event handlers should prevent event
+// propagation.
+export const Popup: React.FunctionComponent<React.PropsWithChildren<PopupProps>> = ({
+    className,
+    title,
+    text,
+    linkText,
+    linkHref,
+    linkTarget,
+    actionButtons,
+    onDismiss,
+    isOpen,
+}) => (
+    <PopupFrame
+        classNames={className ? [className] : []}
+        isOpen={isOpen}
+        onDismiss={onDismiss}
+        actionButtons={actionButtons}
+    >
+        <div className={styles.noticeText}>
+            <h1>{title}</h1>
+            {text && <p>{text}</p>}
+            {linkText && linkHref && (
+                <p>
+                    <VSCodeLink href={linkHref} target={linkTarget}>
+                        {linkText}
+                    </VSCodeLink>
+                </p>
+            )}
+        </div>
+    </PopupFrame>
+)

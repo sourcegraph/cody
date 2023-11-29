@@ -8,6 +8,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
+import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { AuthStatus } from '../protocol'
@@ -33,7 +34,8 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null
+        private embeddingsSearch: EmbeddingsSearch | null,
+        private localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatManager:constructor', 'init')
         this.options = { extensionUri, ...options }
@@ -202,7 +204,12 @@ export class ChatManager implements vscode.Disposable {
 
     private createChatPanelsManger(): void {
         if (!this.chatPanelsManager) {
-            this.chatPanelsManager = new ChatPanelsManager(this.options, this.chatClient, this.embeddingsSearch)
+            this.chatPanelsManager = new ChatPanelsManager(
+                this.options,
+                this.chatClient,
+                this.embeddingsSearch,
+                this.localEmbeddings
+            )
             telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
         }
     }

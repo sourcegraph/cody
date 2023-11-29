@@ -3,7 +3,7 @@ import fetch from 'isomorphic-fetch'
 import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
-import { getTraceparent, startAsyncSpan } from '../../tracing'
+import { addTraceparent, startAsyncSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
 
@@ -636,10 +636,8 @@ export class SourcegraphGraphQLAPIClient {
         } else if (this.anonymousUserID) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
-        const traceparent = getTraceparent()
-        if (traceparent) {
-            headers.set('traceparent', traceparent)
-        }
+
+        addTraceparent(headers)
         addCustomUserAgent(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
@@ -664,10 +662,7 @@ export class SourcegraphGraphQLAPIClient {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         const headers = new Headers()
         addCustomUserAgent(headers)
-        const traceparent = getTraceparent()
-        if (traceparent) {
-            headers.set('traceparent', traceparent)
-        }
+        addTraceparent(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 

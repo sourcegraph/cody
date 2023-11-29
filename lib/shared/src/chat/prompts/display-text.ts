@@ -39,7 +39,8 @@ export function createDisplayTextWithFileSelection(
     const displayText = `${humanInput} @${fileName}`
     const fsPath = selection?.fileUri?.fsPath
     const startLine = selection?.selectionRange?.start?.line
-    if (!fsPath || !selection?.selectionRange?.end?.line) {
+    const endLine = selection?.selectionRange?.end?.line
+    if (!fsPath || !endLine) {
         return displayText
     }
 
