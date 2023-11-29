@@ -8,14 +8,20 @@ import { promisify } from 'node:util'
 import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
-import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
+import { getCurrentVSCodeDocTextByURI } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context'
+import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextResult, IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
 
+import { getActiveEditor } from '../editor/active-editor'
 import { logDebug } from '../log'
 
 import { getSymfPath } from './download-symf'
 
 const execFile = promisify(_execFile)
+
+const source: ContextFileSource = 'symf'
 
 export class SymfRunner implements IndexedKeywordContextFetcher {
     // The root of all symf index directories
@@ -121,6 +127,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             return results
         }
         throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
+    }
+
+    public async getSearchContext(query: string): Promise<ContextResult[]> {
+        const scopeDir = getScopeDirs()
+        const results = await this.getResults(query, scopeDir)
+        return toContextResult(await Promise.all(results))
     }
 
     public async deleteIndex(scopeDir: string): Promise<void> {
@@ -321,6 +333,46 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     }
 }
 
+export async function toContextResult(symResults: Result[][]): Promise<ContextResult[]> {
+    const contextResults: ContextResult[] = []
+    for (const results of symResults) {
+        for (const result of results) {
+            const uri = URI.file(result.file)
+            const fileName = vscode.workspace.asRelativePath(result.file)
+            const vscodeRange = new vscode.Range(
+                result.range.startPoint.row,
+                result.range.startPoint.col,
+                result.range.endPoint.row,
+                result.range.endPoint.col
+            )
+
+            const content = await getCurrentVSCodeDocTextByURI(uri, vscodeRange)
+            if (vscodeRange.isEmpty || !content.trim()) {
+                continue
+            }
+
+            contextResults.push({
+                fileName,
+                revision: result.type,
+                content,
+                source,
+                uri,
+                range: {
+                    start: {
+                        line: vscodeRange.start.line,
+                        character: vscodeRange.start.character,
+                    },
+                    end: {
+                        line: vscodeRange.end.line,
+                        character: vscodeRange.end.character,
+                    },
+                },
+            } satisfies ContextResult)
+        }
+    }
+    return contextResults
+}
+
 async function fileExists(filePath: string): Promise<boolean> {
     try {
         await fs.promises.access(filePath, fs.constants.F_OK)
@@ -362,6 +414,7 @@ function parseSymfStdout(stdout: string): Result[] {
                     col: endColumn,
                 },
             },
+            source,
         }
     })
 }
@@ -425,4 +478,25 @@ function toSymfError(error: unknown): Error {
         errorMessage = `symf index creation failed: ${error}`
     }
     return new EvalError(errorMessage)
+}
+
+function getScopeDirs(): string[] {
+    const folders = vscode.workspace.workspaceFolders
+    if (!folders) {
+        return []
+    }
+    const uri = getActiveEditor()?.document.uri
+    if (!uri) {
+        return folders.map(f => f.uri.fsPath)
+    }
+    const currentFolder = vscode.workspace.getWorkspaceFolder(uri)
+    if (!currentFolder) {
+        return folders.map(f => f.uri.fsPath)
+    }
+
+    return [
+        currentFolder.uri.fsPath,
+        // TODO: maybe support multiple workspace folders
+        // ...folders.filter(folder => folder.uri.toString() !== currentFolder.uri.toString()).map(f => f.uri.fsPath),
+    ]
 }

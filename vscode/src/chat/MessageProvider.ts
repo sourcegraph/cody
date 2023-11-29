@@ -424,6 +424,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const contextSummary = {
             embeddings: 0,
+            symf: 0,
             local: 0,
             user: 0, // context added by user with @ command
         }
@@ -456,6 +457,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 contextFiles.map(file => {
                     if (file.source === 'embeddings') {
                         contextSummary.embeddings++
+                    } else if (file.source === 'symf') {
+                        contextSummary.symf++
                     } else if (file.source === 'user') {
                         contextSummary.user++
                     } else {
