@@ -17,6 +17,7 @@ function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletio
         maxPrefixLength: 100,
         maxSuffixLength: 100,
         context,
+        dynamicMultlilineCompletions: false,
     })
 }
 
@@ -32,6 +33,10 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: 'function myFunction() {',
             nextNonEmptyLine: '',
             multilineTrigger: '{',
+            multilineTriggerPosition: {
+                character: 23,
+                line: 0,
+            },
             injectedPrefix: null,
             position: { character: 2, line: 1 },
         })
@@ -48,6 +53,10 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: 'if (true) {',
             nextNonEmptyLine: '}',
             multilineTrigger: '{',
+            multilineTriggerPosition: {
+                character: 11,
+                line: 1,
+            },
             injectedPrefix: null,
             position: { character: 2, line: 2 },
         })
@@ -64,6 +73,10 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: '',
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
+            multilineTriggerPosition: {
+                character: 13,
+                line: 0,
+            },
             injectedPrefix: null,
             position: { character: 13, line: 0 },
         })
@@ -80,6 +93,10 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: 'console.log(1337);',
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
+            multilineTriggerPosition: {
+                character: 13,
+                line: 1,
+            },
             injectedPrefix: null,
             position: { character: 13, line: 1 },
         })
@@ -107,6 +124,7 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: '',
             nextNonEmptyLine: '',
             multilineTrigger: null,
+            multilineTriggerPosition: null,
             injectedPrefix: 'ssert',
             position: { character: 9, line: 0 },
         })
@@ -135,6 +153,7 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: '// some line before',
             nextNonEmptyLine: '',
             multilineTrigger: null,
+            multilineTriggerPosition: null,
             injectedPrefix: 'log',
             position: { character: 8, line: 1 },
         })
@@ -162,6 +181,7 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: '',
             nextNonEmptyLine: '',
             multilineTrigger: null,
+            multilineTriggerPosition: null,
             injectedPrefix: null,
             position: { character: 7, line: 0 },
         })
@@ -191,6 +211,7 @@ describe('getCurrentDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
+            dynamicMultlilineCompletions: false,
         })
         const contextRange = getContextRange(document, docContext)
 
@@ -206,5 +227,20 @@ describe('getCurrentDocContext', () => {
             },
           }
         `)
+    })
+
+    it('detect the multiline trigger for python with `dynamicMultlilineCompletions` enabled', () => {
+        const { document, position } = documentAndPosition('def greatest_common_divisor(a, b):█', 'python')
+
+        const { multilineTrigger, multilineTriggerPosition } = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            dynamicMultlilineCompletions: true,
+        })
+
+        expect(multilineTrigger).toBe(':')
+        expect(multilineTriggerPosition).toEqual({ line: 0, character: 34 })
     })
 })

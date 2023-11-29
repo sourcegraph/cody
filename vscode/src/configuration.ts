@@ -106,6 +106,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
         autocompleteExperimentalGraphContext,
+        autocompleteExperimentalDynamicMultilineCompletions: config.get(
+            CONFIG_KEY.autocompleteExperimentalDynamicMultilineCompletions,
+            false
+        ),
 
         // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
         inlineChat:
