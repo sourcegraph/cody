@@ -36,7 +36,7 @@ export async function spawnBfg(
         bfg.exit()
         reject(code)
     })
-    child.stderr.pipe(process.stdout)
+    child.stderr.pipe(process.stderr)
     child.stdout.pipe(bfg.messageDecoder)
     bfg.messageEncoder.pipe(child.stdin)
     return bfg
