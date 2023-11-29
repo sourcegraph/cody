@@ -15,10 +15,15 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
 }
 
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
-    private readonly service: Promise<MessageHandler>
+    private service: Promise<MessageHandler> | undefined
 
-    constructor(context: vscode.ExtensionContext) {
-        this.service = this.spawnAndBindService(context)
+    constructor(private readonly context: vscode.ExtensionContext) {}
+
+    private getService(): Promise<MessageHandler> {
+        if (!this.service) {
+            this.service = this.spawnAndBindService(this.context)
+        }
+        return this.service
     }
 
     private async spawnAndBindService(context: vscode.ExtensionContext): Promise<MessageHandler> {
@@ -124,7 +129,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
         this.lastAccessToken = token
         // TODO: Make the cody-engine reply to set-token.
-        void (await this.service).request('embeddings/set-token', token)
+        void (await this.getService()).request('embeddings/set-token', token)
     }
 
     public async index(): Promise<void> {
@@ -138,7 +143,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
             // const model = 'stub/stub'
             const model = 'openai/text-embedding-ada-002'
-            await (await this.service).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
+            await (await this.getService()).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
                 'cody-local-embeddings',
@@ -159,14 +164,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
         this.lastRepo = {
             path: repoPath,
-            loadResult: await (await this.service).request('embeddings/load', repoPath),
+            loadResult: await (await this.getService()).request('embeddings/load', repoPath),
         }
         this.statusEvent.fire(this)
         return this.lastRepo.loadResult
     }
 
     public async query(query: string): Promise<QueryResultSet> {
-        return (await this.service).request('embeddings/query', query)
+        return (await this.getService()).request('embeddings/query', query)
     }
 
     // LocalEmbeddingsFetcher
