@@ -44,6 +44,8 @@ export class FixupTask {
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
+        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
+        this.intent = selectionRange.isEmpty ? 'add' : intent
     }
 
     /**

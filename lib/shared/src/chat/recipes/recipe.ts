@@ -36,12 +36,15 @@ export type RecipeID =
     | 'release-notes'
     | 'translate-to-language'
 
-export type RecipeType = 'ask' | 'edit'
+export enum RecipeType {
+    Ask = 'ask',
+    Edit = 'edit',
+}
 
 export interface Recipe {
     id: RecipeID
     title: string // Title Case
     multiplexerTopic?: string
-    type: RecipeType
+    type?: RecipeType
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

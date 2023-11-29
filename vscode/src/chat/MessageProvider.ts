@@ -52,11 +52,6 @@ import { countGeneratedCode } from './utils'
 const SAFETY_PROMPT_TOKENS = 100
 
 /**
- * Multiplexer topics that should not be displayed in chat view
- */
-const nonDisplayTopics = new Set(['fixup'])
-
-/**
  * The types of errors that should be handled from MessageProvider.
  * `transcript`: Errors that can be displayed directly within a chat transcript, if available.
  * `system`: Errors that should be handled differently, e.g. alerted to the user.
@@ -211,9 +206,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const typewriter = new Typewriter({
             update: content => {
                 const displayText =
-                    recipe.type === 'ask'
-                        ? reformatBotMessageForChat(content, responsePrefix)
-                        : reformatBotMessageForEdit(content, responsePrefix)
+                    recipe.type === RecipeType.Edit
+                        ? reformatBotMessageForEdit(content, responsePrefix)
+                        : reformatBotMessageForChat(content, responsePrefix)
                 this.transcript.addAssistantResponse(content, displayText)
                 this.sendTranscript()
             },
@@ -235,9 +230,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText =
-                        recipe.type === 'ask'
-                            ? reformatBotMessageForChat(text, responsePrefix)
-                            : reformatBotMessageForEdit(text, responsePrefix)
+                        recipe.type === RecipeType.Edit
+                            ? reformatBotMessageForEdit(text, responsePrefix)
+                            : reformatBotMessageForChat(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     const annotatedText = await this.guardrailsAnnotateAttributions(displayText)
                     this.transcript.addAssistantResponse(text, annotatedText)
@@ -454,7 +449,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     prompt,
                     interaction.getAssistantMessage().prefix ?? '',
                     recipe.multiplexerTopic,
-                    { id: recipeId, type: recipe.type },
+                    { id: recipeId, type: recipe.type ?? RecipeType.Ask },
                     requestID
                 )
                 this.sendTranscript()

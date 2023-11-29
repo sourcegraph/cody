@@ -240,7 +240,7 @@ const register = async (
     }
 
     const executeFixup = async (
-        args: ExecuteEditArguments,
+        args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })

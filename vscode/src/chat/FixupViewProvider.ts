@@ -73,7 +73,7 @@ export class FixupProvider extends MessageProvider {
             this.handleError('Cody did not respond with any text')
         }
 
-        if (!lastMessage.displayText || !lastMessage.text) {
+        if (!lastMessage.displayText) {
             return
         }
 

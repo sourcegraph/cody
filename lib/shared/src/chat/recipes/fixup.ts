@@ -7,7 +7,7 @@ import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { Recipe, RecipeContext, RecipeID, RecipeType } from './recipe'
 
 export const PROMPT_TOPICS = {
     OUTPUT: 'CODE5711',
@@ -21,6 +21,7 @@ export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
     public title = 'Fixup'
     public multiplexerTopic = PROMPT_TOPICS.OUTPUT
+    public type = RecipeType.Edit
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
         const fixupController = context.editor.controllers?.fixups

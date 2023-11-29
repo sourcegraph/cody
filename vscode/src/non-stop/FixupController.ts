@@ -158,9 +158,7 @@ export class FixupController
         source?: ChatEventSource
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
-        const adjustedIntent = selectionRange.isEmpty ? 'add' : intent
-        const task = new FixupTask(fixupFile, instruction, adjustedIntent, selectionRange, insertMode, source)
+        const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
