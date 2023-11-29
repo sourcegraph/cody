@@ -212,6 +212,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                   config: this.options.contextProvider.config,
                   chatClient: this.chatClient,
                   embeddingsClient: this.embeddingsSearch,
+                  localEmbeddings: this.localEmbeddings,
               })
             : new ChatPanelProvider(this.options)
 
