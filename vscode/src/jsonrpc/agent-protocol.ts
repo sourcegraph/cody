@@ -135,6 +135,7 @@ export interface CompletionItemParams {
 
 export interface AutocompleteParams {
     uri: string
+    filePath?: string
     position: Position
     // Defaults to 'Automatic' for autocompletions which were not explicitly
     // triggered.

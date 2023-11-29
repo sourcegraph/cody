@@ -293,7 +293,21 @@ export class Agent extends MessageHandler {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
+            const uri =
+                typeof params.uri === 'string'
+                    ? vscode.Uri.parse(params.uri)
+                    : params?.filePath
+                    ? vscode.Uri.file(params.filePath)
+                    : undefined
+            if (!uri) {
+                console.log(
+                    `No uri provided for autocomplete request ${JSON.stringify(
+                        params
+                    )}. To fix this problem, set the 'uri' property.`
+                )
+                return { items: [] }
+            }
+            const document = this.workspace.getDocument(uri)
             if (!document) {
                 console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
                 return { items: [] }
