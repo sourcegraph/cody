@@ -1,6 +1,8 @@
 import { ContextFile } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
 
+import { trailingNonAlphaNumericRegex } from './utils'
+
 /**
  * Creates display text for the given context files by replacing file names with markdown links.
  */
@@ -62,5 +64,7 @@ export function replaceFileNameWithMarkdownLink(
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
     const textToBeReplaced = new RegExp(`\\s*${fileName.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`, 'g')
-    return humanInput.replaceAll(textToBeReplaced, ` ${markdownText}`).trim()
+    const text = humanInput.replace(trailingNonAlphaNumericRegex, '').replaceAll(textToBeReplaced, ` ${markdownText}`)
+    const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
+    return (text + lastChar).trim()
 }

@@ -247,13 +247,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const lastAtIndex = input.lastIndexOf('@')
             if (lastAtIndex >= 0 && selected) {
                 // Trim the @file portion from input
-                const inputWithoutAtFileInput = input.slice(0, lastAtIndex)
+                const inputPrefix = input.slice(0, lastAtIndex)
                 const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
                 const symbolName = isFileType ? '' : `#${selected.fileName}`
                 // Add empty space at the end to end the file matching process
-                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName} `
-                const newInput = `${inputWithoutAtFileInput}${fileDisplayText}`
+                const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
+                const inputSuffix = input.slice(input.lastIndexOf(fileDisplayText), -1)
+                const newInput = `${inputPrefix}${fileDisplayText}${inputSuffix} `
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
                 setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
@@ -266,16 +267,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     // Handles selecting a chat command when the user types a slash in the chat input.
     const chatCommentSelectionHandler = useCallback(
         (inputValue: string): void => {
-            if (!chatCommands || !ChatCommandsComponent) {
-                return
-            }
-            const splittedValue = inputValue.split(' ')
-            if (splittedValue.length > 1) {
-                const matchedCommand = chatCommands.filter(([name]) => name === splittedValue[0])
-                if (matchedCommand.length === 1) {
-                    setDisplayCommands(matchedCommand)
-                    setSelectedChatCommand(0)
-                }
+            if (!chatCommands?.length || !ChatCommandsComponent) {
                 return
             }
             if (inputValue === '/') {
@@ -284,11 +276,20 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
             if (inputValue.startsWith('/')) {
+                const splittedValue = inputValue.split(' ')
+                if (splittedValue.length > 1) {
+                    const matchedCommand = chatCommands.filter(([name]) => name === splittedValue[0])
+                    if (matchedCommand.length === 1) {
+                        setDisplayCommands(matchedCommand)
+                        setSelectedChatCommand(0)
+                    }
+                    return
+                }
                 const filteredCommands = filterChatCommands
                     ? filterChatCommands(chatCommands, inputValue)
                     : chatCommands.filter(command => command[1].slashCommand?.startsWith(inputValue))
                 setDisplayCommands(filteredCommands)
-                // setSelectedChatCommand(0)
+                setSelectedChatCommand(0)
                 return
             }
             setDisplayCommands(null)
@@ -364,6 +365,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Allows backspace and delete keystrokes to remove characters
             const deleteKeysList = new Set(['Backspace', 'Delete'])
             if (deleteKeysList.has(event.key)) {
+                setSelectedChatCommand(-1)
+                setSelectedChatContext(0)
                 return
             }
 
@@ -373,6 +376,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
             if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
                 event.preventDefault()
+                return
             }
 
             // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
@@ -451,7 +455,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // trim the formInput to make sure input value is not empty.
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
                 event.preventDefault()
-                event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
                 return

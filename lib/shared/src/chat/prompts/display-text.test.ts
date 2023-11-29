@@ -11,6 +11,16 @@ describe('replaceFileNameWithMarkdownLink', () => {
         expect(result).toEqual('Hello [_@test.js_](command:cody.chat.open.file?"/path/to/test.js:range:0")')
     })
 
+    it('replaces file name with symbol with markdown link', () => {
+        const text = 'What is @e2e/cody.ts:2-2#codySymbol?'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@e2e/cody.ts:2-2#codySymbol', '/foo/test/e2e/cody.ts', 2)
+
+        expect(result).toEqual(
+            'What is [_@e2e/cody.ts:2-2#codySymbol_](command:cody.chat.open.file?"/foo/test/e2e/cody.ts:range:2")?'
+        )
+    })
+
     it('respects spaces in file name', () => {
         const text = 'Loaded @my file.js'
 
@@ -43,6 +53,14 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 10)
 
         expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:10")')
+    })
+
+    it('handles non alphanumeric characters follows the file name in input', () => {
+        const text = 'What is @test.js?'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 10)
+
+        expect(result).toEqual('What is [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:10")?')
     })
 
     it('handles edge case where start line at 0 - exclude start line in markdown link', () => {
