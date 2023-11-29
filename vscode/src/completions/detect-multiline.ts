@@ -106,9 +106,9 @@ function getPrefixLastNonEmptyCharPosition(prefix: string, cursorPosition: Posit
     const trimmedPrefix = prefix.trimEnd()
     const diffLength = prefix.length - trimmedPrefix.length
     if (diffLength === 0) {
-        return cursorPosition
+        return cursorPosition.translate(0, -1)
     }
 
     const prefixDiff = prefix.slice(-diffLength)
-    return cursorPosition.translate(-(lines(prefixDiff).length - 1), getLastLine(trimmedPrefix).length - 2)
+    return new Position(cursorPosition.line - (lines(prefixDiff).length - 1), getLastLine(trimmedPrefix).length - 1)
 }

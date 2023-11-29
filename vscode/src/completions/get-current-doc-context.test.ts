@@ -1,12 +1,15 @@
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
+import * as Parser from 'web-tree-sitter'
 
 import { range } from '../testutils/textDocument'
+import { asPoint } from '../tree-sitter/parse-tree-cache'
+import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getContextRange } from './doc-context-getters'
 import { getCurrentDocContext } from './get-current-doc-context'
-import { documentAndPosition } from './test-helpers'
+import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletionContext) {
     const { document, position } = documentAndPosition(code)
@@ -34,7 +37,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '',
             multilineTrigger: '{',
             multilineTriggerPosition: {
-                character: 23,
+                character: 22,
                 line: 0,
             },
             injectedPrefix: null,
@@ -54,7 +57,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '}',
             multilineTrigger: '{',
             multilineTriggerPosition: {
-                character: 11,
+                character: 10,
                 line: 1,
             },
             injectedPrefix: null,
@@ -74,7 +77,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
             multilineTriggerPosition: {
-                character: 13,
+                character: 12,
                 line: 0,
             },
             injectedPrefix: null,
@@ -94,7 +97,7 @@ describe('getCurrentDocContext', () => {
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
             multilineTriggerPosition: {
-                character: 13,
+                character: 12,
                 line: 1,
             },
             injectedPrefix: null,
@@ -241,6 +244,53 @@ describe('getCurrentDocContext', () => {
         })
 
         expect(multilineTrigger).toBe(':')
-        expect(multilineTriggerPosition).toEqual({ line: 0, character: 34 })
+        expect(multilineTriggerPosition).toEqual({ line: 0, character: 33 })
+    })
+
+    describe('multiline trigger position verfified by the tree-sitter parser', () => {
+        let parser: Parser
+
+        beforeAll(async () => {
+            parser = await initTreeSitterParser()
+        })
+
+        afterAll(() => {
+            resetParsersCache()
+        })
+
+        it.each([
+            {
+                code: 'const restuls = {█',
+                triggerPosition: { line: 0, character: 16 },
+            },
+            {
+                code: 'const result = {\n  █',
+                triggerPosition: { line: 0, character: 15 },
+            },
+            {
+                code: 'const result = {\n    █',
+                triggerPosition: { line: 0, character: 15 },
+            },
+            {
+                code: 'const something = true\nfunction bubbleSort(█)',
+                triggerPosition: { line: 1, character: 19 },
+            },
+        ])('returns correct multiline trigger position', ({ code, triggerPosition }) => {
+            const { document, position } = documentAndPosition(code)
+
+            const { multilineTrigger, multilineTriggerPosition } = getCurrentDocContext({
+                document,
+                position,
+                maxPrefixLength: 100,
+                maxSuffixLength: 100,
+                dynamicMultlilineCompletions: true,
+            })
+
+            const tree = parser.parse(document.getText())
+            const charAtTrigger = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!)).text
+
+            expect(charAtTrigger).toBe(multilineTrigger)
+            expect(multilineTriggerPosition).toEqual(triggerPosition)
+        })
     })
 })
