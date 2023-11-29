@@ -156,7 +156,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         // Get the string after the last '@' symbol
         const addFileInput = formInput.match(addFileRegex)?.[0]
         if (formInput.endsWith('@') || addFileInput) {
-            vscodeAPI.postMessage({ command: 'getUserContext', query: addFileInput?.slice(1) || '' })
+            // Remove the last character from the query if the it is not alphanumeric, e.g. '?'
+            // this prevents the ending of a question from being interpreted as a file path
+            const query = addFileInput?.slice(1)?.replace(/[^\dA-Za-z]+$/, '') || ''
+            vscodeAPI.postMessage({ command: 'getUserContext', query })
         } else {
             setContextSelection(null)
         }
