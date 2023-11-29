@@ -788,7 +788,7 @@ export class FixupController
             this.setTaskState(task, CodyTaskState.inserting)
         }
 
-        const trimmedReplacement = state === 'complete' ? text : text.slice(0, Math.max(0, text.lastIndexOf('\n') + 1))
+        const trimmedReplacement = state === 'complete' ? text : text.replace(/\n[^\n]*$/, '')
         const replacementText = trimmedReplacement
             .split('\n')
             .map((line, index) => (index === 0 ? line : ' '.repeat(task.selectionRange.start.character) + line))
