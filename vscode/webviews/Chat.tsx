@@ -324,11 +324,10 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 }) => (
     <VSCodeButton
         className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
-        appearance="primary"
         type="button"
         disabled={disabled}
         onClick={onAbortMessageInProgress ?? onClick}
-        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? 'Message is empty' : 'Send Message'}
+        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? '' : 'Send Message'}
     >
         {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
     </VSCodeButton>
