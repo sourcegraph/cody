@@ -28,7 +28,6 @@ import {
     getCurrentVSCodeDocTextByURI,
     getDirContextMessages,
     getEditorTestContext,
-    getFilePathContext,
     getFilesFromDir,
     getFoldingRanges,
     isInWorkspace,
@@ -91,8 +90,6 @@ export class VSCodeEditorContext {
                 const fileUri = tab.uri
                 const fileName = createVSCodeRelativePath(fileUri.fsPath)
                 const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
-
-                // Truncate file text
                 const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
 
                 // Create context message
@@ -136,7 +133,12 @@ export class VSCodeEditorContext {
         currentFileName?: string,
         isUnitTestRequest = false
     ): Promise<ContextMessage[]> {
-        const directoryUri = vscode.Uri.file(directoryPath)
+        let directoryUri = vscode.Uri.file(directoryPath)
+        const currentWorkspaceUri = this.editor.getWorkspaceRootUri()
+        // Turns relative path into absolute path
+        if (currentWorkspaceUri && !directoryPath.startsWith(currentWorkspaceUri.fsPath)) {
+            directoryUri = vscode.Uri.joinPath(currentWorkspaceUri, directoryPath)
+        }
         const filteredFiles = await getFilesFromDir(directoryUri, isUnitTestRequest)
 
         if (isUnitTestRequest && currentFileName) {
@@ -162,11 +164,12 @@ export class VSCodeEditorContext {
     public async getFilePathContext(filePath: string): Promise<ContextMessage[]> {
         const fileName = createVSCodeRelativePath(filePath)
         try {
-            const decoded = await getFilePathContext(filePath)
+            const decoded = await getCurrentVSCodeDocTextByURI(vscode.Uri.file(filePath))
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             // Make sure the truncatedContent is in JSON format
             return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
+                content: decoded,
             })
         } catch (error) {
             console.error(error)

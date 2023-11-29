@@ -70,10 +70,12 @@ export class CustomPrompt implements Recipe {
         // Add selection file name as display when available
         const displayText = contextFiles?.length
             ? createDisplayTextWithFileLinks(contextFiles, promptText)
-            : createDisplayTextWithFileSelection(
+            : contextConfig.currentFile || contextConfig.selection
+            ? createDisplayTextWithFileSelection(
                   commandAdditionalInput ? `${commandName} ${commandAdditionalInput}` : commandName,
                   selection
               )
+            : `${commandName} ${commandAdditionalInput}`.trim()
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
 

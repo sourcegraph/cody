@@ -22,7 +22,7 @@ export function getActiveEditor(): vscode.TextEditor | undefined {
     // When the webview panel is focused, calling activeTextEditor will return undefined.
     // This allows us to get the active editor before the webview panel is focused.
     const get = (): vscode.TextEditor | undefined => {
-        const activeEditor = vscode.window.activeTextEditor
+        const activeEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
         if (activeEditor?.document.uri.scheme) {
             if (validFileSchemes.has(activeEditor.document.uri.scheme)) {
                 lastTrackedTextEditor = activeEditor
