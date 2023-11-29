@@ -264,7 +264,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 const symbolName = isFileType ? '' : `#${selected.fileName}`
                 // Add empty space at the end to end the file matching process
                 const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
-                const inputSuffix = input.split(fileDisplayText)?.[1] || ''
+                const inputSuffix = input.slice(input.lastIndexOf(fileDisplayText), -1)
                 const newInput = `${inputPrefix}${fileDisplayText}${inputSuffix} `
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
@@ -471,7 +471,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     event.preventDefault()
                     const selected = contextSelection[selectedChatContext]
                     onChatContextSelected(selected, formInput)
-                    return
                 }
             }
 
@@ -479,7 +478,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // trim the formInput to make sure input value is not empty.
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && formInput?.trim()) {
                 event.preventDefault()
-                event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
                 return

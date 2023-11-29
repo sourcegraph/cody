@@ -5,6 +5,7 @@ import './App.css'
 import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { ChatModelSelection } from '@sourcegraph/cody-ui/src/Chat'
@@ -155,15 +156,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         const addFileRegex = /@\S+$/
         // Get the string after the last '@' symbol
         const addFileInput = formInput.match(addFileRegex)?.[0]
-        if (formInput.endsWith('@') || addFileInput) {
-            // Remove the last character from the query if the it is not alphanumeric, e.g. '?'
-            // this prevents the ending of a question from being interpreted as a file path
-            const query = addFileInput?.slice(1)?.replace(/[^\dA-Za-z]+$/, '') || ''
-            vscodeAPI.postMessage({ command: 'getUserContext', query })
-        } else {
+
+        if (!formInput.endsWith('@') && trailingNonAlphaNumericRegex.test(formInput) && !contextSelection?.length) {
             setContextSelection(null)
+            return
         }
-    }, [formInput, vscodeAPI])
+
+        if (formInput.endsWith('@') || addFileInput) {
+            const query = addFileInput?.slice(1) || ''
+            vscodeAPI.postMessage({ command: 'getUserContext', query })
+            return
+        }
+
+        setContextSelection(null)
+    }, [contextSelection, formInput, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {

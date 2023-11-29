@@ -43,6 +43,14 @@ describe('replaceFileNameWithMarkdownLink', () => {
         expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:10")')
     })
 
+    it('handles non alphanumeric characters follows the file name in input', () => {
+        const text = 'What is @test.js?'
+
+        const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 10)
+
+        expect(result).toEqual('What is [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:10")?')
+    })
+
     it('handles edge case where start line at 0 - exclude start line in markdown link', () => {
         const text = 'Error in @test.js'
 
