@@ -46,5 +46,6 @@ export interface Recipe {
     title: string // Title Case
     multiplexerTopic?: string
     type?: RecipeType
+    stopSequences?: string[]
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

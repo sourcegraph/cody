@@ -197,6 +197,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         recipe: {
             id: RecipeID
             type: RecipeType
+            stopSequences?: string[]
         },
         requestID: string
     ): void {
@@ -314,7 +315,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     console.error(`Completion request failed: ${err}`)
                 },
             },
-            { model: this.chatModel }
+            { model: this.chatModel, stopSequences: recipe.stopSequences }
         )
     }
 
@@ -449,7 +450,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     prompt,
                     interaction.getAssistantMessage().prefix ?? '',
                     recipe.multiplexerTopic,
-                    { id: recipeId, type: recipe.type ?? RecipeType.Ask },
+                    { id: recipeId, type: recipe.type ?? RecipeType.Ask, stopSequences: recipe.stopSequences },
                     requestID
                 )
                 this.sendTranscript()

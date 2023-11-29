@@ -27,6 +27,7 @@ export class Fixup implements Recipe {
     public title = 'Fixup'
     public multiplexerTopic = PROMPT_TOPICS.OUTPUT
     public type = RecipeType.Edit
+    public stopSequences = [`</${PROMPT_TOPICS.OUTPUT}>`]
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
         const fixupController = context.editor.controllers?.fixups
