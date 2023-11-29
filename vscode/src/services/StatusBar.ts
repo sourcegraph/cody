@@ -94,6 +94,13 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
+                    'Code Actions',
+                    undefined,
+                    'Enable Cody fix and explain options in the Quick Fix menu',
+                    'cody.codeActions.enabled',
+                    c => c.codeActions
+                ),
+                createFeatureToggle(
                     'Editor Title Icon',
                     undefined,
                     'Enable Cody to appear in editor title menu for quick access to Cody commands',
@@ -101,11 +108,11 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.editorTitleCommandIcon
                 ),
                 createFeatureToggle(
-                    'Code Actions',
+                    'Code Lenses',
                     undefined,
-                    'Enable Cody fix and explain options in the Quick Fix menu',
-                    'cody.codeActions.enabled',
-                    c => c.codeActions
+                    'Enable Code Lenses in documents for quick access to Cody commands',
+                    'cody.commandCodeLenses',
+                    c => c.commandCodeLenses
                 ),
                 createFeatureToggle(
                     'Chat Suggestions',
@@ -128,13 +135,6 @@ export function createStatusBar(): CodyStatusBar {
                     'Enable new search panel',
                     'cody.experimental.newSearch',
                     c => c.experimentalSearchPanel
-                ),
-                createFeatureToggle(
-                    'Code Lenses',
-                    'Experimental',
-                    'Enable Code Lenses in documents for quick access to Cody commands',
-                    'cody.experimental.commandLenses',
-                    c => c.experimentalCommandLenses
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

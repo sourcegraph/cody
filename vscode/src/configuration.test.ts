@@ -22,13 +22,14 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
-            experimentalCommandLenses: false,
+            commandCodeLenses: false,
             editorTitleCommandIcon: true,
             experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             experimentalSearchPanel: false,
+            experimentalSimpleChatContext: false,
             inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
@@ -76,7 +77,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.newSearch':
                         return true
-                    case 'cody.experimental.commandLenses':
+                    case 'cody.commandCodeLenses':
                         return true
                     case 'cody.editorTitleCommandIcon':
                         return true
@@ -92,6 +93,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
+                    case 'cody.experimental.simpleChatContext':
+                        return false
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -147,7 +150,8 @@ describe('getConfiguration', () => {
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
             experimentalSearchPanel: true,
-            experimentalCommandLenses: true,
+            commandCodeLenses: true,
+            experimentalSimpleChatContext: false,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,

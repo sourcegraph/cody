@@ -5,6 +5,7 @@ import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import { SidebarChatWebview } from '../chat/chat-view/SidebarChatProvider'
 import {
     AuthStatus,
@@ -161,7 +162,7 @@ export class AuthProvider {
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
-        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
@@ -187,7 +188,8 @@ export class AuthProvider {
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
-        const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
+        const isDotCom = this.client.isDotCom()
+        const isDotComOrApp = isDotCom || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
@@ -205,11 +207,18 @@ export class AuthProvider {
                 !isError(currentUserID),
                 hasVerifiedEmail,
                 enabled,
+                /* userCanUpgrade: */ false,
                 version,
                 configOverwrites
             )
         }
-        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
+
+        // TODO(dantup): If local app support is removed, this can be simplified
+        //  (this path will only be dotCom) and the 'getCurrentUserIdAndVerifiedEmail'
+        //  queries removed.
+        const userInfo = isDotCom
+            ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            : await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
 
         // check first if it's a network error
@@ -217,19 +226,25 @@ export class AuthProvider {
             if (isNetworkError(userInfo.message)) {
                 return { ...networkErrorAuthStatus, endpoint }
             }
+            return { ...unauthenticatedStatus, endpoint }
         }
 
-        return isError(userInfo)
-            ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(
-                  endpoint,
-                  isDotComOrApp,
-                  !!userInfo.id,
-                  userInfo.hasVerifiedEmail,
-                  isCodyEnabled,
-                  version,
-                  configOverwrites
-              )
+        const userCanUpgrade =
+            isDotCom &&
+            'codyProEnabled' in userInfo &&
+            typeof userInfo.codyProEnabled === 'boolean' &&
+            !userInfo.codyProEnabled
+
+        return newAuthStatus(
+            endpoint,
+            isDotComOrApp,
+            !!userInfo.id,
+            userInfo.hasVerifiedEmail,
+            isCodyEnabled,
+            userCanUpgrade,
+            version,
+            configOverwrites
+        )
     }
 
     public getAuthStatus(): AuthStatus {

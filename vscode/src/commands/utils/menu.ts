@@ -6,7 +6,7 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ContextOption } from '.'
 
 export const NewCustomCommandConfigMenuOptions = {
-    title: 'Cody Custom Commands (Experimental) - New User Command',
+    title: 'Cody Custom Commands (Beta) - New User Command',
 }
 
 export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
@@ -33,7 +33,7 @@ const fixOption: QuickPickItemWithSlashCommand = {
 }
 // Seperators
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
-const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
+const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'Custom Commands (Beta)' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const lastUsedSeparator: QuickPickItem = { kind: -1, label: 'last used' }
 // Common options

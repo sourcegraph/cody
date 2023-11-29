@@ -8,21 +8,21 @@ import * as vscode from 'vscode'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import { AutocompleteDocument } from './AutocompleteDocument'
 import { EvaluateAutocompleteOptions, matchesGlobPatterns } from './evaluate-autocomplete'
+import { EvaluationDocument } from './EvaluationDocument'
+import { SnapshotWriter } from './SnapshotWriter'
+import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 export async function evaluateGitLogStrategy(
     client: MessageHandler,
-    options: EvaluateAutocompleteOptions,
-    workspace: string
+    options: EvaluateAutocompleteOptions
 ): Promise<void> {
+    const { workspace } = options
     try {
         let remainingTests = options.testCount
-        const commits = execSync(
-            `git log --name-only --oneline --diff-filter=AMC --stat --numstat --pretty=format:'%H - %an, %ar : %s' -- ${options.gitLogFilter}`,
-            { cwd: workspace }
-        )
+        const command = `git log --name-only --oneline --diff-filter=AMC --stat --numstat --pretty=format:'%H - %an, %ar : %s' -- ${options.gitLogFilter}`
+        const commits = execSync(command, { cwd: workspace })
             .toString()
             .split('\n')
             .map(string => string.split(' ')[0])
@@ -30,6 +30,11 @@ export async function evaluateGitLogStrategy(
             .filter(Boolean)
         // Reverse the commits list so the first element is the oldest commit
         commits.reverse()
+
+        await testInstall(options)
+        const snapshots = new SnapshotWriter(options)
+        await snapshots.writeHeader()
+
         for (const commit of commits) {
             try {
                 execSync(`git checkout ${commit}`, { cwd: workspace })
@@ -44,13 +49,15 @@ export async function evaluateGitLogStrategy(
                     if (!matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], filePath)) {
                         continue
                     }
+
                     const fullPath = path.join(workspace, filePath)
                     const content = (await fspromises.readFile(fullPath)).toString()
                     const languageid = getLanguageForFileName(filePath)
-                    const document = new AutocompleteDocument(
+                    const document = new EvaluationDocument(
                         {
                             languageid,
                             filepath: filePath,
+                            revision: commit,
                             fixture: options.fixture.name,
                             strategy: options.fixture.strategy,
                             workspace: path.basename(options.workspace),
@@ -89,6 +96,7 @@ export async function evaluateGitLogStrategy(
                             lastAddedLine.lineAfter - 1,
                             lastAddedLine.content.length
                         )
+
                         // TODO: This only allows single-lined completions
                         if (!range.isSingleLine) {
                             throw new Error('Multi-line ranges not supported yet')
@@ -112,12 +120,11 @@ export async function evaluateGitLogStrategy(
                             range,
                             client,
                             document,
+                            options,
                             emptyMatchContent: '',
                         })
 
-                        if (options.snapshotDirectory) {
-                            await document.writeSnapshot(options.snapshotDirectory)
-                        }
+                        await snapshots.writeDocument(document)
 
                         remainingTests--
                     }
@@ -129,9 +136,10 @@ export async function evaluateGitLogStrategy(
             }
         }
     } finally {
+        await testCleanup(options)
         // Reset submodule to initial HEAD
         const submodulesDir = path.join(workspace, '..')
         execSync('git submodule deinit -f .', { cwd: submodulesDir }).toString()
-        execSync('it submodule update --init', { cwd: submodulesDir }).toString()
+        execSync('git submodule update --init', { cwd: submodulesDir }).toString()
     }
 }

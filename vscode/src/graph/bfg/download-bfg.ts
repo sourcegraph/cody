@@ -12,7 +12,8 @@ import { getOSArch } from '../../os'
 import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
-const defaultBfgVersion = '5.2.6637'
+// Do not include 'v' in this string.
+const defaultBfgVersion = '5.2.9998'
 
 export async function downloadBfg(context: vscode.ExtensionContext): Promise<string | null> {
     const config = vscode.workspace.getConfiguration()

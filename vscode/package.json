@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -96,7 +96,8 @@
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onWebviewPanel:cody.chatPanel"
   ],
   "contributes": {
     "walkthroughs": [
@@ -837,7 +838,7 @@
       "editor/title": [
         {
           "command": "cody.action.commands.menu",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon",
+          "when": "cody.activated && config.cody.editorTitleCommandIcon && resourceScheme == file && !editorReadonly",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -984,7 +985,7 @@
           }
         },
         "cody.inlineChat.enabled": {
-          "order": 6,
+          "order": 10,
           "title": "Cody Inline Chat",
           "type": "boolean",
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
@@ -1002,10 +1003,10 @@
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
-        "cody.experimental.commandLenses": {
+        "cody.commandCodeLenses": {
           "order": 8,
           "type": "boolean",
-          "markdownDescription": "[Experimental] Adds code lenses to current file for quick access to Cody commands.",
+          "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
           "default": false
         },
         "cody.experimental.guardrails": {
@@ -1027,7 +1028,7 @@
           "markdownDescription": "Experimental feature for internal use."
         },
         "cody.chat.preInstruction": {
-          "order": 10,
+          "order": 6,
           "type": "string",
           "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
           "examples": [
@@ -1045,6 +1046,12 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "New search UI",
+          "default": false
+        },
+        "cody.experimental.simpleChatContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Uses the new simplifed chat context fetcher",
           "default": false
         },
         "cody.experimental.symf.path": {
@@ -1174,6 +1181,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
+    "@opentelemetry/instrumentation-http": "^0.45.1",
+    "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/semantic-conventions": "^1.18.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
@@ -1234,6 +1246,7 @@
     "dedent": "^0.7.0",
     "envalid": "^7.3.1",
     "express": "^4.18.2",
+    "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "path-browserify": "^1.0.1",

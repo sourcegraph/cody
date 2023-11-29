@@ -30,7 +30,8 @@ export interface Configuration {
     experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
     experimentalSearchPanel: boolean
-    experimentalCommandLenses: boolean
+    commandCodeLenses: boolean
+    experimentalSimpleChatContext: boolean
     editorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean

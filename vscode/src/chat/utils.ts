@@ -16,6 +16,7 @@ export function newAuthStatus(
     user: boolean,
     isEmailVerified: boolean,
     isCodyEnabled: boolean,
+    userCanUpgrade: boolean,
     version: string,
     configOverwrites?: AuthStatus['configOverwrites']
 ): AuthStatus {
@@ -29,6 +30,7 @@ export function newAuthStatus(
     authStatus.requiresVerifiedEmail = isDotComOrApp
     authStatus.hasVerifiedEmail = isDotComOrApp && isEmailVerified
     authStatus.siteHasCodyEnabled = isCodyEnabled
+    authStatus.userCanUpgrade = userCanUpgrade
     authStatus.siteVersion = version
     if (configOverwrites) {
         authStatus.configOverwrites = configOverwrites

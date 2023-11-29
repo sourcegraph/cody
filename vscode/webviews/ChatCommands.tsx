@@ -80,8 +80,10 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                                         onClick={() => onCommandClick(prompt.slashCommand)}
                                         type="button"
                                     >
-                                        <p className={styles.commandTitle}>{title}</p>
-                                        <p className={styles.commandDescription}>{prompt.description}</p>
+                                        <span className={styles.titleAndDescriptionContainer}>
+                                            <span className={styles.commandTitle}>{title}</span>
+                                            <span className={styles.commandDescription}>{prompt.description}</span>
+                                        </span>
                                     </button>
                                     {hasSeparator ? <hr className={styles.separator} /> : null}
                                 </React.Fragment>

@@ -125,21 +125,68 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
     (type_alias_declaration (object_type ("{") @block_start)) @trigger
 `
 
+const JS_DOCUMENTABLE_NODES_QUERY = dedent`
+    ; Identifiers
+    ;--------------------------------
+    (_
+        name: (identifier) @identifier)
+
+    ; Property Identifiers
+    ;--------------------------------
+    (method_definition
+        name: (property_identifier) @identifier.property)
+    (pair
+        key: (property_identifier) @identifier.property)
+
+    ; Exports
+    ;--------------------------------
+    ((export_statement) @export)
+`
+
+const TS_DOCUMENTABLE_NODES_QUERY = dedent`
+    ${JS_DOCUMENTABLE_NODES_QUERY}
+
+    ; Type Identifiers
+    ;--------------------------------
+    (_
+        name: (type_identifier) @identifier)
+
+    ; Type Signatures
+    ;--------------------------------
+    ((call_signature) @signature)
+    (interface_declaration
+        (object_type
+            (property_signature
+                name: (property_identifier) @signature.property)))
+    (interface_declaration
+        (object_type
+            (method_signature
+                name: (property_identifier) @signature.property)))
+    (type_alias_declaration
+        (object_type
+            (property_signature
+                name: (property_identifier) @signature.property)))
+`
+
 export const javascriptQueries = {
     [SupportedLanguage.JavaScript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
+        documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
     },
     [SupportedLanguage.JSX]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
+        documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
     },
     [SupportedLanguage.TypeScript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
+        documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
     },
     [SupportedLanguage.TSX]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
+        documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
