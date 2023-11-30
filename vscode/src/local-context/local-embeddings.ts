@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
@@ -17,6 +18,7 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
     private service: Promise<MessageHandler> | undefined
     private accessToken: string | undefined
+    private endpointIsDotcom = false
     private statusBar: vscode.StatusBarItem | undefined
     private lastRepo: { path: string; loadResult: boolean } | undefined
 
@@ -25,7 +27,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
-        logDebug('LocalEmbeddingsController', 'setAccessToken')
+        const endpointIsDotcom = serverEndpoint === DOTCOM_URL.toString()
+        logDebug('LocalEmbeddingsController', 'setAccessToken', endpointIsDotcom ? 'is dotcom' : 'not dotcom')
+        if (endpointIsDotcom !== this.endpointIsDotcom) {
+            // We will show, or hide, status depending on whether we are using
+            // dotcom. We do not offer local embeddings to Enterprise.
+            this.statusEvent.fire(this)
+        }
+        this.endpointIsDotcom = endpointIsDotcom
         if (token === this.accessToken) {
             return Promise.resolve()
         }
@@ -115,9 +124,25 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public get status(): ContextGroup[] {
+        logDebug('LocalEmbeddingsController', 'get status')
+        if (!this.endpointIsDotcom) {
+            // There are no local embeddings for Enterprise.
+            return []
+        }
         if (!this.lastRepo) {
             // TODO: We could dig up the workspace folder here and use that.
-            return []
+            return [
+                {
+                    name: 'No codebase loaded',
+                    providers: [
+                        {
+                            kind: 'embeddings',
+                            type: 'local',
+                            state: 'indeterminate',
+                        },
+                    ],
+                },
+            ]
         }
         // TODO: Summarize the path with ~, etc.
         const path = this.lastRepo.path
