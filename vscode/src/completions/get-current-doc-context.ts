@@ -32,14 +32,14 @@ interface GetCurrentDocContextParams {
     /* A number representing the maximum length of the suffix to get from the document. */
     maxSuffixLength: number
     context?: vscode.InlineCompletionContext
-    dynamicMultlilineCompletions: boolean
+    dynamicMultilineCompletions: boolean
 }
 
 /**
  * Get the current document context based on the cursor position in the current document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, context, dynamicMultlilineCompletions } = params
+    const { document, position, maxPrefixLength, maxSuffixLength, context, dynamicMultilineCompletions } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -102,7 +102,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     return getDerivedDocContext({
         position,
         languageId: document.languageId,
-        dynamicMultlilineCompletions,
+        dynamicMultilineCompletions,
         documentDependentContext: {
             prefix,
             suffix,
@@ -115,7 +115,7 @@ interface GetDerivedDocContextParams {
     languageId: string
     position: vscode.Position
     documentDependentContext: DocumentDependentContext
-    dynamicMultlilineCompletions: boolean
+    dynamicMultilineCompletions: boolean
 }
 
 /**
@@ -123,7 +123,7 @@ interface GetDerivedDocContextParams {
  * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
  */
 export function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
-    const { position, documentDependentContext, languageId, dynamicMultlilineCompletions } = params
+    const { position, documentDependentContext, languageId, dynamicMultilineCompletions } = params
     const linesContext = getLinesContext(documentDependentContext)
 
     return {
@@ -133,7 +133,7 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
         ...detectMultiline({
             docContext: { ...linesContext, ...documentDependentContext },
             languageId,
-            dynamicMultlilineCompletions,
+            dynamicMultilineCompletions,
             position,
         }),
     }

@@ -144,7 +144,7 @@ export class AnthropicProvider extends Provider {
         if (prompt.length > this.promptChars) {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
-        const { dynamicMultlilineCompletions, multiline } = this.options
+        const { dynamicMultilineCompletions, multiline } = this.options
 
         const requestParams: CodeCompletionsParams = {
             temperature: 0.5,
@@ -163,7 +163,7 @@ export class AnthropicProvider extends Provider {
         }
 
         let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultlilineCompletions) {
+        if (dynamicMultilineCompletions) {
             // If the feature flag is enabled use params adjusted for the experiment.
             Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
 

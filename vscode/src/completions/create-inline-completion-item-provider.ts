@@ -57,7 +57,7 @@ export async function createInlineCompletionItemProvider({
         bfgMixedContextFlag,
         localMixedContextFlag,
         disableRecyclingOfPreviousRequests,
-        dynamicMultlilineCompletionsFlag,
+        dynamicMultilineCompletionsFlag,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLspLight),
@@ -75,6 +75,10 @@ export async function createInlineCompletionItemProvider({
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'
+                : config.autocompleteExperimentalGraphContext === 'local-mixed'
+                ? 'local-mixed'
+                : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
+                ? 'jaccard-similarity'
                 : lspLightContextFlag
                 ? 'lsp-light'
                 : bfgContextFlag
@@ -85,8 +89,8 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : 'jaccard-similarity'
 
-        const dynamicMultlilineCompletions =
-            config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultlilineCompletionsFlag
+        const dynamicMultilineCompletions =
+            config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
@@ -99,7 +103,7 @@ export async function createInlineCompletionItemProvider({
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,
             createBfgRetriever,
-            dynamicMultlilineCompletions,
+            dynamicMultilineCompletions,
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)

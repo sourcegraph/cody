@@ -107,6 +107,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                             const completion = canUsePartialCompletion(initialCompletion, {
                                 document: providerOptions.document,
                                 docContext: updatedDocContext,
+                                isDynamicMultilineCompletion: true,
                             })
 
                             if (completion) {
@@ -274,7 +275,7 @@ function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): Document
     const updatedDocContext = getDerivedDocContext({
         languageId: document.languageId,
         position: updatedPosition,
-        dynamicMultlilineCompletions: true,
+        dynamicMultilineCompletions: true,
         documentDependentContext: {
             prefix: prefix + firstLine,
             // Remove the characters that are being replaced by the completion

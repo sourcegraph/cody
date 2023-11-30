@@ -338,6 +338,7 @@ export interface ItemPostProcessingInfo {
         parent?: string
         grandparent?: string
         greatGrandparent?: string
+        lastAncestorOnTheSameLine?: string
     }
     // Syntax node types extracted from the tree-sitter parse-tree with the completion pasted.
     nodeTypesWithCompletion?: {
@@ -345,6 +346,7 @@ export interface ItemPostProcessingInfo {
         parent?: string
         grandparent?: string
         greatGrandparent?: string
+        lastAncestorOnTheSameLine?: string
     }
 }
 

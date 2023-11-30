@@ -383,6 +383,14 @@ const register = async (
         }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
+            const confirmation = await vscode.window.showWarningMessage(
+                'Restart Chat Session',
+                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
+                'Restart Chat Session'
+            )
+            if (!confirmation) {
+                return
+            }
             await chatManager.clearAndRestartSession()
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })

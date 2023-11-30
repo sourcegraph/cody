@@ -549,9 +549,9 @@
       {
         "command": "cody.chat.restart",
         "category": "Cody",
-        "title": "Restart Chat Session",
+        "title": "Restart Chat Session...",
         "group": "Cody",
-        "icon": "$(refresh)",
+        "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory && config.cody.experimental.chatPanel"
       }
     ],
@@ -616,7 +616,7 @@
       "commandPalette": [
         {
           "command": "cody.command.edit-code",
-          "when": "cody.activated && editorTextFocus"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.explain-code",
