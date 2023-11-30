@@ -280,8 +280,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     requestID,
                     message.text,
                     message.submitType,
-                    message.contextFiles,
-                    message.addEnhancedContext
+                    message.contextFiles || [],
+                    message.addEnhancedContext || false
                 )
                 break
             }
@@ -439,8 +439,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         requestID: string,
         text: string,
         submitType: 'user' | 'suggestion' | 'example',
-        userContextFiles?: ContextFile[],
-        addEnhancedContext = true
+        userContextFiles: ContextFile[],
+        addEnhancedContext: boolean
     ): Promise<void> {
         if (submitType === 'suggestion') {
             const args = { requestID }
@@ -489,12 +489,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const contextProvider = new ContextProvider(
                 userContextItems,
                 this.editor,
-                addEnhancedContext ? this.embeddingsClient : null,
-                addEnhancedContext ? this.localEmbeddings : null
+                this.embeddingsClient,
+                this.localEmbeddings
             )
             const { prompt, warnings, newContextUsed } = await this.prompter.makePrompt(
                 this.chatModel,
                 contextProvider,
+                addEnhancedContext,
                 contextWindowBytes
             )
 
@@ -777,11 +778,11 @@ class ContextProvider implements IContextProvider {
         private localEmbeddings: LocalEmbeddingsController | null
     ) {}
 
-    public getUserContext(): ContextItem[] {
+    public getExplicitContext(): ContextItem[] {
         return this.userContext
     }
 
-    public getUserAttentionContext(): ContextItem[] {
+    private getUserAttentionContext(): ContextItem[] {
         const selectionContext = this.getCurrentSelectionContext()
         if (selectionContext.length > 0) {
             return selectionContext
@@ -828,16 +829,18 @@ class ContextProvider implements IContextProvider {
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const contextItems: ContextItem[] = [
-            ...(await this.searchEmbeddingsLocal(text)),
-            ...(await this.searchEmbeddingsRemote(text)),
-        ]
+        const searchContextPromise = [this.searchEmbeddingsLocal(text), this.searchEmbeddingsRemote(text)]
+        const searchContext = (await Promise.all(searchContextPromise)).flat()
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
 
-        // Include root README if it seems necessary and is not already present
-        if (this.shouldIncludeReadmeContext(text)) {
+        const priorityContext: ContextItem[] = []
+        if (this.needsUserAttentionContext(text)) {
+            // Query refers to current editor
+            priorityContext.push(...this.getUserAttentionContext())
+        } else if (this.needsReadmeContext(text)) {
+            // Query refers to project, so include the README
             let containsREADME = false
-            for (const contextItem of contextItems) {
+            for (const contextItem of searchContext) {
                 const basename = path.basename(contextItem.uri.fsPath)
                 if (basename.toLocaleLowerCase() === 'readme' || basename.toLocaleLowerCase().startsWith('readme.')) {
                     containsREADME = true
@@ -845,12 +848,11 @@ class ContextProvider implements IContextProvider {
                 }
             }
             if (!containsREADME) {
-                const readmeContextItems = await this.getReadmeContext()
-                return readmeContextItems.concat(contextItems)
+                priorityContext.push(...(await this.getReadmeContext()))
             }
         }
 
-        return contextItems
+        return priorityContext.concat(searchContext)
     }
 
     private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {
@@ -928,7 +930,7 @@ class ContextProvider implements IContextProvider {
         return contextItems
     }
 
-    private shouldIncludeReadmeContext(input: string): boolean {
+    private needsReadmeContext(input: string): boolean {
         input = input.toLowerCase()
         const question = extractQuestion(input)
         if (!question) {
@@ -967,6 +969,25 @@ class ContextProvider implements IContextProvider {
         }
 
         return containsQuestionIndicator && containsProjectSignifier
+    }
+
+    private static userAttentionRegexps: RegExp[] = [
+        /editor/,
+        /(open|current|this|entire)\s+file/,
+        /current(ly)?\s+open/,
+        /have\s+open/,
+    ]
+
+    private needsUserAttentionContext(input: string): boolean {
+        const inputLowerCase = input.toLowerCase()
+        // If the input matches any of the `editorRegexps` we assume that we have to include
+        // the editor context (e.g., currently open file) to the overall message context.
+        for (const regexp of ContextProvider.userAttentionRegexps) {
+            if (inputLowerCase.match(regexp)) {
+                return true
+            }
+        }
+        return false
     }
 
     private async getReadmeContext(): Promise<ContextItem[]> {

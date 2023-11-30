@@ -9,12 +9,9 @@ import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from 
 
 export interface IContextProvider {
     // Context explicitly specified by user
-    getUserContext(): ContextItem[]
+    getExplicitContext(): ContextItem[]
 
-    // Context reflecting the current editor state
-    getUserAttentionContext(): ContextItem[]
-
-    // Context fetched from the broader repository
+    // Relevant context pulled from the editor state and broader repository
     getEnhancedContext(query: string): Promise<ContextItem[]>
 }
 
@@ -22,6 +19,7 @@ export interface IPrompter {
     makePrompt(
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
+        useEnhancedContext: boolean,
         byteLimit: number
     ): Promise<{
         prompt: Message[]
@@ -34,6 +32,7 @@ export class DefaultPrompter implements IPrompter {
     public async makePrompt(
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
+        useEnhancedContext: boolean,
         byteLimit: number
     ): Promise<{
         prompt: Message[]
@@ -43,6 +42,7 @@ export class DefaultPrompter implements IPrompter {
         const { reversePrompt, warnings, newContextUsed } = await this.makeReversePrompt(
             chat,
             contextProvider,
+            useEnhancedContext,
             byteLimit
         )
         return {
@@ -60,6 +60,7 @@ export class DefaultPrompter implements IPrompter {
     private async makeReversePrompt(
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
+        useEnhancedContext: boolean,
         byteLimit: number
     ): Promise<{
         reversePrompt: Message[]
@@ -88,7 +89,7 @@ export class DefaultPrompter implements IPrompter {
         {
             // Add context from new user-specified context items
             const { limitReached, used } = promptBuilder.tryAddContext(
-                contextProvider.getUserContext(),
+                contextProvider.getExplicitContext(),
                 (item: ContextItem) => this.renderContextItem(item)
             )
             newContextUsed.push(...used)
@@ -121,18 +122,16 @@ export class DefaultPrompter implements IPrompter {
             }
         }
 
-        // Add additional context from current editor or broader search
-        const additionalContextItems: ContextItem[] = []
-        if (isEditorContextRequired(lastMessage.message.text)) {
-            additionalContextItems.push(...contextProvider.getUserAttentionContext())
-        }
-        additionalContextItems.push(...(await contextProvider.getEnhancedContext(lastMessage.message.text)))
-        const { limitReached, used } = promptBuilder.tryAddContext(additionalContextItems, (item: ContextItem) =>
-            this.renderContextItem(item)
-        )
-        newContextUsed.push(...used)
-        if (limitReached) {
-            warnings.push('Ignored additional context items due to context limit')
+        if (useEnhancedContext) {
+            // Add additional context from current editor or broader search
+            const additionalContextItems = await contextProvider.getEnhancedContext(lastMessage.message.text)
+            const { limitReached, used } = promptBuilder.tryAddContext(additionalContextItems, (item: ContextItem) =>
+                this.renderContextItem(item)
+            )
+            newContextUsed.push(...used)
+            if (limitReached) {
+                warnings.push('Ignored additional context items due to context limit')
+            }
         }
 
         return {
@@ -217,18 +216,4 @@ class PromptBuilder {
             duplicate,
         }
     }
-}
-
-const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
-
-function isEditorContextRequired(input: string): boolean {
-    const inputLowerCase = input.toLowerCase()
-    // If the input matches any of the `editorRegexps` we assume that we have to include
-    // the editor context (e.g., currently open file) to the overall message context.
-    for (const regexp of editorRegexps) {
-        if (inputLowerCase.match(regexp)) {
-            return true
-        }
-    }
-    return false
 }
