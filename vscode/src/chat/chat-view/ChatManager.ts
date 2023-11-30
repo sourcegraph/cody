@@ -218,17 +218,20 @@ export class ChatManager implements vscode.Disposable {
      * Creates a new webview panel for chat.
      */
     public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider | undefined> {
-        if (!this.chatPanelsManager) {
-            return undefined
-        }
-        return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
+        logDebug('SimpleChatPanelProvider:createWebviewPanel', 'creating')
+        return this.chatPanelsManager?.createWebviewPanel(chatID, chatQuestion)
     }
 
     public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
-        this.createChatPanelsManger()
-        if (this.chatPanelsManager) {
+        try {
+            if (!this.chatPanelsManager) {
+                throw new Error('ChatPanelsManager is not initialized')
+            }
             await this.chatPanelsManager.revive(panel, chatID)
-            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revive', undefined, { hasV2Event: true })
+            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revived', undefined, { hasV2Event: true })
+        } catch (error) {
+            panel.dispose()
+            logDebug('SimpleChatPanelProvider:revive', 'failed', { error })
         }
     }
 

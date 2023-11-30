@@ -383,14 +383,7 @@ export class ChatPanelProvider extends MessageProvider {
         activePanelViewColumn?: vscode.ViewColumn,
         chatID?: string,
         lastQuestion?: string
-    ): Promise<vscode.WebviewPanel | undefined> {
-        // Create the webview panel only if the user is logged in.
-        // Allows users to login via the sidebar webview.
-        if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
-            return
-        }
-
+    ): Promise<vscode.WebviewPanel> {
         telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
 
         // Checks if the webview panel already exists and is visible.
@@ -425,10 +418,10 @@ export class ChatPanelProvider extends MessageProvider {
      * Revives the chat panel when the extension is reactivated.
      * Registers the existing webviewPanel and sets the chatID.
      */
-    public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<vscode.WebviewPanel | undefined> {
-        telemetryService.log('CodyVSCodeExtension:ChatPanelProvider:revive', undefined, { hasV2Event: true })
+    public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        logDebug('ChatPanelProvider:revive', 'reviving webview panel')
         this.startUpChatID = chatID
-        return this.registerWebviewPanel(webviewPanel)
+        await this.registerWebviewPanel(webviewPanel)
     }
 
     /**
