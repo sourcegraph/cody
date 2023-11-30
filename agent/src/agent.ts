@@ -33,10 +33,8 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
     const paths = envPaths('Cody')
     try {
         const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
-        const gitdir = await fspromises.stat(gitdirPath)
-        if (gitdir.isDirectory()) {
-            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
-        }
+        await fspromises.stat(gitdirPath)
+        vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
     } catch {
         /* ignore */
     }
