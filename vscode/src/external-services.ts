@@ -13,6 +13,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
+import { LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -21,6 +22,7 @@ interface ExternalServices {
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    localEmbeddings: LocalEmbeddingsController | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -44,6 +46,7 @@ export async function configureExternalServices(
     editor: Editor,
     platform: Pick<
         PlatformContext,
+        | 'createLocalEmbeddingsController'
         | 'createLocalKeywordContextFetcher'
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
@@ -69,6 +72,8 @@ export async function configureExternalServices(
             ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
             : null
 
+    const localEmbeddings = platform.createLocalEmbeddingsController?.()
+
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
         initialConfig,
@@ -90,12 +95,14 @@ export async function configureExternalServices(
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

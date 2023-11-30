@@ -65,7 +65,7 @@ export class ContextProvider implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    private localEmbeddings: LocalEmbeddingsController | undefined = undefined
+    public readonly localEmbeddings: LocalEmbeddingsController | undefined = undefined
 
     private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
     private statusEmbeddings: vscode.Disposable | undefined = undefined
@@ -81,6 +81,8 @@ export class ContextProvider implements vscode.Disposable {
         private platform: PlatformContext
     ) {
         this.disposables.push(this.configurationChangeEvent)
+
+        this.localEmbeddings = (codebaseContext.localEmbeddings || undefined) as LocalEmbeddingsController | undefined
 
         this.currentWorkspaceRoot = ''
         this.disposables.push(
@@ -109,18 +111,8 @@ export class ContextProvider implements vscode.Disposable {
     // - Once on extension activation.
     // - With every MessageProvider, including ChatPanelProvider.
     public async init(): Promise<void> {
-        this.initLocalEmbeddings()
         await this.updateCodebaseContext()
         await this.publishContextStatus()
-    }
-
-    private initLocalEmbeddings(): void {
-        // TODO: Multi-window chat sends multiple calls to `init`. Remove this
-        // guard when that is fixed.
-        if (this.localEmbeddings) {
-            return
-        }
-        // this.localEmbeddings = this.platform.createLocalEmbeddingsController?.()
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -359,15 +351,15 @@ async function getCodebaseContext(
     }
 
     // TODO: When SimpleChatContextProvider stops using hackGetCodebaseContext,
-    // it must start sending localEmbeddings.load and setAccessToken directly to
-    // the embeddings controller.
-    let [embeddingsSearch, hasLocalEmbeddings, _] = await Promise.all([
-        // Find a embeddings clients
-        EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase, workspaceRoot.fsPath),
-        // Instruct local embeddings to load the index for this codebase, if it exists
-        localEmbeddings?.load(gitDirectoryUri(workspaceRoot)?.fsPath),
-        config.accessToken ? localEmbeddings?.setAccessToken(config.accessToken) : Promise.resolve(undefined),
-    ])
+    // it must start sending localEmbeddings.load directly to the embeddings
+    // controller.
+    const repoDirUri = gitDirectoryUri(workspaceRoot)
+    const hasLocalEmbeddings = repoDirUri ? localEmbeddings?.load(repoDirUri) : false
+    let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(
+        embeddingsClientCandidates,
+        codebase,
+        workspaceRoot.fsPath
+    )
     if (isError(embeddingsSearch)) {
         logDebug(
             'ContextProvider:getCodebaseContext',
@@ -380,12 +372,12 @@ async function getCodebaseContext(
         config,
         codebase,
         // Use embeddings search if there are no local embeddings.
-        (!hasLocalEmbeddings && embeddingsSearch) || null,
+        (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         // Use local embeddings if we have them.
-        (hasLocalEmbeddings && localEmbeddings) || null,
+        ((await hasLocalEmbeddings) && localEmbeddings) || null,
         symf,
         undefined
     )
