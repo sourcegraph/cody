@@ -22,7 +22,6 @@ import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
-import { LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -136,6 +135,7 @@ const register = async (
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
@@ -165,7 +165,6 @@ const register = async (
         undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
     )
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
-    const localEmbeddings = contextProvider.localEmbeddings as LocalEmbeddingsController | null
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {

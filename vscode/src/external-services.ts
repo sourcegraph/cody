@@ -13,6 +13,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
+import { LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -21,6 +22,7 @@ interface ExternalServices {
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    localEmbeddings: LocalEmbeddingsController | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -80,7 +82,7 @@ export async function configureExternalServices(
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
-        localEmbeddings || null,
+        null,
         symf,
         undefined
     )
@@ -93,6 +95,7 @@ export async function configureExternalServices(
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)
