@@ -75,6 +75,10 @@ export async function createInlineCompletionItemProvider({
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'
+                : config.autocompleteExperimentalGraphContext === 'local-mixed'
+                ? 'local-mixed'
+                : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
+                ? 'jaccard-similarity'
                 : lspLightContextFlag
                 ? 'lsp-light'
                 : bfgContextFlag
