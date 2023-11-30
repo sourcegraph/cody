@@ -17,6 +17,7 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
 
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
     private service: Promise<MessageHandler> | undefined
+    private serviceStarted = false
     private accessToken: string | undefined
     private endpointIsDotcom = false
     private statusBar: vscode.StatusBarItem | undefined
@@ -24,6 +25,16 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     constructor(private readonly context: vscode.ExtensionContext) {
         logDebug('LocalEmbeddingsController', 'constructor')
+    }
+
+    // Hint that local embeddings should start cody-engine, if necessary.
+    public async start(): Promise<void> {
+        logDebug('LocalEmbeddingsController', 'start')
+        await this.getService()
+        const repoUri = vscode.workspace.workspaceFolders?.[0].uri
+        if (repoUri) {
+            await this.eagerlyLoad(repoUri.fsPath)
+        }
     }
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
@@ -90,10 +101,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 this.statusBar = undefined
                 setTimeout(() => statusBar.hide(), 30_000)
 
-                // TODO: There's a race here if there's an intervening load.
                 if (this.lastRepo) {
+                    // TODO: Load the index after indexing completes
+                    // https://github.com/sourcegraph/cody/issues/1972
+                    // This can race with intervening loads, etc.
+                    // For now flip to a checkmark so people don't generate
+                    // a second index.
                     this.lastRepo.loadResult = true
-                    this.statusEvent.fire(this)
+                    this.statusBar.fire(this)
                 }
             } else {
                 // TODO(dpc): Handle these notifications.
@@ -113,6 +128,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // happen in order.
             void service.request('embeddings/set-token', this.accessToken)
         }
+        this.serviceStarted = true
         // TODO: Handle the "last codebase" as well
         return service
     }
@@ -189,8 +205,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public async index(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.path && this.lastRepo?.loadResult)) {
-            logDebug('LocalEmbeddingsController', 'index: No repository to index')
+        if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.loadResult)) {
+            // TODO: Support index updates.
+            logDebug('LocalEmbeddingsController', 'index: No repository to index/already indexed')
             return
         }
         const repoPath = this.lastRepo.path
@@ -213,15 +230,34 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     public async load(repoUri: vscode.Uri | undefined): Promise<boolean> {
         if (!this.endpointIsDotcom) {
+            // Local embeddings only supported for dotcom
             return false
         }
         const repoPath = repoUri?.fsPath
         if (!repoPath) {
-            return Promise.resolve(false)
+            // There's no path to search
+            return false
         }
         if (repoPath === this.lastRepo?.path) {
-            return Promise.resolve(this.lastRepo.loadResult)
+            // We already tried loading this, so use that result
+            return this.lastRepo.loadResult
         }
+        if (!this.serviceStarted) {
+            // Try starting the service but reply that there are no local
+            // embeddings this time.
+            void (async () => {
+                try {
+                    await this.getService()
+                } catch (error) {
+                    logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+                }
+            })()
+            return false
+        }
+        return this.eagerlyLoad(repoPath)
+    }
+
+    private async eagerlyLoad(repoPath: string): Promise<boolean> {
         this.lastRepo = {
             path: repoPath,
             loadResult: await (await this.getService()).request('embeddings/load', repoPath),

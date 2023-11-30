@@ -354,11 +354,12 @@ async function getCodebaseContext(
     // it must start sending localEmbeddings.load directly to the embeddings
     // controller.
     const repoDirUri = gitDirectoryUri(workspaceRoot)
-    let [embeddingsSearch, hasLocalEmbeddings] = await Promise.all([
-        // Find an embeddings clients
-        EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase, workspaceRoot.fsPath),
-        repoDirUri ? localEmbeddings?.load(repoDirUri) : false,
-    ])
+    const hasLocalEmbeddings = repoDirUri ? localEmbeddings?.load(repoDirUri) : false
+    let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(
+        embeddingsClientCandidates,
+        codebase,
+        workspaceRoot.fsPath
+    )
     if (isError(embeddingsSearch)) {
         logDebug(
             'ContextProvider:getCodebaseContext',
@@ -371,12 +372,12 @@ async function getCodebaseContext(
         config,
         codebase,
         // Use embeddings search if there are no local embeddings.
-        (!hasLocalEmbeddings && embeddingsSearch) || null,
+        (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         // Use local embeddings if we have them.
-        (hasLocalEmbeddings && localEmbeddings) || null,
+        ((await hasLocalEmbeddings) && localEmbeddings) || null,
         symf,
         undefined
     )

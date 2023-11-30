@@ -113,6 +113,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.sessionID = this.chatModel.sessionID
         this.guardrails = guardrails
 
+        // Advise local embeddings to start up if necessary.
+        void this.localEmbeddings?.start()
+
         // Push context status to the webview when it changes.
         this.disposables.push(this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatusToWebView()))
         this.disposables.push(this.contextStatusAggregator)
