@@ -53,10 +53,19 @@ vscode-dropdown::part(listbox) {
     background-color: var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background));
 }
 
+vscode-dropdown[disabled]::part(listbox) {
+    cursor: default;
+}
+
 .selected-value {
     display: flex;
     gap: 6px;
     align-items: center;
+}
+
+vscode-option[disabled] {
+    cursor: default;
+    opacity: unset;
 }
 
 vscode-option::part(content) {
@@ -64,8 +73,28 @@ vscode-option::part(content) {
     display: flex;
     gap: 6px;
     align-items: center;
+    margin-right: 30px;
 }
 
-.title {
-    text-transform: capitalize;
+.badge {
+    position: absolute;
+    padding: 2px 5px;
+    right: 13px;
+
+    border-radius: 4px;
+    background: conic-gradient(
+        from 172deg at 50% 50%,
+        #7048e8 28.545312881469727deg,
+        #00cbec 49.090749621391296deg,
+        #a112ff 231.1421513557434deg,
+        #ff5543 282.65082120895386deg
+    );
+}
+
+.title-container {
+    margin-right: 1rem;
+}
+
+.disabled {
+    opacity: 0.6;
 }

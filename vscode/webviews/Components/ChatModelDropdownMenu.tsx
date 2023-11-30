@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
 
 import { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
 import { AnthropicLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
@@ -29,6 +30,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
+    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const tooltips = {
         enabled: 'Select a chat model',
@@ -42,26 +44,30 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     return (
         <div className={styles.container}>
             <VSCodeDropdown
-                disabled={!isCodyProUser || disabled}
+                disabled={disabled}
                 className={styles.dropdownContainer}
                 onChange={handleChange}
-                title={
-                    isCodyProUser
-                        ? disabled
-                            ? tooltips.disabled.codyProUser
-                            : tooltips.enabled
-                        : isEnterpriseUser
-                        ? tooltips.disabled.enterpriseUser
-                        : tooltips.disabled.dotComUser
-                }
+                title={isEnterpriseUser ? tooltips.disabled.enterpriseUser : undefined}
             >
                 {models?.map((option, index) => (
-                    <VSCodeOption className={styles.option} key={option.model} id={index.toString()}>
+                    <VSCodeOption
+                        className={styles.option}
+                        key={option.model}
+                        id={index.toString()}
+                        title={`Upgrade to Cody Pro to use ${option.title}`}
+                        disabled={showCodyProBadge && !option.default}
+                    >
                         <ProviderIcon model={option.model} />
-                        <span>
+                        <span
+                            className={classNames(
+                                styles.titleContainer,
+                                showCodyProBadge && !option.default && styles.disabled
+                            )}
+                        >
                             <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${option.provider}`}</span>
                         </span>
+                        {showCodyProBadge && !option.default && <span className={styles.badge}>Pro</span>}
                     </VSCodeOption>
                 ))}
 
