@@ -285,7 +285,7 @@ describe('getCurrentDocContext', () => {
                         for i in range(n-1):
                             █
                 `,
-            ])('detect the multiline trigger for python', code => {
+            ])('detects the multiline trigger for python', code => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
@@ -297,7 +297,7 @@ describe('getCurrentDocContext', () => {
 
             it.each([
                 {
-                    code: 'const restuls = {█',
+                    code: 'const results = {█',
                     triggerPosition: { line: 0, character: 16 },
                 },
                 {
