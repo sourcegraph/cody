@@ -16,7 +16,7 @@ import {
 interface DetectMultilineParams {
     docContext: LinesContext & DocumentDependentContext
     languageId: string
-    dynamicMultlilineCompletions: boolean
+    dynamicMultilineCompletions: boolean
     position: Position
 }
 
@@ -26,7 +26,7 @@ interface DetectMultilineResult {
 }
 
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
-    const { docContext, languageId, dynamicMultlilineCompletions, position } = params
+    const { docContext, languageId, dynamicMultilineCompletions, position } = params
     const {
         prefix,
         prevNonEmptyLine,
@@ -45,7 +45,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
     if (
-        !dynamicMultlilineCompletions &&
+        !dynamicMultilineCompletions &&
         !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
         checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
     ) {
@@ -54,15 +54,28 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
             multilineTriggerPosition: null,
         }
     }
-    completionPostProcessLogger.info({ completionPostProcessId, stage: 'detectMultiline', text: currentLinePrefix })
 
-    const openingBracketMatch = currentLinePrefix.match(OPENING_BRACKET_REGEX)
-    if (
+    completionPostProcessLogger.info({ completionPostProcessId, stage: 'detectMultiline', text: currentLinePrefix })
+    const openingBracketMatch = getLastLine(prefix.trimEnd()).match(OPENING_BRACKET_REGEX)
+
+    const isSameLineOpeningBracketMatch =
+        currentLinePrefix.trim() !== '' &&
         openingBracketMatch &&
         // Only trigger multiline suggestions when the next non-empty line is indented less
         // than the block start line (the newly created block is empty).
         indentation(currentLinePrefix) >= indentation(nextNonEmptyLine)
-    ) {
+
+    const isNewLineOpeningBracketMatch =
+        currentLinePrefix.trim() === '' &&
+        currentLineSuffix.trim() === '' &&
+        openingBracketMatch &&
+        // Only trigger multiline suggestions when the next non-empty line is indented the same or less
+        indentation(prevNonEmptyLine) < indentation(currentLinePrefix) &&
+        // Only trigger multiline suggestions when the next non-empty line is indented less
+        // than the block start line (the newly created block is empty).
+        indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
+
+    if ((dynamicMultilineCompletions && isNewLineOpeningBracketMatch) || isSameLineOpeningBracketMatch) {
         return {
             multilineTrigger: openingBracketMatch[0],
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),
@@ -79,13 +92,13 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         isBlockStartActive &&
-        // Only trigger multiline suggestions when the new current line is indented
+        // Only trigger multiline suggestions when the next non-empty line is indented the same or less
         indentation(prevNonEmptyLine) < indentation(currentLinePrefix) &&
         // Only trigger multiline suggestions when the next non-empty line is indented less
         // than the block start line (the newly created block is empty).
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
-    if ((dynamicMultlilineCompletions && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
+    if ((dynamicMultilineCompletions && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
         return {
             multilineTrigger: blockStart,
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),

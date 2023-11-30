@@ -159,7 +159,7 @@ export class FireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<InlineCompletionItemWithAnalytics[]> {
-        const { multiline, dynamicMultlilineCompletions } = this.options
+        const { multiline, dynamicMultilineCompletions } = this.options
         const prompt = this.createPrompt(snippets)
 
         const model =
@@ -192,7 +192,7 @@ export class FireworksProvider extends Provider {
         }
 
         let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultlilineCompletions) {
+        if (dynamicMultilineCompletions) {
             // If the feature flag is enabled use params adjusted for the experiment.
             Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
 

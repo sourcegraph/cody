@@ -49,7 +49,7 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             position,
             maxPrefixLength: 100,
             maxSuffixLength: 100,
-            dynamicMultlilineCompletions: false,
+            dynamicMultilineCompletions: false,
         }),
         selectedCompletionInfo: undefined,
     }
