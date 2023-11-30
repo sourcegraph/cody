@@ -616,7 +616,7 @@
       "commandPalette": [
         {
           "command": "cody.command.edit-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.explain-code",
