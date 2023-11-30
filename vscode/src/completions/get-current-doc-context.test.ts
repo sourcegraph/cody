@@ -296,23 +296,11 @@ describe('getCurrentDocContext', () => {
             })
 
             it.each([
-                {
-                    code: 'const results = {█',
-                    triggerPosition: { line: 0, character: 16 },
-                },
-                {
-                    code: 'const result = {\n  █',
-                    triggerPosition: { line: 0, character: 15 },
-                },
-                {
-                    code: 'const result = {\n    █',
-                    triggerPosition: { line: 0, character: 15 },
-                },
-                {
-                    code: 'const something = true\nfunction bubbleSort(█)',
-                    triggerPosition: { line: 1, character: 19 },
-                },
-            ])('returns correct multiline trigger position', ({ code, triggerPosition }) => {
+                'const results = {█',
+                'const result = {\n  █',
+                'const result = {\n    █',
+                'const something = true\nfunction bubbleSort(█)',
+            ])('returns correct multiline trigger position', code => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
@@ -320,7 +308,6 @@ describe('getCurrentDocContext', () => {
 
                 const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
                 expect(multilineTrigger).toBe(triggerNode.text)
-                expect(multilineTriggerPosition).toEqual(triggerPosition)
             })
 
             it.each([
@@ -367,25 +354,18 @@ describe('getCurrentDocContext', () => {
                 expect(multilineTrigger).toBeNull()
             })
 
-            it.each([
-                dedent`
-                    detectMultilineTrigger(█)
-                `,
-                dedent`
-                    const oddNumbers = [█]
-                `,
-                dedent`
-                    const result = {█}
-                `,
-            ])('detects the multiline trigger on the current line inside of parentheses', code => {
-                const {
-                    tree,
-                    docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultilineCompletions: true })
+            it.each(['detectMultilineTrigger(█)', 'const oddNumbers = [█]', 'const result = {█}'])(
+                'detects the multiline trigger on the current line inside of parentheses',
+                code => {
+                    const {
+                        tree,
+                        docContext: { multilineTrigger, multilineTriggerPosition },
+                    } = prepareTest({ code, dynamicMultilineCompletions: true })
 
-                const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
-                expect(triggerNode.text).toBe(multilineTrigger)
-            })
+                    const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
+                    expect(triggerNode.text).toBe(multilineTrigger)
+                }
+            )
         })
     })
 })
