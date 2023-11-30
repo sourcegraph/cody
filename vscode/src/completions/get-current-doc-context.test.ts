@@ -20,7 +20,7 @@ function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletio
         maxPrefixLength: 100,
         maxSuffixLength: 100,
         context,
-        dynamicMultlilineCompletions: false,
+        dynamicMultilineCompletions: false,
     })
 }
 
@@ -214,7 +214,7 @@ describe('getCurrentDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            dynamicMultlilineCompletions: false,
+            dynamicMultilineCompletions: false,
         })
         const contextRange = getContextRange(document, docContext)
 
@@ -237,7 +237,7 @@ describe('getCurrentDocContext', () => {
 
         interface PrepareTestParams {
             code: string
-            dynamicMultlilineCompletions: boolean
+            dynamicMultilineCompletions: boolean
             langaugeId?: string
         }
 
@@ -247,7 +247,7 @@ describe('getCurrentDocContext', () => {
         }
 
         function prepareTest(params: PrepareTestParams): PrepareTestResult {
-            const { dynamicMultlilineCompletions, code, langaugeId } = params
+            const { dynamicMultilineCompletions, code, langaugeId } = params
             const { document, position } = documentAndPosition(code, langaugeId)
 
             const tree = parser.parse(document.getText())
@@ -256,7 +256,7 @@ describe('getCurrentDocContext', () => {
                 position,
                 maxPrefixLength: 100,
                 maxSuffixLength: 100,
-                dynamicMultlilineCompletions,
+                dynamicMultilineCompletions,
             })
 
             return { tree, docContext }
@@ -270,7 +270,7 @@ describe('getCurrentDocContext', () => {
             resetParsersCache()
         })
 
-        describe('with enabled dynamicMultlilineCompletions', () => {
+        describe('with enabled dynamicMultilineCompletions', () => {
             it.each([
                 dedent`
                     def greatest_common_divisor(a, b):█
@@ -289,7 +289,7 @@ describe('getCurrentDocContext', () => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultlilineCompletions: true, langaugeId: 'python' })
+                } = prepareTest({ code, dynamicMultilineCompletions: true, langaugeId: 'python' })
 
                 const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
                 expect(multilineTrigger).toBe(triggerNode.text)
@@ -316,7 +316,7 @@ describe('getCurrentDocContext', () => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultlilineCompletions: true })
+                } = prepareTest({ code, dynamicMultilineCompletions: true })
 
                 const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
                 expect(multilineTrigger).toBe(triggerNode.text)
@@ -343,14 +343,14 @@ describe('getCurrentDocContext', () => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultlilineCompletions: true })
+                } = prepareTest({ code, dynamicMultilineCompletions: true })
 
                 const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
                 expect(triggerNode.text).toBe(multilineTrigger)
             })
         })
 
-        describe('with disabled dynamicMultlilineCompletions', () => {
+        describe('with disabled dynamicMultilineCompletions', () => {
             it.each([
                 dedent`
                     detectMultilineTrigger(
@@ -363,7 +363,7 @@ describe('getCurrentDocContext', () => {
                     ]
                 `,
             ])('does not detect the multiline trigger on the new line inside of parentheses', code => {
-                const { multilineTrigger } = prepareTest({ code, dynamicMultlilineCompletions: false }).docContext
+                const { multilineTrigger } = prepareTest({ code, dynamicMultilineCompletions: false }).docContext
                 expect(multilineTrigger).toBeNull()
             })
 
@@ -381,7 +381,7 @@ describe('getCurrentDocContext', () => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultlilineCompletions: true })
+                } = prepareTest({ code, dynamicMultilineCompletions: true })
 
                 const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
                 expect(triggerNode.text).toBe(multilineTrigger)

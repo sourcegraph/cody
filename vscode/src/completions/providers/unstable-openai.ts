@@ -114,7 +114,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         tracer?: CompletionProviderTracer
     ): Promise<InlineCompletionItemWithAnalytics[]> {
         const prompt = this.createPrompt(snippets)
-        const { dynamicMultlilineCompletions, multiline } = this.options
+        const { dynamicMultilineCompletions, multiline } = this.options
 
         const requestParams: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
@@ -126,7 +126,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         }
 
         let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultlilineCompletions) {
+        if (dynamicMultilineCompletions) {
             // If the feature flag is enabled use params adjusted for the experiment.
             Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
 

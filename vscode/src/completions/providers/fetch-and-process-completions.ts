@@ -274,7 +274,7 @@ function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): Document
     const updatedDocContext = getDerivedDocContext({
         languageId: document.languageId,
         position: updatedPosition,
-        dynamicMultlilineCompletions: true,
+        dynamicMultilineCompletions: true,
         documentDependentContext: {
             prefix: prefix + firstLine,
             // Remove the characters that are being replaced by the completion

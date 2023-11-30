@@ -64,7 +64,7 @@ export interface ProviderOptions {
     n: number
 
     // feature flags
-    dynamicMultlilineCompletions?: boolean
+    dynamicMultilineCompletions?: boolean
 }
 
 export abstract class Provider {

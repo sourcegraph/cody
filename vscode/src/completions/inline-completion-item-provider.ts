@@ -121,7 +121,7 @@ export interface CodyCompletionItemProviderConfig {
     // Feature flags
     completeSuggestWidgetSelection?: boolean
     disableRecyclingOfPreviousRequests?: boolean
-    dynamicMultlilineCompletions?: boolean
+    dynamicMultilineCompletions?: boolean
 }
 
 interface CompletionRequest {
@@ -159,7 +159,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     constructor({
         completeSuggestWidgetSelection = true,
         disableRecyclingOfPreviousRequests = false,
-        dynamicMultlilineCompletions = false,
+        dynamicMultilineCompletions = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -168,7 +168,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             completeSuggestWidgetSelection,
             disableRecyclingOfPreviousRequests,
-            dynamicMultlilineCompletions,
+            dynamicMultilineCompletions,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
         }
@@ -298,7 +298,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-                dynamicMultlilineCompletions: this.config.dynamicMultlilineCompletions,
+                dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
             })
 
             const completionIntent = getCompletionIntent({
@@ -341,7 +341,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
                     completionIntent,
-                    dynamicMultlilineCompletions: this.config.dynamicMultlilineCompletions,
+                    dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
