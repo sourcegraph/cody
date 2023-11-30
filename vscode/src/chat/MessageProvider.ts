@@ -492,6 +492,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             intentDetector: this.intentDetector,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
+            // TODO(dpc): Support initial chats *without* enhanced context
             addEnhancedContext: this.transcript.isEmpty,
         })
         if (!interaction) {

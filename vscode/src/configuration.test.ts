@@ -22,7 +22,7 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
-            experimentalCommandLenses: false,
+            commandCodeLenses: false,
             editorTitleCommandIcon: true,
             experimentalChatPanel: false,
             experimentalChatPredictions: false,
@@ -45,6 +45,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalGraphContext: null,
             autocompleteTimeouts: {},
         })
@@ -77,7 +78,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.newSearch':
                         return true
-                    case 'cody.experimental.commandLenses':
+                    case 'cody.commandCodeLenses':
                         return true
                     case 'cody.editorTitleCommandIcon':
                         return true
@@ -121,6 +122,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
+                    case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
+                        return false
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
@@ -150,8 +153,8 @@ describe('getConfiguration', () => {
             experimentalChatPanel: true,
             experimentalChatPredictions: true,
             experimentalSearchPanel: true,
+            commandCodeLenses: true,
             experimentalSimpleChatContext: false,
-            experimentalCommandLenses: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
@@ -170,6 +173,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteTimeouts: {},
         })

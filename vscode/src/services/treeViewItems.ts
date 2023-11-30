@@ -1,6 +1,7 @@
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
+import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
@@ -42,13 +43,7 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     chatHistoryEntries.forEach(([id, entry]) => {
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            let title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
-
-            // Display command key only
-            if (title.startsWith('/')) {
-                title = title.split(' ')[0]
-            }
-
+            const title = getChatPanelTitle(lastHumanMessage.humanMessage.displayText.split('\n')[0])
             chatTreeItems.push({
                 id,
                 title,

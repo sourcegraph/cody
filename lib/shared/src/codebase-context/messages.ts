@@ -96,8 +96,8 @@ export function createContextMessageByFile(file: ContextFile, content: string): 
     if (!code) {
         return []
     }
-
-    const fileMessage = `Context from file path @${file.fileName}:\n${code}`
+    // Replace exisiting leading @ if any
+    const fileMessage = `Context from file path @${file.fileName.replace(/^@/, '')}:\n${code}`
     const symbolMessage = `$${file.fileName} is a ${file.kind} symbol from file path @${file.uri?.fsPath}:\n${code}`
     const text = file.type === 'symbol' ? symbolMessage : fileMessage
     return [

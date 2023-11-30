@@ -3,10 +3,13 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextSummary } from './context/context-mixer'
@@ -169,18 +172,86 @@ interface ErrorEventPayload {
     count: number
 }
 
-export function logCompletionEvent(name: 'suggested', params: SuggestedEventPayload): void
-export function logCompletionEvent(name: 'accepted', params: AcceptedEventPayload): void
-export function logCompletionEvent(name: 'partiallyAccepted', params: PartiallyAcceptedEventPayload): void
-export function logCompletionEvent(name: 'persistence:present', params: PersistencePresentEventPayload): void
-export function logCompletionEvent(name: 'persistence:removed', params: PersistenceRemovedEventPayload): void
-export function logCompletionEvent(name: 'noResponse', params: NoResponseEventPayload): void
-export function logCompletionEvent(name: 'error', params: ErrorEventPayload): void
+export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent(
+        'suggested',
+        {
+            version: 0,
+            metadata,
+            privateMetadata,
+        },
+        params
+    )
+}
+export function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent(
+        'accepted',
+        {
+            version: 0,
+            metadata,
+            privateMetadata,
+        },
+        params
+    )
+}
+export function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent(
+        'partiallyAccepted',
+        {
+            version: 0,
+            metadata,
+            privateMetadata,
+        },
+        params
+    )
+}
+export function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent(
+        'persistence:present',
+        {
+            version: 0,
+            metadata,
+            privateMetadata,
+        },
+        params
+    )
+}
+export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent(
+        'persistence:removed',
+        {
+            version: 0,
+            metadata,
+            privateMetadata,
+        },
+        params
+    )
+}
+export function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent('noResponse', { version: 0, metadata, privateMetadata }, params)
+}
+export function logCompletionErrorEvent(params: ErrorEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
+}
 /**
  * The following events are added to ensure the logging bookkeeping works as expected in production
  * and should not happen under normal circumstances.
  */
-export function logCompletionEvent(
+export function logCompletionBookkeepingEvent(
     name:
         | 'acceptedUntrackedCompletion'
         | 'unexpectedNotLoaded'
@@ -189,10 +260,36 @@ export function logCompletionEvent(
         | 'unexpectedAlreadySuggested'
         | 'containsOpeningTag'
         | 'synthesizedFromParallelRequest'
-): void
-export function logCompletionEvent(name: string, params: {} = {}): void {
+): void {
+    writeCompletionEvent(name)
+}
+
+/**
+ * writeCompletionEvent is the underlying helper for various logCompletion*
+ * functions. It writes telemetry in the appropriate format to both the v1
+ * and v2 telemetry.
+ */
+function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
+    name: KnownString<Name>,
+    params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
+    /**
+     * legacyParams are passed through as-is the legacy event logger for backwards
+     * compatibility. All relevant arguments should also be set on the params
+     * object.
+     */
+    legacyParams?: LegacyParams
+): void {
     const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(`${logPrefix(extDetails.ide)}:completion:${name}`, params, { agent: true })
+    telemetryService.log(`${logPrefix(extDetails.ide)}:completion:${name}`, legacyParams, {
+        agent: true,
+        hasV2Event: true, // this helper translates the event for us
+    })
+    /**
+     * New telemetry automatically adds extension context - we do not need to
+     * include platform in the name of the event. However, we MUST prefix the
+     * event with 'cody.' to have the event be categorized as a Cody event.
+     */
+    telemetryRecorder.recordEvent('cody.completion', name, params)
 }
 
 export interface CompletionBookkeepingEvent {
@@ -406,20 +503,20 @@ export function accepted(
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
-        logCompletionEvent('acceptedUntrackedCompletion')
+        logCompletionBookkeepingEvent('acceptedUntrackedCompletion')
         return
     }
 
     // Some additional logging to ensure the invariant is correct. I expect these branches to never
     // hit but if they do, they might help debug analytics issues
     if (!completionEvent.loadedAt) {
-        logCompletionEvent('unexpectedNotLoaded')
+        logCompletionBookkeepingEvent('unexpectedNotLoaded')
     }
     if (!completionEvent.startLoggedAt) {
-        logCompletionEvent('unexpectedNotStarted')
+        logCompletionBookkeepingEvent('unexpectedNotStarted')
     }
     if (!completionEvent.suggestedAt) {
-        logCompletionEvent('unexpectedNotSuggested')
+        logCompletionBookkeepingEvent('unexpectedNotSuggested')
     }
     // It is still possible to accept a completion before it was logged as suggested. This is
     // because we do not have direct access to know when a completion is being shown or hidden from
@@ -432,7 +529,7 @@ export function accepted(
     // However, we do log the completion as rejected with the keystroke leaving a small window where
     // the completion can be accepted after it was marked as suggested.
     if (completionEvent.suggestionLoggedAt) {
-        logCompletionEvent('unexpectedAlreadySuggested')
+        logCompletionBookkeepingEvent('unexpectedAlreadySuggested')
     }
 
     if (!completionEvent.params.id) {
@@ -454,7 +551,7 @@ export function accepted(
     completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvents()
-    logCompletionEvent('accepted', {
+    logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion),
     })
@@ -496,7 +593,7 @@ export function partiallyAccept(
     const acceptedLengthDelta = acceptedLength - loggedPartialAcceptedLength
     completionEvent.loggedPartialAcceptedLength = acceptedLength
 
-    logCompletionEvent('partiallyAccepted', {
+    logCompletionPartiallyAcceptedEvent({
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion),
         acceptedLength,
@@ -514,7 +611,7 @@ export function noResponse(id: CompletionLogID): void {
     if (!completionEvent) {
         return
     }
-    logCompletionEvent('noResponse', getSharedParams(completionEvent))
+    logCompletionNoResponseEvent(getSharedParams(completionEvent))
 }
 
 /**
@@ -560,7 +657,7 @@ function logSuggestionEvents(): void {
             }
         }
 
-        logCompletionEvent('suggested', {
+        logCompletionSuggestedEvent({
             ...getSharedParams(completionEvent),
             latency,
             displayDuration,
@@ -614,7 +711,7 @@ export function logError(error: Error): void {
 
     if (!errorCounts.has(message)) {
         errorCounts.set(message, 0)
-        logCompletionEvent('error', { message, traceId, count: 1 })
+        logCompletionErrorEvent({ message, traceId, count: 1 })
     }
 
     const count = errorCounts.get(message)!
@@ -622,7 +719,7 @@ export function logError(error: Error): void {
         // Start a new flush interval
         setTimeout(() => {
             const count = errorCounts.get(message)!
-            logCompletionEvent('error', { message, traceId, count })
+            logCompletionErrorEvent({ message, traceId, count })
             errorCounts.set(message, 0)
         }, TEN_MINUTES)
     }

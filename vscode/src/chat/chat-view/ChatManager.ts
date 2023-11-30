@@ -8,6 +8,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
+import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { AuthStatus } from '../protocol'
@@ -15,6 +16,7 @@ import { AuthStatus } from '../protocol'
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
 import { SidebarChatOptions, SidebarChatProvider } from './SidebarChatProvider'
 
+export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
  * Manages chat view providers and panels.
  */
@@ -32,7 +34,8 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null
+        private embeddingsSearch: EmbeddingsSearch | null,
+        private localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatManager:constructor', 'init')
         this.options = { extensionUri, ...options }
@@ -57,7 +60,7 @@ export class ChatManager implements vscode.Disposable {
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
-            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', isChatPanelEnabled)
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
             if (isChatPanelEnabled) {
                 this.createChatPanelsManger()
             } else {
@@ -201,7 +204,12 @@ export class ChatManager implements vscode.Disposable {
 
     private createChatPanelsManger(): void {
         if (!this.chatPanelsManager) {
-            this.chatPanelsManager = new ChatPanelsManager(this.options, this.chatClient, this.embeddingsSearch)
+            this.chatPanelsManager = new ChatPanelsManager(
+                this.options,
+                this.chatClient,
+                this.embeddingsSearch,
+                this.localEmbeddings
+            )
             telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
         }
     }
@@ -214,6 +222,14 @@ export class ChatManager implements vscode.Disposable {
             return undefined
         }
         return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
+    }
+
+    public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        this.createChatPanelsManger()
+        if (this.chatPanelsManager) {
+            await this.chatPanelsManager.revive(panel, chatID)
+            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revive', undefined, { hasV2Event: true })
+        }
     }
 
     private lastDisplayedNotice = ''

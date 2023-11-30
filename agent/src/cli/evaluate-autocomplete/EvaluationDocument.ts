@@ -5,6 +5,7 @@ import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import * as vscode from 'vscode'
 
 import { CompletionBookkeepingEvent } from '../../../../vscode/src/completions/logger'
+import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
 export class EvaluationDocument {
@@ -17,10 +18,11 @@ export class EvaluationDocument {
             'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
         >,
         public readonly text: string,
+        public readonly uri: vscode.Uri,
         public readonly snapshotDirectory?: string
     ) {
         this.lines = text.split('\n')
-        this.textDocument = new AgentTextDocument({ filePath: params.filepath, content: text })
+        this.textDocument = new AgentTextDocument(TextDocumentWithUri.from(uri, { content: text }))
     }
 
     public pushItem(
@@ -90,7 +92,7 @@ export class EvaluationDocument {
                 }
                 if (item.resultText) {
                     out.push(' RESULT ')
-                    out.push(item.resultText)
+                    out.push(item.resultText.replaceAll('\n', '\\n'))
                 }
                 out.push('\n')
             }

@@ -22,6 +22,8 @@ import { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { VSCodeEditor } from '../../editor/vscode-editor'
+import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
+import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
 import { telemetryService } from '../../services/telemetry'
@@ -37,9 +39,9 @@ import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../s
 import { ConfigurationSubsetForWebview, getChatModelsForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import { embeddingsUrlScheme, relativeFileUrl, stripContextWrapper } from './chat-helpers'
+import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
-import { addWebviewViewHTML } from './ChatManager'
+import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { Config, IChatPanelProvider } from './ChatPanelsManager'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
@@ -52,6 +54,7 @@ interface SimpleChatPanelProviderOptions {
     guardrails: Guardrails
     chatClient: ChatClient
     embeddingsClient: EmbeddingsSearch | null
+    localEmbeddings: LocalEmbeddingsController | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
 }
@@ -72,6 +75,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private chatClient: ChatClient
 
     private embeddingsClient: EmbeddingsSearch | null
+    private localEmbeddings: LocalEmbeddingsController | null
+    private contextStatusAggregator = new ContextStatusAggregator()
 
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
@@ -93,6 +98,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         guardrails,
         chatClient,
         embeddingsClient,
+        localEmbeddings,
         editor,
         treeView,
     }: SimpleChatPanelProviderOptions) {
@@ -101,10 +107,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
+        this.localEmbeddings = localEmbeddings
         this.editor = editor
         this.treeView = treeView
         this.sessionID = this.chatModel.sessionID
         this.guardrails = guardrails
+
+        // Push context status to the webview when it changes.
+        this.disposables.push(this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatusToWebView()))
+        this.disposables.push(this.contextStatusAggregator)
+        if (this.localEmbeddings) {
+            this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
+        }
+        if (this.embeddingsClient) {
+            this.disposables.push(this.contextStatusAggregator.addProvider(this.embeddingsClient))
+        }
     }
 
     private completionCanceller?: () => void
@@ -129,13 +146,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             return this.webviewPanel
         }
 
-        const viewType = 'cody.chatPanel'
-        // truncate firstQuestion to first 10 chars
-        const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
-        const panelTitle = text || 'New Chat'
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        const viewType = CodyChatPanelViewType
+        const panelTitle = getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
-
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
@@ -149,22 +163,61 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             }
         )
 
+        return this.registerWebviewPanel(panel)
+    }
+
+    /**
+     * Revives the chat panel when the extension is reactivated.
+     */
+    public async revive(webviewPanel: vscode.WebviewPanel): Promise<vscode.WebviewPanel | undefined> {
+        telemetryService.log('CodyVSCodeExtension:SimpleChatPanelProvider:revive', undefined, { hasV2Event: true })
+        return this.registerWebviewPanel(webviewPanel)
+    }
+
+    /**
+     * Registers the given webview panel by setting up its options, icon, and handlers.
+     * Also stores the panel reference and disposes it when closed.
+     */
+    private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
+
+        // Reset the webview options to ensure localResourceRoots is up-to-date
+        panel.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [webviewPath],
+            enableCommandUris: true,
+        }
+
         await addWebviewViewHTML(this.extensionUri, panel)
 
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
+        this.postContextStatusToWebView()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
             this.webviewPanel = undefined
+            this.webview = undefined
             panel.dispose()
         })
 
         this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
 
+        // Used for keeping sidebar chat view closed when webview panel is enabled
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+
         return panel
+    }
+
+    private postContextStatusToWebView(): void {
+        void this.webview?.postMessage({
+            type: 'enhanced-context',
+            context: {
+                groups: this.contextStatusAggregator.status,
+            },
+        })
     }
 
     public async setWebviewView(view: View): Promise<void> {
@@ -255,6 +308,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
+            case 'embeddings/index':
+                void this.localEmbeddings?.index()
+                break
             default:
                 this.postError('Invalid request type from Webview Panel')
         }
@@ -343,7 +399,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         this.chatModel.addHumanMessage({ text })
-        void this.postViewTranscript()
+        // trigger the context progress indicator
+        void this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
     }
 
@@ -379,7 +436,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const contextProvider = new ContextProvider(
                 userContextItems,
                 this.editor,
-                addEnhancedContext ? this.embeddingsClient : null
+                addEnhancedContext ? this.embeddingsClient : null,
+                addEnhancedContext ? this.localEmbeddings : null
             )
             const {
                 prompt: promptMessages,
@@ -527,6 +585,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'transcript',
             messages,
             isMessageInProgress: !!messageInProgress,
+            chatID: this.sessionID,
         })
     }
 
@@ -580,7 +639,8 @@ class ContextProvider implements IContextProvider {
     constructor(
         private userContext: ContextItem[],
         private editor: Editor,
-        private embeddingsClient: EmbeddingsSearch | null
+        private embeddingsClient: EmbeddingsSearch | null,
+        private localEmbeddings: LocalEmbeddingsController | null
     ) {}
 
     public getUserContext(): ContextItem[] {
@@ -631,53 +691,13 @@ class ContextProvider implements IContextProvider {
             },
         ]
     }
+
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
-        if (!this.embeddingsClient) {
-            return []
-        }
-
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const contextItems: ContextItem[] = []
-        const embeddings = await this.embeddingsClient.search(text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
-        if (isError(embeddings)) {
-            throw new Error(`Error retrieving embeddings: ${embeddings}`)
-        } else {
-            for (const codeResult of embeddings.codeResults) {
-                const uri = vscode.Uri.from({
-                    scheme: embeddingsUrlScheme,
-                    authority: this.embeddingsClient.repoId,
-                    path: '/' + codeResult.fileName,
-                    fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
-                })
-
-                const range = new vscode.Range(
-                    new vscode.Position(codeResult.startLine, 0),
-                    new vscode.Position(codeResult.endLine, 0)
-                )
-                contextItems.push({
-                    uri,
-                    range,
-                    text: codeResult.content,
-                })
-            }
-
-            for (const textResult of embeddings.textResults) {
-                const uri = vscode.Uri.from({
-                    scheme: 'file',
-                    path: textResult.fileName,
-                    fragment: `${textResult.startLine}:${textResult.endLine}`,
-                })
-                const range = new vscode.Range(
-                    new vscode.Position(textResult.startLine, 0),
-                    new vscode.Position(textResult.endLine, 0)
-                )
-                contextItems.push({
-                    uri,
-                    range,
-                    text: textResult.content,
-                })
-            }
-        }
+        const contextItems: ContextItem[] = [
+            ...(await this.searchEmbeddingsLocal(text)),
+            ...(await this.searchEmbeddingsRemote(text)),
+        ]
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
 
         // Include root README if it seems necessary and is not already present
@@ -694,6 +714,81 @@ class ContextProvider implements IContextProvider {
                 const readmeContextItems = await this.getReadmeContext()
                 return readmeContextItems.concat(contextItems)
             }
+        }
+
+        return contextItems
+    }
+
+    private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {
+        if (!this.localEmbeddings) {
+            return []
+        }
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
+        const contextItems = []
+        const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
+        for (const result of embeddingsResults) {
+            const uri = vscode.Uri.from({
+                scheme: 'file',
+                path: result.fileName,
+                fragment: `${result.startLine}:${result.endLine}`,
+            })
+            const range = new vscode.Range(
+                new vscode.Position(result.startLine, 0),
+                new vscode.Position(result.endLine, 0)
+            )
+            contextItems.push({
+                uri,
+                range,
+                text: result.content,
+            })
+        }
+        return contextItems
+    }
+
+    private async searchEmbeddingsRemote(text: string): Promise<ContextItem[]> {
+        if (!this.embeddingsClient) {
+            return []
+        }
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
+        const contextItems = []
+        const embeddings = await this.embeddingsClient.search(text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
+        if (isError(embeddings)) {
+            throw new Error(`Error retrieving embeddings: ${embeddings}`)
+        }
+        for (const codeResult of embeddings.codeResults) {
+            const uri = vscode.Uri.from({
+                scheme: embeddingsUrlScheme,
+                authority: this.embeddingsClient.repoId,
+                path: '/' + codeResult.fileName,
+                fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
+            })
+
+            const range = new vscode.Range(
+                new vscode.Position(codeResult.startLine, 0),
+                new vscode.Position(codeResult.endLine, 0)
+            )
+            contextItems.push({
+                uri,
+                range,
+                text: codeResult.content,
+            })
+        }
+
+        for (const textResult of embeddings.textResults) {
+            const uri = vscode.Uri.from({
+                scheme: 'file',
+                path: textResult.fileName,
+                fragment: `${textResult.startLine}:${textResult.endLine}`,
+            })
+            const range = new vscode.Range(
+                new vscode.Position(textResult.startLine, 0),
+                new vscode.Position(textResult.endLine, 0)
+            )
+            contextItems.push({
+                uri,
+                range,
+                text: textResult.content,
+            })
         }
 
         return contextItems
