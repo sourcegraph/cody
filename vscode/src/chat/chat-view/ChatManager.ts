@@ -218,8 +218,11 @@ export class ChatManager implements vscode.Disposable {
      * Creates a new webview panel for chat.
      */
     public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider | undefined> {
-        logDebug('SimpleChatPanelProvider:createWebviewPanel', 'creating')
-        return this.chatPanelsManager?.createWebviewPanel(chatID, chatQuestion)
+        if (!this.chatPanelsManager) {
+            return undefined
+        }
+        logDebug('ChatManager:createWebviewPanel', 'creating')
+        return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
     }
 
     public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -227,11 +230,16 @@ export class ChatManager implements vscode.Disposable {
             if (!this.chatPanelsManager) {
                 throw new Error('ChatPanelsManager is not initialized')
             }
-            await this.chatPanelsManager.revive(panel, chatID)
-            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revived', undefined, { hasV2Event: true })
+
+            await this.chatPanelsManager.createWebviewPanel(chatID, panel.title, panel)
         } catch (error) {
+            console.error('revive failed', error)
+            logDebug('ChatManager:revive', 'failed', { verbose: error })
+
+            // When failed, create a new panel with restored session and dispose the old panel
+            const panelTitle = panel.title
+            await this.restorePanel(chatID, panelTitle)
             panel.dispose()
-            logDebug('SimpleChatPanelProvider:revive', 'failed', { error })
         }
     }
 

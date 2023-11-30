@@ -404,6 +404,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // trigger the context progress indicator
         void this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
+        // Set the title of the webview panel to the current text
+        if (this.webviewPanel) {
+            this.webviewPanel.title = getChatPanelTitle(text)
+        }
     }
 
     private async handleEdit(requestID: string, text: string): Promise<void> {

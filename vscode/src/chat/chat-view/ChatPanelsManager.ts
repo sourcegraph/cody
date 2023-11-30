@@ -44,10 +44,6 @@ export interface IChatPanelProvider extends vscode.Disposable {
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
-    // Sync feature flag for cody.experimental.simpleChatContext to this variable
-    // TODO remove once ChatPanelProvider and SimpleChatPanelProvider are unified
-    private useSimpleChatPanelProvider = false
-
     // Chat views in editor panels when experimentalChatPanel is enabled
     private activePanelProvider: IChatPanelProvider | undefined = undefined
     private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
@@ -71,7 +67,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
-        this.useSimpleChatPanelProvider = options.contextProvider.config.experimentalSimpleChatContext
 
         // Create treeview
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
@@ -90,7 +85,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         // Register config change listener
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
-            this.useSimpleChatPanelProvider = options.contextProvider.config.experimentalSimpleChatContext
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
             await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
@@ -131,10 +125,14 @@ export class ChatPanelsManager implements vscode.Disposable {
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider> {
+    public async createWebviewPanel(
+        chatID?: string,
+        chatQuestion?: string,
+        panel?: vscode.WebviewPanel
+    ): Promise<IChatPanelProvider> {
         if (chatID && this.panelProvidersMap.has(chatID)) {
             const provider = this.panelProvidersMap.get(chatID)
-            if (provider) {
+            if (provider?.webviewPanel) {
                 provider.webviewPanel?.reveal()
                 this.activePanelProvider = provider
                 void this.selectTreeItem(chatID)
@@ -148,13 +146,35 @@ export class ChatPanelsManager implements vscode.Disposable {
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
         const provider = this.createProvider()
-        if (chatID) {
+        if (chatID && this.options.contextProvider.config.experimentalSimpleChatContext) {
             await provider.restoreSession(chatID)
         }
-        const webviewPanel = await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
+        // Revives a chat panel provider for a given webview panel and session ID.
+        // Restores any existing session data. Registers handlers for view state changes and dispose events.
+        if (chatID && panel) {
+            await provider.revive(panel, chatID)
+        } else {
+            await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
+        }
         const sessionID = chatID || provider.sessionID
 
-        await this.revive(webviewPanel, sessionID)
+        provider.webviewPanel?.onDidChangeViewState(e => {
+            if (e.webviewPanel.visible && e.webviewPanel.active) {
+                this.activePanelProvider = provider
+                this.options.contextProvider.webview = provider.webview
+                void this.selectTreeItem(provider.sessionID)
+            }
+        })
+
+        provider.webviewPanel?.onDidDispose(() => {
+            this.disposeProvider(sessionID)
+        })
+
+        this.activePanelProvider = provider
+        this.panelProvidersMap.set(sessionID, provider)
+
+        // Selects the corresponding tree view item.
+        this.selectTreeItem(sessionID)
 
         return provider
     }
@@ -166,7 +186,7 @@ export class ChatPanelsManager implements vscode.Disposable {
      * NOTE: This can be removed once we have migrated ChatPanelProvider to SimpleChatPanelProvider
      */
     private createProvider(): SimpleChatPanelProvider | ChatPanelProvider {
-        return this.useSimpleChatPanelProvider
+        return this.options.contextProvider.config.experimentalSimpleChatContext
             ? new SimpleChatPanelProvider({
                   ...this.options,
                   config: this.options.contextProvider.config,
@@ -175,43 +195,6 @@ export class ChatPanelsManager implements vscode.Disposable {
                   localEmbeddings: this.localEmbeddings,
               })
             : new ChatPanelProvider(this.options)
-    }
-
-    /**
-     * Revives a chat panel provider for a given webview panel and session ID.
-     *
-     * Restores any existing session data. Registers handlers for view state changes and dispose events.
-     * Sets the provider as the active one and adds it to the internal map.
-     * Selects the corresponding tree view item.
-     * Returns the revived provider instance.
-     */
-    public async revive(panel: vscode.WebviewPanel, sessionID: string): Promise<IChatPanelProvider> {
-        logDebug('ChatPanelsManager:revive', sessionID)
-        const provider = this.createProvider()
-        if (sessionID) {
-            await provider.restoreSession(sessionID)
-        }
-
-        panel?.onDidChangeViewState(e => {
-            if (e.webviewPanel.visible && e.webviewPanel.active) {
-                this.activePanelProvider = provider
-                this.options.contextProvider.webview = provider.webview
-                void this.selectTreeItem(provider.sessionID)
-            }
-        })
-
-        panel?.onDidDispose(() => {
-            this.disposeProvider(sessionID)
-        })
-
-        await provider.revive(panel, sessionID)
-        // Selects the corresponding tree view item.
-        this.selectTreeItem(sessionID)
-
-        this.activePanelProvider = provider
-        this.panelProvidersMap.set(sessionID, provider)
-
-        return provider
     }
 
     private selectTreeItem(chatID: ChatID): void {
