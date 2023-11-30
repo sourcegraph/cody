@@ -219,6 +219,14 @@ describe('Tracked Range', () => {
         it('should track single character insertion after the range as a range expansion', () => {
             expect(track('[hell]() world', 'o', { supportRangeAffix: true })).toBe('[hello] world')
         })
+
+        it('should not track whitespace insertion before the range as a range expansion', () => {
+            expect(track('( )[llo] world', '  \n', { supportRangeAffix: true })).toBe('  \n[llo] world')
+        })
+
+        it('should not track whitespace insertion after the range as a range expansion', () => {
+            expect(track('[hello]( )', '  \n', { supportRangeAffix: true })).toBe('[hello]  \n')
+        })
     })
 })
 

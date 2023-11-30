@@ -107,6 +107,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                             const completion = canUsePartialCompletion(initialCompletion, {
                                 document: providerOptions.document,
                                 docContext: updatedDocContext,
+                                isDynamicMultilineCompletion: true,
                             })
 
                             if (completion) {
