@@ -30,6 +30,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Chat: The commands display box in the chat input box now uses the same styles as the @ command results box. [pull/1962](https://github.com/sourcegraph/cody/pull/1962)
 - Chat: Fix chat command selection to only filter on '/' prefix. [pull/1980](https://github.com/sourcegraph/cody/pull/1980)
 - Chat: Improve @-file completion to better preserve input value. [pull/1980](https://github.com/sourcegraph/cody/pull/1980)
+- Edit: Fixed "Ask Cody: Edit Code" no longer showing in the command palette. (pull/2004)(https://github.com/sourcegraph/cody/pull/2004)
 
 ### Changed
 
