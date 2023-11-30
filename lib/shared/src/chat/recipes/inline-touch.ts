@@ -70,6 +70,11 @@ export class InlineTouch implements Recipe {
 
         // Text display in UI fpr human that includes the selected code
         const displayText = this.getHumanDisplayText(humanInput, selection.fileName)
+        if (!context.responseMultiplexer) {
+            // HACK: stopgap so we don't need to pass this into the LegacyRecipeAdapter.
+            // This class (InlineTouch) should be removed soon.
+            throw new Error('No response multiplexer found.')
+        }
         context.responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {

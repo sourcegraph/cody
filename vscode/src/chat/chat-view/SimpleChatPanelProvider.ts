@@ -9,6 +9,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -18,6 +19,7 @@ import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -46,6 +48,7 @@ import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { Config, IChatPanelProvider } from './ChatPanelsManager'
+import { LegacyRecipeAdapter } from './LegacyRecipeAdapter'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
 
@@ -60,32 +63,29 @@ interface SimpleChatPanelProviderOptions {
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
+    legacyRecipeAdapter: LegacyRecipeAdapter
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
-    private chatModel: SimpleChatModel = new SimpleChatModel('anthropic/claude-2')
-
-    private config: Config
-
     public webviewPanel?: vscode.WebviewPanel
     public webview?: ChatViewProviderWebview
 
+    private chatModel: SimpleChatModel = new SimpleChatModel('anthropic/claude-2')
+
     private extensionUri: vscode.Uri
     private disposables: vscode.Disposable[] = []
-    private authProvider: AuthProvider
-    private guardrails: Guardrails
 
-    private chatClient: ChatClient
-
-    private embeddingsClient: EmbeddingsSearch | null
-    private localEmbeddings: LocalEmbeddingsController | null
-    private contextStatusAggregator = new ContextStatusAggregator()
-
+    private config: Config
+    private readonly authProvider: AuthProvider
+    private readonly guardrails: Guardrails
+    private readonly chatClient: ChatClient
+    private readonly embeddingsClient: EmbeddingsSearch | null
+    private readonly localEmbeddings: LocalEmbeddingsController | null
+    private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
 
     private history = new ChatHistoryManager()
-
     private prompter: IPrompter = new DefaultPrompter()
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
@@ -95,6 +95,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     // HACK: for now, we need awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
+
+    private legacyRecipeAdapter: LegacyRecipeAdapter
 
     constructor({
         config,
@@ -107,6 +109,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         localEmbeddings,
         editor,
         treeView,
+        legacyRecipeAdapter,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
@@ -119,6 +122,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.treeView = treeView
         this.sessionID = this.chatModel.sessionID
         this.guardrails = guardrails
+        this.legacyRecipeAdapter = legacyRecipeAdapter
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
@@ -356,7 +360,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
 
-        await this.postViewTranscript()
+        this.postViewTranscript()
     }
 
     public async saveSession(): Promise<void> {
@@ -375,7 +379,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.saveSession()
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.sessionID = this.chatModel.sessionID
-        await this.postViewTranscript()
+        this.postViewTranscript()
     }
 
     public clearChatHistory(): Promise<void> {
@@ -428,7 +432,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.history.saveHumanInputHistory(text)
         this.chatModel.addHumanMessage({ text })
         // trigger the context progress indicator
-        void this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
@@ -438,7 +442,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private async handleEdit(requestID: string, text: string): Promise<void> {
         this.chatModel.updateLastHumanMessage({ text })
-        void this.postViewTranscript()
+        this.postViewTranscript()
         await this.generateAssistantResponse(requestID)
     }
 
@@ -471,11 +475,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 addEnhancedContext ? this.embeddingsClient : null,
                 addEnhancedContext ? this.localEmbeddings : null
             )
-            const {
-                prompt: promptMessages,
-                warnings,
-                newContextUsed,
-            } = await this.prompter.makePrompt(this.chatModel, contextProvider, contextWindowBytes)
+            const { prompt, warnings, newContextUsed } = await this.prompter.makePrompt(
+                this.chatModel,
+                contextProvider,
+                contextWindowBytes
+            )
 
             this.chatModel.setNewContextUsed(newContextUsed)
 
@@ -485,13 +489,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            void this.postViewTranscript()
+            this.postViewTranscript()
 
-            let lastContent = ''
-            const typewriter = new Typewriter({
+            this.sendLLMRequest(requestID, prompt, {
                 update: content => {
-                    lastContent = content
-                    void this.postViewTranscript(
+                    this.postViewTranscript(
                         toViewMessage({
                             message: {
                                 speaker: 'assistant',
@@ -501,57 +503,57 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         })
                     )
                 },
-                close: () => {
-                    this.guardrailsAnnotateAttributions(reformatBotMessageForChat(lastContent, ''))
-                        .then(displayText => {
-                            this.chatModel.addBotMessage({ text: lastContent }, displayText)
-                            void this.saveSession()
-                            void this.postViewTranscript()
-
-                            // Count code generated from response
-                            const codeCount = countGeneratedCode(lastContent)
-                            if (codeCount?.charCount) {
-                                // const metadata = lastInteraction?.getHumanMessage().metadata
-                                telemetryService.log(
-                                    'CodyVSCodeExtension:chatResponse:hasCode',
-                                    { ...codeCount, requestID },
-                                    { hasV2Event: true }
-                                )
-                                telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
-                                    metadata: {
-                                        ...codeCount,
-                                    },
-                                })
-                            }
-                        })
-                        .catch(error => {
-                            throw error
-                        })
+                close: content => {
+                    this.addBotMessageWithGuardrails(requestID, content)
                 },
             })
-
-            this.cancelInProgressCompletion()
-            this.completionCanceller = this.chatClient.chat(
-                promptMessages,
-                {
-                    onChange: (content: string) => {
-                        typewriter.update(content)
-                    },
-                    onComplete: () => {
-                        this.completionCanceller = undefined
-                        typewriter.close()
-                        typewriter.stop()
-                    },
-                    onError: error => {
-                        this.completionCanceller = undefined
-                        this.postError(error)
-                    },
-                },
-                { model: this.chatModel.modelID }
-            )
         } catch (error) {
-            this.postError(new Error(`${error}`))
+            this.postError(new Error(`Error generating assistant response: ${error}`))
         }
+    }
+
+    /**
+     * Issue the chat request and stream the results back, updating the model and view
+     * with the response.
+     */
+    private sendLLMRequest(
+        requestID: string,
+        prompt: Message[],
+        callbacks: {
+            update: (response: string) => void
+            close: (finalResponse: string) => void
+        }
+    ): void {
+        let lastContent = ''
+        const typewriter = new Typewriter({
+            update: content => {
+                lastContent = content
+                callbacks.update(content)
+            },
+            close: () => {
+                callbacks.close(lastContent)
+            },
+        })
+
+        this.cancelInProgressCompletion()
+        this.completionCanceller = this.chatClient.chat(
+            prompt,
+            {
+                onChange: (content: string) => {
+                    typewriter.update(content)
+                },
+                onComplete: () => {
+                    this.completionCanceller = undefined
+                    typewriter.close()
+                    typewriter.stop()
+                },
+                onError: error => {
+                    this.completionCanceller = undefined
+                    this.postError(error)
+                },
+            },
+            { model: this.chatModel.modelID }
+        )
     }
 
     // Handler to fetch context files candidates
@@ -597,8 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 }
             }
         } catch (error) {
-            // Handle or log the error as appropriate
-            console.error('Error retrieving context files:', error)
+            this.postError(`Error retrieving context files: ${error}`)
         } finally {
             // Cancel any previous search request after we update the UI
             // to avoid a flash of empty results as you type
@@ -607,13 +608,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
     }
 
-    private async postViewTranscript(messageInProgress?: ChatMessage): Promise<void> {
+    private postViewTranscript(messageInProgress?: ChatMessage): void {
         const messages: ChatMessage[] = this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
         if (messageInProgress) {
             messages.push(messageInProgress)
         }
 
-        await this.webview?.postMessage({
+        // We never await on postMessage, because it can sometimes hang indefinitely:
+        // https://github.com/microsoft/vscode/issues/159431
+        void this.webview?.postMessage({
             type: 'transcript',
             messages,
             isMessageInProgress: !!messageInProgress,
@@ -632,6 +635,38 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      */
     private postError(error: Error): void {
         void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
+    }
+
+    /**
+     * Finalizes adding a bot message to the chat model, with guardrails, and triggers an
+     * update to the view.
+     */
+    private addBotMessageWithGuardrails(requestID: string, rawResponse: string): void {
+        this.guardrailsAnnotateAttributions(reformatBotMessageForChat(rawResponse, ''))
+            .then(displayText => {
+                this.chatModel.addBotMessage({ text: rawResponse }, displayText)
+                void this.saveSession()
+                this.postViewTranscript()
+
+                // Count code generated from response
+                const codeCount = countGeneratedCode(rawResponse)
+                if (codeCount?.charCount) {
+                    // const metadata = lastInteraction?.getHumanMessage().metadata
+                    telemetryService.log(
+                        'CodyVSCodeExtension:chatResponse:hasCode',
+                        { ...codeCount, requestID },
+                        { hasV2Event: true }
+                    )
+                    telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
+                        metadata: {
+                            ...codeCount,
+                        },
+                    })
+                }
+            })
+            .catch(error => {
+                throw error
+            })
     }
 
     private async guardrailsAnnotateAttributions(text: string): Promise<string> {
@@ -664,8 +699,52 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.config = newConfig
     }
 
-    public async executeRecipe(recipeID: RecipeID): Promise<void> {
-        await vscode.window.showErrorMessage(`command ${recipeID} not supported`)
+    public async executeRecipe(
+        recipeID: RecipeID,
+        humanChatInput = '',
+        _source?: ChatEventSource,
+        userInputContextFiles?: ContextFile[],
+        addEnhancedContext = true
+    ): Promise<void> {
+        try {
+            const requestID = uuid.v4()
+            const recipeMessages = await this.legacyRecipeAdapter.computeRecipeMessages(
+                requestID,
+                recipeID,
+                humanChatInput,
+                userInputContextFiles,
+                addEnhancedContext
+            )
+            if (!recipeMessages) {
+                return
+            }
+            await this.clearAndRestartSession()
+            const { humanMessage, prompt } = recipeMessages
+            this.chatModel.addBotMessage(humanMessage.message)
+            if (humanMessage.newContextUsed) {
+                this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
+            }
+            this.postViewTranscript()
+
+            this.sendLLMRequest(requestID, prompt, {
+                update: (responseText: string) => {
+                    this.postViewTranscript(
+                        toViewMessage({
+                            message: {
+                                speaker: 'assistant',
+                                text: responseText,
+                            },
+                            newContextUsed: humanMessage.newContextUsed,
+                        })
+                    )
+                },
+                close: (responseText: string) => {
+                    this.addBotMessageWithGuardrails(requestID, responseText)
+                },
+            })
+        } catch (error) {
+            this.postError(`command ${recipeID} failed: ${error}`)
+        }
     }
 
     public async executeCustomCommand(title: string): Promise<void> {
