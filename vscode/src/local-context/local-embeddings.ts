@@ -110,7 +110,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         if (this.accessToken) {
             // Set the initial access token
             // cody-engine does not reply to this, but we just need it to
-            // happen in order, so void.
+            // happen in order.
             void service.request('embeddings/set-token', this.accessToken)
         }
         // TODO: Handle the "last codebase" as well
@@ -211,10 +211,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
     }
 
-    public async load(repoPath: string | undefined): Promise<boolean> {
+    public async load(repoUri: vscode.Uri | undefined): Promise<boolean> {
         if (!this.endpointIsDotcom) {
             return false
         }
+        const repoPath = repoUri?.fsPath
         if (!repoPath) {
             return Promise.resolve(false)
         }

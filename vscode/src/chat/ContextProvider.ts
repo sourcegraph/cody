@@ -351,13 +351,13 @@ async function getCodebaseContext(
     }
 
     // TODO: When SimpleChatContextProvider stops using hackGetCodebaseContext,
-    // it must start sending localEmbeddings.load and setAccessToken directly to
-    // the embeddings controller.
+    // it must start sending localEmbeddings.load directly to the embeddings
+    // controller.
     const repoDirUri = gitDirectoryUri(workspaceRoot)
     let [embeddingsSearch, hasLocalEmbeddings] = await Promise.all([
         // Find an embeddings clients
         EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase, workspaceRoot.fsPath),
-        repoDirUri ? localEmbeddings?.hasIndex(repoDirUri) : false,
+        repoDirUri ? localEmbeddings?.load(repoDirUri) : false,
     ])
     if (isError(embeddingsSearch)) {
         logDebug(
