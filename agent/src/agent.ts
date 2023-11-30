@@ -4,6 +4,7 @@ import path from 'path'
 
 import { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
+import * as diff from 'fast-myers-diff'
 import * as vscode from 'vscode'
 
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
@@ -221,11 +222,28 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
+
+            const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
+            // get document with old content before updating
+            const oldDocument = this.workspace.getDocument(documentWithUri.uri)
+            if (oldDocument) {
+                const edits = diff.calcPatch(oldDocument.getText() ?? '', document.content ?? '')
+                for (const [sx, ex, text] of edits) {
+                    contentChanges.push({
+                        range: new vscode.Range(oldDocument.positionAt(sx), oldDocument.positionAt(ex)),
+                        rangeOffset: sx,
+                        rangeLength: ex - sx,
+                        text,
+                    })
+                }
+            }
+
             const textDocument = this.workspace.addDocument(documentWithUri)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
+
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
+                contentChanges,
                 reason: undefined,
             })
         })

@@ -1,6 +1,7 @@
 import levenshtein from 'js-levenshtein'
 import * as vscode from 'vscode'
 
+import { getConfiguration } from '../configuration'
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 import {
@@ -16,6 +17,7 @@ const MEASURE_TIMEOUTS = [
     300 * 1000, // 5 minutes
     600 * 1000, // 10 minutes
 ]
+
 interface TrackedCompletion {
     id: CompletionAnalyticsID
     uri: vscode.Uri
@@ -27,6 +29,7 @@ interface TrackedCompletion {
     insertRange: vscode.Range
     latestRange: vscode.Range
 }
+
 export class PersistenceTracker implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private managedTimeouts: Set<NodeJS.Timeout> = new Set()
@@ -63,7 +66,9 @@ export class PersistenceTracker implements vscode.Disposable {
         }
 
         // The range for the completion is relative to the state before the completion was inserted.
-        // We need to convert it to the state after the completion was inserted.
+        // We need to convert it to the state after the completion was inserted, unless we're running
+        // in agent mode, in which case the range will be updated later when we receive a document
+        // edit event.
         const textLines = lines(insertText)
         const latestRange = new vscode.Range(
             insertRange.start.line,
@@ -151,7 +156,6 @@ export class PersistenceTracker implements vscode.Disposable {
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
         const documentCompletions = this.trackedCompletions.get(event.document.uri.toString())
-
         if (!documentCompletions) {
             return
         }
@@ -161,8 +165,20 @@ export class PersistenceTracker implements vscode.Disposable {
             text: change.text,
         }))
 
+        if (mutableChanges.length === 0) {
+            return
+        }
+
         for (const trackedCompletion of documentCompletions) {
-            trackedCompletion.latestRange = updateRangeMultipleChanges(trackedCompletion.latestRange, mutableChanges)
+            // console.log(
+            //     `TRACKED DOCUMENT '${trackedCompletion.document.getText()}'\nEVENT DOCUMENT '${event.document.getText()}'`
+            // )
+
+            trackedCompletion.document = event.document
+            const newRange = updateRangeMultipleChanges(trackedCompletion.latestRange, mutableChanges, {
+                supportRangeAffix: getConfiguration().isRunningInsideAgent ?? false,
+            })
+            trackedCompletion.latestRange = newRange
         }
     }
 

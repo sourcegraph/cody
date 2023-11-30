@@ -563,7 +563,7 @@ export function accepted(
     })
     statistics.logAccepted()
 
-    if (trackedRange === undefined || isRunningInsideAgent()) {
+    if (trackedRange === undefined) {
         return
     }
     if (persistenceTracker === null) {
@@ -785,11 +785,6 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
-}
-
-function isRunningInsideAgent(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return !!config.isRunningInsideAgent
 }
 
 // 🚨 SECURITY: this helper ensures we log additional data only for DotCom users.
