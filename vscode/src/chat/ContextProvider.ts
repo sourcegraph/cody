@@ -82,6 +82,8 @@ export class ContextProvider implements vscode.Disposable {
     ) {
         this.disposables.push(this.configurationChangeEvent)
 
+        this.localEmbeddings = (codebaseContext.localEmbeddings || undefined) as LocalEmbeddingsController | undefined
+
         this.currentWorkspaceRoot = ''
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {

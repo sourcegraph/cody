@@ -37,7 +37,11 @@ export class ChatManager implements vscode.Disposable {
         private embeddingsSearch: EmbeddingsSearch | null,
         private localEmbeddings: LocalEmbeddingsController | null
     ) {
-        logDebug('ChatManager:constructor', 'init')
+        logDebug(
+            'ChatManager:constructor',
+            'init',
+            localEmbeddings ? 'has local embeddings controller' : 'no local embeddings'
+        )
         this.options = { extensionUri, ...options }
 
         this.sidebarChat = new SidebarChatProvider(this.options)

@@ -116,6 +116,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // Push context status to the webview when it changes.
         this.disposables.push(this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatusToWebView()))
         this.disposables.push(this.contextStatusAggregator)
+        logDebug('SimpleChatPanelProvider', 'created with local embeddings?', !!this.localEmbeddings)
         if (this.localEmbeddings) {
             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
         }
@@ -212,6 +213,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private postContextStatusToWebView(): void {
+        logDebug(
+            'SimpleChatPanelProvider',
+            'postContextStatusToWebView',
+            JSON.stringify(this.contextStatusAggregator.status)
+        )
         void this.webview?.postMessage({
             type: 'enhanced-context',
             context: {
