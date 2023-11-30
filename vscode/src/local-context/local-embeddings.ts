@@ -17,7 +17,23 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
     private service: Promise<MessageHandler> | undefined
 
-    constructor(private readonly context: vscode.ExtensionContext) {}
+    constructor(private readonly context: vscode.ExtensionContext) {
+        logDebug('LocalEmbeddingsController', 'constructor')
+    }
+
+    public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
+        logDebug('LocalEmbeddingsController', 'setAccessToken')
+        // TODO: If the server endpoint is not dotcom, local embeddings should "turn off"
+        if (token === this.lastAccessToken) {
+            return Promise.resolve()
+        }
+        this.lastAccessToken = token || undefined
+        // TODO: Add a "drop token" for sign out
+        if (token) {
+            // TODO: Make the cody-engine reply to set-token.
+            void (await this.getService()).request('embeddings/set-token', token)
+        }
+    }
 
     private getService(): Promise<MessageHandler> {
         if (!this.service) {
@@ -57,7 +73,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 this.statusBar.text = '$(sparkle) Cody Embeddings'
                 this.statusBar.backgroundColor = undefined
                 this.statusBar.show()
-                // TODO: Hide this notification after a while.
+
+                // Hide this notification after a while.
+                const statusBar = this.statusBar
+                this.statusBar = undefined
+                setTimeout(() => statusBar.hide(), 30_000)
 
                 // TODO: There's a race here if there's an intervening load.
                 if (this.lastRepo) {
@@ -123,22 +143,19 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private lastAccessToken: string | undefined
     private statusBar: vscode.StatusBarItem | undefined
 
-    public async setAccessToken(token: string): Promise<void> {
-        if (token === this.lastAccessToken) {
-            return Promise.resolve()
-        }
-        this.lastAccessToken = token
-        // TODO: Make the cody-engine reply to set-token.
-        void (await this.getService()).request('embeddings/set-token', token)
+    public async hasIndex(repoPath: vscode.Uri): Promise<boolean> {
+        const metadata = await (await this.getService()).request('embeddings/has-index', repoPath.fsPath)
+        logDebug('LocalEmbeddingsController', 'has-index', repoPath.fsPath, JSON.stringify(metadata))
+        return !!metadata
     }
 
     public async index(): Promise<void> {
         if (!this.lastRepo?.path || this.lastRepo?.loadResult) {
-            logDebug('LocalEmbeddingsController', 'No repository to index')
+            logDebug('LocalEmbeddingsController', 'index: No repository to index')
             return
         }
         const repoPath = this.lastRepo.path
-        logDebug('Indexing repository', repoPath)
+        logDebug('LocalEmbeddingsController', 'index: Starting repository', repoPath)
         try {
             // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
             // const model = 'stub/stub'
@@ -151,7 +168,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 0
             )
         } catch (error) {
-            logDebug('LocalEmbeddingsController', captureException(error))
+            logDebug('LocalEmbeddingsController', captureException(error), error)
         }
     }
 
@@ -181,7 +198,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             logDebug('LocalEmbeddingsController', `returning ${results.length} results`)
             return results
         } catch (error) {
-            logDebug('LocalEmbeddingsController', captureException(error))
+            logDebug('LocalEmbeddingsController', captureException(error), error)
             return []
         }
     }

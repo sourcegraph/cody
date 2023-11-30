@@ -22,6 +22,7 @@ import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -152,8 +153,7 @@ const register = async (
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
-    const localEmbeddings = platform.createLocalEmbeddingsController?.()
-    // Hack to get embeddings search client
+    // Hacks to get embeddings clients
     const codebaseContext = await hackGetCodebaseContext(
         initialConfig,
         rgPath,
@@ -162,9 +162,10 @@ const register = async (
         chatClient,
         platform,
         await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
-        localEmbeddings
+        undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
     )
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
+    const localEmbeddings = contextProvider.context.localEmbeddings as LocalEmbeddingsController | null
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -639,6 +640,7 @@ const register = async (
             void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

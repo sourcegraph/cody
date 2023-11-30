@@ -109,18 +109,8 @@ export class ContextProvider implements vscode.Disposable {
     // - Once on extension activation.
     // - With every MessageProvider, including ChatPanelProvider.
     public async init(): Promise<void> {
-        this.initLocalEmbeddings()
         await this.updateCodebaseContext()
         await this.publishContextStatus()
-    }
-
-    private initLocalEmbeddings(): void {
-        // TODO: Multi-window chat sends multiple calls to `init`. Remove this
-        // guard when that is fixed.
-        if (this.localEmbeddings) {
-            return
-        }
-        // this.localEmbeddings = this.platform.createLocalEmbeddingsController?.()
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -361,12 +351,11 @@ async function getCodebaseContext(
     // TODO: When SimpleChatContextProvider stops using hackGetCodebaseContext,
     // it must start sending localEmbeddings.load and setAccessToken directly to
     // the embeddings controller.
-    let [embeddingsSearch, hasLocalEmbeddings, _] = await Promise.all([
-        // Find a embeddings clients
+    const repoDirUri = gitDirectoryUri(workspaceRoot)
+    let [embeddingsSearch, hasLocalEmbeddings] = await Promise.all([
+        // Find an embeddings clients
         EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase, workspaceRoot.fsPath),
-        // Instruct local embeddings to load the index for this codebase, if it exists
-        localEmbeddings?.load(gitDirectoryUri(workspaceRoot)?.fsPath),
-        config.accessToken ? localEmbeddings?.setAccessToken(config.accessToken) : Promise.resolve(undefined),
+        repoDirUri ? localEmbeddings?.hasIndex(repoDirUri) : false,
     ])
     if (isError(embeddingsSearch)) {
         logDebug(

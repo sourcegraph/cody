@@ -44,6 +44,7 @@ export async function configureExternalServices(
     editor: Editor,
     platform: Pick<
         PlatformContext,
+        | 'createLocalEmbeddingsController'
         | 'createLocalKeywordContextFetcher'
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
@@ -69,6 +70,8 @@ export async function configureExternalServices(
             ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
             : null
 
+    const localEmbeddings = platform.createLocalEmbeddingsController?.()
+
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
         initialConfig,
@@ -77,7 +80,7 @@ export async function configureExternalServices(
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
-        null,
+        localEmbeddings || null,
         symf,
         undefined
     )
@@ -96,6 +99,7 @@ export async function configureExternalServices(
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }
