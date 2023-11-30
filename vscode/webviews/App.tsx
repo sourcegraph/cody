@@ -5,6 +5,7 @@ import './App.css'
 import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -172,12 +173,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         const addFileRegex = /@\S+$/
         // Get the string after the last '@' symbol
         const addFileInput = formInput.match(addFileRegex)?.[0]
-        if (formInput.endsWith('@') || addFileInput) {
-            vscodeAPI.postMessage({ command: 'getUserContext', query: addFileInput?.slice(1) || '' })
-        } else {
+
+        if (!formInput.endsWith('@') && trailingNonAlphaNumericRegex.test(formInput) && !contextSelection?.length) {
             setContextSelection(null)
+            return
         }
-    }, [formInput, vscodeAPI])
+
+        if (formInput.endsWith('@') || addFileInput) {
+            const query = addFileInput?.slice(1) || ''
+            vscodeAPI.postMessage({ command: 'getUserContext', query })
+            return
+        }
+
+        setContextSelection(null)
+    }, [contextSelection, formInput, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
