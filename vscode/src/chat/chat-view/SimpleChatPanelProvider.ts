@@ -142,7 +142,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     public async createWebviewPanel(
         activePanelViewColumn?: vscode.ViewColumn,
         lastQuestion?: string
-    ): Promise<vscode.WebviewPanel | undefined> {
+    ): Promise<vscode.WebviewPanel> {
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
         if (this.webviewPanel) {
@@ -172,9 +172,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Revives the chat panel when the extension is reactivated.
      */
-    public async revive(webviewPanel: vscode.WebviewPanel): Promise<vscode.WebviewPanel | undefined> {
-        telemetryService.log('CodyVSCodeExtension:SimpleChatPanelProvider:revive', undefined, { hasV2Event: true })
-        return this.registerWebviewPanel(webviewPanel)
+    public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
+        logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
+        await this.registerWebviewPanel(webviewPanel)
     }
 
     /**
@@ -182,6 +182,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * Also stores the panel reference and disposes it when closed.
      */
     private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
+        logDebug('SimpleChatPanelProvider:registerWebviewPanel', 'registering webview panel')
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
 
@@ -229,15 +230,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public async setWebviewView(view: View): Promise<void> {
-        await this.webview?.postMessage({
-            type: 'view',
-            messages: view,
-        })
-
         if (!this.webviewPanel) {
             await this.createWebviewPanel()
         }
         this.webviewPanel?.reveal()
+
+        await this.webview?.postMessage({
+            type: 'view',
+            messages: view,
+        })
     }
 
     /**
@@ -392,6 +393,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'chatModels',
             models,
         })
+        void this.restoreSession(this.sessionID)
     }
 
     private async handleHumanMessageSubmitted(
@@ -410,6 +412,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // trigger the context progress indicator
         void this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
+        // Set the title of the webview panel to the current text
+        if (this.webviewPanel) {
+            this.webviewPanel.title = getChatPanelTitle(text)
+        }
     }
 
     private async handleEdit(requestID: string, text: string): Promise<void> {
@@ -595,6 +601,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             isMessageInProgress: !!messageInProgress,
             chatID: this.sessionID,
         })
+
+        // Update webview panel title to match the last message
+        const text = this.chatModel.getLastHumanMessages()?.displayText
+        if (this.webviewPanel && text) {
+            this.webviewPanel.title = getChatPanelTitle(text)
+        }
     }
 
     /**
