@@ -461,5 +461,5 @@ function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string)
     const matchingCommands: [string, CodyPrompt][] = chatCommands.filter(
         ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
     )
-    return matchingCommands
+    return matchingCommands.sort()
 }
