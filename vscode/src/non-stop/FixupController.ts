@@ -8,6 +8,7 @@ import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
+import { PersistenceTracker } from '../persistence-tracker'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
@@ -46,6 +47,14 @@ export class FixupController
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
     private readonly typingUI = new FixupTypingUI(this)
+    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
+        onPresent({ id, afterSec }) {
+            console.log('Still present', id, afterSec)
+        },
+        onRemoved({ id }) {
+            console.log('No longer present', id)
+        },
+    })
 
     private _disposables: vscode.Disposable[] = []
 
@@ -268,7 +277,7 @@ export class FixupController
         )
     }
 
-    private logTaskCompletion(task: FixupTask, editOk: boolean): void {
+    private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
@@ -296,6 +305,14 @@ export class FixupController
                 // can be included in metadata for default export.
                 source,
             },
+        })
+
+        this.persistenceTracker.track({
+            id: task.id,
+            insertedAt: Date.now(),
+            insertText: task.replacement,
+            insertRange: task.selectionRange,
+            document,
         })
     }
 
@@ -339,7 +356,7 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, editOk)
+            this.logTaskCompletion(task, document, editOk)
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -440,7 +457,7 @@ export class FixupController
             ? await this.insertEdit(edit, document, task, applyEditOptions)
             : await this.replaceEdit(edit, diff, task, applyEditOptions)
 
-        this.logTaskCompletion(task, editOk)
+        this.logTaskCompletion(task, document, editOk)
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once

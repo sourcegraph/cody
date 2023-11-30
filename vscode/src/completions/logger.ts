@@ -7,6 +7,8 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
+import { PersistenceTracker } from '../persistence-tracker'
+import { PersistencePresentEventPayload, PersistenceRemovedEventPayload } from '../persistence-tracker/types'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
@@ -14,7 +16,6 @@ import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextSummary } from './context/context-mixer'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
-import { PersistenceTracker } from './persistence-tracker'
 import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -137,26 +138,6 @@ interface PartiallyAcceptedEventPayload extends SharedEventPayload {
      * if you sum up all the acceptedLengthDelta of a given completion ID, you get acceptedLength.
      */
     acceptedLengthDelta: number
-}
-
-/** Emitted when a completion is still present at a specific time interval after insertion */
-interface PersistencePresentEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
-    /** How many seconds after the acceptance was the check performed */
-    afterSec: number
-    /** Levenshtein distance between the current document state and the accepted completion */
-    difference: number
-    /** Number of lines still in the document */
-    lineCount: number
-    /** Number of characters still in the document */
-    charCount: number
-}
-
-/** Emitted when a completion is no longer present at a specific time interval after insertion */
-interface PersistenceRemovedEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
 }
 
 /** Emitted when a completion request returned no usable results */
@@ -380,7 +361,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
     max: 50,
 })
 
-let persistenceTracker: PersistenceTracker | null = null
+let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -563,7 +544,10 @@ export function accepted(
         return
     }
     if (persistenceTracker === null) {
-        persistenceTracker = new PersistenceTracker()
+        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace, {
+            onPresent: logCompletionPersistencePresentEvent,
+            onRemoved: logCompletionPersistenceRemovedEvent,
+        })
     }
     persistenceTracker.track({
         id: completionEvent.params.id,
