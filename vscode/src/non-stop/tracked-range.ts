@@ -57,8 +57,8 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
     const insertedLineBreaks = lines.length - 1
 
     // Handle edits
-    // support combining the appended change with the original range
-    if (options.supportRangeAffix && change.range.start.isEqual(range.end)) {
+    // support combining non-whitespace appended changes with the original range
+    if (options.supportRangeAffix && change.range.start.isEqual(range.end) && change.text.trim().length > 0) {
         return new vscode.Range(
             range.start,
             change.range.end.translate(
@@ -69,8 +69,8 @@ export function updateRange(range: vscode.Range, change: TextChange, options: Up
             )
         )
     }
-    // support combining the prepended change with the original range
-    if (options.supportRangeAffix && change.range.end.isEqual(range.start)) {
+    // support combining non-whitespace prepended changes with the original range
+    if (options.supportRangeAffix && change.range.end.isEqual(range.start) && change.text.trim().length > 0) {
         return new vscode.Range(
             change.range.start,
             range.end.translate(
