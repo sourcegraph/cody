@@ -51,7 +51,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
         this.accessToken = token || undefined
         // TODO: Add a "drop token" for sign out
-        if (token && this.service) {
+        if (token && this.serviceStarted) {
             // TODO: Make the cody-engine reply to set-token.
             void (await this.getService()).request('embeddings/set-token', token)
         }
@@ -108,7 +108,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                     // For now flip to a checkmark so people don't generate
                     // a second index.
                     this.lastRepo.loadResult = true
-                    this.statusBar.fire(this)
+                    this.statusEvent.fire(this)
                 }
             } else {
                 // TODO(dpc): Handle these notifications.
@@ -194,15 +194,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     // Interactions with cody-engine
-
-    public async hasIndex(repoPath: vscode.Uri): Promise<boolean> {
-        if (!this.endpointIsDotcom) {
-            return false
-        }
-        const metadata = await (await this.getService()).request('embeddings/has-index', repoPath.fsPath)
-        logDebug('LocalEmbeddingsController', 'has-index', repoPath.fsPath, JSON.stringify(metadata))
-        return !!metadata
-    }
 
     public async index(): Promise<void> {
         if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.loadResult)) {

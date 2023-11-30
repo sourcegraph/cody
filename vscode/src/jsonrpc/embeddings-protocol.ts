@@ -2,14 +2,6 @@
  * The protocol for communicating between Cody and local embeddings.
  */
 
-export type HasIndexResult = IndexMetadata | null
-
-export interface IndexMetadata {
-    format: 'App' | 'LocalEmbeddings'
-    indexFilePath: string
-    repoName: string
-}
-
 export interface QueryResultSet {
     results: QueryResult[]
 }
@@ -30,8 +22,6 @@ export interface IndexRequest {
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Requests = {
     'embeddings/echo': [string, string]
-    // Query whether an index exists for the repo at the specified path.
-    'embeddings/has-index': [string, HasIndexResult]
     // Instruct local embeddings to index the specified repository path.
     'embeddings/index': [IndexRequest, undefined]
     // Searches for and loads an index for the specified repository name.
