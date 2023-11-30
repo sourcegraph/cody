@@ -7,6 +7,7 @@ import { InlineCompletionItemWithAnalytics } from './text-processing/process-inl
 export interface CanUsePartialCompletionParams {
     document: TextDocument
     docContext: DocumentContext
+    isDynamicMultilineCompletion?: boolean
 }
 
 /**
