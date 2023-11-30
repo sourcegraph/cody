@@ -9,14 +9,10 @@ import { captureException } from '../../../../services/sentry/sentry'
 import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
-// This promise is only used for testing purposes. We don't await on the
-// indexing request during autocomplete because we want autocomplete to respond
-// quickly even while BFG is indexing.
-export let bfgIndexingPromise = Promise.resolve<void>(undefined)
-
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
+    private bfgIndexingPromise = Promise.resolve<void>(undefined)
     private awaitIndexing: boolean
     private didFailLoading = false
     // Keys are repository URIs, values are revisions (commit hashes).
@@ -36,7 +32,7 @@ export class BfgRetriever implements ContextRetriever {
             }
         )
 
-        bfgIndexingPromise = this.indexOpenGitRepositories()
+        this.bfgIndexingPromise = this.indexOpenGitRepositories()
     }
 
     private async indexOpenGitRepositories(): Promise<void> {
@@ -64,8 +60,12 @@ export class BfgRetriever implements ContextRetriever {
         const bfg = await this.loadedBFG
         const indexingStartTime = Date.now()
         // TODO: include commit?
-        await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
-        logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
+        try {
+            await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
+            logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
+        } catch (error) {
+            logDebug('CodyEngine', `indexing error ${error}`)
+        }
     }
 
     public async retrieve({
@@ -74,20 +74,20 @@ export class BfgRetriever implements ContextRetriever {
         docContext,
         hints,
     }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
-        await this.loadedBFG
-        if (this.didFailLoading) {
-            return []
-        }
-        const bfg = await this.loadedBFG
-        if (!bfg.isAlive()) {
-            logDebug('CodyEngine', 'not alive')
-            return []
-        }
-        if (this.awaitIndexing) {
-            await bfgIndexingPromise
-        }
-
         try {
+            if (this.didFailLoading) {
+                return []
+            }
+            const bfg = await this.loadedBFG
+            if (!bfg.isAlive()) {
+                logDebug('CodyEngine', 'not alive')
+                return []
+            }
+
+            if (this.awaitIndexing) {
+                await this.bfgIndexingPromise
+            }
+
             const responses = await bfg.request('bfg/contextAtPosition', {
                 uri: document.uri.toString(),
                 content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
