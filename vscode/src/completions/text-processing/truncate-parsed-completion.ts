@@ -44,11 +44,16 @@ function insertMissingBracketIfNeeded(params: InsertMissingBracketParams): strin
     return textToComplete
 }
 
+interface TruncateParsedCompletionResult {
+    insertText: string
+    nodeToInsert?: SyntaxNode
+}
+
 /**
  * Truncates the insert text of a parsed completion based on context.
  * Uses tree-sitter to walk the parse-tree with the inserted completion and truncate it.
  */
-export function truncateParsedCompletion(context: CompletionContext): string {
+export function truncateParsedCompletion(context: CompletionContext): TruncateParsedCompletionResult {
     const { completion, document, docContext } = context
     const { completionPostProcessId } = docContext
     const parseTreeCache = getCachedParseTreeForDocument(document)
@@ -85,10 +90,14 @@ export function truncateParsedCompletion(context: CompletionContext): string {
     }
 
     const nodeToInsert = findLastAncestorOnTheSameRow(fixedCompletion.tree!.rootNode, points.trigger || points.start)
+
     completionPostProcessLogger.info({
         completionPostProcessId,
         stage: 'truncate node',
         text: nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text,
+        obj: {
+            nodeToInsertType: nodeToInsert?.type,
+        },
     })
 
     if (nodeToInsert) {
@@ -96,14 +105,17 @@ export function truncateParsedCompletion(context: CompletionContext): string {
         completionPostProcessLogger.info({ completionPostProcessId, stage: 'truncate overlap', text: String(overlap) })
 
         if (overlap) {
-            return overlap
+            return {
+                insertText: overlap,
+                nodeToInsert,
+            }
         }
     }
 
-    return insertText
+    return { insertText, nodeToInsert: nodeToInsert || undefined }
 }
 
-function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point): SyntaxNode | null {
+export function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point): SyntaxNode | null {
     const initial = root.namedDescendantForPosition(position)
     let current = initial
 
