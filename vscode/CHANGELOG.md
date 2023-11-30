@@ -1,8 +1,6 @@
 # Changelog
 
-All notable changes to Sourcegraph Cody will be documented in this file.
-
-Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versions and `major.ODD_NUMBER.patch` for pre-release versions.
+This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
 ## [Unreleased]
 
