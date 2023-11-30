@@ -69,7 +69,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         currentLinePrefix.trim() === '' &&
         currentLineSuffix.trim() === '' &&
         openingBracketMatch &&
-        // Only trigger multiline suggestions when the new current line is indented
+        // Only trigger multiline suggestions when the next non-empty line is indented the same or less
         indentation(prevNonEmptyLine) < indentation(currentLinePrefix) &&
         // Only trigger multiline suggestions when the next non-empty line is indented less
         // than the block start line (the newly created block is empty).
@@ -92,7 +92,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         isBlockStartActive &&
-        // Only trigger multiline suggestions when the new current line is indented
+        // Only trigger multiline suggestions when the next non-empty line is indented the same or less
         indentation(prevNonEmptyLine) < indentation(currentLinePrefix) &&
         // Only trigger multiline suggestions when the next non-empty line is indented less
         // than the block start line (the newly created block is empty).
