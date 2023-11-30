@@ -16,6 +16,9 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
 
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
     private service: Promise<MessageHandler> | undefined
+    private accessToken: string | undefined
+    private statusBar: vscode.StatusBarItem | undefined
+    private lastRepo: { path: string; loadResult: boolean } | undefined
 
     constructor(private readonly context: vscode.ExtensionContext) {
         logDebug('LocalEmbeddingsController', 'constructor')
@@ -23,13 +26,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
         logDebug('LocalEmbeddingsController', 'setAccessToken')
-        // TODO: If the server endpoint is not dotcom, local embeddings should "turn off"
-        if (token === this.lastAccessToken) {
+        if (token === this.accessToken) {
             return Promise.resolve()
         }
-        this.lastAccessToken = token || undefined
+        this.accessToken = token || undefined
         // TODO: Add a "drop token" for sign out
-        if (token) {
+        if (token && this.service) {
             // TODO: Make the cody-engine reply to set-token.
             void (await this.getService()).request('embeddings/set-token', token)
         }
@@ -90,6 +92,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 void vscode.window.showInformationMessage(JSON.stringify(obj))
             }
         })
+        logDebug(
+            'LocalEmbeddingsController',
+            'spawnAndBindService',
+            'service started, token available?',
+            !!this.accessToken
+        )
+        if (this.accessToken) {
+            // Set the initial access token
+            await service.request('embeddings/set-token', this.accessToken)
+        }
+        // TODO: Handle the "last codebase" as well
         return service
     }
 
@@ -138,10 +151,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     // Interactions with cody-engine
-
-    private lastRepo: { path: string; loadResult: boolean } | undefined
-    private lastAccessToken: string | undefined
-    private statusBar: vscode.StatusBarItem | undefined
 
     public async hasIndex(repoPath: vscode.Uri): Promise<boolean> {
         const metadata = await (await this.getService()).request('embeddings/has-index', repoPath.fsPath)
