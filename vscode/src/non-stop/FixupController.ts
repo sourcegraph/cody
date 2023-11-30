@@ -149,15 +149,19 @@ export class FixupController
         return task
     }
 
-    public createTask(
+    public async createTask(
         documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
         intent?: FixupIntent,
         insertMode?: boolean,
         source?: ChatEventSource
-    ): FixupTask {
+    ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(documentUri)
+        // Support expanding the selection range for intents where it is useful
+        if (intent !== 'add') {
+            selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
+        }
         const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
@@ -235,10 +239,10 @@ export class FixupController
      * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      */
-    private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
-        const fileName = task.fixupFile.uri.fsPath
-        const documentUri = vscode.Uri.file(fileName)
-
+    private async getFixupTaskSmartSelection(
+        documentUri: vscode.Uri,
+        selectionRange: vscode.Range
+    ): Promise<vscode.Range> {
         // Use selectionRange when it's available
         if (selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
             return selectionRange
@@ -739,13 +743,6 @@ export class FixupController
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
-        }
-
-        // Support expanding the selection range for intents where it is useful
-        const getSmartSelection = task.intent !== 'add'
-        if (getSmartSelection && task.selectionRange) {
-            const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
-            task.selectionRange = newRange
         }
 
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)

@@ -42,7 +42,7 @@ export interface FixupTaskFactory {
         intent?: FixupIntent,
         insertMode?: boolean,
         source?: ChatEventSource
-    ): FixupTask
+    ): Promise<FixupTask>
 }
 
 /**

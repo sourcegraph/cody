@@ -264,7 +264,7 @@ const register = async (
         }
 
         const task = args.instruction?.trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
+            ? await fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
             : await fixup.promptUserForTask(args, source)
         if (!task) {
             return
