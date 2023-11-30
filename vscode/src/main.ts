@@ -165,7 +165,7 @@ const register = async (
         undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
     )
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
-    const localEmbeddings = contextProvider.context.localEmbeddings as LocalEmbeddingsController | null
+    const localEmbeddings = contextProvider.localEmbeddings as LocalEmbeddingsController | null
     logDebug('localEmbeddings', 'is it set', localEmbeddings)
 
     // Shared configuration that is required for chat views to send and receive messages

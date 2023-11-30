@@ -65,7 +65,7 @@ export class ContextProvider implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    private localEmbeddings: LocalEmbeddingsController | undefined = undefined
+    public readonly localEmbeddings: LocalEmbeddingsController | undefined = undefined
 
     private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
     private statusEmbeddings: vscode.Disposable | undefined = undefined

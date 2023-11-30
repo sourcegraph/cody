@@ -109,7 +109,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         )
         if (this.accessToken) {
             // Set the initial access token
-            await service.request('embeddings/set-token', this.accessToken)
+            // cody-engine does not reply to this, but we just need it to
+            // happen in order, so void.
+            void service.request('embeddings/set-token', this.accessToken)
         }
         // TODO: Handle the "last codebase" as well
         return service
@@ -178,13 +180,16 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // Interactions with cody-engine
 
     public async hasIndex(repoPath: vscode.Uri): Promise<boolean> {
+        if (!this.endpointIsDotcom) {
+            return false
+        }
         const metadata = await (await this.getService()).request('embeddings/has-index', repoPath.fsPath)
         logDebug('LocalEmbeddingsController', 'has-index', repoPath.fsPath, JSON.stringify(metadata))
         return !!metadata
     }
 
     public async index(): Promise<void> {
-        if (!this.lastRepo?.path || this.lastRepo?.loadResult) {
+        if (!(this.endpointIsDotcom && this.lastRepo?.path && this.lastRepo?.loadResult)) {
             logDebug('LocalEmbeddingsController', 'index: No repository to index')
             return
         }
@@ -207,6 +212,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public async load(repoPath: string | undefined): Promise<boolean> {
+        if (!this.endpointIsDotcom) {
+            return false
+        }
         if (!repoPath) {
             return Promise.resolve(false)
         }
@@ -222,6 +230,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public async query(query: string): Promise<QueryResultSet> {
+        if (!this.endpointIsDotcom) {
+            return { results: [] }
+        }
         return (await this.getService()).request('embeddings/query', query)
     }
 
