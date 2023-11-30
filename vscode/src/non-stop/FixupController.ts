@@ -1,19 +1,18 @@
 import * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { VsCodeFixupController } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { PersistenceTracker } from '../persistence-tracker'
+import { PersistenceRemovedEventPayload } from '../persistence-tracker/types'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
-import { computeDiff, Diff } from './diff'
+import { computeDiff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
@@ -48,11 +47,11 @@ export class FixupController
     private readonly contentStore = new ContentProvider()
     private readonly typingUI = new FixupTypingUI(this)
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
-        onPresent({ id, afterSec }) {
-            console.log('Still present', id, afterSec)
+        onPresent: (event: PersistenceRemovedEventPayload) => {
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', { ...event })
         },
-        onRemoved({ id }) {
-            console.log('No longer present', id)
+        onRemoved: (event: PersistenceRemovedEventPayload) => {
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', { ...event })
         },
     })
 
