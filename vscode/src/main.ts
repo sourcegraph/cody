@@ -18,6 +18,7 @@ import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
+import { ExecuteEditArguments } from './edit/execute'
 import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -247,13 +248,7 @@ const register = async (
     }
 
     const executeFixup = async (
-        args: {
-            document?: vscode.TextDocument
-            instruction?: string
-            intent?: FixupIntent
-            range?: vscode.Range
-            insertMode?: boolean
-        } = {},
+        args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
@@ -270,8 +265,8 @@ const register = async (
         }
 
         const task = args.instruction?.trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
-            : await fixup.promptUserForTask()
+            ? await fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
+            : await fixup.promptUserForTask(args, source)
         if (!task) {
             return
         }

@@ -10,7 +10,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
-import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
@@ -479,7 +479,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     )
                 },
                 close: () => {
-                    this.guardrailsAnnotateAttributions(reformatBotMessage(lastContent, ''))
+                    this.guardrailsAnnotateAttributions(reformatBotMessageForChat(lastContent, ''))
                         .then(displayText => {
                             this.chatModel.addBotMessage({ text: lastContent }, displayText)
                             void this.saveSession()

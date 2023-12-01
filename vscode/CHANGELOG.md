@@ -1,10 +1,18 @@
 # Changelog
 
-All notable changes to Sourcegraph Cody will be documented in this file.
-
-Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versions and `major.ODD_NUMBER.patch` for pre-release versions.
+This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
 ## [Unreleased]
+
+### Added
+
+- Edit: "Ask Cody to Generate" or the "Edit" command now stream incoming code directly to the document when only inserting new code. [pull/1883](https://github.com/sourcegraph/cody/pull/1883)
+
+### Fixed
+
+### Changed
+
+## [0.16.2]
 
 ### Added
 
@@ -31,7 +39,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Chat: Sort commands and prompts alphabetically in commands menu and chat. [pull/1998](https://github.com/sourcegraph/cody/pull/1998)
 - Chat: Fix chat command selection to only filter on '/' prefix. [pull/1980](https://github.com/sourcegraph/cody/pull/1980)
 - Chat: Improve @-file completion to better preserve input value. [pull/1980](https://github.com/sourcegraph/cody/pull/1980)
-- Edit: Fixed "Ask Cody: Edit Code" no longer showing in the command palette. (pull/2004)(https://github.com/sourcegraph/cody/pull/2004)
+- Edit: Fixed "Ask Cody: Edit Code" no longer showing in the command palette. [pull/2004](https://github.com/sourcegraph/cody/pull/2004)
 - Edit: Fixed an issue where Cody could incorrectly produce edits when repositioning code or moving your cursor onto new lines. [pull/2005](https://github.com/sourcegraph/cody/pull/2005)
 
 ### Changed

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { FixupFile } from './FixupFile'
@@ -38,8 +39,10 @@ export interface FixupTaskFactory {
         documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
-        intent?: FixupIntent
-    ): FixupTask
+        intent?: FixupIntent,
+        insertMode?: boolean,
+        source?: ChatEventSource
+    ): Promise<FixupTask>
 }
 
 /**
@@ -49,4 +52,5 @@ export interface FixupTaskFactory {
 export interface FixupTextChanged {
     textDidChange(task: FixupTask): void
     rangeDidChange(task: FixupTask): void
+    cancelTask(task: FixupTask): void
 }

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { Edit, Position, Range } from './diff'
 import { FixupFileCollection, FixupTextChanged } from './roles'
 import { TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
+import { CodyTaskState } from './utils'
 
 // This does some thunking to manage the two range types: diff ranges, and
 // text change ranges.
@@ -61,6 +62,13 @@ export class FixupDocumentEditObserver {
         const tasks = this.provider_.tasksForFile(file)
         // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
+            // Cancel any ongoing `add` tasks on undo.
+            // This is to avoid a scenario where a user is trying to undo a specific part of text, but cannot because the streamed text continues to come in as the latest addition.
+            if (task.state === CodyTaskState.inserting && event.reason === vscode.TextDocumentChangeReason.Undo) {
+                this.provider_.cancelTask(task)
+                continue
+            }
+
             for (const edit of event.contentChanges) {
                 if (
                     edit.range.end.isBefore(task.selectionRange.start) ||

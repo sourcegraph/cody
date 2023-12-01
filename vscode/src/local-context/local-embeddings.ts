@@ -15,7 +15,8 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
     return new LocalEmbeddingsController(context)
 }
 
-export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
+export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
     private service: Promise<MessageHandler> | undefined
     private serviceStarted = false
     private accessToken: string | undefined
@@ -23,8 +24,29 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private statusBar: vscode.StatusBarItem | undefined
     private lastRepo: { path: string; loadResult: boolean } | undefined
 
+    // If indexing is in progress, the path of the repo being indexed.
+    private pathBeingIndexed: string | undefined
+
+    // Fires when available local embeddings (may) have changed. This updates
+    // the codebase context, which touches the network and file system, so only
+    // use it for major changes like local embeddings being available at all,
+    // or the first index for a repository coming online.
+    private readonly changeEmitter = new vscode.EventEmitter<LocalEmbeddingsController>()
+
     constructor(private readonly context: vscode.ExtensionContext) {
         logDebug('LocalEmbeddingsController', 'constructor')
+        this.disposables.push(this.changeEmitter, this.statusEmitter)
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.statusBar?.dispose()
+    }
+
+    public get onChange(): vscode.Event<LocalEmbeddingsController> {
+        return this.changeEmitter.event
     }
 
     // Hint that local embeddings should start cody-engine, if necessary.
@@ -43,7 +65,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         if (endpointIsDotcom !== this.endpointIsDotcom) {
             // We will show, or hide, status depending on whether we are using
             // dotcom. We do not offer local embeddings to Enterprise.
-            this.statusEvent.fire(this)
+            this.statusEmitter.fire(this)
+            if (this.serviceStarted) {
+                this.changeEmitter.fire(this)
+            }
         }
         this.endpointIsDotcom = endpointIsDotcom
         if (token === this.accessToken) {
@@ -101,15 +126,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 this.statusBar = undefined
                 setTimeout(() => statusBar.hide(), 30_000)
 
-                if (this.lastRepo) {
-                    // TODO: Load the index after indexing completes
-                    // https://github.com/sourcegraph/cody/issues/1972
-                    // This can race with intervening loads, etc.
-                    // For now flip to a checkmark so people don't generate
-                    // a second index.
-                    this.lastRepo.loadResult = true
-                    this.statusEvent.fire(this)
+                if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
+                    const path = this.pathBeingIndexed
+                    void (async () => {
+                        const loadedOk = await this.eagerlyLoad(path)
+                        logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
+                        this.changeEmitter.fire(this)
+                    })()
                 }
+
+                this.pathBeingIndexed = undefined
+                this.statusEmitter.fire(this)
             } else {
                 // TODO(dpc): Handle these notifications.
                 logDebug('LocalEmbeddingsController', JSON.stringify(obj))
@@ -129,16 +156,16 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             void service.request('embeddings/set-token', this.accessToken)
         }
         this.serviceStarted = true
-        // TODO: Handle the "last codebase" as well
+        this.changeEmitter.fire(this)
         return service
     }
 
     // ContextStatusProvider implementation
 
-    private statusEvent: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter()
+    private statusEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter()
 
     public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
-        return this.statusEvent.event(callback)
+        return this.statusEmitter.event(callback)
     }
 
     public get status(): ContextGroup[] {
@@ -147,11 +174,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // There are no local embeddings for Enterprise.
             return []
         }
+        // TODO: Summarize the path with ~, etc.
+        const path = this.lastRepo?.path || vscode.workspace.workspaceFolders?.[0].uri.fsPath || '(No workspace loaded)'
         if (!this.lastRepo) {
-            // TODO: We could dig up the workspace folder here and use that.
             return [
                 {
-                    name: 'No codebase loaded',
+                    name: path,
                     providers: [
                         {
                             kind: 'embeddings',
@@ -162,8 +190,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
-        // TODO: Summarize the path with ~, etc.
-        const path = this.lastRepo.path
+        if (this.pathBeingIndexed === path) {
+            return [
+                {
+                    name: path,
+                    providers: [{ kind: 'embeddings', type: 'local', state: 'indexing' }],
+                },
+            ]
+        }
         if (this.lastRepo.loadResult) {
             return [
                 {
@@ -178,7 +212,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
-        // TODO: Display indexing, if we are indexing
         return [
             {
                 name: path,
@@ -208,12 +241,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // const model = 'stub/stub'
             const model = 'openai/text-embedding-ada-002'
             await (await this.getService()).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
+            this.pathBeingIndexed = repoPath
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
                 'cody-local-embeddings',
                 vscode.StatusBarAlignment.Right,
                 0
             )
+            this.statusEmitter.fire(this)
         } catch (error) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
         }
@@ -253,7 +288,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             path: repoPath,
             loadResult: await (await this.getService()).request('embeddings/load', repoPath),
         }
-        this.statusEvent.fire(this)
+        this.statusEmitter.fire(this)
         return this.lastRepo.loadResult
     }
 

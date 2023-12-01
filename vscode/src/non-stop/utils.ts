@@ -3,11 +3,12 @@ import * as vscode from 'vscode'
 export enum CodyTaskState {
     'idle' = 1,
     'working' = 2,
-    'applying' = 3,
-    'formatting' = 4,
-    'applied' = 5,
-    'finished' = 6,
-    'error' = 7,
+    'inserting' = 3,
+    'applying' = 4,
+    'formatting' = 5,
+    'applied' = 6,
+    'finished' = 7,
+    'error' = 8,
 }
 
 export type CodyTaskList = {
@@ -31,6 +32,11 @@ export const fixupTaskList: CodyTaskList = {
         id: 'working',
         icon: 'sync~spin',
         description: 'Cody is preparing a response',
+    },
+    [CodyTaskState.inserting]: {
+        id: 'inserting',
+        icon: 'pencil',
+        description: 'The edit is being inserted to the document',
     },
     [CodyTaskState.applying]: {
         id: 'applying',

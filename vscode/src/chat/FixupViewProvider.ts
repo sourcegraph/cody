@@ -40,6 +40,9 @@ interface FixupProviderOptions extends MessageProviderOptions {
 
 export class FixupProvider extends MessageProvider {
     private task: FixupTask
+    private insertionResponse: string | null = null
+    private insertionInProgress = false
+    private insertionPromise: Promise<void> | null = null
 
     constructor({ task, ...options }: FixupProviderOptions) {
         super(options)
@@ -57,7 +60,7 @@ export class FixupProvider extends MessageProvider {
     /**
      * Send transcript to the fixup
      */
-    protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
+    protected async handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): Promise<void> {
         const lastMessage = transcript.at(-1)
 
         // The users' messages are already added through the comments API.
@@ -66,16 +69,69 @@ export class FixupProvider extends MessageProvider {
         }
 
         // Error state: The transcript finished but we didn't receive any text
-        if (!lastMessage.text && !isMessageInProgress) {
+        if (!lastMessage.displayText && !isMessageInProgress) {
             this.handleError('Cody did not respond with any text')
         }
 
-        if (lastMessage.text) {
-            void this.editor.controllers.fixups?.didReceiveFixupText(
+        if (!lastMessage.displayText) {
+            return
+        }
+
+        return this.task.intent === 'add'
+            ? this.handleFixupInsert(lastMessage.displayText, isMessageInProgress)
+            : this.handleFixupEdit(lastMessage.displayText, isMessageInProgress)
+    }
+
+    private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
+        const controller = this.editor.controllers.fixups
+        if (!controller) {
+            return
+        }
+        return controller.didReceiveFixupText(
+            this.task.id,
+            contentSanitizer(response),
+            isMessageInProgress ? 'streaming' : 'complete'
+        )
+    }
+
+    private async handleFixupInsert(response: string, isMessageInProgress: boolean): Promise<void> {
+        const controller = this.editor.controllers.fixups
+        if (!controller) {
+            return
+        }
+
+        this.insertionResponse = response
+        this.insertionInProgress = isMessageInProgress
+
+        if (this.insertionPromise) {
+            // Already processing an insertion, wait for it to finish
+            return
+        }
+
+        return this.processInsertionQueue()
+    }
+
+    private async processInsertionQueue(): Promise<void> {
+        while (this.insertionResponse !== null) {
+            const responseToSend = this.insertionResponse
+            this.insertionResponse = null
+
+            const controller = this.editor.controllers.fixups
+            if (!controller) {
+                return
+            }
+
+            this.insertionPromise = controller.didReceiveFixupInsertion(
                 this.task.id,
-                contentSanitizer(lastMessage.text),
-                isMessageInProgress ? 'streaming' : 'complete'
+                contentSanitizer(responseToSend),
+                this.insertionInProgress ? 'streaming' : 'complete'
             )
+
+            try {
+                await this.insertionPromise
+            } finally {
+                this.insertionPromise = null
+            }
         }
     }
 
