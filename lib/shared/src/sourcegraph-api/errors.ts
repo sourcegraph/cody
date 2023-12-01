@@ -2,16 +2,7 @@ import { formatDistance } from 'date-fns'
 
 import { isError } from '../utils'
 
-/**
- * Passing normal Errors through postMessage loses the type/message so any errors to be passed
- * around must include a message and kind explicitly.
- */
-export interface SerializableError {
-    name?: string
-    message: string
-}
-
-export class RateLimitError implements SerializableError {
+export class RateLimitError extends Error {
     public static readonly errorName = 'RateLimitError'
     public readonly name = RateLimitError.errorName
 
@@ -28,6 +19,7 @@ export class RateLimitError implements SerializableError {
         public readonly limit?: number,
         public readonly retryAfter?: Date
     ) {
+        super(message)
         this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
         this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
     }

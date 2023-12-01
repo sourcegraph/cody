@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { RateLimitError, SerializableError } from '@sourcegraph/cody-shared'
+import { ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
 import { ChatButtonProps } from '../Chat'
 
@@ -10,7 +10,7 @@ import styles from './ErrorItem.module.css'
  * An error message shown in the chat.
  */
 export const ErrorItem: React.FunctionComponent<{
-    error: string | SerializableError
+    error: string | ChatError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
 }> = React.memo(function ErrorItemContent({ error, ChatButtonComponent }) {
     return typeof error !== 'string' && error.name === RateLimitError.errorName ? (

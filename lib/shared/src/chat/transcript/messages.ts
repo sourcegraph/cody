@@ -23,7 +23,13 @@ export interface ChatMessage extends Message {
     data?: any
     metadata?: ChatMetadata
     // TODO(dantup): Is anyone using string?
-    error?: string | Error
+    error?: string | ChatError
+}
+
+export interface ChatError {
+    kind?: string
+    name: string
+    message: string
 }
 
 export interface InteractionMessage extends ChatMessage {

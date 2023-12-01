@@ -156,7 +156,13 @@ export class Transcript {
         lastInteraction.setAssistantMessage({
             ...lastInteraction.getAssistantMessage(),
             text: 'Failed to generate a response due to server error.',
-            error,
+            // Serializing normal errors will lose name/message so
+            // just read them off manually and attach the rest of the fields.
+            error: {
+                ...error,
+                message: error.message,
+                name: error.name,
+            },
         })
     }
 
