@@ -54,7 +54,7 @@ vscode-dropdown::part(listbox) {
 }
 
 vscode-dropdown[disabled]::part(listbox) {
-    cursor: default;
+    cursor: pointer;
 }
 
 .selected-value {
@@ -64,35 +64,42 @@ vscode-dropdown[disabled]::part(listbox) {
 }
 
 vscode-option[disabled] {
-    cursor: default;
+    cursor: pointer;
     opacity: unset;
 }
 
 vscode-option::part(content) {
-    padding: 6px 12px 6px 8px;
+    padding: 6px 8px;
     display: flex;
     gap: 6px;
     align-items: center;
-    margin-right: 30px;
+    width: 100%;
 }
 
 .badge {
-    position: absolute;
-    padding: 2px 5px;
-    right: 13px;
-
+    position: relative;
+    margin-left: auto;
+    padding: 3px 4px;
+    background: repeating-conic-gradient(#7048E8 50%, #00CBEC 75%, #A112FF 100%, #FF5543 125%, #7048E8 150%);
     border-radius: 4px;
-    background: conic-gradient(
-        from 172deg at 50% 50%,
-        #7048e8 28.545312881469727deg,
-        #00cbec 49.090749621391296deg,
-        #a112ff 231.1421513557434deg,
-        #ff5543 282.65082120895386deg
-    );
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.025rem;
+    text-shadow: 0px 0px 1px #280065, 0px 1px 1px rgba(36, 0, 81, 1);
+    transition: box-shadow 150ms;
+    color: rgba(255,255,255,0.9);
 }
 
-.title-container {
-    margin-right: 1rem;
+vscode-option:hover .badge {
+    box-shadow:
+        0px 0px 2px 1px var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background)),
+        0px 0px 4px 0px var(--list-active-selection-foreground),
+        inset 0 0 10px 0px rgba(255,255,255,0.25);
+}
+
+.title-container:has(~ .badge) {
+    margin-right: 0.5rem;
 }
 
 .disabled {

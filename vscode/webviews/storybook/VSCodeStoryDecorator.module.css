@@ -5,7 +5,6 @@
 .container {
     max-width: 600px;
     margin: 2rem auto;
-    border: solid 1px #ffffff33;
     font-size: var(--vscode-editor-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
@@ -60,6 +59,10 @@
     --vscode-widget-shadow: rgba(0, 0, 0, 0.2);
     --vscode-list-activeSelectionForeground: #FFFFFF;
     --vscode-list-activeSelectionBackground: #04395E;
+    --vscode-dropdown-background: #313131;
+    --vscode-dropdown-border: #3C3C3C;
+    --vscode-dropdown-foreground: #CCCCCC;
+    --vscode-dropdown-listBackground: #1F1F1F;
 }
 
 @font-face {
