@@ -1178,7 +1178,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
-    "@mdi/js": "^7.2.96",
+    "@mdi/js": "^7.3.67",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.45.1",
     "@opentelemetry/resources": "^1.18.1",

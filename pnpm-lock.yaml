@@ -292,8 +292,8 @@ importers:
   lib/ui:
     dependencies:
       '@mdi/js':
-        specifier: ^7.2.96
-        version: 7.2.96
+        specifier: ^7.3.67
+        version: 7.3.67
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../shared
@@ -347,8 +347,8 @@ importers:
         specifier: ^0.4.2
         version: 0.4.3
       '@mdi/js':
-        specifier: ^7.2.96
-        version: 7.2.96
+        specifier: ^7.3.67
+        version: 7.3.67
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: ^0.45.1
         version: 0.45.1(@opentelemetry/api@1.7.0)
@@ -4125,8 +4125,8 @@ packages:
       path-to-regexp: 6.2.1
     dev: true
 
-  /@mdi/js@7.2.96:
-    resolution: {integrity: sha512-paR9M9ZT7rKbh2boksNUynuSZMHhqRYnEZOm/KrZTjQ4/FzyhjLHuvw/8XYzP+E7fS4+/Ms/82EN1pl/OFsiIA==}
+  /@mdi/js@7.3.67:
+    resolution: {integrity: sha512-MnRjknFqpTC6FifhGHjZ0+QYq2bAkZFQqIj8JA2AdPZbBxUvr8QSgB2yPAJ8/ob/XkR41xlg5majDR3c1JP1hw==}
     dev: false
 
   /@mdx-js/react@2.3.0(react@18.2.0):
