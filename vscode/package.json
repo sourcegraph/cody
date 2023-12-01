@@ -1190,6 +1190,7 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@sourcegraph/telemetry": "^0.13.0",
+    "@storybook/preview-api": "^7.6.2",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
