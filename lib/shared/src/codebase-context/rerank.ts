@@ -2,7 +2,6 @@ import x2js from 'x2js'
 
 import { ChatClient } from '../chat/chat'
 import { ContextResult } from '../local-context'
-import { SerializableError } from '../sourcegraph-api/errors'
 
 export interface Reranker {
     rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]>
@@ -42,10 +41,8 @@ export class LLMReranker implements Reranker {
                     onComplete: () => {
                         resolve(responseText)
                     },
-                    onError: (error: SerializableError, statusCode?: number) => {
-                        reject(
-                            statusCode ? new SerializableError(`Status code ${statusCode}: ${error.message}`) : error
-                        )
+                    onError: (error: Error, statusCode?: number) => {
+                        reject(statusCode ? new Error(`Status code ${statusCode}: ${error.message}`) : error)
                     },
                 },
                 {

@@ -13,7 +13,7 @@ export const ErrorItem: React.FunctionComponent<{
     error: string | SerializableError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
 }> = React.memo(function ErrorItemContent({ error, ChatButtonComponent }) {
-    return typeof error !== 'string' && error.name === 'RateLimitError' ? (
+    return typeof error !== 'string' && error.name === RateLimitError.errorName ? (
         <RateLimitErrorItem error={error as RateLimitError} ChatButtonComponent={ChatButtonComponent} />
     ) : (
         <div className="cody-chat-error">

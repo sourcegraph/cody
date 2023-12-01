@@ -10,7 +10,6 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { ContextFileSource, ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { SerializableError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -156,7 +155,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     onComplete: () => {
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
-                    onError: (error: SerializableError) => reject(error),
+                    onError: (error: Error) => reject(error),
                 },
                 {
                     temperature: 0,

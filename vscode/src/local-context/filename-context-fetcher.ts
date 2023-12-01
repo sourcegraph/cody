@@ -8,7 +8,6 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { ContextFileSource, ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
-import { SerializableError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logDebug } from '../log'
 
@@ -113,7 +112,7 @@ export class FilenameContextFetcher {
                     onComplete: () => {
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
-                    onError: (error: SerializableError, statusCode?: number) => reject(error),
+                    onError: (error: Error, statusCode?: number) => reject(error),
                 },
                 {
                     temperature: 0,

@@ -1,7 +1,6 @@
 import { ANSWER_TOKENS } from '../prompt/constants'
 import { Message } from '../sourcegraph-api'
 import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
-import { SerializableError } from '../sourcegraph-api/errors'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { IntentClassificationOption, IntentDetector } from '.'
@@ -114,7 +113,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
                     onComplete: () => {
                         resolve(responseText)
                     },
-                    onError: (error: SerializableError, statusCode?: number) => {
+                    onError: (error: Error, statusCode?: number) => {
                         console.error(`Error detecting intent: Status code ${statusCode}: ${error.message}`)
                         resolve(fallback)
                     },
