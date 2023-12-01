@@ -26,14 +26,14 @@ export interface ChatMessage extends Message {
     error?: string | ChatError
 }
 
+export interface InteractionMessage extends ChatMessage {
+    prefix?: string
+}
+
 export interface ChatError {
     kind?: string
     name: string
     message: string
-}
-
-export interface InteractionMessage extends ChatMessage {
-    prefix?: string
 }
 
 export interface ChatMetadata {
