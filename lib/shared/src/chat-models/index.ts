@@ -49,13 +49,14 @@ export class ChatModelProvider {
         public readonly model: string,
         isDefaultModel = true
     ) {
-        this.provider = getProviderName(model)
-        this.title = model.split('/')[1]?.replaceAll('-', ' ')
+        const splittedModel = model.split('/')
+        this.provider = getProviderName(splittedModel[0])
+        this.title = splittedModel[1]?.replaceAll('-', ' ')
         this.default = isDefaultModel
     }
 
     // Providers available for non-dotcom instances
-    private static privateProviders: Set<ChatModelProvider> = new Set()
+    private static privateProviders: Map<string, ChatModelProvider> = new Map()
     // Providers available for dotcom instances
     private static dotComProviders: ChatModelProvider[] = defaultDotComChatModels
 
@@ -64,13 +65,9 @@ export class ChatModelProvider {
      * to the internal providers set. This allows new chat models to be added and
      * made available for use.
      */
-    public static add(model: string): void {
-        this.addPrivateProvider(new ChatModelProvider(model))
-    }
-
-    private static addPrivateProvider(provider: ChatModelProvider): void {
-        if (!this.privateProviders.has(provider)) {
-            this.privateProviders.add(provider)
+    public static add(provider: ChatModelProvider): void {
+        if (!this.privateProviders.has(provider.model.trim())) {
+            this.privateProviders.set(provider.model.trim(), provider)
         }
     }
 
@@ -82,12 +79,14 @@ export class ChatModelProvider {
      */
     public static get(endpoint?: string | null, currentModel?: string): ChatModelProvider[] {
         const isDotComUser = endpoint && isDotCom(endpoint)
-        const models = isDotComUser ? this.dotComProviders : this.privateProviders
-        if (!currentModel) {
-            return [...models]
+        const models = isDotComUser ? this.dotComProviders : Array.from(this.privateProviders.values())
+
+        if (!isDotComUser) {
+            return Array.from(this.privateProviders.values())
         }
+
         // Set the current model as default
-        return [...models].map(model => {
+        return models.map(model => {
             return {
                 ...model,
                 default: model.model === currentModel,
@@ -97,7 +96,7 @@ export class ChatModelProvider {
 }
 
 function getProviderName(name: string): string {
-    const providerName = name.split('/')[0].toLowerCase()
+    const providerName = name.toLowerCase()
     switch (providerName) {
         case 'anthropic':
             return 'Anthropic'

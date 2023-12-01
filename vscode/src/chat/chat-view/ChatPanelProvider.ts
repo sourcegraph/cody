@@ -56,6 +56,7 @@ export class ChatPanelProvider extends MessageProvider {
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
+                await this.handleChatModels()
                 break
             case 'submit':
                 return this.onHumanMessageSubmitted(
@@ -183,11 +184,15 @@ export class ChatPanelProvider extends MessageProvider {
             config,
             authStatus,
         })
+    }
 
+    private async handleChatModels(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
-            ChatModelProvider.add(authStatus?.configOverwrites?.chatModel)
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        await this.webview?.postMessage({ type: 'chatModels', models: ChatModelProvider.get(authStatus.endpoint) })
+        const models = ChatModelProvider.get(authStatus.endpoint)
+        await this.webview?.postMessage({ type: 'chatModels', models })
     }
 
     /**

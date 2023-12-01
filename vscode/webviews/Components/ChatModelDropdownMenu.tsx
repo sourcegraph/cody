@@ -15,22 +15,26 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     userInfo,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
+
+    const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
+    const isEnterpriseUser = !userInfo.isDotComUser
+    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
+
     const handleChange = useCallback(
         (event: any): void => {
+            if (showCodyProBadge) {
+                return
+            }
             const selectedModel = models[event.target?.selectedIndex]
             onCurrentChatModelChange(selectedModel)
             setCurrentModel(selectedModel)
         },
-        [models, onCurrentChatModelChange]
+        [models, onCurrentChatModelChange, showCodyProBadge]
     )
 
     if (!models.length || models.length < 1) {
         return null
     }
-
-    const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
-    const isEnterpriseUser = !userInfo.isDotComUser
-    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const tooltips = {
         enabled: 'Select a chat model',
@@ -54,7 +58,11 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                         className={styles.option}
                         key={option.model}
                         id={index.toString()}
-                        title={`Upgrade to Cody Pro to use ${option.title}`}
+                        title={
+                            showCodyProBadge && !option.default
+                                ? `Upgrade to Cody Pro to use ${option.title}`
+                                : undefined
+                        }
                         disabled={showCodyProBadge && !option.default}
                     >
                         <ProviderIcon model={option.model} />

@@ -314,8 +314,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private handleInitialized(): void {
-        const endpoint = this.authProvider.getAuthStatus()?.endpoint
-        const models = ChatModelProvider.get(endpoint, this.chatModel.modelID)
+        const authStatus = this.authProvider.getAuthStatus()
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
         void this.webview?.postMessage({
             type: 'chatModels',
             models,
