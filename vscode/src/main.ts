@@ -540,14 +540,18 @@ const register = async (
 
     vscode.window.onDidChangeWindowState(async ws => {
         if (ws.focused) {
-            const res = await graphqlClient.getCurrentUserHasCodyPro()
+            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
             if (res instanceof Error) {
                 console.error(res)
                 return
             }
 
-            authProvider.getAuthStatus().userCanUpgrade = !res.codyProEnabled
-            void chatManager.syncAuthStatus(authProvider.getAuthStatus())
+            const authStatus = authProvider.getAuthStatus()
+
+            authStatus.hasVerifiedEmail = res.hasVerifiedEmail
+            authStatus.userCanUpgrade = !res.codyProEnabled
+
+            void chatManager.syncAuthStatus(authStatus)
         }
     })
 

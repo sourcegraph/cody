@@ -391,7 +391,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 throw new Error('Cody client not initialized')
             }
-            const res = await client.graphqlClient.getCurrentUserHasCodyPro()
+            const res = await client.graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
             if (res instanceof Error) {
                 throw res
             }
