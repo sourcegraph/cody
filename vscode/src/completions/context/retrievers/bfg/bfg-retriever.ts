@@ -68,7 +68,7 @@ export class BfgRetriever implements ContextRetriever {
             }
             const repo = await inferGitRepository(folder.uri)
             if (repo) {
-                this.didChangeSimpleRepository(repo)
+                await this.didChangeSimpleRepository(repo)
             }
         }
     }
@@ -78,7 +78,7 @@ export class BfgRetriever implements ContextRetriever {
         if (!commit) {
             return
         }
-        this.didChangeSimpleRepository({ uri: repository.rootUri, commit })
+        await this.didChangeSimpleRepository({ uri: repository.rootUri, commit })
     }
 
     private async didChangeSimpleRepository(repository: SimpleRepository): Promise<void> {
