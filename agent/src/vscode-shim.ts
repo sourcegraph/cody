@@ -21,7 +21,6 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
-import { logDebug } from '../../vscode/src/log'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
@@ -398,7 +397,6 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                         const cwd = uri.fsPath
                         const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
                         if (toplevel !== uri.fsPath) {
-                            logDebug('GitExtension', 'Repository root is not file URI')
                             return null
                         }
                         const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd }).toString().trim()
