@@ -23,6 +23,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private statusBar: vscode.StatusBarItem | undefined
     private lastRepo: { path: string; loadResult: boolean } | undefined
 
+    // If indexing is in progress, the path of the repo being indexed.
+    private pathBeingIndexed: string | undefined
+
     constructor(private readonly context: vscode.ExtensionContext) {
         logDebug('LocalEmbeddingsController', 'constructor')
     }
@@ -164,6 +167,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
         // TODO: Summarize the path with ~, etc.
         const path = this.lastRepo.path
+        if (this.pathBeingIndexed === path) {
+            return [
+                {
+                    name: path,
+                    providers: [{ kind: 'embeddings', type: 'local', state: 'indexing' }],
+                },
+            ]
+        }
         if (this.lastRepo.loadResult) {
             return [
                 {
@@ -178,7 +189,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
-        // TODO: Display indexing, if we are indexing
         return [
             {
                 name: path,
@@ -205,15 +215,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'index: Starting repository', repoPath)
         try {
             // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
-            // const model = 'stub/stub'
-            const model = 'openai/text-embedding-ada-002'
+            const model = 'stub/stub'
+            // const model = 'openai/text-embedding-ada-002'
             await (await this.getService()).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
+            this.pathBeingIndexed = repoPath
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
                 'cody-local-embeddings',
                 vscode.StatusBarAlignment.Right,
                 0
             )
+            this.statusEvent.fire(this)
         } catch (error) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
         }

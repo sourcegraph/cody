@@ -152,13 +152,17 @@ const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvi
 export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSettingsProps> = (): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
-    const enabled = useEnhancedContextEnabled()
+    const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const [isOpen, setOpen] = React.useState(false)
     const enabledChanged = React.useCallback(
         (event: any): void => {
-            events.onEnabledChange(event.target?.checked)
+            const shouldEnable = !!event.target?.checked
+            if (enabled !== shouldEnable) {
+                events.onEnabledChange(shouldEnable)
+                setEnabled(shouldEnable)
+            }
         },
-        [events]
+        [events, enabled]
     )
     return (
         <div className={classNames(popupStyles.popupHost)}>

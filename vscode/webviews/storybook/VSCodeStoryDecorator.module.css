@@ -39,6 +39,7 @@ button {
  */
 
 :root {
+    --vscode-button-background: #007acc;
     --vscode-button-secondaryBackground: #3a3d41;
     --vscode-button-secondaryForeground: #ffffff;
     --vscode-button-secondaryHoverBackground: #45494e;
