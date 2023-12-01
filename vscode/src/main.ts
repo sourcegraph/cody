@@ -538,6 +538,19 @@ const register = async (
     authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
     updateAuthStatusBarIndicator()
 
+    vscode.window.onDidChangeWindowState(async ws => {
+        if (ws.focused) {
+            const res = await graphqlClient.getCurrentUserHasCodyPro()
+            if (res instanceof Error) {
+                console.error(res)
+                return
+            }
+
+            authProvider.getAuthStatus().userCanUpgrade = !res.codyProEnabled
+            void chatManager.syncAuthStatus(authProvider.getAuthStatus())
+        }
+    })
+
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })

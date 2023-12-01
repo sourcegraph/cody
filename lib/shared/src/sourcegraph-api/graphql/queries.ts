@@ -251,3 +251,13 @@ export const EVALUATE_FEATURE_FLAG_QUERY = `
         evaluateFeatureFlag(flagName: $flagName)
     }
 `
+
+export const CURRENT_USER_HAS_CODY_PRO = `
+    query UserCodyPlan {
+        currentUser {
+            id
+            codyProEnabled
+            codyProEnabledAt
+        }
+    }
+`
