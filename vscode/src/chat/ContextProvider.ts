@@ -97,6 +97,14 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             }),
             this.contextStatusChangeEmitter
         )
+
+        if (this.localEmbeddings) {
+            this.disposables.push(
+                this.localEmbeddings.onChange(_ => {
+                    void this.updateCodebaseContext()
+                })
+            )
+        }
     }
 
     public get context(): CodebaseContext {
@@ -158,9 +166,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
         this.codebaseContext = codebaseContext
 
-        // TODO: CodebaseContext should be a CodebaseContextStatusProvider,
-        // but aggregator uses vscode EventEmitter and can't live in lib/shared.
-        // After #1717 move the status aggregation close to the context.
         this.statusEmbeddings?.dispose()
         if (this.localEmbeddings && !this.codebaseContext.embeddings) {
             // Add status from local embeddings when:
