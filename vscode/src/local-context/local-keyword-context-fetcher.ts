@@ -155,9 +155,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     onComplete: () => {
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
-                    onError: (message: string) => {
-                        reject(new Error(message))
-                    },
+                    onError: (error: Error) => reject(error),
                 },
                 {
                     temperature: 0,

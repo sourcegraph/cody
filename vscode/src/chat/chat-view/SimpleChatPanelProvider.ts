@@ -321,8 +321,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'embeddings/index':
                 void this.localEmbeddings?.index()
                 break
+            case 'show-page':
+                await vscode.commands.executeCommand('cody.show-page', message.page)
+                break
             default:
-                this.postError('Invalid request type from Webview Panel')
+                this.postError(new Error('Invalid request type from Webview Panel'))
         }
     }
 
@@ -459,7 +462,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             if (warnings.length > 0) {
                 const warningMsg =
                     'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' ')
-                this.postError(warningMsg)
+                this.postError(new Error(warningMsg))
             }
 
             void this.postViewTranscript()
@@ -527,7 +530,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 { model: this.chatModel.modelID }
             )
         } catch (error) {
-            this.postError(`${error}`)
+            this.postError(new Error(`${error}`))
         }
     }
 
@@ -607,8 +610,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    private postError(errorMsg: string): void {
-        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+    private postError(error: Error): void {
+        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
     }
 
     private async guardrailsAnnotateAttributions(text: string): Promise<string> {

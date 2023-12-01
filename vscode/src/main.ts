@@ -14,7 +14,13 @@ import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
-import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import {
+    ACCOUNT_LIMITS_INFO_URL,
+    ACCOUNT_UPGRADE_URL,
+    ACCOUNT_USAGE_URL,
+    AuthStatus,
+    CODY_FEEDBACK_URL,
+} from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -452,6 +458,26 @@ const register = async (
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
         ),
+
+        // Account links
+        vscode.commands.registerCommand('cody.show-page', (page: string) => {
+            let url: URL
+            switch (page) {
+                case 'upgrade':
+                    url = ACCOUNT_UPGRADE_URL
+                    break
+                case 'usage':
+                    url = ACCOUNT_USAGE_URL
+                    break
+                case 'rate-limits':
+                    url = ACCOUNT_LIMITS_INFO_URL
+                    break
+                default:
+                    console.warn(`Unable to show unknown page: "${page}"`)
+                    return
+            }
+            void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
+        }),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({

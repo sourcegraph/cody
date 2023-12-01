@@ -2,6 +2,7 @@ import http from 'http'
 import https from 'https'
 
 import { isError } from '../../utils'
+import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
@@ -35,6 +36,33 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 if (res.statusCode === undefined) {
                     throw new Error('no status code present')
                 }
+
+                // Calls the error callback handler for an error.
+                //
+                // If the request failed with a rate limit error, wraps the
+                // error in RateLimitError.
+                function handleError(e: Error): void {
+                    log?.onError(e.message)
+
+                    if (res.statusCode === 429) {
+                        // Check for explicit false, because if the header is not set, there
+                        // is no upgrade available.
+                        const upgradeIsAvailable = res.headers['x-is-cody-pro-user'] === 'false'
+                        const retryAfter = res.headers['retry-after']
+                        const limit = res.headers['x-ratelimit-limit'] ? res.headers['x-ratelimit-limit'][0] : undefined
+                        const error = new RateLimitError(
+                            'chat messages',
+                            e.message,
+                            upgradeIsAvailable,
+                            limit ? parseInt(limit, 10) : undefined,
+                            retryAfter ? new Date(retryAfter) : undefined
+                        )
+                        cb.onError(error, res.statusCode)
+                    } else {
+                        cb.onError(e, res.statusCode)
+                    }
+                }
+
                 // For failed requests, we just want to read the entire body and
                 // ultimately return it to the error callback.
                 if (res.statusCode >= 400) {
@@ -53,18 +81,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferBin = buf
                     })
 
-                    res.on('error', e => {
-                        log?.onError(e.message)
-                        cb.onError(e.message, res.statusCode)
-                    })
-                    res.on('end', () => {
-                        log?.onError(errorMessage)
-                        cb.onError(errorMessage, res.statusCode)
-                    })
+                    res.on('error', e => handleError(e))
+                    res.on('end', () => handleError(new Error(errorMessage)))
                     return
                 }
 
-                // Bytes which have not been decoded as UTF-8 text
+                // By tes which have not been decoded as UTF-8 text
                 let bufferBin = Buffer.of()
                 // Text which has not been decoded as a server-sent event (SSE)
                 let bufferText = ''
@@ -90,21 +112,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     bufferText = parseResult.remainingBuffer
                 })
 
-                res.on('error', e => {
-                    log?.onError(e.message)
-                    cb.onError(e.message)
-                })
+                res.on('error', e => handleError(e))
             }
         )
 
         request.on('error', e => {
-            let message = e.message
-            if (message.includes('ECONNREFUSED')) {
-                message =
+            let error = e
+            if (error.message.includes('ECONNREFUSED')) {
+                error = new Error(
                     'Could not connect to Cody. Please ensure that Cody app is running or that you are connected to the Sourcegraph server.'
+                )
             }
-            log?.onError(message)
-            cb.onError(message)
+            log?.onError(error.message)
+            cb.onError(error)
         })
 
         request.write(JSON.stringify(params))

@@ -254,12 +254,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
+            postMessage={msg => vscodeAPI.postMessage(msg)}
         />
     )
 }
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
-    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick, appearance }) => (
+    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton} appearance={appearance}>
         {label}
     </VSCodeButton>
 )

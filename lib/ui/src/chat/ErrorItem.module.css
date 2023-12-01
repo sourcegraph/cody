@@ -1,0 +1,15 @@
+h1 {
+    text-transform: uppercase;
+    font-size: 1.2em;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    padding: 0 0 var(--spacing) 0;
+    gap: 10px;
+}
+
+.retry-message {
+    font-size: 0.8em;
+}

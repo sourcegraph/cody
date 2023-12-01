@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { ChatMessage, ChatModelProvider } from '@sourcegraph/cody-shared'
 
 import {
+    ApiPostMessage,
     ChatButtonProps,
     ChatModelDropdownMenuProps,
     ChatUISubmitButtonProps,
@@ -44,6 +45,7 @@ export const Transcript: React.FunctionComponent<
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
         userInfo?: UserAccountInfo
+        postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -74,6 +76,7 @@ export const Transcript: React.FunctionComponent<
     ChatModelDropdownMenu,
     onCurrentChatModelChange,
     userInfo,
+    postMessage,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -143,7 +146,7 @@ export const Transcript: React.FunctionComponent<
     const messageToTranscriptItem =
         (offset: number) =>
         (message: ChatMessage, index: number): JSX.Element | null => {
-            if (!message?.displayText) {
+            if (!message?.displayText && !message.error) {
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
@@ -167,15 +170,17 @@ export const Transcript: React.FunctionComponent<
                     textAreaComponent={textAreaComponent}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText.startsWith('/')}
+                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText?.startsWith('/')}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
-                    showFeedbackButtons={index !== 0 && !isTranscriptError}
+                    showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
+                    userInfo={userInfo}
+                    postMessage={postMessage}
                 />
             )
         }
@@ -214,6 +219,7 @@ export const Transcript: React.FunctionComponent<
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
+                        postMessage={postMessage}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (

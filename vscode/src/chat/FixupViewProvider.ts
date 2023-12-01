@@ -70,7 +70,7 @@ export class FixupProvider extends MessageProvider {
 
         // Error state: The transcript finished but we didn't receive any text
         if (!lastMessage.displayText && !isMessageInProgress) {
-            this.handleError('Cody did not respond with any text')
+            this.handleError(new Error('Cody did not respond with any text'))
         }
 
         if (!lastMessage.displayText) {
@@ -139,8 +139,8 @@ export class FixupProvider extends MessageProvider {
      * Display an erred codelens to the user on failed fixup apply.
      * Will allow the user to view the error in more detail if needed.
      */
-    protected handleError(errorMsg: string): void {
-        this.editor.controllers.fixups?.error(this.task.id, errorMsg)
+    protected handleError(error: Error): void {
+        this.editor.controllers.fixups?.error(this.task.id, error.toString())
     }
 
     protected handleCodyCommands(): void {

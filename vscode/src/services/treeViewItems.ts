@@ -2,7 +2,7 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
-import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
 
@@ -60,14 +60,14 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Upgrade',
         description: 'Upgrade to Pro',
         icon: 'zap',
-        command: { command: 'vscode.open', args: [ACCOUNT_UPGRADE_URL.href] },
+        command: { command: 'cody.account.upgrade' },
         requireUpgradeAvailable: true,
         requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
-        command: { command: 'vscode.open', args: [ACCOUNT_USAGE_URL.href] },
+        command: { command: 'cody.account.usage' },
         requireFeature: FeatureFlag.CodyPro,
     },
     {

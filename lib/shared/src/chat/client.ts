@@ -170,13 +170,13 @@ export async function createClient({
                         sendTranscript(options?.data)
                         resolve()
                     },
-                    onError(error) {
+                    onError(error: Error) {
                         // Display error message as assistant response
                         transcript.addErrorAsAssistantResponse(error)
                         isMessageInProgress = false
                         sendTranscript(options?.data)
                         console.error(`Completion request failed: ${error}`)
-                        reject(new Error(error))
+                        reject(error)
                     },
                 })
                 options?.signal?.addEventListener('abort', () => {
