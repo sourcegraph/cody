@@ -4,7 +4,7 @@ import path from 'path'
 import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import * as vscode from 'vscode'
 
-import { CompletionBookkeepingEvent } from '../../../../vscode/src/completions/logger'
+import { CompletionBookkeepingEvent, CompletionItemInfo } from '../../../../vscode/src/completions/logger'
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
@@ -32,6 +32,20 @@ export class EvaluationDocument {
         item.rangeStartCharacter = item.range.start.character
         item.rangeEndLine = item.range.end.line
         item.rangeEndCharacter = item.range.end.character
+        item.multiline = item.event?.params?.multiline
+        item.completionIntent = item.event?.params?.completionIntent
+        item.providerIdentifier = item.event?.params?.providerIdentifier
+        item.providerModel = item.event?.params?.providerModel
+        item.stopReason = item.info?.stopReason
+        item.resultCharacterCount = item?.info?.charCount
+        const retrieverStats = item.event?.params?.contextSummary?.retrieverStats ?? {}
+        for (const retriever of Object.keys(retrieverStats)) {
+            if (retriever === 'bfg') {
+                item.contextBfgRetrievedCount = retrieverStats[retriever].retrievedItems
+                item.contextBfgSuggestedCount = retrieverStats[retriever].suggestedItems
+                item.contextBfgDurationMs = retrieverStats[retriever].duration
+            }
+        }
         if (item.event) {
             item.eventJSON = JSON.stringify(item.event)
         }
@@ -84,6 +98,11 @@ export class EvaluationDocument {
                 }
                 if (item.resultExact) {
                     out.push(' EXACT_MATCH')
+                }
+                if (item.resultParses === true) {
+                    out.push(' PARSE_OK')
+                } else if (item.resultParses === false) {
+                    out.push(' PARSE_ERROR')
                 }
                 if (item.resultTypechecks === true) {
                     out.push(' TYPECHECK_OK')
@@ -142,6 +161,11 @@ export interface EvaluationItem {
     filepath: string
     revision: string
     range: vscode.Range
+    multiline?: boolean
+    completionIntent?: string
+    providerIdentifier?: string
+    providerModel?: string
+    stopReason?: string
     rangeStartLine?: number
     rangeStartCharacter?: number
     rangeEndLine?: number
@@ -152,7 +176,13 @@ export interface EvaluationItem {
     resultEmpty?: boolean
     resultExact?: boolean
     resultTypechecks?: boolean
+    resultParses?: boolean
     resultText?: string
+    contextBfgRetrievedCount?: number
+    contextBfgSuggestedCount?: number
+    contextBfgDurationMs?: number
+    resultCharacterCount?: number
+    info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
 }
@@ -164,6 +194,8 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'strategy', title: 'STRATEGY' },
     { id: 'filepath', title: 'FILEPATH' },
     { id: 'revision', title: 'REVISION' },
+    { id: 'multiline', title: 'MULTILINE' },
+    { id: 'completionIntent', title: 'COMPLETION_INTENT' },
     { id: 'rangeStartLine', title: 'RANGE_START_LINE' },
     { id: 'rangeStartCharacter', title: 'RANGE_START_CHARACTER' },
     { id: 'rangeEndLine', title: 'RANGE_END_LINE' },
@@ -173,8 +205,16 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultEmpty', title: 'RESULT_EMPTY' },
     { id: 'resultExact', title: 'RESULT_EXACT' },
     { id: 'resultTypechecks', title: 'RESULT_TYPECHECKS' },
+    { id: 'resultParses', title: 'RESULT_PARSES' },
     { id: 'resultText', title: 'RESULT_TEXT' },
+    { id: 'resultCharacterCount', title: 'RESULT_CHAR_COUNT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
+    { id: 'providerIdentifier', title: 'PROVIDER_IDENTIFIER' },
+    { id: 'providerModel', title: 'PROVIDER_MODEL' },
+    { id: 'stopReason', title: 'STOP_REASON' },
+    { id: 'contextBfgRetrievedCount', title: 'CONTEXT_BFG_RETRIEVED_COUNT' },
+    { id: 'contextBfgSuggestedCount', title: 'CONTEXT_BFG_SUGGESTED_COUNT' },
+    { id: 'contextBfgDurationMs', title: 'CONTEXT_BFG_DURATION_MS' },
     { id: 'eventJSON', title: 'EVENT' },
 ]
 
