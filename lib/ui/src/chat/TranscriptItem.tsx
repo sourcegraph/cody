@@ -160,33 +160,34 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            {message.error && (
+            {message.error ? (
                 <ErrorItem
                     error={message.error}
                     ChatButtonComponent={ChatButtonComponent}
                     userInfo={userInfo}
                     postMessage={postMessage}
                 />
-            )}
-            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
-                {message.displayText ? (
-                    EditTextArea ? (
-                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
+            ) : (
+                <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+                    {message.displayText && !message.error ? (
+                        EditTextArea ? (
+                            !inProgress && !message.displayText.startsWith('/') && EditTextArea
+                        ) : (
+                            <CodeBlocks
+                                displayText={message.displayText}
+                                copyButtonClassName={codeBlocksCopyButtonClassName}
+                                copyButtonOnSubmit={copyButtonOnSubmit}
+                                insertButtonClassName={codeBlocksInsertButtonClassName}
+                                insertButtonOnSubmit={insertButtonOnSubmit}
+                                metadata={message.metadata}
+                                inProgress={inProgress}
+                            />
+                        )
                     ) : (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            inProgress={inProgress}
-                        />
-                    )
-                ) : (
-                    inProgress && <BlinkingCursor />
-                )}
-            </div>
+                        inProgress && <BlinkingCursor />
+                    )}
+                </div>
+            )}
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}

@@ -13,13 +13,10 @@ export interface ChatButton {
 }
 
 export interface ChatMessage extends Message {
-    kind?: string
-    className?: string
     displayText?: string
     contextFiles?: ContextFile[]
     preciseContext?: PreciseContext[]
     buttons?: ChatButton[]
-    footerText?: string
     data?: any
     metadata?: ChatMetadata
     // TODO(dantup): Is anyone using string?
