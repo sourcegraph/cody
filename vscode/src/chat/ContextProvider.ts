@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
@@ -52,7 +53,7 @@ export enum ContextEvent {
     Auth = 'auth',
 }
 
-export class ContextProvider implements vscode.Disposable {
+export class ContextProvider implements vscode.Disposable, ContextStatusProvider {
     // We fire messages from ContextProvider to the sidebar webview.
     // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
     public webview?: SidebarChatWebview
@@ -65,8 +66,6 @@ export class ContextProvider implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    public readonly localEmbeddings: LocalEmbeddingsController | undefined = undefined
-
     private statusAggregator: ContextStatusAggregator = new ContextStatusAggregator()
     private statusEmbeddings: vscode.Disposable | undefined = undefined
 
@@ -78,11 +77,10 @@ export class ContextProvider implements vscode.Disposable {
         private rgPath: string | null,
         private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
-        private platform: PlatformContext
+        private platform: PlatformContext,
+        public readonly localEmbeddings: LocalEmbeddingsController | undefined
     ) {
         this.disposables.push(this.configurationChangeEvent)
-
-        this.localEmbeddings = (codebaseContext.localEmbeddings || undefined) as LocalEmbeddingsController | undefined
 
         this.currentWorkspaceRoot = ''
         this.disposables.push(
@@ -94,11 +92,9 @@ export class ContextProvider implements vscode.Disposable {
             }),
             this.statusAggregator,
             this.statusAggregator.onDidChangeStatus(_ => {
-                void this.webview?.postMessage({
-                    type: 'enhanced-context',
-                    context: { groups: this.statusAggregator.status },
-                })
-            })
+                this.contextStatusChangeEmitter.fire(this)
+            }),
+            this.contextStatusChangeEmitter
         )
     }
 
@@ -297,6 +293,17 @@ export class ContextProvider implements vscode.Disposable {
 
     public localEmbeddingsIndexRepository(): void {
         void this.localEmbeddings?.index()
+    }
+
+    // ContextStatusProvider implementation
+    private contextStatusChangeEmitter = new vscode.EventEmitter<ContextStatusProvider>()
+
+    public get status(): ContextGroup[] {
+        return this.statusAggregator.status
+    }
+
+    public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
+        return this.contextStatusChangeEmitter.event(callback)
     }
 }
 
