@@ -12,6 +12,7 @@ import {
     CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
@@ -60,6 +61,7 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+        userInfo?: UserAccountInfo
         postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
@@ -87,6 +89,7 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
+    userInfo,
     postMessage,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
@@ -158,7 +161,12 @@ export const TranscriptItem: React.FunctionComponent<
                 </div>
             )}
             {message.error && (
-                <ErrorItem error={message.error} ChatButtonComponent={ChatButtonComponent} postMessage={postMessage} />
+                <ErrorItem
+                    error={message.error}
+                    ChatButtonComponent={ChatButtonComponent}
+                    userInfo={userInfo}
+                    postMessage={postMessage}
+                />
             )}
             <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                 {message.displayText ? (

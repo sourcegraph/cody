@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
-import { ApiPostMessage, ChatButtonProps } from '../Chat'
+import { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
 import styles from './ErrorItem.module.css'
 
@@ -12,8 +12,9 @@ import styles from './ErrorItem.module.css'
 export const ErrorItem: React.FunctionComponent<{
     error: string | ChatError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+    userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     return typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage ? (
         <RateLimitErrorItem
             error={error as RateLimitError}
@@ -34,15 +35,19 @@ export const ErrorItem: React.FunctionComponent<{
 export const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+    userInfo?: UserAccountInfo
     postMessage: ApiPostMessage
-}> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+}> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
+    // Only show Upgrades if both the error said an upgrade was available and we know the user
+    // has not since upgraded.
+    const canUpgrade = error.upgradeIsAvailable && userInfo?.isCodyProUser !== true
     return (
         <div className={styles.errorItem}>
-            <h1>{error.upgradeIsAvailable ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
+            <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
             <p>{error.userMessage}</p>
             {ChatButtonComponent && (
                 <div className={styles.actions}>
-                    {error.upgradeIsAvailable && (
+                    {canUpgrade && (
                         <ChatButtonComponent
                             label="Upgrade"
                             action=""

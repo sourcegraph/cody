@@ -179,6 +179,7 @@ export const Transcript: React.FunctionComponent<
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
+                    userInfo={userInfo}
                     postMessage={postMessage}
                 />
             )
