@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
-
+import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 
 export const FIX_PROMPT_TOPICS = {
@@ -53,7 +52,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range, intent: 'fix' satisfies FixupIntent, document }, source],
+            arguments: [{ instruction, range, intent: 'fix', document } satisfies ExecuteEditArguments, source],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics

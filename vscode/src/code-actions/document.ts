@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
-
+import { ExecuteEditArguments } from '../edit/execute'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 export class DocumentCodeAction implements vscode.CodeActionProvider {
@@ -39,10 +38,10 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
                 {
                     instruction: this.instruction,
                     range,
-                    intent: 'doc' satisfies FixupIntent,
+                    intent: 'doc',
                     document,
                     insertMode: true,
-                },
+                } satisfies ExecuteEditArguments,
                 source,
             ],
             title: displayText,

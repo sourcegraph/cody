@@ -2,7 +2,7 @@
 // sequence, trim if from the end.
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
-export function reformatBotMessage(text: string, prefix: string): string {
+export function reformatBotMessageForChat(text: string, prefix: string): string {
     let reformattedMessage = prefix + text.trimEnd()
 
     const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP)
@@ -11,6 +11,10 @@ export function reformatBotMessage(text: string, prefix: string): string {
     }
     // TODO: Detect if bot sent unformatted code without a markdown block.
     return fixOpenMarkdownCodeBlock(reformattedMessage)
+}
+
+export function reformatBotMessageForEdit(text: string, prefix: string): string {
+    return prefix + text
 }
 
 function fixOpenMarkdownCodeBlock(text: string): string {
