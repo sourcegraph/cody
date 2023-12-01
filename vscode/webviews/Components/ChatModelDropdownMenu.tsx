@@ -18,11 +18,9 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
 
-    // TODO remove at GA
-    const isReady = false
-    const isCodyProUser = !isReady || (userInfo.isDotComUser && userInfo.isCodyProUser)
+    const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
-    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser && isReady
+    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const handleChange = useCallback(
         (event: any): void => {
