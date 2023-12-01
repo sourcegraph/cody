@@ -756,7 +756,9 @@ function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDot
         nodeTypesWithCompletion: item.nodeTypesWithCompletion,
     }
 
-    if (isDotComUser) {
+    // Do not log long insert text.
+    // 200 is a char_count limit based on the 98 percentile from the last 14 days.
+    if (isDotComUser && charCount < 200) {
         // 🚨 SECURITY: included only for DotCom users.
         completionItemInfo.insertText = item.insertText
     }
