@@ -6,6 +6,8 @@ import classNames from 'classnames'
 import { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
 import { AnthropicLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
 
+import { getVSCodeAPI } from '../utils/VSCodeApi'
+
 import styles from './ChatModelDropdownMenu.module.css'
 
 export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({
@@ -23,6 +25,8 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     const handleChange = useCallback(
         (event: any): void => {
             if (showCodyProBadge) {
+                console.log('Cody Pro badge clicked')
+                getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
                 return
             }
             const selectedModel = models[event.target?.selectedIndex]
@@ -63,7 +67,6 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                         key={option.model}
                         id={index.toString()}
                         title={isModelDisabled(option.model) ? `Upgrade to Cody Pro to use ${option.title}` : undefined}
-                        disabled={isModelDisabled(option.model)}
                     >
                         <ProviderIcon model={option.model} />
                         <span
