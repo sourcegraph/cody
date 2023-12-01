@@ -61,11 +61,9 @@ async function prepareChat(page: Page, sidebar: Frame): Promise<FrameLocator> {
     // Open the new chat panel
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
-    await new Promise(resolve => setTimeout(resolve, 3000))
-
     const chatFrameLocator = page.frameLocator('iframe.webview').frameLocator('iframe')
 
-    await chatFrameLocator.getByRole('textbox', { name: 'Chat message' }).click({ timeout: 5000 })
+    await chatFrameLocator.getByRole('textbox', { name: 'Chat message' }).click()
 
     return chatFrameLocator
 }
