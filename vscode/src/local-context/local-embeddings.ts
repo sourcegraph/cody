@@ -104,15 +104,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 this.statusBar = undefined
                 setTimeout(() => statusBar.hide(), 30_000)
 
-                if (this.lastRepo) {
-                    // TODO: Load the index after indexing completes
-                    // https://github.com/sourcegraph/cody/issues/1972
-                    // This can race with intervening loads, etc.
-                    // For now flip to a checkmark so people don't generate
-                    // a second index.
-                    this.lastRepo.loadResult = true
-                    this.statusEvent.fire(this)
+                if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
+                    void this.eagerlyLoad(this.pathBeingIndexed)
                 }
+
+                this.pathBeingIndexed = undefined
+                this.statusEvent.fire(this)
             } else {
                 // TODO(dpc): Handle these notifications.
                 logDebug('LocalEmbeddingsController', JSON.stringify(obj))

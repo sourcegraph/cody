@@ -30,6 +30,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings> = {
         remoteName: 'github.com/sourcegraph/sourcegraph',
     },
     argTypes: {
+        name: { control: 'text' },
         kind: {
             options: ['embeddings', 'graph', 'search'],
             control: 'select',
@@ -46,6 +47,8 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings> = {
             options: ['indeterminate', 'unconsented', 'indexing', 'ready', 'no-match'],
             control: 'select',
         },
+        origin: { control: 'text' },
+        remoteName: { control: 'text' },
     },
     render: function Render() {
         const [args, updateArgs] = useArgs()
