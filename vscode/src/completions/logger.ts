@@ -2,6 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -353,6 +354,8 @@ export interface ItemPostProcessingInfo {
 interface CompletionItemInfo extends ItemPostProcessingInfo {
     lineCount: number
     charCount: number
+    // 🚨 SECURITY: included only for DotCom users.
+    insertText?: string
     stopReason?: string
 }
 
@@ -452,7 +455,8 @@ export function loaded(
     }
 
     if (event.items.length === 0) {
-        event.items = items.map(completionItemToItemInfo)
+        const isDotComUser = isDotComServer()
+        event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 }
 
@@ -738,10 +742,10 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
     }
 }
 
-function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics): CompletionItemInfo {
+function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser = false): CompletionItemInfo {
     const { lineCount, charCount } = lineAndCharCount(item)
 
-    return {
+    const completionItemInfo: CompletionItemInfo = {
         lineCount,
         charCount,
         stopReason: item.stopReason,
@@ -751,6 +755,15 @@ function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics): Comp
         nodeTypes: item.nodeTypes,
         nodeTypesWithCompletion: item.nodeTypesWithCompletion,
     }
+
+    // Do not log long insert text.
+    // 200 is a char_count limit based on the 98 percentile from the last 14 days.
+    if (isDotComUser && charCount < 200) {
+        // 🚨 SECURITY: included only for DotCom users.
+        completionItemInfo.insertText = item.insertText
+    }
+
+    return completionItemInfo
 }
 
 const otherCompletionProviders = [
@@ -777,4 +790,10 @@ function getOtherCompletionProvider(): string[] {
 function isRunningInsideAgent(): boolean {
     const config = getConfiguration(vscode.workspace.getConfiguration())
     return !!config.isRunningInsideAgent
+}
+
+// 🚨 SECURITY: this helper ensures we log additional data only for DotCom users.
+function isDotComServer(): boolean {
+    const config = getConfiguration(vscode.workspace.getConfiguration())
+    return isDotCom(config.serverEndpoint)
 }
