@@ -188,12 +188,3 @@
     flex-direction: column;
     padding: 0;
 }
-
-.rate-limit-error .actions {
-    flex-direction: row;
-    gap: 10px;
-}
-
-.footer-text {
-    font-size: 0.8em;
-}

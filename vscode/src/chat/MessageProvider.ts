@@ -313,7 +313,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     // We ignore embeddings errors in this instance because we're already showing an
                     // error message and don't want to overwhelm the user.
                     void this.onCompletionEnd(true)
-                    console.error(`Completion request failed: ${err}`)
+                    console.error(`Completion request failed: ${err.message}`)
                 },
             },
             { model: this.chatModel, stopSequences: recipe.stopSequences }
@@ -421,7 +421,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const errorMsg = interaction?.getAssistantMessage()?.error
         if (errorMsg !== undefined) {
-            await this.addCustomInteraction({ assistantResponse: errorMsg }, interaction)
+            await this.addCustomInteraction({ assistantResponse: errorMsg.toString() }, interaction)
             return
         }
 

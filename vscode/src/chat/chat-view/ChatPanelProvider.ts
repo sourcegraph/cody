@@ -125,6 +125,9 @@ export class ChatPanelProvider extends MessageProvider {
             case 'embeddings/index':
                 this.contextProvider.localEmbeddingsIndexRepository()
                 break
+            case 'show-page':
+                await vscode.commands.executeCommand('cody.showPage', message.page)
+                break
             default:
                 this.handleError(new Error('Invalid request type from Webview Panel'), 'system')
         }

@@ -2,23 +2,36 @@ import { formatDistance } from 'date-fns'
 
 import { isError } from '../utils'
 
-export class RateLimitError extends Error {
+/**
+ * Passing normal [Error]s to react causes messages to be lost so this class is a stand-in with
+ * a real 'message' field so that errors extending from this class can carry their messages
+ * to the UI.
+ */
+export class SerializableError implements Error {
+    public readonly name: string = 'SerializableError'
+    constructor(public message: string) {}
+}
+
+export class RateLimitError extends SerializableError {
+    public static readonly name = 'RateLimitError'
+    public readonly name = RateLimitError.name
+
+    public readonly userMessage: string
+    public readonly retryMessage: string | undefined
+
     constructor(
+        public readonly feature: string,
         message: string,
-        public limit?: number,
-        public retryAfter?: Date
+        /**
+         * Whether an upgrade is available that would increase rate limits.
+         */
+        public readonly upgradeIsAvailable: boolean,
+        public readonly limit?: number,
+        public readonly retryAfter?: Date
     ) {
         super(message)
-    }
-
-    public buildMessage(feature: string): string {
-        const limit = this.limit
-        return `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
-    }
-
-    public buildResetMessage(): string | undefined {
-        const retryAfter = this.retryAfter
-        return retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
+        this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
+        this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
     }
 }
 

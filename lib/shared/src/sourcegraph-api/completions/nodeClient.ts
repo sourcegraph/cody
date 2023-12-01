@@ -45,10 +45,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     log?.onError(e.message)
 
                     if (res.statusCode === 429) {
+                        // Check for explicit false, because if the header is not set, there
+                        // is no upgrade available.
+                        const upgradeIsAvailable = res.headers['x-is-cody-pro-user'] === 'false'
                         const retryAfter = res.headers['retry-after']
                         const limit = res.headers['x-ratelimit-limit'] ? res.headers['x-ratelimit-limit'][0] : undefined
                         const error = new RateLimitError(
+                            'chat messages',
                             e.message,
+                            upgradeIsAvailable,
                             limit ? parseInt(limit, 10) : undefined,
                             retryAfter ? new Date(retryAfter) : undefined
                         )

@@ -2,13 +2,11 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-import { ACCOUNT_UPGRADE_URL } from '../chat/protocol'
 import { logDebug } from '../log'
-import { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
@@ -107,8 +105,6 @@ const suggestedCompletionItemIDs = new LRUCache<CompletionItemID, AutocompleteIt
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
-    authProvider: AuthProvider
-    featureFlagProvider: FeatureFlagProvider
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
     triggerNotice: ((notice: { key: string }) => void) | null
@@ -241,9 +237,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             // We start feature flag requests early so that we have a high chance of getting a response
             // before we need it.
-            const userLatencyPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteUserLatency
-            )
+            const userLatencyPromise = featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency)
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
             let stopLoading: () => void | undefined
@@ -439,7 +433,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
                 return completionResult
             } catch (error) {
-                void this.onError(error as Error)
+                this.onError(error as Error)
                 throw error
             }
         })
@@ -575,29 +569,27 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * error messages so every unexpected error is deduplicated by its message and rate limit errors
      * are only shown once during the rate limit period.
      */
-    private async onError(error: Error | RateLimitError): Promise<void> {
+    private onError(error: Error): void {
         if (error instanceof RateLimitError) {
             if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
                 return
             }
             this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
-            const canUpgrade =
-                this.config.authProvider.getAuthStatus().userCanUpgrade &&
-                (await this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro))
+            const canUpgrade = error.upgradeIsAvailable
             let errorTitle: string
-            let errorUrl: string
+            let pageName: string
             if (canUpgrade) {
                 errorTitle = 'Upgrade to Continue Using Cody Autocomplete'
-                errorUrl = ACCOUNT_UPGRADE_URL.toString()
+                pageName = 'upgrade'
             } else {
                 errorTitle = 'Cody Autocomplete Disabled Due to Rate Limit'
-                errorUrl = 'https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits'
+                pageName = 'rate-limits'
             }
             this.config.statusBar.addError({
                 title: errorTitle,
-                description: (error.buildMessage('autocompletions') + ' ' + (error.buildResetMessage() ?? '')).trim(),
+                description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
                 onSelect: () => {
-                    void vscode.env.openExternal(vscode.Uri.parse(errorUrl))
+                    void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
             })
             return

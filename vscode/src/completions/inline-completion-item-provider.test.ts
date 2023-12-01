@@ -2,17 +2,12 @@ import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-import {
-    featureFlagProvider,
-    FeatureFlagProvider,
-} from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { AuthStatus, defaultAuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
-import { decGaMockFeatureFlagProvider, emptyMockFeatureFlagProvider, vsCodeMocks } from '../testutils/mocks'
+import { vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -48,14 +43,10 @@ graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
         mockGetInlineCompletions: typeof getInlineCompletions,
-        superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>,
-        featureFlagProviderOverride?: FeatureFlagProvider,
-        authStatus?: AuthStatus
+        superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>
     ) {
         super({
             completeSuggestWidgetSelection: true,
-            featureFlagProvider: featureFlagProviderOverride ?? featureFlagProvider,
-            authProvider: { getAuthStatus: () => authStatus ?? defaultAuthStatus } as any,
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
@@ -512,7 +503,9 @@ describe('InlineCompletionItemProvider', () => {
     describe('error reporting', () => {
         it('reports standard rate limit errors to the user once', async () => {
             const { document, position } = documentAndPosition('█')
-            const fn = vi.fn(getInlineCompletions).mockRejectedValue(new RateLimitError('rate limited oh no', 1234))
+            const fn = vi
+                .fn(getInlineCompletions)
+                .mockRejectedValue(new RateLimitError('test feature', 'rate limited oh no', false, 1234))
             const addError = vi.fn()
             const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
 
@@ -533,21 +526,18 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it.each([
-            { gaFlag: true, canUpgrade: true, expectUpgrade: true },
-            { gaFlag: false, canUpgrade: true, expectUpgrade: false },
-            { gaFlag: true, canUpgrade: false, expectUpgrade: false },
+            { canUpgrade: true, expectUpgrade: true },
+            { canUpgrade: true, expectUpgrade: false },
+            { canUpgrade: false, expectUpgrade: false },
         ])(
-            'reports correct message (GA:$gaFlag, canUpgrade:$canUpgrade) -> expected upgrade? $expectUpgrade',
-            async ({ gaFlag, canUpgrade, expectUpgrade }) => {
+            'reports correct message (canUpgrade:$canUpgrade) -> expected upgrade? $expectUpgrade',
+            async ({ canUpgrade, expectUpgrade }) => {
                 const { document, position } = documentAndPosition('█')
-                const fn = vi.fn(getInlineCompletions).mockRejectedValue(new RateLimitError('rate limited oh no', 1234))
+                const fn = vi
+                    .fn(getInlineCompletions)
+                    .mockRejectedValue(new RateLimitError('test feature', 'rate limited oh no', canUpgrade, 1234))
                 const addError = vi.fn()
-                const provider = new MockableInlineCompletionItemProvider(
-                    fn,
-                    { statusBar: { addError } as any },
-                    gaFlag ? decGaMockFeatureFlagProvider : emptyMockFeatureFlagProvider,
-                    { ...defaultAuthStatus, userCanUpgrade: canUpgrade }
-                )
+                const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
 
                 await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                     'rate limited oh no'

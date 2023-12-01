@@ -101,10 +101,15 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
+            // Check for explicit false, because if the header is not set, there
+            // is no upgrade available.
+            const upgradeIsAvailable = response.headers.get('x-is-cody-pro-user') === 'false'
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
+                'autocompletions',
                 await response.text(),
+                upgradeIsAvailable,
                 limit ? parseInt(limit, 10) : undefined,
                 retryAfter ? new Date(retryAfter) : undefined
             )

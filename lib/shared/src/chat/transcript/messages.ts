@@ -13,6 +13,7 @@ export interface ChatButton {
 }
 
 export interface ChatMessage extends Message {
+    kind?: string
     className?: string
     displayText?: string
     contextFiles?: ContextFile[]
@@ -21,18 +22,12 @@ export interface ChatMessage extends Message {
     footerText?: string
     data?: any
     metadata?: ChatMetadata
-    isRateLimitError?: boolean
+    // TODO(dantup): Is anyone using string?
+    error?: string | Error
 }
 
-export interface InteractionMessage extends Message {
-    className?: string
-    displayText?: string
+export interface InteractionMessage extends ChatMessage {
     prefix?: string
-    error?: string
-    metadata?: ChatMetadata
-    buttons?: ChatButton[]
-    footerText?: string
-    isRateLimitError?: boolean
 }
 
 export interface ChatMetadata {

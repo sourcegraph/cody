@@ -1,3 +1,5 @@
+import { SerializableError } from '../errors'
+
 export interface DoneEvent {
     type: 'done'
 }
@@ -46,5 +48,5 @@ export interface CompletionCallbacks {
      * assumed to be a "complete" event, and no other callbacks will be called
      * afterwards.
      */
-    onError: (error: Error, statusCode?: number) => void
+    onError: (error: SerializableError, statusCode?: number) => void
 }

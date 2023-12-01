@@ -17,6 +17,7 @@ import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
+import { ErrorItem } from './ErrorItem'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -129,8 +130,7 @@ export const TranscriptItem: React.FunctionComponent<
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow,
-                message.isRateLimitError ? styles.rateLimitError : undefined
+                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
             {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
@@ -154,6 +154,7 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
+            {message.error && <ErrorItem error={message.error} ChatButtonComponent={ChatButtonComponent} />}
             <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                 {message.displayText ? (
                     EditTextArea ? (
@@ -176,7 +177,6 @@ export const TranscriptItem: React.FunctionComponent<
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
-            {message.footerText && <div className={styles.footerText}>{message.footerText}</div>}
             {message.speaker === 'human' && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (
