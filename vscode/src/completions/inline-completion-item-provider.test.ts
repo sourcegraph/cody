@@ -505,7 +505,7 @@ describe('InlineCompletionItemProvider', () => {
             const { document, position } = documentAndPosition('█')
             const fn = vi
                 .fn(getInlineCompletions)
-                .mockRejectedValue(new RateLimitError('test feature', 'rate limited oh no', false, 1234))
+                .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', false, 1234))
             const addError = vi.fn()
             const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
 
@@ -515,7 +515,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(addError).toHaveBeenCalledWith(
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                    description: "You've used all 1234 daily autocompletions.",
+                    description: "You've used all 1234 autocompletions for today.",
                 })
             )
 
@@ -525,17 +525,13 @@ describe('InlineCompletionItemProvider', () => {
             expect(addError).toHaveBeenCalledTimes(1)
         })
 
-        it.each([
-            { canUpgrade: true, expectUpgrade: true },
-            { canUpgrade: true, expectUpgrade: false },
-            { canUpgrade: false, expectUpgrade: false },
-        ])(
-            'reports correct message (canUpgrade:$canUpgrade) -> expected upgrade? $expectUpgrade',
-            async ({ canUpgrade, expectUpgrade }) => {
+        it.each([{ canUpgrade: true }, { canUpgrade: false }])(
+            'reports correct message when canUpgrade=$canUpgrade',
+            async ({ canUpgrade }) => {
                 const { document, position } = documentAndPosition('█')
                 const fn = vi
                     .fn(getInlineCompletions)
-                    .mockRejectedValue(new RateLimitError('test feature', 'rate limited oh no', canUpgrade, 1234))
+                    .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', canUpgrade, 1234))
                 const addError = vi.fn()
                 const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
 
@@ -544,10 +540,10 @@ describe('InlineCompletionItemProvider', () => {
                 )
                 expect(addError).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        title: expectUpgrade
+                        title: canUpgrade
                             ? 'Upgrade to Continue Using Cody Autocomplete'
                             : 'Cody Autocomplete Disabled Due to Rate Limit',
-                        description: "You've used all 1234 daily autocompletions.",
+                        description: "You've used all 1234 autocompletions for today.",
                     })
                 )
 
