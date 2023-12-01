@@ -3,11 +3,13 @@ import * as vscode from 'vscode'
 import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
-import { Repository } from '../../../../repository/builtinGitExtension'
+import { API, Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { captureException } from '../../../../services/sentry/sentry'
 import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+
+import { inferGitRepository, SimpleRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
@@ -41,28 +43,67 @@ export class BfgRetriever implements ContextRetriever {
             return
         }
         for (const repository of git.repositories) {
-            await this.onDidChangeRepository(repository)
+            await this.didChangeGitExtensionRepository(repository)
         }
-        this.context.subscriptions.push(git.onDidOpenRepository(repository => this.onDidChangeRepository(repository)))
+        this.context.subscriptions.push(
+            git.onDidOpenRepository(repository => this.didChangeGitExtensionRepository(repository))
+        )
+        this.context.subscriptions.push(
+            vscode.workspace.onDidChangeWorkspaceFolders(() => this.indexInferredGitRepositories(git))
+        )
         // TODO: handle closed repositories
+
+        await this.indexInferredGitRepositories(git)
     }
 
-    private async onDidChangeRepository(repository: Repository): Promise<void> {
-        const uri = repository.rootUri.toString()
-        const head = repository?.state?.HEAD?.commit
-        if (head !== this.indexedRepositoryRevisions.get(uri)) {
-            this.indexedRepositoryRevisions.set(uri, head ?? '')
+    // Infers what git repositories that are relevant but may not be "open" by
+    // the git extension.  For example, by default, the git extension doesn't
+    // open git repositories when the workspace root is a subfolder. There's a
+    // setting to automatically open parent git repositories but the setting is
+    // disabled by default.
+    private async indexInferredGitRepositories(git: API): Promise<void> {
+        for (const folder of vscode.workspace.workspaceFolders ?? []) {
+            if (this.indexedRepositoryRevisions.has(folder.uri.toString())) {
+                continue
+            }
+            try {
+                const repo = await inferGitRepository(folder.uri)
+                if (repo) {
+                    this.didChangeSimpleRepository(repo)
+                }
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    private async didChangeGitExtensionRepository(repository: Repository): Promise<void> {
+        const commit = repository?.state?.HEAD?.commit
+        if (!commit) {
+            return
+        }
+        this.didChangeSimpleRepository({ uri: repository.rootUri, commit })
+    }
+
+    private async didChangeSimpleRepository(repository: SimpleRepository): Promise<void> {
+        const uri = repository.uri.toString()
+        if (repository.commit !== this.indexedRepositoryRevisions.get(uri)) {
+            this.indexedRepositoryRevisions.set(uri, repository.commit ?? '')
             await this.indexRepository(repository)
         }
     }
 
-    private async indexRepository(repository: Repository): Promise<void> {
+    private async indexRepository(repository: SimpleRepository): Promise<void> {
         const bfg = await this.loadedBFG
         const indexingStartTime = Date.now()
         // TODO: include commit?
         try {
-            await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
-            logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
+            await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.uri.toString() })
+            const elapsed = Date.now() - indexingStartTime
+            logDebug(
+                'CodyEngine',
+                `gitRevision/didChange ${repository.uri.fsPath}:${repository.commit} indexing time ${elapsed}ms`
+            )
         } catch (error) {
             logDebug('CodyEngine', `indexing error ${error}`)
         }

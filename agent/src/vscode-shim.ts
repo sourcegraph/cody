@@ -21,6 +21,7 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
+import { logDebug } from '../../vscode/src/log'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
@@ -354,8 +355,9 @@ const _window: Partial<typeof vscode.window> = {
 
 export const window = _window as typeof vscode.window
 const gitRepositories: Repository[] = []
-export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
-    const repository: Partial<Repository> = {
+
+export function gitRepository(uri: vscode.Uri, headCommit: string): Repository {
+    const repo: Partial<Repository> = {
         rootUri: uri,
         ui: {} as any,
         state: {
@@ -373,7 +375,10 @@ export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
             },
         },
     }
-    gitRepositories.push(repository as Repository)
+    return repo as Repository
+}
+export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
+    gitRepositories.push(gitRepository(uri, headCommit))
 }
 
 const gitExtension: Partial<vscode.Extension<GitExtension>> = {
@@ -389,19 +394,15 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                 onDidOpenRepository: emptyEvent(),
                 onDidPublish: emptyEvent(),
                 getRepository(uri) {
-                    const cwd = workspaceDocuments?.workspaceRootUri?.fsPath
-                    if (!cwd) {
-                        return null
-                    }
                     try {
+                        const cwd = uri.fsPath
                         const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                        const repository: Partial<Repository> = {
-                            rootUri: Uri.file(toplevel),
-                            state: {
-                                remotes: [],
-                            } as any,
+                        if (toplevel !== uri.fsPath) {
+                            logDebug('GitExtension', 'Repository root is not file URI')
+                            return null
                         }
-                        return repository as Repository
+                        const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd }).toString().trim()
+                        return gitRepository(Uri.file(toplevel), commit)
                     } catch {
                         return null
                     }
