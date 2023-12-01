@@ -419,9 +419,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
 
-        const errorMsg = interaction?.getAssistantMessage()?.error
-        if (errorMsg !== undefined) {
-            await this.addCustomInteraction({ assistantResponse: errorMsg.toString() }, interaction)
+        const error = interaction?.getAssistantMessage()?.error
+        if (error) {
+            const errorMsg = typeof error === 'string' ? error : error.message
+            await this.addCustomInteraction({ assistantResponse: errorMsg }, interaction)
             return
         }
 
