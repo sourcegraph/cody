@@ -42,6 +42,8 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm run test:unit --run
+        env:
+          CODY_NODE_VERSION: ${{ matrix.node }}
 
   test-integration:
     strategy:

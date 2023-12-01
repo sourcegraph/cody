@@ -9,7 +9,7 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { ChatManager } from './chat/chat-view/ChatManager'
+import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
@@ -22,6 +22,7 @@ import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -64,6 +65,9 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
                 const config = await getFullConfig()
                 onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
+                if (config.chatPreInstruction) {
+                    PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+                }
             }
         })
     )
@@ -131,6 +135,7 @@ const register = async (
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
@@ -142,13 +147,14 @@ const register = async (
         rgPath,
         symfRunner,
         authProvider,
-        platform
+        platform,
+        localEmbeddings
     )
     disposables.push(contextProvider)
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
-    // Hack to get embeddings search client
+    // Hacks to get embeddings clients
     const codebaseContext = await hackGetCodebaseContext(
         initialConfig,
         rgPath,
@@ -156,7 +162,8 @@ const register = async (
         editor,
         chatClient,
         platform,
-        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig)
+        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
+        undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
     )
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
 
@@ -182,7 +189,8 @@ const register = async (
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsSearch
+        embeddingsSearch,
+        localEmbeddings || null
     )
 
     disposables.push(new CodeActionProvider({ contextProvider }))
@@ -381,6 +389,14 @@ const register = async (
         }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
+            const confirmation = await vscode.window.showWarningMessage(
+                'Restart Chat Session',
+                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
+                'Restart Chat Session'
+            )
+            if (!confirmation) {
+                return
+            }
             await chatManager.clearAndRestartSession()
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
@@ -603,6 +619,18 @@ const register = async (
     // Clean up old onboarding experiment state
     void OnboardingExperiment.cleanUpCachedSelection()
 
+    // Register a serializer for reviving the chat panel on reload
+    if (vscode.window.registerWebviewPanelSerializer) {
+        vscode.window.registerWebviewPanelSerializer(CodyChatPanelViewType, {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
+                if (chatID && webviewPanel.title) {
+                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
+                    await chatManager.revive(webviewPanel, chatID)
+                }
+            },
+        })
+    }
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
@@ -612,6 +640,7 @@ const register = async (
             void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

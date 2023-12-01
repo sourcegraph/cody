@@ -136,6 +136,7 @@ describe('InlineCompletionItemProvider', () => {
               "currentLineSuffix": "",
               "injectedPrefix": null,
               "multilineTrigger": null,
+              "multilineTriggerPosition": null,
               "nextNonEmptyLine": "console.log(1)",
               "position": Position {
                 "character": 12,

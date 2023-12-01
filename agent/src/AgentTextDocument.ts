@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
+import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+
 import { getLanguageForFileName } from './language'
 import { DocumentOffsets } from './offsets'
-import { TextDocument } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 // TODO: implement with vscode-languageserver-textdocument The reason we don't
@@ -10,13 +11,13 @@ import * as vscode_shim from './vscode-shim'
 // the properties/functions that vscode.TextDocument has. For example, lineAt is
 // missing in vscode-languageserver-textdocument
 export class AgentTextDocument implements vscode.TextDocument {
-    constructor(public readonly textDocument: TextDocument) {
+    constructor(public readonly textDocument: TextDocumentWithUri) {
         this.content = textDocument.content ?? ''
-        this.uri = vscode.Uri.from({ scheme: 'file', path: textDocument.filePath })
-        this.fileName = textDocument.filePath
+        this.uri = textDocument.uri
+        this.fileName = textDocument.uri.fsPath
         this.isUntitled = false
         this.languageId = getLanguageForFileName(this.fileName)
-        this.offsets = new DocumentOffsets(textDocument)
+        this.offsets = new DocumentOffsets(textDocument.underlying)
         this.lineCount = this.offsets.lineCount()
     }
     private readonly content: string

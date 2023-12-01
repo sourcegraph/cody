@@ -3,7 +3,7 @@ import assert from 'assert'
 import { describe, expect, it } from 'vitest'
 import { Position, Range } from 'vscode'
 
-import { updateRange, updateRangeMultipleChanges, UpdateRangeOptions } from './tracked-range'
+import { updateFixedRange, updateRange, updateRangeMultipleChanges, UpdateRangeOptions } from './tracked-range'
 
 // Creates a position.
 function pos(line: number, character: number): Position {
@@ -219,6 +219,38 @@ describe('Tracked Range', () => {
         it('should track single character insertion after the range as a range expansion', () => {
             expect(track('[hell]() world', 'o', { supportRangeAffix: true })).toBe('[hello] world')
         })
+
+        it('should not track whitespace insertion before the range as a range expansion', () => {
+            expect(track('( )[llo] world', '  \n', { supportRangeAffix: true })).toBe('  \n[llo] world')
+        })
+
+        it('should not track whitespace insertion after the range as a range expansion', () => {
+            expect(track('[hello]( )', '  \n', { supportRangeAffix: true })).toBe('[hello]  \n')
+        })
+    })
+})
+
+// Given a spec with a tracked range in [], an edited range in (),
+// replaces () with the specified text; applies range tracking;
+// and serializes the resulting text and tracked range.
+function trackFixed(spec: string, replacement: string): string {
+    const scenario = parse(spec)
+    const editedText = edit(scenario.text, scenario.edited, replacement)
+    const updatedRange = updateFixedRange(scenario.tracked, { range: scenario.edited, text: replacement })
+    return updatedRange ? show(editedText, updatedRange) : editedText
+}
+
+describe('Tracked Range Fixed', () => {
+    it('should preserve the fixed range for changes before the range', () => {
+        expect(trackFixed('()[hello world]', 'I am here, ')).toBe('[I am here, ]hello world')
+    })
+
+    it('should preserve the fixed range for changes after the range', () => {
+        expect(trackFixed('[hello world]( )', ', I am here')).toBe('[hello world], I am here')
+    })
+
+    it('should preserve the fixed range for changes within the range', () => {
+        expect(trackFixed('[hello ()orld]', 'w')).toBe('[hello worl]d')
     })
 })
 

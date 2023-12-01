@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { convertGitCloneURLToCodebaseName } from './utils'
+import { convertGitCloneURLToCodebaseName, convertGitCloneURLToCodebaseNameOrError, isError } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
     test('converts GitHub SSH URL', () => {
@@ -76,6 +76,6 @@ describe('convertGitCloneURLToCodebaseName', () => {
     })
 
     test('returns null for invalid URL', () => {
-        expect(convertGitCloneURLToCodebaseName('invalid')).toEqual(null)
+        expect(isError(convertGitCloneURLToCodebaseNameOrError('invalid'))).toBe(true)
     })
 })

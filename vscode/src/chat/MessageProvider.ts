@@ -109,7 +109,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
     protected authProvider: AuthProvider
-    protected contextProvider: ContextProvider
+    protected readonly contextProvider: ContextProvider
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected chatModel: string | undefined = undefined
@@ -489,6 +489,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             intentDetector: this.intentDetector,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
+            // TODO(dpc): Support initial chats *without* enhanced context
             addEnhancedContext: this.transcript.isEmpty,
         })
         if (!interaction) {

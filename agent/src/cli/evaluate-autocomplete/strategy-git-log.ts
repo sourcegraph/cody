@@ -51,6 +51,7 @@ export async function evaluateGitLogStrategy(
                     }
 
                     const fullPath = path.join(workspace, filePath)
+                    const uri = vscode.Uri.file(fullPath)
                     const content = (await fspromises.readFile(fullPath)).toString()
                     const languageid = getLanguageForFileName(filePath)
                     const document = new EvaluationDocument(
@@ -62,7 +63,8 @@ export async function evaluateGitLogStrategy(
                             strategy: options.fixture.strategy,
                             workspace: path.basename(options.workspace),
                         },
-                        content
+                        content,
+                        uri
                     )
 
                     const isLastFile = index === parsedDiff.files.length - 1
@@ -70,7 +72,7 @@ export async function evaluateGitLogStrategy(
                     if (!isLastFile) {
                         // Open all files to simulate local editor context
                         // @TODO: Move the cursor into the changed sections
-                        client.notify('textDocument/didOpen', { filePath, content })
+                        client.notify('textDocument/didOpen', { uri: uri.toString(), content })
                     }
 
                     if (isLastFile) {

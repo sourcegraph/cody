@@ -9,12 +9,14 @@ import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { View } from '../../../webviews/NavBar'
+import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
+import { CodyChatPanelViewType } from './ChatManager'
 import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
@@ -38,6 +40,7 @@ export interface IChatPanelProvider extends vscode.Disposable {
     setWebviewView(view: View): Promise<void>
     restoreSession(chatIDj: string): Promise<void>
     setConfiguration?: (config: Config) => void
+    revive: (panel: vscode.WebviewPanel, chatID: string) => Promise<void>
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
@@ -59,7 +62,8 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null
+        private readonly embeddingsSearch: EmbeddingsSearch | null,
+        private readonly localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
@@ -83,7 +87,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
             // When chat.chatPanel is set to true, the sidebar chat view will never be shown
             const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
-            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', isChatPanelEnabled)
+            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
             // when config is disabled, remove all current panels
             if (!isChatPanelEnabled) {
                 this.disposePanels()
@@ -98,8 +102,6 @@ export class ChatPanelsManager implements vscode.Disposable {
                 }
                 provider.setConfiguration?.(options.contextProvider.config)
             })
-
-            this.useSimpleChatPanelProvider = options.contextProvider.config.experimentalSimpleChatContext
         })
 
         this.updateTreeViewHistory()
@@ -111,7 +113,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposePanels()
         }
 
-        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', authStatus.isLoggedIn)
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
     }
 
     public async getChatPanel(): Promise<IChatPanelProvider> {
@@ -120,16 +122,17 @@ export class ChatPanelsManager implements vscode.Disposable {
         return this.activePanelProvider || provider
     }
 
-    // Sync feature flag for cody.experimental.simpleChatContext to this variable
-    private useSimpleChatPanelProvider = false
-
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider> {
+    public async createWebviewPanel(
+        chatID?: string,
+        chatQuestion?: string,
+        panel?: vscode.WebviewPanel
+    ): Promise<IChatPanelProvider> {
         if (chatID && this.panelProvidersMap.has(chatID)) {
             const provider = this.panelProvidersMap.get(chatID)
-            if (provider) {
+            if (provider?.webviewPanel) {
                 provider.webviewPanel?.reveal()
                 this.activePanelProvider = provider
                 void this.selectTreeItem(chatID)
@@ -142,44 +145,20 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
-        if (this.useSimpleChatPanelProvider) {
-            const provider = new SimpleChatPanelProvider({
-                ...this.options,
-                config: this.options.contextProvider.config,
-                chatClient: this.chatClient,
-                embeddingsClient: this.embeddingsSearch,
-            })
-            const webviewPanel = await provider.createWebviewPanel(activePanelViewColumn, chatQuestion)
-            if (chatID) {
-                await provider.restoreSession(chatID)
-            }
-
-            this.activePanelProvider = provider
-            this.panelProvidersMap.set(provider.sessionID, provider)
-
-            webviewPanel?.onDidChangeViewState(e => {
-                if (e.webviewPanel.visible) {
-                    this.activePanelProvider = provider
-                    this.options.contextProvider.webview = provider.webview
-                    void this.selectTreeItem(provider.sessionID)
-                }
-            })
-
-            webviewPanel?.onDidDispose(() => {
-                this.disposeProvider(sessionID)
-            })
-
-            this.selectTreeItem(provider.sessionID)
-            return provider
+        const provider = this.createProvider()
+        if (chatID && this.options.contextProvider.config.experimentalSimpleChatContext) {
+            await provider.restoreSession(chatID)
         }
-
-        const provider = new ChatPanelProvider(this.options)
-        const webviewPanel = await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
+        // Revives a chat panel provider for a given webview panel and session ID.
+        // Restores any existing session data. Registers handlers for view state changes and dispose events.
+        if (chatID && panel) {
+            await provider.revive(panel, chatID)
+        } else {
+            await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
+        }
         const sessionID = chatID || provider.sessionID
-        this.activePanelProvider = provider
-        this.panelProvidersMap.set(sessionID, provider)
 
-        webviewPanel?.onDidChangeViewState(e => {
+        provider.webviewPanel?.onDidChangeViewState(e => {
             if (e.webviewPanel.visible && e.webviewPanel.active) {
                 this.activePanelProvider = provider
                 this.options.contextProvider.webview = provider.webview
@@ -187,12 +166,35 @@ export class ChatPanelsManager implements vscode.Disposable {
             }
         })
 
-        webviewPanel?.onDidDispose(() => {
+        provider.webviewPanel?.onDidDispose(() => {
             this.disposeProvider(sessionID)
         })
 
+        this.activePanelProvider = provider
+        this.panelProvidersMap.set(sessionID, provider)
+
+        // Selects the corresponding tree view item.
         this.selectTreeItem(sessionID)
+
         return provider
+    }
+
+    /**
+     * Creates a provider for the chat panel.
+     *
+     * Returns either SimpleChatPanelProvider or ChatPanelProvider based on config.
+     * NOTE: This can be removed once we have migrated ChatPanelProvider to SimpleChatPanelProvider
+     */
+    private createProvider(): SimpleChatPanelProvider | ChatPanelProvider {
+        return this.options.contextProvider.config.experimentalSimpleChatContext
+            ? new SimpleChatPanelProvider({
+                  ...this.options,
+                  config: this.options.contextProvider.config,
+                  chatClient: this.chatClient,
+                  embeddingsClient: this.embeddingsSearch,
+                  localEmbeddings: this.localEmbeddings,
+              })
+            : new ChatPanelProvider(this.options)
     }
 
     private selectTreeItem(chatID: ChatID): void {

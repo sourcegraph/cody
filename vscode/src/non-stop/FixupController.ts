@@ -843,13 +843,13 @@ export class FixupController
             'vscode.diff',
             tempDocUri,
             task.fixupFile.uri,
-            'Cody Fixup Diff View - ' + task.id,
+            'Cody Edit Diff View - ' + task.id,
             {
                 preview: true,
                 preserveFocus: false,
                 selection: task.selectionRange,
-                label: 'Cody Fixup Diff View',
-                description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
+                label: 'Cody Edit Diff View',
+                description: 'Cody Edit Diff View: ' + task.fixupFile.uri.fsPath,
             }
         )
     }
@@ -860,7 +860,7 @@ export class FixupController
         if (!task) {
             return
         }
-        const previousRange = task.selectionRange
+        const previousRange = task.originalRange
         const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
@@ -872,7 +872,7 @@ export class FixupController
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document, intent: task.intent },
+            { range: previousRange, instruction, document, intent: task.intent, insertMode: task.insertMode },
             'code-lens'
         )
     }
