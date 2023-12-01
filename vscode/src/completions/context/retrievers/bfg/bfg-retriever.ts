@@ -34,10 +34,38 @@ export class BfgRetriever implements ContextRetriever {
             }
         )
 
-        this.bfgIndexingPromise = this.indexOpenGitRepositories()
+        this.bfgIndexingPromise = this.indexWorkspace()
     }
 
-    private async indexOpenGitRepositories(): Promise<void> {
+    private async indexWorkspace(): Promise<void> {
+        await this.indexGitRepositories()
+        await this.indexRemainingWorkspaceFolders()
+    }
+    private isWorkspaceIndexed(folder: vscode.Uri): boolean {
+        const uri = folder.toString()
+        logDebug('CodyEngine', 'Checking if folder is indexed', uri)
+        for (const key of this.indexedRepositoryRevisions.keys()) {
+            if (uri.startsWith(key)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private async indexRemainingWorkspaceFolders(): Promise<void> {
+        logDebug(
+            'CodyEngine',
+            'workspaceFolders',
+            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+        )
+        for (const folder of vscode.workspace.workspaceFolders ?? []) {
+            if (this.isWorkspaceIndexed(folder.uri)) {
+                continue
+            }
+            await this.indexEntry({ workspace: folder.uri })
+        }
+    }
+    private async indexGitRepositories(): Promise<void> {
         const git = gitAPI()
         if (!git) {
             return
@@ -85,21 +113,34 @@ export class BfgRetriever implements ContextRetriever {
         const uri = repository.uri.toString()
         if (repository.commit !== this.indexedRepositoryRevisions.get(uri)) {
             this.indexedRepositoryRevisions.set(uri, repository.commit ?? '')
-            await this.indexRepository(repository)
+            await this.indexEntry({ repository })
         }
     }
 
-    private async indexRepository(repository: SimpleRepository): Promise<void> {
+    private async indexEntry(params: { repository?: SimpleRepository; workspace?: vscode.Uri }): Promise<void> {
+        const { repository, workspace } = params
+        if (!repository && !workspace) {
+            return
+        }
         const bfg = await this.loadedBFG
         const indexingStartTime = Date.now()
         // TODO: include commit?
         try {
-            await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.uri.toString() })
+            if (repository) {
+                await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.uri.toString() })
+            }
+            if (workspace) {
+                await bfg.request('bfg/workspace/didChange', { workspaceUri: workspace.toString() })
+            }
             const elapsed = Date.now() - indexingStartTime
-            logDebug(
-                'CodyEngine',
-                `gitRevision/didChange ${repository.uri.fsPath}:${repository.commit} indexing time ${elapsed}ms`
-            )
+            const label = repository
+                ? `${repository.uri.fsPath}:${repository.commit}`
+                : workspace
+                ? workspace.fsPath
+                : ''
+            if (label) {
+                logDebug('CodyEngine', `gitRevision/didChange ${label} indexing time ${elapsed}ms`)
+            }
         } catch (error) {
             logDebug('CodyEngine', `indexing error ${error}`)
         }
