@@ -1,7 +1,6 @@
 import levenshtein from 'js-levenshtein'
 import * as vscode from 'vscode'
 
-import { getConfiguration } from '../configuration'
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 import {
@@ -66,9 +65,7 @@ export class PersistenceTracker implements vscode.Disposable {
         }
 
         // The range for the completion is relative to the state before the completion was inserted.
-        // We need to convert it to the state after the completion was inserted, unless we're running
-        // in agent mode, in which case the range will be updated later when we receive a document
-        // edit event.
+        // We need to convert it to the state after the completion was inserted.
         const textLines = lines(insertText)
         const latestRange = new vscode.Range(
             insertRange.start.line,
@@ -170,15 +167,7 @@ export class PersistenceTracker implements vscode.Disposable {
         }
 
         for (const trackedCompletion of documentCompletions) {
-            // console.log(
-            //     `TRACKED DOCUMENT '${trackedCompletion.document.getText()}'\nEVENT DOCUMENT '${event.document.getText()}'`
-            // )
-
-            trackedCompletion.document = event.document
-            const newRange = updateRangeMultipleChanges(trackedCompletion.latestRange, mutableChanges, {
-                supportRangeAffix: getConfiguration().isRunningInsideAgent ?? false,
-            })
-            trackedCompletion.latestRange = newRange
+            trackedCompletion.latestRange = updateRangeMultipleChanges(trackedCompletion.latestRange, mutableChanges)
         }
     }
 

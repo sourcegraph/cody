@@ -223,11 +223,12 @@ export class Agent extends MessageHandler {
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
 
-            const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
-            // get document with old content before updating
+            // Get document with old content before updating. This is not a deep copy!
             const oldDocument = this.workspace.getDocument(documentWithUri.uri)
+            const oldDocumentText = oldDocument?.getText()
+            const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
             if (oldDocument) {
-                const edits = diff.calcPatch(oldDocument.getText() ?? '', document.content ?? '')
+                const edits = diff.calcPatch(oldDocumentText ?? '', document.content ?? '')
                 for (const [sx, ex, text] of edits) {
                     contentChanges.push({
                         range: new vscode.Range(oldDocument.positionAt(sx), oldDocument.positionAt(ex)),

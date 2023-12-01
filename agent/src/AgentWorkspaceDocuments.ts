@@ -22,11 +22,13 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             return new AgentTextDocument(document)
         }
 
-        if (document.content === undefined) {
+        // In practice, these can be null as well.
+
+        if (document.content === undefined || document.content === null) {
             document.underlying.content = fromCache.getText()
         }
 
-        if (document.selection === undefined) {
+        if (document.selection === undefined || document.selection === null) {
             document.underlying.selection = fromCache.underlying.selection
         }
 
