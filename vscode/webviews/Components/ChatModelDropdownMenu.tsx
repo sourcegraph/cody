@@ -28,7 +28,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
                 getVSCodeAPI().postMessage({
                     command: 'event',
-                    eventName: 'CodyVSCodeExtension:upgradeCTA:clicked',
+                    eventName: 'CodyVSCodeExtension:upgradeLLMChoiceCTA:clicked',
                     properties: { limit_type: 'chat_commands' },
                 })
                 return
