@@ -38,7 +38,7 @@ export class AgentEditor implements Editor {
         if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
-        return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
+        return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)?.underlying
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
@@ -60,7 +60,7 @@ export class AgentEditor implements Editor {
         }
 
         const doc = this.agent.workspace.getDocumentFromUriString(uri.toString())
-        return Promise.resolve(doc?.content)
+        return Promise.resolve(doc?.getText())
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
