@@ -118,5 +118,5 @@ export function getChatPanelTitle(lastDisplayText?: string): string {
     const MARKDOWN_LINK_REGEX = /\[_(.+?)_]\((.+?)\)/g
     lastDisplayText = lastDisplayText.replaceAll(MARKDOWN_LINK_REGEX, '$1')?.trim()
     // truncate title that is too long
-    return lastDisplayText.length > 25 ? lastDisplayText.slice(0, 25) + '...' : lastDisplayText
+    return lastDisplayText.length > 25 ? lastDisplayText.slice(0, 25).trim() + '...' : lastDisplayText
 }
