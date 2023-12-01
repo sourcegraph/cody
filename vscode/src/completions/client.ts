@@ -14,6 +14,7 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -67,11 +68,14 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         // Force HTTP connection reuse to reduce latency.
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
+        headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.accessToken) {
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            headers.set('X-Sourcegraph-Should-Trace', 'true')
+            headers.set('X-Sourcegraph-Should-Trace', '1')
+
+            addTraceparent(headers)
         }
 
         // We enable streaming only for Node environments right now because it's hard to make
@@ -93,7 +97,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             signal,
         })
 
-        const traceId = response.headers.get('x-trace') ?? undefined
+        const traceId = getActiveTraceAndSpanId()?.traceId
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {

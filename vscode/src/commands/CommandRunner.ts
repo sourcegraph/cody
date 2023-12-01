@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { getActiveEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
@@ -139,6 +140,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
+        const intent: FixupIntent = this.kind === 'doc' ? 'doc' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         const source = this.kind
         await vscode.commands.executeCommand(
@@ -147,6 +149,7 @@ export class CommandRunner implements vscode.Disposable {
                 range,
                 instruction,
                 document: doc,
+                intent,
                 auto: true,
                 insertMode,
             },

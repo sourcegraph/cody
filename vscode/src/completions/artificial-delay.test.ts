@@ -4,7 +4,6 @@ import { getArtificialDelay, lowPerformanceLanguageIds, resetArtificialDelay } f
 
 const featureFlags = {
     user: true,
-    language: true,
 }
 
 describe('getArtificialDelay', () => {
@@ -158,38 +157,11 @@ describe('getArtificialDelay', () => {
         expect(getArtificialDelay(featureFlags, newUri, languageId)).toBe(0)
     })
 
-    it('returns increased latency for user-based only when only user flag is enabled', () => {
-        const uri = 'file://foo/bar/test.css'
-
-        // css is a low performance language
-        const languageId = 'css'
-        expect(lowPerformanceLanguageIds.has(languageId)).toBe(true)
-
-        const featureFlagsUserOnly = {
-            user: true,
-            language: false,
-        }
-
-        // reject the first 5 suggestions, and confirm latency remains unchanged
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(0)
-        // latency should start increasing after 5 rejections, but max at 2000
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(200)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(400)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(600)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(800)
-        expect(getArtificialDelay(featureFlagsUserOnly, uri, languageId)).toBe(1000)
-    })
-
     it('returns default latency for low performance language only when only language flag is enabled', () => {
         const uri = 'file://foo/bar/test.css'
 
         const featureFlagsLangOnly = {
             user: false,
-            language: true,
         }
 
         // css is a low performance language
@@ -212,35 +184,6 @@ describe('getArtificialDelay', () => {
         expect(getArtificialDelay(featureFlagsLangOnly, goUri, languageId)).toBe(0)
     })
 
-    it('returns increased latency for user-based only when language flag is disabled', () => {
-        const uri = 'file://foo/bar/test.css'
-
-        // css is a low performance language
-        const languageId = 'css'
-        expect(lowPerformanceLanguageIds.has(languageId)).toBe(true)
-
-        const providerAndUserFlags = {
-            user: true,
-            language: false,
-        }
-
-        // latency starts with default provider latency, ignore language based latency
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(0)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(0)
-        // latency for user should start increasing after 5 rejections gradually
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(200)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(400)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(600)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(800)
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(1000)
-        // reset to starting point on every accepted suggestion
-        resetArtificialDelay()
-        expect(getArtificialDelay(providerAndUserFlags, uri, languageId)).toBe(0)
-    })
-
     it('returns latency based on language only when user flag is disabled', () => {
         const uri = 'file://foo/bar/test.css'
 
@@ -250,7 +193,6 @@ describe('getArtificialDelay', () => {
 
         const featureFlagsNoUser = {
             user: false,
-            language: true,
         }
 
         // latency starts with language latency

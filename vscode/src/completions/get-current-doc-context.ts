@@ -6,17 +6,22 @@ import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, li
 export interface DocumentContext extends DocumentDependentContext, LinesContext {
     position: vscode.Position
     multilineTrigger: string | null
+    multilineTriggerPosition: vscode.Position | null
 }
 
 export interface DocumentDependentContext {
     prefix: string
     suffix: string
-
     /**
      * This is set when the document context is looking at the selected item in the
      * suggestion widget and injects the item into the prefix.
      */
     injectedPrefix: string | null
+    /**
+     * @deprecated
+     * will be removed after migrating `completionPostProcessLogger` to OpenTelemtry exporter.
+     */
+    completionPostProcessId?: string
 }
 
 interface GetCurrentDocContextParams {
@@ -27,13 +32,14 @@ interface GetCurrentDocContextParams {
     /* A number representing the maximum length of the suffix to get from the document. */
     maxSuffixLength: number
     context?: vscode.InlineCompletionContext
+    dynamicMultilineCompletions: boolean
 }
 
 /**
  * Get the current document context based on the cursor position in the current document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, context } = params
+    const { document, position, maxPrefixLength, maxSuffixLength, context, dynamicMultilineCompletions } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -96,6 +102,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     return getDerivedDocContext({
         position,
         languageId: document.languageId,
+        dynamicMultilineCompletions,
         documentDependentContext: {
             prefix,
             suffix,
@@ -108,6 +115,7 @@ interface GetDerivedDocContextParams {
     languageId: string
     position: vscode.Position
     documentDependentContext: DocumentDependentContext
+    dynamicMultilineCompletions: boolean
 }
 
 /**
@@ -115,16 +123,18 @@ interface GetDerivedDocContextParams {
  * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
  */
 export function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
-    const { position, documentDependentContext, languageId } = params
+    const { position, documentDependentContext, languageId, dynamicMultilineCompletions } = params
     const linesContext = getLinesContext(documentDependentContext)
 
     return {
         ...documentDependentContext,
         ...linesContext,
         position,
-        multilineTrigger: detectMultiline({
+        ...detectMultiline({
             docContext: { ...linesContext, ...documentDependentContext },
             languageId,
+            dynamicMultilineCompletions,
+            position,
         }),
     }
 }

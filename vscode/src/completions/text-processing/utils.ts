@@ -2,7 +2,7 @@ import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { logCompletionEvent } from '../logger'
+import { logCompletionBookkeepingEvent } from '../logger'
 
 import { isAlmostTheSameString } from './string-comparator'
 
@@ -23,7 +23,7 @@ export const MULTILINE_STOP_SEQUENCE = '\n\n'
  */
 export function extractFromCodeBlock(completion: string): string {
     if (completion.includes(OPENING_CODE_TAG)) {
-        logCompletionEvent('containsOpeningTag')
+        logCompletionBookkeepingEvent('containsOpeningTag')
         return ''
     }
 
@@ -252,7 +252,10 @@ export const BRACKET_PAIR = {
     '(': ')',
     '[': ']',
     '{': '}',
+    '<': '>',
 } as const
+export type OpeningBracket = keyof typeof BRACKET_PAIR
+export type ClosingBracket = (typeof BRACKET_PAIR)[OpeningBracket]
 
 export function getEditorTabSize(): number {
     return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2

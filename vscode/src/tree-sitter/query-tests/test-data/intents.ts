@@ -95,3 +95,29 @@ returnStatementValue("value", false)
 
 returnStatementValue()
 //                  |
+
+// ------------------------------------
+
+const object = {
+    key: "value"
+    //   |
+}
+
+// ------------------------------------
+
+returnStatementValue("value", () => {
+    //                              |
+    const value = "value"
+})
+
+// ------------------------------------
+
+returnStatementValue("value", {key: value})
+//                                  |
+
+// ------------------------------------
+
+returnStatementValue("value", () => {
+    const value = "value"
+   //             |
+})

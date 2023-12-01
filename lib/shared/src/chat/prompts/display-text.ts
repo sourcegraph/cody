@@ -1,6 +1,8 @@
 import { ContextFile } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
 
+import { trailingNonAlphaNumericRegex } from './utils'
+
 /**
  * Creates display text for the given context files by replacing file names with markdown links.
  */
@@ -37,7 +39,8 @@ export function createDisplayTextWithFileSelection(
     const displayText = `${humanInput} @${fileName}`
     const fsPath = selection?.fileUri?.fsPath
     const startLine = selection?.selectionRange?.start?.line
-    if (!fsPath || !selection?.selectionRange?.end?.line) {
+    const endLine = selection?.selectionRange?.end?.line
+    if (!fsPath || !endLine) {
         return displayText
     }
 
@@ -56,11 +59,12 @@ export function replaceFileNameWithMarkdownLink(
     startLine = 0
 ): string {
     // Create markdown link to the file
-    const range = startLine ? `:${startLine}` : ''
-    const fileLink = `vscode://file${fsPath}${range}`
-    const markdownText = `[_${fileName.trim()}_](${fileLink})`
+    const fileLink = `${fsPath}:range:${startLine}`
+    const markdownText = `[_${fileName.trim()}_](command:cody.chat.open.file?"${fileLink}")`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
     const textToBeReplaced = new RegExp(`\\s*${fileName.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`, 'g')
-    return humanInput.replaceAll(textToBeReplaced, ` ${markdownText}`).trim()
+    const text = humanInput.replace(trailingNonAlphaNumericRegex, '').replaceAll(textToBeReplaced, ` ${markdownText}`)
+    const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
+    return (text + lastChar).trim()
 }

@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
@@ -332,14 +331,6 @@ export class FixupController
                 },
             })
 
-            task.editedRange = new vscode.Range(
-                new vscode.Position(task.selectionRange.start.line, 0),
-                new vscode.Position(
-                    task.selectionRange.start.line + codeCount.lineCount,
-                    task.selectionRange.end.character
-                )
-            )
-
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
@@ -451,7 +442,7 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.editedRange
+        const rangeToFormat = task.selectionRange
 
         if (!rangeToFormat) {
             return false
@@ -564,11 +555,9 @@ export class FixupController
             return
         }
 
-        const revertRange = task.editedRange || task.selectionRange
-
-        editor.revealRange(revertRange)
+        editor.revealRange(task.selectionRange)
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(revertRange, task.original)
+            editBuilder.replace(task.selectionRange, task.original)
         })
 
         if (!editOk) {
@@ -634,8 +623,8 @@ export class FixupController
             return undefined
         }
 
-        // Expand the selection range for edits and fixes
-        const getSmartSelection = task.intent === 'edit' || task.intent === 'fix'
+        // Support expanding the selection range for intents where it is useful
+        const getSmartSelection = task.intent !== 'add'
         if (getSmartSelection && task.selectionRange) {
             const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
@@ -845,8 +834,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.editedRange || task.selectionRange
-        edit.replace(tempDocUri, range, diff.originalText)
+        edit.replace(tempDocUri, task.selectionRange, diff.originalText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
@@ -855,13 +843,13 @@ export class FixupController
             'vscode.diff',
             tempDocUri,
             task.fixupFile.uri,
-            'Cody Fixup Diff View - ' + task.id,
+            'Cody Edit Diff View - ' + task.id,
             {
                 preview: true,
                 preserveFocus: false,
-                selection: range,
-                label: 'Cody Fixup Diff View',
-                description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
+                selection: task.selectionRange,
+                label: 'Cody Edit Diff View',
+                description: 'Cody Edit Diff View: ' + task.fixupFile.uri.fsPath,
             }
         )
     }
@@ -872,7 +860,7 @@ export class FixupController
         if (!task) {
             return
         }
-        const previousRange = task.selectionRange
+        const previousRange = task.originalRange
         const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
@@ -884,7 +872,7 @@ export class FixupController
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document, intent: task.intent },
+            { range: previousRange, instruction, document, intent: task.intent, insertMode: task.insertMode },
             'code-lens'
         )
     }

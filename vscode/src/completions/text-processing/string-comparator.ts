@@ -11,7 +11,7 @@ import levenshtein from 'js-levenshtein'
  *
  * For more details see https://en.wikipedia.org/wiki/Levenshtein_distance
  */
-export const isAlmostTheSameString = (stringA: string, stringB: string, percentage: number = 0.2): boolean => {
+export const isAlmostTheSameString = (stringA: string, stringB: string, percentage: number = 0.15): boolean => {
     const maxLength = Math.max(stringA.length, stringB.length)
     const editOperations = levenshtein(stringA, stringB)
 

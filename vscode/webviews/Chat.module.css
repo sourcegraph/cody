@@ -196,6 +196,9 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .submit-button {
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
+
+    display: flex;
+    justify-content: center;
 }
 
 .submit-button,
@@ -204,8 +207,8 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .submit-button[disabled] {
-    opacity: 0.8;
-    cursor: text;
+    opacity: 0.4;
+    cursor: default;
 }
 
 .stop-generating-button {

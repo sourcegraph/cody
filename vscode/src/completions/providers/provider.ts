@@ -62,6 +62,9 @@ export interface ProviderOptions {
     multiline: boolean
     // Number of parallel LLM requests per completion.
     n: number
+
+    // feature flags
+    dynamicMultilineCompletions?: boolean
 }
 
 export abstract class Provider {

@@ -83,13 +83,12 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalChatPanel: config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         experimentalSearchPanel: config.get(CONFIG_KEY.experimentalNewSearch, isTesting),
-        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
-        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
+        experimentalSimpleChatContext: config.get(CONFIG_KEY.experimentalSimpleChatContext, isTesting),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
-        experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
+        commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
@@ -107,6 +106,15 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
         autocompleteExperimentalGraphContext,
+        autocompleteExperimentalDynamicMultilineCompletions: config.get(
+            CONFIG_KEY.autocompleteExperimentalDynamicMultilineCompletions,
+            false
+        ),
+
+        // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
+        inlineChat:
+            config.get(CONFIG_KEY.inlineChatEnabled, false) !== config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
+        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
          * UNDOCUMENTED FLAGS

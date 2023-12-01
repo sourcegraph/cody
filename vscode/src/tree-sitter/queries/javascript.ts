@@ -44,15 +44,49 @@ const JS_INTENTS_QUERY = dedent`
     ; Atomic intents
     ;--------------------------------
 
+    (comment) @comment!
     (import_statement
         source: (string) @import.source!)
 
-    (comment) @comment!
-    (arguments (_) @argument!)
+    (pair
+        value: [
+            (string (_)*)
+            (template_string)
+            (number)
+            (identifier)
+            (true)
+            (false)
+            (null)
+            (undefined)
+        ] @pair.value!)
+
+    (arguments
+        [
+            (string (_)*)
+            (template_string)
+            (number)
+            (identifier)
+            (true)
+            (false)
+            (null)
+            (undefined)
+        ] @argument!)
+
     (formal_parameters) @parameters!
     (formal_parameters (_) @parameter!)
+
     (return_statement) @return_statement!
-    (return_statement (_) @return_statement.value!)
+    (return_statement
+        [
+            (string (_)*)
+            (template_string)
+            (number)
+            (identifier)
+            (true)
+            (false)
+            (null)
+            (undefined)
+        ] @return_statement.value!)
 `
 
 const JSX_INTENTS_QUERY = dedent`
@@ -91,21 +125,68 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
     (type_alias_declaration (object_type ("{") @block_start)) @trigger
 `
 
+const JS_DOCUMENTABLE_NODES_QUERY = dedent`
+    ; Identifiers
+    ;--------------------------------
+    (_
+        name: (identifier) @identifier)
+
+    ; Property Identifiers
+    ;--------------------------------
+    (method_definition
+        name: (property_identifier) @identifier.property)
+    (pair
+        key: (property_identifier) @identifier.property)
+
+    ; Exports
+    ;--------------------------------
+    ((export_statement) @export)
+`
+
+const TS_DOCUMENTABLE_NODES_QUERY = dedent`
+    ${JS_DOCUMENTABLE_NODES_QUERY}
+
+    ; Type Identifiers
+    ;--------------------------------
+    (_
+        name: (type_identifier) @identifier)
+
+    ; Type Signatures
+    ;--------------------------------
+    ((call_signature) @signature)
+    (interface_declaration
+        (object_type
+            (property_signature
+                name: (property_identifier) @signature.property)))
+    (interface_declaration
+        (object_type
+            (method_signature
+                name: (property_identifier) @signature.property)))
+    (type_alias_declaration
+        (object_type
+            (property_signature
+                name: (property_identifier) @signature.property)))
+`
+
 export const javascriptQueries = {
     [SupportedLanguage.JavaScript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
+        documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
     },
     [SupportedLanguage.JSX]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
+        documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
     },
     [SupportedLanguage.TypeScript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
+        documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
     },
     [SupportedLanguage.TSX]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
+        documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
+import { ChildProcessWithoutNullStreams } from 'child_process'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { dirname } from 'path'
 import { Readable, Writable } from 'stream'
@@ -10,9 +11,10 @@ import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/
 
 import * as agent from './agent-protocol'
 import * as bfg from './bfg-protocol'
+import * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests
-type Notifications = bfg.Notifications & agent.Notifications
+type Requests = bfg.Requests & agent.Requests & embeddings.Requests
+type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
 
 // This file is a standalone implementation of JSON-RPC for Node.js
 // ReadStream/WriteStream, which conventionally map to stdin/stdout.
@@ -271,6 +273,31 @@ export class MessageHandler {
         for (const { reject } of this.responseHandlers.values()) {
             reject(error)
         }
+    }
+
+    public connectProcess(child: ChildProcessWithoutNullStreams, reject?: (error: Error) => void): void {
+        child.on('disconnect', () => {
+            reject?.(new Error('disconnect'))
+            this.exit()
+        })
+        child.on('close', () => {
+            reject?.(new Error('close'))
+            this.exit()
+        })
+        child.on('error', error => {
+            reject?.(error)
+            this.exit()
+        })
+        child.on('exit', code => {
+            reject?.(new Error(`exit: ${code}`))
+            this.exit()
+        })
+        child.stderr.on('data', data => {
+            console.error(`----stderr----\n${data}--------------`)
+        })
+        // child.stderr.pipe(process.stderr)
+        child.stdout.pipe(this.messageDecoder)
+        this.messageEncoder.pipe(child.stdin)
     }
 
     // TODO: RPC error handling
