@@ -1,18 +1,18 @@
 import * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { VsCodeFixupController } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
+import { PersistenceTracker } from '../persistence-tracker'
+import { PersistenceRemovedEventPayload } from '../persistence-tracker/types'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
-import { computeDiff, Diff } from './diff'
+import { computeDiff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
@@ -46,6 +46,14 @@ export class FixupController
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
     private readonly typingUI = new FixupTypingUI(this)
+    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
+        onPresent: (event: PersistenceRemovedEventPayload) => {
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', { ...event })
+        },
+        onRemoved: (event: PersistenceRemovedEventPayload) => {
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', { ...event })
+        },
+    })
 
     private _disposables: vscode.Disposable[] = []
 
@@ -272,7 +280,7 @@ export class FixupController
         )
     }
 
-    private logTaskCompletion(task: FixupTask, editOk: boolean): void {
+    private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
@@ -300,6 +308,14 @@ export class FixupController
                 // can be included in metadata for default export.
                 source,
             },
+        })
+
+        this.persistenceTracker.track({
+            id: task.id,
+            insertedAt: Date.now(),
+            insertText: task.replacement,
+            insertRange: task.selectionRange,
+            document,
         })
     }
 
@@ -343,7 +359,7 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, editOk)
+            this.logTaskCompletion(task, document, editOk)
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -444,7 +460,7 @@ export class FixupController
             ? await this.insertEdit(edit, document, task, applyEditOptions)
             : await this.replaceEdit(edit, diff, task, applyEditOptions)
 
-        this.logTaskCompletion(task, editOk)
+        this.logTaskCompletion(task, document, editOk)
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
