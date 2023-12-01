@@ -101,7 +101,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         if (this.localEmbeddings) {
             this.disposables.push(
                 this.localEmbeddings.onChange(_ => {
-                    void this.updateCodebaseContext()
+                    void this.forceUpdateCodebaseContext()
                 })
             )
         }

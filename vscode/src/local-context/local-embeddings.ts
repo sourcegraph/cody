@@ -27,7 +27,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // If indexing is in progress, the path of the repo being indexed.
     private pathBeingIndexed: string | undefined
 
-    // Fires when available local embeddings (may) have changed.
+    // Fires when available local embeddings (may) have changed. This updates
+    // the codebase context, which touches the network and file system, so only
+    // use it for major changes like local embeddings being available at all,
+    // or the first index for a repository coming online.
     private readonly changeEmitter = new vscode.EventEmitter<LocalEmbeddingsController>()
 
     constructor(private readonly context: vscode.ExtensionContext) {
@@ -126,7 +129,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
                     const path = this.pathBeingIndexed
                     void (async () => {
-                        await this.eagerlyLoad(path)
+                        const loadedOk = await this.eagerlyLoad(path)
+                        logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
                         this.changeEmitter.fire(this)
                     })()
                 }
@@ -234,8 +238,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'index: Starting repository', repoPath)
         try {
             // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
-            const model = 'stub/stub'
-            // const model = 'openai/text-embedding-ada-002'
+            // const model = 'stub/stub'
+            const model = 'openai/text-embedding-ada-002'
             await (await this.getService()).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
             this.pathBeingIndexed = repoPath
             this.statusBar?.dispose()
