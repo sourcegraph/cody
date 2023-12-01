@@ -1217,7 +1217,8 @@
     "web-tree-sitter": "^0.20.8",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "fast-myers-diff": "^3.1.0"
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
