@@ -12,6 +12,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [0.16.3]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Reverting back to v0.16.1 due to critical issue found in v0.16.2.
+
 ## [0.16.2]
 
 ### Added
