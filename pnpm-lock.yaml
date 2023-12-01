@@ -151,8 +151,8 @@ importers:
         specifier: ^8.0.0
         version: 8.0.0
       vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
+        specifier: ^3.0.8
+        version: 3.0.8
     devDependencies:
       '@types/google-protobuf':
         specifier: ^3.15.6
@@ -191,8 +191,8 @@ importers:
         specifier: ^2.4.2
         version: 2.4.2
       vscode-languageserver-textdocument:
-        specifier: ^1.0.8
-        version: 1.0.8
+        specifier: ^1.0.11
+        version: 1.0.11
     devDependencies:
       '@types/prompts':
         specifier: ^2.4.4
@@ -264,8 +264,8 @@ importers:
         specifier: ^4.0.16
         version: 4.0.16
       vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
+        specifier: ^3.0.8
+        version: 3.0.8
       x2js:
         specifier: ^3.4.4
         version: 3.4.4
@@ -446,11 +446,11 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       vscode-languageserver-textdocument:
-        specifier: ^1.0.8
-        version: 1.0.8
+        specifier: ^1.0.11
+        version: 1.0.11
       vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
+        specifier: ^3.0.8
+        version: 3.0.8
       web-tree-sitter:
         specifier: ^0.20.8
         version: 0.20.8
@@ -6933,7 +6933,7 @@ packages:
       minimist: 1.2.8
       playwright: 1.39.0
       tar-fs: 3.0.4
-      vscode-uri: 3.0.7
+      vscode-uri: 3.0.8
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -16228,12 +16228,12 @@ packages:
       - terser
     dev: true
 
-  /vscode-languageserver-textdocument@1.0.8:
-    resolution: {integrity: sha512-1bonkGqQs5/fxGT5UchTgjGVnfysL0O8v1AYMBjqTbWQTFn721zaPGDYFkOKtfDgFiSgXM3KwaG3FMGfW4Ed9Q==}
+  /vscode-languageserver-textdocument@1.0.11:
+    resolution: {integrity: sha512-X+8T3GoiwTVlJbicx/sIAF+yuJAqz8VvwJyoMVhwEMoEKE/fkDmrqUgDMyBECcM2A2frVZIUj5HI/ErRXCfOeA==}
     dev: false
 
-  /vscode-uri@3.0.7:
-    resolution: {integrity: sha512-eOpPHogvorZRobNqJGhapa0JdwaxpjVvyBp0QIUMRMSf8ZAlqOdEquKuRmw9Qwu0qXtJIWqFtMkmvJjUZmMjVA==}
+  /vscode-uri@3.0.8:
+    resolution: {integrity: sha512-AyFQ0EVmsOZOlAnxoFOGOq1SQDWAB7C6aqMGS23svWAllfOaxbuFvcT8D1i8z3Gyn8fraVeZNNmN6e9bxxXkKw==}
 
   /w3c-xmlserializer@4.0.0:
     resolution: {integrity: sha512-d+BFHzbiCx6zGfz0HyQ6Rg69w9k19nviJspaj4yNscGjrHu94sVP+aRm75yEbCh+r2/yR+7q6hux9LVtbuTGBw==}
