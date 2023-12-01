@@ -1,6 +1,7 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
+import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -86,7 +87,9 @@ export class ChatManager implements vscode.Disposable {
         if (!this.chatPanelsManager) {
             return
         }
-
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
         await this.chatPanelsManager?.syncAuthStatus(authStatus)
     }
 

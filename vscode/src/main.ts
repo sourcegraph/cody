@@ -235,7 +235,7 @@ const register = async (
         }
     })
     // Sync initial auth status
-    void chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     const executeRecipeInChatView = async (
         recipe: RecipeID,
