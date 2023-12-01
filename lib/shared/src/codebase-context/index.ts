@@ -16,6 +16,7 @@ import {
     populatePreciseCodeContextTemplate,
 } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
+import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
@@ -147,7 +148,7 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
-        if (this.localEmbeddings) {
+        if (this.config.serverEndpoint === DOTCOM_URL.toString() && this.localEmbeddings) {
             // TODO(dpc): Check whether the local embeddings index exists for
             // this repo before relying on it.
             // TODO(dpc): Fetch code and text results.

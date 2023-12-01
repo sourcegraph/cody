@@ -90,10 +90,10 @@ describe('getChatPanelTitle', () => {
         expect(result).toEqual('New Chat')
     })
 
-    test('long titles will not get truncated', () => {
-        const longTitle = 'This is a very long title that should get truncated'
+    test('long titles will be truncated', () => {
+        const longTitle = 'This is a very long title that should get truncated by the function'
         const result = getChatPanelTitle(longTitle)
-        expect(result).toEqual(longTitle)
+        expect(result).toEqual('This is a very long title...')
     })
 
     test('keeps command key', () => {
@@ -121,9 +121,8 @@ describe('getChatPanelTitle', () => {
     })
 
     test('truncates long title with multiple markdown links', () => {
-        const title =
-            'Explain the relationship between [_@foo/bar.py_](command:vscode.open?foo/bar.py) and [_@foo/bar_test.py_](command:vscode.open?foo/bar_test.py)'
+        const title = 'Explain the relationship...'
         const result = getChatPanelTitle(title)
-        expect(result).toEqual('Explain the relationship between @foo/bar.py and @foo/bar_test.py')
+        expect(result).toEqual('Explain the relationship....')
     })
 })

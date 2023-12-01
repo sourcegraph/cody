@@ -43,12 +43,12 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     chatHistoryEntries.forEach(([id, entry]) => {
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            const title = getChatPanelTitle(lastHumanMessage.humanMessage.displayText.split('\n')[0])
+            const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             chatTreeItems.push({
                 id,
-                title,
+                title: getChatPanelTitle(lastDisplayText, false),
                 icon: 'comment-discussion',
-                command: { command: 'cody.chat.panel.restore', args: [id, title] },
+                command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
             })
         }
     })

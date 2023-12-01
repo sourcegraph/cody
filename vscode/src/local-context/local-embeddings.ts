@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
@@ -16,8 +17,45 @@ export function createLocalEmbeddingsController(context: vscode.ExtensionContext
 
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider {
     private service: Promise<MessageHandler> | undefined
+    private serviceStarted = false
+    private accessToken: string | undefined
+    private endpointIsDotcom = false
+    private statusBar: vscode.StatusBarItem | undefined
+    private lastRepo: { path: string; loadResult: boolean } | undefined
 
-    constructor(private readonly context: vscode.ExtensionContext) {}
+    constructor(private readonly context: vscode.ExtensionContext) {
+        logDebug('LocalEmbeddingsController', 'constructor')
+    }
+
+    // Hint that local embeddings should start cody-engine, if necessary.
+    public async start(): Promise<void> {
+        logDebug('LocalEmbeddingsController', 'start')
+        await this.getService()
+        const repoUri = vscode.workspace.workspaceFolders?.[0].uri
+        if (repoUri) {
+            await this.eagerlyLoad(repoUri.fsPath)
+        }
+    }
+
+    public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
+        const endpointIsDotcom = serverEndpoint === DOTCOM_URL.toString()
+        logDebug('LocalEmbeddingsController', 'setAccessToken', endpointIsDotcom ? 'is dotcom' : 'not dotcom')
+        if (endpointIsDotcom !== this.endpointIsDotcom) {
+            // We will show, or hide, status depending on whether we are using
+            // dotcom. We do not offer local embeddings to Enterprise.
+            this.statusEvent.fire(this)
+        }
+        this.endpointIsDotcom = endpointIsDotcom
+        if (token === this.accessToken) {
+            return Promise.resolve()
+        }
+        this.accessToken = token || undefined
+        // TODO: Add a "drop token" for sign out
+        if (token && this.serviceStarted) {
+            // TODO: Make the cody-engine reply to set-token.
+            void (await this.getService()).request('embeddings/set-token', token)
+        }
+    }
 
     private getService(): Promise<MessageHandler> {
         if (!this.service) {
@@ -57,10 +95,18 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 this.statusBar.text = '$(sparkle) Cody Embeddings'
                 this.statusBar.backgroundColor = undefined
                 this.statusBar.show()
-                // TODO: Hide this notification after a while.
 
-                // TODO: There's a race here if there's an intervening load.
+                // Hide this notification after a while.
+                const statusBar = this.statusBar
+                this.statusBar = undefined
+                setTimeout(() => statusBar.hide(), 30_000)
+
                 if (this.lastRepo) {
+                    // TODO: Load the index after indexing completes
+                    // https://github.com/sourcegraph/cody/issues/1972
+                    // This can race with intervening loads, etc.
+                    // For now flip to a checkmark so people don't generate
+                    // a second index.
                     this.lastRepo.loadResult = true
                     this.statusEvent.fire(this)
                 }
@@ -70,6 +116,20 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 void vscode.window.showInformationMessage(JSON.stringify(obj))
             }
         })
+        logDebug(
+            'LocalEmbeddingsController',
+            'spawnAndBindService',
+            'service started, token available?',
+            !!this.accessToken
+        )
+        if (this.accessToken) {
+            // Set the initial access token
+            // cody-engine does not reply to this, but we just need it to
+            // happen in order.
+            void service.request('embeddings/set-token', this.accessToken)
+        }
+        this.serviceStarted = true
+        // TODO: Handle the "last codebase" as well
         return service
     }
 
@@ -82,9 +142,25 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public get status(): ContextGroup[] {
+        logDebug('LocalEmbeddingsController', 'get status')
+        if (!this.endpointIsDotcom) {
+            // There are no local embeddings for Enterprise.
+            return []
+        }
         if (!this.lastRepo) {
             // TODO: We could dig up the workspace folder here and use that.
-            return []
+            return [
+                {
+                    name: 'No codebase loaded',
+                    providers: [
+                        {
+                            kind: 'embeddings',
+                            type: 'local',
+                            state: 'indeterminate',
+                        },
+                    ],
+                },
+            ]
         }
         // TODO: Summarize the path with ~, etc.
         const path = this.lastRepo.path
@@ -119,26 +195,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     // Interactions with cody-engine
 
-    private lastRepo: { path: string; loadResult: boolean } | undefined
-    private lastAccessToken: string | undefined
-    private statusBar: vscode.StatusBarItem | undefined
-
-    public async setAccessToken(token: string): Promise<void> {
-        if (token === this.lastAccessToken) {
-            return Promise.resolve()
-        }
-        this.lastAccessToken = token
-        // TODO: Make the cody-engine reply to set-token.
-        void (await this.getService()).request('embeddings/set-token', token)
-    }
-
     public async index(): Promise<void> {
-        if (!this.lastRepo?.path || this.lastRepo?.loadResult) {
-            logDebug('LocalEmbeddingsController', 'No repository to index')
+        if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.loadResult)) {
+            // TODO: Support index updates.
+            logDebug('LocalEmbeddingsController', 'index: No repository to index/already indexed')
             return
         }
         const repoPath = this.lastRepo.path
-        logDebug('Indexing repository', repoPath)
+        logDebug('LocalEmbeddingsController', 'index: Starting repository', repoPath)
         try {
             // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
             // const model = 'stub/stub'
@@ -151,17 +215,40 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 0
             )
         } catch (error) {
-            logDebug('LocalEmbeddingsController', captureException(error))
+            logDebug('LocalEmbeddingsController', captureException(error), error)
         }
     }
 
-    public async load(repoPath: string | undefined): Promise<boolean> {
+    public async load(repoUri: vscode.Uri | undefined): Promise<boolean> {
+        if (!this.endpointIsDotcom) {
+            // Local embeddings only supported for dotcom
+            return false
+        }
+        const repoPath = repoUri?.fsPath
         if (!repoPath) {
-            return Promise.resolve(false)
+            // There's no path to search
+            return false
         }
         if (repoPath === this.lastRepo?.path) {
-            return Promise.resolve(this.lastRepo.loadResult)
+            // We already tried loading this, so use that result
+            return this.lastRepo.loadResult
         }
+        if (!this.serviceStarted) {
+            // Try starting the service but reply that there are no local
+            // embeddings this time.
+            void (async () => {
+                try {
+                    await this.getService()
+                } catch (error) {
+                    logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+                }
+            })()
+            return false
+        }
+        return this.eagerlyLoad(repoPath)
+    }
+
+    private async eagerlyLoad(repoPath: string): Promise<boolean> {
         this.lastRepo = {
             path: repoPath,
             loadResult: await (await this.getService()).request('embeddings/load', repoPath),
@@ -171,6 +258,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public async query(query: string): Promise<QueryResultSet> {
+        if (!this.endpointIsDotcom) {
+            return { results: [] }
+        }
         return (await this.getService()).request('embeddings/query', query)
     }
 
@@ -181,7 +271,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             logDebug('LocalEmbeddingsController', `returning ${results.length} results`)
             return results
         } catch (error) {
-            logDebug('LocalEmbeddingsController', captureException(error))
+            logDebug('LocalEmbeddingsController', captureException(error), error)
             return []
         }
     }

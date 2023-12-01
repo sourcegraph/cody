@@ -9,7 +9,7 @@ import * as rimraf from 'rimraf'
 import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import { bfgIndexingPromise, BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
+import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
 import { TextDocumentWithUri } from '../../../vscode/src/jsonrpc/TextDocumentWithUri'
@@ -95,8 +95,6 @@ describe('BfgRetriever', async () => {
         })
 
         const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext)
-
-        await bfgIndexingPromise
 
         const document = agent.workspace.agentTextDocument(new TextDocumentWithUri(uri))
         assert(document.getText().length > 0)

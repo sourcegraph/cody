@@ -1,4 +1,4 @@
-import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -7,10 +7,9 @@ import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-c
 import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
-import { ChatModelSelection, ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
+import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../webviews/NavBar'
@@ -90,7 +89,6 @@ export type WebviewMessage =
  */
 export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
-    | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
     // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
@@ -104,7 +102,7 @@ export type ExtensionMessage =
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
-    | { type: 'chatModels'; models: ChatModelSelection[] }
+    | { type: 'chatModels'; models: ChatModelProvider[] }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
@@ -246,21 +244,3 @@ export function archConvertor(arch: string): string {
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
-
-// NOTE: Only dotcom is supported currently
-export function getChatModelsForWebview(endpoint?: string | null): ChatModelSelection[] {
-    if (endpoint && isDotCom(endpoint)) {
-        return defaultChatModels
-    }
-    return []
-}
-
-// The allowed chat models for dotcom
-// The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-const defaultChatModels = [
-    { title: 'Claude 2.0', model: 'anthropic/claude-2.0', provider: 'Anthropic', default: true },
-    { title: 'Claude 2.1 Preview', model: 'anthropic/claude-2.1', provider: 'Anthropic', default: false },
-    { title: 'Claude Instant', model: 'anthropic/claude-instant-1.2', provider: 'Anthropic', default: false },
-    { title: 'ChatGPT 3.5 Turbo', model: 'openai/gpt-3.5-turbo', provider: 'OpenAI', default: false },
-    { title: 'ChatGPT 4 Turbo Preview', model: 'openai/gpt-4-1106-preview', provider: 'OpenAI', default: false },
-]

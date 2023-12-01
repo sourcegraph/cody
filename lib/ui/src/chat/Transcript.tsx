@@ -2,17 +2,17 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { ChatMessage, ChatModelProvider } from '@sourcegraph/cody-shared'
 
 import {
     ChatButtonProps,
     ChatModelDropdownMenuProps,
-    ChatModelSelection,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
     CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { FileLinkProps } from './components/ContextFiles'
@@ -40,9 +40,10 @@ export const Transcript: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
-        chatModels?: ChatModelSelection[]
+        chatModels?: ChatModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-        onCurrentChatModelChange?: (model: ChatModelSelection) => void
+        onCurrentChatModelChange?: (model: ChatModelProvider) => void
+        userInfo?: UserAccountInfo
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -72,6 +73,7 @@ export const Transcript: React.FunctionComponent<
     chatModels,
     ChatModelDropdownMenu,
     onCurrentChatModelChange,
+    userInfo,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -181,11 +183,12 @@ export const Transcript: React.FunctionComponent<
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length && ChatModelDropdownMenu && onCurrentChatModelChange && (
+                {!!chatModels?.length && ChatModelDropdownMenu && onCurrentChatModelChange && userInfo && (
                     <ChatModelDropdownMenu
                         models={chatModels}
                         disabled={transcript.length > 1}
                         onCurrentChatModelChange={onCurrentChatModelChange}
+                        userInfo={userInfo}
                     />
                 )}
                 {earlierMessages.map(messageToTranscriptItem(0))}

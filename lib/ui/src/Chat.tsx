@@ -6,6 +6,7 @@ import {
     ChatButton,
     ChatContextStatus,
     ChatMessage,
+    ChatModelProvider,
     CodyPrompt,
     ContextFile,
     isDefined,
@@ -65,10 +66,16 @@ interface ChatProps extends ChatClassNames {
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
-    chatModels?: ChatModelSelection[]
+    chatModels?: ChatModelProvider[]
     EnhancedContextSettings?: React.FunctionComponent<{}>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-    onCurrentChatModelChange?: (model: ChatModelSelection) => void
+    onCurrentChatModelChange?: (model: ChatModelProvider) => void
+    userInfo?: UserAccountInfo
+}
+
+export interface UserAccountInfo {
+    isDotComUser: boolean
+    isCodyProUser: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -93,7 +100,7 @@ export interface ChatUITextAreaProps {
     onInput: React.FormEventHandler<HTMLElement>
     setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
-    chatModels?: ChatModelSelection[]
+    chatModels?: ChatModelProvider[]
 }
 
 export interface ChatUISubmitButtonProps {
@@ -145,17 +152,11 @@ export interface UserContextSelectorProps {
 
 export type ChatSubmitType = 'user' | 'suggestion' | 'example'
 
-export interface ChatModelSelection {
-    title?: string
-    model: string
-    provider: string
-    default: boolean
-}
-
 export interface ChatModelDropdownMenuProps {
-    models: ChatModelSelection[]
-    disabled: boolean
-    onCurrentChatModelChange: (model: ChatModelSelection) => void
+    models: ChatModelProvider[]
+    disabled: boolean // Disabled when transcript length > 1
+    onCurrentChatModelChange: (model: ChatModelProvider) => void
+    userInfo: UserAccountInfo
 }
 
 /**
@@ -219,6 +220,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatModelDropdownMenu,
     EnhancedContextSettings,
     onCurrentChatModelChange,
+    userInfo,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -550,6 +552,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatModels={chatModels}
                     onCurrentChatModelChange={onCurrentChatModelChange}
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
+                    userInfo={userInfo}
                 />
             )}
 

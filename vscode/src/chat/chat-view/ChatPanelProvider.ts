@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
@@ -19,13 +19,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import {
-    ConfigurationSubsetForWebview,
-    ExtensionMessage,
-    getChatModelsForWebview,
-    LocalEnv,
-    WebviewMessage,
-} from '../protocol'
+import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
 import { getChatPanelTitle } from './chat-helpers'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
@@ -50,6 +44,12 @@ export class ChatPanelProvider extends MessageProvider {
         super(options)
         this.extensionUri = extensionUri
         this.treeView = treeView
+
+        this.contextProvider.onDidChangeStatus(_ => {
+            this.postEnhancedContextStatusToWebview()
+        })
+        // Hint local embeddings to start.
+        void this.contextProvider.localEmbeddings?.start()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -63,7 +63,7 @@ export class ChatPanelProvider extends MessageProvider {
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
-                this.handleChatModel()
+                await this.handleChatModels()
                 break
             case 'submit':
                 return this.onHumanMessageSubmitted(
@@ -196,6 +196,15 @@ export class ChatPanelProvider extends MessageProvider {
         })
     }
 
+    private async handleChatModels(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)
+        await this.webview?.postMessage({ type: 'chatModels', models })
+    }
+
     /**
      * Send transcript to webview
      */
@@ -237,28 +246,6 @@ export class ChatPanelProvider extends MessageProvider {
             messages: userHistory,
         })
         void this.treeView.updateTree(createCodyChatTreeItems(userHistory))
-    }
-
-    /**
-     * Sends the available chat models to the webview based on the authenticated endpoint.
-     * Maps over the allowed models, adding a 'default' property if the model matches the currently selected chatModel.
-     */
-    protected handleChatModel(): void {
-        const endpoint = this.authProvider.getAuthStatus()?.endpoint
-        const allowedModels = getChatModelsForWebview(endpoint)
-        const models = this.chatModel
-            ? allowedModels.map(model => {
-                  return {
-                      ...model,
-                      default: model.model === this.chatModel,
-                  }
-              })
-            : allowedModels
-
-        void this.webview?.postMessage({
-            type: 'chatModels',
-            models,
-        })
     }
 
     /**
@@ -355,10 +342,6 @@ export class ChatPanelProvider extends MessageProvider {
             messages: view,
         })
 
-        if (view !== 'chat') {
-            return
-        }
-
         if (!this.webviewPanel) {
             await this.createWebviewPanel(vscode.ViewColumn.Beside, this.sessionID)
         }
@@ -383,14 +366,7 @@ export class ChatPanelProvider extends MessageProvider {
         activePanelViewColumn?: vscode.ViewColumn,
         chatID?: string,
         lastQuestion?: string
-    ): Promise<vscode.WebviewPanel | undefined> {
-        // Create the webview panel only if the user is logged in.
-        // Allows users to login via the sidebar webview.
-        if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
-            return
-        }
-
+    ): Promise<vscode.WebviewPanel> {
         telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
 
         // Checks if the webview panel already exists and is visible.
@@ -425,10 +401,10 @@ export class ChatPanelProvider extends MessageProvider {
      * Revives the chat panel when the extension is reactivated.
      * Registers the existing webviewPanel and sets the chatID.
      */
-    public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<vscode.WebviewPanel | undefined> {
-        telemetryService.log('CodyVSCodeExtension:ChatPanelProvider:revive', undefined, { hasV2Event: true })
+    public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        logDebug('ChatPanelProvider:revive', 'reviving webview panel')
         this.startUpChatID = chatID
-        return this.registerWebviewPanel(webviewPanel)
+        await this.registerWebviewPanel(webviewPanel)
     }
 
     /**
@@ -450,8 +426,12 @@ export class ChatPanelProvider extends MessageProvider {
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
+        // TODO(abeatrix): ContextProvider is shared so each new chat panel
+        // should not overwrite the context provider's webview, or it
+        // will break the previous chat panel.
         this.contextProvider.webview = panel.webview
         this.authProvider.webview = panel.webview
+        this.postEnhancedContextStatusToWebview()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
@@ -465,5 +445,15 @@ export class ChatPanelProvider extends MessageProvider {
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
         return panel
+    }
+
+    // Sends context status updates to the webview, if any.
+    private postEnhancedContextStatusToWebview(): void {
+        void this.webview?.postMessage({
+            type: 'enhanced-context',
+            context: {
+                groups: this.contextProvider.status,
+            },
+        })
     }
 }

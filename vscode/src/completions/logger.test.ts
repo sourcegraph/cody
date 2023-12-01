@@ -85,6 +85,7 @@ describe('logger', () => {
                 {
                     charCount: 3,
                     lineCount: 1,
+                    insertText: 'foo',
                     lineTruncatedCount: undefined,
                     nodeTypes: undefined,
                     parseErrorCount: undefined,

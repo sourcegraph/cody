@@ -38,7 +38,7 @@ interface RemoteEmbeddingsProvider {
 export interface LocalEmbeddingsProvider {
     kind: 'embeddings'
     type: 'local'
-    state: 'unconsented' | 'indexing' | 'ready'
+    state: 'indeterminate' | 'unconsented' | 'indexing' | 'ready'
 }
 
 interface SearchProvider {
