@@ -277,8 +277,8 @@ importers:
         specifier: ^9.12.4
         version: 9.12.4
       '@types/isomorphic-fetch':
-        specifier: ^0.0.38
-        version: 0.0.38
+        specifier: ^0.0.39
+        version: 0.0.39
       '@types/lodash':
         specifier: ^4.14.195
         version: 4.14.195
@@ -483,8 +483,8 @@ importers:
         specifier: ^8.0.0
         version: 8.1.0
       '@types/isomorphic-fetch':
-        specifier: ^0.0.38
-        version: 0.0.38
+        specifier: ^0.0.39
+        version: 0.0.39
       '@types/js-levenshtein':
         specifier: ^1.1.1
         version: 1.1.1
@@ -6243,8 +6243,8 @@ packages:
       '@types/node': 20.4.0
     dev: false
 
-  /@types/isomorphic-fetch@0.0.38:
-    resolution: {integrity: sha512-DcXWx26qmt89lQ1Saoit0P38yHqT7fGceVs7UpMy2gU7AjEZISPdM7rqoFY5VHtl33H+cJ+VBDYmNRssTM4Zlw==}
+  /@types/isomorphic-fetch@0.0.39:
+    resolution: {integrity: sha512-I0gou/ZdA1vMG7t7gMzL7VYu2xAKU78rW9U1l10MI0nn77pEHq3tQqHQ8hMmXdMpBlkxZOorjI4sO594Z3kKJw==}
     dev: true
 
   /@types/istanbul-lib-coverage@2.0.4:
