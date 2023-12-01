@@ -155,7 +155,6 @@ export class PersistenceTracker implements vscode.Disposable {
         if (!documentCompletions) {
             return
         }
-
         // Create a list of changes that can be mutated by the `updateRangeMultipleChanges` function
         const mutableChanges = event.contentChanges.map(change => ({
             range: change.range,

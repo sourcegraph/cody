@@ -10,19 +10,29 @@ import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     // Keys are `vscode.Uri.toString()` formatted. We don't use `vscode.Uri` as
-    // keys because hascode/equals behave unreliably.
-    private readonly documents: Map<string, TextDocumentWithUri> = new Map()
+    // keys because hashcode/equals behave unreliably.
+    private readonly agentDocuments: Map<string, AgentTextDocument> = new Map()
+
     public workspaceRootUri: vscode.Uri | undefined
     public activeDocumentFilePath: vscode.Uri | null = null
-    public loadedDocument(document: TextDocumentWithUri): TextDocumentWithUri {
-        const fromCache = this.documents.get(document.underlying.uri)
+
+    public loadedDocument(document: TextDocumentWithUri): AgentTextDocument {
+        const fromCache = this.agentDocuments.get(document.underlying.uri)
+        if (!fromCache) {
+            return new AgentTextDocument(document)
+        }
+
         if (document.content === undefined) {
-            document.underlying.content = fromCache?.content
+            document.underlying.content = fromCache.getText()
         }
+
         if (document.selection === undefined) {
-            document.underlying.selection = fromCache?.selection
+            document.underlying.selection = fromCache.underlying.selection
         }
-        return document
+
+        fromCache.update(document)
+
+        return fromCache
     }
 
     public setActiveTextEditor(textEditor: vscode.TextEditor): void {
@@ -31,24 +41,25 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         vscode_shim.window.activeTextEditor = textEditor
     }
 
-    public agentTextDocument(document: TextDocumentWithUri): AgentTextDocument {
-        return new AgentTextDocument(this.loadedDocument(document))
+    public allUris(): string[] {
+        return [...this.agentDocuments.keys()]
     }
 
-    public allUris(): string[] {
-        return [...this.documents.keys()]
+    public allDocuments(): AgentTextDocument[] {
+        return [...this.agentDocuments.values()]
     }
-    public allDocuments(): TextDocumentWithUri[] {
-        return [...this.documents.values()]
+
+    public getDocument(uri: vscode.Uri): AgentTextDocument | undefined {
+        return this.agentDocuments.get(uri.toString())
     }
-    public getDocument(uri: vscode.Uri): TextDocumentWithUri | undefined {
-        return this.documents.get(uri.toString())
+
+    public getDocumentFromUriString(uriString: string): AgentTextDocument | undefined {
+        return this.agentDocuments.get(uriString)
     }
-    public getDocumentFromUriString(uriString: string): TextDocumentWithUri | undefined {
-        return this.documents.get(uriString)
-    }
-    public addDocument(document: TextDocumentWithUri): void {
-        this.documents.set(document.underlying.uri, this.loadedDocument(document))
+
+    public addDocument(document: TextDocumentWithUri): AgentTextDocument {
+        const agentDocument = this.loadedDocument(document)
+        this.agentDocuments.set(document.underlying.uri, agentDocument)
 
         const tabs: vscode.Tab[] = []
         for (const uri of this.allUris()) {
@@ -72,12 +83,16 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             vscode_shim.visibleTextEditors.pop()
         }
         for (const document of this.allDocuments()) {
-            vscode_shim.visibleTextEditors.push(newTextEditor(this.agentTextDocument(document)))
+            vscode_shim.visibleTextEditors.push(newTextEditor(document))
         }
+
+        return agentDocument
     }
+
     public deleteDocument(uri: vscode.Uri): void {
-        this.documents.delete(uri.toString())
+        this.agentDocuments.delete(uri.toString())
     }
+
     private vscodeTab(uri: vscode.Uri): vscode.Tab {
         return {
             input: {
@@ -89,6 +104,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     }
 
     public openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
-        return Promise.resolve(this.agentTextDocument(new TextDocumentWithUri(uri)))
+        return Promise.resolve(this.loadedDocument(new TextDocumentWithUri(uri)))
     }
 }

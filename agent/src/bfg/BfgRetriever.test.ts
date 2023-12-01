@@ -96,7 +96,7 @@ describe('BfgRetriever', async () => {
 
         const bfg = new BfgRetriever(extensionContext as vscode.ExtensionContext)
 
-        const document = agent.workspace.agentTextDocument(new TextDocumentWithUri(uri))
+        const document = agent.workspace.getDocument(new TextDocumentWithUri(uri).uri)!
         assert(document.getText().length > 0)
         const offset = content.indexOf(CURSOR)
         assert(offset >= 0, content)

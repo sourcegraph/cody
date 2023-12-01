@@ -18,7 +18,6 @@ import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
-import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
@@ -192,6 +191,7 @@ export class Agent extends MessageHandler {
                 codyVersion: codyStatus.version,
             }
         })
+
         this.registerNotification('initialized', () => {})
 
         this.registerRequest('shutdown', async () => {
@@ -208,20 +208,20 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('textDocument/didFocus', document => {
             this.workspace.setActiveTextEditor(
-                newTextEditor(this.workspace.agentTextDocument(TextDocumentWithUri.fromDocument(document)))
+                newTextEditor(this.workspace.addDocument(TextDocumentWithUri.fromDocument(document)))
             )
         })
+
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
-            this.workspace.addDocument(documentWithUri)
-            const textDocument = this.workspace.agentTextDocument(documentWithUri)
+            const textDocument = this.workspace.addDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
+
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.agentTextDocument(documentWithUri)
-            this.workspace.addDocument(documentWithUri)
+            const textDocument = this.workspace.addDocument(documentWithUri)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
@@ -229,10 +229,14 @@ export class Agent extends MessageHandler {
                 reason: undefined,
             })
         })
+
         this.registerNotification('textDocument/didClose', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
-            this.workspace.deleteDocument(documentWithUri.uri)
-            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(documentWithUri))
+            const oldDocument = this.workspace.getDocument(documentWithUri.uri)
+            if (oldDocument) {
+                this.workspace.deleteDocument(documentWithUri.uri)
+                vscode_shim.onDidCloseTextDocument.fire(oldDocument)
+            }
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
@@ -284,6 +288,7 @@ export class Agent extends MessageHandler {
             }
             return null
         })
+
         this.registerRequest('autocomplete/execute', async (params, token) => {
             await this.client // To let configuration changes propagate
             const provider = await vscode_shim.completionProvider()
@@ -311,15 +316,13 @@ export class Agent extends MessageHandler {
                 return { items: [] }
             }
 
-            const textDocument = new AgentTextDocument(document)
-
             try {
                 if (params.triggerKind === 'Invoke') {
                     await provider?.manuallyTriggerCompletion?.()
                 }
 
                 const result = await provider.provideInlineCompletionItems(
-                    textDocument,
+                    document,
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
