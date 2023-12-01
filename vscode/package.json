@@ -29,7 +29,7 @@
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "lint": "pnpm run lint:js",
     "lint:js": "NODE_OPTIONS=--max-old-space-size=4096 eslint --quiet --cache '**/*.[tj]s?(x)'",
-    "release": "ts-node ./scripts/release.ts",
+    "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",

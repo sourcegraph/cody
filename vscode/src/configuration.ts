@@ -21,6 +21,10 @@ interface ConfigGetter {
 export function getConfiguration(config: ConfigGetter = vscode.workspace.getConfiguration()): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
+    function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
+        return config.get<T>(`cody.${configKey}` as any, defaultValue)
+    }
+
     let debugRegex: RegExp | null = null
     try {
         const debugPattern: string | null = config.get<string | null>(CONFIG_KEY.debugFilter, null)
@@ -34,15 +38,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     } catch (error: any) {
         void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
         debugRegex = new RegExp('.*')
-    }
-
-    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = config.get(
-        CONFIG_KEY.autocompleteExperimentalGraphContext,
-        null
-    )
-    // Handle the old `true` option
-    if (autocompleteExperimentalGraphContext === true) {
-        autocompleteExperimentalGraphContext = 'lsp-light'
     }
 
     let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
@@ -63,6 +58,19 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         checkValidEnumValues(key, value)
     }
 
+    /**
+     * Hidden settings for internal use only.
+     */
+    const experimentalChatPanel = getHiddenSetting('experimental.chatPanel', isTesting)
+    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
+        'autocomplete.experimental.graphContext',
+        null
+    )
+    // Handle the old `true` option
+    if (autocompleteExperimentalGraphContext === true) {
+        autocompleteExperimentalGraphContext = 'lsp-light'
+    }
+
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
@@ -80,14 +88,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             '*': true,
             scminput: false,
         }),
-        experimentalChatPanel: config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
-        experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
-        experimentalSearchPanel: config.get(CONFIG_KEY.experimentalNewSearch, isTesting),
-        experimentalSimpleChatContext: config.get(CONFIG_KEY.experimentalSimpleChatContext, isTesting),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
-        experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
-        experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
@@ -101,37 +102,43 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
-        autocompleteExperimentalSyntacticPostProcessing: config.get(
-            CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
-            true
-        ),
-        autocompleteExperimentalGraphContext,
-        autocompleteExperimentalDynamicMultilineCompletions: config.get(
-            CONFIG_KEY.autocompleteExperimentalDynamicMultilineCompletions,
-            false
-        ),
 
         // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
-        inlineChat:
-            config.get(CONFIG_KEY.inlineChatEnabled, false) !== config.get(CONFIG_KEY.experimentalChatPanel, isTesting),
+        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, false) !== experimentalChatPanel,
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
-         * UNDOCUMENTED FLAGS
+         * Hidden settings for internal use only.
          */
+
+        autocompleteExperimentalGraphContext,
+        experimentalChatPanel: getHiddenSetting('experimental.chatPanel', isTesting),
+        experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
+        experimentalSearchPanel: getHiddenSetting('experimental.newSearch', isTesting),
+        experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', isTesting),
+
+        experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
+        experimentalNonStop: getHiddenSetting('experimental.nonStop', isTesting),
+        experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
+
+        autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(
+            'autocomplete.experimental.syntacticPostProcessing',
+            true
+        ),
+        autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
+            'autocomplete.experimental.dynamicMultilineCompletions',
+            false
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
-        isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
-        agentIDE: config.get<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide' as any),
+        isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
+        agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
         autocompleteTimeouts: {
-            multiline: config.get<number | undefined>('cody.autocomplete.advanced.timeout.multiline' as any, undefined),
-            singleline: config.get<number | undefined>(
-                'cody.autocomplete.advanced.timeout.singleline' as any,
-                undefined
-            ),
+            multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
+            singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
         },
     }
 }
