@@ -11,6 +11,8 @@ export const SURROUNDING_LINES = 50
 export const NUM_CODE_RESULTS = 12
 export const NUM_TEXT_RESULTS = 3
 
+export const MAX_BYTES_PER_FILE = 4096
+
 export function tokensToChars(tokens: number): number {
     return tokens * CHARS_PER_TOKEN
 }

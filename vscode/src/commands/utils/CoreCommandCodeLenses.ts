@@ -2,7 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { doesFileExist } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context'
+import { doesFileExist } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/helpers'
 
 interface EditorCodeLens {
     name: string

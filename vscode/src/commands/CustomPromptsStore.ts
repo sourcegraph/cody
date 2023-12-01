@@ -92,7 +92,7 @@ export class CustomPromptsStore implements vscode.Disposable {
      * Returns myPromptsMap as an array with keys as the id
      */
     public getCommands(): [string, CodyPrompt][] {
-        return [...this.myPromptsMap]
+        return [...this.myPromptsMap].sort((a, b) => a[0].localeCompare(b[0]))
     }
 
     /**

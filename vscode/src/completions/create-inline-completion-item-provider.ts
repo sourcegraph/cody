@@ -56,16 +56,16 @@ export async function createInlineCompletionItemProvider({
         bfgContextFlag,
         bfgMixedContextFlag,
         localMixedContextFlag,
-        disableNetworkCache,
         disableRecyclingOfPreviousRequests,
+        dynamicMultilineCompletionsFlag,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLspLight),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfg),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
@@ -75,6 +75,10 @@ export async function createInlineCompletionItemProvider({
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'
+                : config.autocompleteExperimentalGraphContext === 'local-mixed'
+                ? 'local-mixed'
+                : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
+                ? 'jaccard-similarity'
                 : lspLightContextFlag
                 ? 'lsp-light'
                 : bfgContextFlag
@@ -85,16 +89,21 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : 'jaccard-similarity'
 
+        const dynamicMultilineCompletions =
+            config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
+
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
+            featureFlagProvider,
+            authProvider,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            disableNetworkCache,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,
             createBfgRetriever,
+            dynamicMultilineCompletions,
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)

@@ -4,9 +4,9 @@ import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection } from '../../editor'
-import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
+import { ContextMessage, getContextMessageWithResponse } from '../../../codebase-context/messages'
+import { ActiveTextEditorSelection } from '../../../editor'
+import { MAX_CURRENT_FILE_TOKENS } from '../../../prompt/constants'
 import {
     populateCodeContextTemplate,
     populateContextTemplateFromText,
@@ -16,11 +16,10 @@ import {
     populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
-} from '../../prompt/templates'
-import { truncateText } from '../../prompt/truncation'
-
-import { answers, displayFileName } from './templates'
-import { createSelectionDisplayText, createVSCodeTestSearchPattern, isValidTestFileName } from './utils'
+} from '../../../prompt/templates'
+import { truncateText } from '../../../prompt/truncation'
+import { answers, displayFileName } from '../templates'
+import { createSelectionDisplayText, createVSCodeTestSearchPattern, isValidTestFileName } from '../utils'
 
 /**
  * Gets the currently active text editor instance from the list of visible editors.
@@ -38,9 +37,7 @@ export function getActiveEditorFromVisibleEditors(): vscode.TextEditor | undefin
     // vscode.window.activeTextEditor to get the current active editor
     // when a user has moved to their webview panel for chat
     // We will use the first visible editor that is not a
-    const activeEditor = vscode.window.activeTextEditor
-    const editorWithSelection = visibleTextEditors.find(editor => !editor.selection.isEmpty)
-    return activeEditor || editorWithSelection
+    return visibleTextEditors.find(editor => !editor.selection.isEmpty)
 }
 
 /**

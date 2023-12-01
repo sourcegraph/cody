@@ -11,19 +11,13 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 import { logDebug } from '../log'
 
 import { localStorage } from './LocalStorageProvider'
-import { extensionDetails } from './telemetry'
+import { getExtensionDetails } from './telemetry'
 
 let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
 /**
  * Recorder for recording telemetry events in the new telemetry framework:
  * https://docs.sourcegraph.com/dev/background-information/telemetry
- *
- * DEPRECATED: Callsites should ALSO record an event using services/telemetry-v2
- * as well and indicate this has happened, for example:
- *
- *   logEvent(name, properties, { hasV2Event: true })
- *   telemetryRecorder.recordEvent(...)
  *
  * See GraphQLTelemetryExporter to learn more about how events are exported
  * when recorded using the new recorder.
@@ -33,7 +27,9 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  */
 export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
     new CallbackTelemetryProcessor(() => {
-        throw new Error('telemetry-v2: recorder used before initialization')
+        if (!process.env.VITEST) {
+            throw new Error('telemetry-v2: recorder used before initialization')
+        }
     }),
 ])
 
@@ -52,7 +48,7 @@ const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
 const debugLogLabel = 'telemetry-v2'
 
-export function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { noOp?: boolean }): void {
+function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { noOp?: boolean }): void {
     telemetryRecorderProvider?.unsubscribe()
     telemetryRecorderProvider = updatedProvider
     telemetryRecorder = updatedProvider.getRecorder([
@@ -83,6 +79,8 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
+    const extensionDetails = getExtensionDetails(config)
+
     if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
         updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
@@ -122,4 +120,58 @@ export async function createOrUpdateTelemetryRecorderProvider(
             telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
         }
     }
+}
+
+/**
+ * splitSafeMetadata is a helper for legacy telemetry helpers that accept typed
+ * event metadata with arbitrarily-shaped values. It checks the types of the
+ * parameters and automatically splits them into two objects:
+ *
+ * - metadata, with numeric values and boolean values converted into 1 or 0.
+ * - privateMetadata, which includes everything else
+ *
+ * We export privateMetadata has special treatment in Sourcegraph.com, but do
+ * not export it in private instances unless allowlisted. See
+ * https://docs.sourcegraph.com/dev/background-information/telemetry#sensitive-attributes
+ * for more details.
+ *
+ * This is only available as a migration helper - where possible, prefer to use
+ * a telemetryRecorder directly instead, and build the parameters at the callsite.
+ */
+export function splitSafeMetadata<Properties extends { [key: string]: any }>(
+    properties: Properties
+): {
+    metadata: { [key in keyof Properties]?: number }
+    privateMetadata: { [key in keyof Properties]?: any }
+} {
+    const safe: { [key in keyof Properties]?: number } = {}
+    const unsafe: { [key in keyof Properties]?: any } = {}
+    for (const key in properties) {
+        if (!Object.hasOwn(properties, key)) {
+            continue
+        }
+
+        const value = properties[key]
+        switch (typeof value) {
+            case 'number':
+                safe[key] = value
+                break
+            case 'boolean':
+                safe[key] = value ? 1 : 0
+                break
+            case 'object': {
+                const { metadata } = splitSafeMetadata(value)
+                Object.entries(metadata).forEach(([nestedKey, value]) => {
+                    safe[`${key}.${nestedKey}`] = value
+                })
+                // Preserve the entire original value in unsafe
+                unsafe[key] = value
+            }
+
+            // By default, treat as potentially unsafe.
+            default:
+                unsafe[key] = value
+        }
+    }
+    return { metadata: safe, privateMetadata: unsafe }
 }

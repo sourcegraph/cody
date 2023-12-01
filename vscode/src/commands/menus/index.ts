@@ -129,7 +129,7 @@ export async function showCommandMenu(
 
 export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<QuickPickItem> {
     const CustomCommandsMenuOptions: QuickPickOptions = {
-        title: 'Cody: Custom Commands (Experimental)',
+        title: 'Cody: Custom Commands (Beta)',
         placeHolder: 'Search command to run...',
     }
 
@@ -138,7 +138,7 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
         quickPick.items = items
         quickPick.title = CustomCommandsMenuOptions.title
         quickPick.placeholder = CustomCommandsMenuOptions.placeHolder
-        quickPick.ignoreFocusOut = true
+        quickPick.ignoreFocusOut = false
 
         quickPick.buttons = [menu_buttons.back]
 
@@ -162,7 +162,7 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
  */
 export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
     const CustomCommandConfigMenuOptions = {
-        title: 'Cody: Configure Custom Commands (Experimental)',
+        title: 'Cody: Configure Custom Commands (Beta)',
         placeHolder: 'Choose an option',
     }
 

@@ -68,7 +68,7 @@ export interface VsCodeInlineController {
  * The intent classification for the fixup.
  * Manually determined depending on how the fixup is triggered.
  */
-export type FixupIntent = 'add' | 'edit' | 'fix'
+export type FixupIntent = 'add' | 'edit' | 'fix' | 'doc'
 
 export interface VsCodeFixupTaskRecipeData {
     instruction: string

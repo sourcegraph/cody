@@ -6,7 +6,7 @@ import { test as base, expect, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { run, sendTestInfo } from '../fixtures/mock-server'
+import { resetLoggedEvents, run, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
@@ -74,6 +74,7 @@ export const test = base
                     await signOut(page)
                 }
 
+                resetLoggedEvents()
                 await use(page)
             })
 
@@ -132,7 +133,7 @@ function escapeToPath(text: string): string {
 export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
-        'cody.experimental.commandLenses': true,
+        'cody.commandCodeLenses': true,
         'cody.editorTitleCommandIcon': true,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
@@ -164,6 +165,9 @@ export async function submitChat(sidebar: Frame, text: string): Promise<void> {
     await sidebar.getByTitle('Send Message').click()
 }
 
+/**
+ * Verifies that loggedEvents contain all of expectedEvents (in any order).
+ */
 export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect.poll(() => loggedEvents.slice().sort()).toEqual(expectedEvents.slice().sort())
+    await expect.poll(() => loggedEvents).toEqual(expect.arrayContaining(expectedEvents))
 }

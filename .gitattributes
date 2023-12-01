@@ -1,3 +1,4 @@
 # Ensure everything is checked out using \n even on Windows, because some test
 # code and snapshots assume this.
 * text=auto eol=lf
+CHANGELOG.md merge=union

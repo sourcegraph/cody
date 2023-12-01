@@ -7,7 +7,7 @@ import { toSlashCommand } from './utils'
 // A list of default cody commands
 export type CodyDefaultCommands = 'ask' | 'doc' | 'edit' | 'explain' | 'smell' | 'test' | 'reset'
 
-export const defaultChatCommands = new Set(['explain', 'doc', 'edit', 'smell', 'test'])
+export const defaultChatCommands = new Set(['explain', 'doc', 'edit', 'smell', 'test', 'ask', 'reset'])
 
 export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()

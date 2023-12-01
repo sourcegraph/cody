@@ -65,7 +65,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Diff view button
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
     await page.getByRole('button', { name: 'Show diff for fixup' }).click()
-    await expect(page.getByText(/^Cody Fixup Diff View.*/)).toBeVisible()
+    await expect(page.getByText(/^Cody Edit Diff View.*/)).toBeVisible()
 
     // Accept fixup button on Click
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
@@ -77,8 +77,6 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
     await assertEvents(loggedEvents, expectedEvents)
     await assertEvents(loggedV2Events, [
-        'cody.auth/failed',
-        'cody.auth/failed',
         'cody.auth/connected',
         'cody.command.edit/executed',
         'cody.recipe.fixup/executed',

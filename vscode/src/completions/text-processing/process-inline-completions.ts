@@ -7,9 +7,11 @@ import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
+import { completionPostProcessLogger } from '../post-process-logger'
 import { InlineCompletionItem } from '../types'
 
 import { dropParserFields, ParsedCompletion } from './parse-completion'
+import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
 export interface ProcessInlineCompletionsParams {
@@ -30,17 +32,26 @@ export function processInlineCompletions(
     items: ParsedCompletion[],
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItemWithAnalytics[] {
-    // Shared post-processing logic
-    const completionItems = items.map(item => processCompletion(item, params))
-
+    completionPostProcessLogger.info({
+        completionPostProcessId: 'constant',
+        stage: 'enter',
+        text: items[0]?.insertText,
+        isCollapsedGroup: true,
+    })
     // Remove low quality results
-    const visibleResults = removeLowQualityCompletions(completionItems)
+    const visibleResults = removeLowQualityCompletions(items)
 
     // Remove duplicate results
     const uniqueResults = dedupeWith(visibleResults, 'insertText')
 
     // Rank results
     const rankedResults = rankCompletions(uniqueResults)
+    completionPostProcessLogger.info({
+        completionPostProcessId: 'constant',
+        stage: 'exit',
+        text: rankedResults[0]?.insertText,
+    })
+    completionPostProcessLogger.flush()
 
     return rankedResults.map(dropParserFields)
 }
@@ -51,9 +62,9 @@ interface ProcessItemParams {
     docContext: DocumentContext
 }
 
-function processCompletion(completion: ParsedCompletion, params: ProcessItemParams): ParsedCompletion {
+export function processCompletion(completion: ParsedCompletion, params: ProcessItemParams): ParsedCompletion {
     const { document, position, docContext } = params
-    const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
+    const { prefix, suffix, currentLineSuffix, multilineTrigger, multilineTriggerPosition } = docContext
     let { insertText } = completion
 
     if (completion.insertText.length === 0) {
@@ -72,12 +83,20 @@ function processCompletion(completion: ParsedCompletion, params: ProcessItemPara
 
     // Use the parse tree WITHOUT the pasted completion to get surrounding node types.
     // Helpful to optimize the completion AST triggers for higher CAR.
-    completion.nodeTypes = getNodeTypesInfo(position, getCachedParseTreeForDocument(document)?.tree)
+    completion.nodeTypes = getNodeTypesInfo({
+        position,
+        parseTree: getCachedParseTreeForDocument(document)?.tree,
+        multilineTriggerPosition,
+    })
 
     // Use the parse tree WITH the pasted completion to get surrounding node types.
     // Helpful to understand CAR for incomplete code snippets.
     // E.g., `const value = ` does not produce a valid AST, but `const value = 'someValue'` does
-    completion.nodeTypesWithCompletion = getNodeTypesInfo(position, completion.tree)
+    completion.nodeTypesWithCompletion = getNodeTypesInfo({
+        position,
+        parseTree: completion.tree,
+        multilineTriggerPosition,
+    })
 
     if (multilineTrigger) {
         insertText = removeTrailingWhitespace(insertText)
@@ -98,10 +117,15 @@ function processCompletion(completion: ParsedCompletion, params: ProcessItemPara
     return { ...completion, insertText }
 }
 
-function getNodeTypesInfo(
-    position: Position,
+interface GetNodeTypesInfoParams {
+    position: Position
     parseTree?: Tree
-): InlineCompletionItemWithAnalytics['nodeTypes'] | undefined {
+    multilineTriggerPosition: Position | null
+}
+
+function getNodeTypesInfo(params: GetNodeTypesInfoParams): InlineCompletionItemWithAnalytics['nodeTypes'] | undefined {
+    const { position, parseTree, multilineTriggerPosition } = params
+
     const positionBeforeCursor = asPoint({
         line: position.line,
         character: Math.max(0, position.character - 1),
@@ -112,12 +136,17 @@ function getNodeTypesInfo(
 
         if (captures.length > 0) {
             const [atCursor, ...parents] = captures
+            const lastAncestorOnTheSameLine = findLastAncestorOnTheSameRow(
+                parseTree.rootNode,
+                asPoint(multilineTriggerPosition || position)
+            )
 
             return {
                 atCursor: atCursor.node.type,
                 parent: parents[0]?.node.type,
                 grandparent: parents[1]?.node.type,
                 greatGrandparent: parents[2]?.node.type,
+                lastAncestorOnTheSameLine: lastAncestorOnTheSameLine?.type,
             }
         }
     }

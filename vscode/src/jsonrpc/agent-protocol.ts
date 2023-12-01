@@ -11,7 +11,7 @@ import {
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
-import { CompletionEvent } from '../completions/logger'
+import { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -103,7 +103,12 @@ export type Notifications = {
     // The user no longer wishes to consider the last autocomplete candidate
     // and the current autocomplete id should not be reused.
     'autocomplete/clearLastCandidate': [null]
-
+    // The completion was presented to the user, and will be logged for telemetry
+    // purposes.
+    'autocomplete/completionSuggested': [CompletionItemParams]
+    // The completion was accepted by the user, and will be logged for telemetry
+    // purposes.
+    'autocomplete/completionAccepted': [CompletionItemParams]
     // Resets the chat transcript and clears any in-progress interactions.
     // This notification should be sent when the user starts a new conversation.
     // The chat transcript grows indefinitely if this notification is never sent.
@@ -124,8 +129,13 @@ export interface CancelParams {
     id: string | number
 }
 
+export interface CompletionItemParams {
+    completionID: CompletionItemID
+}
+
 export interface AutocompleteParams {
-    filePath: string
+    uri: string
+    filePath?: string
     position: Position
     // Defaults to 'Automatic' for autocompletions which were not explicitly
     // triggered.
@@ -139,10 +149,12 @@ export interface SelectedCompletionInfo {
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
-    completionEvent?: CompletionEvent
+    /** @deprecated */
+    completionEvent?: CompletionBookkeepingEvent
 }
 
 export interface AutocompleteItem {
+    id: CompletionItemID
     insertText: string
     range: Range
 }
@@ -281,7 +293,10 @@ export interface Range {
 }
 
 export interface TextDocument {
-    filePath: string
+    // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
+    uri: string
+    /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
+    filePath?: string
     content?: string
     selection?: Range
 }

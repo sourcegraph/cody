@@ -5,22 +5,24 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { ChatManager } from './chat/chat-view/ChatManager'
-import { ContextProvider } from './chat/ContextProvider'
+import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -63,6 +65,9 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
                 const config = await getFullConfig()
                 onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
+                if (config.chatPreInstruction) {
+                    PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+                }
             }
         })
     )
@@ -130,6 +135,7 @@ const register = async (
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
@@ -141,11 +147,25 @@ const register = async (
         rgPath,
         symfRunner,
         authProvider,
-        platform
+        platform,
+        localEmbeddings
     )
     disposables.push(contextProvider)
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
+
+    // Hacks to get embeddings clients
+    const codebaseContext = await hackGetCodebaseContext(
+        initialConfig,
+        rgPath,
+        symfRunner,
+        editor,
+        chatClient,
+        platform,
+        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
+        undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
+    )
+    const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -158,12 +178,22 @@ const register = async (
         platform,
     }
 
+    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
+    await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
+
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
-    const chatManager = new ChatManager({
-        ...messageProviderOptions,
-        extensionUri: context.extensionUri,
-    })
+    const chatManager = new ChatManager(
+        {
+            ...messageProviderOptions,
+            extensionUri: context.extensionUri,
+        },
+        chatClient,
+        embeddingsSearch,
+        localEmbeddings || null
+    )
+
+    disposables.push(new CodeActionProvider({ contextProvider }))
 
     // Register tree views
     disposables.push(
@@ -204,6 +234,8 @@ const register = async (
             symfRunner?.setSourcegraphAuth(null, null)
         }
     })
+    // Sync initial auth status
+    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     const executeRecipeInChatView = async (
         recipe: RecipeID,
@@ -228,6 +260,7 @@ const register = async (
         telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
         const document = args.document || getActiveEditor()?.document
         if (!document) {
+            void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
         }
 
@@ -356,6 +389,14 @@ const register = async (
         }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
+            const confirmation = await vscode.window.showWarningMessage(
+                'Restart Chat Session',
+                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
+                'Restart Chat Session'
+            )
+            if (!confirmation) {
+                return
+            }
             await chatManager.clearAndRestartSession()
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
@@ -578,6 +619,18 @@ const register = async (
     // Clean up old onboarding experiment state
     void OnboardingExperiment.cleanUpCachedSelection()
 
+    // Register a serializer for reviving the chat panel on reload
+    if (vscode.window.registerWebviewPanelSerializer) {
+        vscode.window.registerWebviewPanelSerializer(CodyChatPanelViewType, {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
+                if (chatID && webviewPanel.title) {
+                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
+                    await chatManager.revive(webviewPanel, chatID)
+                }
+            },
+        })
+    }
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
@@ -587,6 +640,7 @@ const register = async (
             void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

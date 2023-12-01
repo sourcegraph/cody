@@ -1,11 +1,21 @@
 import { spawn } from 'child_process'
 
-import { downloadAndUnzipVSCode } from '@vscode/test-electron'
+import { ConsoleReporter, downloadAndUnzipVSCode, ProgressReport, ProgressReportStage } from '@vscode/test-electron'
 
 export const vscodeVersion = '1.81.1'
 
+// A custom version of the VS Code download reporter that silences matching installation
+// notifications as these otherwise are emitted on every test run
+class CustomConsoleReporter extends ConsoleReporter {
+    public report(report: ProgressReport): void {
+        if (report.stage !== ProgressReportStage.FoundMatchingInstall) {
+            return super.report(report)
+        }
+    }
+}
+
 export function installVsCode(): Promise<string> {
-    return downloadAndUnzipVSCode(vscodeVersion)
+    return downloadAndUnzipVSCode(vscodeVersion, undefined, new CustomConsoleReporter(process.stdout.isTTY))
 }
 
 export function installChromium(): Promise<void> {

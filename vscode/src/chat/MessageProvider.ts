@@ -22,6 +22,7 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { showAskQuestionQuickPick } from '../commands/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
@@ -108,7 +109,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
     protected authProvider: AuthProvider
-    protected contextProvider: ContextProvider
+    protected readonly contextProvider: ContextProvider
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected chatModel: string | undefined = undefined
@@ -142,6 +143,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (chatID) {
             await this.restoreSession(chatID)
         }
+    }
+
+    private get isDotComUser(): boolean {
+        const endpoint = this.authProvider.getAuthStatus()?.endpoint || ''
+        return isDotCom(endpoint)
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -232,13 +238,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.onCompletionEnd()
                 // Count code generated from response
                 const codeCount = countGeneratedCode(text)
+                const metadata = lastInteraction?.getHumanMessage().metadata
+                const responseText = this.isDotComUser ? text : undefined
+                telemetryService.log(
+                    'CodyVSCodeExtension:chatResponse:hasCode',
+                    { ...codeCount, ...metadata, requestID, responseText },
+                    { hasV2Event: true }
+                )
+
                 if (codeCount?.charCount) {
-                    const metadata = lastInteraction?.getHumanMessage().metadata
-                    telemetryService.log(
-                        'CodyVSCodeExtension:chatResponse:hasCode',
-                        { ...codeCount, ...metadata, requestID },
-                        { hasV2Event: true }
-                    )
                     telemetryRecorder.recordEvent(
                         `cody.messageProvider.chatResponse.${metadata?.source || recipeId}`,
                         'hasCode',
@@ -259,6 +267,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             promptMessages,
             {
                 onChange: text => {
+                    if (textConsumed === 0 && responsePrefix) {
+                        void this.multiplexer.publish(responsePrefix)
+                    }
+
                     // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                     text = text.slice(textConsumed)
                     textConsumed += text.length
@@ -415,7 +427,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             local: 0,
             user: 0, // context added by user with @ command
         }
-
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -454,7 +465,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
+        const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }
@@ -477,6 +489,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             intentDetector: this.intentDetector,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
+            // TODO(dpc): Support initial chats *without* enhanced context
             addEnhancedContext: this.transcript.isEmpty,
         })
         if (!interaction) {

@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
+import { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
@@ -15,6 +16,7 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/tele
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { activate } from '../../vscode/src/extension.node'
+import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
@@ -27,9 +29,16 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
+export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
-    activate({
+    try {
+        const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
+        await fspromises.stat(gitdirPath)
+        vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
+    } catch {
+        /* ignore */
+    }
+    await activate({
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
         },
@@ -44,8 +53,8 @@ export function initializeVscodeExtension(workspaceRoot: vscode.Uri): void {
         globalState: {
             keys: () => [],
             get: () => undefined,
-            update: (key, value) => Promise.resolve(),
-            setKeysForSync: keys => {},
+            update: () => Promise.resolve(),
+            setKeysForSync: () => {},
         },
         logUri: {} as any,
         logPath: {} as any,
@@ -79,20 +88,8 @@ export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHan
         const serverHandler = new MessageHandler()
         const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
         args.push('jsonrpc')
-        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false' } })
-        child.stderr.on('data', chunk => {
-            console.error(`------agent stderr------\n${chunk}\n------------------------`)
-        })
-        child.on('disconnect', () => reject())
-        child.on('close', () => reject())
-        child.on('error', error => reject(error))
-        child.on('exit', code => {
-            serverHandler.exit()
-            reject(code)
-        })
-        child.stderr.pipe(process.stderr)
-        child.stdout.pipe(serverHandler.messageDecoder)
-        serverHandler.messageEncoder.pipe(child.stdin)
+        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
+        serverHandler.connectProcess(child, reject)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
         })
@@ -118,15 +115,6 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
     debugHandler.messageEncoder.pipe(agent.messageDecoder)
     agent.messageEncoder.pipe(debugHandler.messageDecoder)
     const client = agent.clientForThisInstance()
-    const workspaceRoot = vscode.Uri.parse(clientInfo.workspaceRootUri)
-    try {
-        const gitdir = await fspromises.stat(path.join(workspaceRoot.fsPath, '.git'))
-        if (gitdir.isDirectory()) {
-            vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
-        }
-    } catch {
-        /* ignore */
-    }
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
     return agent
@@ -157,7 +145,7 @@ export class Agent extends MessageHandler {
         },
     ])
 
-    constructor() {
+    constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
@@ -165,19 +153,27 @@ export class Agent extends MessageHandler {
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
-            vscode_shim.setClientInfo(clientInfo)
-            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            initializeVscodeExtension(this.workspace.workspaceRootUri)
 
+            vscode_shim.setClientInfo(clientInfo)
             // Register client info
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             if (clientInfo.extensionConfiguration) {
+                // this must be done before initializing the vscode extension below, as extensionConfiguration
+                // is queried in a number of places.
                 await this.setClientAndTelemetry(clientInfo.extensionConfiguration)
             }
+
+            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
+                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+            await initializeVscodeExtension(this.workspace.workspaceRootUri)
+
+            // must be done here, as the commands are not registered when calling setClientAndTelemetry above
+            // but setClientAndTelemetry must called before initializing the vscode extension.
+            await this.reloadAuth()
+
             const codyClient = await this.client
             if (!codyClient) {
                 return {
@@ -198,24 +194,34 @@ export class Agent extends MessageHandler {
         })
         this.registerNotification('initialized', () => {})
 
-        this.registerRequest('shutdown', () => Promise.resolve(null))
+        this.registerRequest('shutdown', async () => {
+            if (this?.params?.polly) {
+                this.params.polly.disconnectFrom('node-http')
+                await this.params.polly.stop()
+            }
+            return null
+        })
 
         this.registerNotification('exit', () => {
             process.exit(0)
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
+            this.workspace.setActiveTextEditor(
+                newTextEditor(this.workspace.agentTextDocument(TextDocumentWithUri.fromDocument(document)))
+            )
         })
         this.registerNotification('textDocument/didOpen', document => {
-            this.workspace.addDocument(document)
-            const textDocument = this.workspace.agentTextDocument(document)
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            this.workspace.addDocument(documentWithUri)
+            const textDocument = this.workspace.agentTextDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
-            const textDocument = this.workspace.agentTextDocument(document)
-            this.workspace.addDocument(document)
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const textDocument = this.workspace.agentTextDocument(documentWithUri)
+            this.workspace.addDocument(documentWithUri)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
@@ -224,8 +230,9 @@ export class Agent extends MessageHandler {
             })
         })
         this.registerNotification('textDocument/didClose', document => {
-            this.workspace.deleteDocument(document.filePath)
-            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            this.workspace.deleteDocument(documentWithUri.uri)
+            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(documentWithUri))
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
@@ -284,9 +291,23 @@ export class Agent extends MessageHandler {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const document = this.workspace.getDocument(params.filePath)
+            const uri =
+                typeof params.uri === 'string'
+                    ? vscode.Uri.parse(params.uri)
+                    : params?.filePath
+                    ? vscode.Uri.file(params.filePath)
+                    : undefined
+            if (!uri) {
+                console.log(
+                    `No uri provided for autocomplete request ${JSON.stringify(
+                        params
+                    )}. To fix this problem, set the 'uri' property.`
+                )
+                return { items: [] }
+            }
+            const document = this.workspace.getDocument(uri)
             if (!document) {
-                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
+                console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
                 return { items: [] }
             }
 
@@ -294,7 +315,7 @@ export class Agent extends MessageHandler {
 
             try {
                 if (params.triggerKind === 'Invoke') {
-                    await provider.manuallyTriggerCompletion()
+                    await provider?.manuallyTriggerCompletion?.()
                 }
 
                 const result = await provider.provideInlineCompletionItems(
@@ -318,18 +339,35 @@ export class Agent extends MessageHandler {
                     },
                     token
                 )
-                const items: AutocompleteItem[] =
-                    result === null
-                        ? []
-                        : result.items.flatMap(({ insertText, range }) =>
-                              typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
-                          )
 
-                return { items, completionEvent: (result as any)?.completionEvent }
+                const items: AutocompleteItem[] =
+                    result?.items.flatMap(({ insertText, range, id }) =>
+                        typeof insertText === 'string' && range !== undefined ? [{ id, insertText, range }] : []
+                    ) ?? []
+
+                return { items, completionEvent: result?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
                 return Promise.reject(error)
             }
+        })
+
+        this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const provider = await vscode_shim.completionProvider()
+            provider.handleDidAcceptCompletionItem(completionID)
+        })
+
+        this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const provider = await vscode_shim.completionProvider()
+            provider.unstable_handleDidShowCompletionItem(completionID)
         })
 
         this.registerRequest('graphql/currentUserId', async () => {
@@ -441,7 +479,7 @@ export class Agent extends MessageHandler {
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange) {
-            await vscode_shim.commands.executeCommand('agent.auth.reload')
+            await this.reloadAuth()
         }
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>
@@ -449,6 +487,7 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
+
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
@@ -463,6 +502,11 @@ export class Agent extends MessageHandler {
         })
         this.oldClient = client
         return client
+    }
+
+    private async reloadAuth(): Promise<void> {
+        await vscode_shim.commands.executeCommand('agent.auth.reload')
+        await vscode_shim.commands.executeCommand('cody.auth.sync')
     }
 
     /**

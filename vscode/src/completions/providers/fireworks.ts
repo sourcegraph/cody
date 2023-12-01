@@ -2,17 +2,15 @@ import * as vscode from 'vscode'
 
 import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { completionPostProcessLogger } from '../post-process-logger'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
-import { forkSignal } from '../utils'
 
+import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -25,7 +23,6 @@ export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    starcoderExtendedTokenWindow?: boolean
     timeouts: AutocompleteTimeouts
 }
 
@@ -37,10 +34,11 @@ const EOT_LLAMA_CODE = ' <EOT>'
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
-    'starcoder-16b': 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16',
-    'starcoder-16b-sourcegraph': 'fireworks/accounts/sourcegraph/models/starcoder-16b',
-    'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
-    'starcoder-7b-sourcegraph': 'fireworks/accounts/sourcegraph/models/starcoder-7b',
+    // Models in production
+    'starcoder-16b': 'fireworks/starcoder-16b',
+    'starcoder-7b': 'fireworks/starcoder-7b',
+
+    // Models in evaluation
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
     'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
@@ -54,20 +52,17 @@ type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
-    | 'starcoder-hybrid-sourcegraph'
 
-function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow?: boolean): number {
+function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder-hybrid':
-        case 'starcoder-hybrid-sourcegraph':
         case 'starcoder-16b':
         case 'starcoder-7b':
         case 'starcoder-3b':
         case 'starcoder-1b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
-            // our current Anthropic prompt but allow for 6k for the extended token window as
-            // defined by the feature flag
-            return starcoderExtendedTokenWindow ? 6144 : 2048
+            // other providers.
+            return 2048
         }
         case 'wizardcoder-15b':
             // TODO: Confirm what the limit is for WizardCoder
@@ -87,16 +82,22 @@ function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow
 
 const MAX_RESPONSE_TOKENS = 256
 
+const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: undefined,
+    timeoutMs: 15_000,
+}
+
 export class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
     private timeouts?: AutocompleteTimeouts
 
-    constructor(
-        options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
-    ) {
+    constructor(options: ProviderOptions, { model, maxContextTokens, client, timeouts }: Required<FireworksOptions>) {
         super(options)
         this.timeouts = timeouts
         this.model = model
@@ -158,14 +159,12 @@ export class FireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<InlineCompletionItemWithAnalytics[]> {
-        const { multiline } = this.options
+        const { multiline, dynamicMultilineCompletions } = this.options
         const prompt = this.createPrompt(snippets)
 
         const model =
             this.model === 'starcoder-hybrid'
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                : this.model === 'starcoder-hybrid-sourcegraph'
-                ? MODEL_MAP[multiline ? 'starcoder-16b-sourcegraph' : 'starcoder-7b-sourcegraph']
                 : MODEL_MAP[this.model]
 
         const timeoutMs: number = multiline
@@ -179,7 +178,7 @@ export class FireworksProvider extends Provider {
             return []
         }
 
-        const args: CodeCompletionsParams = {
+        const requestParams: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
@@ -192,14 +191,30 @@ export class FireworksProvider extends Provider {
             timeoutMs,
         }
 
-        tracer?.params(args)
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
+
+        tracer?.params(requestParams)
 
         const completions = await Promise.all(
             Array.from({ length: this.options.n }).map(() => {
-                return this.fetchAndProcessCompletions(this.client, args, abortSignal)
+                return fetchAndProcessCompletionsImpl({
+                    client: this.client,
+                    requestParams,
+                    abortSignal,
+                    providerSpecificPostProcess: this.postProcess,
+                    providerOptions: this.options,
+                })
             })
         )
 
+        completionPostProcessLogger.flush()
         tracer?.result({ completions })
 
         return completions
@@ -233,42 +248,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         return `${intro}${prefix}`
     }
 
-    private async fetchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CodeCompletionsParams,
-        abortSignal: AbortSignal
-    ): Promise<InlineCompletionItemWithAnalytics> {
-        // The Async executor is required to return the completion early if a partial result from SSE can be used.
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            try {
-                const abortController = forkSignal(abortSignal)
-
-                const result = await client.complete(
-                    params,
-                    (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        const completion = canUsePartialCompletion(processedCompletion, this.options)
-
-                        if (completion) {
-                            resolve({ ...completion, stopReason: 'streaming-truncation' })
-                            abortController.abort()
-                        }
-                    },
-                    abortController.signal
-                )
-
-                const processedCompletion = this.postProcess(result.completion)
-                const completion = parseAndTruncateCompletion(processedCompletion, this.options)
-
-                resolve({ ...completion, stopReason: result.stopReason })
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
-
-    private postProcess(content: string): string {
+    private postProcess = (content: string): string => {
         if (isStarCoderFamily(this.model)) {
             return content.replace(EOT_STARCODER, '')
         }
@@ -289,8 +269,6 @@ export function createProviderConfig({
             ? 'starcoder-hybrid'
             : model === 'starcoder-hybrid'
             ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid-sourcegraph'
-            ? 'starcoder-hybrid-sourcegraph'
             : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
             ? (model as keyof typeof MODEL_MAP)
             : null
@@ -299,7 +277,7 @@ export function createProviderConfig({
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel, otherOptions.starcoderExtendedTokenWindow)
+    const maxContextTokens = getMaxContextTokens(resolvedModel)
 
     return {
         create(options: ProviderOptions) {

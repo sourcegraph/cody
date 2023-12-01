@@ -62,11 +62,15 @@ export class ChatQuestion implements Recipe {
         contextFiles?: ContextFile[]
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
+        // Unless context files are provided, we don't need to add any context
         // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
         // e,g. "hey", "hi", "why", "explain" etc.
         const isTextTooShort = isSingleWord(text)
         if (isTextTooShort) {
-            return contextMessages
+            if (!contextFiles?.length) {
+                return contextMessages
+            }
+            return ChatQuestion.getContextFilesContext(editor, contextFiles)
         }
 
         this.debug('ChatQuestion:getContextMessages', 'addEnhancedContext', addEnhancedContext)
@@ -118,12 +122,14 @@ export class ChatQuestion implements Recipe {
         for (const file of contextFiles) {
             if (file?.uri) {
                 const content = await editor.getTextEditorContentForFile(file?.uri, file.range)
+                console.log(content, file.uri.fsPath)
                 if (content) {
                     const message = createContextMessageByFile(file, content)
                     contextFileMessages.push(...message)
                 }
             }
         }
+        console.log(contextFileMessages)
         return contextFileMessages
     }
 }

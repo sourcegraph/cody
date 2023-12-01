@@ -1,8 +1,6 @@
-import * as child_process from 'node:child_process'
-
 import * as vscode from 'vscode'
 
-import { downloadBfg } from '../../../../graph/bfg/download-bfg'
+import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import { Repository } from '../../../../repository/builtinGitExtension'
@@ -11,18 +9,18 @@ import { captureException } from '../../../../services/sentry/sentry'
 import { getContextRange } from '../../../doc-context-getters'
 import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
-// This promise is only used for testing purposes. We don't await on the
-// indexing request during autocomplete because we want autocomplete to respond
-// quickly even while BFG is indexing.
-export let bfgIndexingPromise = Promise.resolve<void>(undefined)
-
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
+    private bfgIndexingPromise = Promise.resolve<void>(undefined)
+    private awaitIndexing: boolean
     private didFailLoading = false
     // Keys are repository URIs, values are revisions (commit hashes).
     private indexedRepositoryRevisions = new Map<string, string>()
     constructor(private context: vscode.ExtensionContext) {
+        this.awaitIndexing = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.experimental.cody-engine.await-indexing', false)
         this.loadedBFG = this.loadBFG()
 
         this.loadedBFG.then(
@@ -34,7 +32,7 @@ export class BfgRetriever implements ContextRetriever {
             }
         )
 
-        bfgIndexingPromise = this.indexOpenGitRepositories()
+        this.bfgIndexingPromise = this.indexOpenGitRepositories()
     }
 
     private async indexOpenGitRepositories(): Promise<void> {
@@ -62,8 +60,12 @@ export class BfgRetriever implements ContextRetriever {
         const bfg = await this.loadedBFG
         const indexingStartTime = Date.now()
         // TODO: include commit?
-        await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
-        logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
+        try {
+            await bfg.request('bfg/gitRevision/didChange', { gitDirectoryUri: repository.rootUri.toString() })
+            logDebug('CodyEngine', `indexing time ${Date.now() - indexingStartTime}ms`)
+        } catch (error) {
+            logDebug('CodyEngine', `indexing error ${error}`)
+        }
     }
 
     public async retrieve({
@@ -72,16 +74,20 @@ export class BfgRetriever implements ContextRetriever {
         docContext,
         hints,
     }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
-        if (this.didFailLoading) {
-            return []
-        }
-        const bfg = await this.loadedBFG
-        if (!bfg.isAlive()) {
-            logDebug('CodyEngine', 'not alive')
-            return []
-        }
-
         try {
+            if (this.didFailLoading) {
+                return []
+            }
+            const bfg = await this.loadedBFG
+            if (!bfg.isAlive()) {
+                logDebug('CodyEngine', 'not alive')
+                return []
+            }
+
+            if (this.awaitIndexing) {
+                await this.bfgIndexingPromise
+            }
+
             const responses = await bfg.request('bfg/contextAtPosition', {
                 uri: document.uri.toString(),
                 content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
@@ -147,34 +153,7 @@ export class BfgRetriever implements ContextRetriever {
     }
 
     private async doLoadBFG(reject: (reason?: any) => void): Promise<MessageHandler> {
-        const bfg = new MessageHandler()
-        const codyrpc = await downloadBfg(this.context)
-        if (!codyrpc) {
-            throw new Error(
-                'Failed to download BFG binary. To fix this problem, set the "cody.experimental.cody-engine.path" configuration to the path of your BFG binary'
-            )
-        }
-        const isVerboseDebug = vscode.workspace.getConfiguration().get<boolean>('cody.debug.verbose', false)
-        const child = child_process.spawn(codyrpc, {
-            stdio: 'pipe',
-            env: {
-                VERBOSE_DEBUG: `${isVerboseDebug}`,
-                RUST_BACKTRACE: isVerboseDebug ? '1' : '0',
-            },
-        })
-        child.stderr.on('data', chunk => {
-            logDebug('CodyEngine', 'stderr', chunk.toString())
-        })
-        child.on('disconnect', () => reject())
-        child.on('close', () => reject())
-        child.on('error', error => reject(error))
-        child.on('exit', code => {
-            bfg.exit()
-            reject(code)
-        })
-        child.stderr.pipe(process.stderr)
-        child.stdout.pipe(bfg.messageDecoder)
-        bfg.messageEncoder.pipe(child.stdin)
+        const bfg = await spawnBfg(this.context, reject)
         await bfg.request('bfg/initialize', { clientName: 'vscode' })
         return bfg
     }

@@ -1,6 +1,7 @@
 .notice {
     box-sizing: border-box;
     padding: 10px 10px 13px 10px;
+    margin-top: 15px;
     width: 100%;
 
     background: var(--vscode-sideBar-background);

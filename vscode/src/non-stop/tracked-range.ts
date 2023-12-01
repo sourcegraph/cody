@@ -6,16 +6,32 @@ export interface TextChange {
     text: string
 }
 
-// Given a range and *multiple* edits, update the range for the edit. This
-// works by adjusting the range of each successive edit so that the edits
-// "stack."
-//
-// vscode's edit operations don't allow overlapping ranges. So we can just
-// adjust apply the edits in reverse order and end up with the right
-// adjustment for a compound edit.
-//
-// Note, destructively mutates the `changes` array.
-export function updateRangeMultipleChanges(range: vscode.Range, changes: TextChange[]): vscode.Range {
+export interface UpdateRangeOptions {
+    /**
+     * Whether to expand a range when a change is affixed to the original range.
+     * This changes the behaviour to support cases where we want to include appending or prepending to an original range.
+     * For example, allowing Cody to insert a docstring immediately before a function.
+     */
+    supportRangeAffix?: boolean
+}
+
+/**
+ * Given a range and *multiple* edits, update the range for the edit. This
+ * works by adjusting the range of each successive edit so that the edits
+ * "stack."
+ *
+ * vscode's edit operations don't allow overlapping ranges. So we can just
+ * adjust apply the edits in reverse order and end up with the right
+ * adjustment for a compound edit.
+ *
+ * Note, destructively mutates the `changes` array.
+ */
+export function updateRangeMultipleChanges(
+    range: vscode.Range,
+    changes: TextChange[],
+    options: UpdateRangeOptions = {},
+    rangeUpdater = updateRange
+): vscode.Range {
     changes.sort((a, b) => (b.range.start.isBefore(a.range.start) ? -1 : 1))
     for (let i = 0; i < changes.length - 1; i++) {
         console.assert(
@@ -24,7 +40,7 @@ export function updateRangeMultipleChanges(range: vscode.Range, changes: TextCha
         )
     }
     for (const change of changes) {
-        range = updateRange(range, change)
+        range = rangeUpdater(range, change, options)
     }
     return range
 }
@@ -32,7 +48,7 @@ export function updateRangeMultipleChanges(range: vscode.Range, changes: TextCha
 // Given a range and an edit, updates the range for the edit. Edits at the
 // start or end of the range shrink the range. If the range is deleted, return a
 // zero-width range at the start of the edit.
-export function updateRange(range: vscode.Range, change: TextChange): vscode.Range {
+export function updateRange(range: vscode.Range, change: TextChange, options: UpdateRangeOptions = {}): vscode.Range {
     const lines = change.text.split(/\r\n|\r|\n/m)
     const insertedLastLine = lines.at(-1)?.length
     if (insertedLastLine === undefined) {
@@ -41,6 +57,33 @@ export function updateRange(range: vscode.Range, change: TextChange): vscode.Ran
     const insertedLineBreaks = lines.length - 1
 
     // Handle edits
+    // support combining non-whitespace appended changes with the original range
+    if (options.supportRangeAffix && change.range.start.isEqual(range.end) && change.text.trim().length > 0) {
+        return new vscode.Range(
+            range.start,
+            change.range.end.translate(
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
+                change.range.end.line === range.end.line
+                    ? change.range.start.character - change.range.end.character + insertedLastLine
+                    : 0
+            )
+        )
+    }
+    // support combining non-whitespace prepended changes with the original range
+    if (options.supportRangeAffix && change.range.end.isEqual(range.start) && change.text.trim().length > 0) {
+        return new vscode.Range(
+            change.range.start,
+            range.end.translate(
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
+                change.range.end.line === range.end.line
+                    ? insertedLastLine -
+                          change.range.end.character +
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
+                    : 0
+            )
+        )
+    }
+
     // ...after
     if (change.range.start.isAfterOrEqual(range.end)) {
         return range
@@ -107,5 +150,44 @@ export function updateRange(range: vscode.Range, change: TextChange): vscode.Ran
             change.range.start
         )
     }
+    return range
+}
+
+/**
+ * Given a range and an edit, shifts the range for the edit.
+ * Only handles edits that are outside of the range, as it is purely focused on shifting a fixed range in a document.
+ * Does not expand or shrink the original rank.
+ */
+export function updateFixedRange(range: vscode.Range, change: TextChange): vscode.Range {
+    const lines = change.text.split(/\r\n|\r|\n/m)
+    const insertedLastLine = lines.at(-1)?.length
+    if (insertedLastLine === undefined) {
+        throw new TypeError('unreachable') // Any string .split produces a non-empty array.
+    }
+    const insertedLineBreaks = lines.length - 1
+
+    // The only case where a range should be shifted is when the change happens before the range.
+    // In this case, we just need to adjust the start and end position depending on if the incoming change added or removed text.
+    if (change.range.end.isBefore(range.start)) {
+        range = range.with(
+            range.start.translate(
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
+                change.range.end.line === range.start.line
+                    ? insertedLastLine +
+                          -change.range.end.character +
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
+                    : 0
+            ),
+            range.end.translate(
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
+                change.range.end.line === range.end.line
+                    ? insertedLastLine -
+                          change.range.end.character +
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
+                    : 0
+            )
+        )
+    }
+
     return range
 }
