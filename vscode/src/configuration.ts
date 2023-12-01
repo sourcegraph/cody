@@ -135,13 +135,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
-        agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('cody.advanced.agent.ide'),
+        agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
         autocompleteTimeouts: {
-            multiline: getHiddenSetting<number | undefined>('cody.autocomplete.advanced.timeout.multiline', undefined),
-            singleline: getHiddenSetting<number | undefined>(
-                'cody.autocomplete.advanced.timeout.singleline',
-                undefined
-            ),
+            multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
+            singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
         },
     }
 }
