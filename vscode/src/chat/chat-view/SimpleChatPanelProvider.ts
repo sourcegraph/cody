@@ -322,7 +322,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 void this.localEmbeddings?.index()
                 break
             case 'show-page':
-                await vscode.commands.executeCommand('cody.showPage', message.page)
+                await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             default:
                 this.postError(new Error('Invalid request type from Webview Panel'))

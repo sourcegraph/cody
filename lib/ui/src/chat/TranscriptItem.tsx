@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
+    ApiPostMessage,
     ChatButtonProps,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
@@ -59,6 +60,7 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+        postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -85,6 +87,7 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
+    postMessage,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const EditTextArea =
@@ -154,7 +157,9 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            {message.error && <ErrorItem error={message.error} ChatButtonComponent={ChatButtonComponent} />}
+            {message.error && (
+                <ErrorItem error={message.error} ChatButtonComponent={ChatButtonComponent} postMessage={postMessage} />
+            )}
             <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                 {message.displayText ? (
                     EditTextArea ? (

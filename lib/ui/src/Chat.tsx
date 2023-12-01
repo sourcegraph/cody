@@ -71,12 +71,15 @@ interface ChatProps extends ChatClassNames {
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo?: UserAccountInfo
+    postMessage?: ApiPostMessage
 }
 
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
 }
+
+export type ApiPostMessage = (message: any) => void
 
 interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string
@@ -222,6 +225,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     EnhancedContextSettings,
     onCurrentChatModelChange,
     userInfo,
+    postMessage,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -554,6 +558,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     onCurrentChatModelChange={onCurrentChatModelChange}
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
+                    postMessage={postMessage}
                 />
             )}
 

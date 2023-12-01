@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
-import { ChatButtonProps } from '../Chat'
+import { ApiPostMessage, ChatButtonProps } from '../Chat'
 
 import styles from './ErrorItem.module.css'
 
@@ -12,9 +12,14 @@ import styles from './ErrorItem.module.css'
 export const ErrorItem: React.FunctionComponent<{
     error: string | ChatError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent }) {
-    return typeof error !== 'string' && error.name === RateLimitError.errorName ? (
-        <RateLimitErrorItem error={error as RateLimitError} ChatButtonComponent={ChatButtonComponent} />
+    postMessage?: ApiPostMessage
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+    return typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage ? (
+        <RateLimitErrorItem
+            error={error as RateLimitError}
+            ChatButtonComponent={ChatButtonComponent}
+            postMessage={postMessage}
+        />
     ) : (
         <div className="cody-chat-error">
             <span>Request failed: </span>
@@ -29,7 +34,8 @@ export const ErrorItem: React.FunctionComponent<{
 export const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-}> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent }) {
+    postMessage: ApiPostMessage
+}> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, postMessage }) {
     return (
         <div className={styles.errorItem}>
             <h1>{error.upgradeIsAvailable ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
@@ -40,20 +46,14 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                         <ChatButtonComponent
                             label="Upgrade"
                             action=""
-                            onClick={() => {
-                                // TODO(dantup): We don't have access to vsCodeApi to call postMessage here?
-                                // vsCodeApi.postMessage({ command: 'show-page', page: 'upgrade')
-                            }}
+                            onClick={() => postMessage({ command: 'show-page', page: 'upgrade' })}
                             appearance="primary"
                         />
                     )}
                     <ChatButtonComponent
                         label="Learn More"
                         action=""
-                        onClick={() => {
-                            // TODO(dantup): We don't have access to vsCodeApi to call postMessage here?
-                            // vsCodeApi.postMessage({ command: 'show-page', page: 'rate-limits')
-                        }}
+                        onClick={() => postMessage({ command: 'show-page', page: 'rate-limits' })}
                         appearance="secondary"
                     />
                 </div>

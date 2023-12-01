@@ -195,7 +195,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 }
                 break
             case 'show-page':
-                await vscode.commands.executeCommand('cody.showPage', message.page)
+                await vscode.commands.executeCommand('show-page', message.page)
                 break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')

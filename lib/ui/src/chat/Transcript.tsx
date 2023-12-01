@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { ChatMessage, ChatModelProvider } from '@sourcegraph/cody-shared'
 
 import {
+    ApiPostMessage,
     ChatButtonProps,
     ChatModelDropdownMenuProps,
     ChatUISubmitButtonProps,
@@ -44,6 +45,7 @@ export const Transcript: React.FunctionComponent<
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
         userInfo?: UserAccountInfo
+        postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -74,6 +76,7 @@ export const Transcript: React.FunctionComponent<
     ChatModelDropdownMenu,
     onCurrentChatModelChange,
     userInfo,
+    postMessage,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -176,6 +179,7 @@ export const Transcript: React.FunctionComponent<
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
+                    postMessage={postMessage}
                 />
             )
         }
@@ -214,6 +218,7 @@ export const Transcript: React.FunctionComponent<
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
+                        postMessage={postMessage}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (

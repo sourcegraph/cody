@@ -254,6 +254,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
+            postMessage={msg => vscodeAPI.postMessage(msg)}
         />
     )
 }
