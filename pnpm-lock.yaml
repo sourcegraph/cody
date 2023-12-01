@@ -58,7 +58,7 @@ importers:
         specifier: ^0.0.14-next.2
         version: 0.0.14-next.2
       '@types/google-protobuf':
-        specifier: ^3.15.6
+        specifier: ^3.15.10
         version: 3.15.10
       '@types/node':
         specifier: 20.4.0
@@ -155,7 +155,7 @@ importers:
         version: 3.0.7
     devDependencies:
       '@types/google-protobuf':
-        specifier: ^3.15.6
+        specifier: ^3.15.10
         version: 3.15.10
       '@types/minimatch':
         specifier: ^5.1.2
