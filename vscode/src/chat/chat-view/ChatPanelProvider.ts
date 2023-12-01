@@ -191,7 +191,7 @@ export class ChatPanelProvider extends MessageProvider {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        const models = ChatModelProvider.get(authStatus.endpoint)
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)
         await this.webview?.postMessage({ type: 'chatModels', models })
     }
 

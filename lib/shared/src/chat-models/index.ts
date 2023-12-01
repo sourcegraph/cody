@@ -66,9 +66,11 @@ export class ChatModelProvider {
      * made available for use.
      */
     public static add(provider: ChatModelProvider): void {
-        if (!this.privateProviders.has(provider.model.trim())) {
-            this.privateProviders.set(provider.model.trim(), provider)
+        // private instances can only support 1 provider atm
+        if (this.privateProviders.size) {
+            this.privateProviders.clear()
         }
+        this.privateProviders.set(provider.model.trim(), provider)
     }
 
     /**

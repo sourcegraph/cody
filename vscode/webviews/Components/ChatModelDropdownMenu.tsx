@@ -32,6 +32,10 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         [models, onCurrentChatModelChange, showCodyProBadge]
     )
 
+    function isModelDisabled(model: string): boolean {
+        return showCodyProBadge && model !== currentModel.model
+    }
+
     if (!models.length || models.length < 1) {
         return null
     }
@@ -58,24 +62,20 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                         className={styles.option}
                         key={option.model}
                         id={index.toString()}
-                        title={
-                            showCodyProBadge && !option.default
-                                ? `Upgrade to Cody Pro to use ${option.title}`
-                                : undefined
-                        }
-                        disabled={showCodyProBadge && !option.default}
+                        title={isModelDisabled(option.model) ? `Upgrade to Cody Pro to use ${option.title}` : undefined}
+                        disabled={isModelDisabled(option.model)}
                     >
                         <ProviderIcon model={option.model} />
                         <span
                             className={classNames(
                                 styles.titleContainer,
-                                showCodyProBadge && !option.default && styles.disabled
+                                isModelDisabled(option.model) && styles.disabled
                             )}
                         >
                             <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${option.provider}`}</span>
                         </span>
-                        {showCodyProBadge && !option.default && <span className={styles.badge}>Pro</span>}
+                        {isModelDisabled(option.model) && <span className={styles.badge}>Pro</span>}
                     </VSCodeOption>
                 ))}
 
