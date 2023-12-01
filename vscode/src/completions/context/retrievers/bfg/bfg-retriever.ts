@@ -66,13 +66,9 @@ export class BfgRetriever implements ContextRetriever {
             if (this.indexedRepositoryRevisions.has(folder.uri.toString())) {
                 continue
             }
-            try {
-                const repo = await inferGitRepository(folder.uri)
-                if (repo) {
-                    this.didChangeSimpleRepository(repo)
-                }
-            } catch {
-                // ignore
+            const repo = await inferGitRepository(folder.uri)
+            if (repo) {
+                this.didChangeSimpleRepository(repo)
             }
         }
     }
