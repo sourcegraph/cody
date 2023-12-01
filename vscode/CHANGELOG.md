@@ -10,6 +10,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Chat: Display OS specific keybinding in chat welcome message. [pull/2051](https://github.com/sourcegraph/cody/pull/2051)
+
 ### Changed
 
 ## [0.16.2]
