@@ -47,6 +47,8 @@ export type Requests = {
 
     'graphql/currentUserId': [null, string]
 
+    'graphql/currentUserIsPro': [null, boolean]
+
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */
