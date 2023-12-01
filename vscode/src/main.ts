@@ -147,7 +147,8 @@ const register = async (
         rgPath,
         symfRunner,
         authProvider,
-        platform
+        platform,
+        localEmbeddings
     )
     disposables.push(contextProvider)
     disposables.push(new LocalAppSetupPublisher(contextProvider))

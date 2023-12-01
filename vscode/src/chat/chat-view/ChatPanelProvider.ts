@@ -50,6 +50,12 @@ export class ChatPanelProvider extends MessageProvider {
         super(options)
         this.extensionUri = extensionUri
         this.treeView = treeView
+
+        this.contextProvider.onDidChangeStatus(_ => {
+            this.postEnhancedContextStatusToWebview()
+        })
+        // Hint local embeddings to start.
+        void this.contextProvider.localEmbeddings?.start()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -443,8 +449,12 @@ export class ChatPanelProvider extends MessageProvider {
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
+        // TODO(abeatrix): ContextProvider is shared so each new chat panel
+        // should not overwrite the context provider's webview, or it
+        // will break the previous chat panel.
         this.contextProvider.webview = panel.webview
         this.authProvider.webview = panel.webview
+        this.postEnhancedContextStatusToWebview()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
@@ -458,5 +468,15 @@ export class ChatPanelProvider extends MessageProvider {
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
         return panel
+    }
+
+    // Sends context status updates to the webview, if any.
+    private postEnhancedContextStatusToWebview(): void {
+        void this.webview?.postMessage({
+            type: 'enhanced-context',
+            context: {
+                groups: this.contextProvider.status,
+            },
+        })
     }
 }
