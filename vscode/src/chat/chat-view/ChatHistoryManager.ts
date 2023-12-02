@@ -10,11 +10,7 @@ export class ChatHistoryManager {
 
     public getChat(sessionID: string): TranscriptJSON | null {
         const chatHistory = this.localHistory
-        if (!chatHistory) {
-            return null
-        }
-
-        return chatHistory.chat[sessionID]
+        return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
     public async saveChat(chat: TranscriptJSON): Promise<UserLocalHistory> {

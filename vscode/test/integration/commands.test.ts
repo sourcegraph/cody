@@ -28,9 +28,9 @@ suite('Commands', function () {
         await vscode.commands.executeCommand('cody.command.explain-code')
 
         // Check the chat transcript contains markdown
-        const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^\/explain/)
-
+        // const humanMessage = await getTranscript(0)
+        // assert.match(humanMessage.displayText || '', /^\/explain/)
+        assert.match((await getTranscript(0)).displayText || '', /^\/explain/)
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
