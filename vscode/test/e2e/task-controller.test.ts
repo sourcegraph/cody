@@ -75,7 +75,6 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
-
     await assertEvents(loggedEvents, expectedEvents)
     await assertEvents(loggedV2Events, [
         'cody.auth/connected',
