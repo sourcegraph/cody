@@ -59,31 +59,52 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.accept-all', () => this.acceptFixups()),
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.cancel', 'clicked', {
+                    privateMetadata: { op: 'cancel' }
+                })
                 return this.cancel(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.diff', 'clicked', {
+                    privateMetadata: { op: 'diff' }
+                })
                 return this.diff(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.retry', 'clicked', {
+                    privateMetadata: { op:'regenerate' }
+                })
                 return this.retry(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.undo', 'clicked', {
+                    privateMetadata: { op: 'undo' }
+                })
                 return this.undo(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.accept', 'clicked', {
+                    privateMetadata: { op: 'accept' }
+                })
                 return this.accept(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.error', 'error', {
+                    privateMetadata: { op:'show_error' }
+                })
                 return this.showError(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.skip-formatting', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'skip_formatting' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'skip_formatting', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.skip-formatting','clicked', {
+                    privateMetadata: { op:'skip_formatting' }
+                })
                 return this.skipFormatting(id)
             })
         )
@@ -219,7 +240,10 @@ export class FixupController
     private scheduleRespin(task: FixupTask): void {
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
-            telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
+            telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount, hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.respin', 'scheduled', {
+                privateMetadata: { spinCount: task.spinCount }
+            })
             return this.error(task.id, `Cody tried ${task.spinCount} times but failed to edit the file`)
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
@@ -683,12 +707,18 @@ export class FixupController
         })
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed')
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', { hasV2Event: true})
+            telemetryRecorder.recordEvent('cody.fixup.revert', 'failed')
             return
         }
 
         const tokenCount = countCode(replacementText)
         telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
+        telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
+            privateMetadata: {
+                tokenCount: tokenCount,
+            }
+        })
 
         this.setTaskState(task, CodyTaskState.finished)
     }
@@ -797,6 +827,13 @@ export class FixupController
             telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
                 ...countCode(replacementText),
                 source: task.source,
+                hasV2Event: true
+            })
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                privateMetadata: {
+                    tokenCount: countCode(replacementText),
+                    source: task.source,
+                }
             })
             return this.streamTask(task, state)
         }
@@ -833,6 +870,13 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
                     ...countCode(text),
                     source: task.source,
+                    hasV2Event: true
+                })
+                telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                    privateMetadata: {
+                        tokenCount: countCode(text),
+                        source: task.source,
+                    }
                 })
                 break
         }
