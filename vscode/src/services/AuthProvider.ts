@@ -23,6 +23,7 @@ import { LocalAppDetector } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
+import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => {}
@@ -66,12 +67,16 @@ export class AuthProvider {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         logDebug('AuthProvider:signinMenu', mode)
         telemetryService.log('CodyVSCodeExtension:login:clicked')
+        telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
         }
         const menuID = type || item?.id
         telemetryService.log('CodyVSCodeExtension:auth:selectSigninMenu', { menuID })
+        telemetryRecorder.recordEvent('cody.auth.signin.menu', 'clicked', {
+            privateMetadata: { menuID },
+        })
         switch (menuID) {
             case 'enterprise': {
                 const instanceUrl = await showInstanceURLInputBox(item.uri)
@@ -124,6 +129,11 @@ export class AuthProvider {
         telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
             success: Boolean(authState?.isLoggedIn),
         })
+        telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
+            privateMetadata: {
+                success: Boolean(authState?.isLoggedIn),
+            },
+        })
         await showAuthResultMessage(instanceUrl, authState?.authStatus)
     }
 
@@ -144,6 +154,7 @@ export class AuthProvider {
 
     public async signoutMenu(): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:logout:clicked')
+        telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
         const { endpoint } = this.authStatus
 
         if (endpoint) {
@@ -328,6 +339,13 @@ export class AuthProvider {
             type: 'callback',
             from: isApp ? 'app' : 'web',
             success: Boolean(authState?.isLoggedIn),
+        })
+        telemetryRecorder.recordEvent(`cody.auth.fromCallback.${isApp ? 'app' : 'web'}`, 'succeeded', {
+            privateMetadata: {
+                type: 'callback',
+                from: isApp ? 'app' : 'web',
+                success: Boolean(authState?.isLoggedIn)
+            }
         })
         if (authState?.isLoggedIn) {
             const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
