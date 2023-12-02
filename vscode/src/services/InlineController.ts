@@ -403,7 +403,7 @@ export class InlineController implements VsCodeInlineController {
             this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup', { hasV2Event: true})
+        telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.inline-assist.stopFixup', 'clicked')
         if (!error) {
             await vscode.commands.executeCommand('workbench.action.collapseAllComments')
@@ -493,8 +493,8 @@ export class InlineController implements VsCodeInlineController {
             lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
             await this.stopEditMode(false, newRange)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:replaced', { hasV2Event: true})
-            telemetryRecorder.recordEvent('cody.inline-assist','replaced')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:replaced', { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.inline-assist', 'replaced')
         } catch (error) {
             await this.stopEditMode(true)
             console.error(error)
