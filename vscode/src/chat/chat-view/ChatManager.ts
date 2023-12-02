@@ -12,6 +12,7 @@ import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
 import { AuthStatus } from '../protocol'
 
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
@@ -218,6 +219,7 @@ export class ChatManager implements vscode.Disposable {
                 this.localEmbeddings
             )
             telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.chatPanelsManger', 'activated')
         }
     }
 
