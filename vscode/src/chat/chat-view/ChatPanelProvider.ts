@@ -22,7 +22,6 @@ import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../Me
 import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
 import { getChatPanelTitle } from './chat-helpers'
-import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -40,7 +39,6 @@ export class ChatPanelProvider extends MessageProvider {
     public webview?: ChatViewProviderWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
     public treeView: TreeViewProvider
-    private history = new ChatHistoryManager()
 
     constructor({ treeView, extensionUri, ...options }: ChatPanelProviderOptions) {
         super(options)
@@ -221,12 +219,23 @@ export class ChatPanelProvider extends MessageProvider {
             chatID: this.sessionID,
         })
 
+        const currentTitle = this.history.getChat(this.sessionID)?.chatTitle
+        if (currentTitle) {
+            this.handleChatTitle(currentTitle)
+            return
+        }
         // Update / reset webview panel title
-        const chatTitle = this.history.getChatTitle(this.sessionID)
         const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
-
         if (this.webviewPanel) {
             this.webviewPanel.title = getChatPanelTitle(text)
+        }
+    }
+
+    public handleChatTitle(title: string): void {
+        this.chatTitle = title
+        this.transcript.setChatTitle(title)
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
         }
     }
 
@@ -384,13 +393,10 @@ export class ChatPanelProvider extends MessageProvider {
 
         this.startUpChatID = chatID
 
-        let chatTitle
-        if (chatID) {
-            chatTitle = this.history.getChatTitle(chatID)
-        }
+        const chatTitle = chatID ? this.history.getChat(chatID)?.chatTitle : lastQuestion
 
         const viewType = CodyChatPanelViewType
-        const panelTitle = getChatPanelTitle(lastQuestion)
+        const panelTitle = chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -416,6 +422,11 @@ export class ChatPanelProvider extends MessageProvider {
     public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<void> {
         logDebug('ChatPanelProvider:revive', 'reviving webview panel')
         this.startUpChatID = chatID
+        const title = this.history.getChat(chatID)?.chatTitle
+        if (chatID && title) {
+            this.chatTitle = title
+            webviewPanel.title = title
+        }
         await this.registerWebviewPanel(webviewPanel)
     }
 

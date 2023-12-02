@@ -35,6 +35,7 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { TestSupport } from '../test-support'
 
+import { ChatHistoryManager } from './chat-view/ChatHistoryManager'
 import { ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
 
@@ -108,6 +109,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected chatModel: string | undefined = undefined
+    protected chatTitle: string | undefined = 'init'
+    public history = new ChatHistoryManager()
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -134,6 +137,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendHistory()
         await this.contextProvider.init()
         await this.sendCodyCommands()
+        this.chatTitle = undefined
 
         if (chatID) {
             await this.restoreSession(chatID)
@@ -179,6 +183,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
         this.chatModel = this.transcript.chatModel
+        this.chatTitle = this.history.getChat(chatID)?.chatTitle || this.transcript.chatTitle
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -734,6 +739,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
+        this.transcript.chatTitle = this.history.getChat(this.sessionID)?.chatTitle
         MessageProvider.chatHistory[this.sessionID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()

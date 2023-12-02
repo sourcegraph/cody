@@ -34,6 +34,7 @@ export interface IChatPanelProvider extends vscode.Disposable {
     executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
     clearAndRestartSession(): Promise<void>
     clearChatHistory(chatID: ChatID): Promise<void>
+    handleChatTitle(title: string): void
     triggerNotice(notice: { key: string }): void
     webviewPanel?: vscode.WebviewPanel
     webview?: ChatViewProviderWebview
@@ -238,14 +239,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         await chatProvider.executeCustomCommand(title, type)
     }
 
-    private updateWebviewPanelTitle(chatID: string, newTitle: string): void {
-        const provider = this.panelProvidersMap.get(chatID)
-        if (provider?.webviewPanel) {
-            provider.webviewPanel.title = newTitle
-        }
-        return
-    }
-
     private updateTreeViewHistory(): void {
         const localHistory = localStorage.getChatHistory()
         if (localHistory) {
@@ -264,11 +257,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                 prompt: 'Enter new chat name',
                 value: label,
             })
-            .then(async message => {
-                if (message) {
-                    await this.history.updateChatHistoryTitle(chatID, message)
+            .then(async title => {
+                const chatHistory = this.history.getChat(chatID)
+                if (title && chatHistory) {
+                    this.panelProvidersMap.get(chatID)?.handleChatTitle(title)
+                    chatHistory.chatTitle = title
+                    await this.history.saveChat(chatHistory)
                     this.updateTreeViewHistory()
-                    this.updateWebviewPanelTitle(chatID, message)
                 }
             })
     }

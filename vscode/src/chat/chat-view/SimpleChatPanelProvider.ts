@@ -373,6 +373,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // and can be removed once we retire the old ChatPanelProvider
         return Promise.resolve()
     }
+    public handleChatTitle(title: string): void {
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
+        }
+    }
 
     public triggerNotice(notice: { key: string }): void {
         void this.webview?.postMessage({
@@ -945,7 +950,12 @@ async function newChatModelfromTranscriptJSON(editor: Editor, json: TranscriptJS
             ]
         }
     )
-    return new SimpleChatModel(json.chatModel || 'anthropic/claude-2', (await Promise.all(messages)).flat(), json.id)
+    return new SimpleChatModel(
+        json.chatModel || 'anthropic/claude-2',
+        (await Promise.all(messages)).flat(),
+        json.id,
+        json.chatTitle
+    )
 }
 
 export function deserializedContextFilesToContextItems(
