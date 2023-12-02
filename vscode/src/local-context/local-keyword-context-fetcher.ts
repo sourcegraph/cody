@@ -13,6 +13,7 @@ import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/s
 
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 const source: ContextFileSource = 'keyword'
 const type: ContextFileType = 'file'
@@ -132,6 +133,9 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         )
         const searchDuration = performance.now() - startTime
         telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
+        telemetryRecorder.recordEvent('cody.keywordContext.searchDuration', 'started', {
+            metadata: { searchDuration },
+        })
         logDebug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()
