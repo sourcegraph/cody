@@ -21,7 +21,6 @@ export const ErrorItem: React.FunctionComponent<{
                 error={error as RateLimitError}
                 ChatButtonComponent={ChatButtonComponent}
                 postMessage={postMessage}
-                userInfo={userInfo}
             />
         )
     }
@@ -75,12 +74,15 @@ export const RateLimitErrorItem: React.FunctionComponent<{
 
     const onButtonClick = useCallback(
         (page: 'upgrade' | 'rate-limits'): void => {
-            postMessage({ command: 'show-page', page })
+            // Log click event
+            const action = page === 'upgrade' ? 'upgrade' : 'learn-more'
             postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
-                properties: { limit_type: 'chat_commands', page, tier },
+                properties: { limit_type: 'chat_commands', 'call-to-action': action, tier },
             })
+            // open the page in browser
+            postMessage({ command: 'show-page', page })
         },
         [postMessage, tier]
     )
