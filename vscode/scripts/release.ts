@@ -82,6 +82,25 @@ if (customDefaultSettingsFile) {
     writeJsonFileSync('package.json', packageJSON)
 }
 
+if (releaseType === ReleaseType.Stable) {
+    console.log('Removing experimental settings before the stable release...')
+
+    try {
+        const properties = packageJSON?.contributes?.configuration?.properties
+        if (properties) {
+            for (const key in properties) {
+                if (key.includes('.experimental.')) {
+                    delete properties[key]
+                }
+            }
+            fs.writeFileSync(packageJSONPath, JSON.stringify(packageJSON, null, 2), 'utf8')
+        }
+    } catch (error) {
+        console.error('Error removing experimental settings', error)
+        process.exit(1) // Exit with a non-zero status code in case of an error
+    }
+}
+
 // Tokens are stored in the GitHub repository's secrets.
 const tokens = {
     vscode: dryRun ? 'dry-run' : process.env.VSCODE_MARKETPLACE_TOKEN,

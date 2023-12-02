@@ -144,22 +144,26 @@ export class Transcript {
     }
 
     /**
-     * Adds a error div to the assistant response. If the assistant has collected
+     * Adds an error div to the assistant response. If the assistant has collected
      * some response before, we will add the error message after it.
-     * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
+     * @param error The error to be displayed.
      */
-    public addErrorAsAssistantResponse(errorText: string): void {
+    public addErrorAsAssistantResponse(error: Error): void {
         const lastInteraction = this.getLastInteraction()
         if (!lastInteraction) {
             return
         }
-        // If assistant has responsed before, we will add the error message after it
-        const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
+
         lastInteraction.setAssistantMessage({
-            speaker: 'assistant',
+            ...lastInteraction.getAssistantMessage(),
             text: 'Failed to generate a response due to server error.',
-            displayText:
-                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
+            // Serializing normal errors will lose name/message so
+            // just read them off manually and attach the rest of the fields.
+            error: {
+                ...error,
+                message: error.message,
+                name: error.name,
+            },
         })
     }
 

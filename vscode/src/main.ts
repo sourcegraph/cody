@@ -14,10 +14,17 @@ import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
-import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import {
+    ACCOUNT_LIMITS_INFO_URL,
+    ACCOUNT_UPGRADE_URL,
+    ACCOUNT_USAGE_URL,
+    AuthStatus,
+    CODY_FEEDBACK_URL,
+} from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
+import { ExecuteEditArguments } from './edit/execute'
 import { getActiveEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -135,6 +142,7 @@ const register = async (
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
@@ -146,13 +154,14 @@ const register = async (
         rgPath,
         symfRunner,
         authProvider,
-        platform
+        platform,
+        localEmbeddings
     )
     disposables.push(contextProvider)
     disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
-    // Hack to get embeddings search client
+    // Hacks to get embeddings clients
     const codebaseContext = await hackGetCodebaseContext(
         initialConfig,
         rgPath,
@@ -160,7 +169,8 @@ const register = async (
         editor,
         chatClient,
         platform,
-        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig)
+        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
+        undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
     )
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
 
@@ -186,7 +196,8 @@ const register = async (
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsSearch
+        embeddingsSearch,
+        localEmbeddings || null
     )
 
     disposables.push(new CodeActionProvider({ contextProvider }))
@@ -231,7 +242,7 @@ const register = async (
         }
     })
     // Sync initial auth status
-    void chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     const executeRecipeInChatView = async (
         recipe: RecipeID,
@@ -243,13 +254,7 @@ const register = async (
     }
 
     const executeFixup = async (
-        args: {
-            document?: vscode.TextDocument
-            instruction?: string
-            intent?: FixupIntent
-            range?: vscode.Range
-            insertMode?: boolean
-        } = {},
+        args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
@@ -266,8 +271,8 @@ const register = async (
         }
 
         const task = args.instruction?.trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
-            : await fixup.promptUserForTask()
+            ? await fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
+            : await fixup.promptUserForTask(args, source)
         if (!task) {
             return
         }
@@ -385,6 +390,14 @@ const register = async (
         }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
+            const confirmation = await vscode.window.showWarningMessage(
+                'Restart Chat Session',
+                { modal: true, detail: 'Restarting the chat session will erase the chat transcript.' },
+                'Restart Chat Session'
+            )
+            if (!confirmation) {
+                return
+            }
             await chatManager.clearAndRestartSession()
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
@@ -445,6 +458,26 @@ const register = async (
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
         ),
+
+        // Account links
+        vscode.commands.registerCommand('cody.show-page', (page: string) => {
+            let url: URL
+            switch (page) {
+                case 'upgrade':
+                    url = ACCOUNT_UPGRADE_URL
+                    break
+                case 'usage':
+                    url = ACCOUNT_USAGE_URL
+                    break
+                case 'rate-limits':
+                    url = ACCOUNT_LIMITS_INFO_URL
+                    break
+                default:
+                    console.warn(`Unable to show unknown page: "${page}"`)
+                    return
+            }
+            void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
+        }),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -628,6 +661,7 @@ const register = async (
             void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

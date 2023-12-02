@@ -1,4 +1,4 @@
-import { Position, TextDocument } from 'vscode'
+import { TextDocument } from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
 import { parseAndTruncateCompletion } from './text-processing/parse-and-truncate-completion'
@@ -6,9 +6,8 @@ import { InlineCompletionItemWithAnalytics } from './text-processing/process-inl
 
 export interface CanUsePartialCompletionParams {
     document: TextDocument
-    position: Position
     docContext: DocumentContext
-    multiline: boolean
+    isDynamicMultilineCompletion?: boolean
 }
 
 /**
@@ -26,6 +25,7 @@ export function canUsePartialCompletion(
     partialResponse: string,
     params: CanUsePartialCompletionParams
 ): InlineCompletionItemWithAnalytics | null {
+    const { docContext } = params
     const lastNewlineIndex = partialResponse.lastIndexOf('\n')
 
     // If there is no `\n` in the completion, we have not received a single full line yet
@@ -33,10 +33,9 @@ export function canUsePartialCompletion(
         return null
     }
 
-    // The last line might not be complete yet, so we discard it
-    const item = parseAndTruncateCompletion(partialResponse.slice(0, lastNewlineIndex), params)
+    const item = parseAndTruncateCompletion(partialResponse, params)
 
-    if (params.multiline) {
+    if (docContext.multilineTrigger) {
         return (item.lineTruncatedCount || 0) > 0 ? item : null
     }
 

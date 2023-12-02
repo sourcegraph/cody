@@ -74,7 +74,17 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.status(200)
     })
 
+    let chatRateLimited = false
+    let chatRateLimitPro = false
     app.post('/.api/completions/stream', (req, res) => {
+        if (chatRateLimited) {
+            res.setHeader('retry-after', new Date().toString())
+            res.setHeader('x-ratelimit-limit', '12345')
+            res.setHeader('x-is-cody-pro-user', `${chatRateLimitPro}`)
+            res.sendStatus(429)
+            return
+        }
+
         // TODO: Filter streaming response
         // TODO: Handle multiple messages
         // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
@@ -87,6 +97,16 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 ? responses.fixup
                 : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+    })
+    app.post('/.test/completions/triggerRateLimit/free', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = false
+        res.sendStatus(200)
+    })
+    app.post('/.test/completions/triggerRateLimit/pro', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = true
+        res.sendStatus(200)
     })
 
     app.post('/.api/completions/code', (req, res) => {

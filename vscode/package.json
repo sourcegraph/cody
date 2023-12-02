@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.16.1",
+  "version": "0.16.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -29,7 +29,7 @@
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "lint": "pnpm run lint:js",
     "lint:js": "NODE_OPTIONS=--max-old-space-size=4096 eslint --quiet --cache '**/*.[tj]s?(x)'",
-    "release": "ts-node ./scripts/release.ts",
+    "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
@@ -485,9 +485,15 @@
         "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
       },
       {
+        "command": "cody.autocomplete.manual-trigger",
+        "category": "Cody",
+        "title": "Trigger Autocomplete at Cursor",
+        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+      },
+      {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "Start a New Chat Panel",
+        "title": "New Chat",
         "when": "cody.activated && config.cody.experimental.chatPanel",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -551,9 +557,9 @@
       {
         "command": "cody.chat.restart",
         "category": "Cody",
-        "title": "Restart Chat Session",
+        "title": "Restart Chat Session...",
         "group": "Cody",
-        "icon": "$(refresh)",
+        "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory && config.cody.experimental.chatPanel"
       }
     ],
@@ -618,7 +624,7 @@
       "commandPalette": [
         {
           "command": "cody.command.edit-code",
-          "when": "cody.activated && editorTextFocus"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.explain-code",
@@ -1135,6 +1141,11 @@
           "default": true,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
+        "cody.autocomplete.experimental.dynamicMultilineCompletions": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
+        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
@@ -1192,13 +1203,13 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@sourcegraph/telemetry": "^0.13.0",
+    "@storybook/preview-api": "^7.6.2",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
     "classnames": "^2.3.2",
-    "date-fns": "^2.30.0",
     "detect-indent": "^7.0.1",
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
@@ -1227,7 +1238,7 @@
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
     "@types/glob": "^8.0.0",
-    "@types/isomorphic-fetch": "^0.0.38",
+    "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",

@@ -1,6 +1,7 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
+import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -8,6 +9,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
+import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
 import { AuthStatus } from '../protocol'
@@ -33,9 +35,14 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null
+        private embeddingsSearch: EmbeddingsSearch | null,
+        private localEmbeddings: LocalEmbeddingsController | null
     ) {
-        logDebug('ChatManager:constructor', 'init')
+        logDebug(
+            'ChatManager:constructor',
+            'init',
+            localEmbeddings ? 'has local embeddings controller' : 'no local embeddings'
+        )
         this.options = { extensionUri, ...options }
 
         this.sidebarChat = new SidebarChatProvider(this.options)
@@ -81,7 +88,9 @@ export class ChatManager implements vscode.Disposable {
         if (!this.chatPanelsManager) {
             return
         }
-
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
         await this.chatPanelsManager?.syncAuthStatus(authStatus)
     }
 
@@ -211,7 +220,12 @@ export class ChatManager implements vscode.Disposable {
 
     private createChatPanelsManger(): void {
         if (!this.chatPanelsManager) {
-            this.chatPanelsManager = new ChatPanelsManager(this.options, this.chatClient, this.embeddingsSearch)
+            this.chatPanelsManager = new ChatPanelsManager(
+                this.options,
+                this.chatClient,
+                this.embeddingsSearch,
+                this.localEmbeddings
+            )
             telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
         }
     }
@@ -223,14 +237,25 @@ export class ChatManager implements vscode.Disposable {
         if (!this.chatPanelsManager) {
             return undefined
         }
+        logDebug('ChatManager:createWebviewPanel', 'creating')
         return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
     }
 
     public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
-        this.createChatPanelsManger()
-        if (this.chatPanelsManager) {
-            await this.chatPanelsManager.revive(panel, chatID)
-            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:revive', undefined, { hasV2Event: true })
+        try {
+            if (!this.chatPanelsManager) {
+                throw new Error('ChatPanelsManager is not initialized')
+            }
+
+            await this.chatPanelsManager.createWebviewPanel(chatID, panel.title, panel)
+        } catch (error) {
+            console.error('revive failed', error)
+            logDebug('ChatManager:revive', 'failed', { verbose: error })
+
+            // When failed, create a new panel with restored session and dispose the old panel
+            const panelTitle = panel.title
+            await this.restorePanel(chatID, panelTitle)
+            panel.dispose()
         }
     }
 

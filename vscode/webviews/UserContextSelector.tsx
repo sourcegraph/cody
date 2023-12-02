@@ -23,9 +23,9 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         if (contextSelection?.length) {
             setSelectedChatContext(0)
         }
-    }, [contextSelection, setSelectedChatContext])
+    }, [contextSelection?.length, setSelectedChatContext])
 
-    if (contextSelection === null) {
+    if (contextSelection === null || selected === -1) {
         return null
     }
 

@@ -1,7 +1,8 @@
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
+import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
 import { envInit } from './LocalAppDetector'
 
@@ -40,24 +41,16 @@ export function createCodyChatTreeItems(userHistory: UserLocalHistory): CodySide
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory.chat)]
     chatHistoryEntries.forEach(([id, entry]) => {
-        const chatTitle = entry?.chatTitle
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
-        let title = ''
-        if (chatTitle) {
-            title = chatTitle
-        } else if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            title = lastHumanMessage.humanMessage.displayText.split('\n')[0]
-            // Display command key only
-            if (title.startsWith('/')) {
-                title = title.split(' ')[0]
-            }
+        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
+            const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
+            chatTreeItems.push({
+                id,
+                title: getChatPanelTitle(lastDisplayText, false),
+                icon: 'comment-discussion',
+                command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+            })
         }
-        chatTreeItems.push({
-            id,
-            title,
-            icon: 'comment-discussion',
-            command: { command: 'cody.chat.panel.restore', args: [id, title] },
-        })
     })
     return chatTreeItems.reverse()
 }
@@ -67,14 +60,14 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Upgrade',
         description: 'Upgrade to Pro',
         icon: 'zap',
-        command: { command: 'vscode.open', args: [ACCOUNT_UPGRADE_URL.href] },
+        command: { command: 'cody.account.upgrade' },
         requireUpgradeAvailable: true,
         requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
-        command: { command: 'vscode.open', args: [ACCOUNT_USAGE_URL.href] },
+        command: { command: 'cody.account.usage' },
         requireFeature: FeatureFlag.CodyPro,
     },
     {

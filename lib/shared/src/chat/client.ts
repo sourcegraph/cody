@@ -16,7 +16,7 @@ import { getRecipe } from './recipes/browser-recipes'
 import { RecipeID } from './recipes/recipe'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
-import { reformatBotMessage } from './viewHelpers'
+import { reformatBotMessageForChat } from './viewHelpers'
 
 export type { TranscriptJSON }
 export { Transcript }
@@ -87,8 +87,10 @@ export async function createClient({
             )
         }
 
-        const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
-        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null)
+        const embeddingsSearch = repoId
+            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, config.codebase || repoId, repoId, undefined, true)
+            : null
+        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null, null)
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
@@ -155,7 +157,7 @@ export async function createClient({
                     onChange(_rawText) {
                         rawText = _rawText
 
-                        const text = reformatBotMessage(rawText, responsePrefix)
+                        const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
 
                         sendTranscript(options?.data)
@@ -163,18 +165,18 @@ export async function createClient({
                     onComplete() {
                         isMessageInProgress = false
 
-                        const text = reformatBotMessage(rawText, responsePrefix)
+                        const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
                         sendTranscript(options?.data)
                         resolve()
                     },
-                    onError(error) {
+                    onError(error: Error) {
                         // Display error message as assistant response
                         transcript.addErrorAsAssistantResponse(error)
                         isMessageInProgress = false
                         sendTranscript(options?.data)
                         console.error(`Completion request failed: ${error}`)
-                        reject(new Error(error))
+                        reject(error)
                     },
                 })
                 options?.signal?.addEventListener('abort', () => {

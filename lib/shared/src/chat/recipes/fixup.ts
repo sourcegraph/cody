@@ -1,18 +1,23 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { FixupIntent, VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
-import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
+import {
+    populateCodeContextTemplate,
+    populateCodeGenerationContextTemplate,
+    populateCurrentEditorDiagnosticsTemplate,
+} from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { Recipe, RecipeContext, RecipeID, RecipeType } from './recipe'
 
 export const PROMPT_TOPICS = {
     OUTPUT: 'CODE5711',
     SELECTED: 'SELECTEDCODE7662',
     PRECEDING: 'PRECEDINGCODE3493',
+    FOLLOWING: 'FOLLOWINGCODE2472',
     INSTRUCTIONS: 'INSTRUCTIONS7390',
     DIAGNOSTICS: 'DIAGNOSTICS5668',
 }
@@ -21,6 +26,8 @@ export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
     public title = 'Fixup'
     public multiplexerTopic = PROMPT_TOPICS.OUTPUT
+    public type = RecipeType.Edit
+    public stopSequences = [`</${PROMPT_TOPICS.OUTPUT}>`]
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
         const fixupController = context.editor.controllers?.fixups
@@ -94,7 +101,19 @@ export class Fixup implements Recipe {
              * Include the following code from the current file.
              * The preceding code is already included as part of the response to better guide the output.
              */
-            case 'add':
+            case 'add': {
+                return [
+                    ...getContextMessageWithResponse(
+                        populateCodeGenerationContextTemplate(
+                            `<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
+                            `<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
+                            task.fileName,
+                            PROMPT_TOPICS.OUTPUT
+                        ),
+                        task
+                    ),
+                ]
+            }
             /**
              * Specific case where a user is explciitly trying to "fix" a problem in their code.
              * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
@@ -181,6 +200,8 @@ Provide your generated code using the following instructions:
 - You should think step-by-step to plan your code before generating the final output.
 - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
 - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+- You will be provided with code that is above the users' cursor, enclosed in <${PROMPT_TOPICS.PRECEDING}></${PROMPT_TOPICS.PRECEDING}> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+- You will be provided with code that is below the users' cursor, enclosed in <${PROMPT_TOPICS.FOLLOWING}></${PROMPT_TOPICS.FOLLOWING}> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
 - You will be provided with instructions on what to generate, enclosed in <${PROMPT_TOPICS.INSTRUCTIONS}></${PROMPT_TOPICS.INSTRUCTIONS}> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
 - Do not provide any additional commentary about the code you added. Only respond with the generated code.

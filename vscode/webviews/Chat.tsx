@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -11,7 +11,6 @@ import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environme
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
-    ChatModelSelection,
     ChatSubmitType,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
@@ -19,6 +18,7 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -28,7 +28,11 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import { EnhancedContextToggler } from './Components/EnhancedContextToggler'
+import {
+    EnhancedContextSettings,
+    useEnhancedContextEnabled,
+    useEnhancedContextEventHandlers,
+} from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -59,9 +63,10 @@ interface ChatboxProps {
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[] | null
-    setChatModels?: (models: ChatModelSelection[]) => void
-    chatModels?: ChatModelSelection[]
+    setChatModels?: (models: ChatModelProvider[]) => void
+    chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
+    userInfo: UserAccountInfo
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -84,6 +89,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setChatModels,
     chatModels,
     enableNewChatUI,
+    userInfo,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -93,13 +99,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         setAbortMessageInProgress(() => () => undefined)
     }, [abortMessageInProgressInternal, vscodeAPI])
 
+    const addEnhancedContext = useEnhancedContextEnabled()
+    const enhancedContextEventHandlers = useEnhancedContextEventHandlers()
+
     const onSubmit = useCallback(
-        (
-            text: string,
-            submitType: ChatSubmitType,
-            contextFiles?: Map<string, ContextFile>,
-            addEnhancedContext = true
-        ) => {
+        (text: string, submitType: ChatSubmitType, contextFiles?: Map<string, ContextFile>) => {
             const userContextFiles: ContextFile[] = []
 
             // loop the addedcontextfiles and check if the key still exists in the text, remove the ones not present
@@ -119,12 +123,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 addEnhancedContext,
                 contextFiles: userContextFiles,
             })
+
+            // Automatically turn off enhance context when the user has submitted their first message.
+            if (addEnhancedContext && transcript.length < 2) {
+                enhancedContextEventHandlers.onEnabledChange(false)
+            }
         },
-        [vscodeAPI]
+        [vscodeAPI, enhancedContextEventHandlers, addEnhancedContext, transcript.length]
     )
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ChatModelSelection): void => {
+        (selected: ChatModelProvider): void => {
             if (!chatModels || !setChatModels) {
                 return
             }
@@ -243,13 +252,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatModels={chatModels}
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
-            EnhancedContextToggler={enableNewChatUI ? EnhancedContextToggler : undefined}
+            userInfo={userInfo}
+            EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
+            postMessage={msg => vscodeAPI.postMessage(msg)}
         />
     )
 }
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
-    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick, appearance }) => (
+    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton} appearance={appearance}>
         {label}
     </VSCodeButton>
 )
@@ -324,11 +335,10 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 }) => (
     <VSCodeButton
         className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
-        appearance="primary"
         type="button"
         disabled={disabled}
         onClick={onAbortMessageInProgress ?? onClick}
-        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? 'Message is empty' : 'Send Message'}
+        title={onAbortMessageInProgress ? 'Stop Generating' : disabled ? '' : 'Send Message'}
     >
         {onAbortMessageInProgress ? <i className="codicon codicon-debug-stop" /> : <SubmitSvg />}
     </VSCodeButton>
@@ -455,5 +465,5 @@ function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string)
     const matchingCommands: [string, CodyPrompt][] = chatCommands.filter(
         ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
     )
-    return matchingCommands
+    return matchingCommands.sort()
 }

@@ -5,7 +5,7 @@ import { ActiveTextEditorSelection } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
-import { getEditorDirContext, getEditorOpenTabsContext } from '../prompts/vscode-context'
+import { VSCodeEditorContext } from '../prompts/vscode-context/VSCodeEditorContext'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
@@ -90,6 +90,8 @@ export class InlineTouch implements Recipe {
             })
         )
 
+        const editorContext = new VSCodeEditorContext(context.editor, selection)
+
         return Promise.resolve(
             new Interaction(
                 {
@@ -101,7 +103,7 @@ export class InlineTouch implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },
-                this.getContextMessages(selection, currentDir),
+                this.getContextMessages(selection, currentDir, editorContext),
                 []
             )
         )
@@ -163,16 +165,17 @@ export class InlineTouch implements Recipe {
 
     private async getContextMessages(
         selection: ActiveTextEditorSelection,
-        currentDir: string
+        currentDir: string,
+        editorContext: VSCodeEditorContext
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await getEditorDirContext(currentDir, selection.fileName, true)
+        const currentDirContext = await editorContext.getEditorDirContext(currentDir, selection.fileName, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {
-            const tabsContext = await getEditorOpenTabsContext(currentDir)
+            const tabsContext = await editorContext.getEditorOpenTabsContext(currentDir)
             contextMessages.push(...tabsContext)
         }
         return contextMessages.slice(-10)

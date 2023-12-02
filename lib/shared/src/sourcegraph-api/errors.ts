@@ -1,12 +1,27 @@
+import { formatDistance } from 'date-fns'
+
 import { isError } from '../utils'
 
 export class RateLimitError extends Error {
+    public static readonly errorName = 'RateLimitError'
+    public readonly name = RateLimitError.errorName
+
+    public readonly userMessage: string
+    public readonly retryMessage: string | undefined
+
     constructor(
-        message: string,
-        public limit?: number,
-        public retryAfter?: Date
+        public readonly feature: string,
+        public readonly message: string,
+        /**
+         * Whether an upgrade is available that would increase rate limits.
+         */
+        public readonly upgradeIsAvailable: boolean,
+        public readonly limit?: number,
+        public readonly retryAfter?: Date
     ) {
         super(message)
+        this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
+        this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
     }
 }
 

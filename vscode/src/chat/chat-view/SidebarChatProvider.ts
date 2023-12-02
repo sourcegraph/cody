@@ -68,9 +68,15 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.init()
                 break
             case 'submit':
-                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
+                return this.onHumanMessageSubmitted(
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
             case 'edit':
                 this.transcript.removeLastInteraction()
+                // TODO: This should replay the submitted context files and/or enhanced context fetching
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
@@ -188,8 +194,11 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                     break
                 }
                 break
+            case 'show-page':
+                await vscode.commands.executeCommand('show-page', message.page)
+                break
             default:
-                this.handleError('Invalid request type from Webview', 'system')
+                this.handleError(new Error('Invalid request type from Webview'), 'system')
         }
     }
 
@@ -224,7 +233,9 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         contextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', {
+            verbose: { text, submitType, addEnhancedContext },
+        })
 
         MessageProvider.inputHistory.push(text)
 
@@ -280,14 +291,14 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string, type: MessageErrorType): void {
+    public handleError(error: Error, type: MessageErrorType): void {
         if (type === 'transcript') {
-            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            this.transcript.addErrorAsAssistantResponse(error)
             void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
