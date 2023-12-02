@@ -4,7 +4,7 @@ import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
+import { BotResponseMultiplexer, BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { VSCodeEditorContext } from '../prompts/vscode-context/VSCodeEditorContext'
 import { Interaction } from '../transcript/interaction'
 
@@ -70,12 +70,8 @@ export class InlineTouch implements Recipe {
 
         // Text display in UI fpr human that includes the selected code
         const displayText = this.getHumanDisplayText(humanInput, selection.fileName)
-        if (!context.responseMultiplexer) {
-            // HACK: stopgap so we don't need to pass this into the LegacyRecipeAdapter.
-            // This class (InlineTouch) should be removed soon.
-            throw new Error('No response multiplexer found.')
-        }
-        context.responseMultiplexer.sub(
+        const responseMultiplexer = context.responseMultiplexer || new BotResponseMultiplexer()
+        responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {

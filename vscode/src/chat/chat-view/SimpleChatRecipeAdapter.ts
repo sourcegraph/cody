@@ -13,10 +13,10 @@ import { contextMessageToContextItem } from './chat-helpers'
 import { ContextItem, MessageWithContext } from './SimpleChatModel'
 
 /**
- * LegacyRecipeAdapter is a class that adapts the old recipes for use by the new
+ * SimpleChatRecipeAdapter is a class that adapts the old recipes for use by the new
  * SimpleChatPanelProvider
  */
-export class LegacyRecipeAdapter {
+export class SimpleChatRecipeAdapter {
     constructor(
         private editor: Editor,
         private intentDetector: IntentDetector,
@@ -70,10 +70,10 @@ export class LegacyRecipeAdapter {
         }
 
         // Note: we don't include any assistant message prefixes defined by recipes
-        const humanIMsg = interaction.getHumanMessage()
+        const humanInteractionMessage = interaction.getHumanMessage()
         const fullContext = await interaction.getFullContext()
-        const prompt: Message[] = fullContext.concat([humanIMsg])
-        const humanMessage = interactionMessageToMessageWithContext(humanIMsg, fullContext)
+        const prompt: Message[] = fullContext.concat([humanInteractionMessage])
+        const humanMessage = interactionMessageToMessageWithContext(humanInteractionMessage, fullContext)
 
         return {
             humanMessage,
@@ -83,17 +83,19 @@ export class LegacyRecipeAdapter {
 }
 
 function interactionMessageToMessageWithContext(
-    imsg: InteractionMessage,
+    interactionMessage: InteractionMessage,
     contextMessages: ContextMessage[]
 ): MessageWithContext {
     const contextItems = contextMessages
         .map(m => contextMessageToContextItem(m))
         .filter((m): m is ContextItem => m !== null)
-    const displayText = imsg.prefix ? imsg.prefix + (imsg.displayText || '') : imsg.displayText
+    const displayText = interactionMessage.prefix
+        ? interactionMessage.prefix + (interactionMessage.displayText || '')
+        : interactionMessage.displayText
     return {
         message: {
-            speaker: imsg.speaker,
-            text: imsg.text,
+            speaker: interactionMessage.speaker,
+            text: interactionMessage.text,
         },
         displayText,
         newContextUsed: contextItems,
