@@ -2,7 +2,7 @@ import { expect, Frame, FrameLocator, Page } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { sidebarSignin } from './common'
+import { disableNotifications, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('shows appropriate rate limit message for free users', async ({ page, sidebar }) => {
@@ -41,6 +41,9 @@ test('shows appropriate rate limit message for pro users', async ({ page, sideba
  * Sets up a chat window ready for testing.
  */
 async function prepareChat(page: Page, sidebar: Frame): Promise<FrameLocator> {
+    // Turn off notifications because they can obscure the chat box
+    await disableNotifications(page)
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

@@ -1,3 +1,5 @@
+import { Socket } from 'node:net'
+
 import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
@@ -172,9 +174,24 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     const server = app.listen(SERVER_PORT)
 
+    // Calling close() on the server only stops accepting new connections
+    // and does not terminate existing connections. This can result in
+    // tests reusing the previous tests server unless they are explicitly
+    // closed, so track connections as they open.
+    const sockets = new Set<Socket>()
+    server.on('connection', socket => sockets.add(socket))
+
     const result = await around()
 
-    server.close()
+    // Tell the server to stop accepting connections. The server won't shut down
+    // and the callback won't be fired until all existing clients are closed.
+    const serverClosed = new Promise(resolve => server.close(resolve))
+
+    // Close all the existing connections and wait for the server shutdown.
+    for (const socket of sockets) {
+        socket.destroy()
+    }
+    await serverClosed
 
     return result
 }
