@@ -7,7 +7,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -20,6 +20,10 @@ interface ConfigGetter {
  */
 export function getConfiguration(config: ConfigGetter = vscode.workspace.getConfiguration()): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
+
+    function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
+        return config.get<T>(`cody.${configKey}` as any, defaultValue)
+    }
 
     let debugRegex: RegExp | null = null
     try {
@@ -36,15 +40,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = config.get(
-        CONFIG_KEY.autocompleteExperimentalGraphContext,
-        null
-    )
-    // Handle the old `true` option
-    if (autocompleteExperimentalGraphContext === true) {
-        autocompleteExperimentalGraphContext = 'lsp-light'
-    }
-
     let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
         CONFIG_KEY.autocompleteAdvancedProvider,
         null
@@ -52,6 +47,28 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     // Handle the old `unstable-fireworks` option
     if (autocompleteAdvancedProvider === 'unstable-fireworks') {
         autocompleteAdvancedProvider = 'fireworks'
+    }
+
+    // check if the configured enum values are valid
+    const configKeys = ['autocompleteAdvancedProvider', 'autocompleteAdvancedModel'] as (keyof ConfigurationKeysMap)[]
+
+    for (const configVal of configKeys) {
+        const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
+        const value: string | null = config.get(CONFIG_KEY[configVal])
+        checkValidEnumValues(key, value)
+    }
+
+    /**
+     * Hidden settings for internal use only.
+     */
+    const experimentalChatPanel = getHiddenSetting('experimental.chatPanel', isTesting)
+    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
+        'autocomplete.experimental.graphContext',
+        null
+    )
+    // Handle the old `true` option
+    if (autocompleteExperimentalGraphContext === true) {
+        autocompleteExperimentalGraphContext = 'lsp-light'
     }
 
     return {
@@ -71,15 +88,9 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             '*': true,
             scminput: false,
         }),
-        experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
-        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
-        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
-        experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
-        experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
-        experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
-        experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
+        commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
+        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
@@ -91,21 +102,44 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
-        autocompleteExperimentalSyntacticPostProcessing: config.get(
-            CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
-            true
-        ),
-        autocompleteExperimentalGraphContext,
+
+        // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
+        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, false) !== experimentalChatPanel,
+        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
-         * UNDOCUMENTED FLAGS
+         * Hidden settings for internal use only.
          */
+
+        autocompleteExperimentalGraphContext,
+        experimentalChatPanel: getHiddenSetting('experimental.chatPanel', isTesting),
+        experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
+        experimentalSearchPanel: getHiddenSetting('experimental.newSearch', isTesting),
+        experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', isTesting),
+
+        experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
+        experimentalNonStop: getHiddenSetting('experimental.nonStop', isTesting),
+        experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
+
+        autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(
+            'autocomplete.experimental.syntacticPostProcessing',
+            true
+        ),
+        autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
+            'autocomplete.experimental.dynamicMultilineCompletions',
+            false
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
-        isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
+        isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
+        agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
+        autocompleteTimeouts: {
+            multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
+            singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
+        },
     }
 }
 
@@ -139,4 +173,15 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
+}
+
+function checkValidEnumValues(configName: string, value: string | null): void {
+    const validEnumValues = getConfigEnumValues('cody.' + configName)
+    if (value) {
+        if (!validEnumValues.includes(value)) {
+            void vscode.window.showErrorMessage(
+                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(', ')}`
+            )
+        }
+    }
 }

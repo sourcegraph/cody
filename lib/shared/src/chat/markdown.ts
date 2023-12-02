@@ -37,8 +37,19 @@ const DOMPURIFY_CONFIG = {
         'tfoot',
         's',
         'u',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
     ],
     ALLOWED_URI_REGEXP,
+    FORBID_ATTR: [
+        // Disallow heading ids, or any ids
+        'id',
+    ],
+    FORBID_TAGS: ['style'],
 }
 
 /**

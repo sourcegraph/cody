@@ -6,7 +6,8 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { EventFeature } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
+import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
+import { SidebarChatWebview } from '../chat/chat-view/SidebarChatProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
@@ -36,7 +37,7 @@ export class AuthProvider {
     public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: ChatViewProviderWebview
+    public webview?: SidebarChatWebview
     private listeners: Set<Listener> = new Set()
 
     constructor(
@@ -179,6 +180,7 @@ export class AuthProvider {
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
@@ -204,14 +206,15 @@ export class AuthProvider {
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
-        const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
+        const isDotCom = this.client.isDotCom()
+        const isDotComOrApp = isDotCom || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
 
             // check first if it's a network error
             if (isError(currentUserID)) {
-                if (isNetworkError(currentUserID.message)) {
+                if (isNetworkError(currentUserID)) {
                     return { ...networkErrorAuthStatus, endpoint }
                 }
             }
@@ -222,31 +225,44 @@ export class AuthProvider {
                 !isError(currentUserID),
                 hasVerifiedEmail,
                 enabled,
+                /* userCanUpgrade: */ false,
                 version,
                 configOverwrites
             )
         }
-        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
+
+        // TODO(dantup): If local app support is removed, this can be simplified
+        //  (this path will only be dotCom) and the 'getCurrentUserIdAndVerifiedEmail'
+        //  queries removed.
+        const userInfo = isDotCom
+            ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            : await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
 
         // check first if it's a network error
         if (isError(userInfo)) {
-            if (isNetworkError(userInfo.message)) {
+            if (isNetworkError(userInfo)) {
                 return { ...networkErrorAuthStatus, endpoint }
             }
+            return { ...unauthenticatedStatus, endpoint }
         }
 
-        return isError(userInfo)
-            ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(
-                  endpoint,
-                  isDotComOrApp,
-                  !!userInfo.id,
-                  userInfo.hasVerifiedEmail,
-                  isCodyEnabled,
-                  version,
-                  configOverwrites
-              )
+        const userCanUpgrade =
+            isDotCom &&
+            'codyProEnabled' in userInfo &&
+            typeof userInfo.codyProEnabled === 'boolean' &&
+            !userInfo.codyProEnabled
+
+        return newAuthStatus(
+            endpoint,
+            isDotComOrApp,
+            !!userInfo.id,
+            userInfo.hasVerifiedEmail,
+            isCodyEnabled,
+            userCanUpgrade,
+            version,
+            configOverwrites
+        )
     }
 
     public getAuthStatus(): AuthStatus {
@@ -293,8 +309,9 @@ export class AuthProvider {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
         }
+        const authStatus = this.getAuthStatus()
         for (const listener of this.listeners) {
-            listener(this.getAuthStatus())
+            listener(authStatus)
         }
         await vscode.commands.executeCommand('cody.auth.sync')
     }
@@ -400,12 +417,13 @@ export class AuthProvider {
     }
 }
 
-export function isNetworkError(error: string): boolean {
+export function isNetworkError(error: Error): boolean {
+    const message = error.message
     return (
-        error.includes('ENOTFOUND') ||
-        error.includes('ECONNREFUSED') ||
-        error.includes('ECONNRESET') ||
-        error.includes('EHOSTUNREACH')
+        message.includes('ENOTFOUND') ||
+        message.includes('ECONNREFUSED') ||
+        message.includes('ECONNRESET') ||
+        message.includes('EHOSTUNREACH')
     )
 }
 

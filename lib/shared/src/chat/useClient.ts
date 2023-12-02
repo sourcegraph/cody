@@ -19,7 +19,7 @@ import { RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { Typewriter } from './typewriter'
-import { reformatBotMessage } from './viewHelpers'
+import { reformatBotMessageForChat } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
@@ -31,6 +31,7 @@ export interface CodyClientScope {
     includeInferredFile: boolean
     repositories: string[]
     editor: Editor
+    addEnhancedContext: boolean
 }
 
 export interface CodyClientScopePartial {
@@ -89,6 +90,7 @@ export const useClient = ({
         includeInferredFile: true,
         repositories: [],
         editor: new NoopEditor(),
+        addEnhancedContext: true,
     },
     onEvent,
 }: CodyClientProps): CodyClient => {
@@ -174,6 +176,7 @@ export const useClient = ({
                 ...scope,
                 includeInferredRepository: !scope.includeInferredRepository,
                 includeInferredFile: !scope.includeInferredRepository,
+                addEnhancedContext: !scope.includeInferredRepository,
             })),
         [setScopeState]
     )
@@ -239,6 +242,7 @@ export const useClient = ({
                 includeInferredFile: initialScope?.includeInferredFile ?? true,
                 repositories: initialScope?.repositories ?? [],
                 editor: initialScope?.editor ?? scope.editor,
+                addEnhancedContext: initialScope?.addEnhancedContext ?? true,
             }))
 
             onEvent?.('initializedNewChat')
@@ -273,7 +277,11 @@ export const useClient = ({
                 // Here we are passing the current repo & file context based on `options.scope.editor`
                 // if present.
                 const additionalRepoId = await graphqlClient.getRepoId(activeEditor.repoName)
-                if (isError(additionalRepoId)) {
+                if (additionalRepoId === null) {
+                    console.error(
+                        `Cody could not access the ${activeEditor.repoName} repository on your Sourcegraph instance. RepoId is null.`
+                    )
+                } else if (isError(additionalRepoId)) {
                     console.error(
                         `Cody could not access the ${activeEditor.repoName} repository on your Sourcegraph instance. Details: ${additionalRepoId.message}`
                     )
@@ -291,6 +299,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
+                null,
                 undefined,
                 unifiedContextFetcherClient
             )
@@ -302,7 +311,7 @@ export const useClient = ({
                 intentDetector,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
-                firstInteraction: transcript.isEmpty,
+                addEnhancedContext: scope.addEnhancedContext,
             })
             if (!interaction) {
                 return Promise.resolve(null)
@@ -331,7 +340,7 @@ export const useClient = ({
                         }
                         rawText = _rawText
 
-                        const text = reformatBotMessage(rawText, responsePrefix)
+                        const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
                         setChatMessagesState(transcript.toChat())
                     },

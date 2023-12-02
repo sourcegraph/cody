@@ -15,6 +15,7 @@ export interface TranscriptJSONScope {
 export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
+    chatModel?: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
     scope?: TranscriptJSONScope
@@ -63,7 +64,8 @@ export class Transcript {
                     )
                 }
             ),
-            json.id
+            json.id,
+            json.chatModel
         )
     }
 
@@ -71,16 +73,27 @@ export class Transcript {
 
     private internalID: string
 
-    constructor(interactions: Interaction[] = [], id?: string) {
+    public chatModel: string | undefined = undefined
+
+    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string) {
         this.interactions = interactions
         this.internalID =
             id ||
             this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
             new Date().toISOString()
+        this.chatModel = chatModel
     }
 
     public get id(): string {
         return this.internalID
+    }
+
+    public setChatModel(chatModel?: string): void {
+        // Set chat model for new transcript only
+        if (!chatModel || this.interactions.length > 1) {
+            return
+        }
+        this.chatModel = chatModel
     }
 
     public get isEmpty(): boolean {
@@ -130,33 +143,27 @@ export class Transcript {
     }
 
     /**
-     * Adds a error div to the assistant response. If the assistant has collected
+     * Adds an error div to the assistant response. If the assistant has collected
      * some response before, we will add the error message after it.
-     * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
+     * @param error The error to be displayed.
      */
-    public addErrorAsAssistantResponse(errorText: string): void {
+    public addErrorAsAssistantResponse(error: Error): void {
         const lastInteraction = this.getLastInteraction()
         if (!lastInteraction) {
             return
         }
-        // If assistant has responsed before, we will add the error message after it
-        const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
-        lastInteraction.setAssistantMessage({
-            speaker: 'assistant',
-            text: 'Failed to generate a response due to server error.',
-            displayText:
-                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
-        })
-    }
 
-    private async getLastInteractionWithContextIndex(): Promise<number> {
-        for (let index = this.interactions.length - 1; index >= 0; index--) {
-            const hasContext = await this.interactions[index].hasContext()
-            if (hasContext) {
-                return index
-            }
-        }
-        return -1
+        lastInteraction.setAssistantMessage({
+            ...lastInteraction.getAssistantMessage(),
+            text: 'Failed to generate a response due to server error.',
+            // Serializing normal errors will lose name/message so
+            // just read them off manually and attach the rest of the fields.
+            error: {
+                ...error,
+                message: error.message,
+                name: error.name,
+            },
+        })
     }
 
     public async getPromptForLastInteraction(
@@ -168,14 +175,13 @@ export class Transcript {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
 
-        const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
             const interaction = this.interactions[index]
             const humanMessage = PromptMixin.mixInto(interaction.getHumanMessage())
             const assistantMessage = interaction.getAssistantMessage()
             const contextMessages = await interaction.getFullContext()
-            if (index === lastInteractionWithContextIndex && !onlyHumanMessages) {
+            if (index === this.interactions.length - 1 && !onlyHumanMessages) {
                 messages.push(...contextMessages, humanMessage, assistantMessage)
             } else {
                 messages.push(humanMessage, assistantMessage)
@@ -232,6 +238,7 @@ export class Transcript {
 
         return {
             id: this.id,
+            chatModel: this.chatModel,
             interactions,
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
@@ -247,6 +254,7 @@ export class Transcript {
     public toJSONEmpty(scope?: TranscriptJSONScope): TranscriptJSON {
         return {
             id: this.id,
+            chatModel: this.chatModel,
             interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope

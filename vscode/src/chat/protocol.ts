@@ -1,10 +1,16 @@
+import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
+import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { View } from '../../webviews/NavBar'
 
@@ -19,13 +25,28 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
+    | {
+          command: 'submit'
+          text: string
+          submitType: ChatSubmitType
+          addEnhancedContext?: boolean
+          contextFiles?: ContextFile[]
+      }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openFile'; filePath: string }
+    | {
+          command: 'show-page'
+          page: string
+      }
+    | { command: 'chatModel'; model: string }
+    | {
+          command: 'openFile'
+          filePath: string
+          range?: ActiveTextEditorSelectionRange
+      }
     | {
           command: 'openLocalFileWithRange'
           filePath: string
@@ -34,9 +55,10 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string; source?: string }
-    | { command: 'newFile'; text: string; source?: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string }
+    | { command: 'embeddings/index' }
+    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
     | {
           command: 'auth'
           type:
@@ -58,28 +80,42 @@ export type WebviewMessage =
           command: 'simplified-onboarding'
           type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
       }
+    | { command: 'getUserContext'; query: string }
+    | { command: 'search'; query: string }
+    | {
+          command: 'show-search-result'
+          uriJSON: unknown
+          range: { start: { line: number; character: number }; end: { line: number; character: number } }
+      }
 
 /**
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
-    | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
+    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
+    // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
+    // TODO(dpc): Remove app install status when the app install toasts are... toast.
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
+    | { type: 'chatModels'; models: ChatModelProvider[] }
+    | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
+    | { type: 'index-updated'; scopeDir: string }
+    | { type: 'enhanced-context'; context: EnhancedContextContextT }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -96,6 +132,12 @@ export const CODY_FEEDBACK_URL = new URL(
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
 export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
+// Account
+export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
+export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
+export const ACCOUNT_LIMITS_INFO_URL = new URL(
+    'https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits'
+)
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
@@ -113,6 +155,15 @@ export interface AuthStatus {
     siteVersion: string
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
+    /**
+     * Whether the users account can be upgraded.
+     *
+     * This is `true` if the user is on dotCom and has
+     * not already upgraded. It is used to customise
+     * rate limit messages and show additional upgrade
+     * buttons in the UI.
+     */
+    userCanUpgrade: boolean
 }
 
 export const defaultAuthStatus = {
@@ -124,6 +175,7 @@ export const defaultAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 export const unauthenticatedStatus = {
@@ -135,6 +187,7 @@ export const unauthenticatedStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 export const networkErrorAuthStatus = {
@@ -146,25 +199,26 @@ export const networkErrorAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+    userCanUpgrade: false,
 }
 
 /** The local environment of the editor. */
 export interface LocalEnv {
-    // The operating system kind
+    // The  operating system kind
     os: string
     arch: string
     homeDir?: string | undefined
 
-    // The URL scheme the editor is registered to in the operating system
+    // The  URL scheme the editor is registered to in the operating system
     uriScheme: string
-    // The application name of the editor
+    // The  application name of the editor
     appName: string
     extensionVersion: string
 
-    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    /** Whe ther the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
 
-    // App Local State
+    // App  Local State
     hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
@@ -177,7 +231,7 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
 }
 
-// The OS and Arch support for Cody app
+// The  OS and Arch support for Cody app
 export function isOsSupportedByApp(os?: string, arch?: string): boolean {
     if (!os || !arch) {
         return false
@@ -185,7 +239,7 @@ export function isOsSupportedByApp(os?: string, arch?: string): boolean {
     return os === 'darwin' || os === 'linux'
 }
 
-// Map the Arch to the app's supported Arch
+// Map  the Arch to the app's supported Arch
 export function archConvertor(arch: string): string {
     switch (arch) {
         case 'arm64':

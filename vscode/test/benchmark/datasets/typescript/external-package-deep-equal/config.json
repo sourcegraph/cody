@@ -1,8 +1,0 @@
-{
-  "entryFile": "generate.ts",
-  "openFiles": [],
-  "closedFiles": ["package.json"],
-  "solutionFile": "solution.ts",
-  "testFile": "test.ts",
-  "testCommand": "pnpm install && ts-node test.ts"
-}

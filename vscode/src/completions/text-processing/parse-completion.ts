@@ -1,16 +1,16 @@
 import { Position, Range, TextDocument } from 'vscode'
 import Parser, { Point, Tree } from 'web-tree-sitter'
 
+import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
-import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
-import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import { getMatchingSuffixLength, InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import { getLastLine, lines } from './utils'
 
 export interface CompletionContext {
     completion: InlineCompletionItem
     document: TextDocument
-    position: Position
     docContext: DocumentContext
 }
 
@@ -33,7 +33,12 @@ export interface ParsedCompletion extends InlineCompletionItemWithAnalytics {
  * would introduce any syntactic errors.
  */
 export function parseCompletion(context: CompletionContext): ParsedCompletion {
-    const { completion, document, position, docContext } = context
+    const {
+        completion,
+        document,
+        docContext,
+        docContext: { position, multilineTriggerPosition },
+    } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
     // Do nothig if the syntactic post-processing is not enabled.
@@ -42,16 +47,20 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     }
 
     const { parser, tree } = parseTreeCache
+
+    const completionEndPosition = position.translate(
+        lines(completion.insertText).length,
+        getLastLine(completion.insertText).length
+    )
+
     const treeWithCompletion = pasteCompletion({
         completion,
         document,
-        position,
         docContext,
         tree,
         parser,
+        completionEndPosition,
     })
-
-    const completionEndPosition = position.translate(0, completion.insertText.length)
 
     const points: ParsedCompletion['points'] = {
         start: {
@@ -64,13 +73,8 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
         },
     }
 
-    if (docContext.multilineTrigger) {
-        const triggerPosition = document.positionAt(docContext.prefix.lastIndexOf(docContext.multilineTrigger))
-
-        points.trigger = {
-            row: triggerPosition.line,
-            column: triggerPosition.character,
-        }
+    if (multilineTriggerPosition) {
+        points.trigger = asPoint(multilineTriggerPosition)
     }
 
     // Search for ERROR nodes in the completion range.
@@ -89,39 +93,43 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
 interface PasteCompletionParams {
     completion: InlineCompletionItem
     document: TextDocument
-    position: Position
     docContext: DocumentContext
     tree: Tree
     parser: Parser
+    completionEndPosition: Position
 }
 
 function pasteCompletion(params: PasteCompletionParams): Tree {
     const {
-        completion: { range, insertText },
+        completion: { insertText },
         document,
-        position,
-        docContext,
         tree,
         parser,
+        docContext: { position, currentLineSuffix },
+        completionEndPosition,
     } = params
 
-    // Adjust suffix and prefix based on completion insert range.
-    const prefix = range ? document.getText(new Range(new Position(0, 0), range.start as Position)) : docContext.prefix
-    const suffix = range
-        ? document.getText(new Range(range.end as Position, document.positionAt(document.getText().length)))
-        : docContext.suffix
+    const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
 
-    const textWithCompletion = prefix + insertText + suffix
+    // Adjust suffix and prefix based on completion insert range.
+    const prefix = document.getText(new Range(new Position(0, 0), position))
+    const suffix = document.getText(new Range(position, document.positionAt(document.getText().length)))
+
+    const offset = document.offsetAt(position)
+
+    // Remove the characters that are being replaced by the completion to avoid having
+    // them in the parse tree. It breaks the multiline truncation logic which looks for
+    // the increased number of children in the tree.
+    const textWithCompletion = prefix + insertText + suffix.slice(matchingSuffixLength)
 
     const treeCopy = tree.copy()
-    const completionEndPosition = position.translate(undefined, insertText.length)
 
     treeCopy.edit({
-        startIndex: prefix.length,
-        oldEndIndex: prefix.length,
-        newEndIndex: prefix.length + insertText.length,
+        startIndex: offset,
+        oldEndIndex: offset,
+        newEndIndex: offset + insertText.length,
         startPosition: asPoint(position),
-        oldEndPosition: asPoint(range?.end || position),
+        oldEndPosition: asPoint(position),
         newEndPosition: asPoint(completionEndPosition),
     })
 

@@ -14,6 +14,7 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -67,11 +68,14 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         // Force HTTP connection reuse to reduce latency.
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
+        headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.accessToken) {
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            headers.set('X-Sourcegraph-Should-Trace', 'true')
+            headers.set('X-Sourcegraph-Should-Trace', '1')
+
+            addTraceparent(headers)
         }
 
         // We enable streaming only for Node environments right now because it's hard to make
@@ -93,21 +97,26 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             signal,
         })
 
-        const traceId = response.headers.get('x-trace') ?? undefined
+        const traceId = getActiveTraceAndSpanId()?.traceId
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
+            // Check for explicit false, because if the header is not set, there
+            // is no upgrade available.
+            const upgradeIsAvailable = response.headers.get('x-is-cody-pro-user') === 'false'
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
+                'autocompletions',
                 await response.text(),
+                upgradeIsAvailable,
                 limit ? parseInt(limit, 10) : undefined,
                 retryAfter ? new Date(retryAfter) : undefined
             )
         }
 
         if (!response.ok) {
-            throw new NetworkError(response, traceId)
+            throw new NetworkError(response, await response.text(), traceId)
         }
 
         if (response.body === null) {
@@ -131,6 +140,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 for await (const chunk of iterator) {
                     if (chunk.event === 'completion') {
+                        if (signal?.aborted) {
+                            break // Stop processing the already received chunks.
+                        }
+
                         lastResponse = JSON.parse(chunk.data) as CompletionResponse
                         onPartialResponse?.(lastResponse)
                     }

@@ -9,7 +9,7 @@ export function isLocalApp(url: string): boolean {
         return false
     }
 }
-
+// 🚨 SECURITY: This is used as a check for logging chatTranscript for dotcom users only, be extremely careful if modifying this function
 export function isDotCom(url: string): boolean {
     try {
         return new URL(url).origin === DOTCOM_URL.origin

@@ -1,29 +1,45 @@
+import { spawn } from 'child_process'
+import * as fspromises from 'fs/promises'
 import path from 'path'
 
+import { Polly } from '@pollyjs/core'
+import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
+import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { activate } from '../../vscode/src/extension.node'
+import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
-import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
 import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
+import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-export function initializeVscodeExtension(): void {
-    activate({
+export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
+    const paths = envPaths('Cody')
+    try {
+        const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
+        await fspromises.stat(gitdirPath)
+        vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
+    } catch {
+        /* ignore */
+    }
+    await activate({
         asAbsolutePath(relativePath) {
-            return path.resolve(process.cwd(), relativePath)
+            return path.resolve(workspaceRoot.fsPath, relativePath)
         },
         environmentVariableCollection: {} as any,
         extension: {} as any,
@@ -36,8 +52,8 @@ export function initializeVscodeExtension(): void {
         globalState: {
             keys: () => [],
             get: () => undefined,
-            update: (key, value) => Promise.resolve(),
-            setKeysForSync: keys => {},
+            update: () => Promise.resolve(),
+            setKeysForSync: () => {},
         },
         logUri: {} as any,
         logPath: {} as any,
@@ -60,10 +76,47 @@ export function initializeVscodeExtension(): void {
         storageUri: {} as any,
         subscriptions: [],
         workspaceState: {} as any,
-        globalStorageUri: {} as any,
+        globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: {} as any,
-        globalStoragePath: {} as any,
+        globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     })
+}
+
+export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHandler> {
+    const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
+        const serverHandler = new MessageHandler()
+        const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        args.push('jsonrpc')
+        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
+        serverHandler.connectProcess(child, reject)
+        serverHandler.registerNotification('debug/message', params => {
+            console.error(`${params.channel}: ${params.message}`)
+        })
+        await serverHandler.request('initialize', clientInfo)
+        serverHandler.notify('initialized', null)
+        return serverHandler
+    }
+    return new Promise<MessageHandler>((resolve, reject) => {
+        asyncHandler(reject).then(
+            handler => resolve(handler),
+            error => reject(error)
+        )
+    })
+}
+
+export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
+    process.env.ENABLE_SENTRY = 'false'
+    const agent = new Agent()
+    const debugHandler = new MessageHandler()
+    debugHandler.registerNotification('debug/message', params => {
+        console.error(`${params.channel}: ${params.message}`)
+    })
+    debugHandler.messageEncoder.pipe(agent.messageDecoder)
+    agent.messageEncoder.pipe(debugHandler.messageDecoder)
+    const client = agent.clientForThisInstance()
+    await client.request('initialize', clientInfo)
+    client.notify('initialized', null)
+    return agent
 }
 
 export class Agent extends MessageHandler {
@@ -73,7 +126,25 @@ export class Agent extends MessageHandler {
 
     private clientInfo: ClientInfo | null = null
 
-    constructor() {
+    /**
+     * agentTelemetryRecorderProvider must be used for all events recording
+     * directly within the agent (i.e. code in agent/src/...) and via the agent's
+     * 'telemetry/recordEvent' RPC.
+     *
+     * Components that use VSCode implementations directly (i.e. code in
+     * vscode/src/...) will continue to use the shared recorder initialized and
+     * configured as part of VSCode initialization in vscode/src/services/telemetry-v2.ts.
+     */
+    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider = new NoOpTelemetryRecorderProvider([
+        {
+            processEvent: event =>
+                process.stderr.write(
+                    `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
+                ),
+        },
+    ])
+
+    constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
@@ -81,20 +152,28 @@ export class Agent extends MessageHandler {
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
-            initializeVscodeExtension()
-            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
 
-            if (clientInfo.extensionConfiguration) {
-                this.setClient(clientInfo.extensionConfiguration)
-            }
-
+            vscode_shim.setClientInfo(clientInfo)
+            // Register client info
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
-            const codyClient = await this.client
+            if (clientInfo.extensionConfiguration) {
+                // this must be done before initializing the vscode extension below, as extensionConfiguration
+                // is queried in a number of places.
+                await this.setClientAndTelemetry(clientInfo.extensionConfiguration)
+            }
 
+            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
+                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+            await initializeVscodeExtension(this.workspace.workspaceRootUri)
+
+            // must be done here, as the commands are not registered when calling setClientAndTelemetry above
+            // but setClientAndTelemetry must called before initializing the vscode extension.
+            await this.reloadAuth()
+
+            const codyClient = await this.client
             if (!codyClient) {
                 return {
                     name: 'cody-agent',
@@ -112,26 +191,37 @@ export class Agent extends MessageHandler {
                 codyVersion: codyStatus.version,
             }
         })
+
         this.registerNotification('initialized', () => {})
 
-        this.registerRequest('shutdown', () => Promise.resolve(null))
+        this.registerRequest('shutdown', async () => {
+            if (this?.params?.polly) {
+                this.params.polly.disconnectFrom('node-http')
+                await this.params.polly.stop()
+            }
+            return null
+        })
 
         this.registerNotification('exit', () => {
             process.exit(0)
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
+            this.workspace.setActiveTextEditor(
+                newTextEditor(this.workspace.addDocument(TextDocumentWithUri.fromDocument(document)))
+            )
         })
+
         this.registerNotification('textDocument/didOpen', document => {
-            this.workspace.addDocument(document)
-            const textDocument = this.workspace.agentTextDocument(document)
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const textDocument = this.workspace.addDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
+
         this.registerNotification('textDocument/didChange', document => {
-            const textDocument = this.workspace.agentTextDocument(document)
-            this.workspace.addDocument(document)
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const textDocument = this.workspace.addDocument(documentWithUri)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
@@ -139,12 +229,21 @@ export class Agent extends MessageHandler {
                 reason: undefined,
             })
         })
+
         this.registerNotification('textDocument/didClose', document => {
-            this.workspace.deleteDocument(document.filePath)
-            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
+            const documentWithUri = TextDocumentWithUri.fromDocument(document)
+            const oldDocument = this.workspace.getDocument(documentWithUri.uri)
+            if (oldDocument) {
+                this.workspace.deleteDocument(documentWithUri.uri)
+                vscode_shim.onDidCloseTextDocument.fire(oldDocument)
+            }
         })
 
-        this.registerNotification('extensionConfiguration/didChange', config => this.setClient(config))
+        this.registerNotification('extensionConfiguration/didChange', config => {
+            this.setClientAndTelemetry(config).catch(() => {
+                process.stderr.write('Cody Agent: failed to update configuration\n')
+            })
+        })
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
@@ -176,14 +275,20 @@ export class Agent extends MessageHandler {
                 })
             }
 
-            await this.recordEvent(`recipe:${data.id}`, 'executed')
-            await client.executeRecipe(data.id, {
-                signal: abortController.signal,
-                humanChatInput: data.humanChatInput,
-                data: data.data,
-            })
+            await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
+            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
+            try {
+                await client.executeRecipe(data.id, {
+                    signal: abortController.signal,
+                    humanChatInput: data.humanChatInput,
+                    data: data.data,
+                })
+            } catch {
+                // ignore, can happen when the client cancels the request
+            }
             return null
         })
+
         this.registerRequest('autocomplete/execute', async (params, token) => {
             await this.client // To let configuration changes propagate
             const provider = await vscode_shim.completionProvider()
@@ -191,38 +296,81 @@ export class Agent extends MessageHandler {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const document = this.workspace.getDocument(params.filePath)
+            const uri =
+                typeof params.uri === 'string'
+                    ? vscode.Uri.parse(params.uri)
+                    : params?.filePath
+                    ? vscode.Uri.file(params.filePath)
+                    : undefined
+            if (!uri) {
+                console.log(
+                    `No uri provided for autocomplete request ${JSON.stringify(
+                        params
+                    )}. To fix this problem, set the 'uri' property.`
+                )
+                return { items: [] }
+            }
+            const document = this.workspace.getDocument(uri)
             if (!document) {
-                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
+                console.log('No document found for file path', params.uri, [...this.workspace.allUris()])
                 return { items: [] }
             }
 
-            const textDocument = new AgentTextDocument(document)
-
             try {
                 if (params.triggerKind === 'Invoke') {
-                    await provider.manuallyTriggerCompletion()
+                    await provider?.manuallyTriggerCompletion?.()
                 }
+
                 const result = await provider.provideInlineCompletionItems(
-                    textDocument,
+                    document,
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
-                        selectedCompletionInfo: undefined,
+                        selectedCompletionInfo:
+                            params.selectedCompletionInfo?.text === undefined ||
+                            params.selectedCompletionInfo?.text === null
+                                ? undefined
+                                : {
+                                      text: params.selectedCompletionInfo.text,
+                                      range: new vscode.Range(
+                                          params.selectedCompletionInfo.range.start.line,
+                                          params.selectedCompletionInfo.range.start.character,
+                                          params.selectedCompletionInfo.range.end.line,
+                                          params.selectedCompletionInfo.range.end.character
+                                      ),
+                                  },
                     },
                     token
                 )
+
                 const items: AutocompleteItem[] =
-                    result === null
-                        ? []
-                        : result.items.flatMap(({ insertText, range }) =>
-                              typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
-                          )
-                return { items, completionEvent: (result as any)?.completionEvent }
+                    result?.items.flatMap(({ insertText, range, id }) =>
+                        typeof insertText === 'string' && range !== undefined ? [{ id, insertText, range }] : []
+                    ) ?? []
+
+                return { items, completionEvent: result?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
                 return Promise.reject(error)
             }
+        })
+
+        this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const provider = await vscode_shim.completionProvider()
+            provider.handleDidAcceptCompletionItem(completionID)
+        })
+
+        this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const provider = await vscode_shim.completionProvider()
+            provider.unstable_handleDidShowCompletionItem(completionID)
         })
 
         this.registerRequest('graphql/currentUserId', async () => {
@@ -237,6 +385,28 @@ export class Agent extends MessageHandler {
 
             throw id
         })
+
+        this.registerRequest('telemetry/recordEvent', async event => {
+            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
+                // 👷 HACK: We have no control over what gets sent over JSON RPC,
+                // so we depend on client implementations to give type guidance
+                // to ensure that we don't accidentally share arbitrary,
+                // potentially sensitive string values. In this RPC handler,
+                // when passing the provided event to the TelemetryRecorder
+                // implementation, we forcibly cast all the inputs below
+                // (feature, action, parameters) into known types (strings
+                // 'feature', 'action', 'key') so that the recorder will accept
+                // it. DO NOT do this elsewhere!
+                event.feature as 'feature',
+                event.action as 'action',
+                event.parameters as TelemetryEventParameters<{ key: number }, BillingProduct, BillingCategory>
+            )
+            return Promise.resolve(null)
+        })
+
+        /**
+         * @deprecated use 'telemetry/recordEvent' instead.
+         */
         this.registerRequest('graphql/logEvent', async event => {
             const client = await this.client
             if (typeof event.argument === 'object') {
@@ -245,9 +415,6 @@ export class Agent extends MessageHandler {
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-
-            // TODO: Add support for new telemetry recorder, e.g.
-            // https://github.com/sourcegraph/cody/pull/1192
             await client?.graphqlClient.logEvent(event, 'all')
             return null
         })
@@ -284,8 +451,28 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private setClient(config: ExtensionConfiguration): void {
+    /**
+     * Updates this.client immediately and attempts to update
+     * this.telemetryRecorderProvider as well if prerequisite configuration
+     * is available.
+     */
+    private async setClientAndTelemetry(config: ExtensionConfiguration): Promise<void> {
         this.client = this.createAgentClient(config)
+
+        const codyClient = await this.client
+        if (codyClient && this.clientInfo) {
+            // Update telemetry
+            this.agentTelemetryRecorderProvider?.unsubscribe()
+            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
+                codyClient.graphqlClient,
+                this.clientInfo,
+                {
+                    // Add tracking metadata if provided
+                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
+                }
+            )
+        }
+
         return
     }
 
@@ -295,7 +482,7 @@ export class Agent extends MessageHandler {
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange) {
-            await vscode_shim.commands.executeCommand('agent.auth.reload')
+            await this.reloadAuth()
         }
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>
@@ -303,6 +490,7 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
+
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
@@ -319,11 +507,15 @@ export class Agent extends MessageHandler {
         return client
     }
 
+    private async reloadAuth(): Promise<void> {
+        await vscode_shim.commands.executeCommand('agent.auth.reload')
+        await vscode_shim.commands.executeCommand('cody.auth.sync')
+    }
+
     /**
-     * TODO: feature, action should require lib/shared/src/telemetry-v2 types,
-     * i.e. EventFeature and EventAction.
+     * @deprecated use `this.telemetryRecorderProvider.getRecorder()` instead.
      */
-    private async recordEvent(feature: string, action: string): Promise<null> {
+    private async logEvent(feature: string, action: string, mode: LogEventMode): Promise<null> {
         const client = await this.client
         if (!client) {
             return null
@@ -344,15 +536,14 @@ export class Agent extends MessageHandler {
             return null
         }
 
-        // TODO: Add support for new telemetry recorder, e.g.
-        // https://github.com/sourcegraph/cody/pull/1192
         const event = `${eventProperties.prefix}:${feature}:${action}`
         await client.graphqlClient.logEvent(
             {
                 event,
                 url: '',
                 client: eventProperties.client,
-                userCookieID: eventProperties.anonymousUserID,
+                userCookieID:
+                    this.clientInfo?.extensionConfiguration?.anonymousUserID || eventProperties.anonymousUserID,
                 source: eventProperties.source,
                 publicArgument: JSON.stringify({
                     serverEndpoint: extensionConfiguration.serverEndpoint,
@@ -363,7 +554,7 @@ export class Agent extends MessageHandler {
                     },
                 }),
             },
-            'all'
+            mode
         )
 
         return null

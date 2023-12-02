@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { execSync } from 'child_process'
+import path from 'path'
+
 import type * as vscode from 'vscode'
+
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -16,6 +21,7 @@ import type * as vscode from 'vscode'
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
+import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
@@ -28,7 +34,12 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import type { ExtensionConfiguration } from './protocol-alias'
+import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+
+// Not using CODY_TESTING because it changes the URL endpoint we send requests
+// to and we want to send requests to sourcegraph.com because we record the HTTP
+// traffic.
+const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export {
     emptyEvent,
@@ -79,6 +90,13 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
     ignoreDeleteEvents: true,
     dispose(): void {},
 }
+export let clientInfo: ClientInfo | undefined
+export function setClientInfo(newClientInfo: ClientInfo): void {
+    clientInfo = newClientInfo
+    if (newClientInfo.extensionConfiguration) {
+        setConnectionConfig(newClientInfo.extensionConfiguration)
+    }
+}
 
 export let connectionConfig: ExtensionConfiguration | undefined
 export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
@@ -96,13 +114,26 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
-export const customConfiguration: Record<string, any> = {}
-
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
     },
     get: (section, defaultValue?: any) => {
+        const clientNameToIDE = (value: string): Configuration['agentIDE'] | undefined => {
+            return (
+                {
+                    vscode: 'VSCode',
+                    jetbrains: 'JetBrains',
+                    emacs: 'Emacs',
+                    neovim: 'Neovim',
+                } as const
+            )[value.toLowerCase()]
+        }
+
+        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
+        if (fromCustomConfiguration !== undefined) {
+            return fromCustomConfiguration
+        }
         switch (section) {
             case 'cody.serverEndpoint':
                 return connectionConfig?.serverEndpoint
@@ -111,7 +142,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
             case 'cody.telemetry.level':
-                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // Use the dedicated `telemetry/recordEvent` to send telemetry from
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
@@ -137,8 +168,10 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return false
             case 'cody.codebase':
                 return connectionConfig?.codebase
+            case 'cody.advanced.agent.ide':
+                return clientNameToIDE(clientInfo?.name ?? '')
             default:
-                return customConfiguration[section] ?? defaultValue
+                return defaultValue
         }
     },
     update(section, value, configurationTarget, overrideInLanguage) {
@@ -154,26 +187,41 @@ export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationCha
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
 export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
-    openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
+    openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
+    if (newWorkspaceDocuments.workspaceRootUri) {
+        workspaceFolders.push({ name: 'Workspace Root', uri: newWorkspaceDocuments.workspaceRootUri, index: 0 })
+    }
 }
+
+const workspaceFolders: vscode.WorkspaceFolder[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
-    openTextDocument: uri => {
-        // We currently treat filePath the same as uri for now, but will need to
-        // properly pass around URIs once the agent protocol supports URIs
-        const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
-        return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    openTextDocument: uriOrString => {
+        if (!workspaceDocuments) {
+            return Promise.reject(new Error('workspaceDocuments is uninitialized'))
+        }
+        if (typeof uriOrString === 'string') {
+            return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
+        }
+        if (uriOrString instanceof Uri) {
+            return workspaceDocuments.openTextDocument(uriOrString)
+        }
+        return Promise.reject(
+            new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
+        )
     },
+    workspaceFolders,
     getWorkspaceFolder: () => {
         if (workspaceDocuments?.workspaceRootUri === undefined) {
             throw new Error(
@@ -191,10 +239,28 @@ const _workspace: Partial<typeof vscode.workspace> = {
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
     onDidCloseTextDocument: onDidCloseTextDocument.event,
+    onDidSaveTextDocument: onDidSaveTextDocument.event,
     onDidRenameFiles: onDidRenameFiles.event,
     onDidDeleteFiles: onDidDeleteFiles.event,
     registerTextDocumentContentProvider: () => emptyDisposable,
-    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
+    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => {
+        const uri: vscode.Uri | undefined =
+            typeof pathOrUri === 'string' ? Uri.file(pathOrUri) : pathOrUri instanceof Uri ? pathOrUri : undefined
+        if (uri === undefined) {
+            // Not sure what to do about non-string/non-uri arguments.
+            return `${pathOrUri}`
+        }
+
+        const relativePath = workspaceDocuments?.workspaceRootUri?.fsPath
+            ? path.relative(workspaceDocuments?.workspaceRootUri?.path ?? '', uri.path)
+            : uri.path
+        if (isTesting) {
+            // We insert relative paths in a lot of places like prompts that influence HTTP requests.
+            // When testing, we try to normalize the file paths across Windows/Linux/macOS.
+            return relativePath.replaceAll('\\', '/')
+        }
+        return relativePath
+    },
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
 }
@@ -213,6 +279,7 @@ export function setAgent(newAgent: Agent): void {
 }
 
 const _window: Partial<typeof vscode.window> = {
+    createTreeView: () => ({ visible: false }) as any,
     tabGroups,
     registerCustomEditorProvider: () => emptyDisposable,
     registerFileDecorationProvider: () => emptyDisposable,
@@ -286,9 +353,73 @@ const _window: Partial<typeof vscode.window> = {
 }
 
 export const window = _window as typeof vscode.window
+const gitRepositories: Repository[] = []
+export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
+    const repository: Partial<Repository> = {
+        rootUri: uri,
+        ui: {} as any,
+        state: {
+            refs: [],
+            indexChanges: [],
+            mergeChanges: [],
+            onDidChange: emptyEvent(),
+            remotes: [],
+            submodules: [],
+            workingTreeChanges: [],
+            rebaseCommit: undefined,
+            HEAD: {
+                type: /* RefType.Head */ 0, // Can't reference RefType.Head because it's from a d.ts file
+                commit: headCommit,
+            },
+        },
+    }
+    gitRepositories.push(repository as Repository)
+}
+
+const gitExtension: Partial<vscode.Extension<GitExtension>> = {
+    isActive: true,
+    exports: {
+        enabled: true,
+        onDidChangeEnablement: emptyEvent(),
+        getAPI(version) {
+            const api: Partial<API> = {
+                repositories: gitRepositories,
+                onDidChangeState: emptyEvent(),
+                onDidCloseRepository: emptyEvent(),
+                onDidOpenRepository: emptyEvent(),
+                onDidPublish: emptyEvent(),
+                getRepository(uri) {
+                    const cwd = workspaceDocuments?.workspaceRootUri?.fsPath
+                    if (!cwd) {
+                        return null
+                    }
+                    try {
+                        const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                        const repository: Partial<Repository> = {
+                            rootUri: Uri.file(toplevel),
+                            state: {
+                                remotes: [],
+                            } as any,
+                        }
+                        return repository as Repository
+                    } catch {
+                        return null
+                    }
+                },
+            }
+            return api as API
+        },
+    },
+}
 
 const _extensions: Partial<typeof vscode.extensions> = {
-    getExtension: (extensionId: string) => undefined,
+    getExtension: (extensionId: string) => {
+        const shouldActivateGitExtension = clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
+        if (shouldActivateGitExtension && extensionId === 'vscode.git') {
+            return gitExtension as any
+        }
+        return undefined
+    },
 }
 export const extensions = _extensions as typeof vscode.extensions
 

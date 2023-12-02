@@ -1,4 +1,5 @@
 import { CodebaseContext } from '../../codebase-context'
+import { ContextFile } from '../../codebase-context/messages'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { BotResponseMultiplexer } from '../bot-response-multiplexer'
@@ -10,7 +11,8 @@ export interface RecipeContext {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
-    firstInteraction: boolean
+    addEnhancedContext: boolean
+    userInputContextFiles?: ContextFile[]
 }
 
 export type RecipeID =
@@ -34,9 +36,16 @@ export type RecipeID =
     | 'release-notes'
     | 'translate-to-language'
 
+export enum RecipeType {
+    Ask = 'ask',
+    Edit = 'edit',
+}
+
 export interface Recipe {
     id: RecipeID
     title: string // Title Case
     multiplexerTopic?: string
+    type?: RecipeType
+    stopSequences?: string[]
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

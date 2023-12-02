@@ -12,10 +12,11 @@ import type {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CommandsController } from '../custom-prompts/CommandsController'
+import { CommandsController } from '../commands/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
+import { getActiveEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
@@ -27,21 +28,29 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             CommandsController
         >
     ) {
+        /**
+         * Callback function that calls getActiveEditor() whenever the visible text editors change in VS Code.
+         * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
+         */
+        vscode.window.onDidChangeActiveTextEditor(() => getActiveEditor())
         new EditorCodeLenses()
     }
 
     public get fileName(): string {
-        return vscode.window.activeTextEditor?.document.fileName ?? ''
+        return getActiveEditor()?.document.fileName ?? ''
     }
 
-    /** @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead. */
+    /**
+     * @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead
+    /** NOTE DO NOT UES - this does not work with chat webview panel
+     */
     public getWorkspaceRootPath(): string | null {
         const uri = this.getWorkspaceRootUri()
         return uri?.scheme === 'file' ? uri.fsPath : null
     }
 
     public getWorkspaceRootUri(): vscode.Uri | null {
-        const uri = vscode.window.activeTextEditor?.document?.uri
+        const uri = getActiveEditor()?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
@@ -63,6 +72,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return {
             content: documentText,
             filePath: documentUri.fsPath,
+            fileUri: documentUri,
             selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
         }
     }
@@ -103,7 +113,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
-        const activeEditor = vscode.window.activeTextEditor
+        const activeEditor = getActiveEditor()
         return activeEditor ?? null
     }
 
@@ -130,7 +140,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
      * Otherwise tries to get the folding range containing the cursor position.
      *
      * Returns null if no selection can be determined.
-     *
      * @returns The smart selection for the active editor, or null if none can be determined.
      */
     public async getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
@@ -139,7 +148,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             return null
         }
         const selection = activeEditor.selection
-        if (!selection?.start.line) {
+        if (!selection.start) {
             return null
         }
 
@@ -194,6 +203,30 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
 
         return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
+    public async getTextEditorContentForFile(
+        fileUri: vscode.Uri,
+        selectionRange?: ActiveTextEditorSelectionRange
+    ): Promise<string | undefined> {
+        if (!fileUri) {
+            return undefined
+        }
+
+        let range: vscode.Range | undefined
+        if (selectionRange) {
+            const startLine = selectionRange?.start?.line
+            let endLine = selectionRange?.end?.line
+            if (startLine === endLine) {
+                endLine++
+            }
+            range = new vscode.Range(startLine, 0, endLine, 0)
+        }
+
+        // Get the text from document by file Uri
+        const vscodeUri = vscode.Uri.parse(fileUri.fsPath)
+        const doc = await vscode.workspace.openTextDocument(vscodeUri)
+        return doc.getText(range)
     }
 
     private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {

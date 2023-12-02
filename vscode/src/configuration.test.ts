@@ -22,14 +22,18 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
-            experimentalCommandLenses: false,
-            experimentalEditorTitleCommandIcon: false,
+            commandCodeLenses: false,
+            editorTitleCommandIcon: true,
+            experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
-            inlineChat: true,
+            experimentalSearchPanel: false,
+            experimentalSimpleChatContext: false,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIDE: undefined,
             experimentalNonStop: false,
             debugEnable: false,
             debugVerbose: false,
@@ -41,7 +45,9 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalGraphContext: null,
+            autocompleteTimeouts: {},
         })
     })
 
@@ -66,11 +72,15 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.languages':
                         return { '*': true, scminput: false }
+                    case 'cody.experimental.chatPanel':
+                        return true
                     case 'cody.experimental.chatPredictions':
                         return true
-                    case 'cody.experimental.commandLenses':
+                    case 'cody.experimental.newSearch':
                         return true
-                    case 'cody.experimental.editorTitleCommandIcon':
+                    case 'cody.commandCodeLenses':
+                        return true
+                    case 'cody.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -84,6 +94,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
+                    case 'cody.experimental.simpleChatContext':
+                        return false
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -102,14 +114,22 @@ describe('getConfiguration', () => {
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
+                    case 'cody.autocomplete.advanced.timeout.multiline':
+                        return undefined
+                    case 'cody.autocomplete.advanced.timeout.singleline':
+                        return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
+                    case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
+                        return false
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.agent.ide':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -130,14 +150,18 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
+            experimentalChatPanel: true,
             experimentalChatPredictions: true,
-            experimentalCommandLenses: true,
-            experimentalEditorTitleCommandIcon: true,
+            experimentalSearchPanel: true,
+            commandCodeLenses: true,
+            experimentalSimpleChatContext: false,
+            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
-            inlineChat: true,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
+            agentIDE: undefined,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
@@ -149,7 +173,9 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteTimeouts: {},
         })
     })
 })

@@ -1,8 +1,12 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
-
+import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
+
+export const FIX_PROMPT_TOPICS = {
+    SOURCE: 'PROBLEMCODE4179',
+    RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
+}
 
 export class FixupCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
@@ -34,26 +38,69 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
 
         const newRange = targetAreaRange ? new vscode.Range(targetAreaRange.start, targetAreaRange.end) : expandedRange
-        return [this.createCommandCodeAction(diagnostics, newRange)]
+        const codeAction = await this.createCommandCodeAction(document, diagnostics, newRange)
+        return [codeAction]
     }
 
-    private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
+    private async createCommandCodeAction(
+        document: vscode.TextDocument,
+        diagnostics: vscode.Diagnostic[],
+        range: vscode.Range
+    ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
-        const instruction = this.getCodeActionInstruction(diagnostics)
-        const source = 'code-action'
+        const instruction = await this.getCodeActionInstruction(document.getText(range), diagnostics)
+        const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range }, source],
+            arguments: [{ instruction, range, intent: 'fix', document } satisfies ExecuteEditArguments, source],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
         return action
     }
 
-    private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string => {
-        const intent: FixupIntent = 'edit'
-        return `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
-            .map(({ message }) => `\`\`\`${message}\`\`\``)
-            .join('\n')}`
+    // Public for testing
+    public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
+        const prompt: string[] = [`<${FIX_PROMPT_TOPICS.SOURCE}>${code}</${FIX_PROMPT_TOPICS.SOURCE}>\n`]
+
+        for (let i = 0; i < diagnostics.length; i++) {
+            const { message, source, severity, relatedInformation } = diagnostics[i]
+
+            const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
+            prompt.push(
+                `Fix the following ${source ? `${source} ` : ''}${diagnosticType} from within <${
+                    FIX_PROMPT_TOPICS.SOURCE
+                }></${FIX_PROMPT_TOPICS.SOURCE}>: ${message}`
+            )
+
+            if (relatedInformation?.length) {
+                prompt.push('Code related to this diagnostic:')
+                const relatedInfo = await this.getRelatedInformationContext(relatedInformation)
+                prompt.push(...relatedInfo)
+            }
+
+            if (i < diagnostics.length - 1) {
+                prompt.push('\n')
+            }
+        }
+
+        return prompt.join('\n')
+    }
+
+    private async getRelatedInformationContext(
+        relatedInformation: vscode.DiagnosticRelatedInformation[]
+    ): Promise<string[]> {
+        const prompt: string[] = []
+        for (let i = 0; i < relatedInformation.length; i++) {
+            const { location, message } = relatedInformation[i]
+            prompt.push(message)
+            const document = await vscode.workspace.openTextDocument(location.uri)
+            prompt.push(
+                `<${FIX_PROMPT_TOPICS.RELATED}${i}>${document.getText(location.range)}</${
+                    FIX_PROMPT_TOPICS.RELATED
+                }${i}>\n`
+            )
+        }
+        return prompt
     }
 }

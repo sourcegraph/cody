@@ -3,8 +3,8 @@ import { pick } from 'lodash'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { range } from '../../testutils/textDocument'
+import { resetParsersCache } from '../../tree-sitter/parser'
 import { completion, initTreeSitterParser } from '../test-helpers'
-import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletions, getInlineCompletionsInsertText, params, T } from './helpers'
 
@@ -199,12 +199,14 @@ cases.forEach(isTreeSitterEnabled => {
                         "atCursor": "(",
                         "grandparent": "function_signature",
                         "greatGrandparent": "program",
+                        "lastAncestorOnTheSameLine": "function_signature",
                         "parent": "formal_parameters",
                       },
                       "nodeTypesWithCompletion": {
                         "atCursor": "(",
                         "grandparent": "function_declaration",
                         "greatGrandparent": "program",
+                        "lastAncestorOnTheSameLine": "function_declaration",
                         "parent": "formal_parameters",
                       },
                       "parseErrorCount": 0,
@@ -224,12 +226,14 @@ cases.forEach(isTreeSitterEnabled => {
                           "atCursor": "program",
                           "grandparent": undefined,
                           "greatGrandparent": undefined,
+                          "lastAncestorOnTheSameLine": "program",
                           "parent": undefined,
                         },
                         "nodeTypesWithCompletion": {
                           "atCursor": "variable_declarator",
                           "grandparent": "program",
                           "greatGrandparent": undefined,
+                          "lastAncestorOnTheSameLine": "lexical_declaration",
                           "parent": "lexical_declaration",
                         },
                         "parseErrorCount": 0,

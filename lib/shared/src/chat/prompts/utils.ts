@@ -1,4 +1,4 @@
-import { basename, extname } from 'path'
+import path from 'path'
 
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
@@ -16,17 +16,35 @@ import { prompts } from './templates'
  */
 export async function newInteraction(args: {
     text?: string
-    displayText: string
+    displayText?: string
     contextMessages?: Promise<ContextMessage[]>
     assistantText?: string
     assistantDisplayText?: string
+    assistantPrefix?: string
     source?: ChatEventSource
+    requestID?: string
 }): Promise<Interaction> {
-    const { text, displayText, contextMessages, assistantText, assistantDisplayText, source } = args
+    const {
+        text,
+        displayText,
+        contextMessages,
+        assistantText,
+        assistantDisplayText,
+        assistantPrefix,
+        source,
+        requestID,
+    } = args
+    const metadata = { source, requestID }
     return Promise.resolve(
         new Interaction(
-            { speaker: 'human', text, displayText, source },
-            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText, source },
+            { speaker: 'human', text, displayText, metadata },
+            {
+                speaker: 'assistant',
+                text: assistantText,
+                displayText: assistantDisplayText,
+                prefix: assistantPrefix,
+                metadata,
+            },
             Promise.resolve(contextMessages || []),
             []
         )
@@ -146,8 +164,8 @@ export function toSlashCommand(command: string): string {
  * Otherwise, it will search only the current directory.
  */
 export function createVSCodeSearchPattern(fsPath: string, fromRoot = false): string {
-    const fileName = basename(fsPath)
-    const fileExtension = extname(fsPath)
+    const fileName = path.basename(fsPath)
+    const fileExtension = path.extname(fsPath)
     const fileNameWithoutExt = fileName.replace(fileExtension, '')
 
     const root = fromRoot ? '**' : ''
@@ -157,8 +175,8 @@ export function createVSCodeSearchPattern(fsPath: string, fromRoot = false): str
 }
 
 export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
-    const fileExtension = extname(fsPath)
-    const fileName = basename(fsPath, fileExtension)
+    const fileExtension = path.extname(fsPath)
+    const fileName = path.basename(fsPath, fileExtension)
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
@@ -207,9 +225,12 @@ export function isValidTestFileName(fsPath: string): boolean {
         return false
     }
 
-    const fileNameWithoutExt = basename(fsPath, extname(fsPath))
+    const fileNameWithoutExt = path.basename(fsPath, path.extname(fsPath))
 
     const suffixTest = /([._-](test|spec))|Test|Spec$/
 
     return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
 }
+
+// REGEX for trailing non-alphanumeric characters
+export const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/

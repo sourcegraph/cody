@@ -3,9 +3,12 @@ import * as vscode from 'vscode'
 
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
-import { CompletionID, logCompletionEvent } from './logger'
+import {
+    CompletionAnalyticsID,
+    logCompletionPersistencePresentEvent,
+    logCompletionPersistenceRemovedEvent,
+} from './logger'
 import { lines } from './text-processing'
-import { InlineCompletionItem } from './types'
 
 const MEASURE_TIMEOUTS = [
     30 * 1000, // 30 seconds
@@ -14,13 +17,14 @@ const MEASURE_TIMEOUTS = [
     600 * 1000, // 10 minutes
 ]
 interface TrackedCompletion {
-    id: CompletionID
+    id: CompletionAnalyticsID
     uri: vscode.Uri
     // When a document is rename, the TextDocument instance will still work
     // however the URI it resolves to will be outdated. Ensure we never use it.
     document: Omit<vscode.TextDocument, 'uri'>
     insertedAt: number
-    completion: InlineCompletionItem
+    insertText: string
+    insertRange: vscode.Range
     latestRange: vscode.Range
 }
 export class PersistenceTracker implements vscode.Disposable {
@@ -44,30 +48,33 @@ export class PersistenceTracker implements vscode.Disposable {
     public track({
         id,
         insertedAt,
-        completion,
+        insertText,
+        insertRange,
         document,
     }: {
-        id: CompletionID
+        id: CompletionAnalyticsID
         insertedAt: number
-        completion: InlineCompletionItem
+        insertText: string
+        insertRange: vscode.Range
         document: vscode.TextDocument
     }): void {
-        if (!completion.range || completion.insertText.length === 0) {
+        if (insertText.length === 0) {
             return
         }
 
         // The range for the completion is relative to the state before the completion was inserted.
         // We need to convert it to the state after the completion was inserted.
-        const textLines = lines(completion.insertText)
+        const textLines = lines(insertText)
         const latestRange = new vscode.Range(
-            completion.range.start.line,
-            completion.range.start.character,
-            completion.range.end.line + textLines.length - 1,
-            textLines.length > 1 ? textLines.at(-1)!.length : completion.range.end.character + textLines[0].length
+            insertRange.start.line,
+            insertRange.start.character,
+            insertRange.end.line + textLines.length - 1,
+            textLines.length > 1 ? textLines.at(-1)!.length : insertRange.end.character + textLines[0].length
         )
 
         const trackedCompletion = {
-            completion,
+            insertText,
+            insertRange,
             document,
             id,
             insertedAt,
@@ -105,18 +112,18 @@ export class PersistenceTracker implements vscode.Disposable {
             return
         }
 
-        const initialText = trackedCompletion.completion.insertText
+        const initialText = trackedCompletion.insertText
         const latestText = trackedCompletion.document.getText(trackedCompletion.latestRange)
 
         if (latestText.length === 0) {
             // Text was fully deleted
-            logCompletionEvent('persistence:removed', { id: trackedCompletion.id })
+            logCompletionPersistenceRemovedEvent({ id: trackedCompletion.id })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
             const difference = editOperations / maxLength
 
-            logCompletionEvent('persistence:present', {
+            logCompletionPersistencePresentEvent({
                 id: trackedCompletion.id,
                 afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
                 difference,
@@ -148,7 +155,6 @@ export class PersistenceTracker implements vscode.Disposable {
         if (!documentCompletions) {
             return
         }
-
         // Create a list of changes that can be mutated by the `updateRangeMultipleChanges` function
         const mutableChanges = event.contentChanges.map(change => ({
             range: change.range,

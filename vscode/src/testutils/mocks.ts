@@ -16,6 +16,8 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -375,7 +377,6 @@ export class Selection extends Range {
 
     /**
      * Create a selection from four coordinates.
-     *
      * @param anchorLine A zero-based line value.
      * @param anchorCharacter A zero-based character value.
      * @param activeLine A zero-based line value.
@@ -625,6 +626,11 @@ const languages: Partial<typeof vscode_types.languages> = {
     },
 }
 
+export enum UIKind {
+    Desktop = 1,
+    Web = 2,
+}
+
 export const vsCodeMocks = {
     Range,
     Position,
@@ -632,7 +638,11 @@ export const vsCodeMocks = {
     EventEmitter,
     EndOfLine,
     CancellationTokenSource,
+    ThemeColor,
+    ThemeIcon,
+    TreeItem,
     WorkspaceEdit,
+    UIKind,
     Uri,
     languages,
     window: {
@@ -648,6 +658,10 @@ export const vsCodeMocks = {
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
         onDidChangeActiveTextEditor() {},
+        createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+    },
+    commands: {
+        registerCommand: () => ({ dispose: () => {} }),
     },
     workspace: {
         fs: workspaceFs,
@@ -689,12 +703,9 @@ export const vsCodeMocks = {
     SymbolKind,
     FoldingRange,
     FoldingRangeKind,
+    CodeActionKind,
+    DiagnosticSeverity,
 } as const
-
-export enum UIKind {
-    Desktop = 1,
-    Web = 2,
-}
 
 export function emptyEvent<T>(): vscode_types.Event<T> {
     return () => emptyDisposable
@@ -705,3 +716,19 @@ export enum ProgressLocation {
     Window = 10,
     Notification = 15,
 }
+
+export class MockFeatureFlagProvider extends FeatureFlagProvider {
+    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
+        super(null as any)
+    }
+
+    public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
+        return Promise.resolve(this.enabledFlags.has(flag))
+    }
+    public syncAuthStatus(): void {
+        return
+    }
+}
+
+export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
+export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))

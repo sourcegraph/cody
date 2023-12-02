@@ -22,7 +22,7 @@ export async function createProviderConfig(
         config.autocompleteAdvancedProvider
     )
     if (providerAndModelFromVSCodeConfig) {
-        const { provider, model, starcoderExtendedTokenWindow } = providerAndModelFromVSCodeConfig
+        const { provider, model } = providerAndModelFromVSCodeConfig
 
         switch (provider) {
             case 'unstable-openai': {
@@ -34,14 +34,11 @@ export async function createProviderConfig(
                 return createFireworksProviderConfig({
                     client,
                     model: config.autocompleteAdvancedModel ?? model ?? null,
-                    starcoderExtendedTokenWindow,
+                    timeouts: config.autocompleteTimeouts,
                 })
             }
             case 'anthropic': {
-                return createAnthropicProviderConfig({
-                    client,
-                    mode: 'infill',
-                })
+                return createAnthropicProviderConfig({ client })
             }
             default:
                 logError(
@@ -82,14 +79,12 @@ export async function createProviderConfig(
             case 'fireworks':
                 return createFireworksProviderConfig({
                     client,
+                    timeouts: config.autocompleteTimeouts,
                     model: model ?? null,
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return createAnthropicProviderConfig({
-                    client,
-                    mode: 'infill',
-                })
+                return createAnthropicProviderConfig({ client })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
@@ -100,30 +95,24 @@ export async function createProviderConfig(
      * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
      * use the default provider config ("anthropic").
      */
-    return createAnthropicProviderConfig({
-        client,
-        mode: 'infill',
-    })
+    return createAnthropicProviderConfig({ client })
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredProvider: string | null): Promise<{
     provider: string
     model?: FireworksOptions['model']
-    starcoderExtendedTokenWindow?: boolean
 } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b, starcoderExtendedTokenWindow] =
-        await Promise.all([
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderExtendedTokenWindow),
-        ])
+    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+    ])
 
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
         const model = starCoder7b
@@ -135,7 +124,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
             : llamaCode7b
             ? 'llama-code-7b'
             : 'llama-code-13b'
-        return { provider: 'fireworks', model, starcoderExtendedTokenWindow }
+        return { provider: 'fireworks', model }
     }
 
     return null

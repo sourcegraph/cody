@@ -11,12 +11,13 @@ describe('validateAuthStatus', () => {
     const codyEnabled = true
     const validUser = true
     const endpoint = 'https://example.com'
+    const userCanUpgrade = false
     // DOTCOM AND APP USERS
     test('returns auth state for invalid user on dotcom or app instance', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
-        expect(newAuthStatus(endpoint, isDotComOrApp, !validUser, !verifiedEmail, codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(endpoint, isDotComOrApp, !validUser, !verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+        ).toEqual(expected)
     })
 
     test('returns auth status for valid user with varified email on dotcom or app instance', () => {
@@ -30,9 +31,9 @@ describe('validateAuthStatus', () => {
             isLoggedIn: true,
             endpoint,
         }
-        expect(newAuthStatus(endpoint, isDotComOrApp, validUser, verifiedEmail, codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(endpoint, isDotComOrApp, validUser, verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+        ).toEqual(expected)
     })
 
     test('returns auth status for valid user without verified email on dotcom or app instance', () => {
@@ -44,9 +45,9 @@ describe('validateAuthStatus', () => {
             siteHasCodyEnabled: true,
             endpoint,
         }
-        expect(newAuthStatus(endpoint, isDotComOrApp, validUser, !verifiedEmail, codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(endpoint, isDotComOrApp, validUser, !verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+        ).toEqual(expected)
     })
 
     // ENTERPRISE
@@ -58,16 +59,16 @@ describe('validateAuthStatus', () => {
             isLoggedIn: true,
             endpoint,
         }
-        expect(newAuthStatus(endpoint, !isDotComOrApp, validUser, verifiedEmail, codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(endpoint, !isDotComOrApp, validUser, verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+        ).toEqual(expected)
     })
 
     test('returns auth status for invalid user on enterprise instance with Cody enabled', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
-        expect(newAuthStatus(endpoint, !isDotComOrApp, !validUser, verifiedEmail, codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(endpoint, !isDotComOrApp, !validUser, verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+        ).toEqual(expected)
     })
 
     test('returns auth status for valid user on enterprise instance with Cody disabled', () => {
@@ -77,15 +78,31 @@ describe('validateAuthStatus', () => {
             siteHasCodyEnabled: false,
             endpoint,
         }
-        expect(newAuthStatus(endpoint, !isDotComOrApp, validUser, !verifiedEmail, !codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(
+                endpoint,
+                !isDotComOrApp,
+                validUser,
+                !verifiedEmail,
+                !codyEnabled,
+                userCanUpgrade,
+                siteVersion
+            )
+        ).toEqual(expected)
     })
 
     test('returns auth status for invalid user on enterprise instance with Cody disabled', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
-        expect(newAuthStatus(endpoint, !isDotComOrApp, !validUser, verifiedEmail, !codyEnabled, siteVersion)).toEqual(
-            expected
-        )
+        expect(
+            newAuthStatus(
+                endpoint,
+                !isDotComOrApp,
+                !validUser,
+                verifiedEmail,
+                !codyEnabled,
+                userCanUpgrade,
+                siteVersion
+            )
+        ).toEqual(expected)
     })
 })

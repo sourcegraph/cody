@@ -1,6 +1,10 @@
 import * as vscode from 'vscode'
 
-import { EDIT_COMMAND, menu_buttons } from '../custom-prompts/utils/menu'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+
+import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
+import { ExecuteEditArguments } from '../edit/execute'
+import { getActiveEditor } from '../editor/active-editor'
 
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
@@ -11,7 +15,7 @@ import { FixupTaskFactory } from './roles'
 export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
-    private async getInstructionFromQuickPick({
+    public async getInstructionFromQuickPick({
         title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
         placeholder = 'Your instructions',
         value = '',
@@ -49,12 +53,13 @@ export class FixupTypingUI {
         )
     }
 
-    public async show(): Promise<FixupTask | null> {
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
+    public async show(args: ExecuteEditArguments, source: ChatEventSource): Promise<FixupTask | null> {
+        const editor = getActiveEditor()
+        const document = args.document || editor?.document
+        const range = args.range || editor?.selection
+        if (!document || !range) {
             return null
         }
-        const range = editor.selection
         const instruction = (await this.getInstructionFromQuickPick())?.trim()
         if (!instruction) {
             return null
@@ -67,10 +72,10 @@ export class FixupTypingUI {
             return null
         }
 
-        const task = this.taskFactory.createTask(editor.document.uri, instruction, range)
+        const task = this.taskFactory.createTask(document.uri, instruction, range, args.intent, args.insertMode, source)
 
         // Return focus to the editor
-        void vscode.window.showTextDocument(editor.document)
+        void vscode.window.showTextDocument(document)
 
         return task
     }

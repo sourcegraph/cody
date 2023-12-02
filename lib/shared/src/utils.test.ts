@@ -1,10 +1,16 @@
 import { describe, expect, test } from 'vitest'
 
-import { convertGitCloneURLToCodebaseName } from './utils'
+import { convertGitCloneURLToCodebaseName, convertGitCloneURLToCodebaseNameOrError, isError } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
     test('converts GitHub SSH URL', () => {
         expect(convertGitCloneURLToCodebaseName('git@github.com:sourcegraph/sourcegraph.git')).toEqual(
+            'github.com/sourcegraph/sourcegraph'
+        )
+    })
+
+    test('converts GitHub SSH URL with different user', () => {
+        expect(convertGitCloneURLToCodebaseName('jdsbcnuqwew@github.com:sourcegraph/sourcegraph.git')).toEqual(
             'github.com/sourcegraph/sourcegraph'
         )
     })
@@ -70,6 +76,6 @@ describe('convertGitCloneURLToCodebaseName', () => {
     })
 
     test('returns null for invalid URL', () => {
-        expect(convertGitCloneURLToCodebaseName('invalid')).toEqual(null)
+        expect(isError(convertGitCloneURLToCodebaseNameOrError('invalid'))).toBe(true)
     })
 })

@@ -5,6 +5,7 @@ import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { ContextFileSource, ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
@@ -23,7 +24,6 @@ export class FilenameContextFetcher {
 
     /**
      * Returns pieces of context relevant for the given query. Uses a filename search approach
-     *
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
@@ -32,7 +32,7 @@ export class FilenameContextFetcher {
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const time0 = performance.now()
 
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getWorkspaceRootUri()?.fsPath
         if (!rootPath) {
             return []
         }
@@ -62,6 +62,8 @@ export class FilenameContextFetcher {
         }
 
         const sortedMatchingFiles = allBoostedFiles.concat(remainingFiles).slice(0, numResults)
+        const source: ContextFileSource = 'filename'
+        const type: ContextFileType = 'file'
 
         const results = await Promise.all(
             sortedMatchingFiles
@@ -71,6 +73,9 @@ export class FilenameContextFetcher {
                     return {
                         fileName,
                         content,
+                        uri,
+                        source,
+                        type,
                     }
                 })
                 .reverse()
@@ -107,9 +112,7 @@ export class FilenameContextFetcher {
                     onComplete: () => {
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
-                    onError: (message: string, statusCode?: number) => {
-                        reject(new Error(message))
-                    },
+                    onError: (error: Error, statusCode?: number) => reject(error),
                 },
                 {
                     temperature: 0,

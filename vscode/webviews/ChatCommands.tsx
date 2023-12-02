@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -15,6 +15,25 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     setSelectedChatCommand,
     onSubmit,
 }) => {
+    const commands = chatCommands?.filter(([key]) => key !== 'separator')
+
+    const commandRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        const selectedContainer = commandRef.current
+
+        if (selectedContainer) {
+            selectedContainer.scrollIntoView({ block: 'nearest' })
+        }
+    }, [selectedChatCommand])
+
+    useEffect(() => {
+        // Set the selected to the first item whenever the length changes
+        if (commands?.length) {
+            setSelectedChatCommand(0)
+        }
+    }, [commands?.length, setSelectedChatCommand])
+
     const onCommandClick = (slashCommand: string): void => {
         if (!slashCommand) {
             return
@@ -24,10 +43,11 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         setSelectedChatCommand(-1)
     }
 
-    const commands = chatCommands?.filter(([key]) => key !== 'separator')
     if (!commands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
+
+    const currentIndex = selectedChatCommand === chatCommands?.length ? 0 : selectedChatCommand
 
     return (
         <div className={classNames(styles.container)}>
@@ -52,15 +72,18 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                             return (
                                 <React.Fragment key={prompt.slashCommand}>
                                     <button
+                                        ref={currentIndex === i ? commandRef : null}
                                         className={classNames(
                                             styles.commandItem,
-                                            selectedChatCommand === i && styles.selected
+                                            currentIndex === i && styles.selected
                                         )}
                                         onClick={() => onCommandClick(prompt.slashCommand)}
                                         type="button"
                                     >
-                                        <p className={styles.commandTitle}>{title}</p>
-                                        <p className={styles.commandDescription}>{prompt.description}</p>
+                                        <span className={styles.titleAndDescriptionContainer}>
+                                            <span className={styles.commandTitle}>{title}</span>
+                                            <span className={styles.commandDescription}>{prompt.description}</span>
+                                        </span>
                                     </button>
                                     {hasSeparator ? <hr className={styles.separator} /> : null}
                                 </React.Fragment>

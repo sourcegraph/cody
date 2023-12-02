@@ -3,6 +3,7 @@ import fetch from 'isomorphic-fetch'
 import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
+import { addTraceparent, startAsyncSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
 
@@ -13,6 +14,7 @@ import {
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
@@ -59,6 +61,10 @@ interface CurrentUserIdResponse {
 
 interface CurrentUserIdHasVerifiedEmailResponse {
     currentUser: { id: string; hasVerifiedEmail: boolean } | null
+}
+
+interface CurrentUserIdHasVerifiedEmailHasCodyProResponse {
+    currentUser: { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | null
 }
 
 interface CodyLLMSiteConfigurationResponse {
@@ -185,6 +191,9 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
     return extract(response.data)
 }
 
+/**
+ * @deprecated Use 'TelemetryEvent' instead.
+ */
 export interface event {
     event: string
     userCookieID: string
@@ -212,6 +221,8 @@ export function addCustomUserAgent(headers: Headers): void {
 export function setUserAgent(newUseragent: string): void {
     customUserAgent = newUseragent
 }
+
+const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
@@ -321,6 +332,21 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getCurrentUserIdAndVerifiedEmailAndCodyPro(): Promise<
+        { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailHasCodyProResponse>>(
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser
+                    ? { ...data.currentUser }
+                    : new Error('current user not found with verified email and cody pro')
+            )
+        )
+    }
+
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
         const [configResponse, providerResponse] = await Promise.all([
@@ -353,14 +379,10 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes))
     }
 
-    public async getRepoId(repoName: string): Promise<string | Error> {
+    public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
-        }).then(response =>
-            extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
-            )
-        )
+        }).then(response => extractDataOrError(response, data => (data.repository ? data.repository.id : null)))
     }
 
     public async getRepoNames(first: number): Promise<string[] | Error> {
@@ -386,7 +408,6 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * Checks if Cody is enabled on the current Sourcegraph instance.
-     *
      * @returns
      * enabled: Whether Cody is enabled.
      * version: The Sourcegraph version.
@@ -428,6 +449,9 @@ export class SourcegraphGraphQLAPIClient {
      * gets exported: https://docs.sourcegraph.com/dev/background-information/telemetry
      *
      * Only available on Sourcegraph 5.2.0 and later.
+     *
+     * DO NOT USE THIS DIRECTLY - use an implementation of implementation
+     * TelemetryRecorder from '@sourcegraph/telemetry' instead.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
@@ -438,6 +462,8 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * logEvent is the legacy event-logging mechanism.
+     * @deprecated use an implementation of implementation TelemetryRecorder
+     * from '@sourcegraph/telemetry' instead.
      */
     public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
@@ -610,19 +636,25 @@ export class SourcegraphGraphQLAPIClient {
         } else if (this.anonymousUserID) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
+
+        addTraceparent(headers)
         addCustomUserAgent(headers)
 
+        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
+
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
-        return fetch(url, {
-            method: 'POST',
-            body: JSON.stringify({ query, variables }),
-            headers,
-        })
-            .then(verifyResponseCode)
-            .then(response => response.json() as T)
-            .catch(error => {
-                return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
+        return startAsyncSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
+            fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ query, variables }),
+                headers,
             })
+                .then(verifyResponseCode)
+                .then(response => response.json() as T)
+                .catch(error => {
+                    return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
+                })
+        )
     }
 
     // make an anonymous request to the dotcom API
@@ -630,14 +662,20 @@ export class SourcegraphGraphQLAPIClient {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         const headers = new Headers()
         addCustomUserAgent(headers)
-        return fetch(url, {
-            method: 'POST',
-            body: JSON.stringify({ query, variables }),
-            headers,
-        })
-            .then(verifyResponseCode)
-            .then(response => response.json() as T)
-            .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
+        addTraceparent(headers)
+
+        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
+
+        return startAsyncSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
+            fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ query, variables }),
+                headers,
+            })
+                .then(verifyResponseCode)
+                .then(response => response.json() as T)
+                .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
+        )
     }
 
     // make an anonymous request to the Testing API

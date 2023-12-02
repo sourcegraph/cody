@@ -1,4 +1,7 @@
-export interface ContextResult {
+import { ContextFile } from '../codebase-context/messages'
+import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+
+export interface ContextResult extends ContextFile {
     repoName?: string
     revision?: string
     fileName: string
@@ -12,6 +15,10 @@ export interface KeywordContextFetcher {
 
 export interface FilenameContextFetcher {
     getContext(query: string, numResults: number): Promise<ContextResult[]>
+}
+
+export interface LocalEmbeddingsFetcher {
+    getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
 
 export interface Point {
@@ -39,6 +46,34 @@ export interface Result {
 }
 
 export interface IndexedKeywordContextFetcher {
-    getIndexReady(scopeDir: string, whenReadyFn: () => void): Promise<boolean>
-    getResults(query: string, scopeDir: string): Promise<Result[]>
+    getResults(query: string, scopeDirs: string[]): Promise<Promise<Result[]>[]>
+}
+
+/**
+ * File result that renders in the search panel webview
+ */
+export interface SearchPanelFile {
+    uriString: string
+    uriJSON: unknown
+    basename: string
+    dirname: string
+    wsname?: string
+    snippets: SearchPanelSnippet[]
+}
+
+/**
+ * Snippet result that renders in the search panel webview
+ */
+export interface SearchPanelSnippet {
+    contents: string
+    range: {
+        start: {
+            line: number
+            character: number
+        }
+        end: {
+            line: number
+            character: number
+        }
+    }
 }

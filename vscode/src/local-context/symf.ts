@@ -1,10 +1,11 @@
 import { execFile as _execFile, spawn } from 'node:child_process'
 import fs from 'node:fs'
-import { rename, rm } from 'node:fs/promises'
+import { rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 
+import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
@@ -17,15 +18,10 @@ import { getSymfPath } from './download-symf'
 const execFile = promisify(_execFile)
 
 export class SymfRunner implements IndexedKeywordContextFetcher {
-    // Indexes in the progress of being built
-    private indicesInProgress: Map<string, Promise<void>> = new Map()
-
-    // Which indexes have already been built. Omission does not mean that the index hasn't been built;
-    // it just means we haven't yet checked whether the index directory exists on disk.
-    private indicesReady: Map<string, boolean> = new Map()
-
     // The root of all symf index directories
     private indexRoot: string
+
+    private indexLocks: Map<string, RWLock> = new Map()
 
     constructor(
         private context: vscode.ExtensionContext,
@@ -40,29 +36,24 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         this.authToken = authToken
     }
 
-    /**
-     * Returns a Promise that resolves to whether the symf index is ready. An index is ready when the index
-     * directory exists on disk.
-     */
-    public async getIndexReady(scopeDir: string, whenReadyFn?: () => void): Promise<boolean> {
-        const { indexDir } = this.getIndexDir(scopeDir)
-        if (this.indicesReady.get(indexDir)) {
-            return true
-        }
-        const indexFileExists = await fileExists(path.join(indexDir, 'index.json'))
+    private indexListeners: Set<(scopeDir: string) => void> = new Set()
 
-        if (!indexFileExists && whenReadyFn) {
-            this.ensureIndexFor(scopeDir)
-                .then(whenReadyFn)
-                .catch(() => undefined)
+    public registerIndexListener(onIndexChange: (scopeDir: string) => void): vscode.Disposable {
+        this.indexListeners.add(onIndexChange)
+        return {
+            dispose: () => {
+                this.indexListeners.delete(onIndexChange)
+            },
         }
-        return indexFileExists
     }
 
-    /**
-     * Returns the list of results from symf
-     */
-    public async getResults(query: string, scopeDir: string): Promise<Result[]> {
+    private fireIndexListeners(scopeDir: string): void {
+        for (const listener of this.indexListeners) {
+            listener(scopeDir)
+        }
+    }
+
+    private async getSymfInfo(): Promise<{ symfPath: string; serverEndpoint: string; accessToken: string }> {
         const accessToken = this.authToken
         if (!accessToken) {
             throw new Error('SymfRunner.getResults: No access token')
@@ -71,16 +62,101 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         if (!serverEndpoint) {
             throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
         }
-
-        const indexDir = await this.ensureIndexFor(scopeDir)
         const symfPath = await getSymfPath(this.context)
         if (!symfPath) {
             throw new Error('No symf executable')
         }
+        return { accessToken, serverEndpoint, symfPath }
+    }
+
+    public async getResults(
+        userQuery: string,
+        scopeDirs: string[],
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
+    ): Promise<Promise<Result[]>[]> {
+        const { symfPath, serverEndpoint, accessToken } = await this.getSymfInfo()
+        const expandedQuery = execFile(symfPath, ['expand-query', userQuery], {
+            env: {
+                SOURCEGRAPH_TOKEN: accessToken,
+                SOURCEGRAPH_URL: serverEndpoint,
+            },
+            maxBuffer: 1024 * 1024 * 1024,
+            timeout: 1000 * 10, // timeout in 10 seconds
+        }).then(({ stdout }) => stdout.trim())
+
+        return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir, showIndexProgress))
+    }
+
+    /**
+     * Returns the list of results from symf for a single directory scope.
+     * @param keywordQuery is a promise, because query expansion might be an expensive
+     * operation that is best done concurrently with querying and (re)building the index.
+     */
+    private async getResultsForScopeDir(
+        keywordQuery: Promise<string>,
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
+    ): Promise<Result[]> {
+        const maxRetries = 10
+
+        // Run in a loop in case the index is deleted before we can query it
+        for (let i = 0; i < maxRetries; i++) {
+            await this.getIndexLock(scopeDir).withWrite(async () => {
+                await this.unsafeEnsureIndex(scopeDir, showIndexProgress, { hard: i === 0 })
+            })
+
+            let indexNotFound = false
+            const stdout = await this.getIndexLock(scopeDir).withRead(async () => {
+                // Check again if index exists after we have the read lock
+                if (!(await this.unsafeIndexExists(scopeDir))) {
+                    indexNotFound = true
+                    return ''
+                }
+                return this.unsafeRunQuery(await keywordQuery, scopeDir)
+            })
+            if (indexNotFound) {
+                continue
+            }
+            const results = parseSymfStdout(stdout)
+            return results
+        }
+        throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
+    }
+
+    public async deleteIndex(scopeDir: string): Promise<void> {
+        await this.getIndexLock(scopeDir).withWrite(async () => {
+            await this.unsafeDeleteIndex(scopeDir)
+        })
+    }
+
+    public async ensureIndex(
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void,
+        options: { hard: boolean } = { hard: false }
+    ): Promise<void> {
+        await this.getIndexLock(scopeDir).withWrite(async () => {
+            await this.unsafeEnsureIndex(scopeDir, showIndexProgress, options)
+        })
+    }
+
+    private getIndexLock(scopeDir: string): RWLock {
+        const { indexDir } = this.getIndexDir(scopeDir)
+        let lock = this.indexLocks.get(indexDir)
+        if (lock) {
+            return lock
+        }
+        lock = new RWLock()
+        this.indexLocks.set(indexDir, lock)
+        return lock
+    }
+
+    private async unsafeRunQuery(keywordQuery: string, scopeDir: string): Promise<string> {
+        const { indexDir } = this.getIndexDir(scopeDir)
+        const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
         try {
             const { stdout } = await execFile(
                 symfPath,
-                ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', '--natural', query],
+                ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', keywordQuery],
                 {
                     env: {
                         SOURCEGRAPH_TOKEN: accessToken,
@@ -88,45 +164,66 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                         HOME: process.env.HOME,
                     },
                     maxBuffer: 1024 * 1024 * 1024,
-                    timeout: 1000 * 30, // timeout in 30secs
+                    timeout: 1000 * 30, // timeout in 30 seconds
                 }
             )
-            const results = parseSymfStdout(stdout)
-            return results
+            return stdout
         } catch (error) {
-            handleSymfError(error)
-            throw error
+            throw toSymfError(error)
         }
     }
 
-    // Returns the path to the index directory
-    private async ensureIndexFor(scopeDir: string): Promise<string> {
-        const { indexDir, tmpDir } = this.getIndexDir(scopeDir)
-        const readyAlready = await this.getIndexReady(scopeDir)
-        if (readyAlready) {
-            return indexDir
+    private async unsafeDeleteIndex(scopeDir: string): Promise<void> {
+        const trashRootDir = path.join(this.indexRoot, '.trash')
+        await mkdirp(trashRootDir)
+        const { indexDir } = this.getIndexDir(scopeDir)
+
+        if (!(await fileExists(indexDir))) {
+            // index directory no longer exists, nothing to do
+            return
         }
 
-        if (this.indicesInProgress.has(indexDir)) {
-            try {
-                await this.indicesInProgress.get(indexDir)
-                return indexDir
-            } catch {
-                // Retry if previous attempt failed
-                this.indicesInProgress.delete(indexDir)
-            }
+        // Unique name for trash directory
+        const trashDir = path.join(trashRootDir, `${path.basename(indexDir)}-${Date.now()}`)
+        if (await fileExists(trashDir)) {
+            // if trashDir already exists, error
+            throw new Error(`could not delete index ${indexDir}: target trash directory ${trashDir} already exists`)
         }
-        const newIndexPromise = this.upsertIndex(indexDir, tmpDir, scopeDir)
-        this.indicesInProgress.set(indexDir, newIndexPromise)
-        return newIndexPromise
-            .then(() => {
-                this.indicesReady.set(indexDir, true)
-                return indexDir
-            })
-            .catch(error => {
-                logDebug('symf', 'symf index creation failed', error)
-                throw error
-            })
+
+        await rename(indexDir, trashDir)
+        void rm(trashDir, { recursive: true, force: true }) // delete in background
+    }
+
+    private async unsafeIndexExists(scopeDir: string): Promise<boolean> {
+        const { indexDir } = this.getIndexDir(scopeDir)
+        return fileExists(path.join(indexDir, 'index.json'))
+    }
+
+    private async unsafeEnsureIndex(
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void,
+        options: { hard: boolean } = { hard: false }
+    ): Promise<void> {
+        const indexExists = await this.unsafeIndexExists(scopeDir)
+        if (indexExists) {
+            return
+        }
+
+        if (!options.hard && (await this.didIndexFail(scopeDir))) {
+            // Index build previous failed, so don't try to rebuild
+            logDebug('symf', 'index build previously failed and `hard` === false, not rebuilding')
+            return
+        }
+
+        const { indexDir, tmpDir } = this.getIndexDir(scopeDir)
+        try {
+            await this.unsafeUpsertIndex(indexDir, tmpDir, scopeDir, showIndexProgress)
+        } catch (error) {
+            logDebug('symf', 'symf index creation failed', error)
+            await this.markIndexFailed(scopeDir)
+            throw error
+        }
+        await this.clearIndexFailure(scopeDir)
     }
 
     private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
@@ -137,7 +234,21 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         }
     }
 
-    private async upsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
+    private unsafeUpsertIndex(
+        indexDir: string,
+        tmpIndexDir: string,
+        scopeDir: string,
+        showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void
+    ): Promise<void> {
+        const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir)
+        void upsert.then(() => this.fireIndexListeners(scopeDir))
+        if (showIndexProgress) {
+            showIndexProgress(scopeDir, upsert)
+        }
+        return upsert
+    }
+
+    private async _unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
         const symfPath = await getSymfPath(this.context)
         if (!symfPath) {
             return
@@ -148,10 +259,18 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         ])
 
         logDebug('symf', 'creating index', indexDir)
-        const args = ['--index-root', tmpIndexDir, 'add', '--langs', 'go,typescript,python', scopeDir]
+        let maxCPUs = 1
+        if (os.cpus().length > 4) {
+            maxCPUs = 2
+        }
         try {
-            const proc = spawn(symfPath, args, {
+            const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
+                env: {
+                    ...process.env,
+                    GOMAXPROCS: `${maxCPUs}`, // use at most one cpu for indexing
+                },
                 stdio: ['ignore', 'ignore', 'ignore'],
+                timeout: 1000 * 60 * 10, // timeout in 10 minutes
             })
             // wait for proc to finish
             await new Promise<void>((resolve, reject) => {
@@ -167,8 +286,38 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             await mkdirp(path.dirname(indexDir))
             await rename(tmpIndexDir, indexDir)
         } catch (error) {
-            handleSymfError(error)
+            throw toSymfError(error)
+        } finally {
+            await rm(tmpIndexDir, { recursive: true, force: true })
         }
+    }
+
+    /**
+     * Helpers for tracking index failure
+     */
+
+    private async markIndexFailed(scopeDir: string): Promise<void> {
+        const failureRoot = path.join(this.indexRoot, '.failed')
+        await mkdirp(failureRoot)
+
+        const absIndexedDir = path.resolve(scopeDir)
+        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+
+        await writeFile(failureSentinelFile, '')
+    }
+
+    private async didIndexFail(scopeDir: string): Promise<boolean> {
+        const failureRoot = path.join(this.indexRoot, '.failed')
+        const absIndexedDir = path.resolve(scopeDir)
+        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+        return fileExists(failureSentinelFile)
+    }
+
+    private async clearIndexFailure(scopeDir: string): Promise<void> {
+        const failureRoot = path.join(this.indexRoot, '.failed')
+        const absIndexedDir = path.resolve(scopeDir)
+        const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
+        await rm(failureSentinelFile, { force: true })
     }
 }
 
@@ -217,7 +366,55 @@ function parseSymfStdout(stdout: string): Result[] {
     })
 }
 
-function handleSymfError(error: unknown): void {
+/**
+ * A simple read-write lock.
+ *
+ * Note: it is possible for an overlapping succession of readers to starve out
+ * any writers that are waiting for the mutex to be released. In practice, this
+ * is not an issue, because we don't expect the user to issue neverending
+ * while trying to update the index.
+ */
+class RWLock {
+    /**
+     * Invariants:
+     * - if readers > 0, then mu is locked
+     * - if readers === 0 and mu is locked, then a writer is holding the lock
+     */
+    private readers = 0
+    private mu = new Mutex()
+
+    public async withRead<T>(fn: () => Promise<T>): Promise<T> {
+        while (this.readers === 0) {
+            if (this.mu.isLocked()) {
+                // If mu is locked at this point, it must be held by the writer.
+                // We spin in this case, rather than try to acquire the lock,
+                // because multiple readers blocked on acquiring the lock will
+                // execute serially when the writer releases the lock (whereas
+                // we want all reads to be concurrent).
+                await new Promise(resolve => setTimeout(resolve, 100))
+                continue
+            }
+            // No readers or writers: acquire lock for readers
+            await this.mu.acquire()
+            break
+        }
+        this.readers++
+        try {
+            return await fn()
+        } finally {
+            this.readers--
+            if (this.readers === 0) {
+                this.mu.release()
+            }
+        }
+    }
+
+    public async withWrite<T>(fn: () => Promise<T>): Promise<T> {
+        return this.mu.runExclusive(fn)
+    }
+}
+
+function toSymfError(error: unknown): Error {
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
@@ -227,5 +424,5 @@ function handleSymfError(error: unknown): void {
     } else {
         errorMessage = `symf index creation failed: ${error}`
     }
-    void vscode.window.showErrorMessage(errorMessage)
+    return new EvalError(errorMessage)
 }

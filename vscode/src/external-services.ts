@@ -13,8 +13,8 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
+import { LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug, logger } from './log'
-import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -22,6 +22,7 @@ interface ExternalServices {
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    localEmbeddings: LocalEmbeddingsController | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -45,13 +46,16 @@ export async function configureExternalServices(
     editor: Editor,
     platform: Pick<
         PlatformContext,
+        | 'createLocalEmbeddingsController'
         | 'createLocalKeywordContextFetcher'
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
+        | 'createOpenTelemetryService'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
+    const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClint(initialConfig, logger)
 
@@ -64,7 +68,11 @@ export async function configureExternalServices(
         )
     }
     const embeddingsSearch =
-        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+        repoId && !isError(repoId)
+            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
+            : null
+
+    const localEmbeddings = platform.createLocalEmbeddingsController?.()
 
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
@@ -74,9 +82,9 @@ export async function configureExternalServices(
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
+        null,
         symf,
-        undefined,
-        getRerankWithLog(chatClient)
+        undefined
     )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
@@ -87,11 +95,14 @@ export async function configureExternalServices(
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
+            openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

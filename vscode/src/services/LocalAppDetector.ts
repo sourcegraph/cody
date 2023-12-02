@@ -4,7 +4,7 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
-import { constructFileUri } from '../custom-prompts/utils/helpers'
+import { constructFileUri } from '../commands/utils/helpers'
 import { fetch } from '../fetch'
 import { logDebug, logError } from '../log'
 
@@ -183,7 +183,7 @@ async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
     }
 }
 
-const envInit: LocalEnv = {
+export const envInit: LocalEnv = {
     os: process.platform,
     arch: process.arch,
     homeDir: process.env.HOME,

@@ -2,14 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
+import {
+    EnhancedContextContext,
+    EnhancedContextEnabled,
+    EnhancedContextEventHandlers,
+} from './Components/EnhancedContextSettings'
 import { LoadingPage } from './LoadingPage'
 import { View } from './NavBar'
 import { Notices } from './Notices'
@@ -19,19 +29,28 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
+
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
+    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>({
+        isDotComUser: true,
+        isCodyProUser: false,
+    })
+
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
+    const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
+
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
@@ -39,6 +58,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
+
+    const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
+
+    const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
+    const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
+        groups: [],
+    })
+    const onConsentToEmbeddings = useCallback((): void => {
+        vscodeAPI.postMessage({ command: 'embeddings/index' })
+    }, [vscodeAPI])
 
     useEffect(
         () =>
@@ -54,6 +83,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
+                        vscodeAPI.setState(message.chatID)
                         break
                     }
                     case 'config':
@@ -61,9 +91,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setIsAppInstalled(message.config.isAppInstalled)
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
+                        setUserAccountInfo({
+                            isCodyProUser: !message.authStatus.userCanUpgrade,
+                            isDotComUser: isDotCom(message.authStatus.endpoint || ''),
+                        })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
-                        break
-                    case 'login':
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -71,6 +103,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
+                        break
+                    case 'enhanced-context':
+                        setEnhancedContextStatus(message.context)
+                        break
+                    case 'userContextFiles':
+                        setContextSelection(message.context)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -93,7 +131,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             break
                         }
 
-                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions)
+                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions).sort()
 
                         // mark last prompts as last in group before adding another group
                         const lastPrompt = prompts.at(-1)
@@ -112,6 +150,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
+                    case 'chatModels':
+                        setChatModels(message.models)
+                        break
                 }
             }),
         [errorMessages, view, vscodeAPI]
@@ -127,6 +168,34 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
         }
     }, [view, vscodeAPI])
+
+    useEffect(() => {
+        if (formInput.endsWith(' ')) {
+            setContextSelection(null)
+        }
+
+        // TODO(toolmantim): Allow using @ mid-message by using cursor position not endsWith
+
+        // Regex to check if input ends with the '@' tag format, always get the last @tag
+        // pass: 'foo @bar.ts', '@bar.ts', '@foo.ts @bar', '@'
+        // fail: 'foo ', '@foo.ts bar', '@ foo.ts', '@foo.ts '
+        const addFileRegex = /@\S+$/
+        // Get the string after the last '@' symbol
+        const addFileInput = formInput.match(addFileRegex)?.[0]
+
+        if (!formInput.endsWith('@') && trailingNonAlphaNumericRegex.test(formInput) && !contextSelection?.length) {
+            setContextSelection(null)
+            return
+        }
+
+        if (formInput.endsWith('@') || addFileInput) {
+            const query = addFileInput?.slice(1) || ''
+            vscodeAPI.postMessage({ command: 'getUserContext', query })
+            return
+        }
+
+        setContextSelection(null)
+    }, [contextSelection, formInput, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
@@ -183,31 +252,51 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'chat' && (
-                        <Chat
-                            messageInProgress={messageInProgress}
-                            messageBeingEdited={messageBeingEdited}
-                            setMessageBeingEdited={setMessageBeingEdited}
-                            transcript={transcript}
-                            contextStatus={contextStatus}
-                            formInput={formInput}
-                            setFormInput={setFormInput}
-                            inputHistory={inputHistory}
-                            setInputHistory={setInputHistory}
-                            vscodeAPI={vscodeAPI}
-                            suggestions={suggestions}
-                            setSuggestions={setSuggestions}
-                            telemetryService={telemetryService}
-                            chatCommands={myPrompts || undefined}
-                            isTranscriptError={isTranscriptError}
-                            applessOnboarding={{
-                                endpoint,
-                                embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
-                                props: {
-                                    isAppInstalled,
-                                    onboardingPopupProps,
+                        <EnhancedContextEventHandlers.Provider
+                            value={{
+                                onConsentToEmbeddings,
+                                onEnabledChange: (enabled): void => {
+                                    if (enabled !== enhancedContextEnabled) {
+                                        setEnhancedContextEnabled(enabled)
+                                    }
                                 },
                             }}
-                        />
+                        >
+                            <EnhancedContextContext.Provider value={enhancedContextStatus}>
+                                <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
+                                    <Chat
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        messageBeingEdited={messageBeingEdited}
+                                        setMessageBeingEdited={setMessageBeingEdited}
+                                        transcript={transcript}
+                                        contextStatus={contextStatus}
+                                        contextSelection={contextSelection}
+                                        formInput={formInput}
+                                        setFormInput={setFormInput}
+                                        inputHistory={inputHistory}
+                                        setInputHistory={setInputHistory}
+                                        vscodeAPI={vscodeAPI}
+                                        suggestions={suggestions}
+                                        setSuggestions={setSuggestions}
+                                        telemetryService={telemetryService}
+                                        chatCommands={myPrompts || undefined}
+                                        isTranscriptError={isTranscriptError}
+                                        applessOnboarding={{
+                                            endpoint,
+                                            embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
+                                            props: {
+                                                isAppInstalled,
+                                                onboardingPopupProps,
+                                            },
+                                        }}
+                                        chatModels={chatModels}
+                                        enableNewChatUI={config.experimentalChatPanel || false}
+                                        setChatModels={setChatModels}
+                                    />
+                                </EnhancedContextEnabled.Provider>
+                            </EnhancedContextContext.Provider>
+                        </EnhancedContextEventHandlers.Provider>
                     )}
                 </>
             )}

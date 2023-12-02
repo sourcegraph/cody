@@ -6,7 +6,7 @@ describe('isAlmostTheSameString', () => {
     it.each([
         [true, '', ''],
         [true, 'return []', ' return []'],
-        [true, 'const abortController = new AbortController()', 'const networkAbortController = new AbortController()'],
+        [true, 'const abortController = new AbortController()', 'const networkController = new AbortController()'],
         [
             true,
             'const currentFilePath = path.normalize(document.fileName)',
@@ -18,6 +18,11 @@ describe('isAlmostTheSameString', () => {
             "console.error('Error log', getDBConnection(context))",
         ],
         [false, '    chatId: z.string(),', '    prompt: z.string(),'],
+        [
+            false,
+            '    public get(key: RequestParams): InlineCompletionItemWithAnalytics[] | undefined {',
+            '    public set(key: RequestParams, entry: InlineCompletionItemWithAnalytics[]): void {',
+        ],
     ])('should return %s for strings %j and %j', (expected, stringA, stringB) => {
         expect(isAlmostTheSameString(stringA, stringB)).toBe(expected)
     })

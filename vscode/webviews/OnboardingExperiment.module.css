@@ -15,13 +15,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 }
 
 .button-stack {
     display: flex;
     flex-direction: column;
     gap: 7px;
-    min-width: 75%;
+    width: 100%;
 }
 
 .section.auth-method-screen {
@@ -30,6 +31,20 @@
     border: 1px solid var(--vscode-widget-border);
     box-shadow: 0 2px 16px 0 var(--vscode-widget-shadow);
     border-radius: 4px;
+}
+
+@media (min-width: 640px) {
+    .section.auth-method-screen {
+        width: fit-content;
+        min-width: 300px;
+    }
+}
+
+.auth-method-screen h1 {
+    font-size: 1.2em;
+    font-weight: 500;
+    line-height: 1;
+    margin: 0 0 0.75rem 0;
 }
 
 .auth-method-screen .button {
@@ -47,26 +62,42 @@
     padding: var(--spacing);
 }
 
-.other-sign-in-options {
-    color: var(--vscode-sideBar-foreground);
-    flex: 0 0 auto;
-    margin-bottom: 0.5rem;
-    width: 100%;
-    text-align: center;
-    line-height: 1.4;
+.other-sign-in-options h2 {
+    font-size: inherit;
+    font-weight: 500;
+    margin: 0;
+    opacity: 80%;
+}
+
+.other-sign-in-options p {
+    margin: 0.33rem 0 0 0;
 }
 
 .button {
+    box-sizing: border-box;
     justify-content: center;
     padding: 0.25rem;
+    max-width: 300px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (min-width: 640px) {
+    .button {
+        margin-left: 0;
+    }
 }
 
 .terms {
     font-size: 90%;
-    opacity: 70%;
+    opacity: 80%;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
 }
 
 .button img {
+    width: 16px;
     margin-inline-end: 0.5rem;
 }
 
@@ -79,4 +110,5 @@
     display: inline;
     margin: 0;
     padding: 0;
+    line-height: 1;
 }

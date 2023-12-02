@@ -5,7 +5,7 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { IntentClassificationOption, IntentDetector } from '.'
 
-const editorRegexps = [/editor/, /(open|current|this)\s+file/, /current(ly)?\s+open/, /have\s+open/]
+const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
 
 export class SourcegraphIntentDetectorClient implements IntentDetector {
     constructor(
@@ -113,8 +113,8 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
                     onComplete: () => {
                         resolve(responseText)
                     },
-                    onError: (message: string, statusCode?: number) => {
-                        console.error(`Error detecting intent: Status code ${statusCode}: ${message}`)
+                    onError: (error: Error, statusCode?: number) => {
+                        console.error(`Error detecting intent: Status code ${statusCode}: ${error.message}`)
                         resolve(fallback)
                     },
                 }

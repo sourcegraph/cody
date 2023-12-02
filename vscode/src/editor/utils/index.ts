@@ -16,13 +16,41 @@ import { getSelectionAroundLine } from './document-sections'
  * manual selection truly reflects the user's intent and should be preferred when possible. Smart
  * selection can be unreliable in some cases. Callers needing the true selection range should always
  * use the manual selection method to ensure accuracy.
- *
  * @param uri - The document URI.
  * @param target - The target position in the document.
- *
  * @returns The folding range containing the target position, if one exists. Otherwise returns
  * undefined.
  */
 export async function getSmartSelection(uri: vscode.Uri, target: number): Promise<vscode.Selection | undefined> {
     return getSelectionAroundLine(await vscode.workspace.openTextDocument(uri), target)
+}
+
+/**
+ * Searches for workspace symbols matching the given query string.
+ * @param query - The search query string.
+ * @returns A promise resolving to the array of SymbolInformation objects representing the matched workspace symbols.
+ */
+export async function getWorkspaceSymbols(query = ''): Promise<vscode.SymbolInformation[]> {
+    return vscode.commands.executeCommand('vscode.executeWorkspaceSymbolProvider', query)
+}
+
+/**
+ * Returns an array of URI's for all open editor tabs.
+ *
+ * Loops through all open tab groups and tabs, collecting the URI
+ * of each tab with a 'file' scheme.
+ */
+export function getOpenTabsUris(): vscode.Uri[] {
+    const uris = []
+    // Get open tabs
+    const tabGroups = vscode.window.tabGroups.all
+    const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+
+    for (const tab of openTabs) {
+        // Skip non-file URIs
+        if (tab?.uri?.scheme === 'file') {
+            uris.push(tab.uri)
+        }
+    }
+    return uris
 }
