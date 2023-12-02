@@ -132,7 +132,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         const searchDuration = performance.now() - startTime
-        telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
+        telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration, hasV2Event: true })
         telemetryRecorder.recordEvent('cody.keywordContext.searchDuration', 'started', {
             metadata: { searchDuration },
         })
