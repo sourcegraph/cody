@@ -77,7 +77,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     })
 
     let chatRateLimited = false
-    let chatRateLimitPro = false
+    let chatRateLimitPro: boolean | undefined = false
     app.post('/.api/completions/stream', (req, res) => {
         if (chatRateLimited) {
             res.setHeader('retry-after', new Date().toString())
@@ -108,6 +108,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     app.post('/.test/completions/triggerRateLimit/pro', (req, res) => {
         chatRateLimited = true
         chatRateLimitPro = true
+        res.sendStatus(200)
+    })
+    app.post('/.test/completions/triggerRateLimit/enterprise', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = undefined
         res.sendStatus(200)
     })
 

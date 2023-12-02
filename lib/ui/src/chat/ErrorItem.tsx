@@ -14,7 +14,7 @@ export const ErrorItem: React.FunctionComponent<{
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
@@ -53,9 +53,8 @@ export const RateLimitErrorItem: React.FunctionComponent<{
 }> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
-
-    const canUpgrade = error.upgradeIsAvailable && userInfo?.isCodyProUser !== true
     const isEnterpriseUser = userInfo?.isDotComUser !== true
+    const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : userInfo?.isCodyProUser ? 'pro' : 'free'
 
     // Only log once on mount
@@ -73,14 +72,14 @@ export const RateLimitErrorItem: React.FunctionComponent<{
     }, [])
 
     const onButtonClick = useCallback(
-        (page: 'upgrade' | 'rate-limits'): void => {
+        (page: 'upgrade' | 'rate-limits', call_to_action: 'upgrade' | 'learn-more'): void => {
             // Log click event
-            const action = page === 'upgrade' ? 'upgrade' : 'learn-more'
             postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
-                properties: { limit_type: 'chat_commands', 'call-to-action': action, tier },
+                properties: { limit_type: 'chat_commands', call_to_action, tier },
             })
+
             // open the page in browser
             postMessage({ command: 'show-page', page })
         },
@@ -97,14 +96,14 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                         <ChatButtonComponent
                             label="Upgrade"
                             action=""
-                            onClick={() => onButtonClick('upgrade')}
+                            onClick={() => onButtonClick('upgrade', 'upgrade')}
                             appearance="primary"
                         />
                     )}
                     <ChatButtonComponent
                         label="Learn More"
                         action=""
-                        onClick={() => onButtonClick('rate-limits')}
+                        onClick={() => onButtonClick('rate-limits', 'learn-more')}
                         appearance="secondary"
                     />
                 </div>

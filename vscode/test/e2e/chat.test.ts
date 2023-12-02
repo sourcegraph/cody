@@ -5,7 +5,7 @@ import * as mockServer from '../fixtures/mock-server'
 import { disableNotifications, sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('shows appropriate rate limit message for free users', async ({ page, sidebar }) => {
+test('shows appropriate rate limit message for dotcom free users', async ({ page, sidebar }) => {
     const chatFrame = await prepareChat(page, sidebar)
 
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/free`, {
@@ -21,10 +21,26 @@ test('shows appropriate rate limit message for free users', async ({ page, sideb
     await expect(chatFrame.getByRole('button', { name: 'Learn More' })).toBeVisible()
 })
 
-test('shows appropriate rate limit message for pro users', async ({ page, sidebar }) => {
+test('shows appropriate rate limit message for dotcom pro users', async ({ page, sidebar }) => {
     const chatFrame = await prepareChat(page, sidebar)
 
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/pro`, {
+        method: 'POST',
+    })
+
+    await page.keyboard.type('Hello')
+    await page.keyboard.press('Enter')
+
+    await expect(chatFrame.getByText('UPGRADE TO CODY PRO')).not.toBeVisible()
+    await expect(chatFrame.getByText('Unable to Send Message')).toBeVisible()
+    await expect(chatFrame.getByRole('button', { name: 'Upgrade' })).not.toBeVisible()
+    await expect(chatFrame.getByRole('button', { name: 'Learn More' })).toBeVisible()
+})
+
+test('shows appropriate rate limit message for enterprise users', async ({ page, sidebar }) => {
+    const chatFrame = await prepareChat(page, sidebar)
+
+    await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/enterprise`, {
         method: 'POST',
     })
 
