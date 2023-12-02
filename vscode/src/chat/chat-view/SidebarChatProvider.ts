@@ -29,6 +29,7 @@ import {
     WebviewMessage,
 } from '../protocol'
 
+import { chatHistory } from './ChatHistoryManager'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -237,7 +238,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             verbose: { text, submitType, addEnhancedContext },
         })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveInput(text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }

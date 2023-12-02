@@ -25,4 +25,36 @@ export class ChatHistoryManager {
         await localStorage.setChatHistory(history)
         return history
     }
+
+    public async deleteChat(chatID: string): Promise<void> {
+        await localStorage.deleteChatHistory(chatID)
+    }
+
+    // Remove chat history with input history
+    public async clear(): Promise<void> {
+        await localStorage.removeChatHistory()
+    }
+
+    public async saveInput(input: string): Promise<UserLocalHistory> {
+        let history = localStorage.getChatHistory()
+        if (!history) {
+            history = {
+                chat: {},
+                input: [],
+            }
+        }
+        history.input.push(input)
+        await localStorage.setChatHistory(history)
+        return history
+    }
+
+    public getInput(): string[] {
+        const history = localStorage.getChatHistory()
+        if (!history) {
+            return []
+        }
+        return history.input
+    }
 }
+
+export const chatHistory = new ChatHistoryManager()

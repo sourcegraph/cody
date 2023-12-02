@@ -10,12 +10,7 @@ import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID, RecipeType } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import {
-    ChatEventSource,
-    ChatHistory,
-    ChatMessage,
-    UserLocalHistory,
-} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatEventSource, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
@@ -35,6 +30,7 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { TestSupport } from '../test-support'
 
+import { chatHistory } from './chat-view/ChatHistoryManager'
 import { ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
 
@@ -86,10 +82,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     public sessionID = new Date(Date.now()).toUTCString()
     public currentRequestID: string | undefined = undefined
 
-    // input and chat history are shared across all MessageProvider instances
-    protected static inputHistory: string[] = []
-    protected static chatHistory: ChatHistory = {}
-
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
 
@@ -129,15 +121,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     protected async init(chatID?: string): Promise<void> {
-        this.loadChatHistory()
+        if (chatID) {
+            await this.restoreSession(chatID)
+        }
         this.sendTranscript()
         this.sendHistory()
         await this.contextProvider.init()
         await this.sendCodyCommands()
-
-        if (chatID) {
-            await this.restoreSession(chatID)
-        }
     }
 
     private get isDotComUser(): boolean {
@@ -159,9 +149,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async clearHistory(): Promise<void> {
-        MessageProvider.chatHistory = {}
-        MessageProvider.inputHistory = []
-        await localStorage.removeChatHistory()
+        await chatHistory.clear()
         // Reset the current transcript
         this.transcript = new Transcript()
         await this.clearAndRestartSession()
@@ -174,10 +162,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Restores a session from a chatID
      */
     public async restoreSession(chatID: string): Promise<void> {
-        await this.saveTranscriptToChatHistory()
-        this.cancelCompletion()
+        const history = chatHistory.getChat(chatID)
+        if (!history || chatID === this.sessionID) {
+            return
+        }
+        if (!this.transcript.isEmpty) {
+            await this.saveTranscriptToChatHistory()
+            this.cancelCompletion()
+        }
         this.createNewChatID(chatID)
-        this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
+        this.transcript = Transcript.fromJSON(history)
         this.chatModel = this.transcript.chatModel
         await this.transcript.toJSON()
         this.sendTranscript()
@@ -734,7 +728,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        MessageProvider.chatHistory[this.sessionID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()
     }
@@ -743,33 +736,18 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        const userHistory = {
-            chat: MessageProvider.chatHistory,
-            input: MessageProvider.inputHistory,
-        }
-        await localStorage.setChatHistory(userHistory)
+        const json = await this.transcript.toJSON()
+        await chatHistory.saveChat(json)
     }
 
     /**
      * Delete history from current chat history and local storage
      */
     protected async deleteHistory(chatID: string): Promise<void> {
-        delete MessageProvider.chatHistory[chatID]
-        await localStorage.deleteChatHistory(chatID)
+        await chatHistory.deleteChat(chatID)
         this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:deleteChatHistoryButton:clicked', undefined, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.deleteChatHistoryButton', 'clicked')
-    }
-
-    /**
-     * Loads chat history from local storage
-     */
-    private loadChatHistory(): void {
-        const localHistory = localStorage.getChatHistory()
-        if (localHistory) {
-            MessageProvider.chatHistory = localHistory?.chat
-            MessageProvider.inputHistory = localHistory.input
-        }
     }
 
     /**
@@ -778,9 +756,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     public async exportHistory(): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked', undefined, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = MessageProvider.chatHistory
+        const historyJson = localStorage.getChatHistory()?.chat
         const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
-        if (!exportPath) {
+        if (!exportPath || !historyJson) {
             return
         }
         try {
@@ -802,8 +780,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private sendHistory(): void {
         this.handleHistory({
-            chat: MessageProvider.chatHistory,
-            input: MessageProvider.inputHistory,
+            chat: {},
+            input: chatHistory.getInput(),
         })
     }
 
