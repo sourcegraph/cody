@@ -137,8 +137,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     public async clearAndRestartSession(): Promise<void> {
         await this.saveTranscriptToChatHistory()
-        this.createNewChatID()
         this.cancelCompletion()
+        this.createNewChatID()
         this.isMessageInProgress = false
         this.transcript.reset()
         this.handleSuggestions([])
@@ -166,10 +166,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!history || chatID === this.sessionID) {
             return
         }
-        if (!this.transcript.isEmpty) {
-            await this.saveTranscriptToChatHistory()
-            this.cancelCompletion()
-        }
+        await this.saveTranscriptToChatHistory()
+        this.cancelCompletion()
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(history)
         this.chatModel = this.transcript.chatModel
@@ -779,10 +777,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Send history to view
      */
     private sendHistory(): void {
-        this.handleHistory({
-            chat: {},
-            input: chatHistory.getInput(),
-        })
+        const userHistory = chatHistory.localHistory
+        if (userHistory) {
+            this.handleHistory(userHistory)
+        }
     }
 
     /**

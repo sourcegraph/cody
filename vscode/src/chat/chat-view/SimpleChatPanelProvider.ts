@@ -405,7 +405,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
-
+        await this.history.saveHumanInputHistory(text)
         this.chatModel.addHumanMessage({ text })
         // trigger the context progress indicator
         void this.postViewTranscript({ speaker: 'assistant' })

@@ -142,7 +142,7 @@ export class ChatPanelProvider extends MessageProvider {
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
-        await chatHistory.saveInput(text)
+        await chatHistory.saveHumanInputHistory(text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }

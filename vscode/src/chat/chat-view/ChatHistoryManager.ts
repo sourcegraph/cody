@@ -4,8 +4,12 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 import { localStorage } from '../../services/LocalStorageProvider'
 
 export class ChatHistoryManager {
+    public get localHistory(): UserLocalHistory | null {
+        return localStorage.getChatHistory()
+    }
+
     public getChat(sessionID: string): TranscriptJSON | null {
-        const chatHistory = localStorage.getChatHistory()
+        const chatHistory = this.localHistory
         if (!chatHistory) {
             return null
         }
@@ -14,13 +18,7 @@ export class ChatHistoryManager {
     }
 
     public async saveChat(chat: TranscriptJSON): Promise<UserLocalHistory> {
-        let history = localStorage.getChatHistory()
-        if (!history) {
-            history = {
-                chat: {},
-                input: [],
-            }
-        }
+        const history = localStorage.getChatHistory()
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(history)
         return history
@@ -30,30 +28,24 @@ export class ChatHistoryManager {
         await localStorage.deleteChatHistory(chatID)
     }
 
-    // Remove chat history with input history
-    public async clear(): Promise<void> {
-        await localStorage.removeChatHistory()
-    }
-
-    public async saveInput(input: string): Promise<UserLocalHistory> {
-        let history = localStorage.getChatHistory()
-        if (!history) {
-            history = {
-                chat: {},
-                input: [],
-            }
-        }
+    public async saveHumanInputHistory(input: string): Promise<UserLocalHistory> {
+        const history = localStorage.getChatHistory()
         history.input.push(input)
         await localStorage.setChatHistory(history)
         return history
     }
 
-    public getInput(): string[] {
+    public getHumanInputHistory(): string[] {
         const history = localStorage.getChatHistory()
         if (!history) {
             return []
         }
         return history.input
+    }
+
+    // Remove chat history and input history
+    public async clear(): Promise<void> {
+        await localStorage.removeChatHistory()
     }
 }
 
