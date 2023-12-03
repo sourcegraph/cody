@@ -76,13 +76,17 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.status(200)
     })
 
+    /** Whether to simulate that rate limits have been hit */
     let chatRateLimited = false
-    let chatRateLimitPro = false
+    /** Whether the user is Pro (true), Free (false) or not a dotCom user (undefined) */
+    let chatRateLimitPro: boolean | undefined
     app.post('/.api/completions/stream', (req, res) => {
         if (chatRateLimited) {
             res.setHeader('retry-after', new Date().toString())
             res.setHeader('x-ratelimit-limit', '12345')
-            res.setHeader('x-is-cody-pro-user', `${chatRateLimitPro}`)
+            if (chatRateLimitPro !== undefined) {
+                res.setHeader('x-is-cody-pro-user', `${chatRateLimitPro}`)
+            }
             res.sendStatus(429)
             return
         }
@@ -99,6 +103,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 ? responses.fixup
                 : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+    })
+    app.post('/.test/completions/triggerRateLimit', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = undefined
+        res.sendStatus(200)
     })
     app.post('/.test/completions/triggerRateLimit/free', (req, res) => {
         chatRateLimited = true
