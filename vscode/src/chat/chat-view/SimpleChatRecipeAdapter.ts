@@ -70,7 +70,7 @@ export class SimpleChatRecipeAdapter {
         }
 
         // Note: we don't include any assistant message prefixes defined by recipes
-        const humanInteractionMessage = interaction.getHumanMessage()
+        const humanInteractionMessage: Message = interaction.getHumanMessage()
         const fullContext = await interaction.getFullContext()
         const prompt: Message[] = fullContext.concat([humanInteractionMessage])
         const humanMessage = interactionMessageToMessageWithContext(humanInteractionMessage, fullContext)

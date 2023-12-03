@@ -605,7 +605,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 }
             }
         } catch (error) {
-            this.postError(`Error retrieving context files: ${error}`)
+            this.postError(new Error(`Error retrieving context files: ${error}`))
         } finally {
             // Cancel any previous search request after we update the UI
             // to avoid a flash of empty results as you type
@@ -749,7 +749,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
             })
         } catch (error) {
-            this.postError(`command ${recipeID} failed: ${error}`)
+            this.postError(new Error(`command ${recipeID} failed: ${error}`))
         }
     }
 
