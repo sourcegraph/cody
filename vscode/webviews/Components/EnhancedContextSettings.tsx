@@ -215,9 +215,8 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 onClick={() => setOpen(!isOpen)}
                 title="Configure Enhanced Context"
             >
-                <i>
-                    <i className="codicon codicon-sparkle" />
-                </i>
+                <i className="codicon codicon-sparkle" />
+                {/* Show this dot if the popover has never been opened: <div className={styles.glowyDot}/> */}
             </VSCodeButton>
         </div>
     )

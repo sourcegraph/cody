@@ -132,6 +132,7 @@ vscode-button:focus-within::part(control) {
     color: var(--vscode-editor-foreground);
     border: 1px solid transparent;
     border-radius: 3px;
+    position: relative;
 }
 
 .settings-btn i {
@@ -143,4 +144,40 @@ vscode-button:focus-within::part(control) {
     color: var(--vscode-inputOption-activeForeground);
     border-color: var(--vscode-inputOption-activeBorder);
     background-color: var(--vscode-inputOption-activeBackground);
+}
+
+.glowy-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 100%;
+    background-color: var(--vscode-inputOption-activeBorder);
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    z-index: 2;
+}
+
+.glowy-dot::after {
+    content: '';
+    box-sizing: border-box;
+    width: 6px;
+    height: 6px;
+    border-radius: 100%;
+    border: 0.75px solid var(--vscode-inputOption-activeForeground);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    animation: 2.5s linear infinite glowy;
+}
+
+@keyframes glowy {
+    50% {
+        transform: scale(300%);
+        opacity: 0;
+    }
+    to {
+        transform: scale(300%);
+        opacity: 0;
+    }
 }
