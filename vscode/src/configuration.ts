@@ -112,9 +112,9 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
          */
 
         autocompleteExperimentalGraphContext,
-        experimentalChatPanel: getHiddenSetting('experimental.chatPanel', isTesting),
+        experimentalChatPanel: getHiddenSetting('experimental.chatPanel', true),
         experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
-        experimentalSearchPanel: getHiddenSetting('experimental.newSearch', isTesting),
+        experimentalSearchPanel: getHiddenSetting('experimental.newSearch', true),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', isTesting),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),

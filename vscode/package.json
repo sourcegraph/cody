@@ -1035,12 +1035,6 @@
           "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
         },
-        "cody.experimental.newSearch": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "New search UI",
-          "default": false
-        },
         "cody.experimental.simpleChatContext": {
           "order": 99,
           "type": "boolean",
@@ -1146,8 +1140,14 @@
         "cody.experimental.chatPanel": {
           "order": 100,
           "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
+          "markdownDescription": "Enable new Chat UI.",
+          "default": true
+        },
+        "cody.experimental.newSearch": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable new search UI",
+          "default": true
         }
       }
     },
