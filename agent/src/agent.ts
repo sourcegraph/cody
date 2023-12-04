@@ -6,7 +6,7 @@ import { Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+import { isRateLimitError, RateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
@@ -279,6 +279,7 @@ export class Agent extends MessageHandler {
             await this.logEvent(`recipe:${data.id}`, 'executed', 'dotcom-only')
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(`cody.recipe.${data.id}`, 'executed')
             try {
+                this.myThrowRle('rle from recipe')
                 await client.executeRecipe(data.id, {
                     signal: abortController.signal,
                     humanChatInput: data.humanChatInput,
@@ -353,6 +354,7 @@ export class Agent extends MessageHandler {
                         typeof insertText === 'string' && range !== undefined ? [{ id, insertText, range }] : []
                     ) ?? []
 
+                this.myThrowRle('rle from autocomplete')
                 return { items, completionEvent: result?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
@@ -470,6 +472,23 @@ export class Agent extends MessageHandler {
             }
             provider.clearLastCandidate()
         })
+    }
+
+    private myThrowRle(msg: string): void {
+        const date = new Date()
+        const x = date.getSeconds()
+        console.log(msg, x)
+        if (msg.includes('autocomplete')) {
+            if (x < 30) {
+                date.setSeconds(30)
+                throw new RateLimitError('autocompletions', msg, true, 50, date)
+            }
+        } else if (msg.includes('recipe')) {
+            if (x >= 15 && x < 45) {
+                date.setSeconds(45)
+                throw new RateLimitError('chat', msg, true, 50, date)
+            }
+        }
     }
 
     /**
