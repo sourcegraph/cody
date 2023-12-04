@@ -51,11 +51,22 @@ export function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT
     return React.useContext(EnhancedContextEventHandlers)
 }
 
-const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup }> = ({ group }): React.ReactNode => {
+const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup, allGroups: ContextGroup[] }> = ({ group, allGroups }): React.ReactNode => {
+    // if there's a single group, we want the group name's basename
+    let groupName
+    if (allGroups.length === 1) {
+        const matches = group.name.match(/.+[/\\](.+?)$/)
+        groupName = matches ? matches[1] : group.name
+    } else {
+        groupName = group.name
+    }
+
     return (
         <>
-            <dt>
-                <i className="codicon codicon-folder" /> {group.name}
+            <dt title={group.name}>
+                <i className="codicon codicon-folder" />
+                {' '}
+                {groupName}
             </dt>
             <dd>
                 <ol className={styles.providersList}>
@@ -186,7 +197,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                         </p>
                         <dl className={styles.foldersList}>
                             {context.groups.map(group => (
-                                <ContextGroupComponent key={group.name} group={group} />
+                                <ContextGroupComponent key={group.name} group={group} allGroups={context.groups} />
                             ))}
                         </dl>
                     </div>
