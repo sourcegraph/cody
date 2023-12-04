@@ -113,7 +113,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
              * New user
              */
             telemetryRecorder.recordEvent('cody.extension', 'installed')
-        } else {
+        } else if (!config.isRunningInsideAgent) {
             /**
              * Repeat user
              */
