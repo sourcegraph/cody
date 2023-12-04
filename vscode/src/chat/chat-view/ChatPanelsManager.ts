@@ -15,7 +15,7 @@ import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
 
-import { ChatHistoryManager } from './ChatHistoryManager'
+import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
@@ -57,8 +57,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     public treeView
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
-
-    private history = new ChatHistoryManager()
 
     protected disposables: vscode.Disposable[] = []
 
@@ -248,12 +246,12 @@ export class ChatPanelsManager implements vscode.Disposable {
                 value: label,
             })
             .then(async title => {
-                const chatHistory = this.history.getChat(chatID)
-                if (title && chatHistory) {
+                const history = chatHistory.getChat(chatID)
+                if (title && history) {
+                    history.chatTitle = title
+                    await chatHistory.saveChat(history)
+                    await this.updateTreeViewHistory()
                     this.panelProvidersMap.get(chatID)?.handleChatTitle(title)
-                    chatHistory.chatTitle = title
-                    await this.history.saveChat(chatHistory)
-                    this.updateTreeViewHistory()
                 }
             })
     }

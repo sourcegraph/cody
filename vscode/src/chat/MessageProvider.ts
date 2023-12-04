@@ -30,11 +30,7 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { TestSupport } from '../test-support'
 
-<<<<<<< HEAD
-import { ChatHistoryManager } from './chat-view/ChatHistoryManager'
-=======
 import { chatHistory } from './chat-view/ChatHistoryManager'
->>>>>>> 73feeaa87f3123f3cd162d72cd37532fb9aa2832
 import { ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
 
@@ -105,7 +101,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     protected chatModel: string | undefined = undefined
     protected chatTitle: string | undefined = 'init'
-    public history = new ChatHistoryManager()
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -134,14 +129,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendHistory()
         await this.contextProvider.init()
         await this.sendCodyCommands()
-<<<<<<< HEAD
-        this.chatTitle = undefined
-
-        if (chatID) {
-            await this.restoreSession(chatID)
-        }
-=======
->>>>>>> 73feeaa87f3123f3cd162d72cd37532fb9aa2832
     }
 
     private get isDotComUser(): boolean {
@@ -185,7 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(history)
         this.chatModel = this.transcript.chatModel
-        this.chatTitle = this.history.getChat(chatID)?.chatTitle || this.transcript.chatTitle
+        this.chatTitle = chatHistory.getChat(chatID)?.chatTitle || this.transcript.chatTitle
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -741,11 +728,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-<<<<<<< HEAD
-        this.transcript.chatTitle = this.history.getChat(this.sessionID)?.chatTitle
-        MessageProvider.chatHistory[this.sessionID] = await this.transcript.toJSON()
-=======
->>>>>>> 73feeaa87f3123f3cd162d72cd37532fb9aa2832
         await this.saveChatHistory()
         this.sendHistory()
     }

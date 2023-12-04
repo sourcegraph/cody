@@ -235,7 +235,8 @@ export class ChatPanelProvider extends MessageProvider {
             chatID: this.sessionID,
         })
 
-        const currentTitle = this.history.getChat(this.sessionID)?.chatTitle
+        const currentTitle = chatHistory.getChat(this.sessionID)?.chatTitle
+        console.log('fetched current chat title', currentTitle)
         if (currentTitle) {
             this.handleChatTitle(currentTitle)
             return
@@ -251,6 +252,7 @@ export class ChatPanelProvider extends MessageProvider {
         this.chatTitle = title
         this.transcript.setChatTitle(title)
         if (this.webviewPanel) {
+            console.log('updated webview chat title', title, this.webviewPanel)
             this.webviewPanel.title = title
         }
     }
@@ -409,7 +411,7 @@ export class ChatPanelProvider extends MessageProvider {
 
         this.startUpChatID = chatID
 
-        const chatTitle = chatID ? this.history.getChat(chatID)?.chatTitle : lastQuestion
+        const chatTitle = chatID ? chatHistory.getChat(chatID)?.chatTitle : lastQuestion
 
         const viewType = CodyChatPanelViewType
         const panelTitle = chatTitle || getChatPanelTitle(lastQuestion)
@@ -438,7 +440,7 @@ export class ChatPanelProvider extends MessageProvider {
     public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<void> {
         logDebug('ChatPanelProvider:revive', 'reviving webview panel')
         this.startUpChatID = chatID
-        const title = this.history.getChat(chatID)?.chatTitle
+        const title = chatHistory.getChat(chatID)?.chatTitle
         if (chatID && title) {
             this.chatTitle = title
             webviewPanel.title = title
