@@ -7,7 +7,7 @@ import { test } from './helpers'
 
 // TODO fix tests
 
-test.skip('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
+test('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/free`, {
         method: 'POST',
     })
@@ -17,7 +17,7 @@ test.skip('shows upgrade rate limit message for free users', async ({ page, side
     await expectUpgradeRateLimitMessage(chatFrame)
 })
 
-test.skip('shows standard rate limit message for pro users', async ({ page, sidebar }) => {
+test('shows standard rate limit message for pro users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/pro`, {
         method: 'POST',
     })
@@ -27,7 +27,7 @@ test.skip('shows standard rate limit message for pro users', async ({ page, side
     await expectStandardRateLimitMessage(chatFrame)
 })
 
-test.skip('shows standard rate limit message for non-dotCom users', async ({ page, sidebar }) => {
+test('shows standard rate limit message for non-dotCom users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit`, {
         method: 'POST',
     })
@@ -53,7 +53,7 @@ async function prepareChat(page: Page, sidebar: Frame): Promise<FrameLocator> {
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
     // Find the chat iframe inside the editor iframe
-    const chatFrameLocator = page.frameLocator('iframe.webview').frameLocator('iframe')
+    const chatFrameLocator = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
     // Put focus in the chat textbox
     await chatFrameLocator.getByRole('textbox', { name: 'Chat message' }).click()

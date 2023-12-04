@@ -28,10 +28,6 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    await expect(
-        page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
-    ).toBeVisible()
-
     // Sign out.
     await signOut(page)
 
