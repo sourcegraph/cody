@@ -55,7 +55,7 @@ export const EnhancedContext: React.FunctionComponent<{
     const fileCount = filteredFiles.length
     const lines = `${lineCount} line` + (lineCount > 1 ? 's' : '')
     const files = `${fileCount} file` + (fileCount > 1 ? 's' : '')
-    const title = lineCount ? `${lines} from ${files}` : `from ${files}`
+    const title = lineCount ? `${lines} from ${files}` : `${files}`
 
     return (
         <TranscriptAction
