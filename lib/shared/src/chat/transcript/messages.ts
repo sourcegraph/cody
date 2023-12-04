@@ -9,6 +9,7 @@ export interface ChatButton {
     label: string
     action: string
     onClick: (action: string) => void
+    appearance?: 'primary' | 'secondary' | 'icon'
 }
 
 export interface ChatMessage extends Message {
@@ -18,13 +19,18 @@ export interface ChatMessage extends Message {
     buttons?: ChatButton[]
     data?: any
     metadata?: ChatMetadata
+    // TODO(dantup): Is anyone using string?
+    error?: string | ChatError
 }
 
-export interface InteractionMessage extends Message {
-    displayText?: string
+export interface InteractionMessage extends ChatMessage {
     prefix?: string
-    error?: string
-    metadata?: ChatMetadata
+}
+
+export interface ChatError {
+    kind?: string
+    name: string
+    message: string
 }
 
 export interface ChatMetadata {

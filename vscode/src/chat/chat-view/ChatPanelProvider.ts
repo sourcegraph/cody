@@ -125,8 +125,11 @@ export class ChatPanelProvider extends MessageProvider {
             case 'embeddings/index':
                 this.contextProvider.localEmbeddingsIndexRepository()
                 break
+            case 'show-page':
+                await vscode.commands.executeCommand('cody.show-page', message.page)
+                break
             default:
-                this.handleError('Invalid request type from Webview Panel', 'system')
+                this.handleError(new Error('Invalid request type from Webview Panel'), 'system')
         }
     }
 
@@ -251,14 +254,14 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string, type: MessageErrorType): void {
+    public handleError(error: Error, type: MessageErrorType): void {
         if (type === 'transcript') {
-            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            this.transcript.addErrorAsAssistantResponse(error)
             void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+        void this.webview?.postMessage({ type: 'errors', errors: error.message })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {

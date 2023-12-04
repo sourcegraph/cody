@@ -248,6 +248,9 @@ importers:
       '@sourcegraph/telemetry':
         specifier: ^0.13.0
         version: 0.13.0
+      date-fns:
+        specifier: ^2.30.0
+        version: 2.30.0
       dompurify:
         specifier: ^3.0.4
         version: 3.0.4
@@ -403,9 +406,6 @@ importers:
       classnames:
         specifier: ^2.3.2
         version: 2.3.2
-      date-fns:
-        specifier: ^2.30.0
-        version: 2.30.0
       detect-indent:
         specifier: ^7.0.1
         version: 7.0.1

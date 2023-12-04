@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -92,10 +93,9 @@ export async function createInlineCompletionItemProvider({
         const dynamicMultilineCompletions =
             config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
 
+        const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
-            featureFlagProvider,
-            authProvider,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             disableRecyclingOfPreviousRequests,
@@ -104,6 +104,7 @@ export async function createInlineCompletionItemProvider({
             contextStrategy,
             createBfgRetriever,
             dynamicMultilineCompletions,
+            isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)

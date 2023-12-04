@@ -41,8 +41,8 @@ export class LLMReranker implements Reranker {
                     onComplete: () => {
                         resolve(responseText)
                     },
-                    onError: (message: string, statusCode?: number) => {
-                        reject(new Error(`Status code ${statusCode}: ${message}`))
+                    onError: (error: Error, statusCode?: number) => {
+                        reject(statusCode ? new Error(`Status code ${statusCode}: ${error.message}`) : error)
                     },
                 },
                 {

@@ -44,7 +44,7 @@ export abstract class SourcegraphCompletionsClient {
                     break
                 case 'error':
                     this.errorEncountered = true
-                    cb.onError(event.error)
+                    cb.onError(new Error(event.error))
                     break
                 case 'done':
                     if (!this.errorEncountered) {
@@ -77,8 +77,8 @@ export function bufferStream(
             onComplete() {
                 resolve(buffer)
             },
-            onError(message: string, code?: number) {
-                reject(new Error(code ? `${message} (code ${code})` : message))
+            onError(error: Error, code?: number) {
+                reject(code ? new Error(`${error} (code ${code})`) : error)
             },
         }
         client.stream(params, callbacks)

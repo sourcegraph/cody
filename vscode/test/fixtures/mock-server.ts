@@ -1,3 +1,5 @@
+import { Socket } from 'node:net'
+
 import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
@@ -74,7 +76,21 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         res.status(200)
     })
 
+    /** Whether to simulate that rate limits have been hit */
+    let chatRateLimited = false
+    /** Whether the user is Pro (true), Free (false) or not a dotCom user (undefined) */
+    let chatRateLimitPro: boolean | undefined
     app.post('/.api/completions/stream', (req, res) => {
+        if (chatRateLimited) {
+            res.setHeader('retry-after', new Date().toString())
+            res.setHeader('x-ratelimit-limit', '12345')
+            if (chatRateLimitPro !== undefined) {
+                res.setHeader('x-is-cody-pro-user', `${chatRateLimitPro}`)
+            }
+            res.sendStatus(429)
+            return
+        }
+
         // TODO: Filter streaming response
         // TODO: Handle multiple messages
         // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
@@ -87,6 +103,21 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 ? responses.fixup
                 : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+    })
+    app.post('/.test/completions/triggerRateLimit', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = undefined
+        res.sendStatus(200)
+    })
+    app.post('/.test/completions/triggerRateLimit/free', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = false
+        res.sendStatus(200)
+    })
+    app.post('/.test/completions/triggerRateLimit/pro', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = true
+        res.sendStatus(200)
     })
 
     app.post('/.api/completions/code', (req, res) => {
@@ -152,9 +183,24 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     const server = app.listen(SERVER_PORT)
 
+    // Calling close() on the server only stops accepting new connections
+    // and does not terminate existing connections. This can result in
+    // tests reusing the previous tests server unless they are explicitly
+    // closed, so track connections as they open.
+    const sockets = new Set<Socket>()
+    server.on('connection', socket => sockets.add(socket))
+
     const result = await around()
 
-    server.close()
+    // Tell the server to stop accepting connections. The server won't shut down
+    // and the callback won't be fired until all existing clients are closed.
+    const serverClosed = new Promise(resolve => server.close(resolve))
+
+    // Close all the existing connections and wait for the server shutdown.
+    for (const socket of sockets) {
+        socket.destroy()
+    }
+    await serverClosed
 
     return result
 }

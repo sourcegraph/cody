@@ -196,7 +196,7 @@ export class AuthProvider {
 
             // check first if it's a network error
             if (isError(currentUserID)) {
-                if (isNetworkError(currentUserID.message)) {
+                if (isNetworkError(currentUserID)) {
                     return { ...networkErrorAuthStatus, endpoint }
                 }
             }
@@ -223,7 +223,7 @@ export class AuthProvider {
 
         // check first if it's a network error
         if (isError(userInfo)) {
-            if (isNetworkError(userInfo.message)) {
+            if (isNetworkError(userInfo)) {
                 return { ...networkErrorAuthStatus, endpoint }
             }
             return { ...unauthenticatedStatus, endpoint }
@@ -393,12 +393,13 @@ export class AuthProvider {
     }
 }
 
-export function isNetworkError(error: string): boolean {
+export function isNetworkError(error: Error): boolean {
+    const message = error.message
     return (
-        error.includes('ENOTFOUND') ||
-        error.includes('ECONNREFUSED') ||
-        error.includes('ECONNRESET') ||
-        error.includes('EHOSTUNREACH')
+        message.includes('ENOTFOUND') ||
+        message.includes('ECONNREFUSED') ||
+        message.includes('ECONNRESET') ||
+        message.includes('EHOSTUNREACH')
     )
 }
 

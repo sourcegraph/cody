@@ -37,6 +37,10 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
+    | {
+          command: 'show-page'
+          page: string
+      }
     | { command: 'chatModel'; model: string }
     | {
           command: 'openFile'
@@ -131,6 +135,9 @@ export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-setti
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
+export const ACCOUNT_LIMITS_INFO_URL = new URL(
+    'https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits'
+)
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
@@ -197,21 +204,21 @@ export const networkErrorAuthStatus = {
 
 /** The local environment of the editor. */
 export interface LocalEnv {
-    // The operating system kind
+    // The  operating system kind
     os: string
     arch: string
     homeDir?: string | undefined
 
-    // The URL scheme the editor is registered to in the operating system
+    // The  URL scheme the editor is registered to in the operating system
     uriScheme: string
-    // The application name of the editor
+    // The  application name of the editor
     appName: string
     extensionVersion: string
 
-    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    /** Whe ther the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
 
-    // App Local State
+    // App  Local State
     hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
@@ -224,7 +231,7 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
 }
 
-// The OS and Arch support for Cody app
+// The  OS and Arch support for Cody app
 export function isOsSupportedByApp(os?: string, arch?: string): boolean {
     if (!os || !arch) {
         return false
@@ -232,7 +239,7 @@ export function isOsSupportedByApp(os?: string, arch?: string): boolean {
     return os === 'darwin' || os === 'linux'
 }
 
-// Map the Arch to the app's supported Arch
+// Map  the Arch to the app's supported Arch
 export function archConvertor(arch: string): string {
     switch (arch) {
         case 'arm64':

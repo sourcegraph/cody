@@ -28,11 +28,7 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
-import {
-    EnhancedContextSettings,
-    useEnhancedContextEnabled,
-    useEnhancedContextEventHandlers,
-} from './Components/EnhancedContextSettings'
+import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
@@ -102,7 +98,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const addEnhancedContext = useEnhancedContextEnabled()
-    const enhancedContextEventHandlers = useEnhancedContextEventHandlers()
 
     const onSubmit = useCallback(
         (text: string, submitType: ChatSubmitType, contextFiles?: Map<string, ContextFile>) => {
@@ -125,13 +120,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 addEnhancedContext,
                 contextFiles: userContextFiles,
             })
-
-            // Automatically turn off enhance context when the user has submitted their first message.
-            if (addEnhancedContext && transcript.length < 2) {
-                enhancedContextEventHandlers.onEnabledChange(false)
-            }
         },
-        [vscodeAPI, enhancedContextEventHandlers, addEnhancedContext, transcript.length]
+        [vscodeAPI, addEnhancedContext]
     )
 
     const onCurrentChatModelChange = useCallback(
@@ -256,12 +246,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
+            postMessage={msg => vscodeAPI.postMessage(msg)}
         />
     )
 }
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
-    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick, appearance }) => (
+    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton} appearance={appearance}>
         {label}
     </VSCodeButton>
 )
