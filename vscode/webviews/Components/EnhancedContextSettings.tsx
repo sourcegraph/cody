@@ -51,11 +51,23 @@ export function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT
     return React.useContext(EnhancedContextEventHandlers)
 }
 
-const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup }> = ({ group }): React.ReactNode => {
+const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup; allGroups: ContextGroup[] }> = ({
+    group,
+    allGroups,
+}): React.ReactNode => {
+    // if there's a single group, we want the group name's basename
+    let groupName
+    if (allGroups.length === 1) {
+        const matches = group.name.match(/.+[/\\](.+?)$/)
+        groupName = matches ? matches[1] : group.name
+    } else {
+        groupName = group.name
+    }
+
     return (
         <>
-            <dt>
-                <i className="codicon codicon-folder" /> {group.name}
+            <dt title={group.name}>
+                <i className="codicon codicon-folder" /> {groupName}
             </dt>
             <dd>
                 <ol className={styles.providersList}>
@@ -87,7 +99,7 @@ const EmbeddingsConsentComponent: React.FunctionComponent<{ provider: LocalEmbed
         <div>
             <p className={styles.providerExplanatoryText}>
                 The repository&apos;s contents will be uploaded to OpenAI&apos;s Embeddings API and then stored locally.
-                To exclude files, set up a <a href="about:blank#TODO">Cody ignore file.</a>
+                {/* To exclude files, set up a <a href="about:blank#TODO">Cody ignore file.</a> */}
             </p>
             <p>
                 <VSCodeButton onClick={onClick}>Enable Embeddings</VSCodeButton>
@@ -101,9 +113,13 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'indeterminate':
         case 'ready':
             if (provider.kind === 'embeddings' && provider.type === 'remote') {
-                return <p className={styles.providerExplanatoryText}>Inherited {provider.remoteName}</p>
+                return (
+                    <p className={classNames(styles.providerExplanatoryText, styles.lineBreakAll)}>
+                        Inherited {provider.remoteName}
+                    </p>
+                )
             }
-            return <></>
+            return <span className={styles.providerInlineState}>&mdash; Indexed</span>
         case 'indexing':
             return <span className={styles.providerInlineState}>&mdash; Indexing&hellip;</span>
         case 'unconsented':
@@ -111,7 +127,8 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'no-match':
             return (
                 <p className={styles.providerExplanatoryText}>
-                    No repository matching {provider.remoteName} on <a href="about:blank#TODO">{provider.origin}</a>
+                    {/* No repository matching {provider.remoteName} on <a href="about:blank#TODO">{provider.origin}</a> */}
+                    No repository matching {provider.remoteName} on {provider.origin}
                 </p>
             )
         default:
@@ -130,7 +147,7 @@ const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvi
             stateIcon = <i className="codicon codicon-circle-outline" />
             break
         case 'ready':
-            stateIcon = <i className="codicon codicon-check" />
+            stateIcon = <i className="codicon codicon-database" />
             break
         case 'no-match':
             stateIcon = <i className="codicon codicon-circle-slash" />
@@ -180,12 +197,12 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                             <h1>Enhanced Context ✨</h1>
                         </label>
                         <p>
-                            Automatically include additional context about your code.{' '}
-                            <a href="about:blank#TODO">Learn more</a>
+                            Include additional code context with your message.{' '}
+                            {/* <a href="about:blank#TODO">Learn more</a> */}
                         </p>
                         <dl className={styles.foldersList}>
                             {context.groups.map(group => (
-                                <ContextGroupComponent key={group.name} group={group} />
+                                <ContextGroupComponent key={group.name} group={group} allGroups={context.groups} />
                             ))}
                         </dl>
                     </div>
@@ -198,7 +215,8 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 onClick={() => setOpen(!isOpen)}
                 title="Configure Enhanced Context"
             >
-                <i className="codicon codicon-settings" />
+                <i className="codicon codicon-sparkle" />
+                {/* Show this dot if the popover has never been opened: <div className={styles.glowyDot}/> */}
             </VSCodeButton>
         </div>
     )

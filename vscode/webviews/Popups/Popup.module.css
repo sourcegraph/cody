@@ -30,6 +30,7 @@
     rotate: -45deg;
     width: 12px;
     height: 12px;
+    pointer-events: none;
 
     /* these colors need to be kept in sync with .notice, above */
     background-color: var(--vscode-quickInput-background);

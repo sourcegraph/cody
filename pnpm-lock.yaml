@@ -392,8 +392,8 @@ importers:
         specifier: ^1.7.3
         version: 1.7.3
       '@vscode/codicons':
-        specifier: ^0.0.29
-        version: 0.0.29
+        specifier: ^0.0.35
+        version: 0.0.35
       '@vscode/webview-ui-toolkit':
         specifier: ^1.2.2
         version: 1.2.2(react@18.2.0)
@@ -6955,8 +6955,8 @@ packages:
       pretty-format: 29.6.0
     dev: true
 
-  /@vscode/codicons@0.0.29:
-    resolution: {integrity: sha512-AXhTv1nl3r4W5DqAfXXKiawQNW+tLBNlXn/GcsnFCL0j17sQ2AY+az9oB9K6wjkibq1fndNJvmT8RYN712Fdww==}
+  /@vscode/codicons@0.0.35:
+    resolution: {integrity: sha512-7iiKdA5wHVYSbO7/Mm0hiHD3i4h+9hKUe1O4hISAe/nHhagMwb2ZbFC8jU6d7Cw+JNT2dWXN2j+WHbkhT5/l2w==}
     dev: false
 
   /@vscode/test-electron@2.3.2:
