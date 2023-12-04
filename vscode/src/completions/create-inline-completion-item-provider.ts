@@ -104,7 +104,6 @@ export async function createInlineCompletionItemProvider({
             contextStrategy,
             createBfgRetriever,
             dynamicMultilineCompletions,
-            isCodyProUser: !authStatus.userCanUpgrade,
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 

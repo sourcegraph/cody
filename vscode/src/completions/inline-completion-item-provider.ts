@@ -112,7 +112,6 @@ export interface CodyCompletionItemProviderConfig {
     isRunningInsideAgent?: boolean
 
     isDotComUser?: boolean
-    isCodyProUser?: boolean
 
     contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
@@ -170,7 +169,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             dynamicMultilineCompletions,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
-            isCodyProUser: config.isCodyProUser ?? false,
             isDotComUser: config.isDotComUser ?? false,
         }
 
