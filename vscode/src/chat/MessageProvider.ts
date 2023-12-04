@@ -31,7 +31,7 @@ import { logDebug, logError } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
-import { telemetryService } from '../services/telemetry'
+import { syncChatInteraction, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { TestSupport } from '../test-support'
 
@@ -242,12 +242,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 // Count code generated from response
                 const codeCount = countGeneratedCode(text)
                 const metadata = lastInteraction?.getHumanMessage().metadata
-                const responseText = this.isDotComUser ? text : undefined
                 telemetryService.log(
                     'CodyVSCodeExtension:chatResponse:hasCode',
-                    { ...codeCount, ...metadata, requestID, responseText },
+                    { ...codeCount, ...metadata, requestID },
                     { hasV2Event: true }
                 )
+
+                if (lastInteraction) {
+                    await syncChatInteraction(this.authProvider.getAuthStatus()?.endpoint || undefined, lastInteraction)
+                }
 
                 if (codeCount?.charCount) {
                     telemetryRecorder.recordEvent(
@@ -473,10 +476,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
 
-        const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
-        const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
         telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
+
+        const lastInteraction = this.transcript.getLastInteraction()
+        if (lastInteraction) {
+            await syncChatInteraction(this.authProvider.getAuthStatus()?.endpoint || undefined, lastInteraction)
+        }
     }
 
     protected async runRecipeForSuggestion(

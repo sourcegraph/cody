@@ -41,7 +41,6 @@
     "@storybook/react": "^7.0.26",
     "@storybook/react-vite": "^7.0.26",
     "@storybook/testing-library": "^0.0.14-next.2",
-    "@types/google-protobuf": "^3.15.6",
     "@types/node": "20.4.0",
     "@types/prettier": "2.7.3",
     "@types/react": "18.2.39",

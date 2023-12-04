@@ -43,7 +43,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
-import { createOrUpdateEventLogger, syncTranscript, telemetryService } from './services/telemetry'
+import { createOrUpdateEventLogger, syncLocalTranscript, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
@@ -242,7 +242,7 @@ const register = async (
             symfRunner?.setSourcegraphAuth(null, null)
         }
         if (authStatus.endpoint && isDotCom(authStatus.endpoint)) {
-            void syncTranscript(authStatus.endpoint)
+            void syncLocalTranscript(authStatus.endpoint)
         }
     })
     // Sync initial auth status

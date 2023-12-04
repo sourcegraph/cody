@@ -1,6 +1,6 @@
-import { format } from 'date-fns'
 import * as vscode from 'vscode'
 
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -176,7 +176,7 @@ export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | und
  * It logs various telemetry events related to the sync process and results.
  */
 let syncingProcessStarted = false // We only wants to check this once on start up
-export async function syncTranscript(endpoint: string): Promise<void> {
+export async function syncLocalTranscript(endpoint: string): Promise<void> {
     const eventName = 'CodyVSCodeExtension:syncChatTranscript'
     // Only sync chat transcripts for dotcom endpoints
     if (!isDotCom(endpoint) || syncingProcessStarted || !globalAnonymousUserID) {
@@ -212,8 +212,7 @@ export async function syncTranscript(endpoint: string): Promise<void> {
         const lastSyncedTranscriptTimestamp = filteredChats.at(-1)?.[1]?.lastInteractionTimestamp
         if (lastSyncedTranscriptTimestamp) {
             // File location format: "cody/vscode/chatTranscript/YYYY/MM/DD/anonymousUserID.json"
-            const TODAYS_DATE = format(new Date(), 'yyyy/MM/dd')
-            const fileLocation = `cody/vscode/chatTranscript/${TODAYS_DATE}/${globalAnonymousUserID}.json`
+            const fileLocation = `cody/vscode/chatTranscript/${TODAYS_DATE()}/${globalAnonymousUserID}.json`
 
             // Sync and store the chats and timestamp
             await syncChat(JSON.stringify(filteredChats), fileLocation)
@@ -224,4 +223,33 @@ export async function syncTranscript(endpoint: string): Promise<void> {
     } catch (error: unknown) {
         logEvent(`${eventName}:failed`, { error: `${error}` })
     }
+}
+
+/**
+ * Syncs a chat interaction to remote storage.
+ * @param endpoint - The endpoint URL.
+ * @param interaction - The chat interaction to sync.
+ */
+export async function syncChatInteraction(endpoint?: string, interaction?: Interaction): Promise<void> {
+    if (!endpoint || !isDotCom(endpoint) || !interaction || !globalAnonymousUserID) {
+        return
+    }
+    const eventName = 'CodyVSCodeExtension:syncChatInteraction'
+
+    try {
+        // File location format: "cody/vscode/chatInteraction/anonymousUserID/YYYY/MM/DD/interactionTimestamp.json"
+        const interactionTimestamp = interaction.timestamp
+        // format the date to yyyy/MM/dd
+        const fileLocation = `cody/vscode/chatInteraction/${globalAnonymousUserID}/${TODAYS_DATE()}/${interactionTimestamp}.json`
+
+        // Sync and store the chats and timestamp
+        await syncChat(JSON.stringify(interaction), fileLocation)
+        logEvent(`${eventName}:uploaded`, { fileLocation })
+    } catch (error: unknown) {
+        logEvent(`${eventName}:failed`, { error: `${error}` })
+    }
+}
+
+function TODAYS_DATE(): string {
+    return new Date().toISOString().slice(0, 10).replaceAll('-', '/')
 }

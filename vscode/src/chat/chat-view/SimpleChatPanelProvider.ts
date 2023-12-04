@@ -490,13 +490,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
                             // Count code generated from response
                             const codeCount = countGeneratedCode(lastContent)
+                            telemetryService.log(
+                                'CodyVSCodeExtension:chatResponse:hasCode',
+                                { ...codeCount, requestID },
+                                { hasV2Event: true }
+                            )
                             if (codeCount?.charCount) {
-                                // const metadata = lastInteraction?.getHumanMessage().metadata
-                                telemetryService.log(
-                                    'CodyVSCodeExtension:chatResponse:hasCode',
-                                    { ...codeCount, requestID },
-                                    { hasV2Event: true }
-                                )
                                 telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
                                     metadata: {
                                         ...codeCount,
