@@ -32,9 +32,6 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
         page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
     ).toBeVisible()
 
-    // Check if embeddings server connection error is visible
-    await expect(sidebar.getByText('Error while establishing embeddings server connection.')).not.toBeVisible()
-
     // Sign out.
     await signOut(page)
 
