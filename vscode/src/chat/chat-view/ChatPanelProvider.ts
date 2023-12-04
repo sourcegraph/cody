@@ -214,7 +214,6 @@ export class ChatPanelProvider extends MessageProvider {
         }
         // selection is available to pro only at Dec GA
         const isCodyProFeatureFlagEnabled = await this.featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyPro)
-        console.log(isCodyProFeatureFlagEnabled, 'isCodyProFeatureFlagEnabled')
         const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)?.map(model => {
             return {
                 ...model,
