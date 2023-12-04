@@ -10,7 +10,7 @@ import { AutocompleteResult } from '../../protocol-alias'
 import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
 import { TestParameters } from './TestParameters'
-import { testParse } from './testParse'
+import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 
 export interface AutocompleteParameters {
@@ -79,13 +79,8 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         ].join('')
         const testParameters: TestParameters = { ...parameters, item, newText }
         let resultParses: boolean | undefined
-        if (
-            parameters.originalTreeIsErrorFree &&
-            parameters.parser &&
-            parameters.originalTree &&
-            parameters.options.testParse
-        ) {
-            resultParses = testParse(newText, parameters.parser, parameters.originalTree)
+        if (parameters.originalTreeIsErrorFree && parameters.parser && parameters.options.testParse) {
+            resultParses = testParses(newText, parameters.parser)
         }
 
         const resultTypechecks = await testTypecheck(testParameters)

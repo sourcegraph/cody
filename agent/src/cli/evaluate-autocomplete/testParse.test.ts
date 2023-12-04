@@ -5,54 +5,54 @@ import { describe, expect, it } from 'vitest'
 import { SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 
-import { testParse } from './testParse'
+import { testParses } from './testParse'
 
-const tests: { language: SupportedLanguage; original: string; newText: string }[] = [
+const tests: { language: SupportedLanguage; okText: string; errorText: string }[] = [
     {
         language: SupportedLanguage.TypeScript,
-        original: 'const x = 42\n',
-        newText: 'const x =\n',
+        okText: 'const x = 42\n',
+        errorText: 'const x =\n',
     },
     {
         language: SupportedLanguage.Go,
-        original: 'type Person struct {\n\tName string\n}\n',
-        newText: 'type Person struct {\n',
+        okText: 'type Person struct {\n\tName string\n}\n',
+        errorText: 'type Person struct {\n',
     },
     {
         language: SupportedLanguage.Java,
-        original: 'class Foo {}\n',
-        newText: 'class Foo {\n',
+        okText: 'class Foo {}\n',
+        errorText: 'class Foo {\n',
     },
     {
         language: SupportedLanguage.Python,
-        original: 'def foo():\n    pass\n',
-        newText: 'def foo():\n',
+        okText: 'def foo():\n    pass\n',
+        errorText: 'def foo(\n',
     },
     {
         language: SupportedLanguage.Cpp,
-        original: 'int main() {\n\treturn 0;\n}\n',
-        newText: 'int main() {\n',
+        okText: 'int main() {\n\treturn 0;\n}\n',
+        errorText: 'int main() {\n',
     },
     {
         language: SupportedLanguage.CSharp,
-        original: 'class Foo {\n\tpublic void Bar() {}\n}\n',
-        newText: 'class Foo {\n',
+        okText: 'class Foo {\n\tpublic void Bar() {}\n}\n',
+        errorText: 'class Foo {\n',
     },
     {
         language: SupportedLanguage.Php,
-        original: '<?php\nfunction foo() {\n\treturn 0;\n}\n',
-        newText: '<?php\nfunction foo() {\n',
+        okText: '<?php\nfunction foo() {\n\treturn 0;\n}\n',
+        errorText: '<?php\nfunction foo() {\n',
     },
 ]
 
 describe('testParse', () => {
-    it.each(tests)('works for $language', async ({ language, original, newText }) => {
+    it.each(tests)('works for $language', async ({ language, okText, errorText }) => {
         const parser = await createParser({
             language,
             grammarDirectory: path.resolve(__dirname, '../../../../vscode/dist'),
         })
-        const originalTree = parser.parse(original)
+        const originalTree = parser.parse(okText)
         expect(originalTree.rootNode.hasError()).toBe(false)
-        expect(testParse(newText, parser, originalTree)).toBe(false)
+        expect(testParses(errorText, parser, originalTree)).toBe(false)
     })
 })
