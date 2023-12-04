@@ -354,14 +354,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.disposables = []
     }
 
+    /**
+     * Attempts to restore the chat to the given sessionID, if it exists in
+     * history. If it does, then saves the current session and cancels the
+     * current in-progress completion. If the chat does not exist, then this
+     * is a no-op.
+     */
     public async restoreSession(sessionID: string): Promise<void> {
-        this.cancelInProgressCompletion()
-        await this.saveSession()
-
         const oldTranscript = this.history.getChat(sessionID)
         if (!oldTranscript) {
-            throw new Error(`Could not find chat history for sessionID ${sessionID}`)
+            return
         }
+
+        if (sessionID !== this.sessionID) {
+            await this.saveSession()
+        }
+        this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.defaultModelID)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
@@ -370,6 +378,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public async saveSession(): Promise<void> {
+        if (this.chatModel.isEmpty()) {
+            return
+        }
         const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
         void this.webview?.postMessage({
             type: 'history',
@@ -726,7 +737,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             }
             await this.clearAndRestartSession()
             const { humanMessage, prompt } = recipeMessages
-            this.chatModel.addBotMessage(humanMessage.message)
+            this.chatModel.addHumanMessage(humanMessage.message)
             if (humanMessage.newContextUsed) {
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
@@ -754,7 +765,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public async executeCustomCommand(title: string): Promise<void> {
-        await vscode.window.showErrorMessage(`custom command ${title} not supported`)
+        await this.executeRecipe('custom-prompt', title)
     }
 }
 
