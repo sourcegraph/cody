@@ -96,6 +96,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             isDotComUser: isDotCom(message.authStatus.endpoint || ''),
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        // Get chat models
+                        if (message.authStatus.isLoggedIn) {
+                            vscodeAPI.postMessage({ command: 'get-chat-models' })
+                        }
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])

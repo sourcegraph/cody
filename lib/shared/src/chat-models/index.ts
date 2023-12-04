@@ -80,7 +80,7 @@ export class ChatModelProvider {
      * If currentModel is provided, sets it as the default model.
      */
     public static get(endpoint?: string | null, currentModel?: string): ChatModelProvider[] {
-        const isDotComUser = endpoint && isDotCom(endpoint)
+        const isDotComUser = !endpoint || (endpoint && isDotCom(endpoint))
         const models = isDotComUser ? this.dotComProviders : Array.from(this.privateProviders.values())
 
         if (!isDotComUser) {

@@ -66,7 +66,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
-        this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
+        this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
 
         // Create treeview
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {

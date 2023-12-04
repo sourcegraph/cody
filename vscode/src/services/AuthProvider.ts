@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -232,7 +231,6 @@ export class AuthProvider {
 
         const userCanUpgrade =
             isDotCom &&
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)) &&
             'codyProEnabled' in userInfo &&
             typeof userInfo.codyProEnabled === 'boolean' &&
             !userInfo.codyProEnabled
