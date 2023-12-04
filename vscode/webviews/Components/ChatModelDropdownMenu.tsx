@@ -25,11 +25,20 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     const handleChange = useCallback(
         (event: any): void => {
             if (showCodyProBadge) {
-                console.log('Cody Pro badge clicked')
                 getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
+                getVSCodeAPI().postMessage({
+                    command: 'event',
+                    eventName: 'CodyVSCodeExtension:upgradeLLMChoiceCTA:clicked',
+                    properties: { limit_type: 'chat_commands' },
+                })
                 return
             }
             const selectedModel = models[event.target?.selectedIndex]
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
+                properties: { LLM_provider: selectedModel.model },
+            })
             onCurrentChatModelChange(selectedModel)
             setCurrentModel(selectedModel)
         },
@@ -60,6 +69,13 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 className={styles.dropdownContainer}
                 onChange={handleChange}
                 title={isEnterpriseUser ? tooltips.disabled.enterpriseUser : undefined}
+                onClick={() =>
+                    getVSCodeAPI().postMessage({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
+                        properties: undefined,
+                    })
+                }
             >
                 {models?.map((option, index) => (
                     <VSCodeOption
