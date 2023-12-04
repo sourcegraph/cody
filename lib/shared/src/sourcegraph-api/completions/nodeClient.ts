@@ -47,7 +47,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     if (res.statusCode === 429) {
                         // Check for explicit false, because if the header is not set, there
                         // is no upgrade available.
-                        const upgradeIsAvailable = res.headers['x-is-cody-pro-user'] === 'false'
+                        const upgradeIsAvailable =
+                            typeof res.headers['x-is-cody-pro-user'] !== undefined &&
+                            res.headers['x-is-cody-pro-user'] === 'false'
                         const retryAfter = res.headers['retry-after']
                         const limit = res.headers['x-ratelimit-limit'] ? res.headers['x-ratelimit-limit'][0] : undefined
                         const error = new RateLimitError(
