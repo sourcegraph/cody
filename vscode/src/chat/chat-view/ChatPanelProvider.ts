@@ -22,6 +22,7 @@ import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../Me
 import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
 import { getChatPanelTitle } from './chat-helpers'
+import { chatHistory } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -141,7 +142,7 @@ export class ChatPanelProvider extends MessageProvider {
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveHumanInputHistory(text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
@@ -248,7 +249,7 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
-        void this.treeView.updateTree(createCodyChatTreeItems(userHistory))
+        void this.treeView.updateTree(createCodyChatTreeItems())
     }
 
     /**

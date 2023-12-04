@@ -67,9 +67,9 @@ export class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
-    public getChatHistory(): UserLocalHistory | null {
+    public getChatHistory(): UserLocalHistory {
         const history = this.storage.get<UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
-        return history
+        return history || { chat: {}, input: [] }
     }
 
     public async setChatHistory(history: UserLocalHistory): Promise<void> {
