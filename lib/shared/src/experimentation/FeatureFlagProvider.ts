@@ -23,7 +23,6 @@ export enum FeatureFlag {
     CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
     CodyPro = 'cody-pro',
     CodyChatMockTest = 'cody-chat-mock-test',
-    CodyDecGAFeatures = 'cody-dec-ga',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

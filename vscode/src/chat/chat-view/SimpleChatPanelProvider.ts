@@ -400,11 +400,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
         // selection is available to pro only at Dec GA
-        const isGAFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDecGAFeatures)
+        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
         const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)?.map(model => {
             return {
                 ...model,
-                codyProOnly: isGAFeatureFlagEnabled ? model.codyProOnly : false,
+                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
             }
         })
 

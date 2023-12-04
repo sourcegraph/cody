@@ -212,13 +212,12 @@ export class ChatPanelProvider extends MessageProvider {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
         // selection is available to pro only at Dec GA
-        const isGAFeatureFlagEnabled = await this.featureFlagProvider?.evaluateFeatureFlag(
-            FeatureFlag.CodyDecGAFeatures
-        )
+        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyPro)
+        console.log(isCodyProFeatureFlagEnabled, 'isCodyProFeatureFlagEnabled')
         const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)?.map(model => {
             return {
                 ...model,
-                codyProOnly: isGAFeatureFlagEnabled ? model.codyProOnly : false,
+                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
             }
         })
         await this.webview?.postMessage({ type: 'chatModels', models })
