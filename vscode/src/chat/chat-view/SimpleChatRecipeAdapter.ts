@@ -1,7 +1,6 @@
 import { ContextFile } from '@sourcegraph/cody-shared'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -69,35 +68,41 @@ export class SimpleChatRecipeAdapter {
             return null
         }
 
-        // Note: we don't include any assistant message prefixes defined by recipes
-        const humanInteractionMessage: Message = interaction.getHumanMessage()
-        const fullContext = await interaction.getFullContext()
-        const prompt: Message[] = fullContext.concat([humanInteractionMessage])
-        const humanMessage = interactionMessageToMessageWithContext(humanInteractionMessage, fullContext)
-
-        return {
-            humanMessage,
-            prompt,
-        }
+        return interactionToHumanMessageAndPrompt(interaction)
     }
 }
 
-function interactionMessageToMessageWithContext(
-    interactionMessage: InteractionMessage,
-    contextMessages: ContextMessage[]
-): MessageWithContext {
-    const contextItems = contextMessages
+/**
+ * Converts a legacy Interaction instance into a corresponding humanMessage and prompt.
+ * The humanMessage is what is stored in the new chat model, while the prompt is what
+ * is sent to the LLM.
+ *
+ * Note that the fact that this function does not return any assistant message means
+ * that any assistant message prefixes defined by the recipe are ignored.
+ */
+async function interactionToHumanMessageAndPrompt(interaction: Interaction): Promise<{
+    humanMessage: MessageWithContext
+    prompt: Message[]
+}> {
+    const humanInteractionMessage = interaction.getHumanMessage()
+    const fullContext = await interaction.getFullContext()
+    const prompt: Message[] = fullContext.concat([humanInteractionMessage] as Message[])
+
+    const contextItems = fullContext
         .map(m => contextMessageToContextItem(m))
         .filter((m): m is ContextItem => m !== null)
-    const displayText = interactionMessage.prefix
-        ? interactionMessage.prefix + (interactionMessage.displayText || '')
-        : interactionMessage.displayText
+    const displayText = humanInteractionMessage.prefix
+        ? humanInteractionMessage.prefix + (humanInteractionMessage.displayText || '')
+        : humanInteractionMessage.displayText
     return {
-        message: {
-            speaker: interactionMessage.speaker,
-            text: interactionMessage.text,
+        humanMessage: {
+            message: {
+                speaker: humanInteractionMessage.speaker,
+                text: humanInteractionMessage.text,
+            },
+            displayText,
+            newContextUsed: contextItems,
         },
-        displayText,
-        newContextUsed: contextItems,
+        prompt,
     }
 }
