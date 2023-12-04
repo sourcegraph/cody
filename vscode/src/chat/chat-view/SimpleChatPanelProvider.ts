@@ -203,6 +203,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
+            this.cancelInProgressCompletion()
             this.webviewPanel = undefined
             this.webview = undefined
             panel.dispose()

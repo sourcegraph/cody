@@ -214,29 +214,29 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
+          "when": "!cody.activated"
         },
         {
           "id": "cody.commands.tree.view",
           "name": "Commands",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
+          "when": "cody.activated"
         },
         {
           "id": "cody.chat.tree.view",
           "name": "Chats",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
+          "when": "cody.activated"
         },
         {
           "type": "webview",
           "id": "cody.search",
           "name": "Search (experimental)",
           "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
+          "when": "cody.activated"
         },
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
+          "when": "cody.activated"
         }
       ]
     },
@@ -423,7 +423,7 @@
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
-        "when": "cody.activated && config.cody.experimental.chatPanel",
+        "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
       },
@@ -432,8 +432,7 @@
         "category": "Cody",
         "title": "Open Cody Sidebar",
         "group": "Cody",
-        "icon": "$(layout-sidebar-left)",
-        "when": "config.cody.experimental.chatPanel"
+        "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "cody.chat.history.clear",
@@ -465,7 +464,7 @@
         "group": "Cody",
         "title": "Update search index for current workspace folder",
         "icon": "$(refresh)",
-        "when": "cody.activated && config.cody.experimental.newSearch"
+        "when": "cody.activated"
       },
       {
         "command": "cody.search.index-update-all",
@@ -473,7 +472,7 @@
         "group": "Cody",
         "title": "Update search indices for all workspace folders",
         "icon": "$(sync)",
-        "when": "cody.activated && config.cody.experimental.newSearch"
+        "when": "cody.activated"
       },
       {
         "command": "cody.chat.restart",
@@ -481,24 +480,19 @@
         "title": "Restart Chat Session...",
         "group": "Cody",
         "icon": "$(clear-all)",
-        "when": "cody.activated && cody.hasChatHistory && config.cody.experimental.chatPanel"
+        "when": "cody.activated && cody.hasChatHistory"
       }
     ],
     "keybindings": [
       {
-        "command": "cody.chat.focus",
-        "key": "alt+/",
-        "when": "!config.cody.experimental.chatPanel"
-      },
-      {
         "command": "cody.chat.tree.view.focus",
         "key": "alt+f1",
-        "when": "cody.activated && config.cody.experimental.chatPanel"
+        "when": "cody.activated"
       },
       {
         "command": "cody.chat.panel.new",
         "key": "alt+/",
-        "when": "cody.activated && config.cody.experimental.chatPanel"
+        "when": "cody.activated"
       },
       {
         "command": "cody.command.edit-code",
@@ -637,41 +631,6 @@
         }
       ],
       "view/title": [
-        {
-          "command": "cody.interactive.clear",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.history",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@2"
-        },
-        {
-          "command": "cody.status-bar.interacted",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
-        },
-        {
-          "command": "cody.feedback",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.welcome",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.auth.signout",
-          "when": "view == cody.chat && cody.activated",
-          "group": "9_cody@2"
-        },
-        {
-          "command": "cody.auth.signin",
-          "when": "view == cody.chat && cody.activated",
-          "group": "9_cody@0"
-        },
         {
           "command": "cody.chat.panel.new",
           "when": "view == cody.chat.tree.view && cody.activated",
@@ -953,18 +912,6 @@
             "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
-        },
-        "cody.experimental.chatPanel": {
-          "order": 100,
-          "type": "boolean",
-          "markdownDescription": "Enable new Chat UI.",
-          "default": true
-        },
-        "cody.experimental.newSearch": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable new search UI",
-          "default": true
         }
       }
     },

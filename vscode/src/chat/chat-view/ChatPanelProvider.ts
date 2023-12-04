@@ -438,6 +438,7 @@ export class ChatPanelProvider extends MessageProvider {
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
+            this.cancelCompletion()
             this.webviewPanel = undefined
             panel.dispose()
         })
