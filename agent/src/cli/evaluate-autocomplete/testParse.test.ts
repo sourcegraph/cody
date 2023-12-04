@@ -53,6 +53,6 @@ describe('testParse', () => {
         })
         const originalTree = parser.parse(okText)
         expect(originalTree.rootNode.hasError()).toBe(false)
-        expect(testParses(errorText, parser, originalTree)).toBe(false)
+        expect(testParses(errorText, parser)).toBe(false)
     })
 })
