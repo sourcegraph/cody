@@ -10,7 +10,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Embeddings indexes can be generated and stored locally in repositories with a default fetch URL that is not already indexed by sourcegraph.com. [TODO/TODO](todo)
+
 ### Changed
+
+- Enhanced Context does not turn off automatically after the first chat. [TODO/TODO](todo)
 
 ## [0.16.3]
 
