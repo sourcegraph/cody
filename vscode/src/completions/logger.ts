@@ -351,7 +351,7 @@ export interface ItemPostProcessingInfo {
     }
 }
 
-interface CompletionItemInfo extends ItemPostProcessingInfo {
+export interface CompletionItemInfo extends ItemPostProcessingInfo {
     lineCount: number
     charCount: number
     // 🚨 SECURITY: included only for DotCom users.
