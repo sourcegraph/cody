@@ -1,12 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { disableNotifications, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => {
     // Turn off notification
-    await page.getByRole('button', { name: 'Notifications' }).click()
-    await page.getByRole('button', { name: 'Toggle Do Not Disturb Mode' }).click()
+    await disableNotifications(page)
 
     // Sign into Cody
     await sidebarSignin(page, sidebar)

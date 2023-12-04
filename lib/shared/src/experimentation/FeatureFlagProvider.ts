@@ -20,7 +20,7 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
-    CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multline-completions',
+    CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
     CodyPro = 'cody-pro',
     CodyChatMockTest = 'cody-chat-mock-test',
 }

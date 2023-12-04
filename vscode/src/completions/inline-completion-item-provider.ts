@@ -9,6 +9,7 @@ import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
+import { telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
@@ -110,6 +111,8 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
+    isDotComUser?: boolean
+
     contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
 
@@ -166,6 +169,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             dynamicMultilineCompletions,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
+            isDotComUser: config.isDotComUser ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -576,6 +580,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             }
             this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
             const canUpgrade = error.upgradeIsAvailable
+            const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
             let errorTitle: string
             let pageName: string
             if (canUpgrade) {
@@ -589,9 +594,24 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 title: errorTitle,
                 description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
                 onSelect: () => {
+                    if (canUpgrade) {
+                        telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
+                            limit_type: 'suggestions',
+                        })
+                    }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
             })
+
+            telemetryService.log(
+                canUpgrade
+                    ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
+                    : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+                {
+                    limit_type: 'suggestions',
+                    tier,
+                }
+            )
             return
         }
 
