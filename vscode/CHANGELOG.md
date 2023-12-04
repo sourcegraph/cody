@@ -17,6 +17,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Enhanced Context used to turn off automatically after the first chat. Now it stays enabled until you disable it. [pull/2069](https://github.com/sourcegraph/cody/pull/2069)
+- Chat: Reuse existing New Chat panel to prevent having multiple new chats open at once. [pull/2087](https://github.com/sourcegraph/cody/pull/2087)
 
 ## [0.16.3]
 
