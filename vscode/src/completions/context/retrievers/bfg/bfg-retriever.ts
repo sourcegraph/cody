@@ -77,11 +77,21 @@ export class BfgRetriever implements ContextRetriever {
             git.onDidOpenRepository(repository => this.didChangeGitExtensionRepository(repository))
         )
         this.context.subscriptions.push(
-            vscode.workspace.onDidChangeWorkspaceFolders(() => this.indexInferredGitRepositories(git))
+            vscode.workspace.onDidChangeWorkspaceFolders(() => this.indexInferredGitRepositories())
         )
         // TODO: handle closed repositories
 
-        await this.indexInferredGitRepositories(git)
+        await this.indexInferredGitRepositories()
+    }
+
+    private shouldInferGitRepositories(): boolean {
+        // Some users may not want to allow Cody to index code outside the VS
+        // Code workspace folder so we support an escape hatch to disable this
+        // functionality. This setting is hidden because all the other
+        // BFG-related settings are hidden.
+        return vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.experimental.cody-engine.index-parent-git-folder', false)
     }
 
     // Infers what git repositories that are relevant but may not be "open" by
@@ -89,7 +99,10 @@ export class BfgRetriever implements ContextRetriever {
     // open git repositories when the workspace root is a subfolder. There's a
     // setting to automatically open parent git repositories but the setting is
     // disabled by default.
-    private async indexInferredGitRepositories(git: API): Promise<void> {
+    private async indexInferredGitRepositories(): Promise<void> {
+        if (!this.shouldInferGitRepositories()) {
+            return
+        }
         for (const folder of vscode.workspace.workspaceFolders ?? []) {
             if (this.indexedRepositoryRevisions.has(folder.uri.toString())) {
                 continue
