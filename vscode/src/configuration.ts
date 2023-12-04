@@ -58,10 +58,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         checkValidEnumValues(key, value)
     }
 
-    /**
-     * Hidden settings for internal use only.
-     */
-    const experimentalChatPanel = getHiddenSetting('experimental.chatPanel', isTesting)
     let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
         'autocomplete.experimental.graphContext',
         null
@@ -103,8 +99,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             true
         ),
 
-        // NOTE: Inline Chat will be deprecated soon - Do not enable inline-chat when experimental.chatPanel is enabled
-        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, false) !== experimentalChatPanel,
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
@@ -112,13 +106,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
          */
 
         autocompleteExperimentalGraphContext,
-        experimentalChatPanel: getHiddenSetting('experimental.chatPanel', true),
         experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
-        experimentalSearchPanel: getHiddenSetting('experimental.newSearch', true),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', isTesting),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
-        experimentalNonStop: getHiddenSetting('experimental.nonStop', isTesting),
         experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
 
         autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(

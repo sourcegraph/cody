@@ -44,12 +44,11 @@ export interface IChatPanelProvider extends vscode.Disposable {
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
-    // Chat views in editor panels when experimentalChatPanel is enabled
+    // Chat views in editor panels
     private activePanelProvider: IChatPanelProvider | undefined = undefined
     private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
 
     private options: ChatPanelProviderOptions
-    private onConfigurationChange: vscode.Disposable
 
     // Tree view for chat history
     public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
@@ -82,27 +81,6 @@ export class ChatPanelsManager implements vscode.Disposable {
                 new TreeViewProvider('command', featureFlagProvider)
             )
         )
-
-        // Register config change listener
-        this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
-            // When chat.chatPanel is set to true, the sidebar chat view will never be shown
-            const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
-            // when config is disabled, remove all current panels
-            if (!isChatPanelEnabled) {
-                this.disposePanels()
-                return
-            }
-
-            // Remove provider that doesn't have webPanel anymore
-            this.panelProvidersMap.forEach((provider, id) => {
-                if (!provider.webviewPanel) {
-                    provider.dispose()
-                    this.panelProvidersMap.delete(id)
-                }
-                provider.setConfiguration?.(options.contextProvider.config)
-            })
-        })
 
         this.updateTreeViewHistory()
     }
@@ -321,7 +299,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public dispose(): void {
         this.disposePanels()
-        this.onConfigurationChange.dispose()
         this.disposables.forEach(d => d.dispose())
     }
 }

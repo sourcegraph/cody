@@ -11,12 +11,12 @@ export const sidebarSignin = async (page: Page, sidebar: Frame): Promise<void> =
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    // Collapse the task tree view
-    await page.getByRole('button', { name: 'Fixups Section' }).click()
+    // Turn off notification
+    await disableNotifications(page)
 
-    await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
-
-    await page.getByRole('button', { name: 'Chat Section' }).hover()
+    await expect(
+        page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
+    ).toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux

@@ -10,14 +10,6 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' }).click()
-    await page
-        .getByRole('option', { name: 'New Chat UI, Experimental, Enable new chat panel UI' })
-        .locator('span')
-        .filter({ hasText: 'Experimental' })
-        .first()
-        .click()
-
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view

@@ -28,7 +28,6 @@ export class ChatManager implements vscode.Disposable {
     private chatPanelsManager: ChatPanelsManager | undefined = undefined
 
     private options: SidebarChatOptions
-    private onConfigurationChange: vscode.Disposable
 
     protected disposables: vscode.Disposable[] = []
 
@@ -47,9 +46,7 @@ export class ChatManager implements vscode.Disposable {
 
         this.sidebarChat = new SidebarChatProvider(this.options)
 
-        if (options.contextProvider.config.experimentalChatPanel) {
-            this.createChatPanelsManger()
-        }
+        this.createChatPanelsManger()
 
         // Register Commands
         this.disposables.push(
@@ -60,18 +57,6 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
             vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
         )
-
-        // Register config change listener
-        this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
-            const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
-            // When chat.chatPanel is set to true, the sidebar chat view will never be shown
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
-            if (isChatPanelEnabled) {
-                this.createChatPanelsManger()
-            } else {
-                this.disposeChatPanelsManager()
-            }
-        })
     }
 
     private async getChatProvider(): Promise<SidebarChatProvider | IChatPanelProvider> {
@@ -307,7 +292,6 @@ export class ChatManager implements vscode.Disposable {
 
     public dispose(): void {
         this.disposeChatPanelsManager()
-        this.onConfigurationChange.dispose()
         this.disposables.forEach(d => d.dispose())
     }
 }

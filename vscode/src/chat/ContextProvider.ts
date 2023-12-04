@@ -40,14 +40,12 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
-    | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
-    | 'inlineChat'
 >
 
 export enum ContextEvent {
@@ -266,7 +264,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentalChatPanel: this.config.experimentalChatPanel,
             }
 
             // update codebase context on configuration change

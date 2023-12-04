@@ -45,15 +45,6 @@ async function prepareChat(page: Page, sidebar: Frame): Promise<FrameLocator> {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
-    // Enable new chat UI
-    await page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' }).click()
-    await page
-        .getByRole('option', { name: 'New Chat UI, Experimental, Enable new chat panel UI' })
-        .locator('span')
-        .filter({ hasText: 'Experimental' })
-        .first()
-        .click()
-
     // Bring the cody sidebar to the foreground if it's not already there
     if (!(await page.isVisible('[aria-label="Chat History"]'))) {
         await page.click('[aria-label="Cody"]')
