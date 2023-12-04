@@ -119,6 +119,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         chatRateLimitPro = true
         res.sendStatus(200)
     })
+    app.post('/.test/completions/triggerRateLimit/enterprise', (req, res) => {
+        chatRateLimited = true
+        chatRateLimitPro = undefined
+        res.sendStatus(200)
+    })
 
     app.post('/.api/completions/code', (req, res) => {
         const OPENING_CODE_TAG = '<CODE5711>'
