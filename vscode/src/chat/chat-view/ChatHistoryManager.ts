@@ -24,13 +24,13 @@ export class ChatHistoryManager {
         await localStorage.deleteChatHistory(chatID)
     }
 
+    // HumanInputHistory is the history list when user presses "up" in the chat input box
     public async saveHumanInputHistory(input: string): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory()
         history.input.push(input)
         await localStorage.setChatHistory(history)
         return history
     }
-
     public getHumanInputHistory(): string[] {
         const history = localStorage.getChatHistory()
         if (!history) {
