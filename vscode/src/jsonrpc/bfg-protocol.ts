@@ -14,6 +14,7 @@ export type Requests = {
         { symbols?: SymbolContextSnippet[]; files?: FileContextSnippet[] },
     ]
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]
+    'bfg/workspace/didChange': [{ workspaceUri: string }, void]
     'bfg/shutdown': [null, void]
 
     'embeddings/hello': [null, string]

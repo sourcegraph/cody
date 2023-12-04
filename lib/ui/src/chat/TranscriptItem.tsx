@@ -19,7 +19,7 @@ import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
-import { ErrorItem } from './ErrorItem'
+import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -161,12 +161,16 @@ export const TranscriptItem: React.FunctionComponent<
                 </div>
             )}
             {message.error ? (
-                <ErrorItem
-                    error={message.error}
-                    ChatButtonComponent={ChatButtonComponent}
-                    userInfo={userInfo}
-                    postMessage={postMessage}
-                />
+                typeof message.error === 'string' ? (
+                    <RequestErrorItem error={message.error} />
+                ) : (
+                    <ErrorItem
+                        error={message.error}
+                        ChatButtonComponent={ChatButtonComponent}
+                        userInfo={userInfo}
+                        postMessage={postMessage}
+                    />
+                )
             ) : (
                 <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                     {message.displayText && !message.error ? (
