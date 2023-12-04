@@ -111,7 +111,8 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'no-match':
             return (
                 <p className={styles.providerExplanatoryText}>
-                    No repository matching {provider.remoteName} on <a href="about:blank#TODO">{provider.origin}</a>
+                    {/* No repository matching {provider.remoteName} on <a href="about:blank#TODO">{provider.origin}</a> */}
+                    No repository matching {provider.remoteName} on {provider.origin}
                 </p>
             )
         default:
