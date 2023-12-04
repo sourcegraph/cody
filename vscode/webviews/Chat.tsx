@@ -38,6 +38,7 @@ import { VSCodeWrapper } from './utils/VSCodeApi'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
+    welcomeMessage?: string
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
@@ -65,6 +66,7 @@ interface ChatboxProps {
     userInfo: UserAccountInfo
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
+    welcomeMessage,
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
@@ -226,7 +228,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            afterMarkdown={welcomeMessageMarkdown}
+            afterMarkdown={welcomeMessage}
             helpMarkdown=""
             ChatButtonComponent={ChatButton}
             chatCommands={chatCommands}
@@ -427,13 +429,6 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
         </div>
     )
 }
-
-const welcomeMessageMarkdown = `Start writing code and I’ll autocomplete lines and entire functions for you.
-
-You can ask me to explain, document and edit code using the [Cody Commands](command:cody.action.commands.menu) action (⌥C), or by right-clicking on code and using the “Cody” menu.
-
-See the [Getting Started](command:cody.welcome) guide for more tips and tricks.
-`
 
 const slashCommandRegex = /^\/[A-Za-z]+/
 function isSlashCommand(value: string): boolean {
