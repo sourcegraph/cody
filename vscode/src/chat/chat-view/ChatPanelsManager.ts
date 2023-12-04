@@ -144,6 +144,9 @@ export class ChatPanelsManager implements vscode.Disposable {
         )
         if (!chatID && !panel && this.panelProvidersMap.size && emptyNewChatProvider) {
             emptyNewChatProvider.webviewPanel?.reveal()
+            this.activePanelProvider = emptyNewChatProvider
+            this.options.contextProvider.webview = emptyNewChatProvider.webview
+            void this.selectTreeItem(emptyNewChatProvider.sessionID)
             return emptyNewChatProvider
         }
 
