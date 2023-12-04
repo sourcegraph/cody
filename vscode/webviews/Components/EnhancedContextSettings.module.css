@@ -80,6 +80,10 @@
     opacity: 0.8;
 }
 
+.line-break-all {
+    word-break: break-all;
+}
+
 .provider-item:not(:has(p)) {
     display: flex;
     align-items: center;

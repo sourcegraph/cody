@@ -163,7 +163,9 @@ button {
 :global .codicon-info::before {
     content: '\ea74';
 }
-
+:global .codicon-database::before {
+    content: '\eace';
+}
 :global .codicon-symbol-structure::before {
     content: '\ea91';
 }

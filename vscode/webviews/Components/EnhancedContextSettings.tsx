@@ -112,7 +112,7 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'indeterminate':
         case 'ready':
             if (provider.kind === 'embeddings' && provider.type === 'remote') {
-                return <p className={styles.providerExplanatoryText}>Inherited {provider.remoteName}</p>
+                return <p className={classNames(styles.providerExplanatoryText, styles.lineBreakAll)}>Inherited {provider.remoteName}</p>
             }
             return <span className={styles.providerInlineState}>&mdash; Indexed</span>
         case 'indexing':
