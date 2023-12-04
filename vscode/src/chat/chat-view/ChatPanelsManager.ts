@@ -11,7 +11,6 @@ import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { AuthStatus } from '../protocol'
@@ -81,8 +80,6 @@ export class ChatPanelsManager implements vscode.Disposable {
                 new TreeViewProvider('command', featureFlagProvider)
             )
         )
-
-        this.updateTreeViewHistory()
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -92,6 +89,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
 
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
+        await this.updateTreeViewHistory()
     }
 
     public async getChatPanel(): Promise<IChatPanelProvider> {
@@ -213,16 +211,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         await chatProvider.executeCustomCommand(title, type)
     }
 
-    private updateTreeViewHistory(): void {
-        const localHistory = localStorage.getChatHistory()
-        if (localHistory) {
-            void this.treeViewProvider.updateTree(
-                createCodyChatTreeItems({
-                    chat: localHistory?.chat,
-                    input: localHistory.input,
-                })
-            )
-        }
+    private async updateTreeViewHistory(): Promise<void> {
+        await this.treeViewProvider.updateTree(createCodyChatTreeItems())
     }
 
     public async clearHistory(chatID?: string): Promise<void> {
@@ -230,7 +220,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposeProvider(chatID)
 
             await this.activePanelProvider?.clearChatHistory(chatID)
-            this.updateTreeViewHistory()
+            await this.updateTreeViewHistory()
             return
         }
 
@@ -294,7 +284,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             provider.dispose()
         })
         this.panelProvidersMap.clear()
-        this.updateTreeViewHistory()
+        void this.updateTreeViewHistory()
     }
 
     public dispose(): void {

@@ -23,4 +23,14 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
         page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
     ).toBeVisible()
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+
+    // Start a new chat and submit chat
+    await page.getByRole('tab', { name: 'New Chat' }).getByTitle('New Chat').locator('div').hover()
+    await page.keyboard.type('Hey')
+    await page.keyboard.press('Enter')
+
+    // Check if chat shows up in sidebar chat history tree view
+    await expect(
+        page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3)
+    ).toBeVisible()
 })
