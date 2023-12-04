@@ -12,6 +12,7 @@ describe('handleExportModeTransforms', () => {
                 feature: 'Bar',
                 parameters: {
                     version: 0,
+                    interactionID: 'abcde',
                     metadata: [
                         {
                             key: 'foo',
@@ -31,6 +32,7 @@ describe('handleExportModeTransforms', () => {
         // Modified
         expect(events[0].parameters.privateMetadata).toBeUndefined()
         expect(events[0].parameters.metadata?.pop()?.value).toBe(1)
+        expect(events[0].parameters.interactionID).toBeUndefined()
     })
 
     it('5.2.2-5.2.3', () => {
@@ -40,6 +42,7 @@ describe('handleExportModeTransforms', () => {
                 feature: 'Bar',
                 parameters: {
                     version: 0,
+                    interactionID: 'abcde',
                     metadata: [
                         {
                             key: 'foo',
@@ -58,6 +61,7 @@ describe('handleExportModeTransforms', () => {
 
         // Modified
         expect(events[0].parameters.metadata?.pop()?.value).toBe(1)
+        expect(events[0].parameters.interactionID).toBeUndefined()
         // Not modified
         expect(events[0].parameters.privateMetadata).toBeDefined()
     })
@@ -69,6 +73,7 @@ describe('handleExportModeTransforms', () => {
                 feature: 'Bar',
                 parameters: {
                     version: 0,
+                    interactionID: 'abcde',
                     metadata: [
                         {
                             key: 'foo',
@@ -88,5 +93,6 @@ describe('handleExportModeTransforms', () => {
         // Not modified
         expect(events[0].parameters.metadata?.pop()?.value).toBe(1.234)
         expect(events[0].parameters.privateMetadata).toBeDefined()
+        expect(events[0].parameters.interactionID).toBe('abcde')
     })
 })
