@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-// TODO update to use new chat UI
+// TODO Fix tests with iframe selector
 
 test.skip('@-file empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
