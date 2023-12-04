@@ -15,9 +15,11 @@
 }
 
 .enhanced-context-settings-popup label h1 {
+    text-transform: none;
     font-weight: 600;
     display: inline;
     cursor: pointer;
+    user-select: none;
 }
 
 .enhanced-context-settings-popup > p {
@@ -25,7 +27,7 @@
 }
 
 .folders-list {
-    margin: 1rem 0 0;
+    margin: 1rem 0 0.25rem;
 }
 
 .folders-list > dt {
@@ -34,8 +36,8 @@
 }
 
 .folders-list > dd {
-    margin-left: 0;
-    padding-left: 1rem;
+    margin-left: 0.4rem;
+    padding-left: 0.8rem;
     border-left: 1px solid var(--vscode-checkbox-border);
 }
 

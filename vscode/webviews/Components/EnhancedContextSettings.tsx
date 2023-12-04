@@ -103,7 +103,7 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
             if (provider.kind === 'embeddings' && provider.type === 'remote') {
                 return <p className={styles.providerExplanatoryText}>Inherited {provider.remoteName}</p>
             }
-            return <></>
+            return <span className={styles.providerInlineState}>&mdash; Indexed</span>
         case 'indexing':
             return <span className={styles.providerInlineState}>&mdash; Indexing&hellip;</span>
         case 'unconsented':
@@ -130,7 +130,7 @@ const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvi
             stateIcon = <i className="codicon codicon-circle-outline" />
             break
         case 'ready':
-            stateIcon = <i className="codicon codicon-check" />
+            stateIcon = <i className="codicon codicon-database" />
             break
         case 'no-match':
             stateIcon = <i className="codicon codicon-circle-slash" />
@@ -180,7 +180,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                             <h1>Enhanced Context ✨</h1>
                         </label>
                         <p>
-                            Automatically include additional context about your code.{' '}
+                            Include additional code context with your message.{' '}
                             <a href="about:blank#TODO">Learn more</a>
                         </p>
                         <dl className={styles.foldersList}>
