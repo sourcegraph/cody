@@ -130,9 +130,17 @@ vscode-button:focus-within::part(control) {
 
 .settings-btn {
     color: var(--vscode-editor-foreground);
+    border: 1px solid transparent;
+    border-radius: 3px;
+}
+
+.settings-btn i {
+    width: 16px;
+    height: 16px;
 }
 
 .settings-btn-active {
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
+    color: var(--vscode-inputOption-activeForeground);
+    border-color: var(--vscode-inputOption-activeBorder);
+    background-color: var(--vscode-inputOption-activeBackground);
 }

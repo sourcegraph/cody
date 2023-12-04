@@ -16,6 +16,17 @@ const meta: Meta<typeof EnhancedContextSettings> = {
     title: 'cody/Enhanced Context',
     component: EnhancedContextSettings,
     decorators: [VSCodeStoryDecorator],
+    parameters: {
+        backgrounds: {
+            default: 'vscode',
+            values: [
+                {
+                    name: 'vscode',
+                    value: 'var(--vscode-sideBar-background)',
+                },
+            ],
+        },
+    },
 }
 
 export default meta
