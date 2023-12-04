@@ -96,6 +96,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             isDotComUser: isDotCom(message.authStatus.endpoint || ''),
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        // Get chat models
+                        if (message.authStatus.isLoggedIn) {
+                            vscodeAPI.postMessage({ command: 'get-chat-models' })
+                        }
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -293,6 +297,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatModels={chatModels}
                                         enableNewChatUI={config.experimentalChatPanel || false}
                                         setChatModels={setChatModels}
+                                        welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
@@ -354,4 +359,16 @@ const instructionLabels: Record<string, string> = {
 function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
     const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
+}
+
+function getWelcomeMessageByOS(os: string): string {
+    const welcomeMessageMarkdown = `Start writing code and I’ll autocomplete lines and entire functions for you.
+
+You can ask me to explain, document and edit code using the [Cody Commands](command:cody.action.commands.menu) action (${
+        os === 'darwin' ? '⌥' : 'Alt'
+    }+C), or by right-clicking on code and using the “Cody” menu.
+
+See the [Getting Started](command:cody.welcome) guide for more tips and tricks.
+`
+    return welcomeMessageMarkdown
 }

@@ -24,6 +24,8 @@ export async function spawnBfg(
         env: {
             VERBOSE_DEBUG: `${isVerboseDebug}`,
             RUST_BACKTRACE: isVerboseDebug ? '1' : '0',
+            // See bfg issue 138
+            RUST_LIB_BACKTRACE: '0',
         },
     })
     child.stderr.on('data', chunk => {

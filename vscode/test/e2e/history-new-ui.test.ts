@@ -1,12 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { disableNotifications, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => {
     // Turn off notification
-    await page.getByRole('button', { name: 'Notifications' }).click()
-    await page.getByRole('button', { name: 'Toggle Do Not Disturb Mode' }).click()
+    await disableNotifications(page)
 
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -33,16 +32,13 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
     ).toBeVisible()
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
-    // Create chat
-    await page.getByRole('tab', { name: 'New Chat' }).getByTitle('New Chat').locator('div').click()
-
+    // Start a new chat and submit chat
+    await page.getByRole('tab', { name: 'New Chat' }).getByTitle('New Chat').locator('div').hover()
     await page.keyboard.type('Hey')
     await page.keyboard.press('Enter')
 
-    await page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3).hover()
-    await page.getByRole('button', { name: 'Rename Chat' }).click()
-    await page.getByRole('combobox', { name: 'input' }).fill('Edited!')
-    await page.getByRole('combobox', { name: 'input' }).press('Enter')
-    await page.getByRole('treeitem', { name: 'Edited!' }).locator('div').filter({ hasText: 'Edited!' }).nth(3).click()
-    await page.getByRole('tab', { name: 'Edited!' }).getByText('Edited!').click()
+    // Check if chat shows up in sidebar chat history tree view
+    await expect(
+        page.getByRole('treeitem', { name: 'Hey' }).locator('div').filter({ hasText: 'Hey' }).nth(3)
+    ).toBeVisible()
 })

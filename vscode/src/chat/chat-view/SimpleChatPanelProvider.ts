@@ -14,6 +14,7 @@ import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/vie
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
@@ -58,6 +59,7 @@ interface SimpleChatPanelProviderOptions {
     localEmbeddings: LocalEmbeddingsController | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
+    featureFlagProvider: FeatureFlagProvider
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -88,6 +90,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
+    private readonly featureFlagProvider: FeatureFlagProvider
+
     // HACK: for now, we need awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
@@ -95,6 +99,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     constructor({
         config,
         extensionUri,
+        featureFlagProvider,
         authProvider,
         guardrails,
         chatClient,
@@ -105,6 +110,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
+        this.featureFlagProvider = featureFlagProvider
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
@@ -255,7 +261,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'initialized':
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
-                this.handleInitialized()
+                await this.postChatModels()
+                void this.restoreSession(this.sessionID)
                 break
             case 'submit': {
                 const requestID = uuid.v4()
@@ -286,6 +293,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'chatModel':
                 this.chatModel.modelID = message.model
+                break
+            case 'get-chat-models':
+                await this.postChatModels()
                 break
             case 'executeRecipe':
                 void this.executeRecipe(message.recipe)
@@ -355,7 +365,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'history',
             messages: allHistory,
         })
-        await this.treeView.updateTree(createCodyChatTreeItems(allHistory))
+        await this.treeView.updateTree(createCodyChatTreeItems())
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -386,17 +396,27 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
     }
 
-    private handleInitialized(): void {
+    private async postChatModels(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
+        if (!authStatus?.isLoggedIn) {
+            return
+        }
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)
+        // selection is available to pro only at Dec GA
+        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel.modelID)?.map(model => {
+            return {
+                ...model,
+                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
+            }
+        })
+
         void this.webview?.postMessage({
             type: 'chatModels',
             models,
         })
-        void this.restoreSession(this.sessionID)
     }
 
     private async handleHumanMessageSubmitted(
@@ -410,7 +430,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
-
+        await this.history.saveHumanInputHistory(text)
         this.chatModel.addHumanMessage({ text })
         // trigger the context progress indicator
         void this.postViewTranscript({ speaker: 'assistant' })

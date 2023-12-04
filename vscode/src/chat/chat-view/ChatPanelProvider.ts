@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
@@ -22,6 +23,7 @@ import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../Me
 import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
 import { getChatPanelTitle } from './chat-helpers'
+import { chatHistory } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -31,6 +33,7 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
 export interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
+    featureFlagProvider: FeatureFlagProvider
 }
 
 export class ChatPanelProvider extends MessageProvider {
@@ -39,10 +42,12 @@ export class ChatPanelProvider extends MessageProvider {
     public webview?: ChatViewProviderWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
     public treeView: TreeViewProvider
+    private readonly featureFlagProvider: FeatureFlagProvider
 
-    constructor({ treeView, extensionUri, ...options }: ChatPanelProviderOptions) {
+    constructor({ treeView, extensionUri, featureFlagProvider, ...options }: ChatPanelProviderOptions) {
         super(options)
         this.extensionUri = extensionUri
+        this.featureFlagProvider = featureFlagProvider
         this.treeView = treeView
 
         this.contextProvider.onDidChangeStatus(_ => {
@@ -86,6 +91,9 @@ export class ChatPanelProvider extends MessageProvider {
                     { hasV2Event: true }
                 )
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+                break
+            case 'get-chat-models':
+                await this.handleChatModels()
                 break
             case 'chatModel':
                 this.chatModel = message.model
@@ -141,7 +149,7 @@ export class ChatPanelProvider extends MessageProvider {
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveHumanInputHistory(text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
@@ -204,7 +212,15 @@ export class ChatPanelProvider extends MessageProvider {
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
-        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)
+        // selection is available to pro only at Dec GA
+        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyPro)
+        console.log(isCodyProFeatureFlagEnabled, 'isCodyProFeatureFlagEnabled')
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)?.map(model => {
+            return {
+                ...model,
+                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
+            }
+        })
         await this.webview?.postMessage({ type: 'chatModels', models })
     }
 
@@ -261,7 +277,7 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
-        void this.treeView.updateTree(createCodyChatTreeItems(userHistory))
+        void this.treeView.updateTree(createCodyChatTreeItems())
     }
 
     /**

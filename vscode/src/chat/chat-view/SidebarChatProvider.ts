@@ -29,6 +29,7 @@ import {
     WebviewMessage,
 } from '../protocol'
 
+import { chatHistory } from './ChatHistoryManager'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -197,6 +198,10 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'show-page':
                 await vscode.commands.executeCommand('show-page', message.page)
                 break
+            case 'get-chat-models':
+                // chat models selector is not supported in old UI
+                await this.webview?.postMessage({ type: 'chatModels', models: [] })
+                break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')
         }
@@ -237,7 +242,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             verbose: { text, submitType, addEnhancedContext },
         })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveHumanInputHistory(text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
