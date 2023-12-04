@@ -41,7 +41,6 @@ const MODEL_MAP = {
     // Models in evaluation
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
-    'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
     'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
@@ -64,9 +63,6 @@ function getMaxContextTokens(model: FireworksModel): number {
             // other providers.
             return 2048
         }
-        case 'wizardcoder-15b':
-            // TODO: Confirm what the limit is for WizardCoder
-            return 2048
         case 'llama-code-7b':
         case 'llama-code-13b':
         case 'llama-code-13b-instruct':
@@ -308,7 +304,7 @@ function getSuffixAfterFirstNewline(suffix: string): string {
 }
 
 function isStarCoderFamily(model: string): boolean {
-    return model.startsWith('starcoder') || model.startsWith('wizardcoder')
+    return model.startsWith('starcoder')
 }
 
 function isLlamaCode(model: string): boolean {
