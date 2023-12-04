@@ -215,7 +215,9 @@ export async function syncLocalTranscript(endpoint: string): Promise<void> {
             const fileLocation = `cody/vscode/chatTranscript/${TODAYS_DATE()}/${globalAnonymousUserID}.json`
 
             // Sync and store the chats and timestamp
-            await syncChat(JSON.stringify(filteredChats), fileLocation)
+            // Due to BigQuery limitation, all JSON data must be newline delimited.
+            // This converts the data to proper JSONL format by putting each chat object JSON on its own line.
+            await syncChat(filteredChats.map(chat => JSON.stringify(chat)).join('\n'), fileLocation)
             await localStorage.lastSyncedTimestamp(new Date(lastSyncedTranscriptTimestamp).getTime())
 
             logEvent(`${eventName}:uploaded`, { fileLocation })
