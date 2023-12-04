@@ -22,7 +22,6 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { showAskQuestionQuickPick } from '../commands/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
@@ -138,11 +137,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (chatID) {
             await this.restoreSession(chatID)
         }
-    }
-
-    private get isDotComUser(): boolean {
-        const endpoint = this.authProvider.getAuthStatus()?.endpoint || ''
-        return isDotCom(endpoint)
     }
 
     public async clearAndRestartSession(): Promise<void> {
