@@ -3,9 +3,7 @@ import * as vscode from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import {
     CLOSING_CODE_TAG,
@@ -17,11 +15,11 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
-import { forkSignal, messagesToText } from '../utils'
+import { messagesToText } from '../utils'
 
+import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -39,6 +37,14 @@ export interface AnthropicOptions {
 }
 
 const MAX_RESPONSE_TOKENS = 256
+const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: MULTI_LINE_STOP_SEQUENCES,
+    timeoutMs: 15_000,
+}
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
@@ -138,11 +144,12 @@ export class AnthropicProvider extends Provider {
         if (prompt.length > this.promptChars) {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
+        const { dynamicMultilineCompletions, multiline } = this.options
 
         const requestParams: CodeCompletionsParams = {
             temperature: 0.5,
             messages: prompt,
-            ...(this.options.multiline
+            ...(multiline
                 ? {
                       maxTokensToSample: MAX_RESPONSE_TOKENS,
                       stopSequences: MULTI_LINE_STOP_SEQUENCES,
@@ -155,11 +162,26 @@ export class AnthropicProvider extends Provider {
                   }),
         }
 
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
+
         tracer?.params(requestParams)
 
         const completions = await Promise.all(
             Array.from({ length: this.options.n }).map(() => {
-                return this.fetchAndProcessCompletions(this.client, requestParams, abortSignal)
+                return fetchAndProcessCompletionsImpl({
+                    client: this.client,
+                    requestParams,
+                    abortSignal,
+                    providerSpecificPostProcess: this.postProcess,
+                    providerOptions: this.options,
+                })
             })
         )
 
@@ -167,42 +189,7 @@ export class AnthropicProvider extends Provider {
         return completions
     }
 
-    private async fetchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CodeCompletionsParams,
-        abortSignal: AbortSignal
-    ): Promise<InlineCompletionItemWithAnalytics> {
-        // The Async executor is required to return the completion early if a partial result from SSE can be used.
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            try {
-                const abortController = forkSignal(abortSignal)
-
-                const result = await client.complete(
-                    params,
-                    (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        const completion = canUsePartialCompletion(processedCompletion, this.options)
-
-                        if (completion) {
-                            resolve({ ...completion, stopReason: 'streaming-truncation' })
-                            abortController.abort()
-                        }
-                    },
-                    abortController.signal
-                )
-
-                const processedCompletion = this.postProcess(result.completion)
-                const completion = parseAndTruncateCompletion(processedCompletion, this.options)
-
-                resolve({ ...completion, stopReason: result.stopReason })
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
-
-    private postProcess(rawResponse: string): string {
+    private postProcess = (rawResponse: string): string => {
         let completion = extractFromCodeBlock(rawResponse)
 
         const trimmedPrefixContainNewline = this.options.docContext.prefix

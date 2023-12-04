@@ -80,6 +80,7 @@ export function params(
         position,
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
+        dynamicMultilineCompletions: false,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,

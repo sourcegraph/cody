@@ -113,8 +113,8 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
                     onComplete: () => {
                         resolve(responseText)
                     },
-                    onError: (message: string, statusCode?: number) => {
-                        console.error(`Error detecting intent: Status code ${statusCode}: ${message}`)
+                    onError: (error: Error, statusCode?: number) => {
+                        console.error(`Error detecting intent: Status code ${statusCode}: ${error.message}`)
                         resolve(fallback)
                     },
                 }

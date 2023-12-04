@@ -5,18 +5,21 @@ import classNames from 'classnames'
 import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
+    ApiPostMessage,
     ChatButtonProps,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
     CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
+import { ErrorItem } from './ErrorItem'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -58,6 +61,8 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+        userInfo?: UserAccountInfo
+        postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -84,6 +89,8 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
+    userInfo,
+    postMessage,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const EditTextArea =
@@ -153,25 +160,34 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
-                {message.displayText ? (
-                    EditTextArea ? (
-                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
+            {message.error ? (
+                <ErrorItem
+                    error={message.error}
+                    ChatButtonComponent={ChatButtonComponent}
+                    userInfo={userInfo}
+                    postMessage={postMessage}
+                />
+            ) : (
+                <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+                    {message.displayText && !message.error ? (
+                        EditTextArea ? (
+                            !inProgress && !message.displayText.startsWith('/') && EditTextArea
+                        ) : (
+                            <CodeBlocks
+                                displayText={message.displayText}
+                                copyButtonClassName={codeBlocksCopyButtonClassName}
+                                copyButtonOnSubmit={copyButtonOnSubmit}
+                                insertButtonClassName={codeBlocksInsertButtonClassName}
+                                insertButtonOnSubmit={insertButtonOnSubmit}
+                                metadata={message.metadata}
+                                inProgress={inProgress}
+                            />
+                        )
                     ) : (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            metadata={message.metadata}
-                            inProgress={inProgress}
-                        />
-                    )
-                ) : (
-                    inProgress && <BlinkingCursor />
-                )}
-            </div>
+                        inProgress && <BlinkingCursor />
+                    )}
+                </div>
+            )}
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}

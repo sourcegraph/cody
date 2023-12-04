@@ -4,6 +4,7 @@ import { ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
+import { executeEdit } from '../edit/execute'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
@@ -221,7 +222,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             // Show the list of prompts to the user using a quick pick menu
             const { selectedItem: selectedPrompt, input: userPrompt } = await showCommandMenu([
                 menu_separators.commands,
-                ...commands,
+                ...commands.sort((a, b) => a.label.localeCompare(b.label)),
                 menu_separators.settings,
                 menu_options.config,
             ])
@@ -247,11 +248,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     const source = 'menu'
-                    return await vscode.commands.executeCommand(
-                        'cody.command.edit-code',
-                        { instruction: userPrompt.trim() },
-                        source
-                    )
+                    return await executeEdit({ instruction: userPrompt.trim() }, source)
                 }
             }
 

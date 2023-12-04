@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { execSync } from 'child_process'
+import path from 'path'
 
 import type * as vscode from 'vscode'
 
@@ -34,6 +35,11 @@ import {
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+
+// Not using CODY_TESTING because it changes the URL endpoint we send requests
+// to and we want to send requests to sourcegraph.com because we record the HTTP
+// traffic.
+const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export {
     emptyEvent,
@@ -87,6 +93,9 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
+    if (newClientInfo.extensionConfiguration) {
+        setConnectionConfig(newClientInfo.extensionConfiguration)
+    }
 }
 
 export let connectionConfig: ExtensionConfiguration | undefined
@@ -137,7 +146,7 @@ const configuration: vscode.WorkspaceConfiguration = {
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
-                return 'off'
+                return 'agent'
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
@@ -184,7 +193,7 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
-    openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
+    openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
@@ -198,11 +207,19 @@ const workspaceFolders: vscode.WorkspaceFolder[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
-    openTextDocument: uri => {
-        // We currently treat filePath the same as uri for now, but will need to
-        // properly pass around URIs once the agent protocol supports URIs
-        const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
-        return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    openTextDocument: uriOrString => {
+        if (!workspaceDocuments) {
+            return Promise.reject(new Error('workspaceDocuments is uninitialized'))
+        }
+        if (typeof uriOrString === 'string') {
+            return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
+        }
+        if (uriOrString instanceof Uri) {
+            return workspaceDocuments.openTextDocument(uriOrString)
+        }
+        return Promise.reject(
+            new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
+        )
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
@@ -226,7 +243,24 @@ const _workspace: Partial<typeof vscode.workspace> = {
     onDidRenameFiles: onDidRenameFiles.event,
     onDidDeleteFiles: onDidDeleteFiles.event,
     registerTextDocumentContentProvider: () => emptyDisposable,
-    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
+    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => {
+        const uri: vscode.Uri | undefined =
+            typeof pathOrUri === 'string' ? Uri.file(pathOrUri) : pathOrUri instanceof Uri ? pathOrUri : undefined
+        if (uri === undefined) {
+            // Not sure what to do about non-string/non-uri arguments.
+            return `${pathOrUri}`
+        }
+
+        const relativePath = workspaceDocuments?.workspaceRootUri?.fsPath
+            ? path.relative(workspaceDocuments?.workspaceRootUri?.path ?? '', uri.path)
+            : uri.path
+        if (isTesting) {
+            // We insert relative paths in a lot of places like prompts that influence HTTP requests.
+            // When testing, we try to normalize the file paths across Windows/Linux/macOS.
+            return relativePath.replaceAll('\\', '/')
+        }
+        return relativePath
+    },
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
 }
@@ -320,8 +354,9 @@ const _window: Partial<typeof vscode.window> = {
 
 export const window = _window as typeof vscode.window
 const gitRepositories: Repository[] = []
-export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
-    const repository: Partial<Repository> = {
+
+export function gitRepository(uri: vscode.Uri, headCommit: string): Repository {
+    const repo: Partial<Repository> = {
         rootUri: uri,
         ui: {} as any,
         state: {
@@ -339,7 +374,10 @@ export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
             },
         },
     }
-    gitRepositories.push(repository as Repository)
+    return repo as Repository
+}
+export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
+    gitRepositories.push(gitRepository(uri, headCommit))
 }
 
 const gitExtension: Partial<vscode.Extension<GitExtension>> = {
@@ -355,19 +393,14 @@ const gitExtension: Partial<vscode.Extension<GitExtension>> = {
                 onDidOpenRepository: emptyEvent(),
                 onDidPublish: emptyEvent(),
                 getRepository(uri) {
-                    const cwd = workspaceDocuments?.workspaceRootUri?.fsPath
-                    if (!cwd) {
-                        return null
-                    }
                     try {
+                        const cwd = uri.fsPath
                         const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
-                        const repository: Partial<Repository> = {
-                            rootUri: Uri.file(toplevel),
-                            state: {
-                                remotes: [],
-                            } as any,
+                        if (toplevel !== uri.fsPath) {
+                            return null
                         }
-                        return repository as Repository
+                        const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd }).toString().trim()
+                        return gitRepository(Uri.file(toplevel), commit)
                     } catch {
                         return null
                     }

@@ -16,6 +16,11 @@ export class FixupTask {
      * The original text that we're working on updating. Set when we start an LLM spin.
      */
     public original = ''
+    /**
+     * The original range that we're working on updating.
+     * Used to perform an accurate retry. We cannot use `selectionRange` as that range may expand with the replacement code.
+     */
+    public originalRange: vscode.Range
     /** The text of the streaming turn of the LLM, if any */
     public inProgressReplacement: string | undefined
     /** The text of the last completed turn of the LLM, if any */
@@ -29,6 +34,11 @@ export class FixupTask {
     public diff: Diff | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
+    /**
+     * A callback to skip formatting.
+     * We use the users' default editor formatter so it is possible that
+     * they may run into an error that we can't anticipate
+     */
     public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
@@ -44,6 +54,9 @@ export class FixupTask {
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
+        this.originalRange = selectionRange
+        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
+        this.intent = selectionRange.isEmpty ? 'add' : intent
     }
 
     /**

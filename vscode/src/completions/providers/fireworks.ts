@@ -2,17 +2,15 @@ import * as vscode from 'vscode'
 
 import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { completionPostProcessLogger } from '../post-process-logger'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
-import { forkSignal } from '../utils'
 
+import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -43,7 +41,6 @@ const MODEL_MAP = {
     // Models in evaluation
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
-    'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
     'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
@@ -66,9 +63,6 @@ function getMaxContextTokens(model: FireworksModel): number {
             // other providers.
             return 2048
         }
-        case 'wizardcoder-15b':
-            // TODO: Confirm what the limit is for WizardCoder
-            return 2048
         case 'llama-code-7b':
         case 'llama-code-13b':
         case 'llama-code-13b-instruct':
@@ -83,6 +77,15 @@ function getMaxContextTokens(model: FireworksModel): number {
 }
 
 const MAX_RESPONSE_TOKENS = 256
+
+const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: undefined,
+    timeoutMs: 15_000,
+}
 
 export class FireworksProvider extends Provider {
     private model: FireworksModel
@@ -152,7 +155,7 @@ export class FireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<InlineCompletionItemWithAnalytics[]> {
-        const { multiline } = this.options
+        const { multiline, dynamicMultilineCompletions } = this.options
         const prompt = this.createPrompt(snippets)
 
         const model =
@@ -171,7 +174,7 @@ export class FireworksProvider extends Provider {
             return []
         }
 
-        const args: CodeCompletionsParams = {
+        const requestParams: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
@@ -184,14 +187,30 @@ export class FireworksProvider extends Provider {
             timeoutMs,
         }
 
-        tracer?.params(args)
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
+
+        tracer?.params(requestParams)
 
         const completions = await Promise.all(
             Array.from({ length: this.options.n }).map(() => {
-                return this.fetchAndProcessCompletions(this.client, args, abortSignal)
+                return fetchAndProcessCompletionsImpl({
+                    client: this.client,
+                    requestParams,
+                    abortSignal,
+                    providerSpecificPostProcess: this.postProcess,
+                    providerOptions: this.options,
+                })
             })
         )
 
+        completionPostProcessLogger.flush()
         tracer?.result({ completions })
 
         return completions
@@ -225,42 +244,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         return `${intro}${prefix}`
     }
 
-    private async fetchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CodeCompletionsParams,
-        abortSignal: AbortSignal
-    ): Promise<InlineCompletionItemWithAnalytics> {
-        // The Async executor is required to return the completion early if a partial result from SSE can be used.
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            try {
-                const abortController = forkSignal(abortSignal)
-
-                const result = await client.complete(
-                    params,
-                    (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        const completion = canUsePartialCompletion(processedCompletion, this.options)
-
-                        if (completion) {
-                            resolve({ ...completion, stopReason: 'streaming-truncation' })
-                            abortController.abort()
-                        }
-                    },
-                    abortController.signal
-                )
-
-                const processedCompletion = this.postProcess(result.completion)
-                const completion = parseAndTruncateCompletion(processedCompletion, this.options)
-
-                resolve({ ...completion, stopReason: result.stopReason })
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
-
-    private postProcess(content: string): string {
+    private postProcess = (content: string): string => {
         if (isStarCoderFamily(this.model)) {
             return content.replace(EOT_STARCODER, '')
         }
@@ -320,7 +304,7 @@ function getSuffixAfterFirstNewline(suffix: string): string {
 }
 
 function isStarCoderFamily(model: string): boolean {
-    return model.startsWith('starcoder') || model.startsWith('wizardcoder')
+    return model.startsWith('starcoder')
 }
 
 function isLlamaCode(model: string): boolean {

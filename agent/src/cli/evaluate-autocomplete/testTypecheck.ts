@@ -5,6 +5,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { AutocompleteItem } from '../../protocol-alias'
 
@@ -76,10 +77,9 @@ export async function testTypecheck(
     }
     const start = new vscode.Position(item.range.start.line, item.range.start.character)
     const end = new vscode.Position(item.range.end.line, item.range.end.character)
-    const modifiedDocument = new AgentTextDocument({
-        filePath: document.params.filepath,
-        content: parameters.modifiedContent,
-    })
+    const modifiedDocument = new AgentTextDocument(
+        TextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
+    )
     const newText = [
         modifiedDocument.getText(new vscode.Range(new vscode.Position(0, 0), start)),
         item.insertText,

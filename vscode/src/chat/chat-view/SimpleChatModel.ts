@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { ChatMessage } from '@sourcegraph/cody-shared'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { contextItemsToContextFiles } from './chat-helpers'
@@ -67,6 +67,10 @@ export class SimpleChatModel {
                 ...message,
             },
         })
+    }
+
+    public getLastHumanMessages(): MessageWithContext | undefined {
+        return this.messagesWithContext.findLast(message => message.message.speaker === 'human')
     }
 
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>): void {
@@ -154,7 +158,7 @@ function getDisplayText(mwc: MessageWithContext): string | undefined {
         return mwc.displayText
     }
     if (mwc.message.speaker === 'assistant' && mwc.message.text) {
-        return reformatBotMessage(mwc.message.text, '')
+        return reformatBotMessageForChat(mwc.message.text, '')
     }
     return mwc.message.text
 }

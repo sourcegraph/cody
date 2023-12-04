@@ -98,6 +98,8 @@ export class DefaultPrompter implements IPrompter {
             }
         }
 
+        // TODO(beyang): Decide whether context from previous messages is less
+        // important than user added context, and if so, reorder this.
         {
             // Add context from previous messages
             const { limitReached } = promptBuilder.tryAddContext(
@@ -110,9 +112,8 @@ export class DefaultPrompter implements IPrompter {
             }
         }
 
-        // If not the first message, don't add additional context
-        const firstMessageWithContext = chat.getMessagesWithContext().at(0)
-        if (!firstMessageWithContext?.message.text || chat.getMessagesWithContext().length !== 1) {
+        const lastMessage = reverseTranscript[0]
+        if (!lastMessage?.message.text) {
             return {
                 reversePrompt: promptBuilder.reverseMessages,
                 warnings,
@@ -122,13 +123,10 @@ export class DefaultPrompter implements IPrompter {
 
         // Add additional context from current editor or broader search
         const additionalContextItems: ContextItem[] = []
-        if (isEditorContextRequired(firstMessageWithContext.message.text)) {
+        if (isEditorContextRequired(lastMessage.message.text)) {
             additionalContextItems.push(...contextProvider.getUserAttentionContext())
-        } else {
-            additionalContextItems.push(
-                ...(await contextProvider.getEnhancedContext(firstMessageWithContext.message.text))
-            )
         }
+        additionalContextItems.push(...(await contextProvider.getEnhancedContext(lastMessage.message.text)))
         const { limitReached, used } = promptBuilder.tryAddContext(additionalContextItems, (item: ContextItem) =>
             this.renderContextItem(item)
         )

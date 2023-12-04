@@ -3,7 +3,11 @@ import * as vscode from 'vscode'
 
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
-import { CompletionAnalyticsID, logCompletionEvent } from './logger'
+import {
+    CompletionAnalyticsID,
+    logCompletionPersistencePresentEvent,
+    logCompletionPersistenceRemovedEvent,
+} from './logger'
 import { lines } from './text-processing'
 
 const MEASURE_TIMEOUTS = [
@@ -113,13 +117,13 @@ export class PersistenceTracker implements vscode.Disposable {
 
         if (latestText.length === 0) {
             // Text was fully deleted
-            logCompletionEvent('persistence:removed', { id: trackedCompletion.id })
+            logCompletionPersistenceRemovedEvent({ id: trackedCompletion.id })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
             const difference = editOperations / maxLength
 
-            logCompletionEvent('persistence:present', {
+            logCompletionPersistencePresentEvent({
                 id: trackedCompletion.id,
                 afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
                 difference,
@@ -151,7 +155,6 @@ export class PersistenceTracker implements vscode.Disposable {
         if (!documentCompletions) {
             return
         }
-
         // Create a list of changes that can be mutated by the `updateRangeMultipleChanges` function
         const mutableChanges = event.contentChanges.map(change => ({
             range: change.range,

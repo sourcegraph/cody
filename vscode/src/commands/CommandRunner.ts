@@ -1,8 +1,10 @@
 import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
+import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
+import { executeEdit, ExecuteEditArguments } from '../edit/execute'
 import { getActiveEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
@@ -142,17 +144,15 @@ export class CommandRunner implements vscode.Disposable {
         const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
         const intent: FixupIntent = this.kind === 'doc' ? 'doc' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        const source = this.kind
-        await vscode.commands.executeCommand(
-            'cody.command.edit-code',
+        const source = this.kind as ChatEventSource
+        await executeEdit(
             {
                 range,
                 instruction,
                 document: doc,
                 intent,
-                auto: true,
                 insertMode,
-            },
+            } satisfies ExecuteEditArguments,
             source
         )
     }

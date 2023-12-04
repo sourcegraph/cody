@@ -55,7 +55,7 @@ interface CompleteResponse {
 
 async function run(request: CompleteRequest): Promise<CompleteResponse> {
     const result = await codyAgentComplete({
-        filePath: request.uri.replace(/^file:\/\//, ''),
+        uri: request.uri,
         content: request.content,
         position: request.position,
     })
@@ -70,16 +70,12 @@ async function run(request: CompleteRequest): Promise<CompleteResponse> {
 }
 
 interface CodyAgentCompleteParams {
-    filePath: string
+    uri: string
     content: string
     position: AutocompleteParams['position']
 }
 
-async function codyAgentComplete({
-    filePath,
-    content,
-    position,
-}: CodyAgentCompleteParams): Promise<AutocompleteResult> {
+async function codyAgentComplete({ uri, content, position }: CodyAgentCompleteParams): Promise<AutocompleteResult> {
     const agent = new Agent()
     const client = agent.clientForThisInstance()
     await client.request('initialize', {
@@ -93,9 +89,9 @@ async function codyAgentComplete({
         },
     })
     client.notify('initialized', null)
-    client.notify('textDocument/didOpen', { filePath, content })
+    client.notify('textDocument/didOpen', { uri, content })
     return client.request('autocomplete/execute', {
-        filePath,
+        uri,
         position,
         triggerKind: 'Invoke',
     })

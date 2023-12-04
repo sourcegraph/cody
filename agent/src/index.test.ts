@@ -3,6 +3,7 @@ import { execSync, spawn } from 'child_process'
 import path from 'path'
 
 import { afterAll, beforeAll, describe, it } from 'vitest'
+import { Uri } from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
@@ -100,6 +101,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
         stdio: 'pipe',
         cwd: agentDir,
         env: {
+            CODY_SHIM_TESTING: 'true',
             CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
             CODY_RECORDING_DIRECTORY: recordingDirectory,
             CODY_RECORDING_NAME: name,
@@ -141,14 +143,15 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
 
     it('returns non-empty autocomplete', async () => {
         const filePath = '/path/to/foo/file.ts'
+        const uri = Uri.file(filePath)
         const content = 'function sum(a: number, b: number) {\n    \n}'
         client.notify('textDocument/didOpen', {
-            filePath,
+            uri: uri.toString(),
             content,
             selection: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
         })
         const completions = await client.request('autocomplete/execute', {
-            filePath,
+            uri: uri.toString(),
             position: { line: 1, character: 3 },
             triggerKind: 'Invoke',
         })

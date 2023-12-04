@@ -87,7 +87,7 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
 
                 stream.on('error', e => {
                     console.error('OpenAI stream failed', e)
-                    cb.onError(e.message)
+                    cb.onError(e)
                 })
                 stream.on('end', () => cb.onComplete())
             })

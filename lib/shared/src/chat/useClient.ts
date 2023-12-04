@@ -19,7 +19,7 @@ import { RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { Typewriter } from './typewriter'
-import { reformatBotMessage } from './viewHelpers'
+import { reformatBotMessageForChat } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
@@ -299,6 +299,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
+                null,
                 undefined,
                 unifiedContextFetcherClient
             )
@@ -339,7 +340,7 @@ export const useClient = ({
                         }
                         rawText = _rawText
 
-                        const text = reformatBotMessage(rawText, responsePrefix)
+                        const text = reformatBotMessageForChat(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
                         setChatMessagesState(transcript.toChat())
                     },

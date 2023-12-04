@@ -28,3 +28,8 @@ const sidebarCodyRole = { name: /Cody.*/ }
 export const sidebarCody = (page: Page): Locator => page.getByRole('tab', sidebarCodyRole)
 
 export const codyEditorCommandButtonRole = { name: /Commands.*/ }
+
+export async function disableNotifications(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Notifications' }).click()
+    await page.getByRole('button', { name: 'Toggle Do Not Disturb Mode' }).click()
+}
