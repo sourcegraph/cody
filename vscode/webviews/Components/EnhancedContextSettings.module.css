@@ -25,7 +25,7 @@
 }
 
 .folders-list {
-    margin: 1rem 0 0 0;
+    margin: 1rem 0 0;
 }
 
 .folders-list > dt {
@@ -34,7 +34,7 @@
 }
 
 .folders-list > dd {
-    margin-left: 0rem;
+    margin-left: 0;
     padding-left: 1rem;
     border-left: 1px solid var(--vscode-checkbox-border);
 }
@@ -51,12 +51,8 @@
 
 .providers-list {
     margin-top: 0.4rem;
-    padding: 0.25rem 0 0.5rem 0;
+    padding: 0.25rem 0 0.5rem;
     font-size: 12px;
-}
-
-.provider-item + .provider-item {
-    margin-top: 0.75rem;
 }
 
 .providers-list p {
@@ -88,6 +84,10 @@
     gap: 0.25rem;
 }
 
+.provider-item + .provider-item {
+    margin-top: 0.75rem;
+}
+
 .provider-inline-state {
     font-weight: normal;
 }
@@ -108,6 +108,7 @@ vscode-checkbox::part(control) {
     background-color: var(--vscode-checkbox-background);
     border: 1px solid var(--vscode-checkbox-border);
 }
+
 vscode-checkbox:focus::part(control),
 vscode-checkbox:focus-visible::part(control),
 vscode-checkbox:focus-within::part(control) {
