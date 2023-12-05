@@ -17,7 +17,6 @@ export class ChatHistoryManager {
         const history = localStorage.getChatHistory()
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(history)
-        console.log('History manager', history)
         return history
     }
 

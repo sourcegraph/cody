@@ -235,8 +235,7 @@ export class ChatPanelProvider extends MessageProvider {
             chatID: this.sessionID,
         })
 
-        const currentTitle = chatHistory.getChat(this.sessionID)?.chatTitle
-        console.log('fetched current chat title', currentTitle)
+        const currentTitle = chatHistory.getChat(this.sessionID)?.chatTitle || this.transcript.chatTitle
         if (currentTitle) {
             this.handleChatTitle(currentTitle)
             return
@@ -252,7 +251,6 @@ export class ChatPanelProvider extends MessageProvider {
         this.chatTitle = title
         this.transcript.setChatTitle(title)
         if (this.webviewPanel) {
-            console.log('updated webview chat title', title, this.webviewPanel)
             this.webviewPanel.title = title
         }
     }

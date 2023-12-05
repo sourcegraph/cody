@@ -172,7 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(history)
         this.chatModel = this.transcript.chatModel
-        this.chatTitle = chatHistory.getChat(chatID)?.chatTitle || this.transcript.chatTitle
+        this.chatTitle = chatHistory.getChat(chatID)?.chatTitle
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()

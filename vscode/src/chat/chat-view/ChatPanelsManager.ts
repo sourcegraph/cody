@@ -251,7 +251,9 @@ export class ChatPanelsManager implements vscode.Disposable {
                     history.chatTitle = title
                     await chatHistory.saveChat(history)
                     await this.updateTreeViewHistory()
-                    this.panelProvidersMap.get(chatID)?.handleChatTitle(title)
+                    const chatIDUTC = new Date(chatID).toUTCString()
+                    const provider = this.panelProvidersMap.get(chatID) || this.panelProvidersMap.get(chatIDUTC)
+                    provider?.handleChatTitle(title)
                 }
             })
     }
