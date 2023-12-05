@@ -67,7 +67,7 @@ interface ChatProps extends ChatClassNames {
     contextSelection?: ContextFile[] | null
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ChatModelProvider[]
-    EnhancedContextSettings?: React.FunctionComponent<{}>
+    EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo?: UserAccountInfo
@@ -104,6 +104,7 @@ export interface ChatUITextAreaProps {
     onInput: React.FormEventHandler<HTMLElement>
     setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
+    onFocus?: (event: React.FocusEvent<HTMLElement>) => void
     chatModels?: ChatModelProvider[]
 }
 
@@ -518,6 +519,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
 
+    // isContextSettingsOpen state
+    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
             {!isCodyEnabled && CodyNotEnabledNotice ? (
@@ -614,13 +618,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             required={true}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onInput={onChatInput}
+                            onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
                             setValue={inputHandler}
                             chatModels={chatModels}
                         />
                         {EnhancedContextSettings && (
                             <div className={styles.contextButton}>
-                                <EnhancedContextSettings />
+                                <EnhancedContextSettings
+                                    isOpen={isEnhancedContextOpen}
+                                    setOpen={setIsEnhancedContextOpen}
+                                />
                             </div>
                         )}
                     </div>

@@ -100,7 +100,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings> = {
                             right: 20,
                         }}
                     >
-                        <EnhancedContextSettings />
+                        <EnhancedContextSettings isOpen={true} />
                     </div>
                 </EnhancedContextEventHandlers.Provider>
             </EnhancedContextContext.Provider>
@@ -155,7 +155,7 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                     right: 20,
                 }}
             >
-                <EnhancedContextSettings />
+                <EnhancedContextSettings isOpen={true} />
             </div>
         </EnhancedContextContext.Provider>
     ),
