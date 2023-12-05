@@ -170,7 +170,7 @@ button {
 :global .codicon-database::before {
     content: '\eace';
 }
-:global .codicon-sparkles::before {
+:global .codicon-sparkle::before {
     content: '\ec10';
 }
 :global .codicon-symbol-structure::before {
