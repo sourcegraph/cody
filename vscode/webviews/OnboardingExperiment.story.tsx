@@ -7,7 +7,7 @@ import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 const meta: Meta<typeof LoginSimplified> = {
-    title: 'cody/App-less Onboarding',
+    title: 'cody/Onboarding',
     component: LoginSimplified,
     decorators: [VSCodeStoryDecorator],
 }

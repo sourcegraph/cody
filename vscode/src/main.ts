@@ -37,7 +37,6 @@ import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
-import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
 import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
@@ -158,7 +157,6 @@ const register = async (
         localEmbeddings
     )
     disposables.push(contextProvider)
-    disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
     // Hacks to get embeddings clients

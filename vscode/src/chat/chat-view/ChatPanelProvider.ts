@@ -9,6 +9,7 @@ import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { View } from '../../../webviews/NavBar'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
+import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -63,7 +64,7 @@ export class ChatPanelProvider extends MessageProvider {
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
                 await this.authProvider.announceNewAuthStatus()
-                await this.handleWebviewContext()
+                this.handleWebviewContext()
                 break
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
@@ -175,7 +176,7 @@ export class ChatPanelProvider extends MessageProvider {
      * For Webview panel only
      * This sent the initiate contextStatus and config to webview
      */
-    private async handleWebviewContext(): Promise<void> {
+    private handleWebviewContext(): void {
         const authStatus = this.authProvider.getAuthStatus()
         const editorContext = this.editor.getActiveTextEditor()
         const contextStatus = {
@@ -193,7 +194,7 @@ export class ChatPanelProvider extends MessageProvider {
             contextStatus,
         })
 
-        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const localProcess = getProcessInfo()
         const config: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: this.contextProvider.config.debugEnable,
