@@ -66,7 +66,7 @@ const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup; allG
 
     return (
         <>
-            <dt title={group.name}>
+            <dt title={group.name} className={styles.lineBreakAll}>
                 <i className="codicon codicon-folder" /> {groupName}
             </dt>
             <dd>
