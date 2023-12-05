@@ -31,7 +31,7 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     // Sign out.
     await signOut(page)
 
-    const sidebarFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe')
     await expect(sidebarFrame.getByRole('heading', { name: 'Sign In to Get Started' })).toBeVisible()
     await assertEvents(loggedEvents, expectedEvents)
 })

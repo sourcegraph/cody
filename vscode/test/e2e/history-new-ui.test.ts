@@ -23,6 +23,7 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
 
     // Start a new chat and submit chat
     await page.getByRole('tab', { name: 'New Chat' }).getByTitle('New Chat').locator('div').hover()
+    await page.waitForTimeout(500)
     await page.keyboard.type('Hey')
     await page.keyboard.press('Enter')
 
