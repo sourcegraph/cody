@@ -15,7 +15,10 @@ import { PopupFrame } from '../Popups/Popup'
 import popupStyles from '../Popups/Popup.module.css'
 import styles from './EnhancedContextSettings.module.css'
 
-interface EnhancedContextSettingsProps {}
+interface EnhancedContextSettingsProps {
+    isOpen: boolean
+    setOpen: (open: boolean) => void
+}
 
 export function defaultEnhancedContextContext(): EnhancedContextContextT {
     return {
@@ -166,11 +169,13 @@ const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvi
     )
 }
 
-export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSettingsProps> = (): React.ReactNode => {
+export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSettingsProps> = ({
+    isOpen,
+    setOpen,
+}): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
-    const [isOpen, setOpen] = React.useState(false)
     const enabledChanged = React.useCallback(
         (event: any): void => {
             const shouldEnable = !!event.target?.checked
@@ -192,7 +197,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         <div className={classNames(popupStyles.popupHost)}>
             <PopupFrame
                 isOpen={isOpen}
-                onDismiss={() => setOpen(!isOpen)}
+                onDismiss={() => setOpen(false)}
                 classNames={[popupStyles.popupTrail, styles.enhancedContextSettingsPopup]}
             >
                 <div className={styles.enhancedContextInnerContainer}>
