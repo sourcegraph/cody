@@ -115,7 +115,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   @RequiresEdt
   fun refreshRecipes() {
     recipesPanel.removeAll()
-    recipesPanel.emptyText.text = "Loading recipes..."
+    recipesPanel.emptyText.text = "Loading commands..."
     recipesPanel.revalidate()
     recipesPanel.repaint()
     val server = getServer(project)
@@ -131,7 +131,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
           } // Update on EDT
         }
       } catch (e: Exception) {
-        logger.warn("Error fetching recipes from agent", e)
+        logger.warn("Error fetching commands from agent", e)
         // Update on EDT
         ApplicationManager.getApplication().invokeLater { setRecipesPanelError() }
       }
@@ -141,8 +141,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   @RequiresEdt
   private fun setRecipesPanelError() {
     val emptyText = recipesPanel.emptyText
-    emptyText.text =
-        "Error fetching recipes. Check your connection. If the problem persists, please contact support."
+    emptyText.clear()
+    emptyText.appendLine("Error fetching commands. Check your connection.")
+    emptyText.appendLine("If the problem persists, please contact support.")
     emptyText.appendLine(
         "Retry",
         SimpleTextAttributes(
