@@ -130,8 +130,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/shared
       '@sourcegraph/telemetry':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.0
+        version: 0.14.0
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -246,8 +246,8 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0
       '@sourcegraph/telemetry':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.0
+        version: 0.14.0
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -383,8 +383,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/ui
       '@sourcegraph/telemetry':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.0
+        version: 0.14.0
       '@storybook/preview-api':
         specifier: ^7.6.2
         version: 7.6.2
@@ -5119,8 +5119,8 @@ packages:
     resolution: {integrity: sha512-FQ1/Ued4I02R0JkrHHofDN163juVxUnPALzfxPZrDZUHv+c3jHjfZhmTHEz+Wd+g3b7MFk0fkj36nZSnvPyU8A==}
     dev: true
 
-  /@sourcegraph/telemetry@0.13.0:
-    resolution: {integrity: sha512-PNLBUFYv/BCYIjatFGs7QpgT0sGuC6/P3V2YJ+sVNYc7n8hz2I/GLOsEUepVMIgYagsAtFVV24yrUkDLT82YoA==}
+  /@sourcegraph/telemetry@0.14.0:
+    resolution: {integrity: sha512-pxkIzjBx4Ari7JLDoEocYFaYFav5svHFo39fJvv89A9DuFRMrE0EM/4zP9zvgKPrVZuxwupk1vWe1yWl8QbZ4Q==}
     dependencies:
       rxjs: 7.8.1
     dev: false
@@ -8073,7 +8073,7 @@ packages:
       normalize-path: 3.0.0
       readdirp: 3.6.0
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /chownr@1.1.4:
@@ -10139,6 +10139,14 @@ packages:
     dev: true
     optional: true
 
+  /fsevents@2.3.3:
+    resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
   /fstream@1.0.12:
     resolution: {integrity: sha512-WvJ193OHa0GHPEL+AycEJgxvBEwyfRkN1vhjca23OaPVMCaLCXTd5qAu82AjTcgP1UJmytkOKb63Ypde7raDIg==}
     engines: {node: '>=0.6'}
@@ -11375,7 +11383,7 @@ packages:
       micromatch: 4.0.5
       walker: 1.0.8
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /jest-mock@27.5.1:
@@ -14580,7 +14588,7 @@ packages:
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /route-recognizer@0.3.4:
@@ -16173,7 +16181,7 @@ packages:
       postcss: 8.4.25
       rollup: 3.26.2
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /vite@4.4.3(@types/node@20.5.7):
@@ -16209,7 +16217,7 @@ packages:
       postcss: 8.4.25
       rollup: 3.26.2
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /vitest@0.33.0(jsdom@22.1.0):
