@@ -21,11 +21,16 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
+        console.time('SourcegraphEmbeddingsSearchClient.search')
         if (this.web) {
-            return this.client.searchEmbeddings([this.repoId], query, codeResultsCount, textResultsCount)
+            const res = await this.client.searchEmbeddings([this.repoId], query, codeResultsCount, textResultsCount)
+            console.timeEnd('SourcegraphEmbeddingsSearchClient.search')
+            return res
         }
 
-        return this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+        const res = await this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+        console.timeEnd('SourcegraphEmbeddingsSearchClient.search')
+        return res
     }
 
     public onDidChangeStatus(callback: (provider: status.ContextStatusProvider) => void): status.Disposable {

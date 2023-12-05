@@ -845,6 +845,9 @@ class ContextProvider implements IContextProvider {
     }
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
+        console.time('getEnhancedContext')
+        const startTime = Date.now()
+
         const searchContext: ContextItem[] = []
         let localEmbeddingsError
         let remoteEmbeddingsError
@@ -852,18 +855,22 @@ class ContextProvider implements IContextProvider {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
         const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
+
+        console.log('# getEnhancedContext 1', Date.now() - startTime)
         try {
             searchContext.push(...(await localEmbeddingsResults))
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
             localEmbeddingsError = error
         }
+        console.log('# getEnhancedContext 2', Date.now() - startTime)
         try {
             searchContext.push(...(await remoteEmbeddingsResults))
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
             remoteEmbeddingsError = error
         }
+        console.log('# getEnhancedContext 3', Date.now() - startTime)
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
         if (localEmbeddingsError && remoteEmbeddingsError) {
             throw new Error(
@@ -875,9 +882,12 @@ class ContextProvider implements IContextProvider {
 
         const priorityContext: ContextItem[] = []
         if (this.needsUserAttentionContext(text)) {
+            console.log('# getEnhancedContext 4', Date.now() - startTime)
             // Query refers to current editor
             priorityContext.push(...this.getUserAttentionContext())
+            console.log('# getEnhancedContext 5', Date.now() - startTime)
         } else if (this.needsReadmeContext(text)) {
+            console.log('# getEnhancedContext 6', Date.now() - startTime)
             // Query refers to project, so include the README
             let containsREADME = false
             for (const contextItem of searchContext) {
@@ -887,16 +897,23 @@ class ContextProvider implements IContextProvider {
                     break
                 }
             }
+            console.log('# getEnhancedContext 7', Date.now() - startTime)
             if (!containsREADME) {
                 priorityContext.push(...(await this.getReadmeContext()))
             }
+            console.log('# getEnhancedContext 8', Date.now() - startTime)
         }
+        console.log('# getEnhancedContext 9', Date.now() - startTime)
+        console.log('# searchContext', searchContext, localEmbeddingsError, remoteEmbeddingsError)
 
+        console.timeEnd('getEnhancedContext')
         return priorityContext.concat(searchContext)
     }
 
     private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {
+        console.time('searchEmbeddingsLocal')
         if (!this.localEmbeddings) {
+            console.timeEnd('searchEmbeddingsLocal')
             return []
         }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
@@ -918,6 +935,7 @@ class ContextProvider implements IContextProvider {
                 text: result.content,
             })
         }
+        console.timeEnd('searchEmbeddingsLocal')
         return contextItems
     }
 
@@ -971,9 +989,11 @@ class ContextProvider implements IContextProvider {
     }
 
     private needsReadmeContext(input: string): boolean {
+        console.time('needsReadmeContext')
         input = input.toLowerCase()
         const question = extractQuestion(input)
         if (!question) {
+            console.timeEnd('needsReadmeContext')
             return false
         }
 
@@ -1008,6 +1028,7 @@ class ContextProvider implements IContextProvider {
             }
         }
 
+        console.timeEnd('needsReadmeContext')
         return containsQuestionIndicator && containsProjectSignifier
     }
 
@@ -1019,14 +1040,17 @@ class ContextProvider implements IContextProvider {
     ]
 
     private needsUserAttentionContext(input: string): boolean {
+        console.time('needsUserAttentionContext')
         const inputLowerCase = input.toLowerCase()
         // If the input matches any of the `editorRegexps` we assume that we have to include
         // the editor context (e.g., currently open file) to the overall message context.
         for (const regexp of ContextProvider.userAttentionRegexps) {
             if (inputLowerCase.match(regexp)) {
+                console.timeEnd('needsUserAttentionContext')
                 return true
             }
         }
+        console.timeEnd('needsUserAttentionContext')
         return false
     }
 
