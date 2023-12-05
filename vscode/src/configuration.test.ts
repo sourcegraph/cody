@@ -140,7 +140,7 @@ describe('getConfiguration', () => {
             },
             experimentalChatPredictions: true,
             commandCodeLenses: true,
-            experimentalSimpleChatContext: false,
+            experimentalSimpleChatContext: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
