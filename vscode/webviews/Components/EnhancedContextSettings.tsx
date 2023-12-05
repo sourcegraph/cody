@@ -181,6 +181,13 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         },
         [events, enabled]
     )
+
+    const hasOpenedBeforeKey = 'enhanced-context-settings.has-opened-before'
+    const hasOpenedBefore = localStorage.getItem(hasOpenedBeforeKey) === 'true'
+    if (isOpen && !hasOpenedBefore) {
+        localStorage.setItem(hasOpenedBeforeKey, 'true')
+    }
+
     return (
         <div className={classNames(popupStyles.popupHost)}>
             <PopupFrame
@@ -216,7 +223,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 title="Configure Enhanced Context"
             >
                 <i className="codicon codicon-sparkle" />
-                {/* Show this dot if the popover has never been opened: <div className={styles.glowyDot}/> */}
+                {isOpen || hasOpenedBefore ? null : <div className={styles.glowyDot} />}
             </VSCodeButton>
         </div>
     )
