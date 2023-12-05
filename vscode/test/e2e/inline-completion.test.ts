@@ -20,8 +20,9 @@ test('shows chat sidebar completion onboarding notice on first completion accept
 
     const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
     const editor = page.locator('[id="workbench\\.parts\\.editor"]')
-    const notice = sidebar.locator('.onboarding-autocomplete')
-    const noticeCloseButton = notice.locator('div[class^="_notice-close"] vscode-button')
+    const notice = page.locator('.onboarding-autocomplete')
+    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const noticeCloseButton = chatPanelFrame.locator('div[class^="_notice-close"] vscode-button').nth(1)
 
     const firstAcceptedCompletion = editor.getByText('myFirstCompletion')
     // Use .first() to ignore additional instances of this text if inline completion shows
@@ -43,7 +44,7 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     // the notice to be shown.
     await acceptInlineCompletion(page)
     await expect(firstAcceptedCompletion).toBeVisible()
-    await expect(notice).toBeVisible()
+    await expect(chatPanelFrame.locator('.onboarding-autocomplete')).toBeVisible()
 
     // Close the notice.
     await noticeCloseButton.click()
@@ -97,11 +98,14 @@ test('inline completion onboarding notice on first completion accept', async ({ 
     await expect(firstAcceptedCompletion).toBeVisible()
     await expect(decoration).toBeVisible()
 
+    await page.getByRole('tab', { name: 'index.html' }).getByText('index.html').click()
+
     // Modify the document to hide the decoration.
     await page.keyboard.press('a')
-    await expect(decoration).not.toBeVisible()
+    await expect(page.locator('css=span[class*="TextEditorDecorationType"]')).not.toBeVisible()
 
     // Trigger/accept another completion, but don't expect the notification.
+    await page.waitForTimeout(100)
     await triggerInlineCompletionAfter(page, firstAcceptedCompletion, 'myNot')
     await acceptInlineCompletion(page)
     // After accepting a completion, a new completion request will be made. Since this can interfere

@@ -288,10 +288,9 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
     }
 
-    public triggerNotice(notice: { key: string }): void {
-        this.getChatPanel()
-            .then(provider => provider.triggerNotice(notice))
-            .catch(error => console.error(error))
+    public async triggerNotice(notice: { key: string }): Promise<void> {
+        const chatProvider = await this.getChatPanel()
+        chatProvider.triggerNotice(notice)
     }
 
     private disposeProvider(chatID: string): void {
