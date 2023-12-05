@@ -701,6 +701,10 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.show-page",
+          "when": "false"
         }
       ],
       "editor/context": [
