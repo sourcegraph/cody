@@ -64,14 +64,14 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Upgrade',
         description: 'Upgrade to Pro',
         icon: 'zap',
-        command: { command: 'cody.account.upgrade' },
+        command: { command: 'cody.show-page', args: ['upgrade'] },
         requireUpgradeAvailable: true,
         requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
-        command: { command: 'cody.account.usage' },
+        command: { command: 'cody.show-page', args: ['usage'] },
         requireFeature: FeatureFlag.CodyPro,
     },
     {

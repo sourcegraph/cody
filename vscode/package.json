@@ -377,6 +377,13 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.show-page",
+        "category": "Cody",
+        "title": "Show Admin Pages",
+        "group": "Cody",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
@@ -694,6 +701,10 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.show-page",
+          "when": "false"
         }
       ],
       "editor/context": [
