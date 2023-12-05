@@ -4,7 +4,8 @@ import * as vscode from 'vscode'
 
 import { afterIntegrationTest, beforeIntegrationTest, getFixupTasks, getTranscript, waitUntil } from './helpers'
 
-suite.skip('Commands', function () {
+// TODO fix tests
+suite('Commands', function () {
     this.beforeEach(beforeIntegrationTest)
     this.afterEach(afterIntegrationTest)
 
@@ -21,7 +22,7 @@ suite.skip('Commands', function () {
     // regex for /^hello from the assistant$/
     const assistantRegex = /^hello from the assistant$/
 
-    test('Explain Code', async () => {
+    test.skip('Explain Code', async () => {
         await getTextEditorWithSelection()
 
         // Run the "explain" command
@@ -34,7 +35,7 @@ suite.skip('Commands', function () {
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
-    test('Find Code Smells', async () => {
+    test.skip('Find Code Smells', async () => {
         await getTextEditorWithSelection()
 
         // Run the "/smell" command
@@ -47,7 +48,7 @@ suite.skip('Commands', function () {
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
-    test('Generate Unit Tests', async () => {
+    test.skip('Generate Unit Tests', async () => {
         await getTextEditorWithSelection()
 
         // Run the "/test" command
@@ -60,7 +61,7 @@ suite.skip('Commands', function () {
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
-    test('Document Code', async () => {
+    test.skip('Document Code', async () => {
         await getTextEditorWithSelection()
 
         // Run the "/doc" command
