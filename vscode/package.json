@@ -704,6 +704,11 @@
       ],
       "cody.submenu": [
         {
+          "command": "cody.chat.panel.new",
+          "when": "cody.activated",
+          "group": "ask"
+        },
+        {
           "command": "cody.command.explain-code",
           "when": "cody.activated",
           "group": "command"
@@ -731,7 +736,7 @@
         {
           "command": "cody.action.commands.custom.menu",
           "when": "cody.activated",
-          "group": "command"
+          "group": "custom-commands"
         },
         {
           "command": "cody.focus",
@@ -745,7 +750,7 @@
         },
         {
           "command": "cody.inline.new",
-          "when": "cody.activated",
+          "when": "cody.activated && config.cody.inlineChat.enabled",
           "group": "ask"
         }
       ],
