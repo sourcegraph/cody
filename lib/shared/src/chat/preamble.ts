@@ -1,5 +1,18 @@
 import { Message } from '../sourcegraph-api'
 
+export function getSimplePreamble(): Message[] {
+    return [
+        {
+            speaker: 'human',
+            text: 'You are Cody, an AI coding assistant from Sourcegraph.',
+        },
+        {
+            speaker: 'assistant',
+            text: 'I am Cody, an AI coding assistant from Sourcegraph.',
+        },
+    ]
+}
+
 export interface Preamble {
     actions: string
     rules: string
