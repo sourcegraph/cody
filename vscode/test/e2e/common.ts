@@ -12,7 +12,7 @@ export const sidebarSignin = async (page: Page, sidebar: Frame, enableNotificati
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
     // Turn off notification
-    if (enableNotifications) {
+    if (!enableNotifications) {
         await disableNotifications(page)
     }
 
