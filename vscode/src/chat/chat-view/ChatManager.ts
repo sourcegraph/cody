@@ -288,7 +288,7 @@ export class ChatManager implements vscode.Disposable {
     private async createNewWebviewPanel(): Promise<void> {
         const debounceCreatePanel = debounce(async () => {
             await this.chatPanelsManager?.createWebviewPanel()
-        }, 1000)
+        }, 250)
 
         if (this.chatPanelsManager) {
             await debounceCreatePanel()
