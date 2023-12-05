@@ -334,21 +334,6 @@
         "title": "Sign In"
       },
       {
-        "command": "cody.interactive.clear",
-        "category": "Cody",
-        "title": "Start a New Chat Session",
-        "group": "Cody",
-        "icon": "$(add)",
-        "when": "cody.activated"
-      },
-      {
-        "command": "cody.history",
-        "category": "Cody",
-        "title": "Chat History",
-        "group": "Cody",
-        "icon": "$(history)"
-      },
-      {
         "command": "cody.status-bar.interacted",
         "category": "Cody",
         "title": "Cody Settings",
@@ -428,7 +413,7 @@
         "icon": "$(new-comment-icon)"
       },
       {
-        "command": "cody.chat.tree.view.focus",
+        "command": "cody.chat.focus",
         "category": "Cody",
         "title": "Open Cody Sidebar",
         "group": "Cody",
@@ -485,7 +470,7 @@
     ],
     "keybindings": [
       {
-        "command": "cody.chat.tree.view.focus",
+        "command": "cody.chat.focus",
         "key": "alt+f1",
         "when": "cody.activated"
       },

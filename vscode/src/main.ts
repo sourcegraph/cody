@@ -318,29 +318,12 @@ const register = async (
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
         }),
-        // TODO remove cody.interactive.clear when we remove the old chat
-        vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await chatManager.clearAndRestartSession()
-            await chatManager.setWebviewView('chat')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' }, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'reset' } })
-        }),
-        vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
+        vscode.commands.registerCommand('cody.chat.focus', () =>
+            vscode.commands.executeCommand('cody.chat.tree.view.focus')
+        ),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', async () => {
-            await chatManager.setWebviewView('history')
-            telemetryService.log(
-                'CodyVSCodeExtension:chatTitleButton:clicked',
-                { name: 'history' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.history', 'clicked', { privateMetadata: { name: 'history' } })
-        }),
-        vscode.commands.registerCommand('cody.history.clear', async () => {
-            await chatManager.clearHistory()
-        }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
             await executeRecipeInChatView('chat-question', true, input, source)
