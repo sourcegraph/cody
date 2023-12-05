@@ -127,6 +127,7 @@ async function triggerInlineCompletionAfter(page: Page, afterElement: Locator, p
     await page.keyboard.press('Enter')
     await page.keyboard.type(prefix)
 
+    // TODO: Fix flaky
     // Wait for ghost text to become visible.
     await page.locator('.ghost-text-decoration').waitFor({ state: 'visible' })
 }

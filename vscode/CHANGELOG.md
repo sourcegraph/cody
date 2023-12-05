@@ -18,8 +18,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Chat: Uses the new Chat UI by default. [pull/2079](https://github.com/sourcegraph/cody/pull/2079)
-- Inline Chat is now deprecated. [pull/2079](https://github.com/sourcegraph/cody/pull/2079)
-- Fixup Tree View is now deprecated. [pull/2079](https://github.com/sourcegraph/cody/pull/2079)
+- Inline Chat is now deprecated and removed. [pull/2079](https://github.com/sourcegraph/cody/pull/2079)
+- Fixup Tree View is now deprecated and removed. [pull/2079](https://github.com/sourcegraph/cody/pull/2079)
 - Enhanced Context used to turn off automatically after the first chat. Now it stays enabled until you disable it. [pull/2069](https://github.com/sourcegraph/cody/pull/2069)
 - Chat: Reuse existing New Chat panel to prevent having multiple new chats open at once. [pull/2087](https://github.com/sourcegraph/cody/pull/2087)
 - Chat: Close the Enhanced Context popover on chat input focus. [pull/2091](https://github.com/sourcegraph/cody/pull/2091)

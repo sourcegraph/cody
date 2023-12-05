@@ -3,8 +3,6 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-// TODO Fix tests with iframe selector
-
 test('@-file empty state', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
