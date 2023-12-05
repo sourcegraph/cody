@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 // TODO: convert to kotlin, ideally after converting GraphQlLogger
+@Deprecated
 public class Event {
   @NotNull public String event;
   @NotNull public String userCookieID;

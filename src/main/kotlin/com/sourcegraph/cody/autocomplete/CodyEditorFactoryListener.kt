@@ -11,10 +11,12 @@ import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl
 import com.intellij.openapi.util.Disposer
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getClient
+import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.agent.protocol.TextDocument
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager.Companion.instance
+import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil.VIM_EXIT_INSERT_MODE_ACTION
@@ -93,6 +95,15 @@ class CodyEditorFactoryListener : EditorFactoryListener {
           isEditorValidForAutocomplete(editor) &&
           !CommandProcessor.getInstance().isUndoTransparentActionInProgress) {
         Util.informAgentAboutEditorChange(editor)
+
+        // This notification must be sent after the above, see tracker comment for more details.
+        AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
+          CodyAgent.getServer(editor.project!!)?.let { server ->
+            server.completionAccepted(CompletionItemParams(completionID))
+            server.autocompleteClearLastCandidate()
+          }
+        }
+
         val changeOffset = event.offset + event.newLength
         if (editor.caretModel.offset == changeOffset) {
           completions.triggerAutocomplete(

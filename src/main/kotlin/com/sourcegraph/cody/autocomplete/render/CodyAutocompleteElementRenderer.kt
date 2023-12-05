@@ -6,7 +6,7 @@ import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.colors.EditorFontType
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.sourcegraph.cody.vscode.InlineAutocompleteItem
+import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.config.ConfigUtil.getCustomAutocompleteColor
 import com.sourcegraph.config.ConfigUtil.isCustomAutocompleteColorEnabled
 import java.awt.Font
@@ -14,7 +14,7 @@ import java.util.function.Supplier
 
 abstract class CodyAutocompleteElementRenderer(
     val text: String,
-    val completionItems: List<InlineAutocompleteItem>,
+    val completionItems: List<AutocompleteItem>,
     protected val editor: Editor,
     val type: AutocompleteRendererType
 ) : EditorCustomElementRenderer {

@@ -66,7 +66,7 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
               setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
             }
           } else {
-            server.getRepoId(GetRepoIDResponse(repoName))?.thenAccept { repoId ->
+            server.getRepoId(GetRepoIDResponse(repoName)).thenAccept { repoId ->
               if (repoId != null) {
                 setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
               } else {

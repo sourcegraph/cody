@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.agent
 
-import com.google.gson.GsonBuilder
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
@@ -15,6 +14,8 @@ import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.CodyAgentFocusListener
 import com.sourcegraph.cody.agent.protocol.ClientInfo
+import com.sourcegraph.cody.agent.protocol.CompletionItemID
+import com.sourcegraph.cody.agent.protocol.CompletionItemIDSerializer
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import java.io.File
@@ -40,7 +41,7 @@ class CodyAgent(private val project: Project) : Disposable {
   var disposable = Disposer.newDisposable("CodyAgent")
   private val client = CodyAgentClient()
   private var agentNotRunningExplanation = ""
-  private var initialized = CompletableFuture<CodyAgentServer?>()
+  private var initialized = CompletableFuture<CodyAgentServer>()
   private val firstConnection = AtomicBoolean(true)
   private var listeningToJsonRpc: Future<Void?> = CompletableFuture.completedFuture(null)
   private var agentProcess: Process? = null
@@ -66,7 +67,6 @@ class CodyAgent(private val project: Project) : Disposable {
               server
                   .initialize(
                       ClientInfo(
-                          name = "JetBrains",
                           version = ConfigUtil.getPluginVersion(),
                           workspaceRootUri = ConfigUtil.getWorkspaceRootPath(project).toUri(),
                           extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
@@ -87,7 +87,7 @@ class CodyAgent(private val project: Project) : Disposable {
     }
   }
 
-  fun subscribeToFocusEvents() {
+  private fun subscribeToFocusEvents() {
     // Code example taken from
     // https://intellij-support.jetbrains.com/hc/en-us/community/posts/4578776718354/comments/4594838404882
     // This listener is registered programmatically because it was not working via plugin.xml
@@ -144,11 +144,15 @@ class CodyAgent(private val project: Project) : Disposable {
 
     agentProcess = process
     val launcher =
-        Launcher.Builder<
-                CodyAgentServer>() // emit `null` instead of leaving fields undefined because Cody
-            // in VSC has
-            // many `=== null` checks that return false for undefined fields.
-            .configureGson { obj: GsonBuilder -> obj.serializeNulls() }
+        Launcher.Builder<CodyAgentServer>()
+            .configureGson { gsonBuilder ->
+              gsonBuilder
+                  // emit `null` instead of leaving fields undefined because Cody
+                  // in VSC has
+                  // many `=== null` checks that return false for undefined fields.
+                  .serializeNulls()
+                  .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
+            }
             .setRemoteInterface(CodyAgentServer::class.java)
             .traceMessages(traceWriter())
             .setExecutorService(executorService)
@@ -179,7 +183,7 @@ class CodyAgent(private val project: Project) : Disposable {
     }
 
     @JvmStatic
-    fun getInitializedServer(project: Project): CompletableFuture<CodyAgentServer?> {
+    fun getInitializedServer(project: Project): CompletableFuture<CodyAgentServer> {
       return project.service<CodyAgent>().initialized
     }
 
@@ -198,7 +202,7 @@ class CodyAgent(private val project: Project) : Disposable {
     @JvmStatic
     fun <T> withServer(
         project: Project,
-        callback: Function<CodyAgentServer?, CompletableFuture<T>?>?
+        callback: Function<CodyAgentServer, CompletableFuture<T>?>
     ): CompletableFuture<T> {
       return getInitializedServer(project).thenCompose(callback)
     }

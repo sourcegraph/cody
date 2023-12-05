@@ -6,8 +6,8 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
-import com.sourcegraph.cody.vscode.InlineAutocompleteItem
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.ConcurrentHashMap
@@ -57,31 +57,15 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
       BACKWARD
     }
 
-    class CacheKey(val caretOffset: Int, val documentName: String) {
+    data class CacheKey(val caretOffset: Int, val documentName: String) {
       constructor(
           caret: Caret,
           editor: Editor
       ) : this(caret.offset, CodyEditorUtil.getVirtualFile(editor)?.name ?: "")
-
-      override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is CacheKey) return false
-
-        if (caretOffset != other.caretOffset) return false
-        if (documentName != other.documentName) return false
-
-        return true
-      }
-
-      override fun hashCode(): Int {
-        var result = caretOffset
-        result = 31 * result + documentName.hashCode()
-        return result
-      }
     }
 
     infix fun Editor.cycleAutocompleteCacheKey(caret: Caret) = CacheKey(caret, this)
 
-    private val autocompleteItemsCache = ConcurrentHashMap<CacheKey, List<InlineAutocompleteItem>>()
+    private val autocompleteItemsCache = ConcurrentHashMap<CacheKey, List<AutocompleteItem>>()
   }
 }

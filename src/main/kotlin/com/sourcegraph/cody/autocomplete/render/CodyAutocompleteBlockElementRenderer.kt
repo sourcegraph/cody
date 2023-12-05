@@ -4,7 +4,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.sourcegraph.cody.vscode.InlineAutocompleteItem
+import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Rectangle
@@ -12,7 +12,7 @@ import java.awt.Rectangle
 /** Implements the logic to render an autocomplete item inline in the editor. */
 class CodyAutocompleteBlockElementRenderer(
     text: String,
-    completionItems: List<InlineAutocompleteItem>,
+    completionItems: List<AutocompleteItem>,
     editor: Editor
 ) : CodyAutocompleteElementRenderer(text, completionItems, editor, AutocompleteRendererType.BLOCK) {
   override fun calcWidthInPixels(inlay: Inlay<*>): Int {

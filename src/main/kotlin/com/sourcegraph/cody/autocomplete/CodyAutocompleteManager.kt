@@ -7,14 +7,13 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.InlayModel
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
+import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
@@ -35,7 +34,6 @@ import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.config.UserLevelConfig
-import com.sourcegraph.telemetry.GraphQlLogger
 import com.sourcegraph.utils.CodyEditorUtil.getAllOpenEditors
 import com.sourcegraph.utils.CodyEditorUtil.getLanguage
 import com.sourcegraph.utils.CodyEditorUtil.getTextRange
@@ -50,8 +48,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Consumer
-import java.util.stream.Collectors
+import kotlin.streams.toList
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
@@ -59,7 +56,6 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 class CodyAutocompleteManager {
   private val logger = Logger.getInstance(CodyAutocompleteManager::class.java)
   private val currentJob = AtomicReference(CancellationToken())
-  var currentAutocompleteTelemetry: AutocompleteTelemetry? = null
 
   /**
    * Clears any already rendered autocomplete suggestions for the given editor and cancels any
@@ -69,21 +65,6 @@ class CodyAutocompleteManager {
    */
   @RequiresEdt
   fun clearAutocompleteSuggestions(editor: Editor) {
-    // Log "suggested" event and clear current autocompletion
-    editor.project?.let { p ->
-      currentAutocompleteTelemetry?.let { autocompleteTelemetry ->
-        if (autocompleteTelemetry.status != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
-          autocompleteTelemetry.markCompletionHidden()
-          GraphQlLogger.logAutocompleteSuggestedEvent(
-              p,
-              autocompleteTelemetry.latencyMs,
-              autocompleteTelemetry.displayDurationMs,
-              autocompleteTelemetry.params())
-          currentAutocompleteTelemetry = null
-        }
-      }
-    }
-
     // Cancel any running job
     cancelCurrentJob(editor.project)
 
@@ -97,7 +78,7 @@ class CodyAutocompleteManager {
    */
   @RequiresEdt
   fun clearAutocompleteSuggestionsForAllProjects() {
-    getAllOpenEditors().forEach(Consumer { editor: Editor -> clearAutocompleteSuggestions(editor) })
+    getAllOpenEditors().forEach { clearAutocompleteSuggestions(it) }
   }
 
   @RequiresEdt
@@ -116,8 +97,8 @@ class CodyAutocompleteManager {
       return
     }
     getAllInlaysForEditor(editor)
-        .filter { inlay: Inlay<*> -> inlay.renderer is CodyAutocompleteElementRenderer }
-        .forEach { disposable: Inlay<*>? -> Disposer.dispose(disposable!!) }
+        .filter { inlay -> inlay.renderer is CodyAutocompleteElementRenderer }
+        .forEach { disposable -> Disposer.dispose(disposable) }
   }
 
   /**
@@ -160,9 +141,7 @@ class CodyAutocompleteManager {
       logger.warn("triggered autocomplete with null project")
       return
     }
-    currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered()
     val textDocument: TextDocument = IntelliJTextDocument(editor, project)
-    val autoCompleteDocumentContext = textDocument.getAutocompleteContext(offset)
 
     if (isTriggeredExplicitly &&
         CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
@@ -211,9 +190,8 @@ class CodyAutocompleteManager {
     if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
       tryRestartingAgentIfNotRunning(project)
     }
-    val server = getServer(project)
-    val isAgentAutocomplete = server != null
-    if (!isAgentAutocomplete) {
+    val server = CodyAgent.getServer(project)
+    if (server == null) {
       logger.warn("Doing nothing, Agent is not running")
       return CompletableFuture.completedFuture(null)
     }
@@ -248,7 +226,7 @@ class CodyAutocompleteManager {
                             com.sourcegraph.cody.vscode.Position(lineNumber, startPosition),
                             position)))
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
-    val completions = server!!.autocompleteExecute(params)
+    val completions = server.autocompleteExecute(params)
 
     // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
     // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
@@ -264,10 +242,9 @@ class CodyAutocompleteManager {
           }
           null
         }
-        .thenAccept { result: InlineAutocompleteList ->
+        .thenAccept { result ->
           UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown = false
-          processAutocompleteResult(
-              editor, offset, triggerKind, result, cancellationToken, lookupString)
+          processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
         }
         .exceptionally { error: Throwable? ->
           if (!(error is CancellationException || error is CompletionException)) {
@@ -292,22 +269,15 @@ class CodyAutocompleteManager {
       editor: Editor,
       offset: Int,
       triggerKind: InlineCompletionTriggerKind,
-      result: InlineAutocompleteList,
+      result: AutocompleteResult,
       cancellationToken: CancellationToken,
-      lookupString: String?,
   ) {
-    currentAutocompleteTelemetry?.markCompletionEvent(result.completionEvent)
-    val items = result.items
-    if (items == null || result.completionEvent == null) {
-      logger.warn("autocomplete returned null items")
-      return
-    }
     if (Thread.interrupted() || cancellationToken.isCancelled) {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE) logger.warn("autocomplete canceled")
       return
     }
     val inlayModel = editor.inlayModel
-    if (items.isEmpty()) {
+    if (result.items.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
       // We don't do anything now because it's unclear what would be the most idiomatic
       // IntelliJ API to use.
@@ -321,9 +291,8 @@ class CodyAutocompleteManager {
       }
       cancellationToken.dispose()
       clearAutocompleteSuggestions(editor)
-      currentAutocompleteTelemetry?.markCompletionDisplayed()
 
-      displayAgentAutocomplete(editor, offset, items, inlayModel, triggerKind)
+      displayAgentAutocomplete(editor, offset, result.items, inlayModel, triggerKind)
     }
   }
 
@@ -336,7 +305,7 @@ class CodyAutocompleteManager {
   fun displayAgentAutocomplete(
       editor: Editor,
       offset: Int,
-      items: List<InlineAutocompleteItem>,
+      items: List<AutocompleteItem>,
       inlayModel: InlayModel,
       triggerKind: InlineCompletionTriggerKind,
   ) {
@@ -358,19 +327,16 @@ class CodyAutocompleteManager {
     val defaultItem = items.firstOrNull() ?: return
     val range = getTextRange(editor.document, defaultItem.range)
     val originalText = editor.document.getText(range)
-    val insertTextFirstLine: String = defaultItem.insertText.lines().firstOrNull() ?: ""
-
-    val multilineInsertText: String =
-        defaultItem.insertText.lines().drop(1).joinToString(separator = "\n")
+    val lines = defaultItem.insertText.lines()
+    val insertTextFirstLine: String = lines.firstOrNull() ?: ""
+    val multilineInsertText: String = lines.drop(1).joinToString(separator = "\n")
 
     // Run Myers diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
     // The diff algorithm returns a list of "deltas" that give us the minimal number of additions we
     // need to make to the document.
     val patch = diff(originalText, insertTextFirstLine)
-    if (!patch.getDeltas().stream().allMatch { delta: Delta<String> ->
-      delta.type == Delta.TYPE.INSERT
-    }) {
+    if (!patch.deltas.all { delta -> delta.type == Delta.TYPE.INSERT }) {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
           UserLevelConfig.isVerboseLoggingEnabled()) {
         logger.warn("Skipping autocomplete with non-insert deltas: $patch")
@@ -380,9 +346,13 @@ class CodyAutocompleteManager {
       return
     }
 
+    editor.project?.let {
+      CodyAgent.getServer(it)?.completionSuggested(CompletionItemParams(defaultItem.id))
+    }
+
     // Insert one inlay hint per delta in the first line.
     for (delta in patch.getDeltas()) {
-      val text = java.lang.String.join("", delta.revised.lines)
+      val text = delta.revised.lines.joinToString("")
       inlayModel.addInlineElement(
           range.startOffset + delta.original.position,
           true,
@@ -433,6 +403,6 @@ class CodyAutocompleteManager {
         DiffUtils.diff(characterList(a), characterList(b))
 
     private fun characterList(value: String): List<String> =
-        value.chars().mapToObj { c: Int -> c.toChar().toString() }.collect(Collectors.toList())
+        value.chars().mapToObj { c -> c.toChar().toString() }.toList()
   }
 }

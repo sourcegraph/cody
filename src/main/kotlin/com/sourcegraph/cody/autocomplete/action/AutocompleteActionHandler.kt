@@ -7,9 +7,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
-import com.sourcegraph.cody.vscode.InlineAutocompleteItem
 import com.sourcegraph.utils.CodyEditorUtil
 
 open class AutocompleteActionHandler : EditorActionHandler() {
@@ -39,10 +39,10 @@ open class AutocompleteActionHandler : EditorActionHandler() {
    * ` System.out.println("a: CARET"); // original System.out.println("a: " + a);CARET //
    * autocomplete ` *
    */
-  protected fun getCurrentAutocompleteItem(caret: Caret): InlineAutocompleteItem? =
+  protected fun getCurrentAutocompleteItem(caret: Caret): AutocompleteItem? =
       getAutocompleteRenderers(caret).firstNotNullOfOrNull { it.completionItems.firstOrNull() }
 
-  protected fun getAllAutocompleteItems(caret: Caret): List<InlineAutocompleteItem> =
+  protected fun getAllAutocompleteItems(caret: Caret): List<AutocompleteItem> =
       getAutocompleteRenderers(caret).flatMap { it.completionItems }.distinct()
 
   protected fun getSingleCaret(editor: Editor): Caret? {

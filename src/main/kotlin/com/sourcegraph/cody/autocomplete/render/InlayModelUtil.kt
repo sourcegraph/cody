@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.autocomplete.render
 
-import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.InlayModel
@@ -24,10 +23,5 @@ object InlayModelUtil {
   @JvmStatic
   fun getAllInlaysForEditor(editor: Editor): List<Inlay<*>> {
     return getAllInlays(editor.inlayModel, 0, editor.document.textLength)
-  }
-
-  @JvmStatic
-  fun getAllInlaysForCaret(caret: Caret): List<Inlay<*>> {
-    return getAllInlays(caret.editor.inlayModel, caret.offset, caret.offset)
   }
 }
