@@ -264,49 +264,49 @@
       },
       {
         "command": "cody.command.edit-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Edit Code",
         "when": "cody.activated && editorTextFocus",
         "icon": "$(wand)"
       },
       {
         "command": "cody.command.explain-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Explain Code",
         "icon": "$(output)",
         "when": "cody.activated && editorFocus"
       },
       {
         "command": "cody.command.generate-tests",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Generate Unit Tests",
         "icon": "$(package)",
         "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.document-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Document Code",
         "icon": "$(book)",
         "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.smell-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Find Code Smells",
         "icon": "$(symbol-keyword)",
         "when": "cody.activated && editorFocus"
       },
       {
         "command": "cody.action.commands.custom.menu",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Custom Commands",
         "icon": "$(tools)",
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.command.context-search",
-        "category": "Ask Cody",
+        "category": "Cody",
         "title": "Codebase Context Search",
         "when": "cody.activated && workspaceFolderCount > 0"
       },
@@ -527,23 +527,23 @@
         },
         {
           "command": "cody.command.explain-code",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.context-search",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.smell-code",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.document-code",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.action.commands.custom.menu",
@@ -591,6 +591,11 @@
       ],
       "cody.submenu": [
         {
+          "command": "cody.chat.panel.new",
+          "when": "cody.activated",
+          "group": "ask"
+        },
+        {
           "command": "cody.command.explain-code",
           "when": "cody.activated",
           "group": "command"
@@ -618,7 +623,7 @@
         {
           "command": "cody.action.commands.custom.menu",
           "when": "cody.activated",
-          "group": "command"
+          "group": "custom-commands"
         },
         {
           "command": "cody.focus",

@@ -31,6 +31,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   longer need to have the Cody App open. Note, the sidebar chat indicator may
   say embeddings were not found while we work on improving chat.
   [pull/2099](https://github.com/sourcegraph/cody/pull/2099)
+- Commands: Expose commands in the VS Code command palette and clean up the context menu. [pull/1209](https://github.com/sourcegraph/cody/pull/2109)
 
 ## [0.16.3]
 
