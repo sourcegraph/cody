@@ -49,6 +49,8 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
                 await this.authProvider.announceNewAuthStatus()
+                // Hint local embeddings, if any, should start
+                void this.contextProvider.localEmbeddings?.start()
                 break
             case 'initialized':
                 logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')

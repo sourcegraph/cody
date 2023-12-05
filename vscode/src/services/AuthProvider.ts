@@ -46,12 +46,13 @@ export class AuthProvider {
     // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<void> {
         let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
-        const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         if (lastEndpoint === LOCAL_APP_URL.toString()) {
-            // If the user last signed in to app, which talks to dotcom,
-            // seamlessly redirect them to talk to dotcom directly.
+            // If the user last signed in to app, which talks to dotcom, try
+            // signing them in to dotcom.
             logDebug('AuthProvider:init', 'redirecting App-signed in user to dotcom')
             lastEndpoint = DOTCOM_URL.toString()
+            token = (await secretStorage.get(lastEndpoint)) || null
         }
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
         await this.auth(lastEndpoint, token || null)
