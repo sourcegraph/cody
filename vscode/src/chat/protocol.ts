@@ -126,10 +126,6 @@ export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL(
     'https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode'
 )
-// APP
-export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
-export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
-export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
@@ -218,25 +214,6 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
         return false
     }
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
-}
-
-// The  OS and Arch support for Cody app
-export function isOsSupportedByApp(os?: string, arch?: string): boolean {
-    if (!os || !arch) {
-        return false
-    }
-    return os === 'darwin' || os === 'linux'
-}
-
-// Map  the Arch to the app's supported Arch
-export function archConvertor(arch: string): string {
-    switch (arch) {
-        case 'arm64':
-            return 'aarch64'
-        case 'x64':
-            return 'x86_64'
-    }
-    return arch
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

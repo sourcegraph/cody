@@ -5,7 +5,7 @@ import { TelemetryEventInput } from '@sourcegraph/telemetry'
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { addTraceparent, startAsyncSpan } from '../../tracing'
 import { isError } from '../../utils'
-import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
+import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -256,10 +256,6 @@ export class SourcegraphGraphQLAPIClient {
 
     public isDotCom(): boolean {
         return isDotCom(this.config.serverEndpoint)
-    }
-
-    public isLocalApp(): boolean {
-        return isLocalApp(this.config.serverEndpoint)
     }
 
     // Gets the server endpoint for this client. The UI uses this to display

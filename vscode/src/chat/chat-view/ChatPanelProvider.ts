@@ -9,6 +9,7 @@ import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { View } from '../../../webviews/NavBar'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
+import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -193,14 +194,7 @@ export class ChatPanelProvider extends MessageProvider {
             contextStatus,
         })
 
-        // DONOTCOMMIT TODO
-        const localProcess = {
-            os: 'darwin',
-            arch: 'aarch64',
-            extensionVersion: '1.0.0',
-            uiKindIsWeb: false,
-        }
-        // const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const localProcess = getProcessInfo()
         const config: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: this.contextProvider.config.debugEnable,

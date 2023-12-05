@@ -30,6 +30,7 @@ import { ContextStatusAggregator } from '../../local-context/enhanced-context-st
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
+import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -466,14 +467,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postViewConfig(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
-        // DONOT COMMIT TODO dpc replace this
-        const localProcess = {
-            os: 'darwin',
-            arch: 'aarch64',
-            extensionVersion: '1.0.0',
-            uiKindIsWeb: false,
-        }
-        // const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const localProcess = getProcessInfo()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: config.debugEnable,

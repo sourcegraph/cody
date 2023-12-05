@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { version } from '../../package.json'
-import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
+import { LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../commands/utils/helpers'
 import { fetch } from '../fetch'
 import { logDebug, logError } from '../log'
@@ -12,12 +12,18 @@ import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 
 type OnChangeCallback = (type: string) => Promise<void>
 
+// The  OS and Arch support for Cody app
+function isOsSupportedByApp(os?: string, arch?: string): boolean {
+    if (!os || !arch) {
+        return false
+    }
+    return os === 'darwin' || os === 'linux'
+}
+
 /**
  * Detects whether the user has the Sourcegraph app installed locally.
  */
 export class LocalAppDetector implements vscode.Disposable {
-    private localEnv: LocalEnv
-
     // Check if the platform is supported and the user has a home directory
     private isSupported = false
 
@@ -29,26 +35,23 @@ export class LocalAppDetector implements vscode.Disposable {
 
     constructor(options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
-        this.localEnv = { ...envInit }
-        this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
-        this.isSupported =
-            isOsSupportedByApp(this.localEnv.os, this.localEnv.arch) && this.localEnv.homeDir !== undefined
+        const env = getProcessInfo()
+        this.localAppMarkers = LOCAL_APP_LOCATIONS[env.os]
+        this.isSupported = isOsSupportedByApp(env.os, env.arch) && env.homeDir !== undefined
     }
 
-    public async getProcessInfo(isLoggedIn = false): Promise<LocalEnv> {
+    public async getProcessInfo(isLoggedIn = false): Promise<void> {
         if (isLoggedIn && this._watchers.length > 0) {
             this.dispose()
         }
         await this.fetchServer()
-        return this.localEnv
     }
 
     public async init(): Promise<void> {
         // Start with init state
         this.dispose()
-        this.localEnv = { ...envInit }
         logDebug('LocalAppDetector', 'initializing')
-        const homeDir = this.localEnv.homeDir
+        const homeDir = getProcessInfo().homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
             logError('LocalAppDetector:init:failed', 'osNotSupported')
@@ -129,7 +132,7 @@ export function expandHomeDir(path: string, homeDir: string | null | undefined):
     return path
 }
 
-export const envInit: LocalEnv = {
+const envInit: LocalEnv = {
     arch: process.arch,
     os: process.platform,
     homeDir: process.env.HOME,
@@ -137,4 +140,8 @@ export const envInit: LocalEnv = {
     extensionVersion: version,
 
     uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
+}
+
+export function getProcessInfo(): LocalEnv {
+    return { ...envInit }
 }
