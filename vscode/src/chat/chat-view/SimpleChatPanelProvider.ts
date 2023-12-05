@@ -451,7 +451,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.history.saveHumanInputHistory(text)
         this.chatModel.addHumanMessage({ text })
         // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
@@ -508,7 +508,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            this.postViewTranscript()
+            this.postViewTranscript({ speaker: 'assistant', text: '' })
 
             this.sendLLMRequest(prompt, {
                 update: content => {
@@ -525,6 +525,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 close: content => {
                     this.addBotMessageWithGuardrails(requestID, content)
                 },
+                error: (partialResponse, error) => {
+                    if (isAbortError(error)) {
+                        this.chatModel.addBotMessage({ text: partialResponse })
+                        this.postViewTranscript()
+                        return
+                    }
+                    this.postError(new Error(`completions request aborted: ${error.message}`))
+                },
             })
         } catch (error) {
             this.postError(new Error(`Error generating assistant response: ${error}`))
@@ -540,6 +548,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         callbacks: {
             update: (response: string) => void
             close: (finalResponse: string) => void
+            error: (completedResponse: string, error: Error) => void
         }
     ): void {
         let lastContent = ''
@@ -567,7 +576,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
                 onError: error => {
                     this.completionCanceller = undefined
-                    this.postError(error)
+                    typewriter.stop()
+                    callbacks.error(lastContent, error)
                 },
             },
             { model: this.chatModel.modelID }
@@ -759,6 +769,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 close: (responseText: string) => {
                     this.addBotMessageWithGuardrails(requestID, responseText)
                 },
+                error: (partialResponse: string, error: Error) => {
+                    if (isAbortError(error)) {
+                        this.chatModel.addBotMessage({ text: partialResponse })
+                        this.postViewTranscript()
+                        return
+                    }
+                    this.postError(new Error(`completions request aborted: ${error.message}`))
+                },
             })
         } catch (error) {
             this.postError(new Error(`command ${recipeID} failed: ${error}`))
@@ -828,10 +846,33 @@ class ContextProvider implements IContextProvider {
     }
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
+        const searchContext: ContextItem[] = []
+        let localEmbeddingsError
+        let remoteEmbeddingsError
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const searchContextPromise = [this.searchEmbeddingsLocal(text), this.searchEmbeddingsRemote(text)]
-        const searchContext = (await Promise.all(searchContextPromise)).flat()
+        const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
+        const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
+        try {
+            searchContext.push(...(await localEmbeddingsResults))
+        } catch (error) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+            localEmbeddingsError = error
+        }
+        try {
+            searchContext.push(...(await remoteEmbeddingsResults))
+        } catch (error) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
+            remoteEmbeddingsError = error
+        }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+        if (localEmbeddingsError && remoteEmbeddingsError) {
+            throw new Error(
+                `local and remote embeddings search failed (local: ${getErrorMessage(
+                    localEmbeddingsError
+                )}) (remote: ${getErrorMessage(remoteEmbeddingsError)})`
+            )
+        }
 
         const priorityContext: ContextItem[] = []
         if (this.needsUserAttentionContext(text)) {
@@ -1126,4 +1167,15 @@ function extractQuestion(input: string): string | undefined {
         return input
     }
     return undefined
+}
+
+function isAbortError(error: Error): boolean {
+    return error.message === 'aborted' || error.message === 'socket hang up'
+}
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message
+    }
+    return String(error)
 }
