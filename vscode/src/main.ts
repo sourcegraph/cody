@@ -172,7 +172,12 @@ const register = async (
         await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
         undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
     )
+
+    // TODO(beyang): there is a race here and this is sometimes null
     const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
+    if (!embeddingsSearch) {
+        console.log('# no embeddingsSearch')
+    }
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
