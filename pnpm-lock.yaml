@@ -130,8 +130,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/shared
       '@sourcegraph/telemetry':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.0
+        version: 0.14.0
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -246,8 +246,8 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0
       '@sourcegraph/telemetry':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.0
+        version: 0.14.0
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -383,8 +383,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/ui
       '@sourcegraph/telemetry':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.0
+        version: 0.14.0
       '@storybook/preview-api':
         specifier: ^7.6.2
         version: 7.6.2
@@ -5119,8 +5119,8 @@ packages:
     resolution: {integrity: sha512-FQ1/Ued4I02R0JkrHHofDN163juVxUnPALzfxPZrDZUHv+c3jHjfZhmTHEz+Wd+g3b7MFk0fkj36nZSnvPyU8A==}
     dev: true
 
-  /@sourcegraph/telemetry@0.13.0:
-    resolution: {integrity: sha512-PNLBUFYv/BCYIjatFGs7QpgT0sGuC6/P3V2YJ+sVNYc7n8hz2I/GLOsEUepVMIgYagsAtFVV24yrUkDLT82YoA==}
+  /@sourcegraph/telemetry@0.14.0:
+    resolution: {integrity: sha512-pxkIzjBx4Ari7JLDoEocYFaYFav5svHFo39fJvv89A9DuFRMrE0EM/4zP9zvgKPrVZuxwupk1vWe1yWl8QbZ4Q==}
     dependencies:
       rxjs: 7.8.1
     dev: false
