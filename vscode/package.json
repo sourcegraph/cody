@@ -377,6 +377,13 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.show-page",
+        "category": "Cody",
+        "title": "Show Admin Pages",
+        "group": "Cody",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
