@@ -31,6 +31,9 @@ export interface EvaluateAutocompleteOptions {
     srcAccessToken: string
     srcEndpoint: string
 
+    minimumMatchSize?: number
+    matchEveryN?: number
+
     evaluationConfig: string
     snapshotDirectory: string
     csvPath?: string
@@ -117,6 +120,15 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         '--snapshot-directory <path>',
         'Directory where to write snapshot files to document autocomplete results',
         ''
+    )
+    .option('--minimum-match-size <number>', 'Minimum size of a match to trigger an autocomplete', intOption, 20)
+    .option(
+        '--match-every-n <number>',
+        'Only trigger autocomplete in every N-th match. The motivation to do this is a to get a wider spread of matches. ' +
+            'Sometimes, the same code pattern repeats multiple times and eats up the limit for the file. ' +
+            ' By skipping every few matches, there is a bigger chance that we will hit requests further down in the file before hitting the file request limit.',
+        intOption,
+        4
     )
     .addOption(
         new commander.Option(

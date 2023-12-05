@@ -77,6 +77,7 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                 content,
                 uri
             )
+            let matchCount = -1
             for (const match of query.matches(originalTree.rootNode)) {
                 if (documentTestCountStart - remainingTests > options.maxFileTestCount) {
                     console.log(`--max-file-test-count=${options.maxFileTestCount} limit hit for file '${file}'`)
@@ -92,6 +93,17 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                     if (capture.name !== 'range') {
                         continue
                     }
+
+                    const matchSize = capture.node.endIndex - capture.node.startIndex
+                    if (options?.minimumMatchSize && matchSize < options.minimumMatchSize) {
+                        continue
+                    }
+
+                    matchCount++
+                    if (options.matchEveryN && matchCount % options.matchEveryN !== 0) {
+                        continue
+                    }
+
                     // Modify the content by replacing the argument list to the call expression
                     // with an empty argument list. This evaluation is interesting because it
                     // allows us to test how good Cody is at inferring the original argument
@@ -100,6 +112,9 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                     const isArgumentList =
                         content.slice(capture.node.startIndex, capture.node.startIndex + 1) === '(' &&
                         content.slice(capture.node.endIndex - 1, capture.node.endIndex) === ')'
+                    // TODO: remove this argument-list hack. We should use
+                    // different tree-sitter capture groups to classify the
+                    // kinds of matches.
                     const range = isArgumentList
                         ? new vscode.Range(
                               new vscode.Position(
@@ -113,16 +128,17 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                               new vscode.Position(capture.node.endPosition.row, capture.node.endPosition.column)
                           )
 
-                    const modifiedContent = [
+                    const modifiedContentList = [
                         document.textDocument.getText(new vscode.Range(new vscode.Position(0, 0), range.start)),
                         document.textDocument.getText(
                             new vscode.Range(range.end, new vscode.Position(document.textDocument.lineCount, 0))
                         ),
-                    ].join('')
+                    ]
+                    const modifiedContent = modifiedContentList.join('')
                     const removedContent = document.textDocument.getText(range)
                     const position = new vscode.Position(
                         capture.node.startPosition.row,
-                        capture.node.startPosition.column + 1
+                        capture.node.startPosition.column + (isArgumentList ? 1 : 0)
                     )
                     await triggerAutocomplete({
                         parser,
