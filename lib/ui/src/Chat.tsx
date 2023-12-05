@@ -519,7 +519,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
 
-    // isContextSettingsOpen state
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
 
     return (
