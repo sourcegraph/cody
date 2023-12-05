@@ -57,7 +57,12 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
             ['aarch64', 'arm64'],
             ['x86_64', 'x64'],
         ])
-        const rfc795Arch = archRenames.get(arch ?? '') ?? arch
+        let rfc795Arch = archRenames.get(arch ?? '') ?? arch
+        if (rfc795Arch === 'arm64' && platform === 'win') {
+            // On Windows Arm PCs, we rely on emulation and use the x64 binary.
+            // See https://learn.microsoft.com/en-us/windows/arm/apps-on-arm-x86-emulation
+            rfc795Arch = 'x64'
+        }
 
         const bfgContainingDir = path.join(context.globalStorageUri.fsPath, 'cody-engine')
         const bfgVersion = config.get<string>('cody.experimental.cody-engine.version', defaultBfgVersion)
