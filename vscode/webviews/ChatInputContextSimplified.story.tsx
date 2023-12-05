@@ -8,7 +8,7 @@ import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import styles from './storybook/VSCodeStoryDecorator.module.css'
 
 const meta: Meta<typeof ChatInputContextSimplified> = {
-    title: 'cody/App-less Onboarding',
+    title: 'cody/Old Context Status',
     component: ChatInputContextSimplified,
     decorators: [VSCodeStoryDecorator],
 }
@@ -16,8 +16,6 @@ const meta: Meta<typeof ChatInputContextSimplified> = {
 export default meta
 
 const onboardingCallbacks = {
-    openApp: () => alert('open app'),
-    installApp: () => alert('install app'),
     reloadStatus: () => alert('reload'),
 }
 
@@ -28,68 +26,7 @@ export const ChatInputContextNoRepoOpen: StoryObj<typeof ChatInputContextSimplif
         }
         return (
             <div className={styles.testDarkSidebarBottom}>
-                <ChatInputContextSimplified
-                    isAppInstalled={false}
-                    contextStatus={contextStatus}
-                    onboardingPopupProps={onboardingCallbacks}
-                />
-            </div>
-        )
-    },
-}
-
-export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSimplified> = {
-    render: () => {
-        const contextStatus: ChatContextStatus = {
-            connection: false,
-            codebase: 'github.com/sourcegraph/example',
-        }
-        return (
-            <div className={styles.testDarkSidebarBottom}>
-                <ChatInputContextSimplified
-                    isAppInstalled={false}
-                    contextStatus={contextStatus}
-                    onboardingPopupProps={onboardingCallbacks}
-                />
-            </div>
-        )
-    },
-}
-
-export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimplified> = {
-    render: () => {
-        const contextStatus: ChatContextStatus = {
-            codebase: 'github.com/sourcegraph/example',
-            filePath: 'foo/bar.js',
-        }
-        return (
-            <div className={styles.testDarkSidebarBottom}>
-                <ChatInputContextSimplified
-                    isAppInstalled={true}
-                    contextStatus={contextStatus}
-                    onboardingPopupProps={onboardingCallbacks}
-                />
-            </div>
-        )
-    },
-}
-
-export const ChatInputContextHasLocalEmbeddings: StoryObj<typeof ChatInputContextSimplified> = {
-    render: () => {
-        const contextStatus: ChatContextStatus = {
-            codebase: 'github.com/sourcegraph/example',
-            filePath: 'foo/bar.js',
-            mode: 'embeddings',
-            connection: true,
-            embeddingsEndpoint: 'http://localhost:3080/',
-        }
-        return (
-            <div className={styles.testDarkSidebarBottom}>
-                <ChatInputContextSimplified
-                    isAppInstalled={true}
-                    contextStatus={contextStatus}
-                    onboardingPopupProps={onboardingCallbacks}
-                />
+                <ChatInputContextSimplified contextStatus={contextStatus} onboardingPopupProps={onboardingCallbacks} />
             </div>
         )
     },
@@ -106,11 +43,7 @@ export const ChatInputContextHasDotcomEmbeddings: StoryObj<typeof ChatInputConte
         }
         return (
             <div className={styles.testDarkSidebarBottom}>
-                <ChatInputContextSimplified
-                    isAppInstalled={true}
-                    contextStatus={contextStatus}
-                    onboardingPopupProps={onboardingCallbacks}
-                />
+                <ChatInputContextSimplified contextStatus={contextStatus} onboardingPopupProps={onboardingCallbacks} />
             </div>
         )
     },
@@ -127,11 +60,7 @@ export const ChatInputContextHasEnterpriseEmbeddings: StoryObj<typeof ChatInputC
         }
         return (
             <div className={styles.testDarkSidebarBottom}>
-                <ChatInputContextSimplified
-                    isAppInstalled={true}
-                    contextStatus={contextStatus}
-                    onboardingPopupProps={onboardingCallbacks}
-                />
+                <ChatInputContextSimplified contextStatus={contextStatus} onboardingPopupProps={onboardingCallbacks} />
             </div>
         )
     },
