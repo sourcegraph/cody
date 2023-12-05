@@ -122,9 +122,7 @@ export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
-export const CODY_FEEDBACK_URL = new URL(
-    'https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode'
-)
+export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
