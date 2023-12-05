@@ -526,11 +526,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
                 error: (partialResponse, error) => {
                     if (isAbortError(error)) {
-                        if (partialResponse.length === 0) {
-                            this.chatModel.removeLastMessageIfHuman()
-                        } else {
-                            this.chatModel.addBotMessage({ text: partialResponse })
-                        }
+                        this.chatModel.addBotMessage({ text: partialResponse })
                         this.postViewTranscript()
                         return
                     }
@@ -774,11 +770,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
                 error: (partialResponse: string, error: Error) => {
                     if (isAbortError(error)) {
-                        if (partialResponse.length === 0) {
-                            this.chatModel.removeLastMessageIfHuman()
-                        } else {
-                            this.chatModel.addBotMessage({ text: partialResponse })
-                        }
+                        this.chatModel.addBotMessage({ text: partialResponse })
                         this.postViewTranscript()
                         return
                     }
