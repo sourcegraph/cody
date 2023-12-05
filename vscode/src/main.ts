@@ -316,9 +316,7 @@ const register = async (
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
         }),
-        vscode.commands.registerCommand('cody.chat.focus', () =>
-            vscode.commands.executeCommand('cody.chat.tree.view.focus')
-        ),
+        vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),

@@ -413,7 +413,7 @@
         "icon": "$(new-comment-icon)"
       },
       {
-        "command": "cody.chat.focus",
+        "command": "cody.chat.tree.view.focus",
         "category": "Cody",
         "title": "Open Cody Sidebar",
         "group": "Cody",
@@ -471,6 +471,11 @@
     "keybindings": [
       {
         "command": "cody.chat.focus",
+        "key": "alt+/",
+        "when": "!cody.activated"
+      },
+      {
+        "command": "cody.chat.tree.view.focus",
         "key": "alt+f1",
         "when": "cody.activated"
       },
