@@ -156,8 +156,6 @@ export async function signOut(page: Page): Promise<void> {
     await page.keyboard.press('F1')
     await page.keyboard.type('cody.auth.signout')
     await page.keyboard.press('Enter')
-    await page.waitForTimeout(1000)
-    await page.keyboard.press('Enter')
 }
 
 export async function submitChat(sidebar: Frame, text: string): Promise<void> {

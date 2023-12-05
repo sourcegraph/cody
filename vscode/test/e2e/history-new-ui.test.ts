@@ -1,12 +1,9 @@
 import { expect } from '@playwright/test'
 
-import { disableNotifications, sidebarExplorer, sidebarSignin } from './common'
+import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => {
-    // Turn off notification
-    await disableNotifications(page)
-
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

@@ -40,7 +40,7 @@ test('@-file fuzzy matching and clicking', async ({ page, sidebar }) => {
     // Send the message and check it was included
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
-    await expect(sidebar.getByText('Explain @Main.java')).toBeVisible()
+    await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
 })
 
 test('@-file fuzzy matching and keyboard navigating', async ({ page, sidebar }) => {
