@@ -1,4 +1,5 @@
 import { ContextFile } from '@sourcegraph/cody-shared'
+import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
@@ -68,7 +69,12 @@ export class SimpleChatRecipeAdapter {
             return null
         }
 
-        return interactionToHumanMessageAndPrompt(interaction)
+        const { humanMessage, prompt } = await interactionToHumanMessageAndPrompt(interaction)
+        const preambleMessages = getSimplePreamble()
+        return {
+            humanMessage,
+            prompt: preambleMessages.concat(prompt),
+        }
     }
 }
 

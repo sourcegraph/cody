@@ -1,3 +1,4 @@
+import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
@@ -29,6 +30,11 @@ export interface IPrompter {
 }
 
 export class DefaultPrompter implements IPrompter {
+    // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
+    // an array with the most important messages (which appear most important first in the reverse-prompt.
+    //
+    // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
+    // the new context that was used in the prompt for the current message.
     public async makePrompt(
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
@@ -39,37 +45,15 @@ export class DefaultPrompter implements IPrompter {
         warnings: string[]
         newContextUsed: ContextItem[]
     }> {
-        const { reversePrompt, warnings, newContextUsed } = await this.makeReversePrompt(
-            chat,
-            contextProvider,
-            useEnhancedContext,
-            byteLimit
-        )
-        return {
-            prompt: [...reversePrompt].reverse(),
-            warnings,
-            newContextUsed,
-        }
-    }
-
-    // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
-    // an array with the most important messages (which appear most important first in the reverse-prompt.
-    //
-    // Returns the reverse prompt, a list of warnings that indicate that the prompt was truncated, and
-    // the new context that was used in the prompt for the current message.
-    private async makeReversePrompt(
-        chat: SimpleChatModel,
-        contextProvider: IContextProvider,
-        useEnhancedContext: boolean,
-        byteLimit: number
-    ): Promise<{
-        reversePrompt: Message[]
-        warnings: string[]
-        newContextUsed: ContextItem[]
-    }> {
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
+
+        const preambleMessages = getSimplePreamble()
+        const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
+        if (!preambleSucceeded) {
+            throw new Error(`Preamble length exceeded context window size ${byteLimit}`)
+        }
 
         // Add existing transcript messages
         const reverseTranscript: MessageWithContext[] = [...chat.getMessagesWithContext()].reverse()
@@ -79,7 +63,7 @@ export class DefaultPrompter implements IPrompter {
             if (!contextLimitReached) {
                 warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
                 return {
-                    reversePrompt: promptBuilder.reverseMessages,
+                    prompt: promptBuilder.build(),
                     warnings,
                     newContextUsed,
                 }
@@ -95,7 +79,7 @@ export class DefaultPrompter implements IPrompter {
             newContextUsed.push(...used)
             if (limitReached) {
                 warnings.push('Ignored current user-specified context items due to context limit')
-                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
+                return { prompt: promptBuilder.build(), warnings, newContextUsed }
             }
         }
 
@@ -109,19 +93,17 @@ export class DefaultPrompter implements IPrompter {
             )
             if (limitReached) {
                 warnings.push('Ignored prior context items due to context limit')
-                return { reversePrompt: promptBuilder.reverseMessages, warnings, newContextUsed }
+                return { prompt: promptBuilder.build(), warnings, newContextUsed }
             }
         }
 
         const lastMessage = reverseTranscript[0]
         if (!lastMessage?.message.text) {
-            return {
-                reversePrompt: promptBuilder.reverseMessages,
-                warnings,
-                newContextUsed,
-            }
+            throw new Error('No last message or last message text was empty')
         }
-
+        if (lastMessage.message.speaker === 'assistant') {
+            throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
+        }
         if (useEnhancedContext) {
             // Add additional context from current editor or broader search
             const additionalContextItems = await contextProvider.getEnhancedContext(lastMessage.message.text)
@@ -135,7 +117,7 @@ export class DefaultPrompter implements IPrompter {
         }
 
         return {
-            reversePrompt: promptBuilder.reverseMessages,
+            prompt: promptBuilder.build(),
             warnings,
             newContextUsed,
         }
@@ -155,11 +137,36 @@ export class DefaultPrompter implements IPrompter {
     }
 }
 
+/**
+ * PromptBuilder constructs a full prompt given a byteLimit constraint.
+ * The final prompt is constructed by concatenating the following fields:
+ * - prefixMessages
+ * - the reverse of reverseMessages
+ */
 class PromptBuilder {
-    public reverseMessages: Message[] = []
+    private prefixMessages: Message[] = []
+    private reverseMessages: Message[] = []
     private bytesUsed = 0
     private seenContext = new Set<string>()
     constructor(private readonly byteLimit: number) {}
+
+    public build(): Message[] {
+        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+    }
+
+    public tryAddToPrefix(messages: Message[]): boolean {
+        let numBytes = 0
+        for (const message of messages) {
+            numBytes += message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
+        }
+        if (numBytes + this.bytesUsed > this.byteLimit) {
+            return false
+        }
+        this.prefixMessages.push(...messages)
+        this.bytesUsed += numBytes
+        return true
+    }
+
     public tryAdd(message: Message): boolean {
         const lastMessage = this.reverseMessages.at(-1)
         if (lastMessage?.speaker === message.speaker) {
@@ -175,6 +182,10 @@ class PromptBuilder {
         return true
     }
 
+    /**
+     * Tries to add context items to the prompt, tracking bytes used.
+     * Returns info about which items were used vs. ignored.
+     */
     public tryAddContext(
         contextItems: ContextItem[],
         renderContextItem: (contextItem: ContextItem) => Message[]

@@ -509,7 +509,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
             this.postViewTranscript()
 
-            this.sendLLMRequest(requestID, prompt, {
+            this.sendLLMRequest(prompt, {
                 update: content => {
                     this.postViewTranscript(
                         toViewMessage({
@@ -535,7 +535,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * with the response.
      */
     private sendLLMRequest(
-        requestID: string,
         prompt: Message[],
         callbacks: {
             update: (response: string) => void
@@ -744,7 +743,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             }
             this.postViewTranscript()
 
-            this.sendLLMRequest(requestID, prompt, {
+            this.sendLLMRequest(prompt, {
                 update: (responseText: string) => {
                     this.postViewTranscript(
                         toViewMessage({
