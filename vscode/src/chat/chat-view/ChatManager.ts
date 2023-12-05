@@ -90,14 +90,6 @@ export class ChatManager implements vscode.Disposable {
         source?: ChatEventSource
     ): Promise<void> {
         logDebug('ChatManager:executeRecipe:called', recipeId)
-        if (!this.chatPanelsManager) {
-            if (openChatView) {
-                await this.sidebarChat.setWebviewView('chat')
-            }
-            await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
-            return
-        }
-
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
@@ -133,11 +125,6 @@ export class ChatManager implements vscode.Disposable {
     }
 
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
-        if (!this.chatPanelsManager) {
-            await this.sidebarChat.clearHistory()
-            return
-        }
-
         const chatID = treeItem?.id
         if (chatID) {
             await this.sidebarChat.clearChatHistory(chatID)
@@ -197,10 +184,6 @@ export class ChatManager implements vscode.Disposable {
 
     public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
         try {
-            if (!this.chatPanelsManager) {
-                throw new Error('ChatPanelsManager is not initialized')
-            }
-
             await this.chatPanelsManager.createWebviewPanel(chatID, panel.title, panel)
         } catch (error) {
             console.error('revive failed', error)
