@@ -9,6 +9,7 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
+    onShow?: () => void
     onSelect?: () => void
 }
 
@@ -63,6 +64,10 @@ export function createStatusBar(): CodyStatusBar {
                     }
                 },
             }
+        }
+
+        if (errors.length > 0) {
+            errors.map(error => error.error.onShow?.())
         }
 
         const option = await vscode.window.showQuickPick(
