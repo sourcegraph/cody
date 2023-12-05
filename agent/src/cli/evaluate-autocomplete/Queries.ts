@@ -22,7 +22,12 @@ export class Queries {
         if (fromCache) {
             return fromCache.compiledQuery
         }
-        return this.compileQuery(parser, language, name)
+        try {
+            return await this.compileQuery(parser, language, name)
+        } catch (error) {
+            console.error(`${language}/${name}`, error)
+            process.exit(1)
+        }
     }
 
     private async compileQuery(
