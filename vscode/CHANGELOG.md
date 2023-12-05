@@ -17,6 +17,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Enhanced Context used to turn off automatically after the first chat. Now it stays enabled until you disable it. [pull/2069](https://github.com/sourcegraph/cody/pull/2069)
+- Chat: Close the Enhanced Context popover on chat input focus. [pull/2091](https://github.com/sourcegraph/cody/pull/2091)
 
 ## [0.16.3]
 
