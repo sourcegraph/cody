@@ -33,9 +33,9 @@ export default meta
 
 interface SingleTileArgs {
     name: string
-    kind: 'embeddings' | 'graph' |'search'
-    type: 'local' |'remote'
-    state: 'indeterminate' | 'unconsented' | 'indexing' |'ready' | 'no-match'
+    kind: 'embeddings' | 'graph' | 'search'
+    type: 'local' | 'remote'
+    state: 'indeterminate' | 'unconsented' | 'indexing' | 'ready' | 'no-match'
     origin: string
     remoteName: string
 }
@@ -111,7 +111,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                             right: 20,
                         }}
                     >
-                        <EnhancedContextSettings isOpen={args.isOpen} setOpen={()=> {}}/>
+                        <EnhancedContextSettings isOpen={args.isOpen} setOpen={() => {}} />
                     </div>
                 </EnhancedContextEventHandlers.Provider>
             </EnhancedContextContext.Provider>
@@ -166,7 +166,7 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                     right: 20,
                 }}
             >
-                <EnhancedContextSettings isOpen={true} setOpen={()=> {}} />
+                <EnhancedContextSettings isOpen={true} setOpen={() => {}} />
             </div>
         </EnhancedContextContext.Provider>
     ),
