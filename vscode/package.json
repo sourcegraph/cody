@@ -1045,7 +1045,7 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Uses the new simplifed chat context fetcher",
-          "default": false
+          "default": true
         },
         "cody.experimental.symf.path": {
           "order": 99,
