@@ -865,7 +865,13 @@
         {
           "command": "cody.chat.restart",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation",
+          "group": "navigation@0",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.settings.extension",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@1",
           "visibility": "visible"
         }
       ],
