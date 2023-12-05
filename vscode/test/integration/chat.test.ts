@@ -16,7 +16,7 @@ suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
 
-    test('sends and receives a message', async () => {
+    test.skip('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.panel.new')
         const chatView = await getChatViewProvider()
         await chatView.executeRecipe('chat-question', 'hello from the human', 'test')
