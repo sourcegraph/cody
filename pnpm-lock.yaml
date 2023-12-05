@@ -29,7 +29,7 @@ importers:
         version: 4.1.1(prettier@3.0.3)
       '@sourcegraph/eslint-config':
         specifier: 0.37.1
-        version: 0.37.1(@testing-library/dom@8.20.1)(eslint@8.55.0)(typescript@5.1.6)
+        version: 0.37.1(@testing-library/dom@9.3.3)(eslint@8.55.0)(typescript@5.1.6)
       '@sourcegraph/prettierrc':
         specifier: ^3.0.3
         version: 3.0.3
@@ -55,8 +55,8 @@ importers:
         specifier: ^7.0.26
         version: 7.0.26(react-dom@18.2.0)(react@18.2.0)(typescript@5.1.6)(vite@4.4.3)
       '@storybook/testing-library':
-        specifier: ^0.0.14-next.2
-        version: 0.0.14-next.2
+        specifier: ^0.2.2
+        version: 0.2.2
       '@types/google-protobuf':
         specifier: ^3.15.10
         version: 3.15.10
@@ -5088,7 +5088,7 @@ packages:
       - debug
     dev: false
 
-  /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@8.20.1)(eslint@8.55.0)(typescript@5.1.6):
+  /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@9.3.3)(eslint@8.55.0)(typescript@5.1.6):
     resolution: {integrity: sha512-3G0d3OUgifaADfd27Bdk/kSpECj21BfQ6srbYMY/HVWOv/N8AVuFWNwUMT4Y4slt026RXO5XcwoZhfnaskr5hQ==}
     dependencies:
       '@sourcegraph/prettierrc': 3.0.3
@@ -5098,7 +5098,7 @@ packages:
       eslint-plugin-ban: 1.4.0
       eslint-plugin-etc: 2.0.2(eslint@8.55.0)(typescript@5.1.6)
       eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.9.0)(eslint@8.55.0)
-      eslint-plugin-jest-dom: 5.1.0(@testing-library/dom@8.20.1)(eslint@8.55.0)
+      eslint-plugin-jest-dom: 5.1.0(@testing-library/dom@9.3.3)(eslint@8.55.0)
       eslint-plugin-jsdoc: 46.8.2(eslint@8.55.0)
       eslint-plugin-jsx-a11y: 6.5.1(eslint@8.55.0)
       eslint-plugin-react: 7.32.1(eslint@8.55.0)
@@ -6030,13 +6030,11 @@ packages:
       - supports-color
     dev: true
 
-  /@storybook/testing-library@0.0.14-next.2:
-    resolution: {integrity: sha512-i/SLSGm0o978ELok/SB4Qg1sZ3zr+KuuCkzyFqcCD0r/yf+bG35aQGkFqqxfSAdDxuQom0NO02FE+qys5Eapdg==}
+  /@storybook/testing-library@0.2.2:
+    resolution: {integrity: sha512-L8sXFJUHmrlyU2BsWWZGuAjv39Jl1uAqUHdxmN42JY15M4+XCMjGlArdCCjDe1wpTSW6USYISA9axjZojgtvnw==}
     dependencies:
-      '@storybook/client-logger': 7.0.26
-      '@storybook/instrumenter': 7.0.26
-      '@testing-library/dom': 8.20.1
-      '@testing-library/user-event': 13.5.0(@testing-library/dom@8.20.1)
+      '@testing-library/dom': 9.3.3
+      '@testing-library/user-event': 14.5.1(@testing-library/dom@9.3.3)
       ts-dedent: 2.2.0
     dev: true
 
@@ -6072,9 +6070,9 @@ packages:
       file-system-cache: 2.3.0
     dev: false
 
-  /@testing-library/dom@8.20.1:
-    resolution: {integrity: sha512-/DiOQ5xBxgdYRC8LNk7U+RWat0S3qRLeIw3ZIkMQ9kkVlRmwD/Eg8k8CqIpD6GW7u20JIUOfMKbxtiLutpjQ4g==}
-    engines: {node: '>=12'}
+  /@testing-library/dom@9.3.3:
+    resolution: {integrity: sha512-fB0R+fa3AUqbLHWyxXa2kGVtf1Fe1ZZFr0Zp6AIbIAzXb2mKbEXl+PCQNUOaq5lbTab5tfctfXRNsWXxa2f7Aw==}
+    engines: {node: '>=14'}
     dependencies:
       '@babel/code-frame': 7.22.5
       '@babel/runtime': 7.22.3
@@ -6086,14 +6084,13 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
-  /@testing-library/user-event@13.5.0(@testing-library/dom@8.20.1):
-    resolution: {integrity: sha512-5Kwtbo3Y/NowpkbRuSepbyMFkZmHgD+vPzYB/RJ4oxt5Gj/avFFBYjhw27cqSVPVw/3a67NK1PbiIr9k4Gwmdg==}
-    engines: {node: '>=10', npm: '>=6'}
+  /@testing-library/user-event@14.5.1(@testing-library/dom@9.3.3):
+    resolution: {integrity: sha512-UCcUKrUYGj7ClomOo2SpNVvx4/fkd/2BbIHDCle8A0ax+P3bU7yJwDBDrS6ZwdTMARWTGODX1hEsCcO+7beJjg==}
+    engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
     dependencies:
-      '@babel/runtime': 7.22.3
-      '@testing-library/dom': 8.20.1
+      '@testing-library/dom': 9.3.3
     dev: true
 
   /@tootallnate/once@1.1.2:
@@ -9330,7 +9327,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-jest-dom@5.1.0(@testing-library/dom@8.20.1)(eslint@8.55.0):
+  /eslint-plugin-jest-dom@5.1.0(@testing-library/dom@9.3.3)(eslint@8.55.0):
     resolution: {integrity: sha512-JIXZp+E/h/aGlP/rQc4tuOejiHlZXg65qw8JAJMIJA5VsdjOkss/SYcRSqBrQuEOytEM8JvngUjcz31d1RrCrA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0, npm: '>=6', yarn: '>=1'}
     peerDependencies:
@@ -9341,7 +9338,7 @@ packages:
         optional: true
     dependencies:
       '@babel/runtime': 7.22.3
-      '@testing-library/dom': 8.20.1
+      '@testing-library/dom': 9.3.3
       eslint: 8.55.0
       requireindex: 1.2.0
     dev: true
@@ -12234,6 +12231,7 @@ packages:
 
   /lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
+    hasBin: true
     dev: true
 
   /magic-string@0.27.0:

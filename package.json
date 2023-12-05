@@ -40,7 +40,7 @@
     "@storybook/blocks": "^7.0.26",
     "@storybook/react": "^7.0.26",
     "@storybook/react-vite": "^7.0.26",
-    "@storybook/testing-library": "^0.0.14-next.2",
+    "@storybook/testing-library": "^0.2.2",
     "@types/node": "20.4.0",
     "@types/prettier": "2.7.3",
     "@types/react": "18.2.42",
