@@ -7,6 +7,7 @@ import { AgentTextDocument } from '../../AgentTextDocument'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { AutocompleteResult } from '../../protocol-alias'
 
+import { AutocompleteMatchKind } from './AutocompleteMatcher'
 import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
 import { TestParameters } from './TestParameters'
@@ -23,6 +24,7 @@ export interface AutocompleteParameters {
     options: EvaluateAutocompleteOptions
 
     range: vscode.Range
+    autocompleteKind?: AutocompleteMatchKind
     modifiedContent: string
     removedContent: string
     position: vscode.Position
@@ -30,7 +32,8 @@ export interface AutocompleteParameters {
 }
 
 export async function triggerAutocomplete(parameters: AutocompleteParameters): Promise<void> {
-    const { range, client, document, modifiedContent, removedContent, position, emptyMatchContent } = parameters
+    const { range, client, document, modifiedContent, autocompleteKind, removedContent, position, emptyMatchContent } =
+        parameters
     client.notify('textDocument/didChange', { uri: document.uri.toString(), content: modifiedContent })
     let result: AutocompleteResult
     try {
@@ -44,6 +47,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
     } catch (error) {
         const resultError = error instanceof Error ? error.message : String(error)
         document.pushItem({
+            autocompleteKind,
             range,
             resultError,
         })
@@ -96,6 +100,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         if (hasNonInsertPatch) {
             document.pushItem({
                 resultText: item.insertText,
+                autocompleteKind,
                 range,
                 resultTypechecks,
                 resultParses,
@@ -107,6 +112,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
             const text = patches.join('')
             if (text === removedContent) {
                 document.pushItem({
+                    autocompleteKind,
                     info,
                     range,
                     resultExact: true,
@@ -116,6 +122,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                 })
             } else {
                 document.pushItem({
+                    autocompleteKind,
                     info,
                     range,
                     resultText: text,
@@ -126,6 +133,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
             }
         } else {
             document.pushItem({
+                autocompleteKind,
                 info,
                 range,
                 resultEmpty: true,
@@ -137,6 +145,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
     if (result.items.length === 0) {
         const expectedEmptyMatch = removedContent === emptyMatchContent
         document.pushItem({
+            autocompleteKind,
             range,
             resultExact: expectedEmptyMatch,
             resultEmpty: !expectedEmptyMatch,

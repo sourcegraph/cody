@@ -15,6 +15,7 @@ export type QueryName = 'context'
  * This class caches compilation of queries so that we only read each query once from disk.
  */
 export class Queries {
+    private queryDirectoryExists: boolean | undefined
     private cache: CompiledQuery[] = []
     constructor(private queriesDirectory: string) {}
     public async loadQuery(parser: Parser, language: SupportedLanguage, name: QueryName): Promise<Query | undefined> {
@@ -22,7 +23,13 @@ export class Queries {
         if (fromCache) {
             return fromCache.compiledQuery
         }
-        return this.compileQuery(parser, language, name)
+        try {
+            return await this.compileQuery(parser, language, name)
+        } catch (error) {
+            console.error(`${language}/${name}`, error)
+            throw error
+            // process.exit(1)
+        }
     }
 
     private async compileQuery(
@@ -40,6 +47,17 @@ export class Queries {
                     continue
                 }
             } catch {
+                if (this.queryDirectoryExists === undefined) {
+                    try {
+                        this.queryDirectoryExists = (await fspromises.stat(this.queriesDirectory)).isDirectory()
+                        if (!this.queryDirectoryExists) {
+                            console.log(this.queriesDirectory)
+                            throw new Error(`Query directory ${this.queriesDirectory} is not a directory.`)
+                        }
+                    } catch {
+                        throw new Error(`Query directory ${this.queriesDirectory} does not exist.`)
+                    }
+                }
                 continue
             }
             const queryString = await fspromises.readFile(queryPath)

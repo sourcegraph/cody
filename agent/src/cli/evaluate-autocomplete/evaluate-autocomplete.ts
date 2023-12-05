@@ -26,10 +26,17 @@ export interface EvaluateAutocompleteOptions {
     excludeFilepath?: string[]
     includeLanguage?: string[]
     excludeLanguage?: string[]
+    includeMatchKind?: string[]
+    excludeMatchKind?: string[]
     testTypecheck?: boolean
     testParse?: boolean
     srcAccessToken: string
     srcEndpoint: string
+
+    matchMinimumSize?: number
+    matchSkipSingleline?: number
+    matchEveryN?: number
+    matchKindDistribution?: number
 
     evaluationConfig: string
     snapshotDirectory: string
@@ -71,11 +78,6 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
         }
         const rootDir = path.dirname(options.evaluationConfig)
         const workspace = path.normalize(path.join(rootDir, test.workspace))
-        const queriesDirectory = test.queriesDirectory
-            ? path.join(rootDir, test.queriesDirectory)
-            : config.queriesDirectory
-            ? path.join(rootDir, config.queriesDirectory)
-            : options.queriesDirectory
         const fixtures: EvaluationFixture[] = config.fixtures ?? [{ name: 'default', strategy: EvaluationStrategy.BFG }]
         for (const fixture of fixtures) {
             if (!fixture.strategy) {
@@ -90,8 +92,8 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
                 ...options,
                 ...config,
                 ...test,
+                queriesDirectory: options?.queriesDirectory,
                 workspace,
-                queriesDirectory,
                 snapshotDirectory,
                 fixture,
                 csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
@@ -110,13 +112,45 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         '--max-file-test-count <number>',
         'The maximum number of autocomplete requests to evaluate in a single document',
         intOption,
-        10
+        // relatively safe to use large number because we spread usages
+        // across different autocomplete kinds
+        100
     )
     .option('--evaluation-config <path>', 'Path to a JSON with configuration for this evaluation', '')
     .option(
         '--snapshot-directory <path>',
         'Directory where to write snapshot files to document autocomplete results',
         ''
+    )
+    .option(
+        '--include-match-kind <kind>',
+        'Glob to determine what kinds of matches to trigger autocomplete against.',
+        arrayOption as any,
+        []
+    )
+    .option(
+        '--exclude-match-kind <kind>',
+        'Glob to determine what kinds of matches to not trigger autocomplete against.',
+        arrayOption as any,
+        []
+    )
+    .option('--match-skip-singleline <bool>', 'Whether to skip single line ranges', booleanOption, false)
+    .option('--match-minimum-size <number>', 'Minimum size of a match to trigger an autocomplete', intOption, 20)
+    .option(
+        '--match-every-n <number>',
+        'Only trigger autocomplete in every N-th match. The motivation to do this is a to get a wider spread of matches. ' +
+            'Sometimes, the same code pattern repeats multiple times and eats up the limit for the file. ' +
+            ' By skipping every few matches, there is a bigger chance that we will hit requests further down in the file before hitting the file request limit.',
+        intOption,
+        1
+    )
+    .option(
+        '--match-kind-distribution <number>',
+        "Don't allow a bigger gap than X between the autocomplete kind with most triggers and least triggers. " +
+            'Sometimes, the same code pattern repeats multiple times and eats up the limit for the file. ' +
+            ' By skipping every few matches, there is a bigger chance that we will hit requests further down in the file before hitting the file request limit.',
+        intOption,
+        1.4
     )
     .addOption(
         new commander.Option(

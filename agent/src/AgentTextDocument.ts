@@ -38,6 +38,10 @@ export class AgentTextDocument implements vscode.TextDocument {
     public readonly isDirty: boolean = false
     public readonly isClosed: boolean = false
 
+    public static from(filename: string, content: string): AgentTextDocument {
+        return new AgentTextDocument(TextDocumentWithUri.from(vscode.Uri.file(filename), { content }))
+    }
+
     public save(): Thenable<boolean> {
         throw new Error('Method not implemented.')
     }
