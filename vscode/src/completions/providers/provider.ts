@@ -73,8 +73,13 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completions: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]>
+    ): Promise<void>
 }
 
 /**

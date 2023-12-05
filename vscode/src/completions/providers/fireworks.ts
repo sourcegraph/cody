@@ -5,12 +5,13 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { DocumentContext } from '../get-current-doc-context'
 import { completionPostProcessLogger } from '../post-process-logger'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
-import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
+import { fetchAndProcessCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -78,14 +79,14 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: undefined,
-    timeoutMs: 15_000,
-}
+// const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+//     CodeCompletionsParams,
+//     'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+// > = {
+//     maxTokensToSample: MAX_RESPONSE_TOKENS,
+//     stopSequences: undefined,
+//     timeoutMs: 15_000,
+// }
 
 export class FireworksProvider extends Provider {
     private model: FireworksModel
@@ -153,9 +154,14 @@ export class FireworksProvider extends Provider {
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completion: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]> {
-        const { multiline, dynamicMultilineCompletions } = this.options
+    ): Promise<void> {
+        const { multiline, n } = this.options
         const prompt = this.createPrompt(snippets)
 
         const model =
@@ -171,48 +177,55 @@ export class FireworksProvider extends Provider {
             ? 5_000
             : this.timeouts.singleline
         if (timeoutMs === 0) {
-            return []
+            onCompletionReady([])
+            return
         }
 
         const requestParams: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
-            // To speed up sample generation in single-line case, we request a lower token limit
-            // since we can't terminate on the first `\n`.
-            maxTokensToSample: multiline ? MAX_RESPONSE_TOKENS : 30,
+            maxTokensToSample: MAX_RESPONSE_TOKENS,
             temperature: 0.2,
             topK: 0,
             model,
-            stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
+            stopSequences: ['\n\n', '\n\r\n'],
             timeoutMs,
         }
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+        const fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        // if (dynamicMultilineCompletions) {
+        //     // If the feature flag is enabled use params adjusted for the experiment.
+        //     Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
 
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
+        //     // Use an alternative fetch completions implementation.
+        //     fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        // }
 
         tracer?.params(requestParams)
 
-        const completions = await Promise.all(
-            Array.from({ length: this.options.n }).map(() => {
+        const completions: InlineCompletionItemWithAnalytics[] = []
+        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
+            completions.push(completion)
+            if (completions.length === n) {
+                completionPostProcessLogger.flush()
+                tracer?.result({ completions })
+                onCompletionReady(completions)
+            }
+        }
+
+        await Promise.all(
+            Array.from({ length: n }).map(() => {
                 return fetchAndProcessCompletionsImpl({
                     client: this.client,
                     requestParams,
                     abortSignal,
                     providerSpecificPostProcess: this.postProcess,
                     providerOptions: this.options,
+                    onCompletionReady: onCompletionReadyImpl,
+                    onHotStreakCompletionReady,
+                    emitHotStreak: !multiline,
                 })
             })
         )
-
-        completionPostProcessLogger.flush()
-        tracer?.result({ completions })
-
-        return completions
     }
 
     private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {

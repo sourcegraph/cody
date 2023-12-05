@@ -23,6 +23,10 @@ interface FetchAndProcessCompletionsParams {
     abortSignal: AbortSignal
     providerSpecificPostProcess: (insertText: string) => string
     providerOptions: Readonly<ProviderOptions>
+    emitHotStreak: boolean
+
+    onCompletionReady: (completions: InlineCompletionItemWithAnalytics) => void
+    onHotStreakCompletionReady: (docContext: DocumentContext, completions: InlineCompletionItemWithAnalytics) => void
 }
 
 /**
@@ -206,27 +210,66 @@ export async function fetchAndProcessDynamicMultilineCompletions(
     })
 }
 
-export async function fetchAndProcessCompletions(
-    params: FetchAndProcessCompletionsParams
-): Promise<InlineCompletionItemWithAnalytics> {
+export async function fetchAndProcessCompletions(params: FetchAndProcessCompletionsParams): Promise<void> {
     const { client, requestParams, abortSignal, providerOptions, providerSpecificPostProcess } = params
+
+    let inHotStreakMode = false
+    let completeCompletion: undefined | InlineCompletionItemWithAnalytics
+
+    const hotStreakCompletions: { prefix: string; completion: InlineCompletionItemWithAnalytics }[] = []
 
     // The Async executor is required to return the completion early if a partial result from SSE can be used.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
     return new Promise(async (resolve, reject) => {
         try {
             const abortController = forkSignal(abortSignal)
-
             const result = await client.complete(
                 requestParams,
                 (incompleteResponse: CompletionResponse) => {
+                    console.log('chunk', incompleteResponse.completion)
                     const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
                     const completion = canUsePartialCompletion(initialCompletion, providerOptions)
-
+                    console.log('HOT')
                     if (completion) {
                         const processedCompletion = processCompletion(completion, providerOptions)
-                        resolve({ ...processedCompletion, stopReason: 'streaming-truncation' })
-                        abortController.abort()
+
+                        if (!completeCompletion) {
+                            completeCompletion = processedCompletion
+                            params.onCompletionReady({ ...processedCompletion, stopReason: 'streaming-truncation' })
+                        }
+
+                        if (params.emitHotStreak) {
+                            inHotStreakMode = true
+                        } else {
+                            abortController.abort()
+                        }
+
+                        if (inHotStreakMode) {
+                            const lastHotStreakCompletion =
+                                hotStreakCompletions.at(-1)?.completion || completeCompletion
+
+                            const addition = completion?.insertText.slice(lastHotStreakCompletion.insertText.length)
+
+                            const lines = addition.split('\n')
+                            for (const [index, line] of lines.entries()) {
+                                // Ignore last line as it might not be finished yet
+                                if (index === lines.length - 1) {
+                                    break
+                                }
+
+                                console.log('hot 4', line)
+
+                                // Stop hot-streak when:
+                                // - the next line starts a comment
+                                // - the next line is empty
+                                // - the next line is a repetition of the previous line
+
+                                hotStreakCompletions.push({
+                                    prefix: line,
+                                    completion: processedCompletion,
+                                })
+                            }
+                        }
                     }
                 },
                 abortController.signal
@@ -236,7 +279,12 @@ export async function fetchAndProcessCompletions(
             const completion = parseAndTruncateCompletion(initialCompletion, providerOptions)
 
             const processedCompletion = processCompletion(completion, providerOptions)
-            resolve({ ...processedCompletion, stopReason: result.stopReason })
+
+            if (!completeCompletion) {
+                params.onCompletionReady({ ...processedCompletion, stopReason: result.stopReason })
+            }
+
+            resolve()
         } catch (error) {
             reject(error)
         }

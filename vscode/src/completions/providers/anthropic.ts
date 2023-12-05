@@ -5,6 +5,7 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -19,7 +20,7 @@ import { InlineCompletionItemWithAnalytics } from '../text-processing/process-in
 import { ContextSnippet } from '../types'
 import { messagesToText } from '../utils'
 
-import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
+import { fetchAndProcessCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -37,14 +38,14 @@ export interface AnthropicOptions {
 }
 
 const MAX_RESPONSE_TOKENS = 256
-const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: MULTI_LINE_STOP_SEQUENCES,
-    timeoutMs: 15_000,
-}
+// const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+//     CodeCompletionsParams,
+//     'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+// > = {
+//     maxTokensToSample: MAX_RESPONSE_TOKENS,
+//     stopSequences: MULTI_LINE_STOP_SEQUENCES,
+//     timeoutMs: 15_000,
+// }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
@@ -137,14 +138,19 @@ export class AnthropicProvider extends Provider {
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completion: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]> {
+    ): Promise<void> {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
-        const { dynamicMultilineCompletions, multiline } = this.options
+        const { multiline, n } = this.options
 
         const requestParams: CodeCompletionsParams = {
             temperature: 0.5,
@@ -162,31 +168,40 @@ export class AnthropicProvider extends Provider {
                   }),
         }
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+        const fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        // if (dynamicMultilineCompletions) {
+        //     // If the feature flag is enabled use params adjusted for the experiment.
+        //     Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
 
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
+        //     // Use an alternative fetch completions implementation.
+        //     fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        // }
 
         tracer?.params(requestParams)
 
-        const completions = await Promise.all(
-            Array.from({ length: this.options.n }).map(() => {
+        const completions: InlineCompletionItemWithAnalytics[] = []
+        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
+            completions.push(completion)
+            if (completions.length === n) {
+                tracer?.result({ completions })
+                onCompletionReady(completions)
+            }
+        }
+
+        await Promise.all(
+            Array.from({ length: n }).map(() => {
                 return fetchAndProcessCompletionsImpl({
                     client: this.client,
                     requestParams,
                     abortSignal,
                     providerSpecificPostProcess: this.postProcess,
                     providerOptions: this.options,
+                    onCompletionReady: onCompletionReadyImpl,
+                    onHotStreakCompletionReady,
+                    emitHotStreak: !multiline,
                 })
             })
         )
-
-        tracer?.result({ completions })
-        return completions
     }
 
     private postProcess = (rawResponse: string): string => {

@@ -5,6 +5,7 @@ import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { ContextSnippet } from './types'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -16,12 +17,19 @@ class MockProvider extends Provider {
         this.resolve(completions.map(content => ({ insertText: content, stopReason: 'test' })))
     }
 
-    public generateCompletions(abortSignal: AbortSignal): Promise<InlineCompletionItemWithAnalytics[]> {
+    public generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ContextSnippet[],
+        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void
+    ): Promise<void> {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
         return new Promise(resolve => {
-            this.resolve = resolve
+            this.resolve = (completions: InlineCompletionItemWithAnalytics[]) => {
+                onCompletionReady(completions)
+                resolve()
+            }
         })
     }
 }

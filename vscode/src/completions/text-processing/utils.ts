@@ -366,3 +366,79 @@ export function getPrevNonEmptyLine(prefix: string): string {
 export function lines(text: string): string[] {
     return text.split(/\r?\n/)
 }
+
+export interface AsyncIteratorReadStream<T> {
+    [Symbol.asyncIterator](): AsyncIterator<T>
+}
+
+export interface AsyncIterableReadWriteStream<T> extends AsyncIteratorReadStream<T> {
+    onChunk: (chunk: T) => void
+    onEnd: () => void
+}
+
+// Generator function that converts a stream of arbitrary chunked strings into a stream of newline
+// delimited chunks
+export async function* newlineChunked(stream: AsyncIteratorReadStream<string>): AsyncIteratorReadStream<string> {
+    let buffer = ''
+    for await (const input of stream) {
+        buffer += input
+
+        while (buffer.includes('\n')) {
+            const chunk = buffer.slice(0, buffer.indexOf('\n') + 1)
+            buffer = buffer.slice(buffer.indexOf('\n') + 1)
+            yield chunk
+        }
+    }
+    yield buffer
+}
+
+/**
+ * Creates a one directional stream that can be read using the AsyncIterator pattern
+ */
+export function createAsyncIteratorStream<T>(): AsyncIterableReadWriteStream<T> {
+    let inputEnded = false
+    let outputEnded = false
+    let doContinue: () => void = () => {}
+
+    const buffer: T[] = []
+
+    const stream = {
+        [Symbol.asyncIterator]() {
+            return this
+        },
+        async next(): Promise<{ done: false; value: T } | { done: true; value: null }> {
+            if (outputEnded) {
+                return { done: true, value: null }
+            }
+
+            if (buffer.length > 0) {
+                const chunk = buffer.shift()!
+                return { done: false, value: chunk }
+            }
+
+            if (!inputEnded) {
+                const promise = new Promise<void>(resolve => (doContinue = resolve))
+                await promise
+
+                return stream.next()
+            }
+
+            outputEnded = true
+            return stream.next()
+        },
+        onChunk(chunk: T) {
+            if (inputEnded) {
+                return
+            }
+
+            buffer.push(chunk)
+            doContinue()
+        },
+        onEnd() {
+            inputEnded = true
+            doContinue()
+        },
+    }
+
+    return stream
+}

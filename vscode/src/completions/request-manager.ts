@@ -87,11 +87,25 @@ export class RequestManager {
         this.inflightRequests.add(request)
 
         Promise.all(
-            providers.map(provider =>
-                startAsyncSpan('autocomplete.generate', () =>
-                    provider.generateCompletions(request.abortController.signal, context, tracer)
-                )
-            )
+            providers.map(provider => {
+                const completionReadyPromise = new Promise<InlineCompletionItemWithAnalytics[]>((resolve, reject) => {
+                    provider
+                        .generateCompletions(
+                            request.abortController.signal,
+                            context,
+                            resolve,
+                            (docContext, hotStreakCompletions) => {
+                                console.log('RequestManger#received hot streak')
+                                this.cache.set(docContext, [hotStreakCompletions])
+                                console.log({ prefix, hotStreakCompletions })
+                            },
+                            tracer
+                        )
+                        .catch(error => reject(error))
+                })
+
+                return startAsyncSpan('autocomplete.generate', () => completionReadyPromise)
+            })
         )
             .then(res => res.flat())
             .then(completions => {
@@ -200,10 +214,9 @@ class InflightRequest {
 class RequestCache {
     private cache = new LRUCache<string, InlineCompletionItemWithAnalytics[]>({ max: 50 })
 
-    private toCacheKey(key: RequestParams): string {
+    private toCacheKey(key: Pick<RequestParams, 'docContext'>): string {
         return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
     }
-
     public get(key: RequestParams): InlineCompletionItemWithAnalytics[] | undefined {
         return this.cache.get(this.toCacheKey(key))
     }
