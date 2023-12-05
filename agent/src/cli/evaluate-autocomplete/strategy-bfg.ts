@@ -57,7 +57,8 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
             }
             client.notify('textDocument/didOpen', { uri: uri.toString(), content })
             const parser = await createParser({ language, grammarDirectory })
-            const tree = parser.parse(content)
+            const originalTree = parser.parse(content)
+            const originalTreeIsErrorFree = !originalTree.rootNode.hasError()
             const query = await queries.loadQuery(parser, language, 'context')
             if (!query) {
                 continue
@@ -76,7 +77,7 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                 content,
                 uri
             )
-            for (const match of query.matches(tree.rootNode)) {
+            for (const match of query.matches(originalTree.rootNode)) {
                 if (documentTestCountStart - remainingTests > options.maxFileTestCount) {
                     console.log(`--max-file-test-count=${options.maxFileTestCount} limit hit for file '${file}'`)
                     break
@@ -124,6 +125,9 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                         capture.node.startPosition.column + 1
                     )
                     await triggerAutocomplete({
+                        parser,
+                        originalTree,
+                        originalTreeIsErrorFree,
                         range,
                         client,
                         document,

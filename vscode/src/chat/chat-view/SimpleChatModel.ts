@@ -51,8 +51,8 @@ export class SimpleChatModel {
         }
         this.messagesWithContext.push({
             message: {
-                speaker: 'human',
                 ...message,
+                speaker: 'human',
             },
         })
     }
@@ -64,8 +64,8 @@ export class SimpleChatModel {
         this.messagesWithContext.push({
             displayText,
             message: {
-                speaker: 'assistant',
                 ...message,
+                speaker: 'assistant',
             },
         })
     }

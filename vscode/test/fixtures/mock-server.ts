@@ -180,6 +180,16 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             case 'SiteHasCodyEnabled':
                 res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }))
                 break
+            case 'CurrentSiteCodyLlmConfiguration': {
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            site: { codyLLMConfiguration: { chatModel: 'test-chat-default-model' } },
+                        },
+                    })
+                )
+                break
+            }
             default:
                 res.sendStatus(400)
                 break

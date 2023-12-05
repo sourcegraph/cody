@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -20,6 +21,7 @@ import { CodyChatPanelViewType } from './ChatManager'
 import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 type ChatID = string
 
@@ -186,6 +188,17 @@ export class ChatPanelsManager implements vscode.Disposable {
      * NOTE: This can be removed once we have migrated ChatPanelProvider to SimpleChatPanelProvider
      */
     private createProvider(): SimpleChatPanelProvider | ChatPanelProvider {
+        const authProvider = this.options.authProvider
+        const authStatus = authProvider.getAuthStatus()
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
+        const models = ChatModelProvider.get(authStatus.endpoint)
+        const defaultModel = models.find(m => m.default) || models[0]
+        if (!defaultModel) {
+            throw new Error('No chat model found in server-provided config')
+        }
+
         return this.options.contextProvider.config.experimentalSimpleChatContext
             ? new SimpleChatPanelProvider({
                   ...this.options,
@@ -193,6 +206,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                   chatClient: this.chatClient,
                   embeddingsClient: this.embeddingsSearch,
                   localEmbeddings: this.localEmbeddings,
+                  recipeAdapter: new SimpleChatRecipeAdapter(
+                      this.options.editor,
+                      this.options.intentDetector,
+                      this.options.contextProvider,
+                      this.options.platform
+                  ),
+                  defaultModelID: defaultModel.model,
               })
             : new ChatPanelProvider(this.options)
     }
