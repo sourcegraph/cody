@@ -140,6 +140,18 @@ export class ChatPanelsManager implements vscode.Disposable {
             }
         }
 
+        // Reuse existing "New Chat" panel if there is an empty one
+        const emptyNewChatProvider = Array.from(this.panelProvidersMap.values()).find(
+            p => p.webviewPanel?.title === 'New Chat'
+        )
+        if (!chatID && !panel && this.panelProvidersMap.size && emptyNewChatProvider) {
+            emptyNewChatProvider.webviewPanel?.reveal()
+            this.activePanelProvider = emptyNewChatProvider
+            this.options.contextProvider.webview = emptyNewChatProvider.webview
+            void this.selectTreeItem(emptyNewChatProvider.sessionID)
+            return emptyNewChatProvider
+        }
+
         logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
 
         // Get the view column of the current active chat panel so that we can open a new one on top of it
