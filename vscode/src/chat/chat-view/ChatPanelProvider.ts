@@ -193,7 +193,14 @@ export class ChatPanelProvider extends MessageProvider {
             contextStatus,
         })
 
-        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        // DONOTCOMMIT TODO
+        const localProcess = {
+            os: 'darwin',
+            arch: 'aarch64',
+            extensionVersion: '1.0.0',
+            uiKindIsWeb: false,
+        }
+        // const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
         const config: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: this.contextProvider.config.debugEnable,

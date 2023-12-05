@@ -57,7 +57,7 @@ interface ChatboxProps {
     applessOnboarding: {
         endpoint: string | null
         embeddingsEndpoint?: string
-        props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
+        props: { onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[] | null
     setChatModels?: (models: ChatModelProvider[]) => void

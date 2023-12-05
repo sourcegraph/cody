@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { DOTCOM_URL, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -19,7 +19,6 @@ import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
-import { LocalAppDetector } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
@@ -32,7 +31,6 @@ export class AuthProvider {
 
     private appScheme = vscode.env.uriScheme
     private client: SourcegraphGraphQLAPIClient | null = null
-    public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
     public webview?: SidebarChatWebview
@@ -43,15 +41,18 @@ export class AuthProvider {
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
-        this.appDetector = new LocalAppDetector({ onChange: type => this.syncLocalAppState(type) })
     }
 
-    // Sign into the last endpoint the user was signed into
-    // if none, try signing in with App URL
+    // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<void> {
-        await this.appDetector.init()
-        const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
+        let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        if (lastEndpoint === LOCAL_APP_URL.toString()) {
+            // If the user last signed in to app, which talks to dotcom,
+            // seamlessly redirect them to talk to dotcom directly.
+            logDebug('AuthProvider:init', 'redirecting App-signed in user to dotcom')
+            lastEndpoint = DOTCOM_URL.toString()
+        }
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
         await this.auth(lastEndpoint, token || null)
     }
@@ -62,7 +63,7 @@ export class AuthProvider {
     }
 
     // Display quickpick to select endpoint to sign in to
-    public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token' | 'app', uri?: string): Promise<void> {
+    public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         logDebug('AuthProvider:signinMenu', mode)
         telemetryService.log('CodyVSCodeExtension:login:clicked')
@@ -93,17 +94,10 @@ export class AuthProvider {
                 await this.signinMenuForInstanceUrl(instanceUrl)
                 break
             }
-            case 'app': {
-                if (uri) {
-                    await this.appAuth(uri)
-                }
-                break
-            }
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
-                const tokenKey = isLocalApp(selectedEndpoint) ? 'SOURCEGRAPH_CODY_APP' : selectedEndpoint
-                const token = await secretStorage.get(tokenKey)
+                const token = await secretStorage.get(selectedEndpoint)
                 let authStatus = await this.auth(selectedEndpoint, token || null)
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
@@ -127,21 +121,6 @@ export class AuthProvider {
         await showAuthResultMessage(instanceUrl, authState?.authStatus)
     }
 
-    public async appAuth(uri?: string): Promise<void> {
-        logDebug('AuthProvider:appAuth:init', '')
-        const token = await secretStorage.get('SOURCEGRAPH_CODY_APP')
-        if (token) {
-            const authStatus = await this.auth(LOCAL_APP_URL.href, token)
-            if (authStatus?.isLoggedIn) {
-                return
-            }
-        }
-        if (!uri) {
-            return
-        }
-        await vscode.env.openExternal(vscode.Uri.parse(uri))
-    }
-
     public async signoutMenu(): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:logout:clicked')
         const { endpoint } = this.authStatus
@@ -154,10 +133,6 @@ export class AuthProvider {
 
     // Log user out of the selected endpoint (remove token from secret)
     private async signout(endpoint: string): Promise<void> {
-        // Restart appDetector if endpoint is App
-        if (isLocalApp(endpoint)) {
-            await this.appDetector.init()
-        }
         await secretStorage.deleteToken(endpoint)
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
@@ -189,8 +164,7 @@ export class AuthProvider {
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
-        const isDotComOrApp = isDotCom || isLocalApp(endpoint)
-        if (!isDotComOrApp) {
+        if (!isDotCom) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
 
@@ -203,7 +177,7 @@ export class AuthProvider {
 
             return newAuthStatus(
                 endpoint,
-                isDotComOrApp,
+                isDotCom,
                 !isError(currentUserID),
                 hasVerifiedEmail,
                 enabled,
@@ -213,12 +187,7 @@ export class AuthProvider {
             )
         }
 
-        // TODO(dantup): If local app support is removed, this can be simplified
-        //  (this path will only be dotCom) and the 'getCurrentUserIdAndVerifiedEmail'
-        //  queries removed.
-        const userInfo = isDotCom
-            ? await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
-            : await this.client.getCurrentUserIdAndVerifiedEmail()
+        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
         const isCodyEnabled = true
 
         // check first if it's a network error
@@ -237,7 +206,7 @@ export class AuthProvider {
 
         return newAuthStatus(
             endpoint,
-            isDotComOrApp,
+            isDotCom,
             !!userInfo.id,
             userInfo.hasVerifiedEmail,
             isCodyEnabled,
@@ -297,41 +266,24 @@ export class AuthProvider {
         }
         await vscode.commands.executeCommand('cody.auth.sync')
     }
-    /**
-     * Display app state in webview view that is used during Signin flow
-     */
-    public async syncLocalAppState(type: string): Promise<void> {
-        if (this.authStatus.endpoint === 'init' || !this.webview) {
-            return
-        }
-        // Log user into App if user is currently not logged in and has App running
-        if (type !== 'app' && !this.authStatus.isLoggedIn) {
-            await this.appAuth()
-        }
-        // Notify webview that app is installed
-        await this.webview?.postMessage({ type: 'app-state', isInstalled: true })
-    }
 
-    // Register URI Handler (vscode://sourcegraph.cody-ai) for:
-    // - Deep linking into VS Code with Cody focused (e.g. from the App setup)
-    // - Resolving token sending back from sourcegraph.com and App
+    // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token
+    // sending back from sourcegraph.com
     public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<void> {
         const params = new URLSearchParams(uri.query)
-        const isApp = params.get('type') === 'app'
         const token = params.get('code')
-        const endpoint = isApp ? LOCAL_APP_URL.href : this.authStatus.endpoint
+        const endpoint = this.authStatus.endpoint
         if (!token || !endpoint) {
             return
         }
         const authState = await this.auth(endpoint, token, customHeaders)
         telemetryService.log('CodyVSCodeExtension:auth:fromCallback', {
             type: 'callback',
-            from: isApp ? 'app' : 'web',
+            from: 'web',
             success: Boolean(authState?.isLoggedIn),
         })
         if (authState?.isLoggedIn) {
-            const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
-            await vscode.window.showInformationMessage(successMessage)
+            await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
         } else {
             await showAuthFailureMessage(endpoint)
         }
@@ -424,9 +376,7 @@ function formatURL(uri: string): string | null {
 async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
     if (authStatus?.isLoggedIn) {
         const authority = vscode.Uri.parse(endpoint).authority
-        const isApp = endpoint === LOCAL_APP_URL.href
-        const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${authority}`
-        await vscode.window.showInformationMessage(successMessage)
+        await vscode.window.showInformationMessage(`Signed in to ${authority}`)
     } else {
         await showAuthFailureMessage(endpoint)
     }

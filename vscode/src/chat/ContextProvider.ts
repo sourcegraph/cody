@@ -260,7 +260,14 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+            // DONOTCOMMIT TODO dpc
+            const localProcess = {
+                os: 'darwin',
+                arch: 'aarch64',
+                extensionVersion: '1.0.0',
+                uiKindIsWeb: false,
+            }
+            // const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,

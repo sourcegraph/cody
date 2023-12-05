@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 export interface LoginMenuItem {
     id: string
@@ -19,9 +19,6 @@ export type AuthMenuType = 'signin' | 'switch'
 
 function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
-    if (isLocalApp(uri)) {
-        return `${icon}Cody App`
-    }
     if (isDotCom(uri)) {
         return `${icon}Sourcegraph.com`
     }

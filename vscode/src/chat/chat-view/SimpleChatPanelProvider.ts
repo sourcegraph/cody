@@ -466,7 +466,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postViewConfig(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
-        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        // DONOT COMMIT TODO dpc replace this
+        const localProcess = {
+            os: 'darwin',
+            arch: 'aarch64',
+            extensionVersion: '1.0.0',
+            uiKindIsWeb: false,
+        }
+        // const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: config.debugEnable,

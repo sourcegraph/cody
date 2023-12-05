@@ -66,7 +66,6 @@ export type WebviewMessage =
               | 'signin'
               | 'signout'
               | 'support'
-              | 'app'
               | 'callback'
               | 'simplified-onboarding'
               | 'simplified-onboarding-exposure'
@@ -79,7 +78,7 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
+          type: 'reload-state' | 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
@@ -101,8 +100,6 @@ export type ExtensionMessage =
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
-    // TODO(dpc): Remove app install status when the app install toasts are... toast.
-    | { type: 'app-state'; isInstalled: boolean }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
@@ -210,19 +207,10 @@ export interface LocalEnv {
     arch: string
     homeDir?: string | undefined
 
-    // The  URL scheme the editor is registered to in the operating system
-    uriScheme: string
-    // The  application name of the editor
-    appName: string
     extensionVersion: string
 
-    /** Whe ther the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
     uiKindIsWeb: boolean
-
-    // App  Local State
-    hasAppJson: boolean
-    isAppInstalled: boolean
-    isAppRunning: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

@@ -8,10 +8,10 @@ import { constructFileUri } from '../commands/utils/helpers'
 import { fetch } from '../fetch'
 import { logDebug, logError } from '../log'
 
-import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
-import { secretStorage } from './SecretStorageProvider'
+import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 
 type OnChangeCallback = (type: string) => Promise<void>
+
 /**
  * Detects whether the user has the Sourcegraph app installed locally.
  */
@@ -23,7 +23,6 @@ export class LocalAppDetector implements vscode.Disposable {
 
     private localAppMarkers
     private appFsPaths: string[] = []
-    private tokenFsPath: vscode.Uri | null = null
 
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
@@ -68,70 +67,28 @@ export class LocalAppDetector implements vscode.Disposable {
             watcher.onDidChange(() => this.fetchApp())
             this._watchers.push(watcher)
             this.appFsPaths.push(dirPath + marker.file)
-            if (marker.hasToken) {
-                this.tokenFsPath = vscode.Uri.file(dirPath + marker.file)
-            }
         }
         await this.fetchApp()
     }
 
     // Check if App is installed
     private async fetchApp(): Promise<void> {
-        if (this.localEnv.isAppInstalled || !this.appFsPaths) {
+        if (!this.appFsPaths) {
             return
         }
         if (await Promise.any(this.appFsPaths.map(file => pathExists(vscode.Uri.file(file))))) {
-            this.localEnv.isAppInstalled = true
             this.appFsPaths = []
             await this.found('app')
-            await this.fetchToken()
             return
-        }
-    }
-
-    // Get token from app.json if it exists
-    private async fetchToken(): Promise<void> {
-        if (!this.tokenFsPath || this.localEnv.hasAppJson) {
-            return
-        }
-        await this.tryFetchAppJson(this.tokenFsPath)
-    }
-
-    // Check if `uri` has the an app token. This skips the checks for an
-    // existing token and will forcibly load new tokens.
-    //
-    // This is a stop-gap so LocalAppWatcher/simplified onboarding can force
-    // LocalAppDetector and downstream to pick up an app token even after the
-    // user has logged in to dotcom.
-    public async tryFetchAppJson(uri: vscode.Uri): Promise<void> {
-        const appJson = await loadAppJson(uri)
-        if (!appJson) {
-            return
-        }
-        const token = appJson.token
-        // Once the token is found, we can stop watching the files
-        if (token?.length) {
-            this.localEnv.hasAppJson = true
-            this.tokenFsPath = null
-            await this.found('token')
-            await secretStorage.storeToken(LOCAL_APP_URL.href, token)
-            await this.fetchServer()
         }
     }
 
     // Check if App is running
     private async fetchServer(): Promise<void> {
-        if (this.localEnv.isAppRunning) {
-            return
-        }
         try {
             const response = await fetch(`${LOCAL_APP_URL.href}__version`)
             if (response.status === 200) {
-                this.localEnv.isAppRunning = true
                 await this.found('server')
-            }
-            if (!this.localEnv.hasAppJson) {
-                await this.fetchToken()
             }
         } catch {
             return
@@ -140,8 +97,7 @@ export class LocalAppDetector implements vscode.Disposable {
 
     // Notify the caller that the app has been found
     // NOTE: Call this function only when the app is found
-    private async found(type: 'app' | 'token' | 'server'): Promise<void> {
-        this.localEnv.isAppInstalled = true
+    private async found(type: 'app' | 'server'): Promise<void> {
         await this.onChange(type)
         logDebug('LocalAppDetector:found', type)
     }
@@ -153,7 +109,6 @@ export class LocalAppDetector implements vscode.Disposable {
         }
         this._watchers = []
         this.appFsPaths = []
-        this.tokenFsPath = null
     }
 }
 
@@ -174,24 +129,12 @@ export function expandHomeDir(path: string, homeDir: string | null | undefined):
     return path
 }
 
-async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
-    try {
-        const data = await vscode.workspace.fs.readFile(uri)
-        return JSON.parse(data.toString()) as AppJson
-    } catch {
-        return null
-    }
-}
-
 export const envInit: LocalEnv = {
-    os: process.platform,
     arch: process.arch,
+    os: process.platform,
     homeDir: process.env.HOME,
-    uriScheme: vscode.env.uriScheme,
-    appName: vscode.env.appName,
+
     extensionVersion: version,
+
     uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-    isAppInstalled: false,
-    isAppRunning: false,
-    hasAppJson: false,
 }
