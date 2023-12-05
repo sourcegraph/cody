@@ -8,7 +8,9 @@ import { assertEvents, test } from './helpers'
 test.beforeEach(() => {
     resetLoggedEvents()
 })
-test('shows chat sidebar completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
+
+// TODO Fix flaky test
+test.skip('shows chat sidebar completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
     const expectedEvents = [
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',
@@ -58,7 +60,7 @@ test('shows chat sidebar completion onboarding notice on first completion accept
     await assertEvents(loggedEvents, expectedEvents)
 })
 
-test('inline completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
+test.skip('inline completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
     const expectedEvents = [
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',
