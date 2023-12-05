@@ -220,6 +220,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
+            this.cancelInProgressCompletion()
             this.webviewPanel = undefined
             this.webview = undefined
             panel.dispose()
@@ -472,7 +473,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ...localProcess,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
-            experimentalChatPanel: config.experimentalChatPanel,
         }
         await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
@@ -809,7 +809,7 @@ class ContextProvider implements IContextProvider {
     }
 
     private getCurrentSelectionContext(): ContextItem[] {
-        const selection = this.editor.getActiveInlineChatSelection()
+        const selection = this.editor.getActiveTextEditorSelection()
         if (!selection) {
             return []
         }

@@ -127,20 +127,6 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPredictions,
                     true
                 ),
-                createFeatureToggle(
-                    'New Chat UI',
-                    'Experimental',
-                    'Enable new chat panel UI',
-                    'cody.experimental.chatPanel',
-                    c => c.experimentalChatPanel
-                ),
-                createFeatureToggle(
-                    'New Search UI',
-                    'Experimental',
-                    'Enable new search panel',
-                    'cody.experimental.newSearch',
-                    c => c.experimentalSearchPanel
-                ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
                     label: '$(gear) Cody Extension Settings',

@@ -105,14 +105,6 @@ export class AgentEditor implements Editor {
         return this.getActiveTextEditorSelection()
     }
 
-    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
-        throw new Error('Method not implemented.')
-    }
-
-    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
-        throw new Error('Method not implemented.')
-    }
-
     public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
         throw new Error('Method not implemented.')
     }
