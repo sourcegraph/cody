@@ -318,7 +318,7 @@ export function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLin
 
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
+    return indentation(nextNonEmptyLine) <= startIndent || includeClosingLineBasedOnBrackets
 }
 
 export function getFirstLine(text: string): string {
