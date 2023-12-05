@@ -198,6 +198,10 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'show-page':
                 await vscode.commands.executeCommand('show-page', message.page)
                 break
+            case 'get-chat-models':
+                // chat models selector is not supported in old UI
+                await this.webview?.postMessage({ type: 'chatModels', models: [] })
+                break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')
         }

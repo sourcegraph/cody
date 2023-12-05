@@ -940,7 +940,7 @@
     "@sourcegraph/telemetry": "^0.13.0",
     "@storybook/preview-api": "^7.6.2",
     "@types/stream-json": "^1.7.3",
-    "@vscode/codicons": "^0.0.29",
+    "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",

@@ -42,6 +42,7 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'chatModel'; model: string }
+    | { command: 'get-chat-models' }
     | {
           command: 'openFile'
           filePath: string

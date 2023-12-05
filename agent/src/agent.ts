@@ -394,6 +394,19 @@ export class Agent extends MessageHandler {
             throw id
         })
 
+        this.registerRequest('graphql/currentUserIsPro', async () => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const res = await client.graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            if (res instanceof Error) {
+                throw res
+            }
+
+            return res.codyProEnabled
+        })
+
         this.registerRequest('telemetry/recordEvent', async event => {
             this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,

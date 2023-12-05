@@ -24,7 +24,8 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 
     const handleChange = useCallback(
         (event: any): void => {
-            if (showCodyProBadge) {
+            const selectedModel = models[event.target?.selectedIndex]
+            if (showCodyProBadge && selectedModel.codyProOnly) {
                 getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
                 getVSCodeAPI().postMessage({
                     command: 'event',
@@ -33,7 +34,6 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 })
                 return
             }
-            const selectedModel = models[event.target?.selectedIndex]
             getVSCodeAPI().postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
@@ -45,8 +45,8 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         [models, onCurrentChatModelChange, showCodyProBadge]
     )
 
-    function isModelDisabled(model: string): boolean {
-        return showCodyProBadge && model !== currentModel.model
+    function isModelDisabled(codyProOnly: boolean): boolean {
+        return codyProOnly ? codyProOnly && showCodyProBadge : false
     }
 
     if (!models.length || models.length < 1) {
@@ -82,19 +82,23 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                         className={styles.option}
                         key={option.model}
                         id={index.toString()}
-                        title={isModelDisabled(option.model) ? `Upgrade to Cody Pro to use ${option.title}` : undefined}
+                        title={
+                            isModelDisabled(option.codyProOnly)
+                                ? `Upgrade to Cody Pro to use ${option.title}`
+                                : undefined
+                        }
                     >
                         <ProviderIcon model={option.model} />
                         <span
                             className={classNames(
                                 styles.titleContainer,
-                                isModelDisabled(option.model) && styles.disabled
+                                isModelDisabled(option.codyProOnly) && styles.disabled
                             )}
                         >
                             <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${option.provider}`}</span>
                         </span>
-                        {isModelDisabled(option.model) && <span className={styles.badge}>Pro</span>}
+                        {isModelDisabled(option.codyProOnly) && <span className={styles.badge}>Pro</span>}
                     </VSCodeOption>
                 ))}
 
