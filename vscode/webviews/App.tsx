@@ -194,7 +194,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
 
         setContextSelection(null)
-    }, [contextSelection, formInput, vscodeAPI])
+    }, [formInput, contextSelection?.length, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
