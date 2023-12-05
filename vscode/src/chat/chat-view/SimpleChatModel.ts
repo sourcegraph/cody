@@ -69,6 +69,16 @@ export class SimpleChatModel {
         })
     }
 
+    public removeLastMessageIfHuman(): void {
+        const lastMessage = this.messagesWithContext.at(-1)
+        if (!lastMessage) {
+            return
+        }
+        if (lastMessage.message.speaker === 'human') {
+            this.messagesWithContext.pop()
+        }
+    }
+
     public getLastHumanMessages(): MessageWithContext | undefined {
         return this.messagesWithContext.findLast(message => message.message.speaker === 'human')
     }

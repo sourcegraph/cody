@@ -449,7 +449,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.history.saveHumanInputHistory(text)
         this.chatModel.addHumanMessage({ text })
         // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
@@ -507,7 +507,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            this.postViewTranscript()
+            this.postViewTranscript({ speaker: 'assistant', text: '' })
 
             this.sendLLMRequest(prompt, {
                 update: content => {
@@ -524,6 +524,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 close: content => {
                     this.addBotMessageWithGuardrails(requestID, content)
                 },
+                error: (partialResponse, error) => {
+                    if (isAbortError(error)) {
+                        if (partialResponse.length === 0) {
+                            this.chatModel.removeLastMessageIfHuman()
+                        } else {
+                            this.chatModel.addBotMessage({ text: partialResponse })
+                        }
+                        this.postViewTranscript()
+                        return
+                    }
+                    this.postError(new Error(`completions request aborted: ${error.message}`))
+                },
             })
         } catch (error) {
             this.postError(new Error(`Error generating assistant response: ${error}`))
@@ -539,6 +551,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         callbacks: {
             update: (response: string) => void
             close: (finalResponse: string) => void
+            error: (completedResponse: string, error: Error) => void
         }
     ): void {
         let lastContent = ''
@@ -566,7 +579,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
                 onError: error => {
                     this.completionCanceller = undefined
-                    this.postError(error)
+                    typewriter.stop()
+                    callbacks.error(lastContent, error)
                 },
             },
             { model: this.chatModel.modelID }
@@ -757,6 +771,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
                 close: (responseText: string) => {
                     this.addBotMessageWithGuardrails(requestID, responseText)
+                },
+                error: (partialResponse: string, error: Error) => {
+                    if (isAbortError(error)) {
+                        if (partialResponse.length === 0) {
+                            this.chatModel.removeLastMessageIfHuman()
+                        } else {
+                            this.chatModel.addBotMessage({ text: partialResponse })
+                        }
+                        this.postViewTranscript()
+                        return
+                    }
+                    this.postError(new Error(`completions request aborted: ${error.message}`))
                 },
             })
         } catch (error) {
