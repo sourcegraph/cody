@@ -64,7 +64,7 @@ export class ChatPanelProvider extends MessageProvider {
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
                 await this.authProvider.announceNewAuthStatus()
-                await this.handleWebviewContext()
+                this.handleWebviewContext()
                 break
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
@@ -176,7 +176,7 @@ export class ChatPanelProvider extends MessageProvider {
      * For Webview panel only
      * This sent the initiate contextStatus and config to webview
      */
-    private async handleWebviewContext(): Promise<void> {
+    private handleWebviewContext(): void {
         const authStatus = this.authProvider.getAuthStatus()
         const editorContext = this.editor.getActiveTextEditor()
         const contextStatus = {
