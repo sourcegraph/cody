@@ -827,10 +827,33 @@ class ContextProvider implements IContextProvider {
     }
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
+        const searchContext: ContextItem[] = []
+        let localEmbeddingsError
+        let remoteEmbeddingsError
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const searchContextPromise = [this.searchEmbeddingsLocal(text), this.searchEmbeddingsRemote(text)]
-        const searchContext = (await Promise.all(searchContextPromise)).flat()
+        const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
+        const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
+        try {
+            searchContext.push(...(await localEmbeddingsResults))
+        } catch (error) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+            localEmbeddingsError = error
+        }
+        try {
+            searchContext.push(...(await remoteEmbeddingsResults))
+        } catch (error) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
+            remoteEmbeddingsError = error
+        }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+        if (localEmbeddingsError && remoteEmbeddingsError) {
+            throw new Error(
+                `local and remote embeddings search failed (local: ${getErrorMessage(
+                    localEmbeddingsError
+                )}) (remote: ${getErrorMessage(remoteEmbeddingsError)})`
+            )
+        }
 
         const priorityContext: ContextItem[] = []
         if (this.needsUserAttentionContext(text)) {
@@ -1125,4 +1148,15 @@ function extractQuestion(input: string): string | undefined {
         return input
     }
     return undefined
+}
+
+function isAbortError(error: Error): boolean {
+    return error.message === 'aborted' || error.message === 'socket hang up'
+}
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message
+    }
+    return String(error)
 }
