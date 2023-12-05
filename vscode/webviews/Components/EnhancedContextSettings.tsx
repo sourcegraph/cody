@@ -17,7 +17,7 @@ import styles from './EnhancedContextSettings.module.css'
 
 interface EnhancedContextSettingsProps {
     isOpen: boolean
-    setOpen?: (open: boolean) => void
+    setOpen: (open: boolean) => void
 }
 
 export function defaultEnhancedContextContext(): EnhancedContextContextT {
