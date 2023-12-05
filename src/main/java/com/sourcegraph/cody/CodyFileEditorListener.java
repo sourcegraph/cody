@@ -10,6 +10,7 @@ import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
 import com.sourcegraph.config.ConfigUtil;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyFileEditorListener implements FileEditorManagerListener {
@@ -22,19 +23,26 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (document == null) {
       return;
     }
-    if (!CodyAgent.isConnected(source.getProject())) {
-      return;
-    }
-    CodyAgentClient client = CodyAgent.getClient(source.getProject());
-    if (client.server == null) {
-      return;
-    }
-    client.server.textDocumentDidOpen(new TextDocument(file.getPath(), document.getText()));
 
-    if (client.codebase == null) {
-      return;
-    }
-    client.codebase.onFileOpened(source.getProject(), file);
+    CodyAgent.getInitializedServer(source.getProject())
+        .completeOnTimeout(null, 3, TimeUnit.SECONDS)
+        .thenAccept(
+            server -> {
+              if (server == null) {
+                return;
+              }
+              if (!CodyAgent.isConnected(source.getProject())) {
+                return;
+              }
+
+              server.textDocumentDidOpen(new TextDocument(file.getPath(), document.getText()));
+
+              CodyAgentClient client = CodyAgent.getClient(source.getProject());
+              if (client.codebase == null) {
+                return;
+              }
+              client.codebase.onFileOpened(source.getProject(), file);
+            });
   }
 
   @Override
