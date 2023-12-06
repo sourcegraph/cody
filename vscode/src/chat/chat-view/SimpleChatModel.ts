@@ -110,6 +110,10 @@ export class SimpleChatModel {
         return this.messagesWithContext
     }
 
+    public setChatTitle(title: string): void {
+        this.chatTitle = title
+    }
+
     /**
      * Serializes to the legacy transcript JSON format
      */
@@ -146,6 +150,7 @@ export class SimpleChatModel {
         return {
             id: this.sessionID,
             chatModel: this.modelID,
+            chatTitle: this.chatTitle,
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }

@@ -46,7 +46,7 @@ import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../prot
 import { countGeneratedCode } from '../utils'
 
 import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
-import { ChatHistoryManager } from './ChatHistoryManager'
+import { chatHistory, ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { Config, IChatPanelProvider } from './ChatPanelsManager'
@@ -88,6 +88,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
     private readonly defaultModelID: string
+    // private readonly chatTitle: string = 'init'
 
     private history = new ChatHistoryManager()
     private prompter: IPrompter = new DefaultPrompter()
@@ -169,7 +170,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         const viewType = CodyChatPanelViewType
-        const panelTitle = getChatPanelTitle(lastQuestion)
+        const panelTitle = chatHistory.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -408,6 +409,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return Promise.resolve()
     }
     public handleChatTitle(title: string): void {
+        this.chatModel.setChatTitle(title)
         if (this.webviewPanel) {
             this.webviewPanel.title = title
         }
@@ -461,7 +463,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
-            this.webviewPanel.title = getChatPanelTitle(text)
+            this.webviewPanel.title = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(text)
         }
     }
 
@@ -656,6 +658,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             chatID: this.sessionID,
         })
 
+        const chatTitle = this.history.getChat(this.sessionID)?.chatTitle
+        if (chatTitle) {
+            this.handleChatTitle(chatTitle)
+            return
+        }
         // Update webview panel title to match the last message
         const text = this.chatModel.getLastHumanMessages()?.displayText
         if (this.webviewPanel && text) {
@@ -1134,7 +1141,12 @@ async function newChatModelfromTranscriptJSON(json: TranscriptJSON, defaultModel
             ]
         }
     )
-    return new SimpleChatModel(json.chatModel || defaultModelID, (await Promise.all(messages)).flat(), json.id)
+    return new SimpleChatModel(
+        json.chatModel || defaultModelID,
+        (await Promise.all(messages)).flat(),
+        json.id,
+        json.chatTitle
+    )
 }
 
 export function deserializedContextFilesToContextItems(
