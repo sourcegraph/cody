@@ -9,6 +9,7 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
+    onShow?: () => void
     onSelect?: () => void
 }
 
@@ -63,6 +64,10 @@ export function createStatusBar(): CodyStatusBar {
                     }
                 },
             }
+        }
+
+        if (errors.length > 0) {
+            errors.map(error => error.error.onShow?.())
         }
 
         const option = await vscode.window.showQuickPick(
@@ -123,18 +128,12 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
-                    'New Chat UI',
+                    'Simple Chat Context',
                     'Experimental',
-                    'Enable new chat panel UI',
-                    'cody.experimental.chatPanel',
-                    c => c.experimentalChatPanel
-                ),
-                createFeatureToggle(
-                    'New Search UI',
-                    'Experimental',
-                    'Enable new search panel',
-                    'cody.experimental.newSearch',
-                    c => c.experimentalSearchPanel
+                    'Enable the new simplifed chat context fetcher',
+                    'cody.experimental.simpleChatContext',
+                    c => c.experimentalSimpleChatContext,
+                    true
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

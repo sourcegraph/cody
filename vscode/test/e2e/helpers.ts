@@ -154,9 +154,7 @@ export async function buildWorkSpaceSettings(workspaceDirectory: string): Promis
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.keyboard.type('cody.auth.signout')
-    await page.keyboard.press('Enter')
-    await page.waitForTimeout(1000)
+    await page.getByRole('combobox', { name: 'input' }).fill('>cody sign out')
     await page.keyboard.press('Enter')
 }
 

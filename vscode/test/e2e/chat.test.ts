@@ -2,7 +2,7 @@ import { expect, Frame, FrameLocator, Page } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { disableNotifications, sidebarSignin } from './common'
+import { sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
@@ -39,31 +39,14 @@ test('shows standard rate limit message for non-dotCom users', async ({ page, si
  * Sets up a chat window ready for testing.
  */
 async function prepareChat(page: Page, sidebar: Frame): Promise<FrameLocator> {
-    // Turn off notifications because they can obscure the chat box
-    await disableNotifications(page)
-
     // Sign into Cody
     await sidebarSignin(page, sidebar)
-
-    // Enable new chat UI
-    await page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' }).click()
-    await page
-        .getByRole('option', { name: 'New Chat UI, Experimental, Enable new chat panel UI' })
-        .locator('span')
-        .filter({ hasText: 'Experimental' })
-        .first()
-        .click()
-
-    // Bring the cody sidebar to the foreground if it's not already there
-    if (!(await page.isVisible('[aria-label="Chat History"]'))) {
-        await page.click('[aria-label="Cody"]')
-    }
 
     // Open the new chat panel
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
     // Find the chat iframe inside the editor iframe
-    const chatFrameLocator = page.frameLocator('iframe.webview').frameLocator('iframe')
+    const chatFrameLocator = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
     // Put focus in the chat textbox
     await chatFrameLocator.getByRole('textbox', { name: 'Chat message' }).click()

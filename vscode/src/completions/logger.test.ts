@@ -106,7 +106,12 @@ describe('logger', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
+            version: 0,
+            interactionID: expect.any(String),
+            metadata: expect.anything(),
+            privateMetadata: expect.anything(),
+        })
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:accepted',
@@ -123,7 +128,12 @@ describe('logger', () => {
             },
             { agent: true, hasV2Event: true }
         )
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'accepted', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'accepted', {
+            version: 0,
+            interactionID: expect.any(String),
+            metadata: expect.anything(),
+            privateMetadata: expect.anything(),
+        })
     })
 
     it('reuses the completion ID for the same completion', () => {

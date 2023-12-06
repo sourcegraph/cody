@@ -30,6 +30,7 @@ import { ContextStatusAggregator } from '../../local-context/enhanced-context-st
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
+import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -40,6 +41,7 @@ import {
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
@@ -219,6 +221,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
+            this.cancelInProgressCompletion()
             this.webviewPanel = undefined
             this.webview = undefined
             panel.dispose()
@@ -454,7 +457,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.history.saveHumanInputHistory(text)
         this.chatModel.addHumanMessage({ text })
         // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
@@ -471,12 +474,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postViewConfig(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
-        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const localProcess = getProcessInfo()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
-            experimentalChatPanel: config.experimentalChatPanel,
         }
         await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
@@ -512,7 +514,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            this.postViewTranscript()
+            this.postViewTranscript({ speaker: 'assistant', text: '' })
 
             this.sendLLMRequest(prompt, {
                 update: content => {
@@ -529,6 +531,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 close: content => {
                     this.addBotMessageWithGuardrails(requestID, content)
                 },
+                error: (partialResponse, error) => {
+                    if (isAbortError(error)) {
+                        this.chatModel.addBotMessage({ text: partialResponse })
+                    }
+                    this.postError(error, 'transcript')
+                    this.postViewTranscript()
+                },
             })
         } catch (error) {
             this.postError(new Error(`Error generating assistant response: ${error}`))
@@ -544,6 +553,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         callbacks: {
             update: (response: string) => void
             close: (finalResponse: string) => void
+            error: (completedResponse: string, error: Error) => void
         }
     ): void {
         let lastContent = ''
@@ -570,8 +580,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     typewriter.stop()
                 },
                 onError: error => {
-                    this.completionCanceller = undefined
-                    this.postError(error)
+                    this.cancelInProgressCompletion()
+                    typewriter.stop()
+                    callbacks.error(lastContent, error)
                 },
             },
             { model: this.chatModel.modelID }
@@ -653,10 +664,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
+     * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
-    private postError(error: Error): void {
-        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
+    private postError(error: Error, type?: MessageErrorType): void {
+        // Add error to transcript
+        if (type === 'transcript') {
+            this.chatModel.addErrorAsBotMessage(error)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
+        void this.webview?.postMessage({ type: 'errors', errors: error.message })
     }
 
     /**
@@ -763,6 +781,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 close: (responseText: string) => {
                     this.addBotMessageWithGuardrails(requestID, responseText)
                 },
+                error: (partialResponse: string, error: Error) => {
+                    if (isAbortError(error)) {
+                        this.chatModel.addBotMessage({ text: partialResponse })
+                    }
+                    this.postError(error, 'transcript')
+                    this.postViewTranscript()
+                },
             })
         } catch (error) {
             this.postError(new Error(`command ${recipeID} failed: ${error}`))
@@ -795,7 +820,7 @@ class ContextProvider implements IContextProvider {
     }
 
     private getCurrentSelectionContext(): ContextItem[] {
-        const selection = this.editor.getActiveInlineChatSelection()
+        const selection = this.editor.getActiveTextEditorSelection()
         if (!selection) {
             return []
         }
@@ -832,10 +857,33 @@ class ContextProvider implements IContextProvider {
     }
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
+        const searchContext: ContextItem[] = []
+        let localEmbeddingsError
+        let remoteEmbeddingsError
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        const searchContextPromise = [this.searchEmbeddingsLocal(text), this.searchEmbeddingsRemote(text)]
-        const searchContext = (await Promise.all(searchContextPromise)).flat()
+        const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
+        const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
+        try {
+            searchContext.push(...(await localEmbeddingsResults))
+        } catch (error) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+            localEmbeddingsError = error
+        }
+        try {
+            searchContext.push(...(await remoteEmbeddingsResults))
+        } catch (error) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
+            remoteEmbeddingsError = error
+        }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+        if (localEmbeddingsError && remoteEmbeddingsError) {
+            throw new Error(
+                `local and remote embeddings search failed (local: ${getErrorMessage(
+                    localEmbeddingsError
+                )}) (remote: ${getErrorMessage(remoteEmbeddingsError)})`
+            )
+        }
 
         const priorityContext: ContextItem[] = []
         if (this.needsUserAttentionContext(text)) {
@@ -1130,4 +1178,15 @@ function extractQuestion(input: string): string | undefined {
         return input
     }
     return undefined
+}
+
+function isAbortError(error: Error): boolean {
+    return error.message === 'aborted' || error.message === 'socket hang up'
+}
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message
+    }
+    return String(error)
 }

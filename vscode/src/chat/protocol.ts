@@ -66,7 +66,6 @@ export type WebviewMessage =
               | 'signin'
               | 'signout'
               | 'support'
-              | 'app'
               | 'callback'
               | 'simplified-onboarding'
               | 'simplified-onboarding-exposure'
@@ -79,7 +78,7 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
+          type: 'reload-state' | 'web-sign-in-token'
       }
     | { command: 'getUserContext'; query: string }
     | { command: 'search'; query: string }
@@ -101,8 +100,6 @@ export type ExtensionMessage =
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
-    // TODO(dpc): Remove app install status when the app install toasts are... toast.
-    | { type: 'app-state'; isInstalled: boolean }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
@@ -115,8 +112,7 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview
-    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> {}
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -126,13 +122,7 @@ export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
-export const CODY_FEEDBACK_URL = new URL(
-    'https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode'
-)
-// APP
-export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
-export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
-export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
+export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
@@ -210,19 +200,10 @@ export interface LocalEnv {
     arch: string
     homeDir?: string | undefined
 
-    // The  URL scheme the editor is registered to in the operating system
-    uriScheme: string
-    // The  application name of the editor
-    appName: string
     extensionVersion: string
 
-    /** Whe ther the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
     uiKindIsWeb: boolean
-
-    // App  Local State
-    hasAppJson: boolean
-    isAppInstalled: boolean
-    isAppRunning: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
@@ -230,25 +211,6 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
         return false
     }
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
-}
-
-// The  OS and Arch support for Cody app
-export function isOsSupportedByApp(os?: string, arch?: string): boolean {
-    if (!os || !arch) {
-        return false
-    }
-    return os === 'darwin' || os === 'linux'
-}
-
-// Map  the Arch to the app's supported Arch
-export function archConvertor(arch: string): string {
-    switch (arch) {
-        case 'arm64':
-            return 'aarch64'
-        case 'x64':
-            return 'x86_64'
-    }
-    return arch
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

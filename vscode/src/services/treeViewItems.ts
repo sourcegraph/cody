@@ -3,7 +3,7 @@ import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/Featur
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 
-import { envInit } from './LocalAppDetector'
+import { getProcessInfo } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
@@ -67,14 +67,14 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Upgrade',
         description: 'Upgrade to Pro',
         icon: 'zap',
-        command: { command: 'cody.account.upgrade' },
+        command: { command: 'cody.show-page', args: ['upgrade'] },
         requireUpgradeAvailable: true,
         requireFeature: FeatureFlag.CodyPro,
     },
     {
         title: 'Usage',
         icon: 'pulse',
-        command: { command: 'cody.account.usage' },
+        command: { command: 'cody.show-page', args: ['usage'] },
         requireFeature: FeatureFlag.CodyPro,
     },
     {
@@ -89,11 +89,11 @@ const supportItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Release Notes',
-        description: `v${envInit.extensionVersion}`,
+        description: `v${getProcessInfo().extensionVersion}`,
         icon: 'github',
         command: {
             command: 'vscode.open',
-            args: [`https://github.com/sourcegraph/cody/releases/tag/vscode-v${envInit.extensionVersion}`],
+            args: [`https://github.com/sourcegraph/cody/releases/tag/vscode-v${getProcessInfo().extensionVersion}`],
         },
     },
     {

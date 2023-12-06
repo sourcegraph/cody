@@ -590,6 +590,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 errorTitle = 'Cody Autocomplete Disabled Due to Rate Limit'
                 pageName = 'rate-limits'
             }
+            let shown = false
             this.config.statusBar.addError({
                 title: errorTitle,
                 description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
@@ -601,12 +602,27 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
+                onShow: () => {
+                    if (shown) {
+                        return
+                    }
+                    shown = true
+                    telemetryService.log(
+                        canUpgrade
+                            ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
+                            : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+                        {
+                            limit_type: 'suggestions',
+                            tier,
+                        }
+                    )
+                },
             })
 
             telemetryService.log(
                 canUpgrade
-                    ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
-                    : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+                    ? 'CodyVSCodeExtension:upsellUsageLimitStatusBar:shown'
+                    : 'CodyVSCodeExtension:abuseUsageLimitStatusBar:shown',
                 {
                     limit_type: 'suggestions',
                     tier,
