@@ -23,14 +23,12 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
-import { getFullConfig } from '../../configuration'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
-import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -42,7 +40,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType } from '../MessageProvider'
-import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
 import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
@@ -270,7 +268,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 // The web view is ready to receive events. We need to make sure that it has an up
                 // to date config, even if it was already published
                 await this.authProvider.announceNewAuthStatus()
-                await this.postViewConfig()
                 break
             case 'initialized':
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
@@ -415,6 +412,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
     }
 
+    // Update webview with the latest config, chat models, and authStatus
+    // This is triggered everytime announceNewAuthStatus in authProvider is fired
+    public syncWebviewConfig(authStatus: AuthStatus, configForWebview: ConfigurationSubsetForWebview & LocalEnv): void {
+        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
+        void this.postChatModels()
+        void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+    }
+
     private async postChatModels(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus?.isLoggedIn) {
@@ -464,19 +469,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatModel.updateLastHumanMessage({ text })
         this.postViewTranscript()
         await this.generateAssistantResponse(requestID)
-    }
-
-    private async postViewConfig(): Promise<void> {
-        const config = await getFullConfig()
-        const authStatus = this.authProvider.getAuthStatus()
-        const localProcess = getProcessInfo()
-        const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-            ...localProcess,
-            debugEnable: config.debugEnable,
-            serverEndpoint: config.serverEndpoint,
-        }
-        await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
     private async generateAssistantResponse(

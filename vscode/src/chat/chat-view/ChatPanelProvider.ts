@@ -9,7 +9,6 @@ import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 import { View } from '../../../webviews/NavBar'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
-import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -21,7 +20,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
 import { getChatPanelTitle } from './chat-helpers'
 import { chatHistory } from './ChatHistoryManager'
@@ -173,8 +172,17 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     /**
+     * Update webview with the latest config, chat models, and authStatus
+     * This is triggered everytime announceNewAuthStatus in authProvider is fired
+     */
+    public syncWebviewConfig(authStatus: AuthStatus, configForWebview: ConfigurationSubsetForWebview & LocalEnv): void {
+        void this.handleChatModels()
+        void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+    }
+
+    /**
      * For Webview panel only
-     * This sent the initiate contextStatus and config to webview
+     * This sent the initiate contextStatus to webview
      */
     private handleWebviewContext(): void {
         const authStatus = this.authProvider.getAuthStatus()
@@ -192,18 +200,6 @@ export class ChatPanelProvider extends MessageProvider {
         void this.webview?.postMessage({
             type: 'contextStatus',
             contextStatus,
-        })
-
-        const localProcess = getProcessInfo()
-        const config: ConfigurationSubsetForWebview & LocalEnv = {
-            ...localProcess,
-            debugEnable: this.contextProvider.config.debugEnable,
-            serverEndpoint: this.contextProvider.config.serverEndpoint,
-        }
-        void this.webview?.postMessage({
-            type: 'config',
-            config,
-            authStatus,
         })
     }
 
