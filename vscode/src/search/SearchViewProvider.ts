@@ -77,7 +77,7 @@ class IndexManager {
         void vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: `Cody: building search index for ${prettyScopeDir}`,
+                title: `Building Cody search index for ${prettyScopeDir}`,
                 cancellable: false,
             },
             async () => {
