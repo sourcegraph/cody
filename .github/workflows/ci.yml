@@ -78,12 +78,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu
-          - runner: macos
+          - runner: ubuntu-latest
+          - runner: macos-latest-large
             shard: 1/2
-          - runner: macos
+          - runner: macos-latest-large
             shard: 2/2
-    runs-on: ${{ matrix.runner }}-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     permissions:
       id-token: write
@@ -111,9 +111,9 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
-        if: matrix.runner == 'ubuntu'
+        if: matrix.runner == 'ubuntu-latest'
       - run: pnpm -C vscode run test:e2e
-        if: matrix.runner == 'windows' || matrix.runner == 'macos'
+        if: matrix.runner == 'windows' || matrix.runner == 'macos-latest-large'
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
