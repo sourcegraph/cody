@@ -1,4 +1,5 @@
 import * as uuid from 'uuid'
+import { Position } from 'vscode'
 
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
@@ -212,11 +213,14 @@ export async function fetchAndProcessDynamicMultilineCompletions(
 
 export async function fetchAndProcessCompletions(params: FetchAndProcessCompletionsParams): Promise<void> {
     const { client, requestParams, abortSignal, providerOptions, providerSpecificPostProcess } = params
+    const { position, document, docContext } = providerOptions
 
     let inHotStreakMode = false
     let completeCompletion: undefined | InlineCompletionItemWithAnalytics
 
-    const hotStreakCompletions: { prefix: string; completion: InlineCompletionItemWithAnalytics }[] = []
+    let lastDocumentContext = docContext
+    let lastHotStreakCompletion: InlineCompletionItemWithAnalytics
+    let lastHotStreakLineOffset = 0
 
     // The Async executor is required to return the completion early if a partial result from SSE can be used.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
@@ -226,15 +230,15 @@ export async function fetchAndProcessCompletions(params: FetchAndProcessCompleti
             const result = await client.complete(
                 requestParams,
                 (incompleteResponse: CompletionResponse) => {
-                    console.log('chunk', incompleteResponse.completion)
                     const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
                     const completion = canUsePartialCompletion(initialCompletion, providerOptions)
-                    console.log('HOT')
+
                     if (completion) {
                         const processedCompletion = processCompletion(completion, providerOptions)
 
                         if (!completeCompletion) {
                             completeCompletion = processedCompletion
+                            lastHotStreakCompletion = completeCompletion
                             params.onCompletionReady({ ...processedCompletion, stopReason: 'streaming-truncation' })
                         }
 
@@ -245,29 +249,69 @@ export async function fetchAndProcessCompletions(params: FetchAndProcessCompleti
                         }
 
                         if (inHotStreakMode) {
-                            const lastHotStreakCompletion =
-                                hotStreakCompletions.at(-1)?.completion || completeCompletion
-
-                            const addition = completion?.insertText.slice(lastHotStreakCompletion.insertText.length)
+                            const unprocessedLines = completion.insertText
+                                .split('\n')
+                                .slice(lastHotStreakLineOffset)
+                                .join('\n')
+                            const addition = unprocessedLines.slice(
+                                lastHotStreakCompletion.insertText.length + lastDocumentContext.position.character
+                            )
+                            console.log({ unprocessedLines }, addition)
 
                             const lines = addition.split('\n')
+                            console.log({ lines })
                             for (const [index, line] of lines.entries()) {
-                                // Ignore last line as it might not be finished yet
-                                if (index === lines.length - 1) {
-                                    break
-                                }
+                                console.log({ lastHotStreakLineOffset, index })
 
-                                console.log('hot 4', line)
+                                // Ignore last line as it might not be finished yet
+                                if (index === lines.length - 1 && !initialCompletion.endsWith('\n')) {
+                                    continue
+                                }
 
                                 // Stop hot-streak when:
                                 // - the next line starts a comment
                                 // - the next line is empty
                                 // - the next line is a repetition of the previous line
+                                if (line.trim() === '') {
+                                    break
+                                }
 
-                                hotStreakCompletions.push({
-                                    prefix: line,
-                                    completion: processedCompletion,
+                                const whitespace = line.match(/^([\t ])*/)?.[0] || ''
+                                const completionWithoutWhitespace = line.slice(whitespace.length)
+
+                                const prefix =
+                                    lastDocumentContext.prefix + lastHotStreakCompletion.insertText + '\n' + whitespace
+
+                                lastDocumentContext = getDerivedDocContext({
+                                    languageId: document.languageId,
+                                    position: new Position(
+                                        position.line + index + lastHotStreakLineOffset,
+                                        whitespace.length
+                                    ),
+                                    dynamicMultilineCompletions: false,
+                                    documentDependentContext: {
+                                        prefix,
+                                        // Remove the characters that are being replaced by the completion
+                                        // to reduce the chances of breaking the parse tree with redundant symbols.
+                                        suffix: docContext.suffix,
+                                        injectedPrefix: null,
+                                    },
                                 })
+
+                                console.log(
+                                    'Preparing a hot-streak for',
+                                    lastDocumentContext.prefix,
+                                    'insertion',
+                                    completionWithoutWhitespace
+                                )
+
+                                lastHotStreakCompletion = {
+                                    ...processedCompletion,
+                                    insertText: completionWithoutWhitespace,
+                                    stopReason: 'hot-streak',
+                                }
+                                lastHotStreakLineOffset++
+                                params.onHotStreakCompletionReady(lastDocumentContext, lastHotStreakCompletion)
                             }
                         }
                     }
@@ -352,4 +396,16 @@ function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): Document
     }
 
     return docContext
+}
+
+function nthIndex(str: string, pat: string, n: number): number {
+    const L = str.length
+    let i = -1
+    while (n-- && i++ < L) {
+        i = str.indexOf(pat, i)
+        if (i < 0) {
+            break
+        }
+    }
+    return i
 }

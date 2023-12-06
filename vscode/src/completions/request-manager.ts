@@ -95,9 +95,7 @@ export class RequestManager {
                             context,
                             resolve,
                             (docContext, hotStreakCompletions) => {
-                                console.log('RequestManger#received hot streak')
-                                this.cache.set(docContext, [hotStreakCompletions])
-                                console.log({ prefix, hotStreakCompletions })
+                                this.cache.set({ docContext }, [hotStreakCompletions])
                             },
                             tracer
                         )
@@ -221,7 +219,7 @@ class RequestCache {
         return this.cache.get(this.toCacheKey(key))
     }
 
-    public set(key: RequestParams, entry: InlineCompletionItemWithAnalytics[]): void {
+    public set(key: Pick<RequestParams, 'docContext'>, entry: InlineCompletionItemWithAnalytics[]): void {
         this.cache.set(this.toCacheKey(key), entry)
     }
 
