@@ -10,6 +10,7 @@ import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 
 import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
@@ -63,7 +64,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
         private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
-        private readonly localEmbeddings: LocalEmbeddingsController | null
+        private readonly localEmbeddings: LocalEmbeddingsController | null,
+        private readonly symf: SymfRunner | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
@@ -194,6 +196,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                   chatClient: this.chatClient,
                   embeddingsClient: this.embeddingsClient,
                   localEmbeddings: this.localEmbeddings,
+                  symf: this.symf,
                   recipeAdapter: new SimpleChatRecipeAdapter(
                       this.options.editor,
                       this.options.intentDetector,

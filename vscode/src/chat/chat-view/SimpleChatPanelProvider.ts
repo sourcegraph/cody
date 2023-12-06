@@ -20,6 +20,7 @@ import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/me
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -31,7 +32,8 @@ import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } fr
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { logDebug } from '../../log'
+import { SymfRunner } from '../../local-context/symf'
+import { logDebug, logError } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
@@ -72,6 +74,7 @@ interface SimpleChatPanelProviderOptions {
     chatClient: ChatClient
     embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
+    symf: SymfRunner | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
@@ -95,6 +98,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
+    private readonly symf: SymfRunner | null
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
@@ -122,6 +126,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         chatClient,
         embeddingsClient,
         localEmbeddings,
+        symf,
         editor,
         treeView,
         defaultModelID,
@@ -134,6 +139,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatClient = chatClient
         this.embeddingsClient = embeddingsClient
         this.localEmbeddings = localEmbeddings
+        this.symf = symf
         this.editor = editor
         this.treeView = treeView
         this.guardrails = guardrails
@@ -515,6 +521,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.editor,
                 this.embeddingsClient,
                 this.localEmbeddings,
+                this.symf,
                 this.codebaseStatusProvider
             )
             const { prompt, warnings, newContextUsed } = await this.prompter.makePrompt(
@@ -857,6 +864,7 @@ class ContextProvider implements IContextProvider {
         private editor: Editor,
         private embeddingsClient: CachedRemoteEmbeddingsClient | null,
         private localEmbeddings: LocalEmbeddingsController | null,
+        private symf: SymfRunner | null,
         private codebaseStatusProvider: CodebaseStatusProvider
     ) {}
 
@@ -934,6 +942,11 @@ class ContextProvider implements IContextProvider {
             )
         }
 
+        if (searchContext.length === 0 && this.symf) {
+            // Fallback to symf if embeddings provided no results
+            searchContext.push(...(await this.searchSymf(text)))
+        }
+
         const priorityContext: ContextItem[] = []
         const selectionContext = this.getCurrentSelectionContext()
         if (selectionContext.length > 0) {
@@ -957,6 +970,56 @@ class ContextProvider implements IContextProvider {
         }
 
         return priorityContext.concat(searchContext)
+    }
+
+    /**
+     * Uses symf to conduct a local search within the current workspace folder
+     */
+    private async searchSymf(userText: string): Promise<ContextItem[]> {
+        if (!this.symf) {
+            return []
+        }
+        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
+        if (!workspaceRoot) {
+            return []
+        }
+
+        const r0 = (await this.symf.getResults(userText, [workspaceRoot])).map(async resultsPromise => {
+            const results = await resultsPromise
+            const items = results.map(async (result: Result): Promise<ContextItem | null> => {
+                const uri = vscode.Uri.file(result.file)
+
+                // HACK: we should standardize URI schemes at some point. The way
+                // in which this is handed to the view and received back is a bit
+                // jank
+                const displayUri = relativeFileUrl(path.relative(workspaceRoot, result.file))
+
+                const range = new vscode.Range(
+                    result.range.startPoint.row,
+                    result.range.startPoint.col,
+                    result.range.endPoint.row,
+                    result.range.endPoint.col
+                )
+                let text
+                try {
+                    text = await this.editor.getTextEditorContentForFile(uri, range)
+                    if (!text) {
+                        return null
+                    }
+                } catch (error) {
+                    logError('SimpleChatPanelProvider.searchSymf', `Error getting file contents: ${error}`)
+                    return null
+                }
+                return {
+                    uri: displayUri,
+                    range,
+                    text,
+                }
+            })
+            return items
+        })
+        const r1 = (await Promise.all((await Promise.all(r0)).flat())).filter(isContextItem)
+        return r1
     }
 
     private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {
@@ -1253,4 +1316,8 @@ function getErrorMessage(error: unknown): string {
         return error.message
     }
     return String(error)
+}
+
+function isContextItem(item: ContextItem | null): item is ContextItem {
+    return item !== null
 }

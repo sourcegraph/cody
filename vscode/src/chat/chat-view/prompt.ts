@@ -6,6 +6,8 @@ import {
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
+import { logDebug } from '../../log'
+
 import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 
 export interface IContextProvider {
@@ -107,12 +109,16 @@ export class DefaultPrompter implements IPrompter {
         if (useEnhancedContext) {
             // Add additional context from current editor or broader search
             const additionalContextItems = await contextProvider.getEnhancedContext(lastMessage.message.text)
-            const { limitReached, used } = promptBuilder.tryAddContext(additionalContextItems, (item: ContextItem) =>
-                this.renderContextItem(item)
+            const { limitReached, used, ignored } = promptBuilder.tryAddContext(
+                additionalContextItems,
+                (item: ContextItem) => this.renderContextItem(item)
             )
             newContextUsed.push(...used)
             if (limitReached) {
-                warnings.push('Ignored additional context items due to context limit')
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    `Ignored ${ignored.length} additional context items due to limit reached`
+                )
             }
         }
 
