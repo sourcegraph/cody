@@ -278,10 +278,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'initialized':
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
-                await this.postChatModels()
-                await this.restoreSession(this.sessionID)
-                await this.postHistory()
-                await this.postCodyCommands()
+                await this.onInitialized()
                 break
             case 'submit': {
                 const requestID = uuid.v4()
@@ -356,6 +353,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             default:
                 this.postError(new Error('Invalid request type from Webview Panel'))
         }
+    }
+
+    private async onInitialized(): Promise<void> {
+        await this.restoreSession(this.sessionID)
+        await this.postChatModels()
+        await this.postHistory()
+        await this.postCodyCommands()
     }
 
     public dispose(): void {
@@ -680,6 +684,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         void this.webview?.postMessage({ type: 'errors', errors: error.message })
     }
 
+    /**
+     * Send user history to webview, which included chat history and chat input history.
+     */
     private async postHistory(humanInput?: string): Promise<void> {
         if (humanInput) {
             await this.history.saveHumanInputHistory(humanInput)
