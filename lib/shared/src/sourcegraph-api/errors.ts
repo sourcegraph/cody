@@ -25,8 +25,14 @@ export class RateLimitError extends Error {
     }
 }
 
+/*
+For some reason `error instanceof RateLimitError` was not enough.
+`isRateLimitError` returned `false` for some cases.
+In particular, 'autocomplete/execute' in `agent.ts` and was affected.
+It was required to add `(error as any)?.name === RateLimitError.errorName`.
+ *  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
-    return error instanceof RateLimitError
+    return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 
 export class TracedError extends Error {
