@@ -46,11 +46,12 @@ export class SimpleChatModel {
         lastMessage.newContextUsed = newContextUsed
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>): void {
+    public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
         if (this.messagesWithContext.at(-1)?.message.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
         this.messagesWithContext.push({
+            displayText,
             message: {
                 ...message,
                 speaker: 'human',

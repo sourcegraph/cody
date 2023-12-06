@@ -6,6 +6,10 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import {
+    createDisplayTextWithFileLinks,
+    createDisplayTextWithFileSelection,
+} from '@sourcegraph/cody-shared/src/chat/prompts/display-text'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -275,7 +279,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'initialized':
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.postChatModels()
-                void this.restoreSession(this.sessionID)
+                await this.restoreSession(this.sessionID)
+                await this.postHistory()
+                await this.postCodyCommands()
                 break
             case 'submit': {
                 const requestID = uuid.v4()
@@ -449,15 +455,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
-        await this.history.saveHumanInputHistory(text)
-        this.chatModel.addHumanMessage({ text })
+        // If this is a slash command, run it with custom prompt recipe instead
+        if (text.startsWith('/')) {
+            return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, addEnhancedContext)
+        }
+        const displayText = userContextFiles?.length
+            ? createDisplayTextWithFileLinks(userContextFiles, text)
+            : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
+        this.chatModel.addHumanMessage({ text }, displayText)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
-        // Set the title of the webview panel to the current text
-        if (this.webviewPanel) {
-            this.webviewPanel.title = getChatPanelTitle(text)
-        }
     }
 
     private async handleEdit(requestID: string, text: string): Promise<void> {
@@ -672,6 +680,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         void this.webview?.postMessage({ type: 'errors', errors: error.message })
     }
 
+    private async postHistory(humanInput?: string): Promise<void> {
+        if (humanInput) {
+            await this.history.saveHumanInputHistory(humanInput)
+        }
+        void this.webview?.postMessage({
+            type: 'history',
+            messages: this.history.localHistory,
+        })
+    }
+
     /**
      * Finalizes adding a bot message to the chat model, with guardrails, and triggers an
      * update to the view.
@@ -755,7 +773,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             }
             await this.clearAndRestartSession()
             const { humanMessage, prompt } = recipeMessages
-            this.chatModel.addHumanMessage(humanMessage.message)
+            const displayText = this.editor.getActiveTextEditorSelection()
+                ? createDisplayTextWithFileSelection(humanChatInput, this.editor.getActiveTextEditorSelection())
+                : humanChatInput
+            this.chatModel.addHumanMessage(humanMessage.message, displayText)
             if (humanMessage.newContextUsed) {
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
@@ -791,6 +812,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     public async executeCustomCommand(title: string): Promise<void> {
         await this.executeRecipe('custom-prompt', title)
+    }
+
+    /**
+     * Send a list of commands to webview that can be triggered via chat input box with slash
+     */
+    private async postCodyCommands(): Promise<void> {
+        const send = async (): Promise<void> => {
+            await this.editor.controllers.command?.refresh()
+            const prompts = (await this.editor.controllers.command?.getAllCommands(true)) || []
+            void this.webview?.postMessage({
+                type: 'custom-prompts',
+                prompts,
+            })
+        }
+        this.editor.controllers.command?.setMessenger(send)
+        await send()
     }
 }
 
