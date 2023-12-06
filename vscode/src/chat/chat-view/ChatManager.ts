@@ -230,9 +230,13 @@ export class ChatManager implements vscode.Disposable {
 
     // For registering the commands for chat panels in advance
     private async createNewWebviewPanel(): Promise<void> {
-        const debounceCreatePanel = debounce(async () => {
-            await this.chatPanelsManager?.createWebviewPanel()
-        }, 250)
+        const debounceCreatePanel = debounce(
+            async () => {
+                await this.chatPanelsManager?.createWebviewPanel()
+            },
+            250,
+            { leading: true, trailing: true }
+        )
 
         if (this.chatPanelsManager) {
             await debounceCreatePanel()
@@ -240,9 +244,13 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
-        const debounceRestore = debounce(async (chatID: string, chatQuestion?: string) => {
-            await this.chatPanelsManager?.restorePanel(chatID, chatQuestion)
-        }, 1000)
+        const debounceRestore = debounce(
+            async (chatID: string, chatQuestion?: string) => {
+                await this.chatPanelsManager?.restorePanel(chatID, chatQuestion)
+            },
+            250,
+            { leading: true, trailing: true }
+        )
 
         if (this.chatPanelsManager) {
             await debounceRestore(chatID, chatQuestion)
