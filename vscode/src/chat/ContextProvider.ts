@@ -252,7 +252,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             this.config = await getFullConfig()
 
             // check if the new configuration change is valid or not
-            const authStatus = this.authProvider.getAuthStatus()
             const localProcess = getProcessInfo()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
@@ -262,7 +261,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
             // update codebase context on configuration change
             await this.updateCodebaseContext()
-            await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
 
             logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
