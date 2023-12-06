@@ -210,12 +210,7 @@ export function addSelectionToPrompt(prompt: string, code: string): string {
 /**
  * Gets the range to use for inserting documentation from the doc command.
  *
- * For Python files, returns a range starting on the line after the selection,
- * at the first non-whitespace character. This will insert the documentation
- * on the next line instead of directly in the selection as python docstring
- * is added below the function definition.
- *
- * For other languages, returns the original selection range unmodified.
+ * Returns the original selection range unmodified.
  */
 function getDocCommandRange(editor: vscode.TextEditor, selection: vscode.Selection): vscode.Selection {
     const startLine = selection.start.line
@@ -224,9 +219,9 @@ function getDocCommandRange(editor: vscode.TextEditor, selection: vscode.Selecti
     // move the current selection to the defined selection in the text editor document
     if (editor) {
         const visibleRange = editor.visibleRanges
-        // reveal the range of the selection minus 5 lines if visibleRange doesn't contain the selection
+        // reveal the range of the selection if visibleRange doesn't contain the selection
         if (!visibleRange.some(range => range.contains(selection))) {
-            // reveal the range of the selection minus 5 lines
+            // reveal the range of the selection
             editor?.revealRange(selection, vscode.TextEditorRevealType.InCenter)
         }
     }
