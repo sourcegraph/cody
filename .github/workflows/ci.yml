@@ -77,7 +77,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, macos]
+        include:
+          - runner: ubuntu
+          # macOS is slow so we shard tests across two runners
+          - runner: macos
+            shard: 1/2
+          - runner: macos
+            shard: 2/2
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     permissions:
@@ -107,8 +113,8 @@ jobs:
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         if: matrix.runner == 'ubuntu'
-      - run: pnpm -C vscode run test:e2e
-        if: matrix.runner == 'windows' || matrix.runner == 'macos'
+      - run: pnpm -C vscode run test:e2e --shard ${{ matrix.shard }}
+        if: matrix.runner == 'macos'
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
