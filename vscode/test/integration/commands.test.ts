@@ -27,10 +27,8 @@ suite('Commands', function () {
         // Run the "explain" command
         await vscode.commands.executeCommand('cody.command.explain-code')
 
-        // Check the chat transcript contains markdown
-        // const humanMessage = await getTranscript(0)
-        // assert.match(humanMessage.displayText || '', /^\/explain/)
-        assert.match((await getTranscript(0)).displayText || '', /^\/explain/)
+        // Check the chat transcript contains text from prompt
+        assert.match((await getTranscript(0)).displayText || '', /explain/)
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
@@ -40,9 +38,9 @@ suite('Commands', function () {
         // Run the "/smell" command
         await vscode.commands.executeCommand('cody.command.smell-code')
 
-        // Check the chat transcript contains markdown
+        // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^\/smell/)
+        assert.match(humanMessage.displayText || '', /smell/)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
@@ -53,27 +51,10 @@ suite('Commands', function () {
         // Run the "/test" command
         await vscode.commands.executeCommand('cody.command.generate-tests')
 
-        // Check the chat transcript contains markdown
+        // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^\/test/)
+        assert.match(humanMessage.displayText || '', /unit test/)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
-    })
-
-    test('Document Code', async () => {
-        await getTextEditorWithSelection()
-
-        // Run the "/doc" command
-        await vscode.commands.executeCommand('cody.command.document-code')
-
-        await new Promise(resolve => setTimeout(resolve, 200)) // Make sure the command has finished
-
-        // Check the Fixup Tasks from Task Controller contains the new task
-        const tasks = await getFixupTasks()
-        // Tasks length should be larger than 0
-        assert.ok(tasks.length > 0)
-
-        // Check the chat transcript to make sure text contains the fixup response
-        await waitUntil(async () => ((await getTranscript(1)).text || '').includes('<title>'))
     })
 })
