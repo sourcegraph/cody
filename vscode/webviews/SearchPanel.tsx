@@ -248,16 +248,14 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     />
                 </div>
             </form>
-            {
-                !searching && query.trim().length === 0 && (
-                    <p className={styles.instructions}>Search using natural language queries, for example “password hashing” or "connection retries"</p>
-                )
-            }
-            {
-                !searching && results.length === 0 && query.trim().length !== 0 && (
-                    <p className={styles.instructions}>No results found</p>
-                )
-            }
+            {!searching && query.trim().length === 0 && (
+                <p className={styles.instructions}>
+                    Search using natural language queries, for example “password hashing” or "connection retries"
+                </p>
+            )}
+            {!searching && results.length === 0 && query.trim().length !== 0 && (
+                <p className={styles.instructions}>No results found</p>
+            )}
             <div className={styles.searchResultsContainer}>
                 {results.map((result, fileIndex) => (
                     <>
@@ -265,8 +263,16 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                         <div
                             key={`${result.uriString}`}
                             className={styles.searchResultRow}
-                            onKeyDown={e => { if (e.key === 'Enter') { toggleFileExpansion(fileIndex); setSelectedResult([fileIndex, 0]) }}}
-                            onClick={() => { toggleFileExpansion(fileIndex); setSelectedResult([fileIndex, -1]) }}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                    toggleFileExpansion(fileIndex)
+                                    setSelectedResult([fileIndex, 0])
+                                }
+                            }}
+                            onClick={() => {
+                                toggleFileExpansion(fileIndex)
+                                setSelectedResult([fileIndex, -1])
+                            }}
                         >
                             <div
                                 className={`${styles.searchResultRowInner} ${
@@ -293,9 +299,13 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         <span className={styles.filematchIcon}>
                                             <i className="codicon codicon-file-code" />
                                         </span>
-                                        <span className={styles.filematchTitle} title={result.basename}>{result.basename}</span>
+                                        <span className={styles.filematchTitle} title={result.basename}>
+                                            {result.basename}
+                                        </span>
                                         <span className={styles.filematchDescription}>
-                                            {result.wsname && <span title={result.wsname}>{result.wsname}&nbsp;&middot;&nbsp;</span>}
+                                            {result.wsname && (
+                                                <span title={result.wsname}>{result.wsname}&nbsp;&middot;&nbsp;</span>
+                                            )}
                                             <span title={result.dirname}>{result.dirname}</span>
                                         </span>
                                     </div>
