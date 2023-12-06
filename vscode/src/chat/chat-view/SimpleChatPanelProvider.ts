@@ -863,10 +863,6 @@ class ContextProvider implements IContextProvider {
     }
 
     private getUserAttentionContext(): ContextItem[] {
-        const selectionContext = this.getCurrentSelectionContext()
-        if (selectionContext.length > 0) {
-            return selectionContext
-        }
         return this.getVisibleEditorContext()
     }
 
@@ -937,7 +933,10 @@ class ContextProvider implements IContextProvider {
         }
 
         const priorityContext: ContextItem[] = []
-        if (this.needsUserAttentionContext(text)) {
+        const selectionContext = this.getCurrentSelectionContext()
+        if (selectionContext.length > 0) {
+            priorityContext.push(...selectionContext)
+        } else if (this.needsUserAttentionContext(text)) {
             // Query refers to current editor
             priorityContext.push(...this.getUserAttentionContext())
         } else if (this.needsReadmeContext(text)) {
