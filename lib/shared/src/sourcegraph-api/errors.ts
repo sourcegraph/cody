@@ -22,11 +22,13 @@ export class RateLimitError extends Error {
         super(message)
         this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
         this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
+
+        Object.setPrototypeOf(this, RateLimitError.prototype)
     }
 }
 
 export function isRateLimitError(error: unknown): error is RateLimitError {
-    return error instanceof RateLimitError
+    return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 
 export class TracedError extends Error {
