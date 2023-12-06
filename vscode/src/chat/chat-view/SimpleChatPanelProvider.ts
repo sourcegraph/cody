@@ -276,6 +276,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.postChatModels()
                 void this.restoreSession(this.sessionID)
+
+                // HACK: this call is necessary to get the webview to set the chatID state,
+                // which is necessary on deserialization
+                this.postViewTranscript()
                 break
             case 'submit': {
                 const requestID = uuid.v4()
