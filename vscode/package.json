@@ -243,7 +243,7 @@
     "viewsWelcome": [
       {
         "view": "cody.chat.tree.view",
-        "contents": "Chat alongside your code, attach files, add additional context, and try out different LLM providers.\n[New Chat](command:cody.chat.panel.new)\nTo learn more about chat, [read the docs](https://docs.sourcegraph.com/).",
+        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
         "when": "cody.activated"
       }
     ],
