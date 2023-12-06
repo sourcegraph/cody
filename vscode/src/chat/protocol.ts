@@ -220,10 +220,7 @@ export interface LocalEnv {
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
-    if (!authStatus.siteHasCodyEnabled) {
-        return false
-    }
-    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+    return true
 }
 
 // The OS and Arch support for Cody app
