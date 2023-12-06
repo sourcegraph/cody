@@ -48,9 +48,11 @@ class UpgradeToCodyProNotification private constructor(content: String) :
               ?.let { " Usage will reset in $it." }
               ?: ""
       return UpgradeToCodyProNotification(
-          "You've used all${quotaString} autcompletions.${resetString}")
+          "You've used all${quotaString} autocompletion suggestions.${resetString}")
     }
 
-    var isFirstRleOnAutomaticAutcompletionsShown: Boolean = false
+    var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false
+    var autocompleteRateLimitError: Boolean = false
+    var chatRateLimitError: Boolean = false
   }
 }

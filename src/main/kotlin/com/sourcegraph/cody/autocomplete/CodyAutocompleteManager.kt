@@ -48,7 +48,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.streams.toList
+import java.util.stream.Collectors
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
@@ -233,18 +233,18 @@ class CodyAutocompleteManager {
     // correctly propagate the cancellation to the agent.
     cancellationToken.onCancellationRequested { completions.cancel(true) }
     return completions
-        .exceptionally { error ->
-          if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
-            handleError(project, error)
-          } else if (!UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown) {
-            handleError(project, error)
-            UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown = true
+        .handle { result, error ->
+          if (error != null) {
+            if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
+                !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
+              handleError(project, error)
+            }
+          } else if (result != null) {
+            UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
+            UpgradeToCodyProNotification.autocompleteRateLimitError = false
+            processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
           }
           null
-        }
-        .thenAccept { result ->
-          UpgradeToCodyProNotification.isFirstRleOnAutomaticAutcompletionsShown = false
-          processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
         }
         .exceptionally { error: Throwable? ->
           if (!(error is CancellationException || error is CompletionException)) {
@@ -260,6 +260,8 @@ class CodyAutocompleteManager {
       val errorCode = error.toErrorCode()
       if (errorCode == ErrorCode.RateLimitError) {
         val rateLimitError = error.toRateLimitError()
+        UpgradeToCodyProNotification.autocompleteRateLimitError = true
+        UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = true
         UpgradeToCodyProNotification.create(rateLimitError).notify(project)
       }
     }
@@ -403,6 +405,6 @@ class CodyAutocompleteManager {
         DiffUtils.diff(characterList(a), characterList(b))
 
     private fun characterList(value: String): List<String> =
-        value.chars().mapToObj { c -> c.toChar().toString() }.toList()
+        value.chars().mapToObj { c -> c.toChar().toString() }.collect(Collectors.toList())
   }
 }

@@ -1,16 +1,15 @@
 package com.sourcegraph.cody.chat
 
+import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.UpdatableChat
 import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentClient
-import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
+import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.vscode.CancellationToken
 import java.time.Duration
 import java.time.OffsetDateTime
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
@@ -21,13 +20,14 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 class Chat {
   @Throws(ExecutionException::class, InterruptedException::class)
   fun sendMessageViaAgent(
-      client: CodyAgentClient,
-      codyAgentServer: CompletableFuture<CodyAgentServer>,
+      project: Project,
       humanMessage: ChatMessage,
       recipeId: String,
       chat: UpdatableChat,
       token: CancellationToken
   ) {
+    val client = CodyAgent.getClient(project)
+    val codyAgentServer = CodyAgent.getInitializedServer(project)
     val isFirstMessage = AtomicBoolean(false)
     client.onFinishedProcessing = Runnable { chat.finishMessageProcessing() }
     client.onChatUpdateMessageInProgress = Consumer { agentChatMessage ->
@@ -57,9 +57,13 @@ class Chat {
                     server.recipesExecute(
                         ExecuteRecipeParams(recipeId, humanMessage.actualMessage()))
                 token.onCancellationRequested { recipesExecuteFuture.cancel(true) }
-                recipesExecuteFuture.exceptionally { error ->
-                  handleError(error, chat)
-                  null
+                recipesExecuteFuture.handle { _, error ->
+                  if (error != null) {
+                    handleError(project, error, chat)
+                    null
+                  } else {
+                    RateLimitStateManager.invalidateForChat(project)
+                  }
                 }
               } catch (ignored: Exception) {
                 // Ignore bugs in the agent when executing recipes
@@ -69,10 +73,11 @@ class Chat {
         .get()
   }
 
-  private fun handleError(throwable: Throwable, chat: UpdatableChat) {
+  private fun handleError(project: Project, throwable: Throwable, chat: UpdatableChat) {
     if (throwable is ResponseErrorException) {
       val errorCode = throwable.toErrorCode()
       if (errorCode == ErrorCode.RateLimitError) {
+        RateLimitStateManager.reportForChat(project)
         val rateLimitError = throwable.toRateLimitError()
         val quotaString = rateLimitError.limit?.let { " ${rateLimitError.limit}" } ?: ""
         val currentDateTime = OffsetDateTime.now()
@@ -83,13 +88,15 @@ class Chat {
                 ?.let { " Retry after $it." }
                 ?: ""
         val text =
-            "<b>Request failed:</b> You've used all${quotaString} messages. The allowed number of request per day is limited at the moment to ensure the service stays functional.${resetString}"
+            "<b>Request failed:</b> You've used all${quotaString} chat messages and commands. The allowed number of request per day is limited at the moment to ensure the service stays functional.${resetString}." +
+                " <a href=\"https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more</a>"
         val chatMessage = ChatMessage(Speaker.ASSISTANT, text, null)
         chat.addMessageToChat(chatMessage)
         chat.finishMessageProcessing()
         return
       }
     }
+    RateLimitStateManager.invalidateForChat(project)
 
     // todo: error handling for other error codes and throwables
     chat.finishMessageProcessing()

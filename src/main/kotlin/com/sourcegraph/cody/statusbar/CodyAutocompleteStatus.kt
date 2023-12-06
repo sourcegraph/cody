@@ -34,6 +34,11 @@ enum class CodyAutocompleteStatus : PresentableEnum, WithIcon {
 
     override val icon: Icon = Icons.StatusBar.CodyAutocompleteUnavailable
   },
+  RateLimitError {
+    override fun getPresentableText(): String = "Rate limit reached"
+
+    override val icon: Icon = Icons.StatusBar.CodyAutocompleteUnavailable
+  },
   Ready {
     override fun getPresentableText(): String = "Cody autocomplete is enabled"
 
