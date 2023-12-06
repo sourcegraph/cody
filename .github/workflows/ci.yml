@@ -77,7 +77,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, macos]
+        include:
+          - runner: ubuntu
+          - runner: macos
+            shard: 1/2
+          - runner: macos
+            shard: 2/2
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     permissions:
