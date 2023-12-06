@@ -269,7 +269,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const placeholder = 'Message (type @ to include files)'
+    const placeholder = 'Message (@ to include code, / for commands)'
 
     useEffect(() => {
         if (autoFocus) {
