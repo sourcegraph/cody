@@ -141,7 +141,7 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
+        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection) : selection
         const intent: FixupIntent = this.kind === 'doc' ? 'doc' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         const source = this.kind as ChatEventSource
@@ -217,12 +217,8 @@ export function addSelectionToPrompt(prompt: string, code: string): string {
  *
  * For other languages, returns the original selection range unmodified.
  */
-function getDocCommandRange(
-    editor: vscode.TextEditor,
-    selection: vscode.Selection,
-    languageId?: string
-): vscode.Selection {
-    const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
+function getDocCommandRange(editor: vscode.TextEditor, selection: vscode.Selection): vscode.Selection {
+    const startLine = selection.start.line
     const pos = new vscode.Position(startLine, 0)
 
     // move the current selection to the defined selection in the text editor document
