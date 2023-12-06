@@ -41,6 +41,7 @@ import {
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
@@ -152,6 +153,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             this.completionCanceller()
             this.completionCanceller = undefined
         }
+    }
+
+    private onCompletionEnd(): void {
+        this.cancelInProgressCompletion()
+        this.postViewTranscript()
     }
 
     /**
@@ -531,7 +537,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         this.postViewTranscript()
                         return
                     }
-                    this.postError(new Error(`completions request aborted: ${error.message}`))
+
+                    this.onCompletionEnd()
                 },
             })
         } catch (error) {
@@ -575,8 +582,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     typewriter.stop()
                 },
                 onError: error => {
-                    this.completionCanceller = undefined
                     typewriter.stop()
+                    this.postError(error, 'transcript')
+                    this.onCompletionEnd()
                     callbacks.error(lastContent, error)
                 },
             },
@@ -647,7 +655,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         void this.webview?.postMessage({
             type: 'transcript',
             messages,
-            isMessageInProgress: !!messageInProgress,
+            isMessageInProgress: !!messageInProgress?.speaker,
             chatID: this.sessionID,
         })
 
@@ -659,10 +667,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
+     * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
-    private postError(error: Error): void {
-        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
+    private postError(error: Error, type?: MessageErrorType): void {
+        // Add error to transcript
+        if (type === 'transcript') {
+            this.chatModel.addErrorAsBotMessage(error)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
+        void this.webview?.postMessage({ type: 'errors', errors: error.message })
     }
 
     /**
@@ -776,6 +791,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         return
                     }
                     this.postError(new Error(`completions request aborted: ${error.message}`))
+                    this.onCompletionEnd()
                 },
             })
         } catch (error) {
