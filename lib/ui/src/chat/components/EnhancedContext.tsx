@@ -45,7 +45,7 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const emoji = hasEnhancedContext ? '✨ ' : ''
+    const prefix = '✨ Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
     const lineCount = filteredFiles.reduce(
@@ -60,7 +60,7 @@ export const EnhancedContext: React.FunctionComponent<{
     return (
         <TranscriptAction
             title={{
-                verb: emoji + title,
+                verb: prefix + title,
                 object: '',
                 tooltip: 'Related code automatically included as context',
             }}
