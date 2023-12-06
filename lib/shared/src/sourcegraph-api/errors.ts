@@ -22,11 +22,15 @@ export class RateLimitError extends Error {
         super(message)
         this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
         this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}.` : undefined
-
-        Object.setPrototypeOf(this, RateLimitError.prototype)
     }
 }
 
+/*
+For some reason `error instanceof RateLimitError` was not enough.
+`isRateLimitError` returned `false` for some cases.
+In particular, 'autocomplete/execute' in `agent.ts` and was affected.
+It was required to add `(error as any)?.name === RateLimitError.errorName`.
+ *  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
     return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
