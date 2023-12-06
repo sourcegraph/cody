@@ -115,20 +115,22 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .search-result-row:hover {
 }
 
 .search-result-twistie-noindent {
-    padding-left: 0px;
+    padding-left: 0;
 }
 
 .search-result-content {
     height: 100%;
     line-height: 22px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     overflow: hidden;
 }
 
 .filematch-label {
     display: flex;
     align-items: center;
+    gap: 0.25rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .filematch-icon {
@@ -139,4 +141,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .search-result-row:hover {
 .filematch-description {
     font-size: 12px;
     color: var(--vscode-search-resultsInfoForeground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    flex: 1; /* Let this one ellipsis before the label */
 }

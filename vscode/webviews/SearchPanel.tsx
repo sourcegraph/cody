@@ -293,12 +293,10 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         <span className={styles.filematchIcon}>
                                             <i className="codicon codicon-file-code" />
                                         </span>
-                                        &nbsp;
-                                        <span className={styles.filematchTitle}>{result.basename}</span>
+                                        <span className={styles.filematchTitle} title={result.basename}>{result.basename}</span>
                                         <span className={styles.filematchDescription}>
-                                            &nbsp;
-                                            {result.wsname && <span>{result.wsname}&nbsp;&middot;&nbsp;</span>}
-                                            <span>{result.dirname}</span>
+                                            {result.wsname && <span title={result.wsname}>{result.wsname}&nbsp;&middot;&nbsp;</span>}
+                                            <span title={result.dirname}>{result.dirname}</span>
                                         </span>
                                     </div>
                                 </div>
