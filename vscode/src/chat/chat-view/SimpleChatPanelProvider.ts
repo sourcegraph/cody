@@ -155,11 +155,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
     }
 
-    private onCompletionEnd(): void {
-        this.cancelInProgressCompletion()
-        this.postViewTranscript()
-    }
-
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
@@ -534,11 +529,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 error: (partialResponse, error) => {
                     if (isAbortError(error)) {
                         this.chatModel.addBotMessage({ text: partialResponse })
-                        this.postViewTranscript()
-                        return
                     }
-
-                    this.onCompletionEnd()
+                    this.postError(error, 'transcript')
+                    this.postViewTranscript()
                 },
             })
         } catch (error) {
@@ -582,9 +575,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     typewriter.stop()
                 },
                 onError: error => {
+                    this.cancelInProgressCompletion()
                     typewriter.stop()
-                    this.postError(error, 'transcript')
-                    this.onCompletionEnd()
                     callbacks.error(lastContent, error)
                 },
             },
@@ -655,7 +647,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         void this.webview?.postMessage({
             type: 'transcript',
             messages,
-            isMessageInProgress: !!messageInProgress?.speaker,
+            isMessageInProgress: !!messageInProgress,
             chatID: this.sessionID,
         })
 
@@ -787,11 +779,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 error: (partialResponse: string, error: Error) => {
                     if (isAbortError(error)) {
                         this.chatModel.addBotMessage({ text: partialResponse })
-                        this.postViewTranscript()
-                        return
                     }
-                    this.postError(new Error(`completions request aborted: ${error.message}`))
-                    this.onCompletionEnd()
+                    this.postError(error, 'transcript')
+                    this.postViewTranscript()
                 },
             })
         } catch (error) {
