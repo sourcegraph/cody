@@ -21,9 +21,7 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
     await page.click('[aria-label="Cody"]')
 
     // Open the new chat panel
-    await expect(
-        page.getByText('Chat alongside your code, attach files,')
-    ).toBeVisible()
+    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 
     await page.getByText('Custom commands').click()
 

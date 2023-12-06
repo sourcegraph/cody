@@ -16,9 +16,7 @@ export const sidebarSignin = async (page: Page, sidebar: Frame, enableNotificati
         await disableNotifications(page)
     }
 
-    await expect(
-        page.getByText('Chat alongside your code, attach files,')
-    ).toBeVisible()
+    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
