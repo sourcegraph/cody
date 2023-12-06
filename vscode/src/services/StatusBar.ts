@@ -127,6 +127,14 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPredictions,
                     true
                 ),
+                createFeatureToggle(
+                    'Simple Chat Context',
+                    'Experimental',
+                    'Enable the new simplifed chat context fetcher',
+                    'cody.experimental.simpleChatContext',
+                    c => c.experimentalSimpleChatContext,
+                    true
+                ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
                     label: '$(gear) Cody Extension Settings',
