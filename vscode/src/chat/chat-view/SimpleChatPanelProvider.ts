@@ -358,7 +358,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async onInitialized(): Promise<void> {
         await this.restoreSession(this.sessionID)
         await this.postChatModels()
-        await this.postHistory()
+        await this.saveAndPostHistory()
         await this.postCodyCommands()
     }
 
@@ -687,7 +687,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     /**
      * Send user history to webview, which included chat history and chat input history.
      */
-    private async postHistory(humanInput?: string): Promise<void> {
+    private async saveAndPostHistory(humanInput?: string): Promise<void> {
         if (humanInput) {
             await this.history.saveHumanInputHistory(humanInput)
         }
