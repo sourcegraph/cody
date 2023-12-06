@@ -9,9 +9,6 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.common.BrowserOpener.openInBrowser
-import java.time.Duration
-import java.time.OffsetDateTime
-import org.apache.commons.lang3.time.DurationFormatUtils
 
 class UpgradeToCodyProNotification private constructor(content: String) :
     Notification("Sourcegraph errors", "Sourcegraph", content, NotificationType.WARNING),
@@ -39,16 +36,8 @@ class UpgradeToCodyProNotification private constructor(content: String) :
 
   companion object {
     fun create(rateLimitError: RateLimitError): UpgradeToCodyProNotification {
-      val quotaString = rateLimitError.limit?.let { " ${rateLimitError.limit}" } ?: ""
-      val currentDateTime = OffsetDateTime.now()
-      val resetString =
-          rateLimitError.retryAfter
-              ?.let { Duration.between(currentDateTime, it) }
-              ?.let { DurationFormatUtils.formatDurationWords(it.toMillis(), true, true) }
-              ?.let { " Usage will reset in $it." }
-              ?: ""
       return UpgradeToCodyProNotification(
-          "You've used all${quotaString} autocompletion suggestions.${resetString}")
+          "You've used all${rateLimitError.quotaString()} autocompletion suggestions.${rateLimitError.resetString()}")
     }
 
     var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false

@@ -8,13 +8,10 @@ import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
 import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.vscode.CancellationToken
-import java.time.Duration
-import java.time.OffsetDateTime
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import java.util.stream.Collectors
-import org.apache.commons.lang3.time.DurationFormatUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
 class Chat {
@@ -79,17 +76,10 @@ class Chat {
       if (errorCode == ErrorCode.RateLimitError) {
         RateLimitStateManager.reportForChat(project)
         val rateLimitError = throwable.toRateLimitError()
-        val quotaString = rateLimitError.limit?.let { " ${rateLimitError.limit}" } ?: ""
-        val currentDateTime = OffsetDateTime.now()
-        val resetString =
-            rateLimitError.retryAfter
-                ?.let { Duration.between(currentDateTime, it) }
-                ?.let { DurationFormatUtils.formatDurationWords(it.toMillis(), true, true) }
-                ?.let { " Retry after $it." }
-                ?: ""
         val text =
-            "<b>Request failed:</b> You've used all${quotaString} chat messages and commands. The allowed number of request per day is limited at the moment to ensure the service stays functional.${resetString}." +
-                " <a href=\"https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more</a>"
+            "<b>Request failed:</b> You've used all${rateLimitError.quotaString()} chat messages and commands." +
+                " The allowed number of request per day is limited at the moment to ensure the service stays functional.${rateLimitError.resetString()}" +
+                "<br><a href=\"https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more.</a>"
         val chatMessage = ChatMessage(Speaker.ASSISTANT, text, null)
         chat.addMessageToChat(chatMessage)
         chat.finishMessageProcessing()

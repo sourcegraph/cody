@@ -6,11 +6,35 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import java.lang.reflect.Type
+import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import org.apache.commons.lang3.time.DurationFormatUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
-data class RateLimitError(val limit: Int?, val retryAfter: OffsetDateTime?) {
+data class RateLimitError(
+    val upgradeIsAvailable: Boolean,
+    val limit: Int?,
+    val retryAfter: OffsetDateTime?,
+    val userMessage: String,
+    val retryMessage: String?
+) {
+  fun quotaString() = limit?.let { " $limit" } ?: ""
+
+  fun resetString() =
+      retryMessage?.prependIndent(" ")
+          ?: retryAfter
+              ?.let { Duration.between(OffsetDateTime.now(), it) }
+              ?.let { duration ->
+                if (duration.isNegative) {
+                  " Usage will reset in less than a minute."
+                } else {
+                  val time =
+                      DurationFormatUtils.formatDurationWords(duration.toMillis(), true, true)
+                  " Retry after $time."
+                }
+              }
+              ?: ""
 
   companion object {
     fun ResponseErrorException.toRateLimitError(): RateLimitError {
@@ -31,8 +55,11 @@ data class RateLimitError(val limit: Int?, val retryAfter: OffsetDateTime?) {
         val errorObject = jsonObject["error"].asJsonObject
         val limit = errorObject["limit"]?.asInt
         val retryAfter = errorObject["retryAfter"]?.asString?.let(::parseOffsetDateTime)
+        val upgradeIsAvailable = errorObject["upgradeIsAvailable"]?.asBoolean
+        val userMessage = errorObject["userMessage"]?.asString
+        val retryMessage = errorObject["retryMessage"]?.asString
 
-        return RateLimitError(limit, retryAfter)
+        return RateLimitError(upgradeIsAvailable!!, limit, retryAfter, userMessage!!, retryMessage)
       }
 
       private fun parseOffsetDateTime(dateTimeString: String): OffsetDateTime {
