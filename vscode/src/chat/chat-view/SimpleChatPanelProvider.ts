@@ -945,7 +945,7 @@ class ContextProvider implements IContextProvider {
         if (!this.embeddingsClient) {
             return []
         }
-        const codebase = this.codebaseStatusProvider.currentCodebase
+        const codebase = await this.codebaseStatusProvider?.currentCodebase()
         if (!codebase?.remote) {
             return []
         }

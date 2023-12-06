@@ -8,7 +8,8 @@ import {
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { repositoryRemoteUrl } from '../../repository/repositoryHelpers'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
@@ -139,17 +140,19 @@ export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true
  */
 export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusProvider {
     private disposables: vscode.Disposable[] = []
-    private _currentCodebase: CodebaseIdentifiers | null | undefined = undefined
-    private statusCallbacks: ((provider: ContextStatusProvider) => void)[] = []
+    private eventEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter<ContextStatusProvider>()
 
-    // TODO(beyang): mix of dependency injection and direct vscode API access here
+    // undefined means uninitialized, null means current codebase is empty
+    private _currentCodebase: CodebaseIdentifiers | null | undefined = undefined
+
     constructor(
         private editor: Editor,
         private embeddingsClient: CachedRemoteEmbeddingsClient
     ) {
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(() => this.syncCodebase()),
-            vscode.workspace.onDidChangeWorkspaceFolders(() => this.syncCodebase())
+            vscode.workspace.onDidChangeWorkspaceFolders(() => this.syncCodebase()),
+            this.eventEmitter
         )
     }
 
@@ -161,66 +164,94 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     }
 
     public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): Disposable {
-        this.statusCallbacks.push(callback)
-        return {
-            dispose: () => {
-                this.statusCallbacks = this.statusCallbacks.filter(cb => cb !== callback)
-            },
-        }
+        return this.eventEmitter.event(callback)
     }
+
     public get status(): ContextGroup[] {
-        const codebase = this.currentCodebase
-        return codebase?.remote
-            ? [
-                  {
-                      name: codebase.local,
-                      providers: [
-                          {
-                              kind: 'embeddings',
-                              type: 'remote',
-                              state: 'ready',
-                              origin: this.embeddingsClient.getEndpoint(),
-                              remoteName: codebase.remote,
-                          },
-                      ],
-                  },
-              ]
-            : []
-    }
-
-    public get currentCodebase(): CodebaseIdentifiers | null {
         if (this._currentCodebase === undefined) {
-            this._currentCodebase = CodebaseStatusProvider.fetchCurrentCodebase(this.editor)
+            void this.syncCodebase()
+            return []
         }
-        for (const s of this.statusCallbacks) {
-            s(this)
+        const codebase = this._currentCodebase
+        if (codebase?.remote && codebase?.remoteRepoId) {
+            return [
+                {
+                    name: codebase.local,
+                    providers: [
+                        {
+                            kind: 'embeddings',
+                            type: 'remote',
+                            state: 'ready',
+                            origin: this.embeddingsClient.getEndpoint(),
+                            remoteName: codebase.remote,
+                        },
+                    ],
+                },
+            ]
         }
-        return this._currentCodebase
+        if (!codebase?.remote || isDotCom(this.embeddingsClient.getEndpoint())) {
+            // Dotcom users or no remote codebase name: remote embeddings omitted from context
+            return []
+        }
+        // Enterprise users where no repo ID is found for the desired remote codebase name: no-match context group
+        return [
+            {
+                name: codebase.local,
+                providers: [
+                    {
+                        kind: 'embeddings',
+                        type: 'remote',
+                        state: 'no-match',
+                        origin: this.embeddingsClient.getEndpoint(),
+                        remoteName: codebase.remote,
+                    },
+                ],
+            },
+        ]
     }
 
-    private syncCodebase(): void {
-        const newCodebase = CodebaseStatusProvider.fetchCurrentCodebase(this.editor)
-        if (newCodebase === this._currentCodebase) {
+    public async currentCodebase(): Promise<CodebaseIdentifiers | null> {
+        if (this._currentCodebase === undefined) {
+            // lazy initialization
+            await this.syncCodebase()
+        }
+        return this._currentCodebase || null
+    }
+
+    private async syncCodebase(): Promise<void> {
+        const workspaceRoot = this.editor.getWorkspaceRootUri()
+        if (
+            this._currentCodebase !== undefined &&
+            workspaceRoot?.fsPath === this._currentCodebase?.local &&
+            this._currentCodebase?.remoteRepoId
+        ) {
+            // do nothing if local codebase identifier is unchanged and we have a remote repo ID
             return
         }
-        this._currentCodebase = newCodebase
-        for (const s of this.statusCallbacks) {
-            s(this)
-        }
-    }
 
-    private static fetchCurrentCodebase(editor: Editor): CodebaseIdentifiers | null {
-        const workspaceRoot = editor.getWorkspaceRootUri()
-        if (!workspaceRoot) {
-            return null
+        let newCodebase: CodebaseIdentifiers | null = null
+        if (workspaceRoot) {
+            newCodebase = { local: workspaceRoot.fsPath }
+            const remoteUrl = repositoryRemoteUrl(workspaceRoot)
+            if (remoteUrl) {
+                newCodebase.remote = convertGitCloneURLToCodebaseName(remoteUrl) || undefined
+                if (newCodebase.remote) {
+                    const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
+                    if (!isError(repoId)) {
+                        newCodebase.remoteRepoId = repoId ?? undefined
+                    }
+                }
+            }
         }
-        const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-        if (!remoteUrl) {
-            return null
-        }
-        return {
-            local: workspaceRoot.fsPath,
-            remote: convertGitCloneURLToCodebaseName(remoteUrl) || undefined,
+
+        // codebase local identifier changed, fire callbacks
+        const shouldAlert =
+            this._currentCodebase?.local !== newCodebase?.local ||
+            this._currentCodebase?.remote !== newCodebase?.remote ||
+            this._currentCodebase?.remoteRepoId !== newCodebase?.remoteRepoId
+        this._currentCodebase = newCodebase
+        if (shouldAlert) {
+            this.eventEmitter.fire(this)
         }
     }
 }
@@ -228,4 +259,5 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 interface CodebaseIdentifiers {
     local: string
     remote?: string
+    remoteRepoId?: string
 }
