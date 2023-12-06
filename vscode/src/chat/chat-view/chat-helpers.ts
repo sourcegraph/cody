@@ -1,7 +1,17 @@
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import {
+    ContextGroup,
+    ContextStatusProvider,
+    Disposable,
+} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
+
+import { repositoryRemoteUrl } from '../../repository/repositoryHelpers'
+import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 import { ContextItem } from './SimpleChatModel'
 
@@ -122,4 +132,100 @@ export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true
     }
     // truncate title that is too long
     return lastDisplayText.length > 25 ? lastDisplayText.slice(0, 25).trim() + '...' : lastDisplayText
+}
+
+/**
+ * Provides and signals updates to the current codebase identifiers to use in the chat panel.
+ */
+export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusProvider {
+    private disposables: vscode.Disposable[] = []
+    private _currentCodebase: CodebaseIdentifiers | null | undefined = undefined
+    private statusCallbacks: ((provider: ContextStatusProvider) => void)[] = []
+
+    // TODO(beyang): mix of dependency injection and direct vscode API access here
+    constructor(
+        private editor: Editor,
+        private embeddingsClient: CachedRemoteEmbeddingsClient
+    ) {
+        this.disposables.push(
+            vscode.window.onDidChangeActiveTextEditor(() => this.syncCodebase()),
+            vscode.workspace.onDidChangeWorkspaceFolders(() => this.syncCodebase())
+        )
+    }
+
+    public dispose(): void {
+        for (const d of this.disposables) {
+            d.dispose()
+        }
+        this.disposables = []
+    }
+
+    public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): Disposable {
+        this.statusCallbacks.push(callback)
+        return {
+            dispose: () => {
+                this.statusCallbacks = this.statusCallbacks.filter(cb => cb !== callback)
+            },
+        }
+    }
+    public get status(): ContextGroup[] {
+        const codebase = this.currentCodebase
+        return codebase?.remote
+            ? [
+                  {
+                      name: codebase.local,
+                      providers: [
+                          {
+                              kind: 'embeddings',
+                              type: 'remote',
+                              state: 'ready',
+                              origin: this.embeddingsClient.getEndpoint(),
+                              remoteName: codebase.remote,
+                          },
+                      ],
+                  },
+              ]
+            : []
+    }
+
+    public get currentCodebase(): CodebaseIdentifiers | null {
+        if (this._currentCodebase === undefined) {
+            this._currentCodebase = CodebaseStatusProvider.fetchCurrentCodebase(this.editor)
+        }
+        for (const s of this.statusCallbacks) {
+            s(this)
+        }
+        return this._currentCodebase
+    }
+
+    private syncCodebase(): void {
+        const newCodebase = CodebaseStatusProvider.fetchCurrentCodebase(this.editor)
+        if (newCodebase === this._currentCodebase) {
+            return
+        }
+        this._currentCodebase = newCodebase
+        for (const s of this.statusCallbacks) {
+            s(this)
+        }
+    }
+
+    private static fetchCurrentCodebase(editor: Editor): CodebaseIdentifiers | null {
+        const workspaceRoot = editor.getWorkspaceRootUri()
+        if (!workspaceRoot) {
+            return null
+        }
+        const remoteUrl = repositoryRemoteUrl(workspaceRoot)
+        if (!remoteUrl) {
+            return null
+        }
+        return {
+            local: workspaceRoot.fsPath,
+            remote: convertGitCloneURLToCodebaseName(remoteUrl) || undefined,
+        }
+    }
+}
+
+interface CodebaseIdentifiers {
+    local: string
+    remote?: string
 }

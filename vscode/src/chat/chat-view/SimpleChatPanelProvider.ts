@@ -14,7 +14,6 @@ import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -41,11 +40,18 @@ import {
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
+import {
+    CodebaseStatusProvider,
+    embeddingsUrlScheme,
+    getChatPanelTitle,
+    relativeFileUrl,
+    stripContextWrapper,
+} from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
@@ -60,7 +66,7 @@ interface SimpleChatPanelProviderOptions {
     authProvider: AuthProvider
     guardrails: Guardrails
     chatClient: ChatClient
-    embeddingsClient: EmbeddingsSearch | null
+    embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
     editor: VSCodeEditor
     treeView: TreeViewProvider
@@ -82,7 +88,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private readonly authProvider: AuthProvider
     private readonly guardrails: Guardrails
     private readonly chatClient: ChatClient
-    private readonly embeddingsClient: EmbeddingsSearch | null
+    private readonly embeddingsClient: CachedRemoteEmbeddingsClient
+    private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
@@ -96,7 +103,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private readonly featureFlagProvider: FeatureFlagProvider
 
-    // HACK: for now, we need awkwardly need to keep this in sync with chatModel.sessionID,
+    // HACK: for now, we awkwardly need to keep this in sync with chatModel.sessionID,
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
 
@@ -141,9 +148,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (this.localEmbeddings) {
             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
         }
-        if (this.embeddingsClient) {
-            this.disposables.push(this.contextStatusAggregator.addProvider(this.embeddingsClient))
-        }
+        this.codebaseStatusProvider = new CodebaseStatusProvider(this.editor, embeddingsClient)
+        this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
     }
 
     private completionCanceller?: () => void
@@ -496,7 +502,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 userContextItems,
                 this.editor,
                 this.embeddingsClient,
-                this.localEmbeddings
+                this.localEmbeddings,
+                this.codebaseStatusProvider
             )
             const { prompt, warnings, newContextUsed } = await this.prompter.makePrompt(
                 this.chatModel,
@@ -802,8 +809,9 @@ class ContextProvider implements IContextProvider {
     constructor(
         private userContext: ContextItem[],
         private editor: Editor,
-        private embeddingsClient: EmbeddingsSearch | null,
-        private localEmbeddings: LocalEmbeddingsController | null
+        private embeddingsClient: CachedRemoteEmbeddingsClient | null,
+        private localEmbeddings: LocalEmbeddingsController | null,
+        private codebaseStatusProvider: CodebaseStatusProvider
     ) {}
 
     public getExplicitContext(): ContextItem[] {
@@ -932,20 +940,32 @@ class ContextProvider implements IContextProvider {
         return contextItems
     }
 
+    // Note: does not throw error if remote embeddings are not available, just returns empty array
     private async searchEmbeddingsRemote(text: string): Promise<ContextItem[]> {
         if (!this.embeddingsClient) {
             return []
         }
+        const codebase = this.codebaseStatusProvider.currentCodebase
+        if (!codebase?.remote) {
+            return []
+        }
+        const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(codebase.remote)
+        if (isError(repoId)) {
+            throw new Error(`Error retrieving repo ID: ${repoId}`)
+        } else if (!repoId) {
+            return []
+        }
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
         const contextItems = []
-        const embeddings = await this.embeddingsClient.search(text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
+        const embeddings = await this.embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
         if (isError(embeddings)) {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
         }
         for (const codeResult of embeddings.codeResults) {
             const uri = vscode.Uri.from({
                 scheme: embeddingsUrlScheme,
-                authority: this.embeddingsClient.repoId,
+                authority: codebase.remote,
                 path: '/' + codeResult.fileName,
                 fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
             })

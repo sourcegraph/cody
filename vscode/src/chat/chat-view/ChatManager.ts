@@ -6,11 +6,11 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
+import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
@@ -33,7 +33,7 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null,
+        private embeddingsClient: CachedRemoteEmbeddingsClient,
         private localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug(
@@ -48,7 +48,7 @@ export class ChatManager implements vscode.Disposable {
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
             this.chatClient,
-            this.embeddingsSearch,
+            this.embeddingsClient,
             this.localEmbeddings
         )
 
@@ -190,8 +190,7 @@ export class ChatManager implements vscode.Disposable {
             logDebug('ChatManager:revive', 'failed', { verbose: error })
 
             // When failed, create a new panel with restored session and dispose the old panel
-            const panelTitle = panel.title
-            await this.restorePanel(chatID, panelTitle)
+            await this.restorePanel(chatID, panel.title)
             panel.dispose()
         }
     }
