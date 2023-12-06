@@ -229,7 +229,7 @@
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Search (experimental)",
+          "name": "Natural Language Search (Experimental)",
           "visibility": "visible",
           "when": "cody.activated"
         },
