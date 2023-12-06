@@ -36,7 +36,6 @@
 }
 
 .submit-button {
-    opacity: 0.8;
     border: none;
     cursor: pointer;
 
@@ -56,10 +55,6 @@
     background: none;
     border: none;
     cursor: pointer;
-}
-
-.submit-button:hover {
-    opacity: 1;
 }
 
 .suggestions {
