@@ -22,7 +22,7 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
 
     // Open the new chat panel
     await expect(
-        page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
+        page.getByText('Chat alongside your code, attach files,')
     ).toBeVisible()
 
     await page.getByText('Custom commands').click()

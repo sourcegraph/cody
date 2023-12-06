@@ -17,7 +17,7 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
 
     // Open the new chat panel
     await expect(
-        page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
+        page.getByText('Chat alongside your code, attach files,')
     ).toBeVisible()
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 

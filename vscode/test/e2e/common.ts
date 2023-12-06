@@ -17,7 +17,7 @@ export const sidebarSignin = async (page: Page, sidebar: Frame, enableNotificati
     }
 
     await expect(
-        page.getByText('Chat alongside your code, attach files, add additional context, and try out diff')
+        page.getByText('Chat alongside your code, attach files,')
     ).toBeVisible()
 }
 
