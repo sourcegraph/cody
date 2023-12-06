@@ -6,7 +6,6 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { View } from '../../../webviews/NavBar'
@@ -14,6 +13,7 @@ import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
 import { CodyChatPanelViewType } from './ChatManager'
@@ -62,7 +62,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private readonly embeddingsSearch: EmbeddingsSearch | null,
+        private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
@@ -192,7 +192,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                   ...this.options,
                   config: this.options.contextProvider.config,
                   chatClient: this.chatClient,
-                  embeddingsClient: this.embeddingsSearch,
+                  embeddingsClient: this.embeddingsClient,
                   localEmbeddings: this.localEmbeddings,
                   recipeAdapter: new SimpleChatRecipeAdapter(
                       this.options.editor,

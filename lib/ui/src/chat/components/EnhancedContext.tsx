@@ -21,10 +21,7 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const enhancedContextSources = new Set(['embeddings', 'keyword', 'symf', 'filename'])
     const uniqueFiles = new Set<string>()
-
-    let hasEnhancedContext = false
 
     const filteredFiles = contextFiles.filter(file => {
         if (uniqueFiles.has(file.fileName)) {
@@ -34,9 +31,6 @@ export const EnhancedContext: React.FunctionComponent<{
         if (file.source === 'user') {
             return false
         }
-        if (file.source && enhancedContextSources.has(file.source)) {
-            hasEnhancedContext = true
-        }
         uniqueFiles.add(file.fileName)
         return true
     })
@@ -45,7 +39,7 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const emoji = hasEnhancedContext ? '✨ ' : ''
+    const prefix = '✨ Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
     const lineCount = filteredFiles.reduce(
@@ -55,12 +49,12 @@ export const EnhancedContext: React.FunctionComponent<{
     const fileCount = filteredFiles.length
     const lines = `${lineCount} line` + (lineCount > 1 ? 's' : '')
     const files = `${fileCount} file` + (fileCount > 1 ? 's' : '')
-    const title = lineCount ? `${lines} from ${files}` : `from ${files}`
+    const title = lineCount ? `${lines} from ${files}` : `${files}`
 
     return (
         <TranscriptAction
             title={{
-                verb: emoji + title,
+                verb: prefix + title,
                 object: '',
                 tooltip: 'Related code automatically included as context',
             }}
