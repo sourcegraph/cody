@@ -41,6 +41,7 @@ import {
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
@@ -528,10 +529,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 error: (partialResponse, error) => {
                     if (isAbortError(error)) {
                         this.chatModel.addBotMessage({ text: partialResponse })
-                        this.postViewTranscript()
-                        return
                     }
-                    this.postError(new Error(`completions request aborted: ${error.message}`))
+                    this.postError(error, 'transcript')
+                    this.postViewTranscript()
                 },
             })
         } catch (error) {
@@ -575,7 +575,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     typewriter.stop()
                 },
                 onError: error => {
-                    this.completionCanceller = undefined
+                    this.cancelInProgressCompletion()
                     typewriter.stop()
                     callbacks.error(lastContent, error)
                 },
@@ -659,10 +659,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
+     * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
-    private postError(error: Error): void {
-        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
+    private postError(error: Error, type?: MessageErrorType): void {
+        // Add error to transcript
+        if (type === 'transcript') {
+            this.chatModel.addErrorAsBotMessage(error)
+            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            return
+        }
+
+        void this.webview?.postMessage({ type: 'errors', errors: error.message })
     }
 
     /**
@@ -772,10 +779,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 error: (partialResponse: string, error: Error) => {
                     if (isAbortError(error)) {
                         this.chatModel.addBotMessage({ text: partialResponse })
-                        this.postViewTranscript()
-                        return
                     }
-                    this.postError(new Error(`completions request aborted: ${error.message}`))
+                    this.postError(error, 'transcript')
+                    this.postViewTranscript()
                 },
             })
         } catch (error) {
