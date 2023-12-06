@@ -35,6 +35,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   say embeddings were not found while we work on improving chat.
   [pull/2099](https://github.com/sourcegraph/cody/pull/2099)
 - Commands: Expose commands in the VS Code command palette and clean up the context menu. [pull/1209](https://github.com/sourcegraph/cody/pull/2109)
+- Search: Style and UX improvements to the search panel. [pull/2138](https://github.com/sourcegraph/cody/pull/2138)
 
 ## [0.16.3]
 
