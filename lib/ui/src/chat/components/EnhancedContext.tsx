@@ -21,10 +21,7 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    const enhancedContextSources = new Set(['embeddings', 'keyword', 'symf', 'filename'])
     const uniqueFiles = new Set<string>()
-
-    let hasEnhancedContext = false
 
     const filteredFiles = contextFiles.filter(file => {
         if (uniqueFiles.has(file.fileName)) {
@@ -33,9 +30,6 @@ export const EnhancedContext: React.FunctionComponent<{
         // Skip files added by user. e.g. @-files
         if (file.source === 'user') {
             return false
-        }
-        if (file.source && enhancedContextSources.has(file.source)) {
-            hasEnhancedContext = true
         }
         uniqueFiles.add(file.fileName)
         return true
