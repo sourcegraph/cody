@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -19,6 +20,7 @@ import { CodyChatPanelViewType } from './ChatManager'
 import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 type ChatID = string
 
@@ -43,12 +45,11 @@ export interface IChatPanelProvider extends vscode.Disposable {
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
-    // Chat views in editor panels when experimentalChatPanel is enabled
+    // Chat views in editor panels
     private activePanelProvider: IChatPanelProvider | undefined = undefined
     private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
 
     private options: ChatPanelProviderOptions
-    private onConfigurationChange: vscode.Disposable
 
     // Tree view for chat history
     public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
@@ -65,7 +66,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
-        this.options = { treeView: this.treeViewProvider, extensionUri, ...options }
+        this.options = { treeView: this.treeViewProvider, extensionUri, featureFlagProvider, ...options }
 
         // Create treeview
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
@@ -81,27 +82,6 @@ export class ChatPanelsManager implements vscode.Disposable {
                 new TreeViewProvider('command', featureFlagProvider)
             )
         )
-
-        // Register config change listener
-        this.onConfigurationChange = options.contextProvider.configurationChangeEvent.event(async () => {
-            // When chat.chatPanel is set to true, the sidebar chat view will never be shown
-            const isChatPanelEnabled = options.contextProvider.config.experimentalChatPanel
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, isChatPanelEnabled)
-            // when config is disabled, remove all current panels
-            if (!isChatPanelEnabled) {
-                this.disposePanels()
-                return
-            }
-
-            // Remove provider that doesn't have webPanel anymore
-            this.panelProvidersMap.forEach((provider, id) => {
-                if (!provider.webviewPanel) {
-                    provider.dispose()
-                    this.panelProvidersMap.delete(id)
-                }
-                provider.setConfiguration?.(options.contextProvider.config)
-            })
-        })
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -136,6 +116,18 @@ export class ChatPanelsManager implements vscode.Disposable {
                 void this.selectTreeItem(chatID)
                 return provider
             }
+        }
+
+        // Reuse existing "New Chat" panel if there is an empty one
+        const emptyNewChatProvider = Array.from(this.panelProvidersMap.values()).find(
+            p => p.webviewPanel?.title === 'New Chat'
+        )
+        if (!chatID && !panel && this.panelProvidersMap.size && emptyNewChatProvider) {
+            emptyNewChatProvider.webviewPanel?.reveal()
+            this.activePanelProvider = emptyNewChatProvider
+            this.options.contextProvider.webview = emptyNewChatProvider.webview
+            void this.selectTreeItem(emptyNewChatProvider.sessionID)
+            return emptyNewChatProvider
         }
 
         logDebug('ChatPanelsManager:createWebviewPanel', this.panelProvidersMap.size.toString())
@@ -184,6 +176,17 @@ export class ChatPanelsManager implements vscode.Disposable {
      * NOTE: This can be removed once we have migrated ChatPanelProvider to SimpleChatPanelProvider
      */
     private createProvider(): SimpleChatPanelProvider | ChatPanelProvider {
+        const authProvider = this.options.authProvider
+        const authStatus = authProvider.getAuthStatus()
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
+        const models = ChatModelProvider.get(authStatus.endpoint)
+        const defaultModel = models.find(m => m.default) || models[0]
+        if (!defaultModel) {
+            throw new Error('No chat model found in server-provided config')
+        }
+
         return this.options.contextProvider.config.experimentalSimpleChatContext
             ? new SimpleChatPanelProvider({
                   ...this.options,
@@ -191,6 +194,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                   chatClient: this.chatClient,
                   embeddingsClient: this.embeddingsSearch,
                   localEmbeddings: this.localEmbeddings,
+                  recipeAdapter: new SimpleChatRecipeAdapter(
+                      this.options.editor,
+                      this.options.intentDetector,
+                      this.options.contextProvider,
+                      this.options.platform
+                  ),
+                  defaultModelID: defaultModel.model,
               })
             : new ChatPanelProvider(this.options)
     }
@@ -278,10 +288,9 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
     }
 
-    public triggerNotice(notice: { key: string }): void {
-        this.getChatPanel()
-            .then(provider => provider.triggerNotice(notice))
-            .catch(error => console.error(error))
+    public async triggerNotice(notice: { key: string }): Promise<void> {
+        const chatProvider = await this.getChatPanel()
+        chatProvider.triggerNotice(notice)
     }
 
     private disposeProvider(chatID: string): void {
@@ -311,7 +320,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public dispose(): void {
         this.disposePanels()
-        this.onConfigurationChange.dispose()
         this.disposables.forEach(d => d.dispose())
     }
 }

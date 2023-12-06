@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
@@ -20,6 +20,8 @@ export interface MessageWithContext {
     // duplicate any previous context items in the transcript). This should
     // only be defined on human messages.
     newContextUsed?: ContextItem[]
+
+    error?: ChatError
 }
 
 export class SimpleChatModel {
@@ -50,8 +52,8 @@ export class SimpleChatModel {
         }
         this.messagesWithContext.push({
             message: {
-                speaker: 'human',
                 ...message,
+                speaker: 'human',
             },
         })
     }
@@ -63,8 +65,25 @@ export class SimpleChatModel {
         this.messagesWithContext.push({
             displayText,
             message: {
-                speaker: 'assistant',
                 ...message,
+                speaker: 'assistant',
+            },
+        })
+    }
+
+    public addErrorAsBotMessage(error: ChatError): void {
+        const lastMessage = this.messagesWithContext.at(-1)?.message
+        const lastAssistantMessage = lastMessage?.speaker === 'assistant' ? lastMessage : undefined
+        // Remove the last assistant message
+        if (lastAssistantMessage) {
+            this.messagesWithContext.pop()
+        }
+        // Then add a new assistant message with error added
+        this.messagesWithContext.push({
+            error,
+            message: {
+                ...lastAssistantMessage,
+                speaker: 'assistant',
             },
         })
     }
@@ -148,6 +167,7 @@ export function toViewMessage(mwc: MessageWithContext): ChatMessage {
     const displayText = getDisplayText(mwc)
     return {
         ...mwc.message,
+        error: mwc.error,
         displayText,
         contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
     }

@@ -24,17 +24,13 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: false,
             editorTitleCommandIcon: true,
-            experimentalChatPanel: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
-            experimentalSearchPanel: false,
-            experimentalSimpleChatContext: false,
-            inlineChat: false,
+            experimentalSimpleChatContext: true,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
-            experimentalNonStop: false,
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
@@ -72,11 +68,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.languages':
                         return { '*': true, scminput: false }
-                    case 'cody.experimental.chatPanel':
-                        return true
                     case 'cody.experimental.chatPredictions':
-                        return true
-                    case 'cody.experimental.newSearch':
                         return true
                     case 'cody.commandCodeLenses':
                         return true
@@ -84,18 +76,14 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.guardrails':
                         return true
-                    case 'cody.inlineChat.enabled':
-                        return true
                     case 'cody.codeActions.enabled':
-                        return true
-                    case 'cody.experimental.nonStop':
                         return true
                     case 'cody.experimental.localSymbols':
                         return true
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
-                        return false
+                        return true
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -150,19 +138,15 @@ describe('getConfiguration', () => {
                 '*': true,
                 scminput: false,
             },
-            experimentalChatPanel: true,
             experimentalChatPredictions: true,
-            experimentalSearchPanel: true,
             commandCodeLenses: true,
-            experimentalSimpleChatContext: false,
+            experimentalSimpleChatContext: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
-            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
-            experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,

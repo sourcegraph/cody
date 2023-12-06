@@ -1,7 +1,6 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
@@ -9,7 +8,6 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
@@ -22,6 +20,7 @@ import { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
 import { gitDirectoryUri, repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
@@ -40,14 +39,12 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
-    | 'experimentalChatPanel'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
-    | 'inlineChat'
 >
 
 export enum ContextEvent {
@@ -209,16 +206,11 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? '.app' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         switch (ContextEvent.Auth) {
             case 'auth':
-                telemetryService.log(
-                    `${logPrefix(newConfig.agentIDE)}:Auth${isAppEvent.replace(/^\./, ':')}:${eventValue}`,
-                    undefined,
-                    { agent: true }
-                )
-                telemetryRecorder.recordEvent(`cody.auth${isAppEvent}`, eventValue)
+                telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, { agent: true })
+                telemetryRecorder.recordEvent('cody.auth', eventValue)
                 break
         }
     }
@@ -261,17 +253,15 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+            const localProcess = getProcessInfo()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentalChatPanel: this.config.experimentalChatPanel,
             }
 
             // update codebase context on configuration change
             await this.updateCodebaseContext()
-            await this.webview?.postMessage({ type: 'chatModels', models: ChatModelProvider.get(authStatus.endpoint) })
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
 
             logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })

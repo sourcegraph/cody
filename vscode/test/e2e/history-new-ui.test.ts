@@ -1,22 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { disableNotifications, sidebarExplorer, sidebarSignin } from './common'
+import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => {
-    // Turn off notification
-    await disableNotifications(page)
-
     // Sign into Cody
     await sidebarSignin(page, sidebar)
-
-    await page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' }).click()
-    await page
-        .getByRole('option', { name: 'New Chat UI, Experimental, Enable new chat panel UI' })
-        .locator('span')
-        .filter({ hasText: 'Experimental' })
-        .first()
-        .click()
 
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
@@ -34,6 +23,7 @@ test('checks if chat history shows up in sidebar', async ({ page, sidebar }) => 
 
     // Start a new chat and submit chat
     await page.getByRole('tab', { name: 'New Chat' }).getByTitle('New Chat').locator('div').hover()
+    await page.waitForTimeout(500)
     await page.keyboard.type('Hey')
     await page.keyboard.press('Enter')
 

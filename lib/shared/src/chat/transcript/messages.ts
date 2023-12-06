@@ -54,7 +54,6 @@ export interface OldChatHistory {
 
 export type ChatEventSource =
     | 'chat'
-    | 'inline-chat'
     | 'editor'
     | 'menu'
     | 'code-action'

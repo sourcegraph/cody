@@ -29,9 +29,9 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
+        null
+    )
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -53,7 +53,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
-    const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [myPrompts, setMyPrompts] = useState<
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
@@ -88,7 +87,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     }
                     case 'config':
                         setConfig(message.config)
-                        setIsAppInstalled(message.config.isAppInstalled)
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
@@ -96,6 +94,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             isDotComUser: isDotCom(message.authStatus.endpoint || ''),
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        // Get chat models
+                        if (message.authStatus.isLoggedIn) {
+                            vscodeAPI.postMessage({ command: 'get-chat-models' })
+                        }
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -118,9 +120,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'suggestions':
                         setSuggestions(message.suggestions)
-                        break
-                    case 'app-state':
-                        setIsAppInstalled(message.isInstalled)
                         break
                     case 'custom-prompts': {
                         let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
@@ -195,7 +194,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
 
         setContextSelection(null)
-    }, [contextSelection, formInput, vscodeAPI])
+    }, [formInput, contextSelection?.length, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
@@ -207,14 +206,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
-    // Callbacks used for app setup after onboarding
+    // Callbacks used checking whether Enterprise admin has enabled embeddings
     const onboardingPopupProps = {
-        installApp: () => {
-            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'install-app' })
-        },
-        openApp: () => {
-            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'open-app' })
-        },
         reloadStatus: () => {
             vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'reload-state' })
         },
@@ -285,13 +278,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         applessOnboarding={{
                                             endpoint,
                                             embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
-                                            props: {
-                                                isAppInstalled,
-                                                onboardingPopupProps,
-                                            },
+                                            props: { onboardingPopupProps },
                                         }}
                                         chatModels={chatModels}
-                                        enableNewChatUI={config.experimentalChatPanel || false}
+                                        enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                     />

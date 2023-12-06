@@ -57,7 +57,7 @@ interface ChatboxProps {
     applessOnboarding: {
         endpoint: string | null
         embeddingsEndpoint?: string
-        props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
+        props: { onboardingPopupProps: OnboardingPopupProps }
     }
     contextSelection?: ContextFile[] | null
     setChatModels?: (models: ChatModelProvider[]) => void
@@ -265,6 +265,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    onFocus,
     chatModels,
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -311,6 +312,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 required={required}
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
+                onFocus={onFocus}
                 placeholder={placeholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"

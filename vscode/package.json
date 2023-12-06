@@ -131,14 +131,6 @@
             }
           },
           {
-            "id": "inline-assist",
-            "title": "Inline Chat",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
-            "media": {
-              "markdown": "walkthroughs/inline-assist.md"
-            }
-          },
-          {
             "id": "autocomplete",
             "title": "Code Autocomplete",
             "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
@@ -222,45 +214,33 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "(!cody.activated && config.cody.experimental.chatPanel) || !config.cody.experimental.chatPanel"
-        },
-        {
-          "id": "cody.fixup.tree.view",
-          "name": "Fixups",
-          "when": "cody.nonstop.fixups.enabled && cody.activated && !config.cody.experimental.chatPanel",
-          "icon": "cody.svg",
-          "contextualTitle": "Fixups"
+          "when": "!cody.activated"
         },
         {
           "id": "cody.commands.tree.view",
           "name": "Commands",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
+          "when": "cody.activated"
         },
         {
           "id": "cody.chat.tree.view",
           "name": "Chats",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
+          "when": "cody.activated"
         },
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Search (experimental)",
+          "name": "Natural Language Search (Experimental)",
           "visibility": "visible",
-          "when": "cody.activated && config.cody.experimental.newSearch"
+          "when": "cody.activated"
         },
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated && config.cody.experimental.chatPanel"
+          "when": "cody.activated"
         }
       ]
     },
     "viewsWelcome": [
-      {
-        "view": "cody.fixup.tree.view",
-        "contents": "No pending Cody fixups",
-        "when": "cody.nonstop.fixups.enabled && cody.activated"
-      },
       {
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try out different LLM providers.\n[New Chat](command:cody.chat.panel.new)\nTo learn more about chat, [read the docs](https://docs.sourcegraph.com/).",
@@ -284,49 +264,49 @@
       },
       {
         "command": "cody.command.edit-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Edit Code",
         "when": "cody.activated && editorTextFocus",
         "icon": "$(wand)"
       },
       {
         "command": "cody.command.explain-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Explain Code",
         "icon": "$(output)",
         "when": "cody.activated && editorFocus"
       },
       {
         "command": "cody.command.generate-tests",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Generate Unit Tests",
         "icon": "$(package)",
         "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.document-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Document Code",
         "icon": "$(book)",
         "when": "cody.activated && editorTextFocus"
       },
       {
         "command": "cody.command.smell-code",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Find Code Smells",
         "icon": "$(symbol-keyword)",
         "when": "cody.activated && editorFocus"
       },
       {
         "command": "cody.action.commands.custom.menu",
-        "category": "Ask Cody",
+        "category": "Cody Command",
         "title": "Custom Commands",
         "icon": "$(tools)",
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.command.context-search",
-        "category": "Ask Cody",
+        "category": "Cody",
         "title": "Codebase Context Search",
         "when": "cody.activated && workspaceFolderCount > 0"
       },
@@ -354,21 +334,6 @@
         "title": "Sign In"
       },
       {
-        "command": "cody.interactive.clear",
-        "category": "Cody",
-        "title": "Start a New Chat Session",
-        "group": "Cody",
-        "icon": "$(add)",
-        "when": "cody.activated"
-      },
-      {
-        "command": "cody.history",
-        "category": "Cody",
-        "title": "Chat History",
-        "group": "Cody",
-        "icon": "$(history)"
-      },
-      {
         "command": "cody.status-bar.interacted",
         "category": "Cody",
         "title": "Cody Settings",
@@ -377,61 +342,17 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.comment.add",
-        "title": "Ask Cody",
-        "category": "Cody Inline Chat",
-        "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentIsEmpty && !cody.inline.reply.pending"
-      },
-      {
-        "command": "cody.comment.stop",
-        "title": "Stop generating",
-        "category": "Cody Inline Chat",
-        "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentThreadIsEmpty",
-        "icon": "$(debug-stop)"
-      },
-      {
-        "command": "cody.comment.delete",
-        "title": "Remove Inline Chat",
-        "category": "Cody Inline Chat",
-        "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentThreadIsEmpty",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "cody.comment.open-in-sidebar",
-        "title": "Open this chat in the sidebar",
-        "category": "Cody Inline Chat",
-        "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentThreadIsEmpty",
-        "icon": "$(comment-discussion)"
-      },
-      {
-        "command": "cody.comment.collapse-all",
-        "title": "Collapse All Inline Chats",
-        "category": "Cody Inline Chat",
-        "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentThreadIsEmpty",
-        "icon": "$(collapse-all)"
-      },
-      {
-        "command": "cody.inline.new",
-        "title": "Ask Cody Inline",
-        "category": "Cody Inline Chat",
-        "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "editorFocus && config.cody.inlineChat.enabled"
+        "command": "cody.show-page",
+        "category": "Cody",
+        "title": "Show Admin Pages",
+        "group": "Cody",
+        "when": "cody.activated"
       },
       {
         "command": "cody.guardrails.debug",
         "category": "Cody",
         "title": "Guardrails Debug Attribution",
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
-      },
-      {
-        "command": "cody.command.inline-touch",
-        "category": "Cody",
-        "title": "Touch"
       },
       {
         "command": "cody.fixup.open",
@@ -494,7 +415,7 @@
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
-        "when": "cody.activated && config.cody.experimental.chatPanel",
+        "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
       },
@@ -503,8 +424,7 @@
         "category": "Cody",
         "title": "Open Cody Sidebar",
         "group": "Cody",
-        "icon": "$(layout-sidebar-left)",
-        "when": "config.cody.experimental.chatPanel"
+        "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "cody.chat.history.clear",
@@ -536,7 +456,7 @@
         "group": "Cody",
         "title": "Update search index for current workspace folder",
         "icon": "$(refresh)",
-        "when": "cody.activated && config.cody.experimental.newSearch"
+        "when": "cody.activated"
       },
       {
         "command": "cody.search.index-update-all",
@@ -544,7 +464,7 @@
         "group": "Cody",
         "title": "Update search indices for all workspace folders",
         "icon": "$(sync)",
-        "when": "cody.activated && config.cody.experimental.newSearch"
+        "when": "cody.activated"
       },
       {
         "command": "cody.chat.restart",
@@ -552,43 +472,30 @@
         "title": "Restart Chat Session...",
         "group": "Cody",
         "icon": "$(clear-all)",
-        "when": "cody.activated && cody.hasChatHistory && config.cody.experimental.chatPanel"
+        "when": "cody.activated && cody.hasChatHistory"
       }
     ],
     "keybindings": [
       {
         "command": "cody.chat.focus",
         "key": "alt+/",
-        "when": "!config.cody.experimental.chatPanel"
+        "when": "!cody.activated"
       },
       {
         "command": "cody.chat.tree.view.focus",
         "key": "alt+f1",
-        "when": "cody.activated && config.cody.experimental.chatPanel"
+        "when": "cody.activated"
       },
       {
         "command": "cody.chat.panel.new",
         "key": "alt+/",
-        "when": "cody.activated && config.cody.experimental.chatPanel"
+        "when": "cody.activated"
       },
       {
         "command": "cody.command.edit-code",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.inline-touch",
-        "key": "ctrl+alt+/",
-        "mac": "cmd+alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection && config.cody.inlineChat.enabled"
-      },
-      {
-        "command": "cody.inline.new",
-        "key": "ctrl+shift+c",
-        "mac": "cmd+shift+c",
-        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled",
-        "enablement": "config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.action.commands.menu",
@@ -620,27 +527,23 @@
         },
         {
           "command": "cody.command.explain-code",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.context-search",
-          "when": "false"
-        },
-        {
-          "command": "cody.command.inline-touch",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.smell-code",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.command.document-code",
-          "when": "false"
+          "when": "cody.activated && editorIsOpen"
         },
         {
           "command": "cody.action.commands.custom.menu",
@@ -650,26 +553,6 @@
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
-        },
-        {
-          "command": "cody.comment.add",
-          "when": "false"
-        },
-        {
-          "command": "cody.comment.delete",
-          "when": "false"
-        },
-        {
-          "command": "cody.comment.stop",
-          "when": "false"
-        },
-        {
-          "command": "cody.comment.open-in-sidebar",
-          "when": "false"
-        },
-        {
-          "command": "cody.comment.collapse-all",
-          "when": "false"
         },
         {
           "command": "cody.fixup.accept",
@@ -694,6 +577,10 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.show-page",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -703,6 +590,11 @@
         }
       ],
       "cody.submenu": [
+        {
+          "command": "cody.chat.panel.new",
+          "when": "cody.activated",
+          "group": "ask"
+        },
         {
           "command": "cody.command.explain-code",
           "when": "cody.activated",
@@ -731,7 +623,7 @@
         {
           "command": "cody.action.commands.custom.menu",
           "when": "cody.activated",
-          "group": "command"
+          "group": "custom-commands"
         },
         {
           "command": "cody.focus",
@@ -742,54 +634,9 @@
           "command": "cody.guardrails.debug",
           "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
           "group": "other"
-        },
-        {
-          "command": "cody.inline.new",
-          "when": "cody.activated",
-          "group": "ask"
         }
       ],
       "view/title": [
-        {
-          "command": "cody.interactive.clear",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.history",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@2"
-        },
-        {
-          "command": "cody.status-bar.interacted",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
-        },
-        {
-          "command": "cody.feedback",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.welcome",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.auth.signout",
-          "when": "view == cody.chat && cody.activated",
-          "group": "9_cody@2"
-        },
-        {
-          "command": "cody.auth.signin",
-          "when": "view == cody.chat && cody.activated",
-          "group": "9_cody@0"
-        },
-        {
-          "command": "cody.fixup.accept-all",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
-          "group": "navigation"
-        },
         {
           "command": "cody.chat.panel.new",
           "when": "view == cody.chat.tree.view && cody.activated",
@@ -853,63 +700,11 @@
           "visibility": "visible"
         }
       ],
-      "comments/commentThread/context": [
-        {
-          "command": "cody.comment.add",
-          "group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
-        },
-        {
-          "command": "cody.focus",
-          "group": "inline",
-          "when": "!cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
-        }
-      ],
-      "comments/commentThread/title": [
-        {
-          "command": "cody.comment.delete",
-          "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
-        },
-        {
-          "command": "cody.comment.open-in-sidebar",
-          "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && config.cody.inlineChat.enabled"
-        },
-        {
-          "command": "cody.comment.collapse-all",
-          "group": "inline@3",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
-        }
-      ],
-      "comments/comment/title": [
-        {
-          "command": "cody.comment.stop",
-          "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && comment =~ /^cody-inline-(streaming|loading)/ && config.cody.inlineChat.enabled"
-        }
-      ],
       "view/item/context": [
         {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
           "group": "inline"
-        },
-        {
-          "command": "cody.fixup.accept-by-file",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == fsPath",
-          "enable": "cody.fixup.filesWithApplicableFixups",
-          "group": "inline"
-        },
-        {
-          "command": "cody.fixup.accept",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
-          "group": "inline@2"
-        },
-        {
-          "command": "cody.fixup.diff",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
-          "group": "inline@1"
         }
       ]
     },
@@ -977,13 +772,6 @@
             "scminput": false
           }
         },
-        "cody.inlineChat.enabled": {
-          "order": 10,
-          "title": "Cody Inline Chat",
-          "type": "boolean",
-          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
-          "default": false
-        },
         "cody.editorTitleCommandIcon": {
           "order": 7,
           "type": "boolean",
@@ -1003,12 +791,6 @@
           "default": false
         },
         "cody.experimental.guardrails": {
-          "order": 9,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
-        "cody.experimental.nonStop": {
           "order": 9,
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
@@ -1035,17 +817,11 @@
           "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
         },
-        "cody.experimental.newSearch": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "New search UI",
-          "default": false
-        },
         "cody.experimental.simpleChatContext": {
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Uses the new simplifed chat context fetcher",
-          "default": false
+          "default": true
         },
         "cody.experimental.symf.path": {
           "order": 99,
@@ -1142,12 +918,6 @@
             "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
-        },
-        "cody.experimental.chatPanel": {
-          "order": 100,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
         }
       }
     },
@@ -1188,10 +958,10 @@
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.13.0",
+    "@sourcegraph/telemetry": "^0.14.0",
     "@storybook/preview-api": "^7.6.2",
     "@types/stream-json": "^1.7.3",
-    "@vscode/codicons": "^0.0.29",
+    "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",

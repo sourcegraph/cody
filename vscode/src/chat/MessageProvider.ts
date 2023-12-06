@@ -612,11 +612,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         userContextFiles?: ContextFile[]
     ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
         const source = eventTrace?.source || undefined
-        // Inline chat has its own filter for slash commands
-        if (recipeId === 'inline-chat') {
-            return { text, recipeId, source }
-        }
-
         text = text.trim()
         if (!text?.startsWith('/')) {
             return { text, recipeId, source }
