@@ -77,10 +77,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: ubuntu-latest
-          # macOS is slow so we shard tests across two runners
-          - runner: macos-latest-large
+        # Use a single large mac for e2e tests as it runs in 4m instead of 6m (as of 2023-12-06)
+        runner: [ubuntu-latest, macos-latest-large]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     permissions:
