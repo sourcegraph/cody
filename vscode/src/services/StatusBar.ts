@@ -9,6 +9,7 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
+    errorType: string
     onShow?: () => void
     onSelect?: () => void
 }
@@ -17,6 +18,10 @@ export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
     addError(error: StatusBarError): () => void
+    checkErrors(): {
+        error: StatusBarError
+        createdAt: number
+    }[]
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -220,6 +225,9 @@ export function createStatusBar(): CodyStatusBar {
                     rerender()
                 }
             }
+        },
+        checkErrors() {
+            return errors
         },
         dispose() {
             statusBarItem.dispose()

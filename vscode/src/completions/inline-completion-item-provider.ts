@@ -575,7 +575,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      */
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
-            if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
+            let hasRateLimitError
+            const allStatusBarErrors = this.config.statusBar.checkErrors()
+            allStatusBarErrors.forEach(statusBarError => {
+                if (statusBarError.error.errorType == error.name) {
+                    hasRateLimitError = true
+                    return
+                }
+            })
+
+            if (hasRateLimitError) {
                 return
             }
             this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
@@ -594,6 +603,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.config.statusBar.addError({
                 title: errorTitle,
                 description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
+                errorType: error.name,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
