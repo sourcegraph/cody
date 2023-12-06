@@ -16,6 +16,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Decreased debounce time for creating chat panels to improve responsiveness. [pull/2115](https://github.com/sourcegraph/cody/pull/2115)
 - Chat: Fix infinite loop when searching for symbols. [pull/2114](https://github.com/sourcegraph/cody/pull/2114)
 - Chat: Speed up chat panel debounce w/ trigger on leading edge too. [pull/2126](https://github.com/sourcegraph/cody/pull/2126)
+- Chat: Fix message input overlapping with enhanced context button. [pull/2141](https://github.com/sourcegraph/cody/pull/2141)
 
 ### Changed
 
@@ -35,6 +36,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   say embeddings were not found while we work on improving chat.
   [pull/2099](https://github.com/sourcegraph/cody/pull/2099)
 - Commands: Expose commands in the VS Code command palette and clean up the context menu. [pull/1209](https://github.com/sourcegraph/cody/pull/2109)
+- Search: Style and UX improvements to the search panel. [pull/2138](https://github.com/sourcegraph/cody/pull/2138)
 - Chat: Update message input placeholder to mention slash commands. [pull/2142](https://github.com/sourcegraph/cody/pull/2142)
 
 ## [0.16.3]
