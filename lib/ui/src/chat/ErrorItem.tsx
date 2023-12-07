@@ -94,7 +94,8 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                     <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
                     <p>
                         {error.userMessage}.
-                        {canUpgrade && ' Upgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.'}
+                        {canUpgrade &&
+                            ' Upgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.'}
                     </p>
                 </header>
                 {ChatButtonComponent && (
@@ -121,11 +122,11 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                 )}
                 <p className={styles.retryMessage}>{error.retryMessage}</p>
             </div>
-            {canUpgrade &&
+            {canUpgrade && (
                 <div className={styles.bannerContainer}>
                     <div className={styles.banner}>Go Pro</div>
                 </div>
-            }
+            )}
         </div>
     )
 })

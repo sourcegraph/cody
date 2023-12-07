@@ -20,9 +20,7 @@ export class RateLimitError extends Error {
         public readonly retryAfter?: Date
     ) {
         super(message)
-        this.userMessage = `You've used all${
-            limit ? ` ${limit}` : ''
-        } ${feature} for today`
+        this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today`
         this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}` : undefined
     }
 }
