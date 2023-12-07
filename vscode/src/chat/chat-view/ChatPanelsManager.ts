@@ -295,8 +295,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     private disposeProvider(chatID: string): void {
         if (chatID === this.activePanelProvider?.sessionID) {
-            this.activePanelProvider.webviewPanel?.dispose()
-            this.activePanelProvider.dispose()
             this.activePanelProvider = undefined
         }
 
