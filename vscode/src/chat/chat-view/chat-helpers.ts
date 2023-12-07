@@ -209,8 +209,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         }
         return [
             {
-                kind: 'symf',
-                type: 'local',
+                kind: 'search',
                 state: 'ready',
             },
         ]
