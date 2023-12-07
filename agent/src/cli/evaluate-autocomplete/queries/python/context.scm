@@ -1,6 +1,7 @@
 ; Call expression
+
 (call
-    arguments: (argument_list "(" @opening_paren)
+    arguments: (argument_list "(" @opening_paren ")" @closing_paren)
 ) @call_expression
 
 ; Assignment statement

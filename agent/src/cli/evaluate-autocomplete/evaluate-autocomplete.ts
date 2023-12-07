@@ -33,6 +33,8 @@ export interface EvaluateAutocompleteOptions {
     srcAccessToken: string
     srcEndpoint: string
 
+    codyAgentBinary?: string
+
     matchMinimumSize?: number
     matchSkipSingleline?: number
     matchEveryN?: number
@@ -62,6 +64,7 @@ interface EvaluationFixture {
     name: string
     customConfiguration?: Record<string, any>
     strategy: EvaluationStrategy
+    codyAgentBinary?: string
 }
 
 async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promise<EvaluateAutocompleteOptions[]> {
@@ -88,6 +91,11 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
                 : config.snapshotDirectory
                 ? path.join(rootDir, config.snapshotDirectory, fixture.name, test.workspace)
                 : options.snapshotDirectory
+
+            console.log({ codyAgentBinary: fixture.codyAgentBinary })
+            const codyAgentBinary = fixture.codyAgentBinary
+                ? path.resolve(path.dirname(options.evaluationConfig), fixture.codyAgentBinary)
+                : undefined
             result.push({
                 ...options,
                 ...config,
@@ -95,6 +103,7 @@ async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promi
                 queriesDirectory: options?.queriesDirectory,
                 workspace,
                 snapshotDirectory,
+                codyAgentBinary,
                 fixture,
                 csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
             })
@@ -258,6 +267,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
+    console.log({ fixture: options.fixture, codyAgentBinary: options.codyAgentBinary })
     const client = await newAgentClient({
         name: 'evaluate-autocomplete',
         version: '0.1.0',
@@ -268,6 +278,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             customHeaders: {},
             customConfiguration: options.fixture.customConfiguration,
         },
+        codyAgentPath: options.codyAgentBinary,
     })
     try {
         if (options.fixture.strategy === EvaluationStrategy.BFG) {
