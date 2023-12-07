@@ -59,6 +59,7 @@ export class FeatureFlagProvider {
     }
 
     public syncAuthStatus(): void {
+        this.featureFlags = {}
         void this.refreshFeatureFlags()
     }
 
