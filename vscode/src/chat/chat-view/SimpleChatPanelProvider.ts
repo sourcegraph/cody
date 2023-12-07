@@ -366,7 +366,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async onInitialized(): Promise<void> {
-        await this.restoreSession(this.sessionID)
+        await this.restoreSession(this.sessionID, false)
         await this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
@@ -383,12 +383,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * current in-progress completion. If the chat does not exist, then this
      * is a no-op.
      */
-    public async restoreSession(sessionID: string): Promise<void> {
+    public async restoreSession(sessionID: string, cancelOngoingCompletion = true): Promise<void> {
         const oldTranscript = this.history.getChat(sessionID)
         if (!oldTranscript) {
             return
         }
-        this.cancelInProgressCompletion()
+        if (cancelOngoingCompletion) {
+            this.cancelInProgressCompletion()
+        }
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.defaultModelID)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
