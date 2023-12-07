@@ -285,7 +285,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * This is the entrypoint for handling messages from the webview.
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        console.log('incoming message', message)
         switch (message.command) {
             case 'ready':
                 await this.postViewConfig()
@@ -497,7 +496,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postViewConfig(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
-        console.log('simple chat', { authStatus })
         const localProcess = getProcessInfo()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,

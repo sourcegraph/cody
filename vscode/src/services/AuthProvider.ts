@@ -225,24 +225,19 @@ export class AuthProvider {
         token: string | null,
         customHeaders?: {} | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
-        try {
-            const endpoint = formatURL(uri) || ''
-            const config = {
-                serverEndpoint: endpoint,
-                accessToken: token,
-                customHeaders: customHeaders || this.config.customHeaders,
-            }
-            const authStatus = await this.makeAuthStatus(config)
-            const isLoggedIn = isAuthed(authStatus)
-            authStatus.isLoggedIn = isLoggedIn
-            await this.storeAuthInfo(endpoint, token)
-            this.syncAuthStatus(authStatus)
-            await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
-            return { authStatus, isLoggedIn }
-        } catch (error) {
-            console.log('OH HO')
-            console.log({ error })
+        const endpoint = formatURL(uri) || ''
+        const config = {
+            serverEndpoint: endpoint,
+            accessToken: token,
+            customHeaders: customHeaders || this.config.customHeaders,
         }
+        const authStatus = await this.makeAuthStatus(config)
+        const isLoggedIn = isAuthed(authStatus)
+        authStatus.isLoggedIn = isLoggedIn
+        await this.storeAuthInfo(endpoint, token)
+        this.syncAuthStatus(authStatus)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
+        return { authStatus, isLoggedIn }
     }
 
     // Set auth status in case of reload

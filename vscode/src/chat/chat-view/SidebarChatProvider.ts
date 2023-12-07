@@ -47,7 +47,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         switch (message.command) {
             case 'ready':
                 await this.contextProvider.syncAuthStatus()
-                console.log('we ready my friend')
                 break
             case 'initialized':
                 logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')

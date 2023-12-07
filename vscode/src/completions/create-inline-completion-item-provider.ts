@@ -90,8 +90,6 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : 'jaccard-similarity'
 
-        console.log({ providerConfig })
-
         const dynamicMultilineCompletions =
             config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
 
