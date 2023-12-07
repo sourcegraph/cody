@@ -55,13 +55,25 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
     </VSCodeButton>
 )
 
-export const ChatRateLimitUpgrade: Story = {
+export const ChatRateLimitFree: Story = {
     args: {
-        error: new RateLimitError('chat messages', 'thing', true, 10, new Date()),
+        error: new RateLimitError('chat messages and commands', 'thing', true, 10, new Date()),
         postMessage: () => {},
         userInfo: {
             isDotComUser: true,
             isCodyProUser: false,
+        },
+        ChatButtonComponent: ChatButton,
+    },
+}
+
+export const ChatRateLimitPro: Story = {
+    args: {
+        error: new RateLimitError('chat messages and commands', 'thing', false, 10, new Date()),
+        postMessage: () => {},
+        userInfo: {
+            isDotComUser: true,
+            isCodyProUser: true,
         },
         ChatButtonComponent: ChatButton,
     },

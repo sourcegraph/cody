@@ -11,7 +11,7 @@
 .body {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.7rem;
 }
 
 .error-item vscode-button {
@@ -25,22 +25,74 @@ h1, p {
 header {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.3rem;
+    margin-right: 30px;
 }
 
-h1 {
+header h1 {
     text-transform: uppercase;
     font-size: 11px;
     margin: 0;
 }
 
+header p {
+    max-width: 38em;
+    opacity: 0.9;
+}
+
 .actions {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    gap: 8px;
 }
 
 .retry-message {
-    font-size: 12px;
+    font-size: 11px;
     opacity: 0.7;
+}
+
+.banner-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    overflow: hidden;
+    height: 100px;
+    pointer-events: none;
+}
+
+.banner {
+    padding: 7px 30px 6px 30px;
+    transform: translateY(50%) translateX(25%) rotate(45deg);
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    background: linear-gradient(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.6)), repeating-conic-gradient(#4AC1E8, #7048E8, #FF5543, #7048E8, #4AC1E8);
+    box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);
+    color: #080808;
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.75);
+    font-size: 9px;
+    line-height: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    overflow: hidden;
+}
+
+.banner::before {
+    content: ' ';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 5px;
+    transform: translateX(-22px) rotate(135deg);
+    background: linear-gradient(rgb(255 255 255 / 0), rgb(255 255 255 / 0.8));
+}
+
+.banner::after {
+    content: ' ';
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    width: 100px;
+    height: 5px;
+    transform: translateY(-27px) rotate(225deg);
+    background: linear-gradient(rgb(255 255 255 / 0), rgb(255 255 255 / 0.8));
 }

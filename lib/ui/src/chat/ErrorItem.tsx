@@ -92,7 +92,10 @@ export const RateLimitErrorItem: React.FunctionComponent<{
             <div className={styles.body}>
                 <header>
                     <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
-                    <p>{error.userMessage}</p>
+                    <p>
+                        {error.userMessage}.
+                        {canUpgrade && ' Upgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.'}
+                    </p>
                 </header>
                 {ChatButtonComponent && (
                     <div className={styles.actions}>
@@ -105,15 +108,24 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                             />
                         )}
                         <ChatButtonComponent
-                            label={canUpgrade ? 'See Plans' : 'Learn More'}
+                            label={canUpgrade ? 'See Plans →' : 'Learn More'}
                             action=""
-                            onClick={() => onButtonClick('rate-limits', 'learn-more')}
+                            onClick={() =>
+                                canUpgrade
+                                    ? onButtonClick('upgrade', 'upgrade')
+                                    : onButtonClick('rate-limits', 'learn-more')
+                            }
                             appearance="secondary"
                         />
                     </div>
                 )}
                 <p className={styles.retryMessage}>{error.retryMessage}</p>
             </div>
+            {canUpgrade &&
+                <div className={styles.bannerContainer}>
+                    <div className={styles.banner}>Go Pro</div>
+                </div>
+            }
         </div>
     )
 })
