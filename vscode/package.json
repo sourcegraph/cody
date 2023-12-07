@@ -823,6 +823,12 @@
           "markdownDescription": "Uses the new simplifed chat context fetcher",
           "default": true
         },
+        "cody.experimental.symfContext": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable symf code search context for chat",
+          "default": false
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",

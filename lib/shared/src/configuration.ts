@@ -29,6 +29,7 @@ export interface Configuration {
     experimentalChatPredictions: boolean
     commandCodeLenses: boolean
     experimentalSimpleChatContext: boolean
+    experimentalSymfContext: boolean
     editorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalLocalSymbols: boolean

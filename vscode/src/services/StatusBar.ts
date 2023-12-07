@@ -128,6 +128,14 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
+                    'Symf Context',
+                    'Experimental',
+                    'Enable context fetched via symf',
+                    'cody.experimental.symfContext',
+                    c => c.experimentalSymfContext,
+                    false
+                ),
+                createFeatureToggle(
                     'Simple Chat Context',
                     'Experimental',
                     'Enable the new simplifed chat context fetcher',
