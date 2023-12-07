@@ -8,6 +8,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Chat: Always include selection in Enhanced Context. [pull/2144](https://github.com/sourcegraph/cody/pull/2144)
+- Chat: Fix abort. [pull/2159](https://github.com/sourcegraph/cody/pull/2159)
+
 ### Changed
 
 ## [0.18.0]
