@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
@@ -118,30 +119,7 @@ export class SimpleChatModel {
         for (let i = 0; i < this.messagesWithContext.length; i += 2) {
             const humanMessage = this.messagesWithContext[i]
             const botMessage = this.messagesWithContext[i + 1]
-            if (humanMessage.message.speaker !== 'human') {
-                throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
-            }
-            if (botMessage.message.speaker !== 'assistant') {
-                throw new Error('SimpleChatModel.toTranscriptJSON: expected bot message, got human')
-            }
-            interactions.push({
-                humanMessage: {
-                    speaker: humanMessage.message.speaker,
-                    text: humanMessage.message.text,
-                    displayText: getDisplayText(humanMessage),
-                },
-                assistantMessage: {
-                    speaker: botMessage.message.speaker,
-                    text: botMessage.message.text,
-                    displayText: getDisplayText(botMessage),
-                },
-                usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
-
-                // These fields are unused on deserialization
-                fullContext: [],
-                usedPreciseContext: [],
-                timestamp: 'n/a',
-            })
+            interactions.push(messageToInteractionJSON(humanMessage, botMessage))
         }
         return {
             id: this.sessionID,
@@ -149,6 +127,32 @@ export class SimpleChatModel {
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
+    }
+}
+
+function messageToInteractionJSON(humanMessage: MessageWithContext, botMessage: MessageWithContext): InteractionJSON {
+    if (humanMessage?.message?.speaker !== 'human') {
+        throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
+    }
+    return {
+        humanMessage: messageToInteractionMessage(humanMessage),
+        assistantMessage:
+            botMessage?.message?.speaker === 'assistant'
+                ? messageToInteractionMessage(botMessage)
+                : { speaker: 'assistant' },
+        usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
+        // These fields are unused on deserialization
+        fullContext: [],
+        usedPreciseContext: [],
+        timestamp: new Date().toISOString(),
+    }
+}
+
+function messageToInteractionMessage(message: MessageWithContext): InteractionMessage {
+    return {
+        speaker: message.message.speaker,
+        text: message.message.text,
+        displayText: getDisplayText(message),
     }
 }
 
