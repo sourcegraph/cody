@@ -61,9 +61,6 @@ export class ChatPanelProvider extends MessageProvider {
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
                 this.handleWebviewContext()
                 break
             case 'initialized':
@@ -448,7 +445,6 @@ export class ChatPanelProvider extends MessageProvider {
         // should not overwrite the context provider's webview, or it
         // will break the previous chat panel.
         this.contextProvider.webview = panel.webview
-        this.authProvider.webview = panel.webview
         this.postEnhancedContextStatusToWebview()
 
         // Dispose panel when the panel is closed

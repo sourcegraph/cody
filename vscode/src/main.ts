@@ -211,6 +211,8 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener((authStatus: AuthStatus) => {
+        void contextProvider.syncAuthStatus()
+        void featureFlagProvider.syncAuthStatus()
         void chatManager.syncAuthStatus(authStatus)
         if (symfRunner && authStatus.isLoggedIn) {
             getAccessToken()
@@ -286,13 +288,6 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.sync', () => {
-            const result = contextProvider.syncAuthStatus()
-            void featureFlagProvider.syncAuthStatus()
-            // Important that we return a promise here to allow `AuthProvider`
-            // to `await` on the auth config changes to propagate.
-            return result
-        }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
             const confirmation = await vscode.window.showWarningMessage(
@@ -435,18 +430,7 @@ const register = async (
 
     vscode.window.onDidChangeWindowState(async ws => {
         if (ws.focused) {
-            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
-            if (res instanceof Error) {
-                console.error(res)
-                return
-            }
-
-            const authStatus = authProvider.getAuthStatus()
-
-            authStatus.hasVerifiedEmail = res.hasVerifiedEmail
-            authStatus.userCanUpgrade = !res.codyProEnabled
-
-            void chatManager.syncAuthStatus(authStatus)
+            await authProvider.reloadAuthStatus()
         }
     })
 

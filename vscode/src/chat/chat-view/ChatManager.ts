@@ -226,7 +226,6 @@ export class ChatManager implements vscode.Disposable {
 
     private disposeChatPanelsManager(): void {
         this.options.contextProvider.webview = this.sidebarChat.webview
-        this.options.authProvider.webview = this.sidebarChat.webview
         this.chatPanelsManager?.dispose()
     }
 

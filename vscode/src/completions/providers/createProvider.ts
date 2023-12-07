@@ -114,6 +114,14 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
     ])
 
+    console.log({
+        starCoder7b,
+        starCoder16b,
+        starCoderHybrid,
+        llamaCode7b,
+        llamaCode13b,
+    })
+
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
         const model = starCoder7b
             ? 'starcoder-7b'
