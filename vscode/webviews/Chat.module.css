@@ -4,7 +4,7 @@
 }
 
 .transcript-item {
-    font-size: var(--vscode-editor-font-size);
+    font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     border-color: var(--vscode-sideBarSectionHeader-border);
