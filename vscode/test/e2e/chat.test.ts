@@ -10,7 +10,7 @@ test('shows upgrade rate limit message for free users', async ({ page, sidebar }
         method: 'POST',
     })
 
-    const [ chatFrame, chatInput ] = await prepareChat(page, sidebar)
+    const [chatFrame, chatInput] = await prepareChat(page, sidebar)
     await chatInput.fill('test message')
     await chatInput.press('Enter')
 
@@ -23,7 +23,7 @@ test('shows standard rate limit message for pro users', async ({ page, sidebar }
         method: 'POST',
     })
 
-    const [ chatFrame, chatInput ] = await prepareChat(page, sidebar)
+    const [chatFrame, chatInput] = await prepareChat(page, sidebar)
     await chatInput.fill('test message')
     await chatInput.press('Enter')
 
@@ -36,7 +36,7 @@ test('shows standard rate limit message for non-dotCom users', async ({ page, si
         method: 'POST',
     })
 
-    const [ chatFrame, chatInput ] = await prepareChat(page, sidebar)
+    const [chatFrame, chatInput] = await prepareChat(page, sidebar)
     await chatInput.fill('test message')
     await chatInput.press('Enter')
 
@@ -44,11 +44,11 @@ test('shows standard rate limit message for non-dotCom users', async ({ page, si
     await expect(chatFrame.getByRole('button', { name: 'Learn More' })).toBeVisible()
 })
 
-async function prepareChat(page: Page, sidebar: Frame): Promise<[ FrameLocator, Locator ]> {
+async function prepareChat(page: Page, sidebar: Frame): Promise<[FrameLocator, Locator]> {
     await sidebarSignin(page, sidebar)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     // Chat webview iframe is the second and last frame (search is the first)
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    return [ chatFrame, chatInput ]
+    return [chatFrame, chatInput]
 }
