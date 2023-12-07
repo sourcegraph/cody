@@ -75,7 +75,7 @@ jobs:
 
   test-e2e:
     runs-on: ubuntu-latest
-    name: 'test-e2e (ubuntu)'
+    name: 'test-e2e (ubuntu)' # required to match the GitHub PR status check requirement
     timeout-minutes: 15
     permissions:
       id-token: write
@@ -114,7 +114,8 @@ jobs:
   #
   # fixme(toolmantim): We should dedupe this Mac job with the above job using a
   # matrix after Cody 1.0.0. It wasn't done beforehand because it requires
-  # updating the required status checks for merging PRs.
+  # updating the required status checks for merging PRs. Ideally it would just
+  # be https://github.com/sourcegraph/cody/blob/21a40be7297da70f310350e2557a069ea06326ce/.github/workflows/ci.yml#L76
   test-e2e-macos:
     runs-on: macos-latest-large
     name: 'test-e2e (macos)'
