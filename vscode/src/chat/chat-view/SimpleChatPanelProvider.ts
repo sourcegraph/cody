@@ -906,7 +906,7 @@ class ContextProvider implements IContextProvider {
         const searchContext: ContextItem[] = []
         let localEmbeddingsError
         let remoteEmbeddingsError
-
+        searchContext.push(...(await this.getReadmeContext()))
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
         const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
@@ -1158,8 +1158,9 @@ class ContextProvider implements IContextProvider {
 
     private async getReadmeContext(): Promise<ContextItem[]> {
         // global pattern for readme file
-        const readmeGlobalPattern = '{README,readme,Readme}.*'
+        const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
         const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
+        console.log('Searching for readme file...', readmeUri)
         if (!readmeUri) {
             return []
         }
