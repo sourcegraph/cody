@@ -124,7 +124,15 @@ export const RateLimitErrorItem: React.FunctionComponent<{
             </div>
             {canUpgrade && (
                 <div className={styles.bannerContainer}>
-                    <div className={styles.banner}>Go Pro</div>
+                    <div
+                        className={styles.banner}
+                        role="button"
+                        tabIndex={-1}
+                        onClick={() => onButtonClick('upgrade', 'upgrade')}
+                        onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
+                    >
+                        Go Pro
+                    </div>
                 </div>
             )}
         </div>
