@@ -424,6 +424,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     } else {
                         const newInput = selectedCommand?.slashCommand
                         setFormInput(newInput || formInput)
+                        setDisplayCommands(null)
+                        setSelectedChatCommand(-1)
                     }
                 }
                 return
@@ -469,7 +471,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // Loop through input history on up arrow press
-            if (!inputHistory.length) {
+            if (!inputHistory?.length) {
                 return
             }
 

@@ -474,7 +474,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ? createDisplayTextWithFileLinks(userContextFiles, text)
             : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
         this.chatModel.addHumanMessage({ text }, displayText)
-        await this.saveSession(displayText)
+        await this.saveSession(text)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
