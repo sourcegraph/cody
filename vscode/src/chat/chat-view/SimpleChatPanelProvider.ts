@@ -376,9 +376,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async onInitialized(): Promise<void> {
-        await this.restoreSession(this.sessionID)
+        await this.restoreSession(this.sessionID, false)
         await this.postChatModels()
-        await this.saveAndPostHistory()
+        await this.saveSession()
         await this.postCodyCommands()
     }
 
@@ -393,16 +393,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * current in-progress completion. If the chat does not exist, then this
      * is a no-op.
      */
-    public async restoreSession(sessionID: string): Promise<void> {
+    public async restoreSession(sessionID: string, cancelOngoingCompletion = true): Promise<void> {
         const oldTranscript = this.history.getChat(sessionID)
         if (!oldTranscript) {
             return
         }
-
-        if (sessionID !== this.sessionID) {
-            await this.saveSession()
+        if (cancelOngoingCompletion) {
+            this.cancelInProgressCompletion()
         }
-        this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.defaultModelID)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
@@ -410,15 +408,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.postViewTranscript()
     }
 
-    public async saveSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
+    public async saveSession(humanInput?: string): Promise<void> {
+        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON(), humanInput)
+        if (allHistory) {
+            void this.webview?.postMessage({
+                type: 'history',
+                messages: allHistory,
+            })
         }
-        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: allHistory,
-        })
         await this.treeView.updateTree(createCodyChatTreeItems())
     }
 
@@ -487,6 +484,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ? createDisplayTextWithFileLinks(userContextFiles, text)
             : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
         this.chatModel.addHumanMessage({ text }, displayText)
+        await this.saveSession(text)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
@@ -708,19 +706,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Send user history to webview, which included chat history and chat input history.
-     */
-    private async saveAndPostHistory(humanInput?: string): Promise<void> {
-        if (humanInput) {
-            await this.history.saveHumanInputHistory(humanInput)
-        }
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: this.history.localHistory,
-        })
-    }
-
-    /**
      * Finalizes adding a bot message to the chat model, with guardrails, and triggers an
      * update to the view.
      */
@@ -801,15 +786,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             if (!recipeMessages) {
                 return
             }
-            await this.clearAndRestartSession()
-            const { humanMessage, prompt } = recipeMessages
             const displayText = this.editor.getActiveTextEditorSelection()
                 ? createDisplayTextWithFileSelection(humanChatInput, this.editor.getActiveTextEditorSelection())
                 : humanChatInput
+            const { humanMessage, prompt } = recipeMessages
             this.chatModel.addHumanMessage(humanMessage.message, displayText)
             if (humanMessage.newContextUsed) {
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
+            await this.saveSession()
             this.postViewTranscript()
 
             this.sendLLMRequest(prompt, {
@@ -921,7 +906,7 @@ class ContextProvider implements IContextProvider {
         const searchContext: ContextItem[] = []
         let localEmbeddingsError
         let remoteEmbeddingsError
-
+        searchContext.push(...(await this.getReadmeContext()))
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
         const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
@@ -1172,14 +1157,10 @@ class ContextProvider implements IContextProvider {
     }
 
     private async getReadmeContext(): Promise<ContextItem[]> {
-        let readmeUri
-        const patterns = ['README', 'README.*', 'Readme.*', 'readme.*']
-        for (const pattern of patterns) {
-            const files = await vscode.workspace.findFiles(pattern)
-            if (files.length > 0) {
-                readmeUri = files[0]
-            }
-        }
+        // global pattern for readme file
+        const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
+        const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
+        console.log('Searching for readme file...', readmeUri)
         if (!readmeUri) {
             return []
         }
