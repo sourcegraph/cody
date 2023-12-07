@@ -5,9 +5,6 @@ import {
     AuthStatus
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logDebug } from '../log'
-import { localStorage } from './LocalStorageProvider'
-import { secretStorage } from './SecretStorageProvider'
 import { AuthProvider } from './AuthProvider'
 
 export class AlwaysAuthProvider extends  AuthProvider { 
@@ -16,9 +13,9 @@ export class AlwaysAuthProvider extends  AuthProvider {
     // if none, try signing in with App URL
     public async init(): Promise<void> {
         await this.appDetector.init()
-        const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
-        const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
-        logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
+        const lastEndpoint = this.config.serverEndpoint
+        const token = "mock-fake-token" // this.config.accessToken
+        console.log('AuthProvider:init:lastEndpoint', lastEndpoint, token)
         await this.auth(lastEndpoint, token || null)
     }
 
