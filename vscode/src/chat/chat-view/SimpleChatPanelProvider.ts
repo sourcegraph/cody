@@ -158,7 +158,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (this.localEmbeddings) {
             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
         }
-        this.codebaseStatusProvider = new CodebaseStatusProvider(this.editor, embeddingsClient)
+        this.codebaseStatusProvider = new CodebaseStatusProvider(this.editor, embeddingsClient, this.symf)
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
     }
 
