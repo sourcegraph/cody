@@ -505,7 +505,7 @@ describe('InlineCompletionItemProvider', () => {
             const { document, position } = documentAndPosition('█')
             const fn = vi
                 .fn(getInlineCompletions)
-                .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', false, 1234))
+                .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', false, 1234, '86400'))
             const addError = vi.fn()
             const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
 
@@ -515,7 +515,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(addError).toHaveBeenCalledWith(
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                    description: "You've used all 1234 autocompletions for today.",
+                    description: "You've used all 1234 autocompletions for today. Usage will reset in 1 day.",
                 })
             )
 
