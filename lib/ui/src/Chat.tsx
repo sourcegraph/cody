@@ -570,7 +570,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                {!displayCommands && suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                {!displayCommands &&
+                !contextSelection &&
+                suggestions !== undefined &&
+                suggestions.length !== 0 &&
+                SuggestionButton ? (
                     <div className={styles.suggestions}>
                         {suggestions.map((suggestion: string) =>
                             suggestion.trim().length > 0 ? (
@@ -589,7 +593,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     </div>
                 )}
                 <div className={styles.textAreaContainer}>
-                    {displayCommands && ChatCommandsComponent && formInput && (
+                    {displayCommands && ChatCommandsComponent && formInput.startsWith('/') && (
                         <ChatCommandsComponent
                             chatCommands={displayCommands}
                             selectedChatCommand={selectedChatCommand}
