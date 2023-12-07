@@ -33,7 +33,8 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     protected get completionsEndpoint(): string {
-        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+        // stream completion
+        return new URL('/completion', 'http://127.0.0.1:8080').href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {

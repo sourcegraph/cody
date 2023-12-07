@@ -10,6 +10,7 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
     maxTokensToSample: ANSWER_TOKENS,
     topK: -1,
     topP: -1,
+    stream: true,
 }
 
 export class ChatClient {

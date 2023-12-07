@@ -32,6 +32,8 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    prompt?: string
+    stream?: boolean
 }
 
 export interface CompletionCallbacks {
@@ -47,4 +49,11 @@ export interface CompletionCallbacks {
      * afterwards.
      */
     onError: (message: string, statusCode?: number) => void
+}
+
+export function withPrompt(params: CompletionParameters) : CompletionParameters {
+    let prompt = ''
+    params.messages.forEach(e => { prompt += e.text })
+    params.prompt = prompt
+    return params
 }

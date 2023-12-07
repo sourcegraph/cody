@@ -6,11 +6,12 @@ import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
-import { parseEvents } from './parse'
-import { CompletionCallbacks, CompletionParameters } from './types'
+import { parseSSEData } from './parse'
+import { CompletionCallbacks, CompletionParameters, withPrompt } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
+        params = withPrompt(params)
         const log = this.logger?.startCompletion(params)
 
         const abortController = new AbortController()
@@ -68,6 +69,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 let bufferBin = Buffer.of()
                 // Text which has not been decoded as a server-sent event (SSE)
                 let bufferText = ''
+                let completionText = ''
 
                 res.on('data', chunk => {
                     if (!(chunk instanceof Buffer)) {
@@ -76,18 +78,20 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // text/event-stream messages are always UTF-8, but a chunk
                     // may terminate in the middle of a character
                     const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
-                    bufferText += str
                     bufferBin = buf
-
-                    const parseResult = parseEvents(bufferText)
-                    if (isError(parseResult)) {
-                        console.error(parseResult)
+                    console.log('recv:', str)
+                    const event = parseSSEData(bufferText == '' ? str : bufferText + str)
+                    if (isError(event)) {
+                        console.error(event)
+                        bufferText += str
                         return
                     }
-
-                    log?.onEvents(parseResult.events)
-                    this.sendEvents(parseResult.events, cb)
-                    bufferText = parseResult.remainingBuffer
+                    if (event.type == "completion") {
+                        completionText += event.completion
+                        event.completion = completionText
+                    }
+                    bufferText = ''
+                    this.sendEvents([event], cb)
                 })
 
                 res.on('error', e => {

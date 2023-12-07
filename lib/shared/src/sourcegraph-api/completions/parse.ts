@@ -93,3 +93,18 @@ export function parseEvents(eventsBuffer: string): EventsParseResult | Error {
 
     return { events, remainingBuffer: eventsBuffer.slice(eventStartIndex) }
 }
+
+export function parseSSEData(dataLine: string): Event | Error {
+    if (!dataLine.startsWith(DATA_LINE_PREFIX)) {
+        return new Error(`cannot parse event data: ${dataLine}`)
+    }
+    const jsonData = dataLine.trim().replace(DATA_LINE_PREFIX, '') 
+    const data = parseJSON<{ content: string; stop: boolean }>(jsonData)
+    if (isError(data)) {
+        return data
+    }
+    if (data['stop']) {
+        return { type: 'done' } 
+    }
+    return { type: 'completion', completion: data['content'], stopReason: '' }   
+}
