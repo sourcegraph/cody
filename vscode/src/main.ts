@@ -178,7 +178,8 @@ const register = async (
         },
         chatClient,
         embeddingsClient,
-        localEmbeddings || null
+        localEmbeddings || null,
+        symfRunner || null
     )
 
     disposables.push(new CodeActionProvider({ contextProvider }))

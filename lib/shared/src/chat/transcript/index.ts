@@ -4,7 +4,7 @@ import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
 
 import { Interaction, InteractionJSON } from './interaction'
-import { ChatMessage } from './messages'
+import { ChatMessage, errorToChatError } from './messages'
 
 export interface TranscriptJSONScope {
     includeInferredRepository: boolean
@@ -158,11 +158,7 @@ export class Transcript {
             text: 'Failed to generate a response due to server error.',
             // Serializing normal errors will lose name/message so
             // just read them off manually and attach the rest of the fields.
-            error: {
-                ...error,
-                message: error.message,
-                name: error.name,
-            },
+            error: errorToChatError(error),
         })
     }
 

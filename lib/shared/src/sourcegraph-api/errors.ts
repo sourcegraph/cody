@@ -7,21 +7,28 @@ export class RateLimitError extends Error {
     public readonly name = RateLimitError.errorName
 
     public readonly userMessage: string
+    public readonly retryAfterDate: Date | undefined
     public readonly retryMessage: string | undefined
 
     constructor(
         public readonly feature: string,
         public readonly message: string,
-        /**
-         * Whether an upgrade is available that would increase rate limits.
-         */
+        /* Whether an upgrade is available that would increase rate limits. */
         public readonly upgradeIsAvailable: boolean,
         public readonly limit?: number,
-        public readonly retryAfter?: Date
+        /* The value of the `retry-after` header */
+        public readonly retryAfter?: string | null
     ) {
         super(message)
         this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
-        this.retryMessage = retryAfter ? `Usage will reset in ${formatDistance(retryAfter, new Date())}` : undefined
+        this.retryAfterDate = retryAfter
+            ? /^\d+$/.test(retryAfter)
+                ? new Date(Date.now() + parseInt(retryAfter, 10) * 1000)
+                : new Date(retryAfter)
+            : undefined
+        this.retryMessage = this.retryAfterDate
+            ? `Usage will reset in ${formatDistance(this.retryAfterDate, new Date())}`
+            : undefined
     }
 }
 
