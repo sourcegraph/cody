@@ -27,7 +27,7 @@ export class RateLimitError extends Error {
                 : new Date(retryAfter)
             : undefined
         this.retryMessage = this.retryAfterDate
-            ? `Usage will reset in ${formatDistance(this.retryAfterDate, new Date())}`
+            ? `Usage will reset in ${formatDistance(this.retryAfterDate, new Date())}.`
             : undefined
     }
 }
