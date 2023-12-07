@@ -10,7 +10,7 @@ import styles from './ErrorItem.module.css'
  * An error message shown in the chat.
  */
 export const ErrorItem: React.FunctionComponent<{
-    error: ChatError
+    error: Omit<ChatError, 'isChatErrorGuard'>
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage

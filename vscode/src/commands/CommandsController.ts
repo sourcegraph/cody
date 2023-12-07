@@ -68,6 +68,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         return commandRunner?.codyCommand
     }
 
+    public isCommand(text: string): boolean {
+        const commandSplit = text.split(' ')
+        // The unique key for the command. e.g. /test
+        const commandKey = commandSplit.shift() || text
+
+        return !!this.default.get(commandKey)
+    }
+
     /**
      * Adds a new command to the commands map.
      *
