@@ -59,6 +59,7 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        console.log('incoming message 2', message)
         switch (message.command) {
             case 'ready':
                 this.handleWebviewContext()

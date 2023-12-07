@@ -46,6 +46,8 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
+                await this.contextProvider.syncAuthStatus()
+                console.log('we ready my friend')
                 break
             case 'initialized':
                 logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')
@@ -360,6 +362,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
+        this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         webviewView.webview.options = {

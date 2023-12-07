@@ -240,6 +240,7 @@ export class AuthProvider {
             await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
             return { authStatus, isLoggedIn }
         } catch (error) {
+            console.log('OH HO')
             console.log({ error })
         }
     }

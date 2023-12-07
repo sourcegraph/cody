@@ -210,10 +210,11 @@ const register = async (
     }
 
     // Adds a change listener to the auth provider that syncs the auth status
-    authProvider.addChangeListener((authStatus: AuthStatus) => {
-        void contextProvider.syncAuthStatus()
-        void featureFlagProvider.syncAuthStatus()
-        void chatManager.syncAuthStatus(authStatus)
+    authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        await contextProvider.syncAuthStatus()
+        featureFlagProvider.syncAuthStatus()
+        await chatManager.syncAuthStatus(authStatus)
+
         if (symfRunner && authStatus.isLoggedIn) {
             getAccessToken()
                 .then(token => {
@@ -430,7 +431,18 @@ const register = async (
 
     vscode.window.onDidChangeWindowState(async ws => {
         if (ws.focused) {
-            await authProvider.reloadAuthStatus()
+            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            if (res instanceof Error) {
+                console.error(res)
+                return
+            }
+
+            const authStatus = authProvider.getAuthStatus()
+
+            authStatus.hasVerifiedEmail = res.hasVerifiedEmail
+            authStatus.userCanUpgrade = !res.codyProEnabled
+
+            void chatManager.syncAuthStatus(authStatus)
         }
     })
 

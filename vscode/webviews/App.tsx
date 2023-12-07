@@ -70,6 +70,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
+                console.log({ message })
                 switch (message.type) {
                     case 'transcript': {
                         if (message.isMessageInProgress) {
@@ -85,6 +86,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'config':
+                        console.log('config received', message.config)
                         setConfig(message.config)
                         setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
@@ -213,6 +215,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+
+    console.log({ view, authStatus, config })
 
     if (!view || !authStatus || !config) {
         return <LoadingPage />

@@ -285,6 +285,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * This is the entrypoint for handling messages from the webview.
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        console.log('incoming message', message)
         switch (message.command) {
             case 'ready':
                 await this.postViewConfig()
