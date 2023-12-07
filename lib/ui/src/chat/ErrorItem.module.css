@@ -4,11 +4,11 @@
     gap: 0.5rem;
 }
 
-.icon {
+.error-item .icon {
     font-size: 24px;
 }
 
-.body {
+.error-item .body {
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
@@ -18,40 +18,40 @@
     margin: 0;
 }
 
-h1, p {
+.error-item h1, .error-item p {
     margin: 0;
 }
 
-header {
+.error-item header {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     margin-right: 30px;
 }
 
-header h1 {
+.error-item header h1 {
     text-transform: uppercase;
     font-size: 11px;
     margin: 0;
 }
 
-header p {
+.error-item header p {
     max-width: 38em;
     opacity: 0.9;
 }
 
-.actions {
+.error-item .actions {
     display: flex;
     flex-direction: row;
     gap: 8px;
 }
 
-.retry-message {
+.error-item .retry-message {
     font-size: 11px;
     opacity: 0.7;
 }
 
-.banner-container {
+.error-item .banner-container {
     position: absolute;
     top: 0;
     right: 0;
@@ -60,7 +60,7 @@ header p {
     pointer-events: none;
 }
 
-.banner {
+.error-item .banner {
     padding: 7px 30px 6px 30px;
     transform: translateY(50%) translateX(25%) rotate(45deg);
     border: 1px solid rgba(0, 0, 0, 0.16);
@@ -75,7 +75,7 @@ header p {
     overflow: hidden;
 }
 
-.banner::before {
+.error-item .banner::before {
     content: ' ';
     position: absolute;
     top: 0;
@@ -86,7 +86,7 @@ header p {
     background: linear-gradient(rgb(255 255 255 / 0), rgb(255 255 255 / 0.8));
 }
 
-.banner::after {
+.error-item .banner::after {
     content: ' ';
     position: absolute;
     bottom: 0;
