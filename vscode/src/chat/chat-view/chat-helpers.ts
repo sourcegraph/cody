@@ -140,8 +140,6 @@ export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true
 
 /**
  * Provides and signals updates to the current codebase identifiers to use in the chat panel.
- * If this becomes too unwieldy, it may make sense to break this out into 2 separate
- * CodebaseProvider and ContextStatusProvider classes (which interact with each other).
  */
 export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusProvider {
     private disposables: vscode.Disposable[] = []

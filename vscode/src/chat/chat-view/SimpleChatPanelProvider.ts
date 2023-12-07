@@ -988,9 +988,8 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
-        const r0 = (await this.symf.getResults(userText, [workspaceRoot])).map(async resultsPromise => {
-            const results = await resultsPromise
-            const items = results.map(async (result: Result): Promise<ContextItem | null> => {
+        const r0 = (await this.symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
+            const items = (await results).flatMap(async (result: Result): Promise<ContextItem[] | ContextItem> => {
                 const uri = vscode.Uri.file(result.file)
 
                 // HACK: we should standardize URI schemes at some point. The way
@@ -1008,11 +1007,11 @@ class ContextProvider implements IContextProvider {
                 try {
                     text = await this.editor.getTextEditorContentForFile(uri, range)
                     if (!text) {
-                        return null
+                        return []
                     }
                 } catch (error) {
                     logError('SimpleChatPanelProvider.searchSymf', `Error getting file contents: ${error}`)
-                    return null
+                    return []
                 }
                 return {
                     uri: displayUri,
@@ -1020,10 +1019,9 @@ class ContextProvider implements IContextProvider {
                     text,
                 }
             })
-            return items
+            return (await Promise.all(items)).flat()
         })
-        const r1 = (await Promise.all((await Promise.all(r0)).flat())).filter(isContextItem)
-        return r1
+        return (await Promise.all(r0)).flat()
     }
 
     private async searchEmbeddingsLocal(text: string): Promise<ContextItem[]> {
@@ -1320,8 +1318,4 @@ function getErrorMessage(error: unknown): string {
         return error.message
     }
     return String(error)
-}
-
-function isContextItem(item: ContextItem | null): item is ContextItem {
-    return item !== null
 }
