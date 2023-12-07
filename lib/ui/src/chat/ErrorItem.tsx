@@ -88,27 +88,32 @@ export const RateLimitErrorItem: React.FunctionComponent<{
 
     return (
         <div className={styles.errorItem}>
-            <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
-            <p>{error.userMessage}</p>
-            {ChatButtonComponent && (
-                <div className={styles.actions}>
-                    {canUpgrade && (
+            {canUpgrade && <div className={styles.icon}>⚡️</div>}
+            <div className={styles.body}>
+                <header>
+                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
+                    <p>{error.userMessage}</p>
+                </header>
+                {ChatButtonComponent && (
+                    <div className={styles.actions}>
+                        {canUpgrade && (
+                            <ChatButtonComponent
+                                label="Upgrade"
+                                action=""
+                                onClick={() => onButtonClick('upgrade', 'upgrade')}
+                                appearance="primary"
+                            />
+                        )}
                         <ChatButtonComponent
-                            label="Upgrade"
+                            label={canUpgrade ? 'See Plans' : 'Learn More'}
                             action=""
-                            onClick={() => onButtonClick('upgrade', 'upgrade')}
-                            appearance="primary"
+                            onClick={() => onButtonClick('rate-limits', 'learn-more')}
+                            appearance="secondary"
                         />
-                    )}
-                    <ChatButtonComponent
-                        label="Learn More"
-                        action=""
-                        onClick={() => onButtonClick('rate-limits', 'learn-more')}
-                        appearance="secondary"
-                    />
-                </div>
-            )}
-            <p className={styles.retryMessage}>{error.retryMessage}</p>
+                    </div>
+                )}
+                <p className={styles.retryMessage}>{error.retryMessage}</p>
+            </div>
         </div>
     )
 })
