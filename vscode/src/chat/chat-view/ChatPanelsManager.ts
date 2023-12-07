@@ -25,7 +25,7 @@ import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 type ChatID = string
 
-export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails'>
+export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'experimentalSpladeContext'>
 
 /**
  * An interface to swap out SimpleChatPanelProvider for ChatPanelProvider

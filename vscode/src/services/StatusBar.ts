@@ -128,6 +128,14 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
+                    'SPLADE context',
+                    'Experimental',
+                    'Enable context fetched via SPLADE',
+                    'cody.experimental.spladeContext',
+                    c => c.experimentalSpladeContext,
+                    false
+                ),
+                createFeatureToggle(
                     'Simple Chat Context',
                     'Experimental',
                     'Enable the new simplifed chat context fetcher',
