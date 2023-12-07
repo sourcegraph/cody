@@ -77,8 +77,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         this.accessToken = token || undefined
         // TODO: Add a "drop token" for sign out
         if (token && this.serviceStarted) {
-            // TODO: Make the cody-engine reply to set-token.
-            void (await this.getService()).request('embeddings/set-token', token)
+            await (await this.getService()).request('embeddings/set-token', token)
         }
     }
 
@@ -143,17 +142,48 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 void vscode.window.showInformationMessage(JSON.stringify(obj))
             }
         })
+        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
+
+        let paths
+        switch (process.platform) {
+            case 'darwin':
+                paths = {
+                    indexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`,
+                    appIndexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/blobstore/buckets/embeddings`,
+                }
+                break
+            case 'linux':
+                paths = {
+                    indexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`,
+                    appIndexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/blobstore/buckets/embeddings`,
+                }
+                break
+            case 'win32':
+                paths = {
+                    indexPath: `${process.env.LOCALAPPDATA}/com.sourcegraph.cody/embeddings`,
+                    // Note, there was no Cody App on Windows, so we do not search for App indexes.
+                }
+                break
+            default:
+                throw new Error(`Unsupported platform: ${process.platform}`)
+        }
+
+        const initResult = await service.request('embeddings/initialize', {
+            codyGatewayEndpoint: 'https://cody-gateway.sourcegraph.com/v1/embeddings',
+            ...paths,
+        })
         logDebug(
             'LocalEmbeddingsController',
             'spawnAndBindService',
-            'service started, token available?',
+            'initialized',
+            initResult,
+            'token available?',
             !!this.accessToken
         )
+
         if (this.accessToken) {
             // Set the initial access token
-            // cody-engine does not reply to this, but we just need it to
-            // happen in order.
-            void service.request('embeddings/set-token', this.accessToken)
+            await service.request('embeddings/set-token', this.accessToken)
         }
         this.serviceStarted = true
         this.changeEmitter.fire(this)
@@ -286,7 +316,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private async eagerlyLoad(repoPath: string): Promise<boolean> {
         this.lastRepo = {
             path: repoPath,
-            loadResult: await (await this.getService()).request('embeddings/load', repoPath),
+            loadResult: !!(await (await this.getService()).request('embeddings/load', repoPath)),
         }
         this.statusEmitter.fire(this)
         return this.lastRepo.loadResult
