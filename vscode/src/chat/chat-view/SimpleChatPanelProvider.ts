@@ -368,7 +368,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async onInitialized(): Promise<void> {
         await this.restoreSession(this.sessionID)
         await this.postChatModels()
-        await this.saveAndPostHistory()
+        await this.saveSession()
         await this.postCodyCommands()
     }
 
@@ -388,10 +388,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (!oldTranscript) {
             return
         }
-
-        if (sessionID !== this.sessionID) {
-            await this.saveSession()
-        }
         this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.defaultModelID)
         this.chatModel = newModel
@@ -400,15 +396,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.postViewTranscript()
     }
 
-    public async saveSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
+    public async saveSession(humanInput?: string): Promise<void> {
+        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON(), humanInput)
+        if (allHistory) {
+            void this.webview?.postMessage({
+                type: 'history',
+                messages: allHistory,
+            })
         }
-        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON())
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: allHistory,
-        })
         await this.treeView.updateTree(createCodyChatTreeItems())
     }
 
@@ -477,6 +472,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ? createDisplayTextWithFileLinks(userContextFiles, text)
             : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
         this.chatModel.addHumanMessage({ text }, displayText)
+        await this.saveSession(displayText)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant', text: '' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
@@ -697,19 +693,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Send user history to webview, which included chat history and chat input history.
-     */
-    private async saveAndPostHistory(humanInput?: string): Promise<void> {
-        if (humanInput) {
-            await this.history.saveHumanInputHistory(humanInput)
-        }
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: this.history.localHistory,
-        })
-    }
-
-    /**
      * Finalizes adding a bot message to the chat model, with guardrails, and triggers an
      * update to the view.
      */
@@ -910,6 +893,7 @@ class ContextProvider implements IContextProvider {
         let localEmbeddingsError
         let remoteEmbeddingsError
 
+        searchContext.push(...(await this.getReadmeContext()))
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
         const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
@@ -1107,14 +1091,10 @@ class ContextProvider implements IContextProvider {
     }
 
     private async getReadmeContext(): Promise<ContextItem[]> {
-        let readmeUri
-        const patterns = ['README', 'README.*', 'Readme.*', 'readme.*']
-        for (const pattern of patterns) {
-            const files = await vscode.workspace.findFiles(pattern)
-            if (files.length > 0) {
-                readmeUri = files[0]
-            }
-        }
+        // global pattern for readme file
+        const readmeGlobalPattern = '{README,readme,Readme}.*'
+        const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
+        console.log(readmeUri, 'readmeUri')
         if (!readmeUri) {
             return []
         }
