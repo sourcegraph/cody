@@ -57,7 +57,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             e.message,
                             upgradeIsAvailable,
                             limit ? parseInt(limit, 10) : undefined,
-                            retryAfter ? new Date(retryAfter) : undefined
+                            retryAfter
                         )
                         cb.onError(error, res.statusCode)
                     } else {

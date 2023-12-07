@@ -8,7 +8,13 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Chat: Always include selection in Enhanced Context. [pull/2144](https://github.com/sourcegraph/cody/pull/2144)
+- Chat: Fix abort. [pull/2159](https://github.com/sourcegraph/cody/pull/2159)
+- Autocomplete: Fix rate limits messages for short time spans. [pull/2152](https://github.com/sourcegraph/cody/pull/2152)
+
 ### Changed
+
+- Chat: Improve slash command heading padding. [pull/2173](https://github.com/sourcegraph/cody/pull/2173)
 
 ## [0.18.0]
 

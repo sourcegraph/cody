@@ -9,6 +9,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 
 import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
@@ -34,7 +35,8 @@ export class ChatManager implements vscode.Disposable {
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
         private embeddingsClient: CachedRemoteEmbeddingsClient,
-        private localEmbeddings: LocalEmbeddingsController | null
+        private localEmbeddings: LocalEmbeddingsController | null,
+        private symf: SymfRunner | null
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -49,7 +51,8 @@ export class ChatManager implements vscode.Disposable {
             this.options,
             this.chatClient,
             this.embeddingsClient,
-            this.localEmbeddings
+            this.localEmbeddings,
+            this.symf
         )
 
         // Register Commands

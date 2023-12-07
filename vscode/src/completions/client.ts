@@ -113,7 +113,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 await response.text(),
                 upgradeIsAvailable,
                 limit ? parseInt(limit, 10) : undefined,
-                retryAfter ? new Date(retryAfter) : undefined
+                retryAfter
             )
         }
 
