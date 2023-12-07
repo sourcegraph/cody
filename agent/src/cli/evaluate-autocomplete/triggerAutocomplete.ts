@@ -34,11 +34,16 @@ export interface AutocompleteParameters {
 export async function triggerAutocomplete(parameters: AutocompleteParameters): Promise<void> {
     const { range, client, document, modifiedContent, autocompleteKind, removedContent, position, emptyMatchContent } =
         parameters
-    client.notify('textDocument/didChange', { uri: document.uri.toString(), content: modifiedContent })
+    client.notify('textDocument/didChange', {
+        uri: document.uri.toString(),
+        filePath: document.uri.fsPath,
+        content: modifiedContent,
+    })
     let result: AutocompleteResult
     try {
         result = await client.request('autocomplete/execute', {
             uri: document.uri.toString(),
+            filePath: document.uri.fsPath,
             position,
             // We don't use the "automatic" trigger to avoid certain code paths like
             // synthetic latency when acceptance rate is low.
