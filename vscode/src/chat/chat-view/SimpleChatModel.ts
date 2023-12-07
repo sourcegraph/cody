@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { errorToChatError } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
@@ -72,7 +73,7 @@ export class SimpleChatModel {
         })
     }
 
-    public addErrorAsBotMessage(error: ChatError): void {
+    public addErrorAsBotMessage(error: Error): void {
         const lastMessage = this.messagesWithContext.at(-1)?.message
         const lastAssistantMessage = lastMessage?.speaker === 'assistant' ? lastMessage : undefined
         // Remove the last assistant message
@@ -81,7 +82,7 @@ export class SimpleChatModel {
         }
         // Then add a new assistant message with error added
         this.messagesWithContext.push({
-            error,
+            error: errorToChatError(error),
             message: {
                 ...lastAssistantMessage,
                 speaker: 'assistant',
