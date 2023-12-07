@@ -3,7 +3,10 @@ import { ConfigurationWithAccessToken } from '../../configuration'
 import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
 export interface CompletionLogger {
-    startCompletion(params: CompletionParameters | {}):
+    startCompletion(
+        params: CompletionParameters | {},
+        endpoint: string
+    ):
         | undefined
         | {
               onError: (error: string) => void

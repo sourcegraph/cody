@@ -184,6 +184,25 @@ const register = async (
 
     disposables.push(new CodeActionProvider({ contextProvider }))
 
+    let oldConfig = JSON.stringify(initialConfig)
+    function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
+        if (oldConfig === JSON.stringify(newConfig)) {
+            return
+        }
+        oldConfig = JSON.stringify(newConfig)
+
+        featureFlagProvider.syncAuthStatus()
+        graphqlClient.onConfigurationChange(newConfig)
+        contextProvider.onConfigurationChange(newConfig)
+        externalServicesOnDidConfigurationChange(newConfig)
+        void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+        platform.onConfigurationChange?.(newConfig)
+        symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+        void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+        embeddingsClient.updateConfiguration(newConfig)
+        setupAutocomplete()
+    }
+
     // Register tree views
     disposables.push(
         chatManager,
@@ -193,8 +212,7 @@ const register = async (
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
-            externalServicesOnDidConfigurationChange(newConfig)
-            await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+            onConfigurationChange(newConfig)
         })
     )
 
@@ -211,7 +229,9 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        // Update context provider first since it will also update the configuration
         await contextProvider.syncAuthStatus()
+
         featureFlagProvider.syncAuthStatus()
         await chatManager.syncAuthStatus(authStatus)
 
@@ -225,6 +245,8 @@ const register = async (
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
+
+        setupAutocomplete()
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
@@ -449,7 +471,7 @@ const register = async (
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = (): void => {
+    function setupAutocomplete(): void {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
@@ -485,15 +507,6 @@ const register = async (
             })
     }
 
-    // Reload autocomplete if either the configuration changes or the auth status is updated
-    vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('cody.autocomplete')) {
-            setupAutocomplete()
-        }
-    })
-    authProvider.addChangeListener(() => {
-        setupAutocomplete()
-    })
     setupAutocomplete()
 
     if (initialConfig.experimentalGuardrails) {
@@ -524,16 +537,7 @@ const register = async (
 
     return {
         disposable: vscode.Disposable.from(...disposables),
-        onConfigurationChange: newConfig => {
-            graphqlClient.onConfigurationChange(newConfig)
-            contextProvider.onConfigurationChange(newConfig)
-            externalServicesOnDidConfigurationChange(newConfig)
-            void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
-            platform.onConfigurationChange?.(newConfig)
-            symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
-            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-            embeddingsClient.updateConfiguration(newConfig)
-        },
+        onConfigurationChange,
     }
 }
 
