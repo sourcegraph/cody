@@ -12,7 +12,7 @@ export interface ContextStatusProvider {
 // Plain data types for describing context status. These are shared between
 // the VScode webviews, the VScode extension, and cody-shared.
 
-export type ContextProvider = EmbeddingsProvider | GraphProvider | SearchProvider | SpladeProvider
+export type ContextProvider = EmbeddingsProvider | GraphProvider | SearchProvider | SymfProvider
 
 type EmbeddingsProvider = IndeterminateEmbeddingsProvider | LocalEmbeddingsProvider | RemoteEmbeddingsProvider
 
@@ -46,8 +46,8 @@ interface SearchProvider {
     state: 'indeterminate' | 'indexing' | 'ready'
 }
 
-interface SpladeProvider {
-    kind: 'splade'
+interface SymfProvider {
+    kind: 'symf'
     type: 'local' | 'remote'
     state: 'indeterminate' | 'indexing' | 'ready'
 }

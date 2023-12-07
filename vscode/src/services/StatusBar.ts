@@ -128,11 +128,11 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
-                    'SPLADE context',
+                    'Symf Context',
                     'Experimental',
-                    'Enable context fetched via SPLADE',
-                    'cody.experimental.spladeContext',
-                    c => c.experimentalSpladeContext,
+                    'Enable context fetched via symf',
+                    'cody.experimental.symfContext',
+                    c => c.experimentalSymfContext,
                     false
                 ),
                 createFeatureToggle(

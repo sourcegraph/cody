@@ -43,7 +43,7 @@ export type Config = Pick<
     | 'experimentalGuardrails'
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
-    | 'experimentalSpladeContext'
+    | 'experimentalSymfContext'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
 >

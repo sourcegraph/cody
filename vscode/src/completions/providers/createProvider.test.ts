@@ -27,7 +27,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
-    experimentalSpladeContext: false,
+    experimentalSymfContext: false,
     codeActions: true,
     isRunningInsideAgent: false,
     debugEnable: false,
