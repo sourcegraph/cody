@@ -773,15 +773,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             if (!recipeMessages) {
                 return
             }
-            await this.clearAndRestartSession()
-            const { humanMessage, prompt } = recipeMessages
             const displayText = this.editor.getActiveTextEditorSelection()
                 ? createDisplayTextWithFileSelection(humanChatInput, this.editor.getActiveTextEditorSelection())
                 : humanChatInput
+            const { humanMessage, prompt } = recipeMessages
             this.chatModel.addHumanMessage(humanMessage.message, displayText)
             if (humanMessage.newContextUsed) {
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
+            await this.saveSession()
             this.postViewTranscript()
 
             this.sendLLMRequest(prompt, {
