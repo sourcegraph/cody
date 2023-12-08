@@ -2,8 +2,8 @@ import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/Featur
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { releaseNotesURL, releaseType, version } from '../version'
 
-import { getProcessInfo } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
@@ -85,12 +85,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
     },
     {
-        title: 'Release Notes',
-        description: `v${getProcessInfo().extensionVersion}`,
+        title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
+        description: `v${version}`,
         icon: 'github',
         command: {
             command: 'vscode.open',
-            args: [`https://github.com/sourcegraph/cody/releases/tag/vscode-v${getProcessInfo().extensionVersion}`],
+            args: [releaseNotesURL(version)],
         },
     },
     {
