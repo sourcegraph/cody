@@ -1,4 +1,4 @@
-import { basename, dirname } from 'path'
+import path, { basename, dirname } from 'path'
 
 import fuzzysort from 'fuzzysort'
 import { throttle } from 'lodash'
@@ -44,6 +44,12 @@ export async function getFileContextFiles(
 
     if (!uris) {
         return []
+    }
+
+    // On Windows, if the user has typed forward slashes, map them to backslashes before
+    // running the search so they match the real paths.
+    if (path.sep === path.win32.sep) {
+        query = query.replaceAll(path.posix.sep, path.win32.sep)
     }
 
     const results = fuzzysort.go(query, uris, {

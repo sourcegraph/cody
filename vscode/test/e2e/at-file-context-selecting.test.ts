@@ -1,3 +1,5 @@
+import path from 'path'
+
 import { expect } from '@playwright/test'
 
 import { sidebarSignin } from './common'
@@ -33,6 +35,16 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
+
+    // Forward slashes work
+    await chatInput.fill('@lib/batches/env')
+    await expect(chatPanelFrame.getByRole('button', { name: 'lib/batches/env/var.go' })).toBeVisible()
+
+    // Backslashes work on Windows
+    if (path.sep === path.win32.sep) {
+        await chatInput.fill('@lib\\batches\\env')
+        await expect(chatPanelFrame.getByRole('button', { name: 'lib/batches/env/var.go' })).toBeVisible()
+    }
 
     // Keyboard nav
     await chatInput.type('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
