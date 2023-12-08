@@ -2,9 +2,10 @@ import assert from 'assert'
 import { execSync, spawn } from 'child_process'
 import path from 'path'
 
-import { afterAll, beforeAll, describe, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
+import { ChatMessage } from '@sourcegraph/cody-shared'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { MessageHandler } from './jsonrpc-alias'
@@ -41,35 +42,30 @@ export class TestClient extends MessageHandler {
 }
 
 const dotcom = 'https://sourcegraph.com'
-const clients: { name: string; clientInfo: ClientInfo }[] = [
-    {
-        name: 'FullConfig',
-        clientInfo: {
-            name: 'test-client',
-            version: 'v1',
-            workspaceRootUri: 'file:///path/to/foo',
-            workspaceRootPath: '/path/to/foo',
-            extensionConfiguration: {
-                anonymousUserID: 'abcde1234',
-                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: dotcom,
-                customHeaders: {},
-                autocompleteAdvancedProvider: 'anthropic',
-                autocompleteAdvancedAccessToken: '',
-                autocompleteAdvancedServerEndpoint: '',
-                debug: false,
-                verboseDebug: false,
-            },
-        },
+const clientInfo: ClientInfo = {
+    name: 'test-client',
+    version: 'v1',
+    workspaceRootUri: 'file:///path/to/foo',
+    workspaceRootPath: '/path/to/foo',
+    extensionConfiguration: {
+        anonymousUserID: 'abcde1234',
+        accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
+        serverEndpoint: dotcom,
+        customHeaders: {},
+        autocompleteAdvancedProvider: 'anthropic',
+        autocompleteAdvancedAccessToken: '',
+        autocompleteAdvancedServerEndpoint: '',
+        debug: false,
+        verboseDebug: false,
     },
-]
+}
 
 const cwd = process.cwd()
 const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 const recordingDirectory = path.join(agentDir, 'recordings')
 const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo }) => {
+describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
     // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
     // post in #wg-cody-agent to let the team know the tests have been disabled so that we can
@@ -79,8 +75,8 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
     //     return
     // }
 
-    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
-        it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
+    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
+        it('Agent tests are skipped due to VITEST_ONLY environment variable', () => {})
         return
     }
     const client = new TestClient()
@@ -104,7 +100,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
             CODY_SHIM_TESTING: 'true',
             CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
             CODY_RECORDING_DIRECTORY: recordingDirectory,
-            CODY_RECORDING_NAME: name,
+            CODY_RECORDING_NAME: 'FullConfig',
             ...process.env,
         },
     })
@@ -158,6 +154,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
         assert(completions.items.length > 0, 'Completions should not be empty')
     }, 10_000)
 
+    const messages: ChatMessage[] = []
     const streamingChatMessages = new Promise<void>((resolve, reject) => {
         let hasReceivedNonNullMessage = false
         let isResolved = false
@@ -173,6 +170,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
                     reject(new Error('Received null message before non-null message'))
                 }
             } else {
+                messages.push(msg)
                 hasReceivedNonNullMessage = true
             }
         })
@@ -183,7 +181,17 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
     }, 20_000)
 
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
-    it('executing a recipe sends chat/updateMessageInProgress notifications', () => streamingChatMessages, 100)
+    it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
+        await streamingChatMessages
+        expect(messages.slice(-1)).toMatchInlineSnapshot(`
+          [
+            {
+              "speaker": "assistant",
+              "text": " I apologize, but without any context about the programming language, project, or problem you are working on, I do not have enough information to provide a specific implementation of a \`sum\` function. If you can provide more details about the task and goals, I would be happy to try assisting further. As an AI assistant, I aim to avoid making assumptions or providing misleading information when the context is unclear. Please let me know if there are any details you can add that would help me understand the problem space, so I can try to offer a relevant code sample or explanation for implementing \`sum\`.",
+            },
+          ]
+        `)
+    }, 100)
 
     it('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
