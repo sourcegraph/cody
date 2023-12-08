@@ -273,6 +273,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
 
         let wasCancelled = false
+        let onExit: (() => void) | undefined
         try {
             const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
                 env: {
@@ -282,6 +283,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 stdio: ['ignore', 'ignore', 'ignore'],
                 timeout: 1000 * 60 * 10, // timeout in 10 minutes
             })
+            onExit = () => {
+                proc.kill('SIGKILL')
+            }
+            process.on('exit', onExit)
 
             if (cancellationToken.isCancellationRequested) {
                 wasCancelled = true
@@ -314,6 +319,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             }
             throw toSymfError(error)
         } finally {
+            if (onExit) {
+                process.removeListener('exit', onExit)
+            }
             disposeOnFinish.forEach(d => d.dispose())
             await rm(tmpIndexDir, { recursive: true, force: true })
         }
