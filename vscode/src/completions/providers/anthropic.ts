@@ -198,7 +198,6 @@ export class AnthropicProvider extends Provider {
                     providerOptions: this.options,
                     onCompletionReady: onCompletionReadyImpl,
                     onHotStreakCompletionReady,
-                    emitHotStreak: !multiline,
                 })
             })
         )

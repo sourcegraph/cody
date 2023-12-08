@@ -222,7 +222,6 @@ export class FireworksProvider extends Provider {
                     providerOptions: this.options,
                     onCompletionReady: onCompletionReadyImpl,
                     onHotStreakCompletionReady,
-                    emitHotStreak: !multiline,
                 })
             })
         )

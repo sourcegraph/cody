@@ -161,7 +161,6 @@ ${OPENING_CODE_TAG}${infillBlock}`
                     providerOptions: this.options,
                     onCompletionReady: onCompletionReadyImpl,
                     onHotStreakCompletionReady,
-                    emitHotStreak: !multiline,
                 })
             })
         )
