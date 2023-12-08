@@ -98,6 +98,7 @@ export interface InlineCompletionsResult {
 export enum InlineCompletionsResultSource {
     Network = 'Network',
     Cache = 'Cache',
+    HotStreak = 'HotStreak',
     CacheAfterRequestStart = 'CacheAfterRequestStart',
 
     /**
@@ -297,19 +298,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Get the processed completions from providers
-    const { completions, cacheHit } = await requestManager.request(
+    const { completions, source } = await requestManager.request(
         reqContext,
         completionProviders,
         contextResult?.context ?? [],
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
-
-    const source =
-        cacheHit === 'hit'
-            ? InlineCompletionsResultSource.Cache
-            : cacheHit === 'hit-after-request-started'
-            ? InlineCompletionsResultSource.CacheAfterRequestStart
-            : InlineCompletionsResultSource.Network
 
     CompletionLogger.loaded(logId, reqContext, completions, source)
 

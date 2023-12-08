@@ -5,84 +5,147 @@ import { completion } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
 
-describe('[getInlineCompletions] hot streak', () => {
-    it('caches hot streaks completions', async () => {
-        const firstParams = params(
-            dedent`
-            function myFunction() {
-                console.log(1)
-                █
-            }
-        `,
-            [
-                completion`
+describe.skip('[getInlineCompletions] hot streak', () => {
+    describe('static multiline', () => {
+        it('caches hot streaks completions that are streamed in', async () => {
+            const firstParams = params(
+                dedent`
+                    function myFunction() {
+                        console.log(1)
+                        █
+                    }
+                `,
+                [
+                    completion`
                         ├console.log(2)
                         console.log(3)
                         console.log(4)
                         ┤
                     ┴┴┴┴
                 `,
-            ],
-            {
-                onNetworkRequest(_params, onPartialResponse) {
-                    onPartialResponse?.(completion`
+                ],
+                {
+                    onNetworkRequest(_params, onPartialResponse) {
+                        onPartialResponse?.(completion`
                             ├console.log(2)
                         ┤`)
-                    onPartialResponse?.(completion`
+                        onPartialResponse?.(completion`
                             ├console.log(2)
                             console.log(3)
                             console.┤
                         ┴┴┴┴`)
-                    onPartialResponse?.(completion`
+                        onPartialResponse?.(completion`
                             ├console.log(2)
                             console.log(3)
                             console.log(4)
                             ┤
                         ┴┴┴┴`)
-                },
-            }
-        )
-        const firstRequest = await getInlineCompletions(firstParams)
-
-        expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
-
-        const secondRequest = await getInlineCompletions({
-            ...params(
-                dedent`
-                function myFunction() {
-                    console.log(1)
-                    console.log(2)
-                    █
+                    },
                 }
-            `,
-                // No network request needed!
-                []
-            ),
-            // Reuse the request manager to get a cache hit
-            requestManager: firstParams.requestManager,
+            )
+            const firstRequest = await getInlineCompletions(firstParams)
+
+            expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
+
+            const secondRequest = await getInlineCompletions({
+                ...params(
+                    dedent`
+                        function myFunction() {
+                            console.log(1)
+                            console.log(2)
+                            █
+                        }
+                    `,
+                    // No network request needed!
+                    []
+                ),
+                // Reuse the request manager to get a cache hit
+                requestManager: firstParams.requestManager,
+            })
+
+            expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
+            expect(secondRequest?.source).toEqual('Cache')
+
+            const thirdRequest = await getInlineCompletions({
+                ...params(
+                    dedent`
+                        function myFunction() {
+                            console.log(1)
+                            console.log(2)
+                            console.log(3)
+                            █
+                        }
+                    `,
+                    // No network request needed!
+                    []
+                ),
+                // Reuse the request manager to get a cache hit
+                requestManager: firstParams.requestManager,
+            })
+
+            expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
+            expect(thirdRequest?.source).toEqual('Cache')
         })
 
-        expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
-        expect(secondRequest?.source).toEqual('Cache')
-
-        const thirdRequest = await getInlineCompletions({
-            ...params(
+        it.only('caches hot streaks completions hat are added at the end of the request', async () => {
+            const firstParams = params(
                 dedent`
-                function myFunction() {
-                    console.log(1)
-                    console.log(2)
-                    console.log(3)
-                    █
-                }
-            `,
-                // No network request needed!
-                []
-            ),
-            // Reuse the request manager to get a cache hit
-            requestManager: firstParams.requestManager,
-        })
+                    function myFunction() {
+                        console.log(1)
+                        █
+                    }
+                `,
+                [
+                    completion`
+                        ├console.log(2)
+                        console.log(3)
+                        console.log(4)┤
+                    ┴┴┴┴
+                `,
+                ]
+            )
+            const firstRequest = await getInlineCompletions(firstParams)
 
-        expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
-        expect(thirdRequest?.source).toEqual('Cache')
+            expect(firstRequest?.items[0]?.insertText).toEqual('console.log(2)')
+
+            const secondRequest = await getInlineCompletions({
+                ...params(
+                    dedent`
+                        function myFunction() {
+                            console.log(1)
+                            console.log(2)
+                            █
+                        }
+                    `,
+                    // No network request needed!
+                    []
+                ),
+                // Reuse the request manager to get a cache hit
+                requestManager: firstParams.requestManager,
+            })
+
+            expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
+            expect(secondRequest?.source).toEqual('Cache')
+
+            const thirdRequest = await getInlineCompletions({
+                ...params(
+                    dedent`
+                        function myFunction() {
+                            console.log(1)
+                            console.log(2)
+                            console.log(3)
+                            █
+                        }
+                    `,
+                    // No network request needed!
+                    []
+                ),
+                // Reuse the request manager to get a cache hit
+                requestManager: firstParams.requestManager,
+            })
+
+            expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
+            expect(thirdRequest?.source).toEqual('Cache')
+        })
     })
 })

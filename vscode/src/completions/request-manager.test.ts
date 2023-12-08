@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
+import { InlineCompletionsResultSource } from './get-inline-completions'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
@@ -78,10 +79,10 @@ describe('RequestManager', () => {
 
         setTimeout(() => provider.resolveRequest(["'hello')"]), 0)
 
-        const { completions, cacheHit } = await createRequest(prefix, provider)
+        const { completions, source } = await createRequest(prefix, provider)
 
         expect(completions[0].insertText).toBe("'hello')")
-        expect(cacheHit).toBeNull()
+        expect(source).toBe(InlineCompletionsResultSource.Network)
     })
 
     it('resolves a single request', async () => {
@@ -92,9 +93,9 @@ describe('RequestManager', () => {
 
         const provider2 = createProvider(prefix)
 
-        const { completions, cacheHit } = await createRequest(prefix, provider2)
+        const { completions, source } = await createRequest(prefix, provider2)
 
-        expect(cacheHit).toBe('hit')
+        expect(source).toBe(InlineCompletionsResultSource.Cache)
         expect(completions[0].insertText).toBe("'hello')")
     })
 
@@ -109,9 +110,9 @@ describe('RequestManager', () => {
         const provider2 = createProvider(prefix)
         setTimeout(() => provider2.resolveRequest(["'world')"]), 0)
 
-        const { completions, cacheHit } = await createRequest(prefix, provider2, suffix2)
+        const { completions, source } = await createRequest(prefix, provider2, suffix2)
 
-        expect(cacheHit).toBeNull()
+        expect(source).toBe(InlineCompletionsResultSource.Network)
         expect(completions[0].insertText).toBe("'world')")
     })
 
@@ -154,9 +155,9 @@ describe('RequestManager', () => {
         provider1.resolveRequest(["log('hello')"])
 
         expect((await promise1).completions[0].insertText).toBe("log('hello')")
-        const { completions, cacheHit } = await promise2
+        const { completions, source } = await promise2
         expect(completions[0].insertText).toBe("'hello')")
-        expect(cacheHit).toBe('hit-after-request-started')
+        expect(source).toBe(InlineCompletionsResultSource.CacheAfterRequestStart)
 
         expect(provider1.didFinishNetworkRequest).toBe(true)
         expect(provider2.didFinishNetworkRequest).toBe(false)

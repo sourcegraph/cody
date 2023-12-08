@@ -34,7 +34,7 @@ export interface RequestParams {
 
 export interface RequestManagerResult {
     completions: InlineCompletionItemWithAnalytics[]
-    cacheHit: 'hit' | 'hit-after-request-started' | null
+    source: InlineCompletionsResultSource
 }
 
 /**
@@ -72,7 +72,7 @@ export class RequestManager {
     ): Promise<RequestManagerResult> {
         const cachedCompletions = this.cache.get(params)
         if (cachedCompletions) {
-            return { completions: cachedCompletions, cacheHit: 'hit' }
+            return cachedCompletions
         }
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
@@ -95,7 +95,13 @@ export class RequestManager {
                             context,
                             resolve,
                             (docContext, hotStreakCompletions) => {
-                                this.cache.set({ docContext }, [hotStreakCompletions])
+                                this.cache.set(
+                                    { docContext },
+                                    {
+                                        completions: [hotStreakCompletions],
+                                        source: InlineCompletionsResultSource.HotStreak,
+                                    }
+                                )
                             },
                             tracer
                         )
@@ -112,11 +118,14 @@ export class RequestManager {
             })
             .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.
-                this.cache.set(params, processedCompletions)
+                this.cache.set(params, {
+                    completions: processedCompletions,
+                    source: InlineCompletionsResultSource.Cache,
+                })
 
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.
-                request.resolve({ completions: processedCompletions, cacheHit: null })
+                request.resolve({ completions: processedCompletions, source: InlineCompletionsResultSource.Network })
 
                 if (!this.disableRecyclingOfPreviousRequests) {
                     this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
@@ -180,7 +189,10 @@ export class RequestManager {
                 const synthesizedItems = synthesizedCandidate.items
 
                 logCompletionBookkeepingEvent('synthesizedFromParallelRequest')
-                request.resolve({ completions: synthesizedItems, cacheHit: 'hit-after-request-started' })
+                request.resolve({
+                    completions: synthesizedItems,
+                    source: InlineCompletionsResultSource.CacheAfterRequestStart,
+                })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }
@@ -209,18 +221,24 @@ class InflightRequest {
     }
 }
 
+interface RequestCacheItem {
+    completions: InlineCompletionItemWithAnalytics[]
+    source: InlineCompletionsResultSource
+}
 class RequestCache {
-    private cache = new LRUCache<string, InlineCompletionItemWithAnalytics[]>({ max: 50 })
+    private cache = new LRUCache<string, RequestCacheItem>({
+        max: 50,
+    })
 
     private toCacheKey(key: Pick<RequestParams, 'docContext'>): string {
         return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
     }
-    public get(key: RequestParams): InlineCompletionItemWithAnalytics[] | undefined {
+    public get(key: RequestParams): RequestCacheItem | undefined {
         return this.cache.get(this.toCacheKey(key))
     }
 
-    public set(key: Pick<RequestParams, 'docContext'>, entry: InlineCompletionItemWithAnalytics[]): void {
-        this.cache.set(this.toCacheKey(key), entry)
+    public set(key: Pick<RequestParams, 'docContext'>, item: RequestCacheItem): void {
+        this.cache.set(this.toCacheKey(key), item)
     }
 
     public delete(key: RequestParams): void {
