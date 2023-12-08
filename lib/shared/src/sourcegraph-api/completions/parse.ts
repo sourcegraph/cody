@@ -5,6 +5,7 @@ import { Event } from './types'
 const EVENT_LINE_PREFIX = 'event: '
 const DATA_LINE_PREFIX = 'data: '
 const EVENTS_SEPARATOR = '\n\n'
+export const LLAMA_ERROR_PREFIX = 'error: '
 
 function parseEventType(eventLine: string): Event['type'] | Error {
     if (!eventLine.startsWith(EVENT_LINE_PREFIX)) {

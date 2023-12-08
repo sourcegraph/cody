@@ -6,7 +6,7 @@ import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
-import { parseSSEData } from './parse'
+import { parseSSEData, LLAMA_ERROR_PREFIX } from './parse'
 import { CompletionCallbacks, CompletionParameters, withPrompt } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
@@ -80,6 +80,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
                     bufferBin = buf
                     console.log('recv:', str)
+                    if (str.startsWith(LLAMA_ERROR_PREFIX)) {
+                        return 
+                    }
                     const event = parseSSEData(bufferText == '' ? str : bufferText + str)
                     if (isError(event)) {
                         console.error(event)
@@ -90,6 +93,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         completionText += event.completion
                         event.completion = completionText
                     }
+                    console.log('event', event)
                     bufferText = ''
                     this.sendEvents([event], cb)
                 })
