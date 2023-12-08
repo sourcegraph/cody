@@ -69,7 +69,7 @@ export const ChatRateLimitFree: Story = {
 
 export const ChatRateLimitPro: Story = {
     args: {
-        error: new RateLimitError('chat messages and commands', 'thing', false, 20, String(60 * 60 * 24 * 5)), // 5 days
+        error: new RateLimitError('chat messages and commands', 'thing', false, 500, String(60 * 60 * 24 * 5)), // 5 days
         postMessage: () => {},
         userInfo: {
             isDotComUser: true,

@@ -7,7 +7,10 @@ function formatRetryAfterDate(retryAfterDate: Date): string {
     if (differenceInDays(retryAfterDate, now) < 7) {
         return `Usage will reset ${formatRelative(retryAfterDate, now)}`
     }
-    return `Usage will reset in ${formatDistanceStrict(retryAfterDate, now)} (${format(retryAfterDate, 'P')} at ${format(retryAfterDate, 'p')})`
+    return `Usage will reset in ${formatDistanceStrict(retryAfterDate, now)} (${format(
+        retryAfterDate,
+        'P'
+    )} at ${format(retryAfterDate, 'p')})`
 }
 
 export class RateLimitError extends Error {
