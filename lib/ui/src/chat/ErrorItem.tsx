@@ -120,7 +120,7 @@ export const RateLimitErrorItem: React.FunctionComponent<{
                         />
                     </div>
                 )}
-                <p className={styles.retryMessage}>{error.retryMessage?.replace(/\.$/, '')}</p>
+                {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
             </div>
             {canUpgrade && (
                 <div className={styles.bannerContainer}>

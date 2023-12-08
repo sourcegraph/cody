@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -501,6 +501,15 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     describe('error reporting', () => {
+        beforeEach(() => {
+            vi.useFakeTimers()
+            vi.setSystemTime(new Date(2000, 1, 1, 13, 0 , 0, 0))
+        })
+
+        afterEach(() => {
+            vi.useRealTimers()
+        })
+
         it('reports standard rate limit errors to the user once', async () => {
             const { document, position } = documentAndPosition('█')
             const fn = vi
@@ -515,7 +524,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(addError).toHaveBeenCalledWith(
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                    description: "You've used all 1234 autocompletions for today. Usage will reset in 1 day.",
+                    description: "You've used all 1234 autocompletions for the month. Usage will reset tomorrow at 1:00 PM",
                 })
             )
 
@@ -543,7 +552,7 @@ describe('InlineCompletionItemProvider', () => {
                         title: canUpgrade
                             ? 'Upgrade to Continue Using Cody Autocomplete'
                             : 'Cody Autocomplete Disabled Due to Rate Limit',
-                        description: "You've used all 1234 autocompletions for today.",
+                        description: "You've used all 1234 autocompletions for the month.",
                     })
                 )
 

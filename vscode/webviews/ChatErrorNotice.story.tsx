@@ -57,7 +57,7 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 
 export const ChatRateLimitFree: Story = {
     args: {
-        error: new RateLimitError('chat messages and commands', 'thing', true, 10, '50000'),
+        error: new RateLimitError('chat messages and commands', 'thing', true, 20, String(60 * 60 * 24 * 25)), // 25 days
         postMessage: () => {},
         userInfo: {
             isDotComUser: true,
@@ -69,7 +69,7 @@ export const ChatRateLimitFree: Story = {
 
 export const ChatRateLimitPro: Story = {
     args: {
-        error: new RateLimitError('chat messages and commands', 'thing', false, 10, '50000'),
+        error: new RateLimitError('chat messages and commands', 'thing', false, 20, String(60 * 60 * 24 * 5)), // 5 days
         postMessage: () => {},
         userInfo: {
             isDotComUser: true,
