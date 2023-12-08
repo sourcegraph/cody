@@ -516,7 +516,9 @@ describe('InlineCompletionItemProvider', () => {
                 .fn(getInlineCompletions)
                 .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', false, 1234, '86400'))
             const addError = vi.fn()
-            const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                statusBar: { addError, hasError: () => addError.mock.calls.length } as any,
+            })
 
             await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                 'rate limited oh no'
@@ -543,7 +545,9 @@ describe('InlineCompletionItemProvider', () => {
                     .fn(getInlineCompletions)
                     .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', canUpgrade, 1234))
                 const addError = vi.fn()
-                const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
+                const provider = new MockableInlineCompletionItemProvider(fn, {
+                    statusBar: { addError, hasError: () => addError.mock.calls.length } as any,
+                })
 
                 await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                     'rate limited oh no'
@@ -569,7 +573,9 @@ describe('InlineCompletionItemProvider', () => {
             let error = new Error('unexpected')
             const fn = vi.fn(getInlineCompletions).mockImplementation(() => Promise.reject(error))
             const addError = vi.fn()
-            const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                statusBar: { addError, hasError: () => addError.mock.calls.length } as any,
+            })
 
             await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                 'unexpected'
