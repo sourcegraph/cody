@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { RateLimitError } from '@sourcegraph/cody-shared'
 import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from '../configuration'
@@ -9,7 +10,7 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
-    errorType: string
+    errorType: string | RateLimitError
     onShow?: () => void
     onSelect?: () => void
 }
@@ -240,7 +241,7 @@ export function createStatusBar(): CodyStatusBar {
             }
         },
         hasError(errorName: string): boolean {
-            return errors.some(e => e.error.errorType == errorName)
+            return errors.some(e => e.error.errorType === errorName)
         },
         dispose() {
             statusBarItem.dispose()

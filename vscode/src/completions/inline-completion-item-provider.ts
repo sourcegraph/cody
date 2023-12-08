@@ -135,7 +135,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     // completions, we use consult this field inside the completion callback instead.
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
-    private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
@@ -580,7 +579,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             if (hasRateLimitError) {
                 return
             }
-            this.resetRateLimitErrorsAfter = error.retryAfterDate?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
+
             const canUpgrade = error.upgradeIsAvailable
             const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
             let errorTitle: string
