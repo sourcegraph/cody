@@ -139,6 +139,46 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
     }
 }
 
+/**
+ * Inserts a completion into a specific document context and computes the updated positions.
+ *
+ * This will insert the completion at the `position` outlined in the document context and will
+ * replace the whole rest of the line with the completion.
+ *
+ * NOTE: This will always move the position to the _end_ of the line that the text was inserted at,
+ *       regardless of wether the text was inserted before the sameLineSuffix.
+ *
+ * TODO: Properly support {@link getRangeAdjustedForOverlappingCharacters}.
+ */
+export function insertIntoDocContext(
+    docContext: DocumentContext,
+    insertText: string,
+    languageId: string,
+    dynamicMultilineCompletions: boolean = false
+): DocumentContext {
+    const { position, prefix, currentLinePrefix, currentLineSuffix, suffix } = docContext
+
+    const insertedLines = lines(insertText)
+
+    let updatedPosition = position
+    if (insertedLines.length <= 1) {
+        updatedPosition = new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
+    } else {
+        updatedPosition = new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
+    }
+
+    return getDerivedDocContext({
+        languageId,
+        position: updatedPosition,
+        dynamicMultilineCompletions,
+        documentDependentContext: {
+            prefix: prefix + insertText,
+            suffix: suffix.slice(currentLineSuffix.length),
+            injectedPrefix: null,
+        },
+    })
+}
+
 export interface LinesContext {
     /** Text before the cursor on the same line. */
     currentLinePrefix: string

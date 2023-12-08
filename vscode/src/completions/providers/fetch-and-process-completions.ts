@@ -1,11 +1,10 @@
 import * as uuid from 'uuid'
-import { Position } from 'vscode'
 
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext, getDerivedDocContext } from '../get-current-doc-context'
+import { DocumentContext, getDerivedDocContext, insertIntoDocContext } from '../get-current-doc-context'
 import { completionPostProcessLogger } from '../post-process-logger'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
@@ -95,8 +94,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                         }
                     } else {
                         /**
-                         * This completion was started without the multline trigger at the end of current line.
-                         * Check if the the first completion line ends with the multline trigger. If that's the case
+                         * This completion was started without the multiline trigger at the end of current line.
+                         * Check if the the first completion line ends with the multiline trigger. If that's the case
                          * continue streaming and pretend like this completion was multiline in the first place:
                          *
                          * 1. Update `docContext` with the `multilineTrigger` value.
@@ -213,14 +212,84 @@ export async function fetchAndProcessDynamicMultilineCompletions(
 
 export async function fetchAndProcessCompletions(params: FetchAndProcessCompletionsParams): Promise<void> {
     const { client, requestParams, abortSignal, providerOptions, providerSpecificPostProcess } = params
-    const { position, document, docContext } = providerOptions
+    const {
+        document: { languageId },
+        docContext,
+    } = providerOptions
 
-    let inHotStreakMode = false
-    let completeCompletion: undefined | InlineCompletionItemWithAnalytics
+    let completedCompletion: undefined | InlineCompletionItemWithAnalytics
 
-    let lastDocumentContext = docContext
-    let lastHotStreakCompletion: InlineCompletionItemWithAnalytics
-    let lastHotStreakLineOffset = 0
+    let updatedDocContext: undefined | DocumentContext
+    let lastInsertedWhitespace: undefined | string
+    let alreadyInsertedLength = 0
+
+    function insertCompletionAndPressEnter(
+        docContext: DocumentContext,
+        completion: InlineCompletionItemWithAnalytics
+    ): DocumentContext {
+        // For a hot streak, we require the completion to be inserted followed by an enter key
+        // Enter will usually insert a line break followed by the same indentation that the
+        // current line has.
+        let updatedDocContext = insertIntoDocContext(docContext, completion.insertText, languageId)
+        lastInsertedWhitespace = '\n' + (updatedDocContext.currentLinePrefix.match(/^([\t ])*/)?.[0] || '')
+        updatedDocContext = insertIntoDocContext(updatedDocContext, lastInsertedWhitespace, languageId)
+
+        alreadyInsertedLength += completion.insertText.length + lastInsertedWhitespace.length
+
+        return updatedDocContext
+    }
+
+    function extractHotStreakCompletions(rawCompletion: string, isRequestEnd: boolean): void {
+        if (!completedCompletion) {
+            throw new Error('Hot streak require a completion to be yielded first')
+        }
+
+        if (!updatedDocContext || !alreadyInsertedLength) {
+            updatedDocContext = insertCompletionAndPressEnter(docContext, completedCompletion)
+        }
+
+        do {
+            const unprocessedCompletion = rawCompletion.slice(alreadyInsertedLength)
+            if (unprocessedCompletion.length <= 0) {
+                break
+            }
+
+            const updatedProviderOptions = {
+                ...providerOptions,
+                docContext: updatedDocContext,
+            }
+
+            const completion = canUsePartialCompletion(unprocessedCompletion, updatedProviderOptions)
+            if (completion) {
+                // If the partial completion logic finds a match, extract this as the next hot streak
+                const processedCompletion = processCompletion(completion, updatedProviderOptions)
+                params.onHotStreakCompletionReady(updatedDocContext, {
+                    ...processedCompletion,
+                    stopReason: 'hot-streak',
+                })
+
+                updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
+            } else if (isRequestEnd) {
+                // If not and we are at processing the last payload, we use the whole remainder for
+                // the completion (this means we will parse the last line even when a \n is missing
+                // at the end)
+                const completion = parseAndTruncateCompletion(unprocessedCompletion, updatedProviderOptions)
+                if (completion.insertText.trim().length <= 0) {
+                    break
+                }
+                const processedCompletion = processCompletion(completion, updatedProviderOptions)
+                params.onHotStreakCompletionReady(updatedDocContext, {
+                    ...processedCompletion,
+                    stopReason: 'hot-streak-end',
+                })
+                updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
+            } else {
+                // If we don't have enough in the remaining completion text to generate a full
+                // hot-streak completion so we yield.
+                break
+            }
+        } while (true)
+    }
 
     // The Async executor is required to return the completion early if a partial result from SSE can be used.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
@@ -230,103 +299,40 @@ export async function fetchAndProcessCompletions(params: FetchAndProcessCompleti
             const result = await client.complete(
                 requestParams,
                 (incompleteResponse: CompletionResponse) => {
-                    const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
-                    const completion = canUsePartialCompletion(initialCompletion, providerOptions)
+                    const rawCompletion = providerSpecificPostProcess(incompleteResponse.completion)
 
-                    if (completion) {
-                        const processedCompletion = processCompletion(completion, providerOptions)
-
-                        if (!completeCompletion) {
-                            completeCompletion = processedCompletion
-                            lastHotStreakCompletion = completeCompletion
+                    if (!completedCompletion) {
+                        const completion = canUsePartialCompletion(rawCompletion, providerOptions)
+                        if (completion) {
+                            const processedCompletion = processCompletion(completion, providerOptions)
+                            completedCompletion = processedCompletion
                             params.onCompletionReady({ ...processedCompletion, stopReason: 'streaming-truncation' })
-                        }
-
-                        if (params.emitHotStreak) {
-                            inHotStreakMode = true
                         } else {
-                            abortController.abort()
+                            // If we don't have a complete completion yet and th current chunk is
+                            // not extracting one, we need to wait longer.
+                            return
                         }
+                    }
 
-                        if (inHotStreakMode) {
-                            const unprocessedLines = completion.insertText
-                                .split('\n')
-                                .slice(lastHotStreakLineOffset)
-                                .join('\n')
-                            const addition = unprocessedLines.slice(
-                                lastHotStreakCompletion.insertText.length + lastDocumentContext.position.character
-                            )
-                            console.log({ unprocessedLines }, addition)
-
-                            const lines = addition.split('\n')
-                            console.log({ lines })
-                            for (const [index, line] of lines.entries()) {
-                                console.log({ lastHotStreakLineOffset, index })
-
-                                // Ignore last line as it might not be finished yet
-                                if (index === lines.length - 1 && !initialCompletion.endsWith('\n')) {
-                                    continue
-                                }
-
-                                // Stop hot-streak when:
-                                // - the next line starts a comment
-                                // - the next line is empty
-                                // - the next line is a repetition of the previous line
-                                if (line.trim() === '') {
-                                    break
-                                }
-
-                                const whitespace = line.match(/^([\t ])*/)?.[0] || ''
-                                const completionWithoutWhitespace = line.slice(whitespace.length)
-
-                                const prefix =
-                                    lastDocumentContext.prefix + lastHotStreakCompletion.insertText + '\n' + whitespace
-
-                                lastDocumentContext = getDerivedDocContext({
-                                    languageId: document.languageId,
-                                    position: new Position(
-                                        position.line + index + lastHotStreakLineOffset,
-                                        whitespace.length
-                                    ),
-                                    dynamicMultilineCompletions: false,
-                                    documentDependentContext: {
-                                        prefix,
-                                        // Remove the characters that are being replaced by the completion
-                                        // to reduce the chances of breaking the parse tree with redundant symbols.
-                                        suffix: docContext.suffix,
-                                        injectedPrefix: null,
-                                    },
-                                })
-
-                                console.log(
-                                    'Preparing a hot-streak for',
-                                    lastDocumentContext.prefix,
-                                    'insertion',
-                                    completionWithoutWhitespace
-                                )
-
-                                lastHotStreakCompletion = {
-                                    ...processedCompletion,
-                                    insertText: completionWithoutWhitespace,
-                                    stopReason: 'hot-streak',
-                                }
-                                lastHotStreakLineOffset++
-                                params.onHotStreakCompletionReady(lastDocumentContext, lastHotStreakCompletion)
-                            }
-                        }
+                    if (params.emitHotStreak) {
+                        extractHotStreakCompletions(rawCompletion, false)
+                    } else {
+                        abortController.abort()
                     }
                 },
                 abortController.signal
             )
 
-            const initialCompletion = providerSpecificPostProcess(result.completion)
-            const completion = parseAndTruncateCompletion(initialCompletion, providerOptions)
+            const rawCompletion = providerSpecificPostProcess(result.completion)
 
-            const processedCompletion = processCompletion(completion, providerOptions)
-
-            if (!completeCompletion) {
+            if (!completedCompletion) {
+                const completion = parseAndTruncateCompletion(rawCompletion, providerOptions)
+                const processedCompletion = processCompletion(completion, providerOptions)
+                completedCompletion = processedCompletion
                 params.onCompletionReady({ ...processedCompletion, stopReason: result.stopReason })
             }
+
+            extractHotStreakCompletions(rawCompletion, true)
 
             resolve()
         } catch (error) {

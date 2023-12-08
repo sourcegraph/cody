@@ -1,11 +1,12 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
+import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
 
-describe.skip('[getInlineCompletions] hot streak', () => {
+describe('[getInlineCompletions] hot streak', () => {
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
             const firstParams = params(
@@ -37,8 +38,7 @@ describe.skip('[getInlineCompletions] hot streak', () => {
                         onPartialResponse?.(completion`
                             ├console.log(2)
                             console.log(3)
-                            console.log(4)
-                            ┤
+                            console.log(4)┤
                         ┴┴┴┴`)
                     },
                 }
@@ -64,7 +64,7 @@ describe.skip('[getInlineCompletions] hot streak', () => {
             })
 
             expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
-            expect(secondRequest?.source).toEqual('Cache')
+            expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
 
             const thirdRequest = await getInlineCompletions({
                 ...params(
@@ -84,10 +84,10 @@ describe.skip('[getInlineCompletions] hot streak', () => {
             })
 
             expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
-            expect(thirdRequest?.source).toEqual('Cache')
+            expect(thirdRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
 
-        it.only('caches hot streaks completions hat are added at the end of the request', async () => {
+        it('caches hot streaks completions that are added at the end of the request', async () => {
             const firstParams = params(
                 dedent`
                     function myFunction() {
@@ -125,7 +125,7 @@ describe.skip('[getInlineCompletions] hot streak', () => {
             })
 
             expect(secondRequest?.items[0]?.insertText).toEqual('console.log(3)')
-            expect(secondRequest?.source).toEqual('Cache')
+            expect(secondRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
 
             const thirdRequest = await getInlineCompletions({
                 ...params(
@@ -145,7 +145,7 @@ describe.skip('[getInlineCompletions] hot streak', () => {
             })
 
             expect(thirdRequest?.items[0]?.insertText).toEqual('console.log(4)')
-            expect(thirdRequest?.source).toEqual('Cache')
+            expect(thirdRequest?.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
     })
 })
