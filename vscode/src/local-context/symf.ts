@@ -225,7 +225,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
-        const absIndexedDir = path.resolve(scopeDir)
+        let absIndexedDir = path.resolve(scopeDir)
+        // On Windows, we can't use an absolute path with a dirve letter inside another path
+        // so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
+        // sub-path in the index.
+        if (path.sep === path.win32.sep && absIndexedDir[1] === ':') {
+            absIndexedDir = absIndexedDir[0] + absIndexedDir.slice(2)
+        }
         return {
             indexDir: path.join(this.indexRoot, absIndexedDir),
             tmpDir: path.join(this.indexRoot, '.tmp', absIndexedDir),
