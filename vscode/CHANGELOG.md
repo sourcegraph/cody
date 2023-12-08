@@ -12,8 +12,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Typing a complete filename when @-mentioning files and then pressing `<tab>` will no longer duplicate the filename [pull/2218](https://github.com/sourcegraph/cody/pull/2218)
 - Autocomplete: Fixes an issue where changing user accounts caused some configuration issues. [pull/2182](https://github.com/sourcegraph/cody/pull/2182)
 - Fixes an issue where focusing the VS Code extension window caused unexpected errors when connected to an Enterprise instance. [pull/2182](https://github.com/sourcegraph/cody/pull/2182)
+- Embeddings: Send embeddings/initialize to the local embeddings controller. [pull/2183](https://github.com/sourcegraph/cody/pull/2183)
+- Chat: Do not parse Windows file paths as URIs. [pull/2197](https://github.com/sourcegraph/cody/pull/2197)
+- Search: Fix symf index dir on Windows. [pull/2207](https://github.com/sourcegraph/cody/pull/2207)
 - Chat: You can @-mention files on Windows without generating an error. [pull/2197](https://github.com/sourcegraph/cody/pull/2197)
-- Fix "Release Notes" label & link for pre-releases in sidebar. [pull/2210](https://github.com/sourcegraph/cody/pull/2210)
+- Sidebar: Fix "Release Notes" label & link for pre-releases in sidebar. [pull/2210](https://github.com/sourcegraph/cody/pull/2210)
+- Search: Send sigkill to symf when extension exits. [pull/2225](https://github.com/sourcegraph/cody/pull/2225)
+- Search: Support cancelling index. [pull/2202](https://github.com/sourcegraph/cody/pull/2202)
+- Chat Fix cursor blink issue and ensure proper chat initialization synchronization. [pull/2193](https://github.com/sourcegraph/cody/pull/2193)
 
 ### Changed
 
