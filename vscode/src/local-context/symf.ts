@@ -407,7 +407,7 @@ class RWLock {
     public async withRead<T>(fn: () => Promise<T>): Promise<T> {
         while (this.readers === 0) {
             if (this.mu.isLocked()) {
-                // If muis locked at this point, it must be held by the writer.
+                // If mu is locked at this point, it must be held by the writer.
                 // We spin in this case, rather than try to acquire the lock,
                 // because multiple readers blocked on acquiring the lock will
                 // execute serially when the writer releases the lock (whereas
