@@ -1,6 +1,17 @@
-import { formatDistance } from 'date-fns'
+import { differenceInDays, format, formatDistanceStrict, formatRelative } from 'date-fns'
 
 import { isError } from '../utils'
+
+function formatRetryAfterDate(retryAfterDate: Date): string {
+    const now = new Date()
+    if (differenceInDays(retryAfterDate, now) < 7) {
+        return `Usage will reset ${formatRelative(retryAfterDate, now)}`
+    }
+    return `Usage will reset in ${formatDistanceStrict(retryAfterDate, now)} (${format(
+        retryAfterDate,
+        'P'
+    )} at ${format(retryAfterDate, 'p')})`
+}
 
 export class RateLimitError extends Error {
     public static readonly errorName = 'RateLimitError'
@@ -20,15 +31,13 @@ export class RateLimitError extends Error {
         public readonly retryAfter?: string | null
     ) {
         super(message)
-        this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for today.`
+        this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for the month.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + parseInt(retryAfter, 10) * 1000)
                 : new Date(retryAfter)
             : undefined
-        this.retryMessage = this.retryAfterDate
-            ? `Usage will reset in ${formatDistance(this.retryAfterDate, new Date())}.`
-            : undefined
+        this.retryMessage = this.retryAfterDate ? formatRetryAfterDate(this.retryAfterDate) : undefined
     }
 }
 
