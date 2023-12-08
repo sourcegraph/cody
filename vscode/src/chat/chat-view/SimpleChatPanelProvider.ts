@@ -299,9 +299,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
                 await this.postViewConfig()
                 break
             case 'initialized':
