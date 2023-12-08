@@ -129,6 +129,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         })
     }
 
+    public async indexExists(scopeDir: string): Promise<boolean> {
+        return this.getIndexLock(scopeDir).withRead(async () => {
+            return this.unsafeIndexExists(scopeDir)
+        })
+    }
+
     public async ensureIndex(
         scopeDir: string,
         showIndexProgress?: (scopeDir: string, indexDone: Promise<void>) => void,

@@ -180,7 +180,6 @@ export class FireworksProvider extends Provider {
             // since we can't terminate on the first `\n`.
             maxTokensToSample: multiline ? MAX_RESPONSE_TOKENS : 30,
             temperature: 0.2,
-            topP: 0.95,
             topK: 0,
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],

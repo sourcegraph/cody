@@ -53,11 +53,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         const retryAfter = res.headers['retry-after']
                         const limit = res.headers['x-ratelimit-limit'] ? res.headers['x-ratelimit-limit'][0] : undefined
                         const error = new RateLimitError(
-                            'chat messages',
+                            'chat messages and commands',
                             e.message,
                             upgradeIsAvailable,
                             limit ? parseInt(limit, 10) : undefined,
-                            retryAfter ? new Date(retryAfter) : undefined
+                            retryAfter
                         )
                         cb.onError(error, res.statusCode)
                     } else {

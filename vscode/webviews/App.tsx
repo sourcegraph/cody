@@ -24,14 +24,13 @@ import { LoadingPage } from './LoadingPage'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
-import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'experimentalChatPanel'> & LocalEnv) | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
+        null
+    )
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -194,7 +193,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
 
         setContextSelection(null)
-    }, [contextSelection, formInput, vscodeAPI])
+    }, [formInput, contextSelection?.length, vscodeAPI])
 
     const loginRedirect = useCallback(
         (method: AuthMethod) => {
@@ -235,15 +234,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
                     />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                    {view === 'history' && (
-                        <UserHistory
-                            userHistory={userHistory}
-                            setUserHistory={setUserHistory}
-                            setInputHistory={setInputHistory}
-                            setView={setView}
-                            vscodeAPI={vscodeAPI}
-                        />
-                    )}
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
@@ -281,7 +271,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                             props: { onboardingPopupProps },
                                         }}
                                         chatModels={chatModels}
-                                        enableNewChatUI={config.experimentalChatPanel || false}
+                                        enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
                                     />

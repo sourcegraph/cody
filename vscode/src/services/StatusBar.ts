@@ -128,18 +128,20 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
-                    'New Chat UI',
+                    'Symf Context',
                     'Experimental',
-                    'Enable new chat panel UI',
-                    'cody.experimental.chatPanel',
-                    c => c.experimentalChatPanel
+                    'Enable context fetched via symf',
+                    'cody.experimental.symfContext',
+                    c => c.experimentalSymfContext,
+                    false
                 ),
                 createFeatureToggle(
-                    'New Search UI',
+                    'Simple Chat Context',
                     'Experimental',
-                    'Enable new search panel',
-                    'cody.experimental.newSearch',
-                    c => c.experimentalSearchPanel
+                    'Enable the new simplifed chat context fetcher',
+                    'cody.experimental.simpleChatContext',
+                    c => c.experimentalSimpleChatContext,
+                    true
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

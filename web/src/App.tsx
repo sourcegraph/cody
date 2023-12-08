@@ -20,12 +20,6 @@ const editor: Editor = {
     getActiveTextEditorSelection() {
         return null
     },
-    getActiveInlineChatTextEditor() {
-        return null
-    },
-    getActiveInlineChatSelection() {
-        return null
-    },
     getActiveTextEditorSmartSelection() {
         return Promise.resolve(null)
     },

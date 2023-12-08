@@ -36,7 +36,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 homeDir: '/home/user',
                 uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
-                experimentalChatPanel: false,
             },
             authStatus: {
                 ...defaultAuthStatus,

@@ -4,7 +4,7 @@
   "rules": {
     "color-named": "never",
     "color-hex-length": "long",
-    "function-disallowed-list": ["rgb", "hsl"],
+    "function-disallowed-list": ["hsl"],
     "declaration-block-no-duplicate-properties": [
       true,
       {

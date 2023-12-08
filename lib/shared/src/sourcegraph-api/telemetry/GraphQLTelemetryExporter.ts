@@ -143,6 +143,10 @@ type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2-5.2.3' | '5.2.4+'
  * required for exportMode.
  */
 export function handleExportModeTransforms(exportMode: ExportMode, events: TelemetryEventInput[]): void {
+    if (exportMode === 'legacy') {
+        throw new Error('legacy export mode should not publish new telemetry events')
+    }
+
     /**
      * In early releases, the privateMetadata field is broken. Circumvent
      * this by filtering out the privateMetadata field for now.
@@ -150,7 +154,9 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      */
     if (exportMode === '5.2.0-5.2.1') {
         events.forEach(event => {
-            event.parameters.privateMetadata = undefined
+            if (event.parameters) {
+                event.parameters.privateMetadata = undefined
+            }
         })
     }
 
@@ -159,12 +165,18 @@ export function handleExportModeTransforms(exportMode: ExportMode, events: Telem
      * that may be provided as number. Circumvent this by rounding all
      * metadata values by default.
      * https://github.com/sourcegraph/sourcegraph/pull/58643
+     *
+     * We also don't support a interaction ID as a first-class citizen, as it
+     * was only added in 5.2.4: https://github.com/sourcegraph/sourcegraph/pull/58539
      */
     if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3') {
         events.forEach(event => {
-            event.parameters.metadata?.forEach(entry => {
-                entry.value = Math.round(entry.value)
-            })
+            if (event.parameters) {
+                event.parameters.metadata?.forEach(entry => {
+                    entry.value = Math.round(entry.value)
+                })
+                event.parameters.interactionID = undefined
+            }
         })
     }
 }

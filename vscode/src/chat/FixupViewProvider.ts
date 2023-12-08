@@ -140,7 +140,7 @@ export class FixupProvider extends MessageProvider {
      * Will allow the user to view the error in more detail if needed.
      */
     protected handleError(error: Error): void {
-        this.editor.controllers.fixups?.error(this.task.id, error.toString())
+        this.editor.controllers.fixups?.error(this.task.id, error)
     }
 
     protected handleCodyCommands(): void {

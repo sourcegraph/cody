@@ -68,6 +68,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         return commandRunner?.codyCommand
     }
 
+    public isCommand(text: string): boolean {
+        const commandSplit = text.split(' ')
+        // The unique key for the command. e.g. /test
+        const commandKey = commandSplit.shift() || text
+
+        return !!this.default.get(commandKey)
+    }
+
     /**
      * Adds a new command to the commands map.
      *
@@ -243,7 +251,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                         return await vscode.commands.executeCommand('cody.action.chat', input, 'command')
                     }
                     input = await showAskQuestionQuickPick()
-                    await vscode.commands.executeCommand('cody.chat.focus')
+                    await vscode.commands.executeCommand('cody.chat.panel.new')
                     return await vscode.commands.executeCommand('cody.action.chat', input, 'command')
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {

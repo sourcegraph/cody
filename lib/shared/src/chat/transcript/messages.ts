@@ -31,6 +31,10 @@ export interface ChatError {
     kind?: string
     name: string
     message: string
+
+    // Prevent Error from being passed as ChatError.
+    // Errors should be converted using errorToChatError.
+    isChatErrorGuard: 'isChatErrorGuard'
 }
 
 export interface ChatMetadata {
@@ -54,7 +58,6 @@ export interface OldChatHistory {
 
 export type ChatEventSource =
     | 'chat'
-    | 'inline-chat'
     | 'editor'
     | 'menu'
     | 'code-action'
@@ -63,3 +66,17 @@ export type ChatEventSource =
     | 'code-lens'
     | CodyDefaultCommands
     | RecipeID
+
+/**
+ * Converts an Error to a ChatError. Note that this cannot be done naively,
+ * because some of the Error object's keys are typically not enumerable, and so
+ * would be omitted during serialization.
+ */
+export function errorToChatError(error: Error): ChatError {
+    return {
+        isChatErrorGuard: 'isChatErrorGuard',
+        ...error,
+        message: error.message,
+        name: error.name,
+    }
+}

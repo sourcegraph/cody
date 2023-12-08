@@ -578,7 +578,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
                 return
             }
-            this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
+            this.resetRateLimitErrorsAfter = error.retryAfterDate?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
             const canUpgrade = error.upgradeIsAvailable
             const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
             let errorTitle: string
