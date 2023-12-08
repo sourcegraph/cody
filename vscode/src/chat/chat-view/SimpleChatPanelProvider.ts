@@ -395,7 +395,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             chatID: this.sessionID,
         })
 
-        await this.restoreSession(this.sessionID, false)
         await this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
@@ -506,7 +505,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatModel.addHumanMessage({ text }, displayText)
         await this.saveSession(text)
         // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant', text: '' })
+        this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
     }
 
@@ -561,7 +560,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            this.postViewTranscript({ speaker: 'assistant', text: '' })
+            this.postViewTranscript({ speaker: 'assistant' })
 
             this.sendLLMRequest(prompt, {
                 update: content => {
@@ -815,7 +814,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
             await this.saveSession()
-            this.postViewTranscript()
+            this.postViewTranscript({ speaker: 'assistant' })
 
             this.sendLLMRequest(prompt, {
                 update: (responseText: string) => {
