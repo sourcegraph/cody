@@ -250,7 +250,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             </form>
             {!searching && query.trim().length === 0 && (
                 <p className={styles.instructions}>
-                    Search using natural language queries, for example “password hashing” or "connection retries"
+                    Search for code using a natural language query, such as “password hashing”, "connection retries", a symbol name, or a topic.
                 </p>
             )}
             {!searching && results.length === 0 && query.trim().length !== 0 && (
