@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { QueryExpander } from '@sourcegraph/cody-shared/src/codebase-context/query-expansion'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
@@ -392,6 +393,8 @@ async function getCodebaseContext(
         // Use local embeddings if we have them.
         ((await hasLocalEmbeddings) && localEmbeddings) || null,
         symf,
-        undefined
+        undefined,
+        undefined,
+        new QueryExpander(chatClient)
     )
 }

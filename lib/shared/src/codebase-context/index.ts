@@ -22,6 +22,7 @@ import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
 import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithResponse } from './messages'
+import { QueryExpander } from './query-expansion'
 
 export interface ContextSearchOptions {
     numCodeResults: number
@@ -40,7 +41,8 @@ export class CodebaseContext {
         public localEmbeddings: LocalEmbeddingsFetcher | null,
         public symf?: IndexedKeywordContextFetcher,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
-        private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
+        private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>,
+        private queryExpander?: QueryExpander
     ) {}
 
     public tempHackGetEmbeddingsSearch(): EmbeddingsSearch | null {
@@ -271,6 +273,18 @@ export class CodebaseContext {
         }
 
         return contextMessages
+    }
+
+    public async getContextWithExpandedQuery(
+        query: string,
+        options: ContextSearchOptions,
+        pseudoRelevantContextMessages: ContextMessage[]
+    ): Promise<ContextMessage[]> {
+        if (!this.queryExpander) {
+            return []
+        }
+        const expandedQuery = await this.queryExpander.expandQuery(query, pseudoRelevantContextMessages)
+        return this.getCombinedContextMessages(expandedQuery, options)
     }
 }
 

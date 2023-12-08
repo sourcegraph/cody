@@ -1,5 +1,6 @@
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { QueryExpander } from '@sourcegraph/cody-shared/src/codebase-context/query-expansion'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
@@ -84,7 +85,9 @@ export async function configureExternalServices(
         null,
         null,
         symf,
-        undefined
+        undefined,
+        undefined,
+        new QueryExpander(chatClient)
     )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)

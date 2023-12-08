@@ -22,11 +22,12 @@ export const QualityMetrics: React.FunctionComponent<QualityMetricsProps> = ({ v
     return (
         <div className={classNames(styles.qualityMetricsContainer, variantToClass[variant])}>
             <div className={styles.qualityMetric}>
-                <Ratio
-                    numerator={aggregatedResults.incorrectAnswers + aggregatedResults.partialAnswers}
-                    denominator={aggregatedResults.numInteractions}
-                />
-                <div className={styles.qualityMetricLabel}>incorrect or partial answers</div>
+                <Ratio numerator={aggregatedResults.incorrectAnswers} denominator={aggregatedResults.numInteractions} />
+                <div className={styles.qualityMetricLabel}>incorrect answers</div>
+            </div>
+            <div className={styles.qualityMetric}>
+                <Ratio numerator={aggregatedResults.partialAnswers} denominator={aggregatedResults.numInteractions} />
+                <div className={styles.qualityMetricLabel}>partial answers</div>
             </div>
             <div className={styles.qualityMetric}>
                 <Ratio numerator={aggregatedResults.missingFacts} denominator={aggregatedResults.facts} />
