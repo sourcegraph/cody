@@ -344,7 +344,14 @@
       {
         "command": "cody.show-page",
         "category": "Cody",
-        "title": "Show Admin Pages",
+        "title": "Open Account Page",
+        "group": "Cody",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.show-rate-limit-modal",
+        "category": "Cody",
+        "title": "Show Rate Limit Modal",
         "group": "Cody",
         "when": "cody.activated"
       },
@@ -580,6 +587,10 @@
         },
         {
           "command": "cody.show-page",
+          "when": "false"
+        },
+        {
+          "command": "cody.show-rate-limit-modal",
           "when": "false"
         }
       ],
