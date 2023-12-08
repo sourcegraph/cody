@@ -366,18 +366,29 @@ const register = async (
         vscode.commands.registerCommand(
             'cody.show-rate-limit-modal',
             async (userMessage: string, retryMessage: string, upgradeAvailable: boolean) => {
-                const selected = await vscode.window.showInformationMessage(
-                    upgradeAvailable ? 'Upgrade to Cody Pro' : 'Rate Limit Exceeded',
-                    {
-                        modal: true,
-                        detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.\n\n${retryMessage}`,
-                    },
-                    'Upgrade',
-                    'See Plans'
-                )
-                // Both options go to the same URL
-                if (selected) {
-                    void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                if (upgradeAvailable) {
+                    const option = await vscode.window.showInformationMessage(
+                        'Upgrade to Cody Pro',
+                        {
+                            modal: true,
+                            detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.\n\n${retryMessage}`,
+                        },
+                        'Upgrade',
+                        'See Plans'
+                    )
+                    // Both options go to the same URL
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                    }
+                } else {
+                    const option = await vscode.window.showInformationMessage(
+                        'Rate Limit Exceeded',
+                        { modal: true, detail: `${userMessage}\n\n${retryMessage}` },
+                        'Learn More'
+                    )
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_LIMITS_INFO_URL.toString()))
+                    }
                 }
             }
         ),
