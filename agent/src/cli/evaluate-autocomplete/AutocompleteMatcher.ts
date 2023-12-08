@@ -129,13 +129,10 @@ export class AutocompleteMatcher {
                     }
                 } else if (capture.name === 'assignment_statement') {
                     const equalSign = queryMatch.captures.find(c => c.name === 'equal_sign')?.node
-                    const rightHandSide = queryMatch.captures.find(c => c.name === 'rhs')?.node
-                    if (rightHandSide) {
-                        const startIndex = equalSign?.startIndex ?? rightHandSide.startIndex
+                    if (equalSign) {
+                        const startIndex = equalSign.startIndex
                         const endIndex =
-                            text.at(rightHandSide.endIndex) === ';'
-                                ? rightHandSide.endIndex + 1
-                                : rightHandSide.endIndex
+                            text.at(capture.node.endIndex) === ';' ? capture.node.endIndex + 1 : capture.node.endIndex
                         const newText = [text.slice(0, startIndex), text.slice(endIndex)]
                         result.push({
                             kind: 'assignment_statement',
@@ -149,7 +146,7 @@ export class AutocompleteMatcher {
                         })
                         continue
                     } else {
-                        throw new Error('Missing @rhs capture for node: ' + capture.node.text)
+                        throw new Error('Missing @equal_sign capture for node: ' + capture.node.text)
                     }
                 }
             }

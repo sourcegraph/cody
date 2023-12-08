@@ -14,12 +14,8 @@
   ) @call_expression
 
 ; Assignment statements
-(variable_declarator
-  "=" @equal_sign
-  value: [(object) (array)] @rhs) @assignment_statement
-(assignment_expression
-  "=" @equal_sign
-  right: [(object) (array)] @rhs) @assignment_statement
+(variable_declarator "=" @equal_sign) @assignment_statement
+(assignment_expression "=" @equal_sign) @assignment_statement
 
 ; Function declaration
 (function_declaration parameters: (formal_parameters "(" @opening_paren ")")) @function_declaration

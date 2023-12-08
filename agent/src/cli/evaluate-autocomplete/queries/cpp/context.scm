@@ -4,8 +4,9 @@
 ) @call_expression
 
 ; Assignment statement
-(declaration declarator: (_) @rhs) @assignment_statement
-(assignment_expression right: (_) @rhs) @assignment_statement
+(declaration "=" @equal_sign2) @assignment_statement
+(declaration declarator: (init_declarator "=" @equal_sign)) @assignment_statement
+(assignment_expression "=" @equal_sign) @assignment_statement
 
 ; Function declaration
 (function_declarator parameters: (parameter_list "(" @opening_paren ")")) @function_declaration

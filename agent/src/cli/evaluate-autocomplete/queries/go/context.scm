@@ -6,8 +6,8 @@
 (composite_literal (literal_value "{" @opening_paren "}" @closing_paren)) @call_expression
 
 ; Assignment statements
-(short_var_declaration ":=" @equal_sign right: (_) @rhs) @assignment_statement
-(assignment_statement "=" @equal_sign right: (_) @rhs) @assignment_statement
+(short_var_declaration ":=" @equal_sign) @assignment_statement
+(assignment_statement "=" @equal_sign) @assignment_statement
 
 ; Function declaration
 (function_declaration parameters: (parameter_list "(" @opening_paren ")")) @function_declaration
