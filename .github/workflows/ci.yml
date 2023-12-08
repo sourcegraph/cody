@@ -74,8 +74,11 @@ jobs:
         if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows' || matrix.runner == 'macos')
 
   test-e2e:
-    runs-on: ubuntu-latest
-    name: 'test-e2e (ubuntu)' # required to match the GitHub PR status check requirement
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu, windows]
+    runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     permissions:
       id-token: write
@@ -105,6 +108,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
+        if: matrix.runner == 'ubuntu'
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
