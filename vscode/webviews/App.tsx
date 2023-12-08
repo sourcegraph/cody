@@ -234,10 +234,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices
-                        extensionVersion={config?.extensionVersion}
-                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
-                    />
+                    <Notices probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0} />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
