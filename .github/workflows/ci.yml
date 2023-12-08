@@ -158,7 +158,10 @@ jobs:
         if: ${{ failure() }}
         with:
           name: playwright-recordings ${{ matrix.runner }}
-          path: playwright/**/*.webm
+          path: |
+            playwright
+            test-results
+            vscode/test-results
 
   build:
     runs-on: ubuntu-latest
