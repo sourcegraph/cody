@@ -370,7 +370,7 @@ const register = async (
                     upgradeAvailable ? 'Upgrade to Cody Pro' : 'Rate Limit Exceeded',
                     {
                         modal: true,
-                        detail: `${userMessage} ${retryMessage}`,
+                        detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.\n\n${retryMessage}`,
                     },
                     'Upgrade',
                     'See Plans'
