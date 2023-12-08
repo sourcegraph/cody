@@ -6,6 +6,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
@@ -483,7 +484,8 @@ const register = async (
     updateAuthStatusBarIndicator()
 
     vscode.window.onDidChangeWindowState(async ws => {
-        if (ws.focused) {
+        const endpoint = authProvider.getAuthStatus().endpoint
+        if (ws.focused && endpoint && isDotCom(endpoint)) {
             const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
             if (res instanceof Error) {
                 console.error(res)
