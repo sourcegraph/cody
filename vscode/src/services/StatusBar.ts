@@ -18,10 +18,7 @@ export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
     addError(error: StatusBarError): () => void
-    checkErrors(): {
-        error: StatusBarError
-        createdAt: number
-    }[]
+    hasError(error: string): boolean
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -242,8 +239,8 @@ export function createStatusBar(): CodyStatusBar {
                 }
             }
         },
-        checkErrors() {
-            return errors
+        hasError(errorName: string): boolean {
+            return errors.some(e => e.error.errorType == errorName)
         },
         dispose() {
             statusBarItem.dispose()
