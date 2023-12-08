@@ -13,9 +13,12 @@ export class ChatHistoryManager {
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
-    public async saveChat(chat: TranscriptJSON): Promise<UserLocalHistory> {
+    public async saveChat(chat: TranscriptJSON, input?: string): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory()
         history.chat[chat.id] = chat
+        if (input) {
+            history.input.push(input)
+        }
         await localStorage.setChatHistory(history)
         return history
     }

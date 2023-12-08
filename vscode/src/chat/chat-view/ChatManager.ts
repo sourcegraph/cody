@@ -6,11 +6,12 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 
 import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
+import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
@@ -33,8 +34,9 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarChatOptions,
         private chatClient: ChatClient,
-        private embeddingsSearch: EmbeddingsSearch | null,
-        private localEmbeddings: LocalEmbeddingsController | null
+        private embeddingsClient: CachedRemoteEmbeddingsClient,
+        private localEmbeddings: LocalEmbeddingsController | null,
+        private symf: SymfRunner | null
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -48,8 +50,9 @@ export class ChatManager implements vscode.Disposable {
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
             this.chatClient,
-            this.embeddingsSearch,
-            this.localEmbeddings
+            this.embeddingsClient,
+            this.localEmbeddings,
+            this.symf
         )
 
         // Register Commands
@@ -90,14 +93,6 @@ export class ChatManager implements vscode.Disposable {
         source?: ChatEventSource
     ): Promise<void> {
         logDebug('ChatManager:executeRecipe:called', recipeId)
-        if (!this.chatPanelsManager) {
-            if (openChatView) {
-                await this.sidebarChat.setWebviewView('chat')
-            }
-            await this.sidebarChat.executeRecipe(recipeId, humanChatInput, source)
-            return
-        }
-
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
@@ -133,11 +128,6 @@ export class ChatManager implements vscode.Disposable {
     }
 
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
-        if (!this.chatPanelsManager) {
-            await this.sidebarChat.clearHistory()
-            return
-        }
-
         const chatID = treeItem?.id
         if (chatID) {
             await this.sidebarChat.clearChatHistory(chatID)
@@ -197,18 +187,13 @@ export class ChatManager implements vscode.Disposable {
 
     public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
         try {
-            if (!this.chatPanelsManager) {
-                throw new Error('ChatPanelsManager is not initialized')
-            }
-
             await this.chatPanelsManager.createWebviewPanel(chatID, panel.title, panel)
         } catch (error) {
             console.error('revive failed', error)
             logDebug('ChatManager:revive', 'failed', { verbose: error })
 
             // When failed, create a new panel with restored session and dispose the old panel
-            const panelTitle = panel.title
-            await this.restorePanel(chatID, panelTitle)
+            await this.restorePanel(chatID, panel.title)
             panel.dispose()
         }
     }
@@ -247,9 +232,13 @@ export class ChatManager implements vscode.Disposable {
 
     // For registering the commands for chat panels in advance
     private async createNewWebviewPanel(): Promise<void> {
-        const debounceCreatePanel = debounce(async () => {
-            await this.chatPanelsManager?.createWebviewPanel()
-        }, 250)
+        const debounceCreatePanel = debounce(
+            async () => {
+                await this.chatPanelsManager?.createWebviewPanel()
+            },
+            250,
+            { leading: true, trailing: true }
+        )
 
         if (this.chatPanelsManager) {
             await debounceCreatePanel()
@@ -257,9 +246,13 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
-        const debounceRestore = debounce(async (chatID: string, chatQuestion?: string) => {
-            await this.chatPanelsManager?.restorePanel(chatID, chatQuestion)
-        }, 1000)
+        const debounceRestore = debounce(
+            async (chatID: string, chatQuestion?: string) => {
+                await this.chatPanelsManager?.restorePanel(chatID, chatQuestion)
+            },
+            250,
+            { leading: true, trailing: true }
+        )
 
         if (this.chatPanelsManager) {
             await debounceRestore(chatID, chatQuestion)

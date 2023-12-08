@@ -43,6 +43,7 @@ export type Config = Pick<
     | 'experimentalGuardrails'
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
+    | 'experimentalSymfContext'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
 >
@@ -277,12 +278,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         this.disposables = []
     }
 
-    public async hackGetEmbeddingClientCandidates(
-        config: GraphQLAPIClientConfig
-    ): Promise<SourcegraphGraphQLAPIClient[]> {
-        return this.getEmbeddingClientCandidates(config)
-    }
-
     // Gets a list of GraphQL clients to interrogate for embeddings
     // availability.
     private getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
@@ -303,28 +298,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
         return this.contextStatusChangeEmitter.event(callback)
     }
-}
-
-export function hackGetCodebaseContext(
-    config: Config,
-    rgPath: string | null,
-    symf: IndexedKeywordContextFetcher | undefined,
-    editor: Editor,
-    chatClient: ChatClient,
-    platform: PlatformContext,
-    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[],
-    localEmbeddings: LocalEmbeddingsController | undefined
-): Promise<CodebaseContext | null> {
-    return getCodebaseContext(
-        config,
-        rgPath,
-        symf,
-        editor,
-        chatClient,
-        platform,
-        embeddingsClientCandidates,
-        localEmbeddings
-    )
 }
 
 /**
@@ -355,9 +328,8 @@ async function getCodebaseContext(
         return null
     }
 
-    // TODO: When SimpleChatContextProvider stops using hackGetCodebaseContext,
-    // it must start sending localEmbeddings.load directly to the embeddings
-    // controller.
+    // TODO: When we remove this class (ContextProvider), SimpleChatContextProvider
+    // should be updated to invoke localEmbeddings.load when the codebase changes
     const repoDirUri = gitDirectoryUri(workspaceRoot)
     const hasLocalEmbeddings = repoDirUri ? localEmbeddings?.load(repoDirUri) : false
     let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(

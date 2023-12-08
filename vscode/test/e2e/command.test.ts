@@ -6,6 +6,17 @@ import { test } from './helpers'
 test('submit command from command palette', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
+
+    await page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' }).click()
+    await page
+        .getByRole('option', {
+            name: 'Simple Chat Context, Experimental, Enable the new simplifed chat context fetcher',
+        })
+        .locator('span')
+        .filter({ hasText: 'Experimental' })
+        .first()
+        .click()
+
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view

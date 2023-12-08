@@ -24,7 +24,6 @@ import { LoadingPage } from './LoadingPage'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
-import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -235,15 +234,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
                     />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                    {view === 'history' && (
-                        <UserHistory
-                            userHistory={userHistory}
-                            setUserHistory={setUserHistory}
-                            setInputHistory={setInputHistory}
-                            setView={setView}
-                            vscodeAPI={vscodeAPI}
-                        />
-                    )}
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider
                             value={{

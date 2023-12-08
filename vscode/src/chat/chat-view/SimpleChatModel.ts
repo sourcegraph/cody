@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { errorToChatError, InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
@@ -20,6 +21,8 @@ export interface MessageWithContext {
     // duplicate any previous context items in the transcript). This should
     // only be defined on human messages.
     newContextUsed?: ContextItem[]
+
+    error?: ChatError
 }
 
 export class SimpleChatModel {
@@ -44,11 +47,12 @@ export class SimpleChatModel {
         lastMessage.newContextUsed = newContextUsed
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>): void {
+    public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
         if (this.messagesWithContext.at(-1)?.message.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
         this.messagesWithContext.push({
+            displayText,
             message: {
                 ...message,
                 speaker: 'human',
@@ -64,6 +68,23 @@ export class SimpleChatModel {
             displayText,
             message: {
                 ...message,
+                speaker: 'assistant',
+            },
+        })
+    }
+
+    public addErrorAsBotMessage(error: Error): void {
+        const lastMessage = this.messagesWithContext.at(-1)?.message
+        const lastAssistantMessage = lastMessage?.speaker === 'assistant' ? lastMessage : undefined
+        // Remove the last assistant message
+        if (lastAssistantMessage) {
+            this.messagesWithContext.pop()
+        }
+        // Then add a new assistant message with error added
+        this.messagesWithContext.push({
+            error: errorToChatError(error),
+            message: {
+                ...lastAssistantMessage,
                 speaker: 'assistant',
             },
         })
@@ -98,30 +119,7 @@ export class SimpleChatModel {
         for (let i = 0; i < this.messagesWithContext.length; i += 2) {
             const humanMessage = this.messagesWithContext[i]
             const botMessage = this.messagesWithContext[i + 1]
-            if (humanMessage.message.speaker !== 'human') {
-                throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
-            }
-            if (botMessage.message.speaker !== 'assistant') {
-                throw new Error('SimpleChatModel.toTranscriptJSON: expected bot message, got human')
-            }
-            interactions.push({
-                humanMessage: {
-                    speaker: humanMessage.message.speaker,
-                    text: humanMessage.message.text,
-                    displayText: getDisplayText(humanMessage),
-                },
-                assistantMessage: {
-                    speaker: botMessage.message.speaker,
-                    text: botMessage.message.text,
-                    displayText: getDisplayText(botMessage),
-                },
-                usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
-
-                // These fields are unused on deserialization
-                fullContext: [],
-                usedPreciseContext: [],
-                timestamp: 'n/a',
-            })
+            interactions.push(messageToInteractionJSON(humanMessage, botMessage))
         }
         return {
             id: this.sessionID,
@@ -129,6 +127,32 @@ export class SimpleChatModel {
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
+    }
+}
+
+function messageToInteractionJSON(humanMessage: MessageWithContext, botMessage: MessageWithContext): InteractionJSON {
+    if (humanMessage?.message?.speaker !== 'human') {
+        throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
+    }
+    return {
+        humanMessage: messageToInteractionMessage(humanMessage),
+        assistantMessage:
+            botMessage?.message?.speaker === 'assistant'
+                ? messageToInteractionMessage(botMessage)
+                : { speaker: 'assistant' },
+        usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
+        // These fields are unused on deserialization
+        fullContext: [],
+        usedPreciseContext: [],
+        timestamp: new Date().toISOString(),
+    }
+}
+
+function messageToInteractionMessage(message: MessageWithContext): InteractionMessage {
+    return {
+        speaker: message.message.speaker,
+        text: message.message.text,
+        displayText: getDisplayText(message),
     }
 }
 
@@ -148,6 +172,7 @@ export function toViewMessage(mwc: MessageWithContext): ChatMessage {
     const displayText = getDisplayText(mwc)
     return {
         ...mwc.message,
+        error: mwc.error,
         displayText,
         contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
     }

@@ -8,8 +8,9 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
-import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
+import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import {
@@ -153,19 +154,6 @@ const register = async (
     disposables.push(contextProvider)
     await contextProvider.init()
 
-    // Hacks to get embeddings clients
-    const codebaseContext = await hackGetCodebaseContext(
-        initialConfig,
-        rgPath,
-        symfRunner,
-        editor,
-        chatClient,
-        platform,
-        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
-        undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
-    )
-    const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
-
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
@@ -181,14 +169,17 @@ const register = async (
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
     const fixupManager = new FixupManager(messageProviderOptions)
+
+    const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsSearch,
-        localEmbeddings || null
+        embeddingsClient,
+        localEmbeddings || null,
+        symfRunner || null
     )
 
     disposables.push(new CodeActionProvider({ contextProvider }))
@@ -546,6 +537,7 @@ const register = async (
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+            embeddingsClient.updateConfiguration(newConfig)
         },
     }
 }

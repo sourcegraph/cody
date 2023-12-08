@@ -27,7 +27,8 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
-            experimentalSimpleChatContext: false,
+            experimentalSimpleChatContext: true,
+            experimentalSymfContext: false,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
@@ -83,6 +84,8 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
+                        return true
+                    case 'cody.experimental.symfContext':
                         return false
                     case 'cody.debug.enable':
                         return true
@@ -140,7 +143,8 @@ describe('getConfiguration', () => {
             },
             experimentalChatPredictions: true,
             commandCodeLenses: true,
-            experimentalSimpleChatContext: false,
+            experimentalSimpleChatContext: true,
+            experimentalSymfContext: false,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
