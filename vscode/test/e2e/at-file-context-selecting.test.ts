@@ -57,4 +57,12 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await expect(
         chatPanelFrame.getByText('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go')
     ).toBeVisible()
+
+    // Check pressing tab after typing a complete filename.
+    // https://github.com/sourcegraph/cody/issues/2200
+    await chatInput.focus()
+    await chatInput.clear()
+    await chatInput.type('@Main.java', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('@Main.java ')
 })
