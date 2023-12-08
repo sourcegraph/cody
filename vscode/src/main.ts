@@ -362,6 +362,26 @@ const register = async (
             void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
         }),
 
+        // Account links
+        vscode.commands.registerCommand(
+            'cody.show-rate-limit-modal',
+            async (userMessage: string, retryMessage: string, upgradeAvailable: boolean) => {
+                const selected = await vscode.window.showInformationMessage(
+                    upgradeAvailable ? 'Upgrade to Cody Pro' : 'Rate Limit Exceeded',
+                    {
+                        modal: true,
+                        detail: `${userMessage} ${retryMessage}`,
+                    },
+                    'Upgrade',
+                    'See Plans'
+                )
+                // Both options go to the same URL
+                if (selected) {
+                    void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                }
+            }
+        ),
+
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
