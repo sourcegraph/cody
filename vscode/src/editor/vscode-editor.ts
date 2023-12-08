@@ -174,7 +174,7 @@ export class VSCodeEditor implements Editor<FixupController, CommandsController>
         }
 
         // Get the text from document by file Uri
-        const vscodeUri = vscode.Uri.parse(fileUri.fsPath)
+        const vscodeUri = vscode.Uri.file(fileUri.fsPath)
         const doc = await vscode.workspace.openTextDocument(vscodeUri)
         return doc.getText(range)
     }
