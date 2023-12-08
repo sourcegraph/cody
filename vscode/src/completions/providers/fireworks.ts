@@ -11,7 +11,7 @@ import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-proc
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
-import { fetchAndProcessCompletions } from './fetch-and-process-completions'
+import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -79,14 +79,14 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-// const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-//     CodeCompletionsParams,
-//     'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-// > = {
-//     maxTokensToSample: MAX_RESPONSE_TOKENS,
-//     stopSequences: undefined,
-//     timeoutMs: 15_000,
-// }
+const DYNAMIC_MULTILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: undefined,
+    timeoutMs: 15_000,
+}
 
 export class FireworksProvider extends Provider {
     private model: FireworksModel
@@ -161,7 +161,7 @@ export class FireworksProvider extends Provider {
         ) => void,
         tracer?: CompletionProviderTracer
     ): Promise<void> {
-        const { multiline, n } = this.options
+        const { multiline, n, dynamicMultilineCompletions } = this.options
         const prompt = this.createPrompt(snippets)
 
         const model =
@@ -191,14 +191,14 @@ export class FireworksProvider extends Provider {
             timeoutMs,
         }
 
-        const fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        // if (dynamicMultilineCompletions) {
-        //     // If the feature flag is enabled use params adjusted for the experiment.
-        //     Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTILINE_COMPLETIONS_ARGS)
 
-        //     // Use an alternative fetch completions implementation.
-        //     fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        // }
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
 
         tracer?.params(requestParams)
 

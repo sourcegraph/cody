@@ -21,7 +21,10 @@ export enum FeatureFlag {
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
     CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
+    CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
+
     CodyPro = 'cody-pro',
+
     CodyChatMockTest = 'cody-chat-mock-test',
 }
 

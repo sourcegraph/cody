@@ -16,7 +16,7 @@ import {
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
-import { fetchAndProcessCompletions } from './fetch-and-process-completions'
+import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -36,14 +36,14 @@ interface UnstableOpenAIOptions {
 const PROVIDER_IDENTIFIER = 'unstable-openai'
 const MAX_RESPONSE_TOKENS = 256
 
-// const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-//     CodeCompletionsParams,
-//     'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-// > = {
-//     maxTokensToSample: MAX_RESPONSE_TOKENS,
-//     stopSequences: MULTI_LINE_STOP_SEQUENCES,
-//     timeoutMs: 15_000,
-// }
+const DYNAMIC_MULTILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: MULTI_LINE_STOP_SEQUENCES,
+    timeoutMs: 15_000,
+}
 
 export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
@@ -120,7 +120,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         tracer?: CompletionProviderTracer
     ): Promise<void> {
         const prompt = this.createPrompt(snippets)
-        const { multiline, n } = this.options
+        const { multiline, n, dynamicMultilineCompletions } = this.options
 
         const requestParams: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
@@ -131,14 +131,14 @@ ${OPENING_CODE_TAG}${infillBlock}`
             timeoutMs: multiline ? 15000 : 5000,
         }
 
-        const fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        // if (dynamicMultilineCompletions) {
-        //     // If the feature flag is enabled use params adjusted for the experiment.
-        //     Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTILINE_COMPLETIONS_ARGS)
 
-        //     // Use an alternative fetch completions implementation.
-        //     fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        // }
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
 
         tracer?.params(requestParams)
 

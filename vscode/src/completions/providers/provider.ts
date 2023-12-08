@@ -65,6 +65,7 @@ export interface ProviderOptions {
 
     // feature flags
     dynamicMultilineCompletions?: boolean
+    hotStreak?: boolean
 }
 
 export abstract class Provider {

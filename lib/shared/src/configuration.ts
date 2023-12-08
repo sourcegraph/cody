@@ -40,6 +40,7 @@ export interface Configuration {
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
+    autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'

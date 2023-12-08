@@ -47,6 +47,7 @@ export interface InlineCompletionsParams {
     // Feature flags
     completeSuggestWidgetSelection?: boolean
     dynamicMultilineCompletions?: boolean
+    hotStreak?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -178,6 +179,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         artificialDelay,
         completionIntent,
         dynamicMultilineCompletions,
+        hotStreak,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -279,6 +281,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerConfig,
         docContext,
         dynamicMultilineCompletions,
+        hotStreak,
     })
     tracer?.({
         completers: completionProviders.map(({ options }) => ({
@@ -317,19 +320,21 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 interface GetCompletionProvidersParams
     extends Pick<
         InlineCompletionsParams,
-        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'dynamicMultilineCompletions'
+        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'dynamicMultilineCompletions' | 'hotStreak'
     > {
     docContext: DocumentContext
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const { document, position, triggerKind, providerConfig, docContext, dynamicMultilineCompletions } = params
+    const { document, position, triggerKind, providerConfig, docContext, dynamicMultilineCompletions, hotStreak } =
+        params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         document,
         position,
         dynamicMultilineCompletions,
+        hotStreak,
     }
 
     if (docContext.multilineTrigger) {
