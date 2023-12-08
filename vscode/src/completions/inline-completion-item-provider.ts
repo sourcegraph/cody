@@ -574,8 +574,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      */
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
+            // If there's already an existing error, don't add another one.
             const hasRateLimitError = this.config.statusBar.hasError(error.name)
-
             if (hasRateLimitError) {
                 return
             }
