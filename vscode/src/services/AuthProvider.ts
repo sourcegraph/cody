@@ -6,7 +6,6 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
-import { SidebarChatWebview } from '../chat/chat-view/SidebarChatProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
@@ -33,7 +32,6 @@ export class AuthProvider {
     private client: SourcegraphGraphQLAPIClient | null = null
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: SidebarChatWebview
     private listeners: Set<Listener> = new Set()
 
     constructor(
@@ -237,7 +235,7 @@ export class AuthProvider {
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
         await this.storeAuthInfo(endpoint, token)
-        await this.syncAuthStatus(authStatus)
+        this.syncAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
@@ -249,23 +247,22 @@ export class AuthProvider {
     }
 
     // Set auth status and share it with chatview
-    private async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+    private syncAuthStatus(authStatus: AuthStatus): void {
         if (this.authStatus === authStatus) {
             return
         }
         this.authStatus = authStatus
-        await this.announceNewAuthStatus()
+        this.announceNewAuthStatus()
     }
 
-    public async announceNewAuthStatus(): Promise<void> {
-        if (this.authStatus.endpoint === 'init' || !this.webview) {
+    public announceNewAuthStatus(): void {
+        if (this.authStatus.endpoint === 'init') {
             return
         }
         const authStatus = this.getAuthStatus()
         for (const listener of this.listeners) {
             listener(authStatus)
         }
-        await vscode.commands.executeCommand('cody.auth.sync')
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token

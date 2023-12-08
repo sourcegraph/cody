@@ -530,7 +530,6 @@ export class Agent extends MessageHandler {
 
     private async reloadAuth(): Promise<void> {
         await vscode_shim.commands.executeCommand('agent.auth.reload')
-        await vscode_shim.commands.executeCommand('cody.auth.sync')
     }
 
     /**

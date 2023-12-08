@@ -28,43 +28,51 @@ export enum FeatureFlag {
 const ONE_HOUR = 60 * 60 * 1000
 
 export class FeatureFlagProvider {
-    private featureFlags: Record<string, boolean> = {}
+    // The first key maps to the endpoint so that we do never cache the wrong flag for different
+    // endpoints
+    private featureFlags: Record<string, Record<string, boolean>> = {}
     private lastUpdated = 0
 
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
-    private getFromCache(flagName: FeatureFlag): boolean | undefined {
+    private getFromCache(flagName: FeatureFlag, endpoint: string): boolean | undefined {
         const now = Date.now()
         if (now - this.lastUpdated > ONE_HOUR) {
             // Cache expired, refresh
             void this.refreshFeatureFlags()
         }
 
-        return this.featureFlags[flagName]
+        return this.featureFlags[endpoint]?.[flagName]
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
+        const endpoint = this.apiClient.endpoint
         if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
             return false
         }
 
-        const cachedValue = this.getFromCache(flagName)
+        const cachedValue = this.getFromCache(flagName, endpoint)
         if (cachedValue !== undefined) {
             return cachedValue
         }
 
         const value = await this.apiClient.evaluateFeatureFlag(flagName)
-        this.featureFlags[flagName] = value === null || isError(value) ? false : value
-        return this.featureFlags[flagName]
+        if (!this.featureFlags[endpoint]) {
+            this.featureFlags[endpoint] = {}
+        }
+        this.featureFlags[endpoint][flagName] = value === null || isError(value) ? false : value
+        return this.featureFlags[endpoint][flagName]
     }
 
     public syncAuthStatus(): void {
+        this.featureFlags = {}
         void this.refreshFeatureFlags()
     }
 
     private async refreshFeatureFlags(): Promise<void> {
+        const endpoint = this.apiClient.endpoint
         const data = await this.apiClient.getEvaluatedFeatureFlags()
-        this.featureFlags = isError(data) ? {} : data
+        this.featureFlags[endpoint] = isError(data) ? {} : data
         this.lastUpdated = Date.now()
     }
 }
