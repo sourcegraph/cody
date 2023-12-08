@@ -26,7 +26,7 @@ export class FixupTask {
     /** The text of the last completed turn of the LLM, if any */
     public replacement: string | undefined
     /** The error attached to the fixup, if any */
-    public error: string | undefined
+    public error: Error | undefined
     /**
      * If text has been received from the LLM and a diff has been computed,
      * it is cached here. Diffs are recomputed lazily and may be stale.

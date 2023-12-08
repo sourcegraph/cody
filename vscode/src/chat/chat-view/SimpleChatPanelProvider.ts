@@ -48,7 +48,7 @@ import {
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { MessageErrorType } from '../MessageProvider'
-import { ConfigurationSubsetForWebview, LocalEnv, WebviewMessage } from '../protocol'
+import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
 import {
@@ -62,6 +62,7 @@ import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { Config, IChatPanelProvider } from './ChatPanelsManager'
+import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
 import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
@@ -83,8 +84,15 @@ interface SimpleChatPanelProviderOptions {
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
-    public webviewPanel?: vscode.WebviewPanel
-    public webview?: ChatViewProviderWebview
+    private _webviewPanel?: vscode.WebviewPanel
+    public get webviewPanel(): vscode.WebviewPanel | undefined {
+        return this._webviewPanel
+    }
+    private _webview?: ChatViewProviderWebview
+    public get webview(): ChatViewProviderWebview | undefined {
+        return this._webview
+    }
+    private initDoer = new InitDoer<boolean | undefined>()
 
     private chatModel: SimpleChatModel
 
@@ -222,6 +230,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      */
     private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
         logDebug('SimpleChatPanelProvider:registerWebviewPanel', 'registering webview panel')
+        if (this.webviewPanel || this.webview) {
+            throw new Error('Webview or webview panel already registered')
+        }
+
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
 
@@ -235,15 +247,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await addWebviewViewHTML(this.extensionUri, panel)
 
         // Register webview
-        this.webviewPanel = panel
-        this.webview = panel.webview
+        this._webviewPanel = panel
+        this._webview = panel.webview
         this.postContextStatusToWebView()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
             this.cancelInProgressCompletion()
-            this.webviewPanel = undefined
-            this.webview = undefined
+            this._webviewPanel = undefined
+            this._webview = undefined
             panel.dispose()
         })
 
@@ -261,7 +273,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             'postContextStatusToWebView',
             JSON.stringify(this.contextStatusAggregator.status)
         )
-        void this.webview?.postMessage({
+        void this.postMessage({
             type: 'enhanced-context',
             context: {
                 groups: this.contextStatusAggregator.status,
@@ -275,7 +287,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
         this.webviewPanel?.reveal()
 
-        await this.webview?.postMessage({
+        await this.postMessage({
             type: 'view',
             messages: view,
         })
@@ -292,10 +304,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'initialized':
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.onInitialized()
-
-                // HACK: this call is necessary to get the webview to set the chatID state,
-                // which is necessary on deserialization
-                this.postViewTranscript()
                 break
             case 'submit': {
                 const requestID = uuid.v4()
@@ -373,10 +381,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private async onInitialized(): Promise<void> {
-        await this.restoreSession(this.sessionID, false)
+        // HACK: this call is necessary to get the webview to set the chatID state,
+        // which is necessary on deserialization. It should be invoked before the
+        // other initializers run (otherwise, it might interfere with other view
+        // state)
+        await this.webview?.postMessage({
+            type: 'transcript',
+            messages: [],
+            isMessageInProgress: false,
+            chatID: this.sessionID,
+        })
+
         await this.postChatModels()
         await this.saveSession()
         await this.postCodyCommands()
+        this.initDoer.signalInitialized()
     }
 
     public dispose(): void {
@@ -390,14 +409,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * current in-progress completion. If the chat does not exist, then this
      * is a no-op.
      */
-    public async restoreSession(sessionID: string, cancelOngoingCompletion = true): Promise<void> {
+    public async restoreSession(sessionID: string): Promise<void> {
         const oldTranscript = this.history.getChat(sessionID)
         if (!oldTranscript) {
             return
         }
-        if (cancelOngoingCompletion) {
-            this.cancelInProgressCompletion()
-        }
+        this.cancelInProgressCompletion()
         const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.defaultModelID)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
@@ -408,7 +425,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     public async saveSession(humanInput?: string): Promise<void> {
         const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON(), humanInput)
         if (allHistory) {
-            void this.webview?.postMessage({
+            void this.postMessage({
                 type: 'history',
                 messages: allHistory,
             })
@@ -433,7 +450,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public triggerNotice(notice: { key: string }): void {
-        void this.webview?.postMessage({
+        void this.postMessage({
             type: 'notice',
             notice,
         })
@@ -456,7 +473,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             }
         })
 
-        void this.webview?.postMessage({
+        void this.postMessage({
             type: 'chatModels',
             models,
         })
@@ -483,7 +500,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.chatModel.addHumanMessage({ text }, displayText)
         await this.saveSession(text)
         // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant', text: '' })
+        this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
     }
 
@@ -502,7 +519,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
         }
-        await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+        await this.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
@@ -538,7 +555,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            this.postViewTranscript({ speaker: 'assistant', text: '' })
+            this.postViewTranscript({ speaker: 'assistant' })
 
             this.sendLLMRequest(prompt, {
                 update: content => {
@@ -618,7 +635,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async handleContextFiles(query: string): Promise<void> {
         if (!query.length) {
             const tabs = getOpenTabsContextFile()
-            await this.webview?.postMessage({
+            await this.postMessage({
                 type: 'userContextFiles',
                 context: tabs,
             })
@@ -638,7 +655,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 // (i.e. prevent race conditions where slow old requests get
                 // processed after later faster requests)
                 if (!cancellation.token.isCancellationRequested) {
-                    await this.webview?.postMessage({
+                    await this.postMessage({
                         type: 'userContextFiles',
                         context: symbolResults,
                     })
@@ -650,7 +667,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 // (i.e. prevent race conditions where slow old requests get
                 // processed after later faster requests)
                 if (!cancellation.token.isCancellationRequested) {
-                    await this.webview?.postMessage({
+                    await this.postMessage({
                         type: 'userContextFiles',
                         context: fileResults,
                     })
@@ -674,7 +691,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         // We never await on postMessage, because it can sometimes hang indefinitely:
         // https://github.com/microsoft/vscode/issues/159431
-        void this.webview?.postMessage({
+        void this.postMessage({
             type: 'transcript',
             messages,
             isMessageInProgress: !!messageInProgress,
@@ -695,11 +712,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
-            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: error.message })
+        void this.postMessage({ type: 'errors', errors: error.message })
     }
 
     /**
@@ -792,7 +809,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
             await this.saveSession()
-            this.postViewTranscript()
+            this.postViewTranscript({ speaker: 'assistant' })
 
             this.sendLLMRequest(prompt, {
                 update: (responseText: string) => {
@@ -834,13 +851,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
             const prompts = (await this.editor.controllers.command?.getAllCommands(true)) || []
-            void this.webview?.postMessage({
+            void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
             })
         }
         this.editor.controllers.command?.setMessenger(send)
         await send()
+    }
+
+    /**
+     * Posts a message to the webview, pending initialization.
+     *
+     * cody-invariant: this.webview?.postMessage should never be invoked directly
+     * except within this method.
+     */
+    private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
+        return this.initDoer.do(() => this.webview?.postMessage(message))
     }
 }
 

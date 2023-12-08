@@ -2,13 +2,14 @@
 * CSS styles for storybooks to define variables and otherwise resemble the VS Code.
 */
 
-button {
+vscode-button::part(control) {
+    font-size: inherit;
 }
 
 .container {
     max-width: 600px;
     margin: 2rem auto;
-    font-size: var(--vscode-editor-font-size);
+    font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
 }
@@ -46,10 +47,13 @@ button {
     --vscode-checkbox-background: #313131;
     --vscode-checkbox-border: #3c3c3c;
     --vscode-editor-background: #151c28;
-    --vscode-editor-font-size: 13px;
+    --vscode-editor-font-size: 12px;
     --vscode-editor-foreground: var(--foreground);
     --vscode-focusBorder: #4daafc;
+    --vscode-font-size: 13px;
     --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --type-ramp-base-font-size: 13px;
+    --type-ramp-base-line-height: normal;
     --vscode-input-background: #313131;
     --vscode-input-foreground: #cccccc;
     --vscode-inputOption-activeBorder: #2488db;
