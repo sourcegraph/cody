@@ -40,7 +40,7 @@ export interface IChatPanelProvider extends vscode.Disposable {
     webview?: ChatViewProviderWebview
     sessionID: string
     setWebviewView(view: View): Promise<void>
-    restoreSession(chatIDj: string): Promise<void>
+    restoreSession(chatID: string): Promise<void>
     setConfiguration?: (config: Config) => void
     revive: (panel: vscode.WebviewPanel, chatID: string) => Promise<void>
 }
