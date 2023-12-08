@@ -411,6 +411,9 @@ const register = async (
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
+        vscode.commands.registerCommand('cody.settings.extension.chat', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
+        ),
         vscode.commands.registerCommand('cody.history', async () => {
             await chatManager.setWebviewView('history')
             telemetryService.log(

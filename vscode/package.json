@@ -349,6 +349,13 @@
         "icon": "$(gear)"
       },
       {
+        "command": "cody.settings.extension.chat",
+        "category": "Cody",
+        "title": "Chat Settings",
+        "group": "Cody",
+        "icon": "$(gear)"
+      },
+      {
         "command": "cody.focus",
         "category": "Cody",
         "title": "Sign In"
@@ -869,7 +876,7 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.settings.extension",
+          "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
@@ -1045,7 +1052,7 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages.",
           "examples": [
             "Answer all my questions in Spanish."
           ]
