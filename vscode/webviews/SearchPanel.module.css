@@ -59,6 +59,7 @@
     display: none;
 }
 
+.outer-container:hover .instructions,
 .outer-container:focus-within .instructions {
     display: block;
 }
