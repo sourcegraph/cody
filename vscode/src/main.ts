@@ -127,6 +127,9 @@ const register = async (
     await authProvider.init()
 
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
+    if (symfRunner) {
+        disposables.push(symfRunner)
+    }
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
@@ -219,8 +222,8 @@ const register = async (
 
     if (symfRunner) {
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
-        searchViewProvider.initialize()
         disposables.push(searchViewProvider)
+        searchViewProvider.initialize()
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
