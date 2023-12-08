@@ -9,6 +9,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: You can @-mention files on Windows without generating an error. [pull/2197](https://github.com/sourcegraph/cody/pull/2197)
+- Chat: You can @-mention files on Windows using backslashes instead of forward slashes [pull/2215](https://github.com/sourcegraph/cody/pull/2215)
 
 ### Changed
 
