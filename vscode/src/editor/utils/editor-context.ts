@@ -181,6 +181,21 @@ function createContextFilePath(uri: vscode.Uri): ContextFile['path'] {
     return {
         basename: basename(uri.fsPath),
         dirname: dirname(uri.fsPath),
-        relative: vscode.workspace.asRelativePath(uri.fsPath),
+        relative: asRelativePath(uri),
     }
+}
+
+/**
+ * Returna a relative path using the correct slash direction for the current platform.
+ * @returns
+ */
+function asRelativePath(uri: vscode.Uri): string {
+    let relativePath = vscode.workspace.asRelativePath(uri.fsPath)
+    // asRelativePath returns forward slashes on Windows but we want to
+    // render a native path like VS Code does in the file quick-pick.
+    if (path.sep === path.win32.sep) {
+        relativePath = relativePath.replaceAll(path.posix.sep, path.win32.sep)
+    }
+
+    return relativePath
 }
