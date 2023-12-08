@@ -22,6 +22,10 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.fill('@definitelydoesntexist')
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
+    // Includes dotfiles after just "."
+    await chatInput.fill('@.')
+    await expect(chatPanelFrame.getByRole('button', { name: '.mydotfile' })).toBeVisible()
+
     // Symbol empty state
     await chatInput.fill('@#')
     await expect(chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })).toBeVisible()
