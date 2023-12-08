@@ -160,7 +160,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 break
             case 'win32':
                 paths = {
-                    indexPath: `${process.env.LOCALAPPDATA}/com.sourcegraph.cody/embeddings`,
+                    indexPath: `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`,
                     // Note, there was no Cody App on Windows, so we do not search for App indexes.
                 }
                 break
