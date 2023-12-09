@@ -10,9 +10,40 @@ import { resetLoggedEvents, run, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
+export interface WorkspaceDirectory {
+    workspaceDirectory: string
+}
+
+export interface WorkspaceSettings {
+    [key: string]: string | boolean | number
+}
+
+export interface ExtraWorkspaceSettings {
+    extraWorkspaceSettings: WorkspaceSettings
+}
+
+export interface DotcomUrlOverride {
+    dotcomUrl: string | undefined
+}
+
 export const test = base
+    .extend<WorkspaceDirectory>({
+        // Playwright needs empty pattern to specify "no dependencies".
+        // eslint-disable-next-line no-empty-pattern
+        workspaceDirectory: async ({}, use) => {
+            const vscodeRoot = path.resolve(__dirname, '..', '..')
+            const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
+            await use(workspaceDirectory)
+        },
+    })
+    .extend<ExtraWorkspaceSettings>({
+        extraWorkspaceSettings: {},
+    })
+    .extend<DotcomUrlOverride>({
+        dotcomUrl: undefined,
+    })
     .extend<{}>({
-        page: async ({ page: _page }, use, testInfo) => {
+        page: async ({ page: _page, workspaceDirectory, extraWorkspaceSettings, dotcomUrl }, use, testInfo) => {
             void _page
 
             const vscodeRoot = path.resolve(__dirname, '..', '..')
@@ -24,17 +55,23 @@ export const test = base
             const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
 
-            const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
+            console.log(`Workspace directory: ${workspaceDirectory}`)
 
-            await buildWorkSpaceSettings(workspaceDirectory)
+            await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
 
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
+
+            let dotcomUrlOverride: { [key: string]: string } = {}
+            if (dotcomUrl) {
+                dotcomUrlOverride = { TESTING_DOTCOM_URL: dotcomUrl }
+            }
 
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
                 executablePath: vscodeExecutablePath,
                 env: {
                     ...process.env,
+                    ...dotcomUrlOverride,
                     CODY_TESTING: 'true',
                 },
                 args: [
@@ -117,7 +154,7 @@ export async function getCodySidebar(page: Page): Promise<Frame> {
     return (await findCodySidebarFrame()) || page.mainFrame()
 }
 
-async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
+export async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
     let delay = 10
     while (!(await predicate())) {
         await new Promise(resolve => setTimeout(resolve, delay))
@@ -130,11 +167,15 @@ function escapeToPath(text: string): string {
 }
 
 // Build a workspace settings file that enables the experimental inline mode
-export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
+export async function buildWorkSpaceSettings(
+    workspaceDirectory: string,
+    extraSettings: WorkspaceSettings
+): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
         'cody.editorTitleCommandIcon': true,
+        ...extraSettings,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')

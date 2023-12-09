@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
@@ -11,18 +11,61 @@ import { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 
-export function createLocalEmbeddingsController(context: vscode.ExtensionContext): LocalEmbeddingsController {
-    return new LocalEmbeddingsController(context)
+export function createLocalEmbeddingsController(
+    context: vscode.ExtensionContext,
+    config: LocalEmbeddingsConfig
+): LocalEmbeddingsController {
+    return new LocalEmbeddingsController(context, config)
+}
+
+export interface LocalEmbeddingsConfig {
+    testingLocalEmbeddingsModel: string | undefined
+    testingLocalEmbeddingsEndpoint: string | undefined
+    testingLocalEmbeddingsIndexLibraryPath: string | undefined
+}
+
+function getIndexLibraryPaths(): { indexPath: string; appIndexPath?: string } {
+    switch (process.platform) {
+        case 'darwin':
+            return {
+                indexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`,
+                appIndexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/blobstore/buckets/embeddings`,
+            }
+        case 'linux':
+            return {
+                indexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`,
+                appIndexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/blobstore/buckets/embeddings`,
+            }
+        case 'win32':
+            return {
+                indexPath: `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`,
+                // Note, there was no Cody App on Windows, so we do not search for App indexes.
+            }
+        default:
+            throw new Error(`Unsupported platform: ${process.platform}`)
+    }
+}
+
+interface RepoState {
+    indexable: boolean
+    hasIndex: boolean
 }
 
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
+
+    // These properties are constants, but may be overridden for testing.
+    private readonly model: string
+    private readonly endpoint: string
+    private readonly indexLibraryPath: string | undefined
+
     private service: Promise<MessageHandler> | undefined
     private serviceStarted = false
     private accessToken: string | undefined
     private endpointIsDotcom = false
     private statusBar: vscode.StatusBarItem | undefined
     private lastRepo: { path: string; loadResult: boolean } | undefined
+    private repoState: Map<string, RepoState> = new Map()
 
     // If indexing is in progress, the path of the repo being indexed.
     private pathBeingIndexed: string | undefined
@@ -33,9 +76,16 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // or the first index for a repository coming online.
     private readonly changeEmitter = new vscode.EventEmitter<LocalEmbeddingsController>()
 
-    constructor(private readonly context: vscode.ExtensionContext) {
+    constructor(
+        private readonly context: vscode.ExtensionContext,
+        config: LocalEmbeddingsConfig
+    ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
+
+        this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
+        this.endpoint = config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
+        this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
     }
 
     public dispose(): void {
@@ -60,7 +110,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
-        const endpointIsDotcom = serverEndpoint === DOTCOM_URL.toString()
+        const endpointIsDotcom = isDotCom(serverEndpoint)
         logDebug('LocalEmbeddingsController', 'setAccessToken', endpointIsDotcom ? 'is dotcom' : 'not dotcom')
         if (endpointIsDotcom !== this.endpointIsDotcom) {
             // We will show, or hide, status depending on whether we are using
@@ -142,34 +192,15 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 void vscode.window.showInformationMessage(JSON.stringify(obj))
             }
         })
+
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-
-        let paths
-        switch (process.platform) {
-            case 'darwin':
-                paths = {
-                    indexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`,
-                    appIndexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/blobstore/buckets/embeddings`,
-                }
-                break
-            case 'linux':
-                paths = {
-                    indexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`,
-                    appIndexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/blobstore/buckets/embeddings`,
-                }
-                break
-            case 'win32':
-                paths = {
-                    indexPath: `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`,
-                    // Note, there was no Cody App on Windows, so we do not search for App indexes.
-                }
-                break
-            default:
-                throw new Error(`Unsupported platform: ${process.platform}`)
+        const paths = getIndexLibraryPaths()
+        // Tests may override the index library path
+        if (this.indexLibraryPath) {
+            paths.indexPath = this.indexLibraryPath
         }
-
         const initResult = await service.request('embeddings/initialize', {
-            codyGatewayEndpoint: 'https://cody-gateway.sourcegraph.com/v1/embeddings',
+            codyGatewayEndpoint: this.endpoint,
             ...paths,
         })
         logDebug(
@@ -249,7 +280,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                     {
                         kind: 'embeddings',
                         type: 'local',
-                        state: 'unconsented',
+                        state: this.repoState.get(path)?.indexable ? 'unconsented' : 'no-match',
                     },
                 ],
             },
@@ -267,10 +298,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         const repoPath = this.lastRepo.path
         logDebug('LocalEmbeddingsController', 'index: Starting repository', repoPath)
         try {
-            // TODO(dpc): Add a configuration parameter to override the embedding model for dev/testing
-            // const model = 'stub/stub'
-            const model = 'openai/text-embedding-ada-002'
-            await (await this.getService()).request('embeddings/index', { path: repoPath, model, dimension: 1536 })
+            await (
+                await this.getService()
+            ).request('embeddings/index', { path: repoPath, model: this.model, dimension: 1536 })
             this.pathBeingIndexed = repoPath
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
@@ -294,9 +324,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // There's no path to search
             return false
         }
-        if (repoPath === this.lastRepo?.path) {
-            // We already tried loading this, so use that result
-            return this.lastRepo.loadResult
+        const cachedState = this.repoState.get(repoPath)
+        if (cachedState && !cachedState.hasIndex) {
+            // We already failed to loading this, so use that result
+            return false
         }
         if (!this.serviceStarted) {
             // Try starting the service but reply that there are no local
@@ -314,9 +345,27 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     }
 
     private async eagerlyLoad(repoPath: string): Promise<boolean> {
-        this.lastRepo = {
-            path: repoPath,
-            loadResult: !!(await (await this.getService()).request('embeddings/load', repoPath)),
+        try {
+            const hasIndex = !!(await (await this.getService()).request('embeddings/load', repoPath))
+            this.repoState.set(repoPath, {
+                hasIndex,
+                indexable: true,
+            })
+            this.lastRepo = {
+                path: repoPath,
+                loadResult: hasIndex,
+            }
+        } catch (error: any) {
+            logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+            const noRemoteErrorMessage = "repository does not have a default fetch URL, so can't be named for an index"
+            this.repoState.set(repoPath, {
+                hasIndex: false,
+                indexable: error.message !== noRemoteErrorMessage,
+            })
+            // TODO: Log telemetry when error.message is:
+            // 'repository does not have a default fetch URL, so can't be named for an index'
+            // to prioritize whether to support repositories without a default fetch URL
+            this.lastRepo = { path: repoPath, loadResult: false }
         }
         this.statusEmitter.fire(this)
         return this.lastRepo.loadResult

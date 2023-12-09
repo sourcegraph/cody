@@ -42,6 +42,9 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteTimeouts: {},
+    testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsIndexLibraryPath: undefined,
+    testingLocalEmbeddingsModel: undefined,
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({

@@ -44,7 +44,7 @@ test('shows standard rate limit message for non-dotCom users', async ({ page, si
     await expect(chatFrame.getByRole('button', { name: 'Learn More' })).toBeVisible()
 })
 
-async function prepareChat(page: Page, sidebar: Frame): Promise<[FrameLocator, Locator]> {
+export async function prepareChat(page: Page, sidebar: Frame): Promise<[FrameLocator, Locator]> {
     await sidebarSignin(page, sidebar)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     // Chat webview iframe is the second and last frame (search is the first)

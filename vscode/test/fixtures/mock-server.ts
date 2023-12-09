@@ -164,12 +164,29 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         }
 
         const operation = new URL(req.url, 'https://example.com').search.replace(/^\?/, '')
+        console.log(operation)
         switch (operation) {
             case 'CurrentUser':
-                res.send(JSON.stringify({ data: { currentUser: 'u' } }))
+                res.send(
+                    JSON.stringify({
+                        data: { currentUser: { id: 'u', hasVerifiedEmail: true, codyProEnabled: false } },
+                    })
+                )
                 break
             case 'IsContextRequiredForChatQuery':
                 res.send(JSON.stringify({ data: { isContextRequiredForChatQuery: false } }))
+                break
+            case 'SiteIdentification':
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            site: {
+                                siteID: 'test-site-id',
+                                productSubscription: { license: { hashedKey: 'mmm,hashedkey' } },
+                            },
+                        },
+                    })
+                )
                 break
             case 'SiteProductVersion':
                 res.send(JSON.stringify({ data: { site: { productVersion: 'dev' } } }))
@@ -184,13 +201,16 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 res.send(
                     JSON.stringify({
                         data: {
-                            site: { codyLLMConfiguration: { chatModel: 'test-chat-default-model' } },
+                            site: {
+                                codyLLMConfiguration: { chatModel: 'test-chat-default-model', provider: 'sourcegraph' },
+                            },
                         },
                     })
                 )
                 break
             }
             default:
+                console.log(`not handling request, ${req.url}: ${JSON.stringify(req.headers)}`)
                 res.sendStatus(400)
                 break
         }

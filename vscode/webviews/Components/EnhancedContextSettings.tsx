@@ -114,6 +114,7 @@ const EmbeddingsConsentComponent: React.FunctionComponent<{ provider: LocalEmbed
 function contextProviderState(provider: ContextProvider): React.ReactNode {
     switch (provider.state) {
         case 'indeterminate':
+            return <></>
         case 'ready':
             if (provider.kind === 'embeddings' && provider.type === 'remote') {
                 return (
@@ -128,11 +129,13 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'unconsented':
             return <EmbeddingsConsentComponent provider={provider} />
         case 'no-match':
-            return (
+            return provider.kind === 'embeddings' && provider.type === 'remote' ? (
                 <p className={styles.providerExplanatoryText}>
                     {/* No repository matching {provider.remoteName} on <a href="about:blank#TODO">{provider.origin}</a> */}
                     No repository matching {provider.remoteName} on {provider.origin}
                 </p>
+            ) : (
+                <p className={styles.providerExplanatoryText}>Hello, world</p>
             )
         default:
             return ''
