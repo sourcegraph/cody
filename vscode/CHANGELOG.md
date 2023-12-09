@@ -20,6 +20,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Search: Send sigkill to symf when extension exits. [pull/2225](https://github.com/sourcegraph/cody/pull/2225)
 - Search: Support cancelling index. [pull/2202](https://github.com/sourcegraph/cody/pull/2202)
 - Chat Fix cursor blink issue and ensure proper chat initialization synchronization. [pull/2193](https://github.com/sourcegraph/cody/pull/2193)
+- plg: display errors when autocomplete rate limits trigger [pull/2193](https://github.com/sourcegraph/cody/pull/2135)
+- Mark Upgrade/Usage links as dot-com only [pull/2219](https://github.com/sourcegraph/cody/pull/2219)
 
 ### Changed
 
