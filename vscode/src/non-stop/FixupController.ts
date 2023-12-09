@@ -111,7 +111,7 @@ export class FixupController
                     op: 'skip_formatting',
                     hasV2Event: true,
                 })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.skip-formatting', 'clicked', {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.skipFormatting', 'clicked', {
                     privateMetadata: { op: 'skip_formatting' },
                 })
                 return this.skipFormatting(id)
