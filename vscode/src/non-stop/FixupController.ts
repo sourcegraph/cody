@@ -724,7 +724,7 @@ export class FixupController
         const tokenCount = countCode(replacementText)
         telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            privateMetadata: {
+            metadata: {
                 tokenCount,
             },
         })
