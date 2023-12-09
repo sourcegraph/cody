@@ -101,7 +101,7 @@ export class FixupController
                     op: 'show_error',
                     hasV2Event: true,
                 })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.error', 'error', {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.showError', 'clicked', {
                     privateMetadata: { op: 'show_error' },
                 })
                 return this.showError(id)
