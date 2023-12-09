@@ -79,7 +79,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // may terminate in the middle of a character
                     const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
                     bufferBin = buf
-                    console.log('recv:', str)
                     if (str.startsWith(LLAMA_ERROR_PREFIX)) {
                         return 
                     }
@@ -93,7 +92,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         completionText += event.completion
                         event.completion = completionText
                     }
-                    console.log('event', event)
                     bufferText = ''
                     this.sendEvents([event], cb)
                 })

@@ -139,32 +139,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     private async userQueryToExpandedKeywords(query: string): Promise<Map<string, Term>> {
         const start = performance.now()
-        const keywords = await new Promise<string[]>((resolve, reject) => {
-            let responseText = ''
-            this.chatClient.chat(
-                [
-                    {
-                        speaker: 'human',
-                        text: `Write 3-5 keywords that you would use to search for code snippets that are relevant to answering the following user query: <query>${query}</query> Your response should be only a list of space-delimited keywords and nothing else.`,
-                    },
-                ],
-                {
-                    onChange: (text: string) => {
-                        responseText = text
-                    },
-                    onComplete: () => {
-                        resolve(responseText.split(/\s+/).filter(e => e.length > 0))
-                    },
-                    onError: (message: string) => {
-                        reject(new Error(message))
-                    },
-                },
-                {
-                    temperature: 0,
-                    fast: true,
-                }
-            )
-        })
+        const keywords: string[] = []
+        if (this.chatClient) {}
         const terms = new Map<string, Term>()
         for (const kw of keywords) {
             const stem = winkUtils.string.stem(kw)

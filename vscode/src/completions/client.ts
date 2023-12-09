@@ -36,7 +36,7 @@ export interface CodeCompletionsClient {
  */
 export function createClient(config: CompletionsClientConfig, logger?: CompletionLogger): CodeCompletionsClient {
     function getCodeCompletionsEndpoint(): string {
-        return new URL('/.api/completions/code', config.serverEndpoint).href
+        return new URL('/completion', 'http://127.0.0.1:8080').href
     }
 
     function completeWithTimeout(

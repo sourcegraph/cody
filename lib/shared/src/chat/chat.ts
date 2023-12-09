@@ -8,9 +8,10 @@ type ChatParameters = Omit<CompletionParameters, 'messages'>
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
     temperature: 0.2,
     maxTokensToSample: ANSWER_TOKENS,
-    topK: -1,
-    topP: -1,
+    top_k: 20,
+    top_p: 0.85,
     stream: true,
+    n_predict: 800,
 }
 
 export class ChatClient {

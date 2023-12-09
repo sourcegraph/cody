@@ -8,7 +8,6 @@ import type {
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
-import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
@@ -163,7 +162,7 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
 export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration()
     // Migrate endpoints to local storage
-    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+    config.serverEndpoint = "http://127.0.0.1:8080" // localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
 }

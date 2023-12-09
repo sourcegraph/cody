@@ -31,6 +31,10 @@ I will let you know if I need more information to answer a question.`
  * Both messages contain an optional note about the current codebase if it's not null.
  */
 export function getPreamble(codebase: string | undefined, customPreamble?: Preamble): Message[] {
+    const disabled = true
+    if (disabled) {
+        return []
+    }
     const actionsText = customPreamble?.actions ?? actions
     const rulesText = customPreamble?.rules ?? rules
     const answerText = customPreamble?.answer ?? answer

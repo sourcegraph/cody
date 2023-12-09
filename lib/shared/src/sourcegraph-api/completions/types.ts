@@ -32,8 +32,12 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    // LLaMa.cpp params
     prompt?: string
     stream?: boolean
+    n_predict?: number
+    top_k?: number
+    top_p?: number
 }
 
 export interface CompletionCallbacks {
@@ -53,7 +57,9 @@ export interface CompletionCallbacks {
 
 export function withPrompt(params: CompletionParameters) : CompletionParameters {
     let prompt = ''
-    params.messages.forEach(e => { prompt += e.text })
+    params.messages.forEach(e => {
+        if (e.speaker == "human" && e.text) prompt = e.text
+    })
     params.prompt = prompt
     return params
 }

@@ -36,10 +36,11 @@ export class PromptMixin {
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
         // Default Mixin is added at the end so that it cannot be overriden by a custom mixin.
         const mixins = [...this.mixins, ...this.customMixin, this.defaultMixin].map(mixin => mixin.prompt).join('\n\n')
-        if (mixins) {
+        const enabled = true
+        if (mixins && enabled) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
-            return { ...humanMessage, text: `${mixins}${humanMessage.text}` }
+            return { ...humanMessage, text: `${humanMessage.text}` }
         }
         return humanMessage
     }
