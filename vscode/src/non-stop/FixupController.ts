@@ -9,7 +9,7 @@ import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
 import { computeDiff, Diff } from './diff'
@@ -723,10 +723,10 @@ export class FixupController
 
         const tokenCount = countCode(replacementText)
         telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, { hasV2Event: true })
+        const { metadata, privateMetadata } = splitSafeMetadata(tokenCount)
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            metadata: {
-                tokenCount,
-            },
+            metadata,
+            privateMetadata,
         })
 
         this.setTaskState(task, CodyTaskState.finished)

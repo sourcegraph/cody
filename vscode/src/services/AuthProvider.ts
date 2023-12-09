@@ -343,10 +343,12 @@ export class AuthProvider {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent(`cody.auth.fromCallback.${isApp ? 'app' : 'web'}`, 'succeeded', {
+            metadata: {
+                success: authState?.isLoggedIn ? 1 : 0,
+            },
             privateMetadata: {
                 type: 'callback',
                 from: isApp ? 'app' : 'web',
-                success: Boolean(authState?.isLoggedIn),
             },
         })
         if (authState?.isLoggedIn) {
