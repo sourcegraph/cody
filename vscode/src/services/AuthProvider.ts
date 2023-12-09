@@ -147,7 +147,6 @@ export class AuthProvider {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
         if (!token || !endpoint) {
-            logDebug('AuthProvider', 'no auth status')
             return { ...defaultAuthStatus, endpoint }
         }
         // Cache the config and the GraphQL client
@@ -160,7 +159,7 @@ export class AuthProvider {
             this.client.isCodyEnabled(),
             this.client.getCodyLLMConfiguration(),
         ])
-        logDebug('AuthProvider', 'isError codyLLMConfiguration', isError(codyLLMConfiguration), codyLLMConfiguration)
+
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
@@ -187,14 +186,11 @@ export class AuthProvider {
             )
         }
 
-        logDebug('AuthProvider', 'getCurrentUserIdAndVerifiedEmailAndCodyPro')
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
-        logDebug('AuthProvider', 'getCurrentUserIdAndVerifiedEmailAndCodyPro done', userInfo)
         const isCodyEnabled = true
 
         // check first if it's a network error
         if (isError(userInfo)) {
-            logDebug('AuthProvider:makeAuthStatus', 'userInfo error', userInfo)
             if (isNetworkError(userInfo)) {
                 return { ...networkErrorAuthStatus, endpoint }
             }
@@ -235,13 +231,7 @@ export class AuthProvider {
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
         }
-        let authStatus
-        try {
-            authStatus = await this.makeAuthStatus(config)
-        } catch (error) {
-            logDebug('AuthProvider:auth', 'error makeAuthStatus', error)
-            throw error
-        }
+        const authStatus = await this.makeAuthStatus(config)
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
         await this.storeAuthInfo(endpoint, token)
