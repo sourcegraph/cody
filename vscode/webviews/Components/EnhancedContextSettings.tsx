@@ -135,7 +135,7 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
                     No repository matching {provider.remoteName} on {provider.origin}
                 </p>
             ) : (
-                <p className={styles.providerExplanatoryText}>Hello, world</p>
+                <></>
             )
         default:
             return ''

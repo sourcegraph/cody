@@ -48,6 +48,7 @@ function getIndexLibraryPaths(): { indexPath: string; appIndexPath?: string } {
 
 interface RepoState {
     indexable: boolean
+    isGit: boolean
     hasIndex: boolean
 }
 
@@ -282,6 +283,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
+        const repoState = this.repoState.get(path)
+        if (!repoState?.isGit) {
+            return []
+        }
         return [
             {
                 name: path,
@@ -289,7 +294,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                     {
                         kind: 'embeddings',
                         type: 'local',
-                        state: this.repoState.get(path)?.indexable ? 'unconsented' : 'no-match',
+                        state: repoState?.indexable ? 'unconsented' : 'no-match',
                     },
                 ],
             },
@@ -359,6 +364,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             this.repoState.set(repoPath, {
                 hasIndex,
                 indexable: true,
+                isGit: true,
             })
             this.lastRepo = {
                 path: repoPath,
@@ -366,14 +372,22 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             }
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+
             const noRemoteErrorMessage = "repository does not have a default fetch URL, so can't be named for an index"
+            const noRemote = error.message === noRemoteErrorMessage
+
+            const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
+            const notGit = notAGitRepositoryErrorMessage.test(error.message)
+
             this.repoState.set(repoPath, {
                 hasIndex: false,
-                indexable: error.message !== noRemoteErrorMessage,
+                indexable: !(notGit || noRemote),
+                isGit: !notGit,
             })
-            // TODO: Log telemetry when error.message is:
-            // 'repository does not have a default fetch URL, so can't be named for an index'
-            // to prioritize whether to support repositories without a default fetch URL
+
+            // TODO: Log telemetry error messages to prioritize supporting
+            // repos without remotes, other SCCS, etc.
+
             this.lastRepo = { path: repoPath, loadResult: false }
         }
         this.statusEmitter.fire(this)
