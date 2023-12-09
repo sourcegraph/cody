@@ -3,7 +3,7 @@ import { promises as fs } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 
-import { expect } from '@playwright/test'
+import { expect, FrameLocator, Page } from '@playwright/test'
 
 import { SERVER_URL } from '../fixtures/mock-server'
 
@@ -32,6 +32,21 @@ function spawn(...args: Parameters<typeof child_process.spawn>): Promise<void> {
             }
         })
     })
+}
+
+async function openFile(page: Page, filename: string): Promise<void> {
+    // Open a file from the file picker
+    await page.keyboard.down('Control')
+    await page.keyboard.down('Shift')
+    await page.keyboard.press('P')
+    await page.keyboard.up('Shift')
+    await page.keyboard.up('Control')
+    await page.keyboard.type(`${filename}\n`)
+}
+
+async function newChat(page: Page): Promise<FrameLocator> {
+    await page.getByRole('button', { name: 'New Chat' }).click()
+    return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
 
 // Reconfigured test for local embeddings:
@@ -78,23 +93,38 @@ const test = helpers.test
         },
     })
 
-test('git repositories without a remote should show the "no match" state', async ({ page, sidebar }) => {
-    // Open a file from the file picker
-    await page.keyboard.down('Control')
-    await page.keyboard.down('Shift')
-    await page.keyboard.press('P')
-    await page.keyboard.up('Shift')
-    await page.keyboard.up('Control')
-    await page.keyboard.type('main.c\n')
-
+test.extend<helpers.WorkspaceDirectory>({
+    // Playwright needs empty pattern to specify "no dependencies".
+    // eslint-disable-next-line no-empty-pattern
+    workspaceDirectory: async ({}, use) => {
+        await withTempDir(async dir => {
+            // Write some content to the filesystem. But this is not a git repository.
+            await Promise.all([
+                fs.writeFile(path.join(dir, 'README.md'), 'Prints an classic greeting'),
+                fs.writeFile(path.join(dir, 'main.c'), '#include <stdio.h> main() { printf("Hello, world.\\n"); }'),
+            ])
+            await use(dir)
+        })
+    },
+})('non-git repositories should not advertise embeddings', async ({ page, sidebar }) => {
+    await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat' }).click()
-
-    // Find the chat frame
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatFrame = await newChat(page)
     const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
     await enhancedContextButton.click()
 
+    // Embeddings is visible at first as cody-engine starts...
+    await expect(chatFrame.getByText('Embeddings')).toBeVisible()
+    // ...and disappears when the engine works out this is not a git repo.
+    await expect(chatFrame.getByText('Embeddings')).not.toBeVisible()
+})
+
+test('git repositories without a remote should show the "no match" state', async ({ page, sidebar }) => {
+    await openFile(page, 'main.c')
+    await sidebarSignin(page, sidebar)
+    const chatFrame = await newChat(page)
+    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
+    await enhancedContextButton.click()
     await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible()
 })
 
@@ -105,22 +135,14 @@ test.extend<helpers.WorkspaceDirectory>({
         await use(workspaceDirectory)
     },
 })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
-    // Open a file from the file picker
-    await page.keyboard.down('Control')
-    await page.keyboard.down('Shift')
-    await page.keyboard.press('P')
-    await page.keyboard.up('Shift')
-    await page.keyboard.up('Control')
-    await page.keyboard.type('main.c\n')
-
+    await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat' }).click()
-
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatFrame = await newChat(page)
     const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
     await enhancedContextButton.click()
 
     const enableEmbeddingsButton = chatFrame.getByText('Enable Embeddings')
+    // This may take a while, we download and start cody-engine
     await expect(enableEmbeddingsButton).toBeVisible({ timeout: 300000 })
     await enableEmbeddingsButton.click()
 
