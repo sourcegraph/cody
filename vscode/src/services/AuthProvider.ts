@@ -1,12 +1,13 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { DOTCOM_URL, isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
+    ACCOUNT_USAGE_URL,
     AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
@@ -130,6 +131,55 @@ export class AuthProvider {
         }
     }
 
+    public async accountMenu(): Promise<void> {
+        if (!this.authStatus.authenticated || !this.authStatus.endpoint) {
+            return
+        }
+
+        if (!isDotCom(this.authStatus.endpoint)) {
+            const option = await vscode.window.showInformationMessage(
+                `Signed in as ${this.authStatus.primaryEmail}`,
+                {
+                    modal: true,
+                    detail: `Enterprise Instance:\n${this.authStatus.endpoint}`,
+                },
+                'Switch Account...',
+                'Sign Out'
+            )
+            switch (option) {
+                case 'Switch Account...':
+                    await this.signinMenu()
+                    break
+                case 'Sign Out':
+                    await this.signoutMenu()
+                    break
+            }
+            return
+        }
+
+        const option = await vscode.window.showInformationMessage(
+            `${this.authStatus.displayName}\n${this.authStatus.primaryEmail}`,
+            {
+                modal: true,
+                detail: `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Pro' : 'Cody Free'}`,
+            },
+            'Manage Account',
+            'Switch Account...',
+            'Sign Out'
+        )
+        switch (option) {
+            case 'Manage Account':
+                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()))
+                break
+            case 'Switch Account...':
+                await this.signinMenu()
+                break
+            case 'Sign Out':
+                await this.signoutMenu()
+                break
+        }
+    }
+
     // Log user out of the selected endpoint (remove token from secret)
     private async signout(endpoint: string): Promise<void> {
         await secretStorage.deleteToken(endpoint)
@@ -163,25 +213,30 @@ export class AuthProvider {
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
+
         if (!isDotCom) {
-            const currentUserID = await this.client.getCurrentUserId()
+            const userInfo = await this.client.getEnterpriseCurrentUserInfo()
             const hasVerifiedEmail = false
 
             // check first if it's a network error
-            if (isError(currentUserID)) {
-                if (isNetworkError(currentUserID)) {
+            if (isError(userInfo)) {
+                if (isNetworkError(userInfo)) {
                     return { ...networkErrorAuthStatus, endpoint }
                 }
+                return { ...unauthenticatedStatus, endpoint }
             }
 
             return newAuthStatus(
                 endpoint,
                 isDotCom,
-                !isError(currentUserID),
+                !isError(userInfo),
                 hasVerifiedEmail,
                 enabled,
                 /* userCanUpgrade: */ false,
                 version,
+                userInfo.avatarURL,
+                userInfo.primaryEmail.email,
+                userInfo.displayName,
                 configOverwrites
             )
         }
@@ -211,6 +266,9 @@ export class AuthProvider {
             isCodyEnabled,
             userCanUpgrade,
             version,
+            userInfo.avatarURL,
+            userInfo.primaryEmail.email,
+            userInfo.displayName,
             configOverwrites
         )
     }

@@ -5,6 +5,18 @@ query CurrentUser {
     }
 }`
 
+export const ENTERPRISE_CURRENT_USER_INFO_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+        displayName
+        avatarURL
+        primaryEmail {
+            email
+        }
+    }
+}`
+
 export const CURRENT_SITE_VERSION_QUERY = `
 query SiteProductVersion {
     site {
@@ -28,12 +40,17 @@ query SiteGraphQLFields {
     }
 }`
 
-export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
+export const CURRENT_USER_INFO_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
 query CurrentUser {
     currentUser {
         id
         hasVerifiedEmail
+        displayName
+        avatarURL
         codyProEnabled
+        primaryEmail {
+            email
+        }
     }
 }`
 

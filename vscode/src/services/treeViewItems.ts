@@ -112,9 +112,9 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'vscode.open', args: [DISCORD_URL.href] },
     },
     {
-        title: 'Sign Out',
-        icon: 'log-out',
-        command: { command: 'cody.auth.signout' },
+        title: 'Account',
+        icon: 'account',
+        command: { command: 'cody.auth.account' },
     },
 ]
 
