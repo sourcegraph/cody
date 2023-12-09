@@ -209,7 +209,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 break
             }
             default:
-                console.log(`mock-server not handling request: ${req.url}`)
                 res.sendStatus(400)
                 break
         }
