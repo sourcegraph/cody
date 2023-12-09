@@ -140,7 +140,7 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             requestID,
             hasV2Event: true,
         })
-        telemetryRecorder.recordEvent(`cody.${eventType}:Paste`, 'clicked', {
+        telemetryRecorder.recordEvent(`cody.${eventType}`, 'paste', {
             privateMetadata: {
                 args: {
                     op,
