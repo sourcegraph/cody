@@ -164,7 +164,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         }
 
         const operation = new URL(req.url, 'https://example.com').search.replace(/^\?/, '')
-        console.log(operation)
         switch (operation) {
             case 'CurrentUser':
                 res.send(
@@ -210,7 +209,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 break
             }
             default:
-                console.log(`not handling request, ${req.url}: ${JSON.stringify(req.headers)}`)
+                console.log(`mock-server not handling request: ${req.url}`)
                 res.sendStatus(400)
                 break
         }

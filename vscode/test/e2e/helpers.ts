@@ -55,8 +55,6 @@ export const test = base
             const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
 
-            console.log(`Workspace directory: ${workspaceDirectory}`)
-
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
 
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
