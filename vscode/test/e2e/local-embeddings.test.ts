@@ -71,16 +71,14 @@ const test = helpers.test
         extraWorkspaceSettings: async ({}, use) => {
             await withTempDir(async dir =>
                 use({
-                    'cody.testing.localEmbeddingsModel': 'stub/stub',
-                    'cody.testing.localEmbeddingsIndexLibraryPath': dir,
+                    'cody.testing.localEmbeddings.model': 'stub/stub',
+                    'cody.testing.localEmbeddings.indexLibraryPath': dir,
                 })
             )
         },
     })
 
-// test('should create and tear down a git repository', async ({}) => {})
-
-test('should create and search a local embeddings index', async ({ page, sidebar }) => {
+test('git repositories without a remote should show the "no match" state', async ({ page, sidebar }) => {
     // Open a file from the file picker
     await page.keyboard.down('Control')
     await page.keyboard.down('Shift')
@@ -97,7 +95,39 @@ test('should create and search a local embeddings index', async ({ page, sidebar
     const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
     await enhancedContextButton.click()
 
+    await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible()
+})
+
+test.extend<helpers.WorkspaceDirectory>({
+    workspaceDirectory: async ({ workspaceDirectory }, use) => {
+        // Add a remote to the git repo so that it can be indexed.
+        await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/repo.git'], { cwd: workspaceDirectory })
+        await use(workspaceDirectory)
+    },
+})('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
+    // Open a file from the file picker
+    await page.keyboard.down('Control')
+    await page.keyboard.down('Shift')
+    await page.keyboard.press('P')
+    await page.keyboard.up('Shift')
+    await page.keyboard.up('Control')
+    await page.keyboard.type('main.c\n')
+
+    await sidebarSignin(page, sidebar)
+    await page.getByRole('button', { name: 'New Chat' }).click()
+
+    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
+    await enhancedContextButton.click()
+
     const enableEmbeddingsButton = chatFrame.getByText('Enable Embeddings')
-    await expect(enableEmbeddingsButton).toBeVisible({ timeout: 60000 })
+    await expect(enableEmbeddingsButton).toBeVisible({ timeout: 300000 })
     await enableEmbeddingsButton.click()
+
+    await expect(chatFrame.getByText('Indexed')).toBeVisible({ timeout: 30000 })
+
+    // Search the embeddings. This test uses the "stub" embedding model, which
+    // is deterministic, but the searches are not semantic.
+    await chatFrame.locator('textarea').type('hello world\n')
+    await expect(chatFrame.getByText(/✨ Context: \d+ lines from 2 files/)).toBeVisible({ timeout: 10000 })
 })

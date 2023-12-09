@@ -171,6 +171,9 @@ export async function buildWorkSpaceSettings(
     workspaceDirectory: string,
     extraSettings: WorkspaceSettings
 ): Promise<void> {
+    console.log(
+        `Building workspace settings for ${workspaceDirectory} with extra settings ${JSON.stringify(extraSettings)}`
+    )
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
@@ -180,7 +183,9 @@ export async function buildWorkSpaceSettings(
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
     const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
-    mkdir(workspaceSettingsDirectory, { recursive: true }, () => {})
+    await new Promise((resolve, reject) => {
+        mkdir(workspaceSettingsDirectory, { recursive: true }, err => (err ? reject(err) : resolve(undefined)))
+    })
     await new Promise<void>((resolve, reject) => {
         writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
             if (error) {

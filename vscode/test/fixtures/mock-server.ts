@@ -21,7 +21,7 @@ interface MockRequest {
 const SERVER_PORT = 49300
 
 export const SERVER_URL = 'http://localhost:49300'
-export const VALID_TOKEN = 'abcdefgh1234'
+export const VALID_TOKEN = 'sgp_1234567890123456789012345678901234567890'
 
 const responses = {
     chat: 'hello from the assistant',

@@ -159,10 +159,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                     const percent = Math.floor((100 * obj.Progress.numItems) / obj.Progress.totalItems)
                     this.statusBar.text = `$(loading~spin) Cody Embeddings (${percent.toFixed(0)}%)`
                     this.statusBar.backgroundColor = undefined
+                    this.statusBar.tooltip = obj.Progress.currentPath
                     this.statusBar.show()
                 } else if ('Error' in obj) {
                     this.statusBar.text = '$(warning) Cody Embeddings'
                     this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+                    this.statusBar.tooltip = obj.Error
                     this.statusBar.show()
                 }
             } else if (obj === 'Done') {
@@ -196,7 +198,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
         const paths = getIndexLibraryPaths()
         // Tests may override the index library path
+        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'index library paths', JSON.stringify(paths))
         if (this.indexLibraryPath) {
+            logDebug(
+                'LocalEmbeddingsController',
+                'spawnAndBindService',
+                'overriding index library path',
+                this.indexLibraryPath
+            )
             paths.indexPath = this.indexLibraryPath
         }
         const initResult = await service.request('embeddings/initialize', {
