@@ -218,7 +218,7 @@ export async function assertEvents(loggedEvents: string[], expectedEvents: strin
 // directory when done.
 export async function withTempDir<T>(f: (dir: string) => Promise<T>): Promise<T> {
     // Create the temporary directory
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cody-vsce'))
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
     try {
         return await f(dir)
     } finally {
