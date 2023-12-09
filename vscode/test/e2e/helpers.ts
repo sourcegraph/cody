@@ -1,8 +1,9 @@
-import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
-import { tmpdir } from 'os'
+import * as child_process from 'child_process'
+import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 
-import { test as base, expect, Frame, Page } from '@playwright/test'
+import { test as base, expect, Frame, FrameLocator, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -10,6 +11,7 @@ import { resetLoggedEvents, run, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 
+// Playwright test extension: The workspace directory to run the test in.
 export interface WorkspaceDirectory {
     workspaceDirectory: string
 }
@@ -18,15 +20,19 @@ export interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
+// Playwright test extension: Extra VSCode settings to write to
+// .vscode/settings.json.
 export interface ExtraWorkspaceSettings {
     extraWorkspaceSettings: WorkspaceSettings
 }
 
+// Playwright test extension: Treat this URL as if it is "dotcom".
 export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
 }
 
 export const test = base
+    // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
         // Playwright needs empty pattern to specify "no dependencies".
         // eslint-disable-next-line no-empty-pattern
@@ -36,9 +42,11 @@ export const test = base
             await use(workspaceDirectory)
         },
     })
+    // By default, do not add any extra workspace settings.
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {},
     })
+    // By default, treat https://sourcegraph.com as "dotcom".
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
@@ -51,8 +59,8 @@ export const test = base
             const vscodeExecutablePath = await installVsCode()
             const extensionDevelopmentPath = vscodeRoot
 
-            const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-            const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
+            const userDataDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
+            const extensionsDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
             const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
@@ -169,9 +177,6 @@ export async function buildWorkSpaceSettings(
     workspaceDirectory: string,
     extraSettings: WorkspaceSettings
 ): Promise<void> {
-    console.log(
-        `Building workspace settings for ${workspaceDirectory} with extra settings ${JSON.stringify(extraSettings)}`
-    )
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
@@ -202,14 +207,54 @@ export async function signOut(page: Page): Promise<void> {
     await page.keyboard.press('Enter')
 }
 
-export async function submitChat(sidebar: Frame, text: string): Promise<void> {
-    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill(text)
-    await sidebar.getByTitle('Send Message').click()
-}
-
 /**
  * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
 export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
     await expect.poll(() => loggedEvents).toEqual(expect.arrayContaining(expectedEvents))
+}
+
+// Creates a temporary directory, calls `f`, and then deletes the temporary
+// directory when done.
+export async function withTempDir<T>(f: (dir: string) => Promise<T>): Promise<T> {
+    // Create the temporary directory
+    const dir = await fs.mkdtemp(await fs.realpath(os.tmpdir() + path.sep))
+    try {
+        return await f(dir)
+    } finally {
+        // Remove the temporary directory
+        await fs.rm(dir, { recursive: true, force: true })
+    }
+}
+
+// Runs a program (see `child_process.spawn`) and waits until it exits. Throws
+// if the child exits with a non-zero exit code or signal.
+export function spawn(...args: Parameters<typeof child_process.spawn>): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const child = child_process.spawn(...args)
+        child.once('close', (code, signal) => {
+            if (code || signal) {
+                reject(new Error(`child exited with code ${code}/signal ${signal}`))
+            } else {
+                resolve()
+            }
+        })
+    })
+}
+
+// Uses VSCode command palette to open a file by typing its name.
+export async function openFile(page: Page, filename: string): Promise<void> {
+    // Open a file from the file picker
+    await page.keyboard.down('Control')
+    await page.keyboard.down('Shift')
+    await page.keyboard.press('P')
+    await page.keyboard.up('Shift')
+    await page.keyboard.up('Control')
+    await page.keyboard.type(`${filename}\n`)
+}
+
+// Starts a new panel chat and returns a FrameLocator for the chat.
+export async function newChat(page: Page): Promise<FrameLocator> {
+    await page.getByRole('button', { name: 'New Chat' }).click()
+    return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }

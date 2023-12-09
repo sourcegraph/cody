@@ -1,53 +1,13 @@
-import * as child_process from 'child_process'
 import { promises as fs } from 'fs'
-import * as os from 'os'
 import * as path from 'path'
 
-import { expect, FrameLocator, Page } from '@playwright/test'
+import { expect } from '@playwright/test'
 
 import { SERVER_URL } from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
 import * as helpers from './helpers'
-
-async function withTempDir<T>(f: (dir: string) => Promise<T>): Promise<T> {
-    // Create the temporary directory
-    const dir = await fs.mkdtemp(await fs.realpath(os.tmpdir() + path.sep))
-    try {
-        return await f(dir)
-    } finally {
-        // Remove the temporary directory
-        await fs.rm(dir, { recursive: true, force: true })
-    }
-}
-
-function spawn(...args: Parameters<typeof child_process.spawn>): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const child = child_process.spawn(...args)
-        child.once('close', (code, signal) => {
-            if (code || signal) {
-                reject(new Error(`child exited with code ${code}/signal ${signal}`))
-            } else {
-                resolve()
-            }
-        })
-    })
-}
-
-async function openFile(page: Page, filename: string): Promise<void> {
-    // Open a file from the file picker
-    await page.keyboard.down('Control')
-    await page.keyboard.down('Shift')
-    await page.keyboard.press('P')
-    await page.keyboard.up('Shift')
-    await page.keyboard.up('Control')
-    await page.keyboard.type(`${filename}\n`)
-}
-
-async function newChat(page: Page): Promise<FrameLocator> {
-    await page.getByRole('button', { name: 'New Chat' }).click()
-    return page.frameLocator('iframe.webview').last().frameLocator('iframe')
-}
+import { newChat, openFile, spawn, withTempDir } from './helpers'
 
 // Reconfigured test for local embeddings:
 // - treats http://localhost:49000 as dotcom
