@@ -1,3 +1,5 @@
+import { platform } from 'os'
+
 import { debounce } from 'lodash'
 import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
@@ -38,7 +40,7 @@ export async function showCommandMenu(
     items: (QuickPickItem | QuickPickItemWithSlashCommand)[]
 ): Promise<CommandMenuResponse> {
     const options = {
-        title: 'Cody (Shortcut: ⌥C)',
+        title: `Cody (Shortcut: ${platform() === 'darwin' ? '⌥' : 'Alt+'}C)`,
         placeHolder: 'Search for a command or enter your question here...',
     }
 

@@ -132,8 +132,8 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
     // the copied code should be the same as the clipboard text
     if (matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, newCode)) {
         const op = 'paste'
-        const eventType = source.startsWith('inline') ? 'inlineChat' : 'keyDown'
-        // 'CodyVSCodeExtension:inlineChat:Paste:clicked' or 'CodyVSCodeExtension:keyDown:Paste:clicked'
+        const eventType = 'keyDown'
+        // e.g.'CodyVSCodeExtension:keyDown:Paste:clicked'
         telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
             op,
             lineCount,

@@ -113,10 +113,7 @@ export class EventLogger {
             configurationDetails: {
                 contextSelection: this.config.useContext,
                 chatPredictions: this.config.experimentalChatPredictions,
-                inline: this.config.inlineChat,
-                nonStop: this.config.experimentalNonStop,
                 guardrails: this.config.experimentalGuardrails,
-                newChatUI: this.config.experimentalChatPanel,
             },
             version: this.extensionDetails.version, // for backcompat
             hasV2Event,

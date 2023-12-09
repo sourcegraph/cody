@@ -47,6 +47,10 @@ export type Requests = {
 
     'graphql/currentUserId': [null, string]
 
+    'graphql/currentUserIsPro': [null, boolean]
+
+    'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
+
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */
@@ -149,7 +153,8 @@ export interface SelectedCompletionInfo {
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
-    /** @deprecated */
+
+    /** completionEvent is not deprecated because it's used by non-editor clients like evaluate-autocomplete that need access to book-keeping data to evaluate results. */
     completionEvent?: CompletionBookkeepingEvent
 }
 

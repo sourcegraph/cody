@@ -9,6 +9,7 @@ import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
+import { telemetryService } from '../services/telemetry'
 
 import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
@@ -110,6 +111,8 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
+    isDotComUser?: boolean
+
     contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
 
@@ -132,7 +135,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     // completions, we use consult this field inside the completion callback instead.
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
-    private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
@@ -166,6 +168,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             dynamicMultilineCompletions,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
+            isDotComUser: config.isDotComUser ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -571,11 +574,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      */
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
-            if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
+            // If there's already an existing error, don't add another one.
+            const hasRateLimitError = this.config.statusBar.hasError(error.name)
+            if (hasRateLimitError) {
                 return
             }
-            this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
+
             const canUpgrade = error.upgradeIsAvailable
+            const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
             let errorTitle: string
             let pageName: string
             if (canUpgrade) {
@@ -585,13 +591,45 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 errorTitle = 'Cody Autocomplete Disabled Due to Rate Limit'
                 pageName = 'rate-limits'
             }
+            let shown = false
             this.config.statusBar.addError({
                 title: errorTitle,
                 description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
+                errorType: error.name,
                 onSelect: () => {
+                    if (canUpgrade) {
+                        telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
+                            limit_type: 'suggestions',
+                        })
+                    }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
+                onShow: () => {
+                    if (shown) {
+                        return
+                    }
+                    shown = true
+                    telemetryService.log(
+                        canUpgrade
+                            ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
+                            : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+                        {
+                            limit_type: 'suggestions',
+                            tier,
+                        }
+                    )
+                },
             })
+
+            telemetryService.log(
+                canUpgrade
+                    ? 'CodyVSCodeExtension:upsellUsageLimitStatusBar:shown'
+                    : 'CodyVSCodeExtension:abuseUsageLimitStatusBar:shown',
+                {
+                    limit_type: 'suggestions',
+                    tier,
+                }
+            )
             return
         }
 

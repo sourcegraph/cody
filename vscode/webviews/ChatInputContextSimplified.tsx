@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { URI } from 'vscode-uri'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared'
-import { DOTCOM_URL, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
 
@@ -14,7 +14,6 @@ import {
     EmbeddingsEnabledPopup,
     EmbeddingsNotFoundEnterprisePopup,
     EmbeddingsNotFoundPopup,
-    InstallCodyAppPopup,
     OnboardingPopupProps,
 } from './Popups/OnboardingExperimentPopups'
 import { Popup, PopupOpenProps } from './Popups/Popup'
@@ -24,7 +23,6 @@ import popupStyles from './Popups/Popup.module.css'
 
 export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
-    isAppInstalled: boolean
     onboardingPopupProps: OnboardingPopupProps
 }
 
@@ -38,8 +36,6 @@ const CodebaseState: React.FunctionComponent<{
     onboardingPopupProps?: OnboardingPopupProps
 }> = ({ iconClassName, icon, popup, popupOpen, togglePopup, onboardingPopupProps }) => {
     onboardingPopupProps ||= {
-        openApp: () => {},
-        installApp: () => {},
         reloadStatus: () => {},
     }
     return (
@@ -54,13 +50,8 @@ const CodebaseState: React.FunctionComponent<{
     )
 }
 
-// This is a fork of ChatInputContext with extra UI for simplified "App-less"
-// Onboarding. Note, it is just the onboarding that's simplified: This component
-// has *more* UI to guide users through the app setup steps they skipped during
-// the simplified onboarding flow.
 export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProps> = ({
     contextStatus,
-    isAppInstalled,
     onboardingPopupProps,
 }) => {
     const [popupOpen, setPopupOpen] = useState<boolean>(false)
@@ -73,7 +64,7 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                 isOpen={isOpen}
                 onDismiss={onDismiss}
                 title="No Repository Found"
-                text="Open a git repository that has a remote to enable indexing."
+                text="Open a git repository that has a remote to enable embeddings."
                 linkText=""
                 linkHref=""
             />
@@ -90,25 +81,12 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
         )
     } else if (contextStatus?.codebase && !contextStatus?.embeddingsEndpoint) {
         // Codebase, but no embeddings
-        const isEnterprise =
-            contextStatus?.endpoint !== LOCAL_APP_URL.href && contextStatus?.endpoint !== DOTCOM_URL.href
+        const isEnterprise = contextStatus?.endpoint !== DOTCOM_URL.href
         let popup: React.FC<OnboardingPopupProps & PopupOpenProps>
         if (isEnterprise) {
             popup = EmbeddingsNotFoundEnterprisePopup
-        } else if (isAppInstalled) {
-            popup = EmbeddingsNotFoundPopup
         } else {
-            const repoName = contextStatus.codebase
-            popup = ({ installApp, isOpen, openApp, onDismiss, reloadStatus }) => (
-                <InstallCodyAppPopup
-                    installApp={installApp}
-                    openApp={openApp}
-                    isOpen={isOpen}
-                    onDismiss={onDismiss}
-                    reloadStatus={reloadStatus}
-                    repoName={repoName}
-                />
-            )
+            popup = EmbeddingsNotFoundPopup
         }
         codebaseState = (
             <CodebaseState
@@ -123,13 +101,10 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
         )
     } else if (contextStatus?.codebase && contextStatus?.embeddingsEndpoint) {
         // Codebase and embeddings
+        // TODO: Add a widget indicating when "app-less" local embeddings are
+        // available.
         const repoName = contextStatus.codebase
-        let indexSource = contextStatus.embeddingsEndpoint
-        if (contextStatus.embeddingsEndpoint === LOCAL_APP_URL.toString()) {
-            indexSource = 'Cody App'
-        } else {
-            indexSource = URI.parse(contextStatus.embeddingsEndpoint).authority
-        }
+        const indexSource = URI.parse(contextStatus.embeddingsEndpoint).authority
         const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = ({ isOpen, onDismiss }) => (
             <EmbeddingsEnabledPopup
                 isOpen={isOpen}

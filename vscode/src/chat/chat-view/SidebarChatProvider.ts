@@ -10,7 +10,6 @@ import { View } from '../../../webviews/NavBar'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
-import { LocalAppWatcher } from '../../services/LocalAppWatcher'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import {
@@ -20,15 +19,9 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import {
-    APP_LANDING_URL,
-    APP_REPOSITORIES_URL,
-    archConvertor,
-    ExtensionMessage,
-    isOsSupportedByApp,
-    WebviewMessage,
-} from '../protocol'
+import { ExtensionMessage, WebviewMessage } from '../protocol'
 
+import { chatHistory } from './ChatHistoryManager'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -48,19 +41,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     constructor({ extensionUri, ...options }: SidebarChatOptions) {
         super(options)
         this.extensionUri = extensionUri
-
-        const localAppWatcher = new LocalAppWatcher()
-        this.disposables.push(localAppWatcher)
-        this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
-        this.disposables.push(localAppWatcher.onTokenFileChange(tokenFile => this.tokenFileChanged(tokenFile)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
+                await this.contextProvider.syncAuthStatus()
                 break
             case 'initialized':
                 logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')
@@ -68,6 +54,12 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.init()
                 break
             case 'submit':
+                // Hint local embeddings, if any, should start so subsequent
+                // messages can use local embeddings. We delay to this point so
+                // local embeddings service start-up updating the context
+                // provider does not cause autocompletes to disappear.
+                void this.contextProvider.localEmbeddings?.start()
+
                 return this.onHumanMessageSubmitted(
                     message.text,
                     message.submitType,
@@ -98,14 +90,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.executeRecipe(message.recipe, '', 'chat')
                 break
             case 'auth':
-                if (message.type === 'app' && message.endpoint) {
-                    await this.authProvider.appAuth(message.endpoint)
-                    // Log app button click events: e.g. app:download:clicked or app:connect:clicked
-                    const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`, undefined, { hasV2Event: true }) // TODO(sqs): remove when new events are working
-                    telemetryRecorder.recordEvent(`cody.${value}`, 'clicked')
-                    break
-                }
                 if (message.type === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
@@ -167,14 +151,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
             case 'simplified-onboarding':
-                if (message.type === 'install-app') {
-                    void this.simplifiedOnboardingInstallApp()
-                    break
-                }
-                if (message.type === 'open-app') {
-                    void openExternalLinks(APP_REPOSITORIES_URL.href)
-                    break
-                }
                 if (message.type === 'reload-state') {
                     void this.simplifiedOnboardingReloadEmbeddingsState()
                     break
@@ -197,34 +173,17 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'show-page':
                 await vscode.commands.executeCommand('show-page', message.page)
                 break
+            case 'get-chat-models':
+                // chat models selector is not supported in old UI
+                await this.webview?.postMessage({ type: 'chatModels', models: [] })
+                break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')
         }
     }
 
-    private async simplifiedOnboardingInstallApp(): Promise<void> {
-        const os = process.platform
-        const arch = process.arch
-        const DOWNLOAD_URL =
-            os && arch && isOsSupportedByApp(os, arch)
-                ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
-                : APP_LANDING_URL.href
-        await openExternalLinks(DOWNLOAD_URL)
-    }
-
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
         await this.contextProvider.forceUpdateCodebaseContext()
-    }
-
-    private appWatcherChanged(appWatcher: LocalAppWatcher): void {
-        void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
-        void this.simplifiedOnboardingReloadEmbeddingsState()
-    }
-
-    private tokenFileChanged(file: vscode.Uri): void {
-        void this.authProvider.appDetector
-            .tryFetchAppJson(file)
-            .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
     }
 
     private async onHumanMessageSubmitted(
@@ -237,7 +196,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             verbose: { text, submitType, addEnhancedContext },
         })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveHumanInputHistory(text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
@@ -402,7 +361,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
-        this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')

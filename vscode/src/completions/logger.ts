@@ -39,14 +39,16 @@ declare const CompletionLogID: unique symbol
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
 
-interface SharedEventPayload {
+interface InteractionIDPayload {
     /**
      * An ID to uniquely identify a suggest completion. Note: It is possible for this ID to be part
      * of two suggested events. This happens when the exact same completion text is shown again at
      * the exact same location. We count this as the same completion and thus use the same ID.
      */
     id: CompletionAnalyticsID | null
+}
 
+interface SharedEventPayload extends InteractionIDPayload {
     /** Eventual Sourcegraph instance OpenTelemetry trace id */
     traceId?: string
 
@@ -100,6 +102,14 @@ interface SharedEventPayload {
 
     /** A list of known completion providers that are also enabled with this user. */
     otherCompletionProviders: string[]
+}
+
+/**
+ * hasInteractionID helps extracting analytics interaction ID from parameters
+ * that extend SharedEventPayload.
+ */
+function hasInteractionID(params: any): params is InteractionIDPayload {
+    return 'id' in params
 }
 
 /** Emitted when a completion was suggested to the user and printed onto the screen */
@@ -286,6 +296,12 @@ function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
         hasV2Event: true, // this helper translates the event for us
     })
     /**
+     * Extract interaction ID from the full legacy params for convenience
+     */
+    if (params && hasInteractionID(legacyParams)) {
+        params.interactionID = legacyParams.id?.toString()
+    }
+    /**
      * New telemetry automatically adds extension context - we do not need to
      * include platform in the name of the event. However, we MUST prefix the
      * event with 'cody.' to have the event be categorized as a Cody event.
@@ -351,7 +367,7 @@ export interface ItemPostProcessingInfo {
     }
 }
 
-interface CompletionItemInfo extends ItemPostProcessingInfo {
+export interface CompletionItemInfo extends ItemPostProcessingInfo {
     lineCount: number
     charCount: number
     // 🚨 SECURITY: included only for DotCom users.

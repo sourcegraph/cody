@@ -25,16 +25,13 @@ export interface Configuration {
     chatPreInstruction: string
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    inlineChat: boolean
     codeActions: boolean
-    experimentalChatPanel: boolean
     experimentalChatPredictions: boolean
-    experimentalSearchPanel: boolean
     commandCodeLenses: boolean
     experimentalSimpleChatContext: boolean
+    experimentalSymfContext: boolean
     editorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
-    experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
     autocompleteAdvancedServerEndpoint: string | null

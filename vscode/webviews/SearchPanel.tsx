@@ -63,6 +63,7 @@ const debouncedDoSearch = debounce(doSearch, SEARCH_DEBOUNCE_MS)
 
 export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [query, setQuery] = React.useState('')
+    const [searching, setSearching] = React.useState(false)
     const [results, setResults] = React.useState<SearchPanelFile[]>([])
     const [selectedResult, setSelectedResult] = React.useState<[number, number]>([-1, -1])
     const [collapsedFileResults, setCollapsedFileResults] = React.useState<{ [key: number]: boolean }>({})
@@ -73,11 +74,14 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
     // Update search results when query changes
     useEffect(() => {
         if (query.trim().length === 0) {
+            setSearching(false)
             setResults([])
             setSelectedResult([-1, -1])
             return
         }
+        setSearching(true)
         debouncedDoSearch(vscodeAPI, query, resultsCache, cachedResults => {
+            setSearching(false)
             setResults(cachedResults)
         })
     }, [vscodeAPI, resultsCache, query])
@@ -88,6 +92,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             switch (message.type) {
                 case 'update-search-results': {
                     if (message.query === query) {
+                        setSearching(false)
                         setResults(message.results)
                         setSelectedResult([-1, -1])
                     }
@@ -235,7 +240,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             <form className={styles.inputRow}>
                 <div className={styles.searchInputContainer}>
                     <textarea
-                        placeholder="Type a keyword query or describe what you're looking for"
+                        placeholder="Search"
                         className={styles.searchInput}
                         onChange={onInputChange}
                         onKeyDown={onInputKeyDown}
@@ -243,6 +248,15 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     />
                 </div>
             </form>
+            {!searching && query.trim().length === 0 && (
+                <p className={styles.instructions}>
+                    Search for code using a natural language query, such as “password hashing”, "connection retries", a
+                    symbol name, or a topic.
+                </p>
+            )}
+            {!searching && results.length === 0 && query.trim().length !== 0 && (
+                <p className={styles.instructions}>No results found</p>
+            )}
             <div className={styles.searchResultsContainer}>
                 {results.map((result, fileIndex) => (
                     <>
@@ -250,8 +264,16 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                         <div
                             key={`${result.uriString}`}
                             className={styles.searchResultRow}
-                            onKeyDown={e => e.key === 'Enter' && setSelectedResult([fileIndex, 0])}
-                            onClick={() => setSelectedResult([fileIndex, -1])}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                    toggleFileExpansion(fileIndex)
+                                    setSelectedResult([fileIndex, 0])
+                                }
+                            }}
+                            onClick={() => {
+                                toggleFileExpansion(fileIndex)
+                                setSelectedResult([fileIndex, -1])
+                            }}
                         >
                             <div
                                 className={`${styles.searchResultRowInner} ${
@@ -278,12 +300,14 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                                         <span className={styles.filematchIcon}>
                                             <i className="codicon codicon-file-code" />
                                         </span>
-                                        &nbsp;
-                                        <span className={styles.filematchTitle}>{result.basename}</span>
+                                        <span className={styles.filematchTitle} title={result.basename}>
+                                            {result.basename}
+                                        </span>
                                         <span className={styles.filematchDescription}>
-                                            &nbsp;
-                                            {result.wsname && <span>{result.wsname}&nbsp;&middot;&nbsp;</span>}
-                                            <span>{result.dirname}</span>
+                                            {result.wsname && (
+                                                <span title={result.wsname}>{result.wsname}&nbsp;&middot;&nbsp;</span>
+                                            )}
+                                            <span title={result.dirname}>{result.dirname}</span>
                                         </span>
                                     </div>
                                 </div>

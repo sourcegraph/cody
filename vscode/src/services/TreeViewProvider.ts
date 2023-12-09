@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { AuthStatus } from '../chat/protocol'
 
@@ -54,11 +55,22 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         const updatedTree: vscode.TreeItem[] = []
         this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.
         for (const item of this.treeItems) {
+            if (item.requireDotCom) {
+                const isConnectedtoDotCom = this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)
+                if (!isConnectedtoDotCom) {
+                    continue
+                }
+            }
+
             if (item.requireFeature && !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
                 continue
             }
 
-            if (item.requireUpgradeAvailable && !(this.authStatus?.userCanUpgrade ?? false)) {
+            if (
+                item.requireUpgradeAvailable &&
+                (await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)) &&
+                !(this.authStatus?.userCanUpgrade ?? false)
+            ) {
                 continue
             }
 

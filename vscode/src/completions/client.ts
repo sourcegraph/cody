@@ -60,7 +60,8 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
         signal?: AbortSignal
     ): Promise<CompletionResponse> {
-        const log = logger?.startCompletion(params)
+        const url = getCodeCompletionsEndpoint()
+        const log = logger?.startCompletion(params, url)
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
 
@@ -86,7 +87,6 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         const isNode = typeof process !== 'undefined'
         const enableStreaming = !!isNode
 
-        const url = getCodeCompletionsEndpoint()
         const response: Response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -103,7 +103,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         if (response.status === 429) {
             // Check for explicit false, because if the header is not set, there
             // is no upgrade available.
-            const upgradeIsAvailable = response.headers.get('x-is-cody-pro-user') === 'false'
+            const upgradeIsAvailable =
+                response.headers.get('x-is-cody-pro-user') === 'false' &&
+                typeof response.headers.get('x-is-cody-pro-user') !== undefined
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
@@ -111,7 +113,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 await response.text(),
                 upgradeIsAvailable,
                 limit ? parseInt(limit, 10) : undefined,
-                retryAfter ? new Date(retryAfter) : undefined
+                retryAfter
             )
         }
 

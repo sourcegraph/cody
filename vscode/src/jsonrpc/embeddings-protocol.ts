@@ -2,6 +2,18 @@
  * The protocol for communicating between Cody and local embeddings.
  */
 
+export interface InitializeParams {
+    codyGatewayEndpoint: string
+    appIndexPath?: string
+    indexPath: string
+    chunkingPolicy?: ChunkingPolicy
+}
+
+export interface ChunkingPolicy {
+    maxFileSizeBytes: number
+    pathsToExcludeRegexp: string
+}
+
 export interface QueryResultSet {
     results: QueryResult[]
 }
@@ -23,9 +35,11 @@ export interface IndexRequest {
 export type Requests = {
     'embeddings/echo': [string, string]
     // Instruct local embeddings to index the specified repository path.
-    'embeddings/index': [IndexRequest, undefined]
+    'embeddings/index': [IndexRequest, {}]
+    // Initializes the local embeddings service. You must call this first.
+    'embeddings/initialize': [InitializeParams, {}]
     // Searches for and loads an index for the specified repository name.
-    'embeddings/load': [string, boolean]
+    'embeddings/load': [string, {}]
     // Queries loaded index.
     'embeddings/query': [string, QueryResultSet]
     // Sets the Sourcegraph access token.

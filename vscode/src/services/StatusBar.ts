@@ -9,6 +9,8 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
+    errorType: StatusBarErrorName
+    onShow?: () => void
     onSelect?: () => void
 }
 
@@ -16,6 +18,7 @@ export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
     addError(error: StatusBarError): () => void
+    hasError(error: StatusBarErrorName): boolean
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -25,6 +28,8 @@ const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
+
+type StatusBarErrorName = 'auth' | 'RateLimitError'
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -63,6 +68,10 @@ export function createStatusBar(): CodyStatusBar {
                     }
                 },
             }
+        }
+
+        if (errors.length > 0) {
+            errors.map(error => error.error.onShow?.())
         }
 
         const option = await vscode.window.showQuickPick(
@@ -123,18 +132,20 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
-                    'New Chat UI',
+                    'Symf Context',
                     'Experimental',
-                    'Enable new chat panel UI',
-                    'cody.experimental.chatPanel',
-                    c => c.experimentalChatPanel
+                    'Enable context fetched via symf',
+                    'cody.experimental.symfContext',
+                    c => c.experimentalSymfContext,
+                    false
                 ),
                 createFeatureToggle(
-                    'New Search UI',
+                    'Simple Chat Context',
                     'Experimental',
-                    'Enable new search panel',
-                    'cody.experimental.newSearch',
-                    c => c.experimentalSearchPanel
+                    'Enable the new simplifed chat context fetcher',
+                    'cody.experimental.simpleChatContext',
+                    c => c.experimentalSimpleChatContext,
+                    true
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
@@ -229,6 +240,9 @@ export function createStatusBar(): CodyStatusBar {
                     rerender()
                 }
             }
+        },
+        hasError(errorName: StatusBarErrorName): boolean {
+            return errors.some(e => e.error.errorType === errorName)
         },
         dispose() {
             statusBarItem.dispose()

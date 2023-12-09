@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
@@ -10,21 +10,34 @@ import styles from './ErrorItem.module.css'
  * An error message shown in the chat.
  */
 export const ErrorItem: React.FunctionComponent<{
-    error: string | ChatError
+    error: Omit<ChatError, 'isChatErrorGuard'>
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
-    return typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage ? (
-        <RateLimitErrorItem
-            error={error as RateLimitError}
-            ChatButtonComponent={ChatButtonComponent}
-            postMessage={postMessage}
-        />
-    ) : (
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+    if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
+        return (
+            <RateLimitErrorItem
+                error={error as RateLimitError}
+                ChatButtonComponent={ChatButtonComponent}
+                postMessage={postMessage}
+            />
+        )
+    }
+
+    return <RequestErrorItem error={error.message} />
+})
+
+/**
+ * Renders a generic error message for chat request failures.
+ */
+export const RequestErrorItem: React.FunctionComponent<{
+    error: string
+}> = React.memo(function ErrorItemContent({ error }) {
+    return (
         <div className="cody-chat-error">
             <span>Request failed: </span>
-            {typeof error === 'string' ? error : error.message}
+            {error}
         </div>
     )
 })
@@ -40,30 +53,88 @@ export const RateLimitErrorItem: React.FunctionComponent<{
 }> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
-    const canUpgrade = error.upgradeIsAvailable && userInfo?.isCodyProUser !== true
+    const isEnterpriseUser = userInfo?.isDotComUser !== true
+    const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
+    const tier = isEnterpriseUser ? 'enterprise' : userInfo?.isCodyProUser ? 'pro' : 'free'
+
+    // Only log once on mount
+    React.useEffect(() => {
+        // Log as abuseUsageLimit if pro user run into rate limit
+        postMessage({
+            command: 'event',
+            eventName: userInfo?.isCodyProUser
+                ? 'CodyVSCodeExtension:abuseUsageLimitCTA:shown'
+                : 'CodyVSCodeExtension:upsellUsageLimitCTA:shown',
+            properties: { limit_type: 'chat_commands', tier },
+        })
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const onButtonClick = useCallback(
+        (page: 'upgrade' | 'rate-limits', call_to_action: 'upgrade' | 'learn-more'): void => {
+            // Log click event
+            postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
+                properties: { limit_type: 'chat_commands', call_to_action, tier },
+            })
+
+            // open the page in browser
+            postMessage({ command: 'show-page', page })
+        },
+        [postMessage, tier]
+    )
+
     return (
         <div className={styles.errorItem}>
-            <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
-            <p>{error.userMessage}</p>
-            {ChatButtonComponent && (
-                <div className={styles.actions}>
-                    {canUpgrade && (
+            {canUpgrade && <div className={styles.icon}>⚡️</div>}
+            <div className={styles.body}>
+                <header>
+                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
+                    <p>
+                        {error.userMessage}
+                        {canUpgrade &&
+                            ' Upgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.'}
+                    </p>
+                </header>
+                {ChatButtonComponent && (
+                    <div className={styles.actions}>
+                        {canUpgrade && (
+                            <ChatButtonComponent
+                                label="Upgrade"
+                                action=""
+                                onClick={() => onButtonClick('upgrade', 'upgrade')}
+                                appearance="primary"
+                            />
+                        )}
                         <ChatButtonComponent
-                            label="Upgrade"
+                            label={canUpgrade ? 'See Plans →' : 'Learn More'}
                             action=""
-                            onClick={() => postMessage({ command: 'show-page', page: 'upgrade' })}
-                            appearance="primary"
+                            onClick={() =>
+                                canUpgrade
+                                    ? onButtonClick('upgrade', 'upgrade')
+                                    : onButtonClick('rate-limits', 'learn-more')
+                            }
+                            appearance="secondary"
                         />
-                    )}
-                    <ChatButtonComponent
-                        label="Learn More"
-                        action=""
-                        onClick={() => postMessage({ command: 'show-page', page: 'rate-limits' })}
-                        appearance="secondary"
-                    />
+                    </div>
+                )}
+                {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
+            </div>
+            {canUpgrade && (
+                <div className={styles.bannerContainer}>
+                    <div
+                        className={styles.banner}
+                        role="button"
+                        tabIndex={-1}
+                        onClick={() => onButtonClick('upgrade', 'upgrade')}
+                        onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
+                    >
+                        Go Pro
+                    </div>
                 </div>
             )}
-            <p className={styles.retryMessage}>{error.retryMessage}</p>
         </div>
     )
 })

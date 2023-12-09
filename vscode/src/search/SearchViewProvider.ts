@@ -7,7 +7,7 @@ import { Result, SearchPanelFile, SearchPanelSnippet } from '@sourcegraph/cody-s
 
 import { WebviewMessage } from '../chat/protocol'
 import { getActiveEditor } from '../editor/active-editor'
-import { SymfRunner } from '../local-context/symf'
+import { IndexStartEvent, SymfRunner } from '../local-context/symf'
 
 const searchDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('searchEditor.findMatchBackground'),
@@ -36,11 +36,18 @@ class CancellationManager implements vscode.Disposable {
     }
 }
 
-class IndexManager {
+class IndexManager implements vscode.Disposable {
     private currentlyRefreshing = new Set<string>()
     private scopeDirIndexInProgress: Map<string, Promise<void>> = new Map()
+    private disposables: vscode.Disposable[] = []
 
-    constructor(private symf: SymfRunner) {}
+    constructor(private symf: SymfRunner) {
+        this.disposables.push(this.symf.onIndexStart(event => this.showIndexProgress(event)))
+    }
+
+    public dispose(): void {
+        this.disposables.forEach(d => d.dispose())
+    }
 
     /**
      * Show a warning message if indexing is already in progress for scopeDirs.
@@ -62,26 +69,31 @@ class IndexManager {
         void vscode.window.showWarningMessage(`Still indexing: ${indexingScopeDirs.join(', ')}`)
     }
 
-    public showIndexProgress = (scopeDir: string, indexDone: Promise<void>): void => {
+    public showIndexProgress({ scopeDir, cancel, done }: IndexStartEvent): void {
         const { base, dir, wsName } = getRenderableComponents(scopeDir)
         const prettyScopeDir = wsName ? path.join(wsName, dir, base) : path.join(dir, base)
         if (this.scopeDirIndexInProgress.has(scopeDir)) {
             void vscode.window.showWarningMessage(`Duplicate index request for ${prettyScopeDir}`)
             return
         }
-        this.scopeDirIndexInProgress.set(scopeDir, indexDone)
-        void indexDone.finally(() => {
+        this.scopeDirIndexInProgress.set(scopeDir, done)
+        void done.finally(() => {
             this.scopeDirIndexInProgress.delete(scopeDir)
         })
 
         void vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: `Cody: building search index for ${prettyScopeDir}`,
-                cancellable: false,
+                title: `Building Cody search index for ${prettyScopeDir}`,
+                cancellable: true,
             },
-            async () => {
-                await indexDone
+            async (_progress, token) => {
+                if (token.isCancellationRequested) {
+                    cancel()
+                } else {
+                    token.onCancellationRequested(() => cancel())
+                }
+                await done
             }
         )
     }
@@ -94,9 +106,11 @@ class IndexManager {
             this.currentlyRefreshing.add(scopeDir)
 
             await this.symf.deleteIndex(scopeDir)
-            await this.symf.ensureIndex(scopeDir, this.showIndexProgress, { hard: true })
+            await this.symf.ensureIndex(scopeDir, { hard: true })
         } catch (error) {
-            void vscode.window.showErrorMessage(`Error refreshing search index for ${scopeDir}: ${error}`)
+            if (!(error instanceof vscode.CancellationError)) {
+                void vscode.window.showErrorMessage(`Error refreshing search index for ${scopeDir}: ${error}`)
+            }
         } finally {
             this.currentlyRefreshing.delete(scopeDir)
         }
@@ -114,6 +128,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         private symfRunner: SymfRunner
     ) {
         this.indexManager = new IndexManager(this.symfRunner)
+        this.disposables.push(this.indexManager)
         this.disposables.push(this.cancellationManager)
     }
 
@@ -147,19 +162,19 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         )
         // Kick off search index creation for all workspace folders
         vscode.workspace.workspaceFolders?.forEach(folder => {
-            void this.symfRunner.ensureIndex(folder.uri.fsPath, this.indexManager.showIndexProgress, { hard: false })
+            void this.symfRunner.ensureIndex(folder.uri.fsPath, { hard: false })
         })
         this.disposables.push(
             vscode.workspace.onDidChangeWorkspaceFolders(event => {
                 event.added.forEach(folder => {
-                    void this.symfRunner.ensureIndex(folder.uri.fsPath, this.indexManager.showIndexProgress, {
+                    void this.symfRunner.ensureIndex(folder.uri.fsPath, {
                         hard: false,
                     })
                 })
             })
         )
         this.disposables.push(
-            this.symfRunner.registerIndexListener(scopeDir => {
+            this.symfRunner.onIndexEnd(({ scopeDir }) => {
                 void this.webview?.postMessage({ type: 'index-updated', scopeDir })
             })
         )
@@ -254,7 +269,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
             const cumulativeResults: SearchPanelFile[] = []
             this.indexManager.showMessageIfIndexingInProgress(scopeDirs)
-            const resultSets = await symf.getResults(query, scopeDirs, this.indexManager.showIndexProgress)
+            const resultSets = await symf.getResults(query, scopeDirs)
             for (const resultSet of resultSets) {
                 try {
                     cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
@@ -264,7 +279,11 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                         query,
                     })
                 } catch (error) {
-                    void vscode.window.showErrorMessage(`Error fetching results for query, "${query}": ${error}`)
+                    if (error instanceof vscode.CancellationError) {
+                        void vscode.window.showErrorMessage('No search results because indexing was canceled')
+                    } else {
+                        void vscode.window.showErrorMessage(`Error fetching results for query "${query}": ${error}`)
+                    }
                 }
             }
         })

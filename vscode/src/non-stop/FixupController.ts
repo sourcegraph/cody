@@ -253,7 +253,7 @@ export class FixupController
             telemetryRecorder.recordEvent('cody.fixup.respin', 'scheduled', {
                 privateMetadata: { spinCount: task.spinCount },
             })
-            return this.error(task.id, `Cody tried ${task.spinCount} times but failed to edit the file`)
+            return this.error(task.id, new Error(`Cody tried ${task.spinCount} times but failed to edit the file`))
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
@@ -732,13 +732,13 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.finished)
     }
 
-    public error(id: taskID, message: string): void {
+    public error(id: taskID, error: Error): void {
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
 
-        task.error = message
+        task.error = error
         this.setTaskState(task, CodyTaskState.error)
     }
 
@@ -748,7 +748,7 @@ export class FixupController
             return
         }
 
-        void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
+        void vscode.window.showErrorMessage('Applying Edits Failed', { modal: true, detail: task.error.message })
     }
 
     private skipFormatting(id: taskID): void {

@@ -51,7 +51,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
         await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: 'Downloading semantic code search utility, symf',
+                title: 'Downloading Cody search engine (symf)',
                 cancellable: false,
             },
             async progress => {

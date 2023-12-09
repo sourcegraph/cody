@@ -1,18 +1,18 @@
 import * as vscode from 'vscode'
 
-import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
-import { ContextProvider, hackGetCodebaseContext } from './chat/ContextProvider'
+import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
-import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -36,8 +36,6 @@ import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
-import { Comment, InlineController } from './services/InlineController'
-import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
 import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
@@ -98,8 +96,6 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    // Controller for inline Chat
-    const commentController = new InlineController(context.extensionPath)
     // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
@@ -108,7 +104,6 @@ const register = async (
     }
 
     const editor = new VSCodeEditor({
-        inline: commentController,
         fixups: fixup,
         command: platform.createCommandsController?.(context),
     })
@@ -132,6 +127,9 @@ const register = async (
     await authProvider.init()
 
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
+    if (symfRunner) {
+        disposables.push(symfRunner)
+    }
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
@@ -158,21 +156,7 @@ const register = async (
         localEmbeddings
     )
     disposables.push(contextProvider)
-    disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
-
-    // Hacks to get embeddings clients
-    const codebaseContext = await hackGetCodebaseContext(
-        initialConfig,
-        rgPath,
-        symfRunner,
-        editor,
-        chatClient,
-        platform,
-        await contextProvider.hackGetEmbeddingClientCandidates(initialConfig),
-        undefined // Note, we do not pass LocalEmbeddingsController here to delay initializing it as long as possible
-    )
-    const embeddingsSearch = codebaseContext?.tempHackGetEmbeddingsSearch() || null
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -188,19 +172,40 @@ const register = async (
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
-    const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
+
+    const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
         },
         chatClient,
-        embeddingsSearch,
-        localEmbeddings || null
+        embeddingsClient,
+        localEmbeddings || null,
+        symfRunner || null
     )
 
     disposables.push(new CodeActionProvider({ contextProvider }))
+
+    let oldConfig = JSON.stringify(initialConfig)
+    function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
+        if (oldConfig === JSON.stringify(newConfig)) {
+            return
+        }
+        oldConfig = JSON.stringify(newConfig)
+
+        featureFlagProvider.syncAuthStatus()
+        graphqlClient.onConfigurationChange(newConfig)
+        contextProvider.onConfigurationChange(newConfig)
+        externalServicesOnDidConfigurationChange(newConfig)
+        void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+        platform.onConfigurationChange?.(newConfig)
+        symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+        void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+        embeddingsClient.updateConfiguration(newConfig)
+        setupAutocomplete()
+    }
 
     // Register tree views
     disposables.push(
@@ -211,15 +216,14 @@ const register = async (
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
-            externalServicesOnDidConfigurationChange(newConfig)
-            await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+            onConfigurationChange(newConfig)
         })
     )
 
     if (symfRunner) {
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
-        searchViewProvider.initialize()
         disposables.push(searchViewProvider)
+        searchViewProvider.initialize()
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
@@ -228,8 +232,13 @@ const register = async (
     }
 
     // Adds a change listener to the auth provider that syncs the auth status
-    authProvider.addChangeListener((authStatus: AuthStatus) => {
-        void chatManager.syncAuthStatus(authStatus)
+    authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        // Update context provider first since it will also update the configuration
+        await contextProvider.syncAuthStatus()
+
+        featureFlagProvider.syncAuthStatus()
+        await chatManager.syncAuthStatus(authStatus)
+
         if (symfRunner && authStatus.isLoggedIn) {
             getAccessToken()
                 .then(token => {
@@ -240,6 +249,8 @@ const register = async (
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
+
+        setupAutocomplete()
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
@@ -284,70 +295,6 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        // Inline Chat Provider
-        vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isEditMode = commandRegex.edit.test(comment.text.trimStart())
-
-            /**
-             * TODO: Should we make fix the default for comments?
-             * /chat or /ask could trigger a chat
-             */
-            if (isEditMode) {
-                const source = 'inline-chat'
-                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup(
-                    {
-                        document: activeDocument,
-                        instruction: comment.text.replace(commandRegex.edit, ''),
-                        range: comment.thread.range,
-                    },
-                    source
-                )
-            }
-
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, false)
-        }),
-        vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
-            inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked', undefined, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.comment.delete', 'clicked')
-        }),
-        vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
-            await inlineChatProvider.abortChat()
-            telemetryService.log(
-                'CodyVSCodeExtension:abortButton:clicked',
-                { source: 'inline-chat' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.comment.stop', 'clicked', {
-                privateMetadata: { source: 'inline-chat' },
-            })
-        }),
-        vscode.commands.registerCommand('cody.comment.collapse-all', () => {
-            void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked', undefined, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.comment.collapse-all', 'clicked')
-        }),
-        vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
-            const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
-            // Ensure that the sidebar view is open if not already
-            await chatManager.setWebviewView('chat')
-            // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-            await chatManager.restoreSession(inlineChatProvider.sessionID)
-            // Remove the inline chat
-            inlineChatManager.removeProviderForThread(thread)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked', undefined, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.comment.open-in-sidebar', 'clicked')
-        }),
         vscode.commands.registerCommand(
             'cody.command.edit-code',
             (
@@ -361,19 +308,6 @@ const register = async (
                 source?: ChatEventSource
             ) => executeFixup(args, source)
         ),
-        vscode.commands.registerCommand('cody.inline.new', async () => {
-            // move focus line to the end of the current selection
-            await vscode.commands.executeCommand('cursorLineEndSelect')
-            await vscode.commands.executeCommand('workbench.action.addComment')
-        }),
-        vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
-            const comment = commentController.create(instruction, range)
-            if (!comment) {
-                return Promise.resolve()
-            }
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            void inlineChatProvider.addChat(comment.text, false)
-        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (url, token) => authProvider.auth(url, token)),
@@ -381,13 +315,6 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.sync', () => {
-            const result = contextProvider.syncAuthStatus()
-            void featureFlagProvider.syncAuthStatus()
-            // Important that we return a promise here to allow `AuthProvider`
-            // to `await` on the auth config changes to propagate.
-            return result
-        }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
             const confirmation = await vscode.window.showWarningMessage(
@@ -402,29 +329,10 @@ const register = async (
             telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'clear' }, { hasV2Event: true })
             telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'clear' } })
         }),
-        // TODO remove cody.interactive.clear when we remove the old chat
-        vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await chatManager.clearAndRestartSession()
-            await chatManager.setWebviewView('chat')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' }, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', { privateMetadata: { name: 'reset' } })
-        }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', async () => {
-            await chatManager.setWebviewView('history')
-            telemetryService.log(
-                'CodyVSCodeExtension:chatTitleButton:clicked',
-                { name: 'history' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.history', 'clicked', { privateMetadata: { name: 'history' } })
-        }),
-        vscode.commands.registerCommand('cody.history.clear', async () => {
-            await chatManager.clearHistory()
-        }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
             await executeRecipeInChatView('chat-question', true, input, source)
@@ -452,9 +360,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
             await executeRecipeInChatView('custom-prompt', true, '/smell')
         }),
-        vscode.commands.registerCommand('cody.command.inline-touch', () =>
-            executeRecipeInChatView('inline-touch', false)
-        ),
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
         ),
@@ -478,6 +383,37 @@ const register = async (
             }
             void vscode.env.openExternal(vscode.Uri.parse(url.toString()))
         }),
+
+        // Account links
+        vscode.commands.registerCommand(
+            'cody.show-rate-limit-modal',
+            async (userMessage: string, retryMessage: string, upgradeAvailable: boolean) => {
+                if (upgradeAvailable) {
+                    const option = await vscode.window.showInformationMessage(
+                        'Upgrade to Cody Pro',
+                        {
+                            modal: true,
+                            detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.\n\n${retryMessage}`,
+                        },
+                        'Upgrade',
+                        'See Plans'
+                    )
+                    // Both options go to the same URL
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                    }
+                } else {
+                    const option = await vscode.window.showInformationMessage(
+                        'Rate Limit Exceeded',
+                        { modal: true, detail: `${userMessage}\n\n${retryMessage}` },
+                        'Learn More'
+                    )
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_LIMITS_INFO_URL.toString()))
+                    }
+                }
+            }
+        ),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -523,20 +459,6 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
-        vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'enableInlineChat' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.walkthrough.enableInlineChat', 'clicked')
-            await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
-            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.inlineChat.enabled',
-                openToSide: true,
-            })
-        }),
         vscode.commands.registerCommand('agent.auth.reload', async () => {
             await authProvider.reloadAuthStatus()
         })
@@ -554,6 +476,7 @@ const register = async (
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
                 title: 'Sign In To Use Cody',
+                errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
                     void chatManager.setWebviewView('chat')
@@ -564,10 +487,28 @@ const register = async (
     authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
     updateAuthStatusBarIndicator()
 
+    vscode.window.onDidChangeWindowState(async ws => {
+        const endpoint = authProvider.getAuthStatus().endpoint
+        if (ws.focused && endpoint && isDotCom(endpoint)) {
+            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            if (res instanceof Error) {
+                console.error(res)
+                return
+            }
+
+            const authStatus = authProvider.getAuthStatus()
+
+            authStatus.hasVerifiedEmail = res.hasVerifiedEmail
+            authStatus.userCanUpgrade = !res.codyProEnabled
+
+            void chatManager.syncAuthStatus(authStatus)
+        }
+    })
+
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = (): void => {
+    function setupAutocomplete(): void {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
@@ -603,21 +544,7 @@ const register = async (
             })
     }
 
-    // Reload autocomplete if either the configuration changes or the auth status is updated
-    vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('cody.autocomplete')) {
-            setupAutocomplete()
-        }
-    })
-    authProvider.addChangeListener(() => {
-        setupAutocomplete()
-    })
     setupAutocomplete()
-
-    // Initiate inline chat when feature flag is on
-    if (!initialConfig.inlineChat) {
-        commentController.dispose()
-    }
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
@@ -626,13 +553,6 @@ const register = async (
                 await guardrailsProvider.debugEditorSelection()
             })
         )
-    }
-    // Register task view when feature flag is on
-    // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
-    // It is too obstructive when it is in the same window as the sidebar chat.
-    if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        fixup.registerTreeView()
-        await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     await showSetupNotification(initialConfig)
@@ -654,15 +574,7 @@ const register = async (
 
     return {
         disposable: vscode.Disposable.from(...disposables),
-        onConfigurationChange: newConfig => {
-            graphqlClient.onConfigurationChange(newConfig)
-            contextProvider.onConfigurationChange(newConfig)
-            externalServicesOnDidConfigurationChange(newConfig)
-            void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
-            platform.onConfigurationChange?.(newConfig)
-            symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
-            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-        },
+        onConfigurationChange,
     }
 }
 

@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
-import { arrayOption, intOption } from './cli-parsers'
+import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
@@ -26,7 +26,8 @@ export interface EvaluateAutocompleteOptions {
     excludeFilepath?: string[]
     includeLanguage?: string[]
     excludeLanguage?: string[]
-    runTestCommand?: boolean
+    testTypecheck?: boolean
+    testParse?: boolean
     srcAccessToken: string
     srcEndpoint: string
 
@@ -183,7 +184,18 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         path.resolve(__dirname, '../../vscode/dist')
     )
     .option('--queries-directory <path>', 'Path to a directory containing tree-sitter queries')
-    .option('--run-test-command', 'If enabled, runs the test command to typecheck the generated code')
+    .option(
+        '--test-typecheck',
+        'If enabled, runs the test command to typecheck the generated code',
+        booleanOption,
+        false // disabled by default because it's slow and requires custom configuration
+    )
+    .option(
+        '--test-parse',
+        'If enabled, parses the generated code to validate whether it has syntax errors or not',
+        booleanOption,
+        true
+    )
     .action(async (options: EvaluateAutocompleteOptions) => {
         const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(

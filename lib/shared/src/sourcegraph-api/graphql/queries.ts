@@ -28,14 +28,6 @@ query SiteGraphQLFields {
     }
 }`
 
-export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        hasVerifiedEmail
-    }
-}`
-
 export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
 query CurrentUser {
     currentUser {

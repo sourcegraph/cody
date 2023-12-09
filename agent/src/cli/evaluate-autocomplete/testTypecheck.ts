@@ -3,15 +3,9 @@ import * as fspromises from 'fs/promises'
 import * as os from 'os'
 import path from 'path'
 
-import * as vscode from 'vscode'
-
-import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { AgentTextDocument } from '../../AgentTextDocument'
-import { AutocompleteItem } from '../../protocol-alias'
-
 import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { TestParameters } from './TestParameters'
 import { Timer } from './Timer'
-import { AutocompleteParameters } from './triggerAutocomplete'
 
 async function runCommand(command: string | undefined, cwd: string): Promise<boolean> {
     return new Promise<boolean>(resolve => {
@@ -44,7 +38,7 @@ export async function testCleanup(options: EvaluateAutocompleteOptions): Promise
 }
 
 export async function testInstall(options: EvaluateAutocompleteOptions): Promise<void> {
-    if (!options.runTestCommand) {
+    if (!options.testTypecheck) {
         return
     }
     if (options.worktree) {
@@ -61,30 +55,17 @@ export async function testInstall(options: EvaluateAutocompleteOptions): Promise
     await runVoidCommand(options.testCommand, options.worktree)
 }
 
-export async function testTypecheck(
-    parameters: AutocompleteParameters,
-    item: AutocompleteItem
-): Promise<boolean | undefined> {
-    const { options, document } = parameters
+export async function testTypecheck(parameters: TestParameters): Promise<boolean | undefined> {
+    const { options, document, item, newText } = parameters
     const { worktree } = options
     if (!worktree) {
         return undefined
     }
     const absolutePath = path.join(worktree, document.params.filepath)
-    const { testCommand, runTestCommand } = options
+    const { testCommand, testTypecheck: runTestCommand } = options
     if (!testCommand || !runTestCommand) {
         return undefined
     }
-    const start = new vscode.Position(item.range.start.line, item.range.start.character)
-    const end = new vscode.Position(item.range.end.line, item.range.end.character)
-    const modifiedDocument = new AgentTextDocument(
-        TextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
-    )
-    const newText = [
-        modifiedDocument.getText(new vscode.Range(new vscode.Position(0, 0), start)),
-        item.insertText,
-        modifiedDocument.getText(new vscode.Range(end, new vscode.Position(document.textDocument.lineCount, 0))),
-    ].join('')
 
     try {
         // Assert that the codebase has no diffs to ensure that we're evaluating a clean worktree
