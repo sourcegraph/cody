@@ -86,5 +86,5 @@ test('@-file empty state', async ({ page, sidebar }) => {
 })
 
 function withPlatformSlashes(input: string) {
-    return path.sep === path.win32.sep ? input.replaceAll(path.posix.sep, path.win32.sep) : input
+    return input.replaceAll(path.posix.sep, path.sep)
 }
