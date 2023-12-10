@@ -7,7 +7,7 @@ import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/tele
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
-import { version as extensionVersion } from '../version'
+import { version } from '../version'
 
 import { localStorage } from './LocalStorageProvider'
 
@@ -22,10 +22,7 @@ export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): Ex
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
     arch,
-    // Prefer the runtime package json over the version that is inlined during build times. This
-    // way we will be able to include pre-release builds that are published with a different version
-    // identifier.
-    version: extensionVersion,
+    version,
 })
 
 /**
