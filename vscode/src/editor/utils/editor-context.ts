@@ -48,9 +48,7 @@ export async function getFileContextFiles(
 
     // On Windows, if the user has typed forward slashes, map them to backslashes before
     // running the search so they match the real paths.
-    if (path.sep === path.win32.sep) {
-        query = query.replaceAll(path.posix.sep, path.win32.sep)
-    }
+    query = query.replaceAll(path.posix.sep, path.sep)
 
     const results = fuzzysort.go(query, uris, {
         key: 'fsPath',
