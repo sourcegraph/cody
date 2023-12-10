@@ -24,6 +24,15 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.fill('@definitelydoesntexist')
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
+    // Clear the input so the next test doesn't detect the same text already visible from the previous
+    // check (otherwise the test can pass even without the filter working).
+    await chatInput.clear()
+
+    // We should only match the relative visible path, not parts of the full path outside of the workspace.
+    // Eg. searching for "source" should not find all files if the project is inside `C:\Source`.
+    await chatInput.fill('@fixtures') // fixture is in the test project folder name, but in the relative paths.
+    await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
     await expect(chatPanelFrame.getByRole('button', { name: '.mydotfile' })).toBeVisible()
