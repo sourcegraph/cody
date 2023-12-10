@@ -4,8 +4,8 @@ import { majorMinorVersion, releaseNotesURL, releaseType, version } from './vers
 
 vi.mock('vscode', () => ({
     extensions: {
-        getExtension: vi.fn().mockReturnValue({ packageJSON: { version: '1.2.3' } })
-    }
+        getExtension: vi.fn().mockReturnValue({ packageJSON: { version: '1.2.3' } }),
+    },
 }))
 
 describe('version', () => {

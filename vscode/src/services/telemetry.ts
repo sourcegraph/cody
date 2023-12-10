@@ -4,10 +4,10 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
-import { version as extensionVersion } from '../version'
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
+import { version as extensionVersion } from '../version'
 
 import { localStorage } from './LocalStorageProvider'
 
