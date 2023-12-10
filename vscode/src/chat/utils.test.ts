@@ -46,7 +46,7 @@ describe('validateAuthStatus', () => {
             endpoint,
             avatarURL,
             primaryEmail,
-            displayName
+            displayName,
         }
         expect(
             newAuthStatus(
@@ -74,7 +74,7 @@ describe('validateAuthStatus', () => {
             endpoint,
             avatarURL,
             primaryEmail,
-            displayName
+            displayName,
         }
         expect(
             newAuthStatus(
@@ -102,7 +102,7 @@ describe('validateAuthStatus', () => {
             endpoint,
             avatarURL,
             primaryEmail,
-            displayName
+            displayName,
         }
         expect(
             newAuthStatus(
@@ -146,7 +146,7 @@ describe('validateAuthStatus', () => {
             endpoint,
             avatarURL,
             primaryEmail,
-            displayName
+            displayName,
         }
         expect(
             newAuthStatus(
