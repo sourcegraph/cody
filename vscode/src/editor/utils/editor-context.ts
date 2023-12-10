@@ -190,9 +190,7 @@ function asRelativePath(uri: vscode.Uri): string {
     let relativePath = vscode.workspace.asRelativePath(uri.fsPath)
     // asRelativePath returns forward slashes on Windows but we want to
     // render a native path like VS Code does in the file quick-pick.
-    if (path.sep === path.win32.sep) {
-        relativePath = relativePath.replaceAll(path.posix.sep, path.win32.sep)
-    }
+    relativePath = relativePath.replaceAll(path.posix.sep, path.sep)
 
     return relativePath
 }
