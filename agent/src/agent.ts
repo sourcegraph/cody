@@ -10,6 +10,7 @@ import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -470,6 +471,10 @@ export class Agent extends MessageHandler {
             }
             provider.clearLastCandidate()
         })
+
+        this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
+            return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
+        })
     }
 
     /**
@@ -530,7 +535,6 @@ export class Agent extends MessageHandler {
 
     private async reloadAuth(): Promise<void> {
         await vscode_shim.commands.executeCommand('agent.auth.reload')
-        await vscode_shim.commands.executeCommand('cody.auth.sync')
     }
 
     /**

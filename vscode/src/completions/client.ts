@@ -60,7 +60,8 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
         signal?: AbortSignal
     ): Promise<CompletionResponse> {
-        const log = logger?.startCompletion(params)
+        const url = getCodeCompletionsEndpoint()
+        const log = logger?.startCompletion(params, url)
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
 
@@ -86,7 +87,6 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         const isNode = typeof process !== 'undefined'
         const enableStreaming = !!isNode
 
-        const url = getCodeCompletionsEndpoint()
         const response: Response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify({

@@ -24,6 +24,10 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.fill('@definitelydoesntexist')
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
+    // Includes dotfiles after just "."
+    await chatInput.fill('@.')
+    await expect(chatPanelFrame.getByRole('button', { name: '.mydotfile' })).toBeVisible()
+
     // Symbol empty state
     await chatInput.fill('@#')
     await expect(chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })).toBeVisible()
@@ -71,6 +75,14 @@ test('@-file empty state', async ({ page, sidebar }) => {
             withPlatformSlashes('Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go')
         )
     ).toBeVisible()
+
+    // Check pressing tab after typing a complete filename.
+    // https://github.com/sourcegraph/cody/issues/2200
+    await chatInput.focus()
+    await chatInput.clear()
+    await chatInput.type('@Main.java', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('@Main.java ')
 })
 
 function withPlatformSlashes(input: string) {

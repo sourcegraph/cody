@@ -46,9 +46,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
+                await this.contextProvider.syncAuthStatus()
                 break
             case 'initialized':
                 logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')
@@ -363,7 +361,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
-        this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
