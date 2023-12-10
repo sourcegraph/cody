@@ -187,7 +187,6 @@ function createContextFilePath(uri: vscode.Uri): ContextFile['path'] {
 
 /**
  * Returna a relative path using the correct slash direction for the current platform.
- * @returns
  */
 function asRelativePath(uri: vscode.Uri): string {
     let relativePath = vscode.workspace.asRelativePath(uri.fsPath)
