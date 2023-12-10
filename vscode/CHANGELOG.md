@@ -8,6 +8,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## [0.18.2]
+
+### Added
+
+### Fixed
+
 - Chat: You can @-mention files starting with a dot. [pull/2209](https://github.com/sourcegraph/cody/pull/2209)
 - Chat: Typing a complete filename when @-mentioning files and then pressing `<tab>` will no longer duplicate the filename [pull/2218](https://github.com/sourcegraph/cody/pull/2218)
 - Autocomplete: Fixes an issue where changing user accounts caused some configuration issues. [pull/2182](https://github.com/sourcegraph/cody/pull/2182)
@@ -20,6 +28,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Search: Send sigkill to symf when extension exits. [pull/2225](https://github.com/sourcegraph/cody/pull/2225)
 - Search: Support cancelling index. [pull/2202](https://github.com/sourcegraph/cody/pull/2202)
 - Chat Fix cursor blink issue and ensure proper chat initialization synchronization. [pull/2193](https://github.com/sourcegraph/cody/pull/2193)
+- plg: display errors when autocomplete rate limits trigger [pull/2193](https://github.com/sourcegraph/cody/pull/2135)
+- Mark Upgrade/Usage links as dot-com only [pull/2219](https://github.com/sourcegraph/cody/pull/2219)
 
 ### Changed
 
