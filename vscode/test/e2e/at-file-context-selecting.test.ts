@@ -30,6 +30,9 @@ test('@-file empty state', async ({ page, sidebar }) => {
 
     // We should only match the relative visible path, not parts of the full path outside of the workspace.
     // Eg. searching for "source" should not find all files if the project is inside `C:\Source`.
+    // TODO(dantup): After https://github.com/sourcegraph/cody/pull/2235 lands, add workspacedirectory to the test
+    //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
+    //   longer matches.
     await chatInput.fill('@fixtures') // fixture is in the test project folder name, but in the relative paths.
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
