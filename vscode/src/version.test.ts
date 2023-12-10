@@ -1,12 +1,16 @@
-import { describe, expect, it } from 'vitest'
-
-import { version as packageVersion } from '../package.json'
+import { describe, expect, it, vi } from 'vitest'
 
 import { majorMinorVersion, releaseNotesURL, releaseType, version } from './version'
 
+vi.mock('vscode', () => ({
+    extensions: {
+        getExtension: vi.fn().mockReturnValue({ packageJSON: { version: '1.2.3' } })
+    }
+}))
+
 describe('version', () => {
-    it('returns the version from JSON', () => {
-        expect(version).toEqual(packageVersion)
+    it('returns the version from the extension manifest', () => {
+        expect(version).toEqual('1.2.3')
     })
 })
 

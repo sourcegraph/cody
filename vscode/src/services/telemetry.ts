@@ -4,7 +4,7 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
-import { version as packageVersion } from '../../package.json'
+import { version as extensionVersion } from '../version'
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
@@ -17,8 +17,6 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-export const extensionVersion =
-    vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
 export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
