@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { DOTCOM_URL, isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -160,19 +161,19 @@ export class AuthProvider {
             return
         }
 
+        const codyProEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
+        const detail = codyProEnabled ? `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : undefined
+        const options = codyProEnabled
+            ? ['Manage Account', 'Switch Account...', 'Sign Out']
+            : ['Switch Account...', 'Sign Out']
         const option = await vscode.window.showInformationMessage(
             `Signed in as ${
                 this.authStatus.displayName
                     ? `${this.authStatus.displayName} (${this.authStatus.primaryEmail})`
                     : this.authStatus.primaryEmail
             }`,
-            {
-                modal: true,
-                detail: `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`,
-            },
-            'Manage Account',
-            'Switch Account...',
-            'Sign Out'
+            { modal: true, detail },
+            ...options
         )
         switch (option) {
             case 'Manage Account':
