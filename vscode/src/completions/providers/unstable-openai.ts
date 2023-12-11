@@ -48,15 +48,6 @@ interface UnstableOpenAIOptions {
 
 const PROVIDER_IDENTIFIER = 'unstable-openai'
 
-const DYNAMIC_MULTILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: MULTI_LINE_STOP_SEQUENCES,
-    timeoutMs: 15_000,
-}
-
 export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
