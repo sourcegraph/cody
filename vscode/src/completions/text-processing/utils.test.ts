@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-    createAsyncIteratorStream,
-    getFirstLine,
-    getLastLine,
-    getNextNonEmptyLine,
-    getPrevNonEmptyLine,
-    lines,
-    newlineChunked,
-} from './utils'
+import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './utils'
 
 describe('getNextNonEmptyLine', () => {
     it.each(
@@ -97,81 +89,3 @@ function withCRLFExamples(examples: string[][]): string[][] {
     }
     return examples.concat(crlfExample)
 }
-
-describe('createAsyncIteratorStream', () => {
-    it('yields the right items', async () => {
-        const stream = createAsyncIteratorStream()
-
-        stream.onChunk('one')
-        stream.onChunk('two')
-        stream.onChunk('three')
-        stream.onEnd()
-
-        const chunks = []
-        for await (const x of stream) {
-            chunks.push(x)
-        }
-
-        expect(chunks).toEqual(['one', 'two', 'three'])
-    })
-
-    it('yields the right items if the async iterator is immediately started', async () => {
-        const stream = createAsyncIteratorStream()
-
-        setTimeout(() => {
-            stream.onChunk('one')
-            stream.onChunk('two')
-            stream.onChunk('three')
-            stream.onEnd()
-        }, 0)
-
-        const chunks = []
-        for await (const x of stream) {
-            chunks.push(x)
-        }
-
-        expect(chunks).toEqual(['one', 'two', 'three'])
-    })
-})
-
-describe('newlineChunked', () => {
-    it('creates the right chunks', async () => {
-        const inputStream = createAsyncIteratorStream<string>()
-        inputStream.onChunk('one\ntwo\nthree')
-
-        const outputStream = newlineChunked(inputStream)
-
-        inputStream.onChunk(' four\n')
-        inputStream.onChunk('fi')
-        inputStream.onChunk('ve\nsix')
-        inputStream.onEnd()
-
-        const chunks = []
-        for await (const x of outputStream) {
-            chunks.push(x)
-        }
-
-        expect(chunks).toEqual(['one\n', 'two\n', 'three four\n', 'five\n', 'six'])
-    })
-
-    it('creates the right chunks if the async iterator is immediately started', async () => {
-        const inputStream = createAsyncIteratorStream<string>()
-        inputStream.onChunk('one\ntwo\nthree')
-
-        const outputStream = newlineChunked(inputStream)
-
-        setTimeout(() => {
-            inputStream.onChunk(' four\n')
-            inputStream.onChunk('fi')
-            inputStream.onChunk('ve\nsix')
-            inputStream.onEnd()
-        }, 0)
-
-        const chunks = []
-        for await (const x of outputStream) {
-            chunks.push(x)
-        }
-
-        expect(chunks).toEqual(['one\n', 'two\n', 'three four\n', 'five\n', 'six'])
-    })
-})

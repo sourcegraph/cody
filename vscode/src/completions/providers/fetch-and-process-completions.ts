@@ -271,8 +271,8 @@ export async function fetchAndProcessCompletions(params: FetchAndProcessCompleti
                                 })
                             }
                         } else {
-                            // If we don't have a complete completion yet and th current chunk is
-                            // not extracting one, we need to wait longer.
+                            // If we don't have a complete completion yet and the current chunk is
+                            // not enough to be used as a completion, we wait for the next chunk.
                             return
                         }
                     }

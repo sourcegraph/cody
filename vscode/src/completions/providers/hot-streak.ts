@@ -43,7 +43,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
     function extract(rawCompletion: string, isRequestEnd: boolean): void {
         do {
             const unprocessedCompletion = rawCompletion.slice(alreadyInsertedLength)
-            if (unprocessedCompletion.length <= 0) {
+            if (unprocessedCompletion.length === 0) {
                 break
             }
 
@@ -65,7 +65,8 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
 
             const completion = canUsePartialCompletion(unprocessedCompletion, eventualDynamicMultilineProviderOptions)
             if (completion) {
-                // If the partial completion logic finds a match, extract this as the next hot streak
+                // If the partial completion logic finds a match, extract this as the next hot
+                // streak...
                 const processedCompletion = processCompletion(completion, eventualDynamicMultilineProviderOptions)
 
                 onHotStreakCompletionReady(updatedDocContext, {
@@ -75,14 +76,14 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
 
                 updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
             } else if (isRequestEnd) {
-                // If not and we are at processing the last payload, we use the whole remainder for
-                // the completion (this means we will parse the last line even when a \n is missing
-                // at the end)
+                // ... if not and we are processing the last payload, we use the whole remainder for the
+                // completion (this means we will parse the last line even when a \n is missing at
+                // the end) ...
                 const completion = parseAndTruncateCompletion(
                     unprocessedCompletion,
                     eventualDynamicMultilineProviderOptions
                 )
-                if (completion.insertText.trim().length <= 0) {
+                if (completion.insertText.trim().length === 0) {
                     break
                 }
                 const processedCompletion = processCompletion(completion, eventualDynamicMultilineProviderOptions)
@@ -92,8 +93,8 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 })
                 updatedDocContext = insertCompletionAndPressEnter(updatedDocContext, processedCompletion)
             } else {
-                // If we don't have enough in the remaining completion text to generate a full
-                // hot-streak completion so we yield.
+                // ... otherwise we don't have enough in the remaining completion text to generate a full
+                // hot-streak completion and yield to wait for the next chunk (or abort).
                 break
             }
         } while (true)

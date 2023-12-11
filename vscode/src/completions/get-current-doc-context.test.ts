@@ -371,7 +371,7 @@ describe('getCurrentDocContext', () => {
 })
 
 describe('insertCompletionIntoDocContext', () => {
-    it('inserts the completion and updates the range', () => {
+    it('inserts the completion and updates document prefix/suffix and cursor position', () => {
         const { document, position } = documentAndPosition(
             dedent`
                 function helloWorld() {
@@ -410,7 +410,7 @@ describe('insertCompletionIntoDocContext', () => {
         })
     })
 
-    it('removes the characters that are being replaced by the completion', () => {
+    it('does not duplicate the insertion characters when an existing suffix is being replaced by the single-line completion', () => {
         const { document, position } = documentAndPosition(
             dedent`
                 function helloWorld() {
@@ -440,7 +440,51 @@ describe('insertCompletionIntoDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
-            position: { character: 33, line: 1 },
+            // Note: The position is always moved at the end of the line that the text was inserted
+            position: { character: "    console.log('hello', 'world')".length, line: 1 },
+        })
+    })
+
+    it('does not duplicate the insertion characters when an existing suffix is being replaced by the multi-line completion', () => {
+        const { document, position } = documentAndPosition(
+            dedent`
+                function helloWorld() {
+                    f(1, {█2)
+                }
+            `
+        )
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
+            dynamicMultilineCompletions: false,
+        })
+
+        const updatedDocContext = insertIntoDocContext(
+            docContext,
+            '\n        propA: foo,\n        propB: bar,\n    }, 2)',
+            document.languageId
+        )
+
+        expect(updatedDocContext).toEqual({
+            prefix: dedent`
+                function helloWorld() {
+                    f(1, {
+                        propA: foo,
+                        propB: bar,
+                    }, 2)
+            `,
+            suffix: '\n}',
+            currentLinePrefix: '    }, 2)',
+            currentLineSuffix: '',
+            prevNonEmptyLine: '        propB: bar,',
+            nextNonEmptyLine: '}',
+            multilineTrigger: null,
+            multilineTriggerPosition: null,
+            injectedPrefix: null,
+            // Note: The position is always moved at the end of the line that the text was inserted
+            position: { character: '    }, 2)'.length, line: 4 },
         })
     })
 })

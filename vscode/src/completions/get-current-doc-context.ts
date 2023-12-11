@@ -140,15 +140,17 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
 }
 
 /**
- * Inserts a completion into a specific document context and computes the updated positions.
+ * Inserts a completion into a specific document context and computes the updated cursor position.
  *
  * This will insert the completion at the `position` outlined in the document context and will
- * replace the whole rest of the line with the completion.
+ * replace the whole rest of the line with the completion. This means that if you have content in
+ * the sameLineSuffix, it will be an empty string afterwards.
+ *
  *
  * NOTE: This will always move the position to the _end_ of the line that the text was inserted at,
- *       regardless of wether the text was inserted before the sameLineSuffix.
+ *       regardless of whether the text was inserted before the sameLineSuffix.
  *
- * TODO: Properly support {@link getRangeAdjustedForOverlappingCharacters}.
+ *       When inserting `2` into: `f(1, █);`, the document context will look like this `f(1, 2);█`
  */
 export function insertIntoDocContext(
     docContext: DocumentContext,
@@ -160,12 +162,10 @@ export function insertIntoDocContext(
 
     const insertedLines = lines(insertText)
 
-    let updatedPosition = position
-    if (insertedLines.length <= 1) {
-        updatedPosition = new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
-    } else {
-        updatedPosition = new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
-    }
+    const updatedPosition =
+        insertedLines.length <= 1
+            ? new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
+            : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
 
     return getDerivedDocContext({
         languageId,
