@@ -50,8 +50,11 @@ export async function getFileContextFiles(
     // running the search so they match the real paths.
     query = query.replaceAll(path.posix.sep, path.sep)
 
-    const results = fuzzysort.go(query, uris, {
-        key: 'fsPath',
+    // Add on the relative URIs for search, so we only search the visible part
+    // of the path and not the full FS path.
+    const urisWithRelative = uris.map(uri => ({ uri, relative: asRelativePath(uri) }))
+    const results = fuzzysort.go(query, urisWithRelative, {
+        key: 'relative',
         limit: maxResults,
         // We add a threshold for performance as per fuzzysort’s
         // recommendations. Testing with sg/sg path strings, somewhere over 10k
@@ -67,12 +70,15 @@ export async function getFileContextFiles(
     // they have the same score :( So we do this hacky post-limit sorting (first
     // by score, then by path) to ensure the order stays the same
     const sortedResults = [...results].sort((a, b) => {
-        return b.score - a.score || new Intl.Collator(undefined, { numeric: true }).compare(a.obj.fsPath, b.obj.fsPath)
+        return (
+            b.score - a.score ||
+            new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.fsPath, b.obj.uri.fsPath)
+        )
     })
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return sortedResults.map(result => createContextFileFromUri(result.obj))
+    return sortedResults.map(result => createContextFileFromUri(result.obj.uri))
 }
 
 export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFile[]> {
