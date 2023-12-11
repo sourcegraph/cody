@@ -91,6 +91,7 @@ export async function newAgentClient(clientInfo: ClientInfo & { codyAgentPath?: 
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
+        console.log({ arg0, args })
         const child = spawn(arg0, args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
         serverHandler.connectProcess(child, reject)
         serverHandler.registerNotification('debug/message', params => {

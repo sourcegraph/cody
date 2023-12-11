@@ -5,7 +5,7 @@ import * as path from 'path'
 import parseGitDiff, { AddedLine } from 'parse-git-diff'
 import * as vscode from 'vscode'
 
-import { MessageHandler } from '../../jsonrpc-alias'
+import { JsonrpcClient } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
 import { EvaluateAutocompleteOptions, matchesGlobPatterns } from './evaluate-autocomplete'
@@ -15,7 +15,7 @@ import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 export async function evaluateGitLogStrategy(
-    client: MessageHandler,
+    client: JsonrpcClient,
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
     const { workspace } = options

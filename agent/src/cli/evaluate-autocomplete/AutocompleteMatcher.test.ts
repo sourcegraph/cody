@@ -24,8 +24,7 @@ describe('AutocompleteMatcher', () => {
                     strategy: 'bfg',
                     workspace: 'test',
                 },
-                queries,
-                path.join(__dirname, '../../../../vscode/dist')
+                queries
             )
             const matches = await matcher.matches(text)
             const result: string[] = []

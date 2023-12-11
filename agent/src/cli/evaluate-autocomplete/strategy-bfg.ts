@@ -5,7 +5,7 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 
 import { getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
-import { MessageHandler } from '../../jsonrpc-alias'
+import { JsonrpcClient } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
 import { AutocompleteMatcher, AutocompleteMatchKind } from './AutocompleteMatcher'
@@ -22,10 +22,9 @@ import { triggerAutocomplete } from './triggerAutocomplete'
  * code. Eventually, we could make the logic configurable via command-line
  * flags so that we can reuse this command for different kinds of evaluations.
  */
-export async function evaluateBfgStrategy(client: MessageHandler, options: EvaluateAutocompleteOptions): Promise<void> {
+export async function evaluateBfgStrategy(client: JsonrpcClient, options: EvaluateAutocompleteOptions): Promise<void> {
     const { workspace } = options
     const queries = new Queries(options.queriesDirectory)
-    const grammarDirectory = path.normalize(options.treeSitterGrammars)
     const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
     files.sort()
     let remainingTests = options.testCount
@@ -69,7 +68,7 @@ export async function evaluateBfgStrategy(client: MessageHandler, options: Evalu
                 content,
                 uri
             )
-            const matcher = new AutocompleteMatcher(document.params, queries, grammarDirectory)
+            const matcher = new AutocompleteMatcher(document.params, queries)
             const matches = await matcher.matches(content)
             if (matches === undefined) {
                 continue

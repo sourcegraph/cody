@@ -250,7 +250,7 @@ type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<
  * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
  * that can be piped with ReadStream/WriteStream.
  */
-export class MessageHandler {
+export class MessageHandler implements JsonrpcClient {
     public id = 0
     private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
@@ -316,6 +316,7 @@ export class MessageHandler {
 
             // Requests have ids and methods
             const handler = this.requestHandlers.get(msg.method)
+
             if (handler) {
                 const cancelToken: vscode.CancellationTokenSource = new vscode.CancellationTokenSource()
                 this.cancelTokens.set(msg.id, cancelToken)
@@ -443,10 +444,18 @@ export class MessageHandler {
     }
 }
 
+export interface JsonrpcClient {
+    request<M extends RequestMethodName>(
+        method: M,
+        params: ParamsOf<M>,
+        cancelToken: vscode.CancellationToken
+    ): Promise<ResultOf<M>>
+    notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void
+}
 /**
  * A client for a JSON-RPC {@link MessageHandler} running in the same process.
  */
-export class InProcessClient {
+export class InProcessClient implements JsonrpcClient {
     constructor(
         private readonly requestHandlers: Map<RequestMethodName, RequestCallback<any>>,
         private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>

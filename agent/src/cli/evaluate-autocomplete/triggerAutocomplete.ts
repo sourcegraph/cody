@@ -4,7 +4,7 @@ import Parser, { Tree } from 'web-tree-sitter'
 
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
-import { MessageHandler } from '../../jsonrpc-alias'
+import { JsonrpcClient } from '../../jsonrpc-alias'
 import { AutocompleteResult } from '../../protocol-alias'
 
 import { AutocompleteMatchKind } from './AutocompleteMatcher'
@@ -18,7 +18,7 @@ export interface AutocompleteParameters {
     parser?: Parser
     originalTree?: Tree
     originalTreeIsErrorFree?: boolean
-    client: MessageHandler
+    client: JsonrpcClient
     document: EvaluationDocument
 
     options: EvaluateAutocompleteOptions
@@ -41,14 +41,19 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
     })
     let result: AutocompleteResult
     try {
-        result = await client.request('autocomplete/execute', {
-            uri: document.uri.toString(),
-            filePath: document.uri.fsPath,
-            position,
-            // We don't use the "automatic" trigger to avoid certain code paths like
-            // synthetic latency when acceptance rate is low.
-            triggerKind: 'Invoke',
-        })
+        result = await client.request(
+            'autocomplete/execute',
+            {
+                uri: document.uri.toString(),
+                filePath: document.uri.fsPath,
+                position,
+                // We don't use the "automatic" trigger to avoid certain code paths like
+                // synthetic latency when acceptance rate is low.
+                triggerKind: 'Invoke',
+            },
+            new vscode.CancellationTokenSource().token
+        )
+        console.log({ result: result.items })
     } catch (error) {
         const resultError = error instanceof Error ? error.message : String(error)
         document.pushItem({

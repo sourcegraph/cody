@@ -21,8 +21,7 @@ export class AutocompleteMatcher {
     public originalTreeIsFreeOfErrrors: boolean | undefined
     constructor(
         public readonly params: EvaluationDocumentParams,
-        public readonly queries: Queries,
-        public readonly grammarDirectory: string
+        public readonly queries: Queries
     ) {}
     private ifSyntax(language: SupportedLanguage): string {
         switch (language) {
@@ -37,7 +36,7 @@ export class AutocompleteMatcher {
         if (!language) {
             return undefined
         }
-        this.parser = await createParser({ language, grammarDirectory: this.grammarDirectory })
+        this.parser = await createParser({ language })
         const query = await this.queries.loadQuery(this.parser, language, 'context')
         if (!query) {
             return

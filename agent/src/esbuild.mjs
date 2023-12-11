@@ -13,7 +13,8 @@ import { build } from 'esbuild'
         bundle: true,
         outfile: path.join('dist', 'index.js'),
         platform: 'node',
-        sourcemap: true,
+        // Never got it working correctly and sourcemaps increase the size of the binary.
+        sourcemap: false,
         logLevel: 'error',
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),

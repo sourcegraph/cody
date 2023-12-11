@@ -1,6 +1,12 @@
+import sourcemap from 'source-map-support'
+
 import { rootCommand } from './cli/root'
 
+sourcemap.install()
+console.error('Starting agent...')
+
 const args = process.argv.slice(2)
+console.error({ args })
 const { operands } = rootCommand.parseOptions(args)
 if (operands.length === 0) {
     args.push('jsonrpc')

@@ -5,7 +5,7 @@ import * as commander from 'commander'
 import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
 
-import { newAgentClient } from '../../agent'
+import { newEmbeddedAgentClient } from '../../agent'
 
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { evaluateBfgStrategy } from './strategy-bfg'
@@ -266,7 +266,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
-    const client = await newAgentClient({
+    const agent = await newEmbeddedAgentClient({
         name: 'evaluate-autocomplete',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
@@ -276,8 +276,9 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             customHeaders: {},
             customConfiguration: options.fixture.customConfiguration,
         },
-        codyAgentPath: options.codyAgentBinary,
+        // codyAgentPath: options.codyAgentBinary,
     })
+    const client = agent.clientForThisInstance()
     try {
         if (options.fixture.strategy === EvaluationStrategy.BFG) {
             await evaluateBfgStrategy(client, options)

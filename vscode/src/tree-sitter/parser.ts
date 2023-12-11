@@ -38,6 +38,7 @@ export function resetParsersCache(): void {
 
 export async function createParser(settings: ParserSettings): Promise<Parser> {
     const { language, grammarDirectory = __dirname } = settings
+    console.log({ grammarDirectory })
 
     const cachedParser = PARSERS_LOCAL_CACHE[language]
 
