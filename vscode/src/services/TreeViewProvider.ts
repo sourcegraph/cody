@@ -8,7 +8,7 @@ import { AuthStatus } from '../chat/protocol'
 import { groupCodyChats } from './HistoryChat'
 import { CodySidebarTreeItem, CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
 
-class ChatTreeItem extends vscode.TreeItem {
+export class ChatTreeItem extends vscode.TreeItem {
     public children: ChatTreeItem[] | undefined
 
     constructor(
