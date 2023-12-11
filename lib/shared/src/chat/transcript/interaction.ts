@@ -68,7 +68,11 @@ export class Interaction {
                 contextFiles: this.usedContextFiles,
                 preciseContext: this.usedPreciseContext,
             },
-            this.assistantMessage,
+            {
+                ...this.assistantMessage,
+                contextFiles: this.usedContextFiles,
+                preciseContext: this.usedPreciseContext,
+            },
         ]
     }
 

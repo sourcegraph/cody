@@ -9,6 +9,7 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
+    errorType: StatusBarErrorName
     onShow?: () => void
     onSelect?: () => void
 }
@@ -17,6 +18,7 @@ export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
     addError(error: StatusBarError): () => void
+    hasError(error: StatusBarErrorName): boolean
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -26,6 +28,8 @@ const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
+
+type StatusBarErrorName = 'auth' | 'RateLimitError'
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -236,6 +240,9 @@ export function createStatusBar(): CodyStatusBar {
                     rerender()
                 }
             }
+        },
+        hasError(errorName: StatusBarErrorName): boolean {
+            return errors.some(e => e.error.errorType === errorName)
         },
         dispose() {
             statusBarItem.dispose()

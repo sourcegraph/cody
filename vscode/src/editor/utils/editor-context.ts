@@ -1,4 +1,4 @@
-import { basename, dirname } from 'path'
+import path, { basename, dirname } from 'path'
 
 import fuzzysort from 'fuzzysort'
 import { throttle } from 'lodash'
@@ -13,7 +13,7 @@ const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): 
     // TODO(toolmantim): Add support for the search.exclude option, e.g.
     // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
     // {}))
-    const fileExcludesPattern = '**/{.,*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
+    const fileExcludesPattern = '**/{*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
 }
@@ -46,8 +46,15 @@ export async function getFileContextFiles(
         return []
     }
 
-    const results = fuzzysort.go(query, uris, {
-        key: 'fsPath',
+    // On Windows, if the user has typed forward slashes, map them to backslashes before
+    // running the search so they match the real paths.
+    query = query.replaceAll(path.posix.sep, path.sep)
+
+    // Add on the relative URIs for search, so we only search the visible part
+    // of the path and not the full FS path.
+    const urisWithRelative = uris.map(uri => ({ uri, relative: asRelativePath(uri) }))
+    const results = fuzzysort.go(query, urisWithRelative, {
+        key: 'relative',
         limit: maxResults,
         // We add a threshold for performance as per fuzzysort’s
         // recommendations. Testing with sg/sg path strings, somewhere over 10k
@@ -63,12 +70,15 @@ export async function getFileContextFiles(
     // they have the same score :( So we do this hacky post-limit sorting (first
     // by score, then by path) to ensure the order stays the same
     const sortedResults = [...results].sort((a, b) => {
-        return b.score - a.score || new Intl.Collator(undefined, { numeric: true }).compare(a.obj.fsPath, b.obj.fsPath)
+        return (
+            b.score - a.score ||
+            new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.fsPath, b.obj.uri.fsPath)
+        )
     })
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return sortedResults.map(result => createContextFileFromUri(result.obj))
+    return sortedResults.map(result => createContextFileFromUri(result.obj.uri))
 }
 
 export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFile[]> {
@@ -175,6 +185,18 @@ function createContextFilePath(uri: vscode.Uri): ContextFile['path'] {
     return {
         basename: basename(uri.fsPath),
         dirname: dirname(uri.fsPath),
-        relative: vscode.workspace.asRelativePath(uri.fsPath),
+        relative: asRelativePath(uri),
     }
+}
+
+/**
+ * Returns a relative path using the correct slash direction for the current platform.
+ */
+function asRelativePath(uri: vscode.Uri): string {
+    let relativePath = vscode.workspace.asRelativePath(uri.fsPath)
+    // asRelativePath returns forward slashes on Windows but we want to
+    // render a native path like VS Code does in the file quick-pick.
+    relativePath = relativePath.replaceAll(path.posix.sep, path.sep)
+
+    return relativePath
 }

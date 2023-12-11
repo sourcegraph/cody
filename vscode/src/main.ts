@@ -6,6 +6,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
@@ -126,6 +127,9 @@ const register = async (
     await authProvider.init()
 
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
+    if (symfRunner) {
+        disposables.push(symfRunner)
+    }
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
@@ -184,6 +188,25 @@ const register = async (
 
     disposables.push(new CodeActionProvider({ contextProvider }))
 
+    let oldConfig = JSON.stringify(initialConfig)
+    function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
+        if (oldConfig === JSON.stringify(newConfig)) {
+            return
+        }
+        oldConfig = JSON.stringify(newConfig)
+
+        featureFlagProvider.syncAuthStatus()
+        graphqlClient.onConfigurationChange(newConfig)
+        contextProvider.onConfigurationChange(newConfig)
+        externalServicesOnDidConfigurationChange(newConfig)
+        void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+        platform.onConfigurationChange?.(newConfig)
+        symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
+        void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+        embeddingsClient.updateConfiguration(newConfig)
+        setupAutocomplete()
+    }
+
     // Register tree views
     disposables.push(
         chatManager,
@@ -193,15 +216,14 @@ const register = async (
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
-            externalServicesOnDidConfigurationChange(newConfig)
-            await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
+            onConfigurationChange(newConfig)
         })
     )
 
     if (symfRunner) {
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
-        searchViewProvider.initialize()
         disposables.push(searchViewProvider)
+        searchViewProvider.initialize()
         disposables.push(
             vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
@@ -210,8 +232,13 @@ const register = async (
     }
 
     // Adds a change listener to the auth provider that syncs the auth status
-    authProvider.addChangeListener((authStatus: AuthStatus) => {
-        void chatManager.syncAuthStatus(authStatus)
+    authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        // Update context provider first since it will also update the configuration
+        await contextProvider.syncAuthStatus()
+
+        featureFlagProvider.syncAuthStatus()
+        await chatManager.syncAuthStatus(authStatus)
+
         if (symfRunner && authStatus.isLoggedIn) {
             getAccessToken()
                 .then(token => {
@@ -222,6 +249,8 @@ const register = async (
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
+
+        setupAutocomplete()
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
@@ -285,14 +314,8 @@ const register = async (
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
+        vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.sync', () => {
-            const result = contextProvider.syncAuthStatus()
-            void featureFlagProvider.syncAuthStatus()
-            // Important that we return a promise here to allow `AuthProvider`
-            // to `await` on the auth config changes to propagate.
-            return result
-        }),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
             const confirmation = await vscode.window.showWarningMessage(
@@ -310,6 +333,9 @@ const register = async (
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
+        ),
+        vscode.commands.registerCommand('cody.settings.extension.chat', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
@@ -454,6 +480,7 @@ const register = async (
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
                 title: 'Sign In To Use Cody',
+                errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
                     void chatManager.setWebviewView('chat')
@@ -465,8 +492,9 @@ const register = async (
     updateAuthStatusBarIndicator()
 
     vscode.window.onDidChangeWindowState(async ws => {
-        if (ws.focused) {
-            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+        const endpoint = authProvider.getAuthStatus().endpoint
+        if (ws.focused && endpoint && isDotCom(endpoint)) {
+            const res = await graphqlClient.getDotComCurrentUserInfo()
             if (res instanceof Error) {
                 console.error(res)
                 return
@@ -476,6 +504,9 @@ const register = async (
 
             authStatus.hasVerifiedEmail = res.hasVerifiedEmail
             authStatus.userCanUpgrade = !res.codyProEnabled
+            authStatus.primaryEmail = res.primaryEmail.email
+            authStatus.displayName = res.displayName
+            authStatus.avatarURL = res.avatarURL
 
             void chatManager.syncAuthStatus(authStatus)
         }
@@ -484,7 +515,7 @@ const register = async (
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = (): void => {
+    function setupAutocomplete(): void {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
@@ -520,15 +551,6 @@ const register = async (
             })
     }
 
-    // Reload autocomplete if either the configuration changes or the auth status is updated
-    vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('cody.autocomplete')) {
-            setupAutocomplete()
-        }
-    })
-    authProvider.addChangeListener(() => {
-        setupAutocomplete()
-    })
     setupAutocomplete()
 
     if (initialConfig.experimentalGuardrails) {
@@ -559,16 +581,7 @@ const register = async (
 
     return {
         disposable: vscode.Disposable.from(...disposables),
-        onConfigurationChange: newConfig => {
-            graphqlClient.onConfigurationChange(newConfig)
-            contextProvider.onConfigurationChange(newConfig)
-            externalServicesOnDidConfigurationChange(newConfig)
-            void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
-            platform.onConfigurationChange?.(newConfig)
-            symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
-            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-            embeddingsClient.updateConfiguration(newConfig)
-        },
+        onConfigurationChange,
     }
 }
 

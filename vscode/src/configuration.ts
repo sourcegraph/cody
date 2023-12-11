@@ -134,6 +134,16 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
             singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
         },
+
+        testingLocalEmbeddingsModel: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.model', undefined)
+            : undefined,
+        testingLocalEmbeddingsEndpoint: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.endpoint', undefined)
+            : undefined,
+        testingLocalEmbeddingsIndexLibraryPath: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
+            : undefined,
     }
 }
 

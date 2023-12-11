@@ -181,7 +181,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         // Get the string after the last '@' symbol
         const addFileInput = formInput.match(addFileRegex)?.[0]
 
-        if (!formInput.endsWith('@') && trailingNonAlphaNumericRegex.test(formInput) && !contextSelection?.length) {
+        if (
+            !formInput.endsWith('@') &&
+            !formInput.endsWith('.') &&
+            trailingNonAlphaNumericRegex.test(formInput) &&
+            !contextSelection?.length
+        ) {
             setContextSelection(null)
             return
         }
@@ -229,10 +234,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices
-                        extensionVersion={config?.extensionVersion}
-                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
-                    />
+                    <Notices probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0} />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'chat' && (
                         <EnhancedContextEventHandlers.Provider

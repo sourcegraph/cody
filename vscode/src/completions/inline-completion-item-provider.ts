@@ -136,7 +136,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     // completions, we use consult this field inside the completion callback instead.
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
-    private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
@@ -579,10 +578,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      */
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
-            if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
+            // If there's already an existing error, don't add another one.
+            const hasRateLimitError = this.config.statusBar.hasError(error.name)
+            if (hasRateLimitError) {
                 return
             }
-            this.resetRateLimitErrorsAfter = error.retryAfterDate?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
+
             const canUpgrade = error.upgradeIsAvailable
             const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
             let errorTitle: string
@@ -598,6 +599,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.config.statusBar.addError({
                 title: errorTitle,
                 description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
+                errorType: error.name,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {

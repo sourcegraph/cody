@@ -14,8 +14,10 @@ import {
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
-    CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+    CURRENT_USER_CODY_PRO_ENABLED_QUERY,
     CURRENT_USER_ID_QUERY,
+    DOT_COM_CURRENT_USER_INFO_QUERY,
+    ENTERPRISE_CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
     GET_FEATURE_FLAGS_QUERY,
@@ -58,8 +60,34 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
-interface CurrentUserIdHasVerifiedEmailHasCodyProResponse {
-    currentUser: { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | null
+interface DotComCurrentUserInfoResponse {
+    currentUser: {
+        id: string
+        hasVerifiedEmail: boolean
+        displayName: string
+        avatarURL: string
+        codyProEnabled: boolean
+        primaryEmail: {
+            email: string
+        }
+    } | null
+}
+
+interface EnterpriseCurrentUserInfoResponse {
+    currentUser: {
+        id: string
+        displayName: string
+        avatarURL: string
+        primaryEmail: {
+            email: string
+        }
+    } | null
+}
+
+interface CurrentUserCodyProEnabledResponse {
+    currentUser: {
+        codyProEnabled: boolean
+    } | null
 }
 
 interface CodyLLMSiteConfigurationResponse {
@@ -312,17 +340,57 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserIdAndVerifiedEmailAndCodyPro(): Promise<
-        { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | Error
-    > {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailHasCodyProResponse>>(
-            CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+    public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodyProEnabledResponse>>(
+            CURRENT_USER_CODY_PRO_ENABLED_QUERY,
             {}
         ).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser
-                    ? { ...data.currentUser }
-                    : new Error('current user not found with verified email and cody pro')
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+            )
+        )
+    }
+
+    public async getEnterpriseCurrentUserInfo(): Promise<
+        | {
+              id: string
+              displayName: string
+              avatarURL: string
+              primaryEmail: {
+                  email: string
+              }
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<EnterpriseCurrentUserInfoResponse>>(
+            ENTERPRISE_CURRENT_USER_INFO_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+            )
+        )
+    }
+
+    public async getDotComCurrentUserInfo(): Promise<
+        | {
+              id: string
+              hasVerifiedEmail: boolean
+              codyProEnabled: boolean
+              displayName: string
+              avatarURL: string
+              primaryEmail: {
+                  email: string
+              }
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<DotComCurrentUserInfoResponse>>(
+            DOT_COM_CURRENT_USER_INFO_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
         )
     }
