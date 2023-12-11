@@ -54,7 +54,7 @@ query SiteGraphQLFields {
     }
 }`
 
-export const CURRENT_USER_INFO_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
+export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
 query CurrentUser {
     currentUser {
         id

@@ -14,8 +14,8 @@ import {
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
     CURRENT_USER_ID_QUERY,
-    CURRENT_USER_INFO_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
     CURRENT_USER_INFO_DOT_COM_QUERY,
     ENTERPRISE_CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
@@ -371,8 +371,8 @@ export class SourcegraphGraphQLAPIClient {
               displayName: string
               avatarURL: string
               primaryEmail: {
-                email: string
-            }
+                  email: string
+              }
           }
         | Error
     > {
@@ -397,7 +397,7 @@ export class SourcegraphGraphQLAPIClient {
         | Error
     > {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailHasCodyProResponse>>(
-            CURRENT_USER_INFO_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
             {}
         ).then(response =>
             extractDataOrError(response, data =>
