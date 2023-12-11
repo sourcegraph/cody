@@ -10,6 +10,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [0.18.4]
+
+### Added
+
+### Fixed
+
+- Fixes an issue where the sidebar would not properly load when not signed in. [pull/2267](https://github.com/sourcegraph/cody/pull/2267)
+
+### Changed
+
 ## [0.18.3]
 
 ### Added
