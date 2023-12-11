@@ -1,4 +1,6 @@
+import fspromises from 'fs/promises'
 import path from 'path'
+import { argv0 } from 'process'
 
 import Parser from 'web-tree-sitter'
 
@@ -36,8 +38,17 @@ export function resetParsersCache(): void {
     }
 }
 
-export async function createParser(settings: ParserSettings): Promise<Parser> {
-    const { language, grammarDirectory = __dirname } = settings
+const isAgentPkg = typeof process !== 'undefined' && process.env.CODY_AGENT_PKG_BINARY === 'true'
+
+function defaultGrammarDirectory(): string {
+    if (isAgentPkg) {
+        return path.join(process.cwd(), path.normalize(path.dirname(argv0)))
+    }
+    return __dirname
+}
+
+export async function createParser(settings: ParserSettings): Promise<Parser | null> {
+    const { language, grammarDirectory = defaultGrammarDirectory() } = settings
     console.log({ grammarDirectory })
 
     const cachedParser = PARSERS_LOCAL_CACHE[language]
@@ -46,7 +57,24 @@ export async function createParser(settings: ParserSettings): Promise<Parser> {
         return cachedParser
     }
 
-    await ParserImpl.init()
+    if (isAgentPkg) {
+        try {
+            const wasmPath = path.join(grammarDirectory, 'tree-sitter.wasm')
+            await fspromises.stat(wasmPath)
+        } catch {
+            console.error(
+                'Failed to load tree-sitter.wasm. To fix this problem, make sure to copy over the `*.wasm` files from the `vscode/dist` directory and place them next to the Cody agent binaries.'
+            )
+            return null
+        }
+    }
+
+    await ParserImpl.init({
+        locateFile(scriptName: string, scriptDirectory: string) {
+            return path.join(grammarDirectory, scriptName)
+        },
+    })
+
     const parser = new ParserImpl()
 
     const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])

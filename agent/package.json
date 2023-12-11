@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "agent",
+  "name": "@sourcegraph/cody-agent",
   "version": "0.0.1",
   "description": "Cody JSON-RPC agent for consistent cross-editor support",
   "license": "Apache-2.0",
@@ -17,25 +17,11 @@
     "agent": "pnpm run build && node dist/index.js",
     "agent:debug": "pnpm run build && node --inspect ./dist/index.js",
     "build-ts": "tsc --build",
-    "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg package.json",
+    "build-agent-binaries": "pnpm run build && cp dist/src/agent.pkg.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "vitest"
   },
-  "pkg": {
-    "targets": [
-      "latest-linux-arm64",
-      "latest-linux-x64",
-      "latest-macos-x64",
-      "latest-win-x64",
-      "latest-macos-arm64"
-    ],
-    "outputPath": "dist",
-    "assets": [
-      "dist/*.wasm"
-    ]
-  },
-  "bin": "dist/agent.js",
   "dependencies": {
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",

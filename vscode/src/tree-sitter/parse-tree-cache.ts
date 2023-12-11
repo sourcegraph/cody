@@ -42,6 +42,9 @@ export async function parseDocument(document: TextDocument): Promise<void> {
     }
 
     const parser = await createParser({ language: parseLanguage })
+    if (!parser) {
+        return
+    }
     updateParseTreeCache(document, parser)
 }
 

@@ -36,7 +36,12 @@ export class AutocompleteMatcher {
         if (!language) {
             return undefined
         }
-        this.parser = await createParser({ language })
+        const parser = await createParser({ language })
+        if (!parser) {
+            return undefined
+        }
+        this.parser = parser
+
         const query = await this.queries.loadQuery(this.parser, language, 'context')
         if (!query) {
             return
