@@ -122,12 +122,10 @@ const register = async (
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
-    if (config.autocompleteExperimentalSyntacticPostProcessing) {
-        parseAllVisibleDocuments()
+    parseAllVisibleDocuments()
 
-        disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
-        disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
-    }
+    disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+    disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
 
     // Enable tracking for pasting chat responses into editor text
     disposables.push(

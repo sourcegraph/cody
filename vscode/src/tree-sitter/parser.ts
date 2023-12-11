@@ -1,3 +1,4 @@
+import fspromises from 'fs/promises'
 import path from 'path'
 
 import Parser from 'web-tree-sitter'
@@ -36,7 +37,16 @@ export function resetParsersCache(): void {
     }
 }
 
-export async function createParser(settings: ParserSettings): Promise<Parser> {
+async function isRegularFile(filePath: string): Promise<boolean> {
+    try {
+        const stat = await fspromises.stat(filePath)
+        return stat.isFile()
+    } catch {
+        return false
+    }
+}
+
+export async function createParser(settings: ParserSettings): Promise<Parser | undefined> {
     const { language, grammarDirectory = __dirname } = settings
 
     const cachedParser = PARSERS_LOCAL_CACHE[language]
@@ -44,8 +54,11 @@ export async function createParser(settings: ParserSettings): Promise<Parser> {
     if (cachedParser) {
         return cachedParser
     }
+    if (!(await isRegularFile(path.resolve(grammarDirectory, 'tree-sitter.wasm')))) {
+        return undefined
+    }
 
-    await ParserImpl.init()
+    await ParserImpl.init({ grammarDirectory })
     const parser = new ParserImpl()
 
     const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])

@@ -100,12 +100,14 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
     })
 }
 
-export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHandler> {
+export async function newAgentClient(clientInfo: ClientInfo & { codyAgentPath?: string }): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
         const serverHandler = new MessageHandler()
-        const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
-        args.push('jsonrpc')
-        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
+        const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        nodeArguments.push('jsonrpc')
+        const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
+        const args = clientInfo.codyAgentPath ? [] : nodeArguments
+        const child = spawn(arg0, args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
         serverHandler.connectProcess(child, reject)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
@@ -518,7 +520,6 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('chat/new', async () => {
             const id = await new Promise<string>((resolve, reject) => {
-                console.log('STAAAAAAAAAAAAAAAAAART')
                 // HACK: when triggering this command, Cody creates a webview under the hood and there's
                 // no clean way for us (yet) to pair the webview with this command invocation.
                 // To work around this limitation, we hijack the `webview/create` handler to capture
@@ -534,7 +535,6 @@ export class Agent extends MessageHandler {
                     reject(new Error('chat/new: timed out waiting for chat panel to be created'))
                 }, 1000)
             })
-            console.log('END')
 
             // Important: this request never responds if we await on the messages here.
             this.receiveWebviewMessage(id, { command: 'ready' }).then(

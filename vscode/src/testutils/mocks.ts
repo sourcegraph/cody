@@ -279,9 +279,9 @@ export class Position implements VSCodePosition {
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
     public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
-        const line = typeof arg === 'number' ? arg : arg?.line
-        character = arg && typeof arg !== 'number' ? arg.character : character
-        return new Position(this.line + (line || 0), this.character + (character || 0))
+        const newLine = typeof arg === 'number' ? arg : arg?.line
+        const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
+        return new Position(newLine ?? this.line, newCharacter ?? this.character)
     }
 
     public compareTo(other: VSCodePosition): number {
@@ -794,11 +794,13 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
-    autocompleteExperimentalSyntacticPostProcessing: true,
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
-    autocompleteTimeouts: {},
+    autocompleteTimeouts: {
+        multiline: undefined,
+        singleline: undefined,
+    },
     testingLocalEmbeddingsEndpoint: undefined,
     testingLocalEmbeddingsIndexLibraryPath: undefined,
     testingLocalEmbeddingsModel: undefined,
