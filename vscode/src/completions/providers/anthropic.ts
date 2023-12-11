@@ -29,22 +29,25 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+const MAX_RESPONSE_TOKENS = 256
+
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
+export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+
+const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    maxTokensToSample: 50,
+    stopSequences: SINGLE_LINE_STOP_SEQUENCES,
+    timeoutMs: 5_000,
+}
+const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: MULTI_LINE_STOP_SEQUENCES,
+    timeoutMs: 15_000,
+}
 
 export interface AnthropicOptions {
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-}
-
-const MAX_RESPONSE_TOKENS = 256
-const DYNAMIC_MULTILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: MULTI_LINE_STOP_SEQUENCES,
-    timeoutMs: 15_000,
 }
 
 export class AnthropicProvider extends Provider {
@@ -150,32 +153,19 @@ export class AnthropicProvider extends Provider {
         if (prompt.length > this.promptChars) {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
-        const { multiline, n, dynamicMultilineCompletions } = this.options
+        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
+
+        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
 
         const requestParams: CodeCompletionsParams = {
+            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
             temperature: 0.5,
             messages: prompt,
-            ...(multiline
-                ? {
-                      maxTokensToSample: MAX_RESPONSE_TOKENS,
-                      stopSequences: MULTI_LINE_STOP_SEQUENCES,
-                      timeoutMs: 15000,
-                  }
-                : {
-                      maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
-                      stopSequences: SINGLE_LINE_STOP_SEQUENCES,
-                      timeoutMs: 5000,
-                  }),
         }
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTILINE_COMPLETIONS_ARGS)
-
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
+        const fetchAndProcessCompletionsImpl = dynamicMultilineCompletions
+            ? fetchAndProcessDynamicMultilineCompletions
+            : fetchAndProcessCompletions
 
         tracer?.params(requestParams)
 

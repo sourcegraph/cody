@@ -79,13 +79,15 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-const DYNAMIC_MULTILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
+const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences'> = {
+    // To speed up sample generation in single-line case, we request a lower token limit
+    // since we can't terminate on the first `\n`.
+    maxTokensToSample: 30,
+    stopSequences: ['\n'],
+}
+const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences'> = {
     maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: undefined,
-    timeoutMs: 15_000,
+    stopSequences: ['\n\n', '\n\r\n'],
 }
 
 export class FireworksProvider extends Provider {
@@ -161,7 +163,7 @@ export class FireworksProvider extends Provider {
         ) => void,
         tracer?: CompletionProviderTracer
     ): Promise<void> {
-        const { multiline, n, dynamicMultilineCompletions } = this.options
+        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
         const prompt = this.createPrompt(snippets)
 
         const model =
@@ -169,7 +171,9 @@ export class FireworksProvider extends Provider {
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
-        const timeoutMs: number = multiline
+        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
+
+        const timeoutMs: number = useExtendedGeneration
             ? this.timeouts?.multiline === undefined
                 ? 15_000
                 : this.timeouts.multiline
@@ -182,23 +186,17 @@ export class FireworksProvider extends Provider {
         }
 
         const requestParams: CodeCompletionsParams = {
+            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
             messages: [{ speaker: 'human', text: prompt }],
-            maxTokensToSample: MAX_RESPONSE_TOKENS,
             temperature: 0.2,
             topK: 0,
             model,
-            stopSequences: ['\n\n', '\n\r\n'],
             timeoutMs,
         }
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTILINE_COMPLETIONS_ARGS)
-
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
+        const fetchAndProcessCompletionsImpl = dynamicMultilineCompletions
+            ? fetchAndProcessDynamicMultilineCompletions
+            : fetchAndProcessCompletions
 
         tracer?.params(requestParams)
 
