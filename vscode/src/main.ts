@@ -314,6 +314,7 @@ const register = async (
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
+        vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
@@ -490,7 +491,7 @@ const register = async (
     vscode.window.onDidChangeWindowState(async ws => {
         const endpoint = authProvider.getAuthStatus().endpoint
         if (ws.focused && endpoint && isDotCom(endpoint)) {
-            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            const res = await graphqlClient.getDotComCurrentUserInfo()
             if (res instanceof Error) {
                 console.error(res)
                 return
@@ -500,6 +501,9 @@ const register = async (
 
             authStatus.hasVerifiedEmail = res.hasVerifiedEmail
             authStatus.userCanUpgrade = !res.codyProEnabled
+            authStatus.primaryEmail = res.primaryEmail.email
+            authStatus.displayName = res.displayName
+            authStatus.avatarURL = res.avatarURL
 
             void chatManager.syncAuthStatus(authStatus)
         }

@@ -250,7 +250,7 @@
     "commands": [
       {
         "command": "cody.welcome",
-        "title": "Help & Getting Started",
+        "title": "Getting Started Guide",
         "category": "Cody",
         "group": "Cody",
         "icon": "$(book)"
@@ -666,19 +666,9 @@
           "group": "navigation@3"
         },
         {
-          "command": "cody.feedback",
-          "when": "view == cody.support.tree.view",
-          "group": "7_cody@0"
-        },
-        {
           "command": "cody.welcome",
           "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
-        },
-        {
-          "command": "cody.auth.signin",
-          "when": "view == cody.support.tree.view && cody.activated",
-          "group": "9_cody@0"
         },
         {
           "command": "cody.search.index-update",

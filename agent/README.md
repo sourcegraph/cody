@@ -92,11 +92,15 @@ To run the agent in testing mode, define the following environment variables:
 Run `pnpm run agent jsonrpc --help` to get more information about all available
 `--recording-*` options.
 
-## Updating agent tests
+## Updating the Polly HTTP Recordings
 
-If agent tests are failing in CI for non-agent related PRs then you may need to update
-the HTTP recordings. For example, this can happen when we make changes to the prompt
-the agent test to not be able to replay the autocomplete requests from old reordigns.
+If agent tests are failing in CI for non-agent related PRs (e.g. `PollyError:
+[Polly] [adapter:node-http] Recording for the following request is not found and
+recordIfMissing is false` errors) then you may need to update the HAR HTTP
+recordings. For example, this can happen when we make changes to the prompt the
+agent test to not be able to replay the autocomplete requests from old
+recordings.
+
 To fix this problem, update the HTTP recordings with the following command:
 
 ```sh
@@ -107,10 +111,10 @@ CODY_RECORDING_MODE=record pnpm run test      # run tests to update recordings
 pnpm run test                                 # confirm that tests are passing when replaying HTTP traffic
 ```
 
-Please post in #wg-cody-agent if you have problems getting the agent tests to pass after recording.
-Worst case, feel free to disable the agent tests by uncomming a block of code in
-`index.test.ts`. Ssee comment in the code for more details about how to disable
-agent tests.
+Please post in #wg-cody-agent if you have problems getting the agent tests to
+pass after recording. Worst case, feel free to disable the agent tests by
+uncommenting the block of code in `index.test.ts`. See comment in the code for
+more details about how to disable agent tests.
 
 ## Miscellaneous notes
 

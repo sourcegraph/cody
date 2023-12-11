@@ -1,12 +1,14 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { DOTCOM_URL, isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
+    ACCOUNT_USAGE_URL,
     AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
@@ -100,6 +102,9 @@ export class AuthProvider {
                 let authStatus = await this.auth(selectedEndpoint, token || null)
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
+                    if (!newToken) {
+                        return
+                    }
                     authStatus = await this.auth(selectedEndpoint, newToken || null)
                 }
                 await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
@@ -127,6 +132,59 @@ export class AuthProvider {
         if (endpoint) {
             await this.signout(endpoint)
             logDebug('AuthProvider:signoutMenu', endpoint)
+        }
+    }
+
+    public async accountMenu(): Promise<void> {
+        if (!this.authStatus.authenticated || !this.authStatus.endpoint) {
+            return
+        }
+
+        if (!isDotCom(this.authStatus.endpoint)) {
+            const option = await vscode.window.showInformationMessage(
+                `Signed in as ${this.authStatus.primaryEmail}`,
+                {
+                    modal: true,
+                    detail: `Enterprise Instance:\n${this.authStatus.endpoint}`,
+                },
+                'Switch Account...',
+                'Sign Out'
+            )
+            switch (option) {
+                case 'Switch Account...':
+                    await this.signinMenu()
+                    break
+                case 'Sign Out':
+                    await this.signoutMenu()
+                    break
+            }
+            return
+        }
+
+        const codyProEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)
+        const detail = codyProEnabled ? `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : undefined
+        const options = codyProEnabled
+            ? ['Manage Account', 'Switch Account...', 'Sign Out']
+            : ['Switch Account...', 'Sign Out']
+        const option = await vscode.window.showInformationMessage(
+            `Signed in as ${
+                this.authStatus.displayName
+                    ? `${this.authStatus.displayName} (${this.authStatus.primaryEmail})`
+                    : this.authStatus.primaryEmail
+            }`,
+            { modal: true, detail },
+            ...options
+        )
+        switch (option) {
+            case 'Manage Account':
+                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()))
+                break
+            case 'Switch Account...':
+                await this.signinMenu()
+                break
+            case 'Sign Out':
+                await this.signoutMenu()
+                break
         }
     }
 
@@ -163,30 +221,35 @@ export class AuthProvider {
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
+
         if (!isDotCom) {
-            const currentUserID = await this.client.getCurrentUserId()
+            const userInfo = await this.client.getEnterpriseCurrentUserInfo()
             const hasVerifiedEmail = false
 
             // check first if it's a network error
-            if (isError(currentUserID)) {
-                if (isNetworkError(currentUserID)) {
+            if (isError(userInfo)) {
+                if (isNetworkError(userInfo)) {
                     return { ...networkErrorAuthStatus, endpoint }
                 }
+                return { ...unauthenticatedStatus, endpoint }
             }
 
             return newAuthStatus(
                 endpoint,
                 isDotCom,
-                !isError(currentUserID),
+                !isError(userInfo),
                 hasVerifiedEmail,
                 enabled,
                 /* userCanUpgrade: */ false,
                 version,
+                userInfo.avatarURL,
+                userInfo.primaryEmail.email,
+                userInfo.displayName,
                 configOverwrites
             )
         }
 
-        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+        const userInfo = await this.client.getDotComCurrentUserInfo()
         const isCodyEnabled = true
 
         // check first if it's a network error
@@ -211,6 +274,9 @@ export class AuthProvider {
             isCodyEnabled,
             userCanUpgrade,
             version,
+            userInfo.avatarURL,
+            userInfo.primaryEmail.email,
+            userInfo.displayName,
             configOverwrites
         )
     }
@@ -374,7 +440,7 @@ function formatURL(uri: string): string | null {
 async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
     if (authStatus?.isLoggedIn) {
         const authority = vscode.Uri.parse(endpoint).authority
-        await vscode.window.showInformationMessage(`Signed in to ${authority}`)
+        await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {
         await showAuthFailureMessage(endpoint)
     }

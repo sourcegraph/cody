@@ -168,7 +168,18 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             case 'CurrentUser':
                 res.send(
                     JSON.stringify({
-                        data: { currentUser: { id: 'u', hasVerifiedEmail: true, codyProEnabled: false } },
+                        data: {
+                            currentUser: {
+                                id: 'u',
+                                hasVerifiedEmail: true,
+                                codyProEnabled: false,
+                                displayName: 'Person',
+                                avatarURL: '',
+                                primaryEmail: {
+                                    email: 'person@company.comp',
+                                },
+                            },
+                        },
                     })
                 )
                 break
