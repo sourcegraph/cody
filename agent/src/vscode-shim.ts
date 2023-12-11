@@ -182,6 +182,7 @@ const configuration: vscode.WorkspaceConfiguration = {
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
 export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
@@ -303,7 +304,7 @@ const _window: Partial<typeof vscode.window> = {
     visibleTextEditors,
     withProgress: (_, handler) => handler({ report: () => {} }, 'window.withProgress.cancelationToken' as any),
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
-    onDidChangeVisibleTextEditors: (() => ({})) as any,
+    onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: (() => ({})) as any,
     showErrorMessage: (message: string, ...items: any[]) => {
         if (agent) {
