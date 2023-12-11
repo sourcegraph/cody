@@ -87,6 +87,12 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         const isNode = typeof process !== 'undefined'
         const enableStreaming = !!isNode
 
+        // Disable gzip compression since the sg instance will start to batch
+        // responses afterwards.
+        if (enableStreaming) {
+            headers.set('Accept-Encoding', 'gzip;q=0')
+        }
+
         const response: Response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify({
