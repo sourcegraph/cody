@@ -100,7 +100,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected chatModel: string | undefined = undefined
-    protected chatTitle: string | undefined = 'init'
+    protected chatTitle: string | undefined = 'Untitled'
 
     constructor(options: MessageProviderOptions) {
         super()
