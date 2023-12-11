@@ -6,6 +6,7 @@ import {
     ContextStatusProvider,
     LocalEmbeddingsProvider,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -23,7 +24,7 @@ export function createLocalEmbeddingsController(
     return new LocalEmbeddingsController(context, config)
 }
 
-export interface LocalEmbeddingsConfig {
+export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken'> & {
     testingLocalEmbeddingsModel: string | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
@@ -88,6 +89,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
+
+        // Pick up the initial access token, and whether the account is dotcom.
+        this.accessToken = config.accessToken || undefined
+        this.endpointIsDotcom = isDotCom(config.serverEndpoint)
 
         this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
         this.endpoint = config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
