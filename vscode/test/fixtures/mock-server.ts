@@ -21,7 +21,7 @@ interface MockRequest {
 const SERVER_PORT = 49300
 
 export const SERVER_URL = 'http://localhost:49300'
-export const VALID_TOKEN = 'abcdefgh1234'
+export const VALID_TOKEN = 'sgp_1234567890123456789012345678901234567890'
 
 const responses = {
     chat: 'hello from the assistant',
@@ -166,10 +166,26 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         const operation = new URL(req.url, 'https://example.com').search.replace(/^\?/, '')
         switch (operation) {
             case 'CurrentUser':
-                res.send(JSON.stringify({ data: { currentUser: 'u' } }))
+                res.send(
+                    JSON.stringify({
+                        data: { currentUser: { id: 'u', hasVerifiedEmail: true, codyProEnabled: false } },
+                    })
+                )
                 break
             case 'IsContextRequiredForChatQuery':
                 res.send(JSON.stringify({ data: { isContextRequiredForChatQuery: false } }))
+                break
+            case 'SiteIdentification':
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            site: {
+                                siteID: 'test-site-id',
+                                productSubscription: { license: { hashedKey: 'mmm,hashedkey' } },
+                            },
+                        },
+                    })
+                )
                 break
             case 'SiteProductVersion':
                 res.send(JSON.stringify({ data: { site: { productVersion: 'dev' } } }))
@@ -184,7 +200,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 res.send(
                     JSON.stringify({
                         data: {
-                            site: { codyLLMConfiguration: { chatModel: 'test-chat-default-model' } },
+                            site: {
+                                codyLLMConfiguration: { chatModel: 'test-chat-default-model', provider: 'sourcegraph' },
+                            },
                         },
                     })
                 )
