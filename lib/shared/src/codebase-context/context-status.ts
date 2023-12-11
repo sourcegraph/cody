@@ -38,7 +38,8 @@ interface RemoteEmbeddingsProvider {
 export interface LocalEmbeddingsProvider {
     kind: 'embeddings'
     type: 'local'
-    state: 'indeterminate' | 'unconsented' | 'indexing' | 'ready'
+    state: 'indeterminate' | 'no-match' | 'unconsented' | 'indexing' | 'ready'
+    errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
 }
 
 interface SearchProvider {
