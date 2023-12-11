@@ -42,7 +42,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteFormatOnAccept: true,
-            autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: null,
@@ -118,8 +117,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.formatOnAccept':
                         return true
-                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                        return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
@@ -169,7 +166,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
-            autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
