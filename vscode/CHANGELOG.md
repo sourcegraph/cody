@@ -171,6 +171,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: @'ing files now uses a case insensitive fuzzy search. [pull/1889](https://github.com/sourcegraph/cody/pull/1889)
 - Edit: Added a faster, more optimized response for the "document" command. [pull/1900](https://github.com/sourcegraph/cody/pull/1900)
 - Chat: Restore last opened chat panel on reload. [pull/1918](https://github.com/sourcegraph/cody/pull/1918)
+- Chat: Edit button to rename the chat history. [pull/1818](https://github.com/sourcegraph/cody/pull/1818)
 
 ### Fixed
 

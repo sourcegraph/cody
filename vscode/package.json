@@ -441,6 +441,14 @@
         "icon": "$(layout-sidebar-left)"
       },
       {
+        "command": "cody.chat.history.edit",
+        "category": "Cody",
+        "title": "Rename Chat",
+        "group": "Cody",
+        "icon": "$(edit)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
         "command": "cody.chat.history.clear",
         "category": "Cody",
         "title": "Delete All Chats",
@@ -716,9 +724,14 @@
       ],
       "view/item/context": [
         {
+          "command": "cody.chat.history.edit",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "group": "inline@1"
+        },
+        {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "group": "inline"
+          "group": "inline@2"
         }
       ]
     },
