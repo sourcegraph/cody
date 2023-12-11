@@ -340,17 +340,13 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserCodyProEnabled(): Promise<
-        { codyProEnabled: boolean } | Error
-    > {
+    public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodyProEnabledResponse>>(
             CURRENT_USER_CODY_PRO_ENABLED_QUERY,
             {}
         ).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser
-                    ? { ...data.currentUser }
-                    : new Error('current user not found')
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
         )
     }
@@ -394,9 +390,7 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser
-                    ? { ...data.currentUser }
-                    : new Error('current user not found')
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
         )
     }
