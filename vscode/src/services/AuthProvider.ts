@@ -435,7 +435,7 @@ function formatURL(uri: string): string | null {
 async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
     if (authStatus?.isLoggedIn) {
         const authority = vscode.Uri.parse(endpoint).authority
-        await vscode.window.showInformationMessage(`Signed in to ${authority}`)
+        await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {
         await showAuthFailureMessage(endpoint)
     }
