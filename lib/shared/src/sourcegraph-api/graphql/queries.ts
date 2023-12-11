@@ -5,6 +5,13 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
+query CurrentUser {
+    currentUser {
+        codyProEnabled
+    }
+}`
+
 export const DOT_COM_CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
@@ -51,15 +58,6 @@ query SiteGraphQLFields {
         fields {
             name
         }
-    }
-}`
-
-export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        hasVerifiedEmail
-        codyProEnabled
     }
 }`
 

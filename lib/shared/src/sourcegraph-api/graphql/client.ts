@@ -14,7 +14,7 @@ import {
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
-    CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+    CURRENT_USER_CODY_PRO_ENABLED_QUERY,
     CURRENT_USER_ID_QUERY,
     DOT_COM_CURRENT_USER_INFO_QUERY,
     ENTERPRISE_CURRENT_USER_INFO_QUERY,
@@ -84,10 +84,8 @@ interface EnterpriseCurrentUserInfoResponse {
     } | null
 }
 
-interface CurrentUserIdHasVerifiedEmailHasCodyProResponse {
+interface CurrentUserCodyProEnabledResponse {
     currentUser: {
-        id: string
-        hasVerifiedEmail: boolean
         codyProEnabled: boolean
     } | null
 }
@@ -342,6 +340,21 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getCurrentUserCodyProEnabled(): Promise<
+        { codyProEnabled: boolean } | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodyProEnabledResponse>>(
+            CURRENT_USER_CODY_PRO_ENABLED_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser
+                    ? { ...data.currentUser }
+                    : new Error('current user not found')
+            )
+        )
+    }
+
     public async getEnterpriseCurrentUserInfo(): Promise<
         | {
               id: string
@@ -383,22 +396,7 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(response, data =>
                 data.currentUser
                     ? { ...data.currentUser }
-                    : new Error('current user not found with verified email and cody pro')
-            )
-        )
-    }
-
-    public async getCurrentUserIdAndVerifiedEmailAndCodyPro(): Promise<
-        { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | Error
-    > {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailHasCodyProResponse>>(
-            CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
-            {}
-        ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser
-                    ? { ...data.currentUser }
-                    : new Error('current user not found with verified email and cody pro')
+                    : new Error('current user not found')
             )
         )
     }
