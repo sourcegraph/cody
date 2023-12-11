@@ -334,6 +334,9 @@ const register = async (
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
+        vscode.commands.registerCommand('cody.settings.extension.chat', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
+        ),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
             await executeRecipeInChatView('chat-question', true, input, source)
