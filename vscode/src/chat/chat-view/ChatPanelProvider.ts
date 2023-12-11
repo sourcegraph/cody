@@ -428,7 +428,7 @@ export class ChatPanelProvider extends MessageProvider {
      */
     private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
+        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
 
         panel.webview.options = {
             enableScripts: true,

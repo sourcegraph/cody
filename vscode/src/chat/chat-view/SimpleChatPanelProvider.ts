@@ -235,7 +235,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
+        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
 
         // Reset the webview options to ensure localResourceRoots is up-to-date
         panel.webview.options = {
