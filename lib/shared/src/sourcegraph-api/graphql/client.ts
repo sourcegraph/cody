@@ -16,7 +16,7 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
     CURRENT_USER_ID_QUERY,
-    CURRENT_USER_INFO_DOT_COM_QUERY,
+    DOT_COM_CURRENT_USER_INFO_QUERY,
     ENTERPRISE_CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
@@ -363,7 +363,7 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserInfoDotCom(): Promise<
+    public async getDotComCurrentUserInfo(): Promise<
         | {
               id: string
               hasVerifiedEmail: boolean
@@ -377,7 +377,7 @@ export class SourcegraphGraphQLAPIClient {
         | Error
     > {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoDotComResponse>>(
-            CURRENT_USER_INFO_DOT_COM_QUERY,
+            DOT_COM_CURRENT_USER_INFO_QUERY,
             {}
         ).then(response =>
             extractDataOrError(response, data =>
@@ -389,12 +389,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserIdAndVerifiedEmailAndCodyPro(): Promise<
-        | {
-              id: string
-              hasVerifiedEmail: boolean
-              codyProEnabled: boolean
-          }
-        | Error
+        { id: string; hasVerifiedEmail: boolean; codyProEnabled: boolean } | Error
     > {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailHasCodyProResponse>>(
             CURRENT_USER_ID_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,

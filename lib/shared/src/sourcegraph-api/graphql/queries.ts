@@ -5,7 +5,7 @@ query CurrentUser {
     }
 }`
 
-export const CURRENT_USER_INFO_DOT_COM_QUERY = `
+export const DOT_COM_CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
         id

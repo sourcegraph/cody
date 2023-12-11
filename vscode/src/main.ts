@@ -491,7 +491,7 @@ const register = async (
     vscode.window.onDidChangeWindowState(async ws => {
         const endpoint = authProvider.getAuthStatus().endpoint
         if (ws.focused && endpoint && isDotCom(endpoint)) {
-            const res = await graphqlClient.getCurrentUserInfoDotCom()
+            const res = await graphqlClient.getDotComCurrentUserInfo()
             if (res instanceof Error) {
                 console.error(res)
                 return
