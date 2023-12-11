@@ -41,7 +41,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
-            autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: null,
@@ -112,8 +111,6 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
-                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                        return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
@@ -163,7 +160,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
-            autocompleteExperimentalSyntacticPostProcessing: true,
+            autocompleteExperimental: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'lsp-light',

@@ -38,7 +38,6 @@ export interface Configuration {
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
-    autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null

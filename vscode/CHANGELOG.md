@@ -46,6 +46,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Replace "Sign Out" with an account dialog. [pull/2233](https://github.com/sourcegraph/cody/pull/2233)
 - Chat: Update chat icon and transcript gradient. [pull/2254](https://github.com/sourcegraph/cody/pull/2254)
+- Remove the experimental `syntacticPostProcessing` flag. This behavior is now the default.
 
 ## [0.18.2]
 

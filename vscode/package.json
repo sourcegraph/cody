@@ -931,11 +931,6 @@
           "default": true,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
         },
-        "cody.autocomplete.experimental.syntacticPostProcessing": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Rank autocomplete results with tree-sitter."
-        },
         "cody.autocomplete.experimental.dynamicMultilineCompletions": {
           "type": "boolean",
           "default": false,
