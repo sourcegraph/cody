@@ -414,8 +414,11 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     }
   }
 
-  val preferredFocusableComponent: JComponent
-    get() = promptPanel.textArea
+  val preferredFocusableComponent: JComponent?
+    get() = if (tabbedPane.selectedIndex == CHAT_TAB_INDEX) promptPanel.textArea else null
+
+  fun addToTabbedPaneChangeListener(myAction: () -> Unit) =
+      tabbedPane.addChangeListener { myAction() }
 
   companion object {
     const val ONBOARDING_PANEL = "onboardingPanel"
