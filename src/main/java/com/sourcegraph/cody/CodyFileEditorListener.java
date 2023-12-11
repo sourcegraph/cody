@@ -25,7 +25,10 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     }
 
     CodyAgent.getInitializedServer(source.getProject())
-        .completeOnTimeout(null, 3, TimeUnit.SECONDS)
+        // The timeout has been increased from 3 to 12.
+        // This more like workaround than a fix to:
+        // https://github.com/sourcegraph/jetbrains/issues/169
+        .completeOnTimeout(null, 12, TimeUnit.SECONDS)
         .thenAccept(
             server -> {
               if (server == null) {
