@@ -241,7 +241,7 @@ class CodyAutocompleteManager {
             }
           } else if (result != null) {
             UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
-            UpgradeToCodyProNotification.autocompleteRateLimitError = false
+            UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
             processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
           }
           null
@@ -260,7 +260,7 @@ class CodyAutocompleteManager {
       val errorCode = error.toErrorCode()
       if (errorCode == ErrorCode.RateLimitError) {
         val rateLimitError = error.toRateLimitError()
-        UpgradeToCodyProNotification.autocompleteRateLimitError = true
+        UpgradeToCodyProNotification.autocompleteRateLimitError.set(rateLimitError)
         UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = true
         UpgradeToCodyProNotification.create(rateLimitError).notify(project)
       }

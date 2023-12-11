@@ -15,7 +15,7 @@ import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 data class RateLimitError(
     val upgradeIsAvailable: Boolean,
     val limit: Int?,
-    val retryAfter: OffsetDateTime?,
+    val retryAfterDate: OffsetDateTime?,
     val userMessage: String,
     val retryMessage: String?
 ) {
@@ -23,7 +23,7 @@ data class RateLimitError(
 
   fun resetString() =
       retryMessage?.prependIndent(" ")
-          ?: retryAfter
+          ?: retryAfterDate
               ?.let { Duration.between(OffsetDateTime.now(), it) }
               ?.let { duration ->
                 if (duration.isNegative) {
@@ -54,12 +54,13 @@ data class RateLimitError(
         val jsonObject = json.asJsonObject
         val errorObject = jsonObject["error"].asJsonObject
         val limit = errorObject["limit"]?.asInt
-        val retryAfter = errorObject["retryAfter"]?.asString?.let(::parseOffsetDateTime)
+        val retryAfterDate = errorObject["retryAfterDate"]?.asString?.let(::parseOffsetDateTime)
         val upgradeIsAvailable = errorObject["upgradeIsAvailable"]?.asBoolean
         val userMessage = errorObject["userMessage"]?.asString
         val retryMessage = errorObject["retryMessage"]?.asString
 
-        return RateLimitError(upgradeIsAvailable!!, limit, retryAfter, userMessage!!, retryMessage)
+        return RateLimitError(
+            upgradeIsAvailable!!, limit, retryAfterDate, userMessage!!, retryMessage)
       }
 
       private fun parseOffsetDateTime(dateTimeString: String): OffsetDateTime {

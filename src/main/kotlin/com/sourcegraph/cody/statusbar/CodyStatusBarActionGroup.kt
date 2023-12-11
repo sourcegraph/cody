@@ -34,27 +34,52 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
     }
   }
 
-  private fun deriveWarningAction() =
-      if (UpgradeToCodyProNotification.autocompleteRateLimitError &&
-          UpgradeToCodyProNotification.chatRateLimitError) {
+  private fun deriveWarningAction(): RateLimitErrorWarningAction? {
+    val autocompleteRLE = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
+    val chatRLE = UpgradeToCodyProNotification.chatRateLimitError.get()
+
+    // TODO(mikolaj):
+    // RFC 872 mentions `feature flag cody-pro: true`
+    // the flag should be a factor in whether to show the upgrade option
+    val isGa = java.lang.Boolean.getBoolean("cody.isGa")
+    val shouldShowUpgradeOption =
+        isGa && autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
+
+    val suggestionOrExplanation =
+        if (shouldShowUpgradeOption)
+            "Upgrade to Cody Pro for unlimited autocompletes, chats, and commands."
+        else
+            " The allowed number of request per day is limited at the moment to ensure the service stays functional."
+
+    return when {
+      autocompleteRLE != null && chatRLE != null -> {
         RateLimitErrorWarningAction(
-            "<html><b>Warning:</b> Chat and Autocomplete Limit Reached...</html>",
-            "You've used all chat messages and commands, and autocompletion suggestions. The allowed number of request per day is limited at the moment to ensure the service stays functional.",
-            "Chat and Autocomplete Limit Reached",
-        )
-      } else if (UpgradeToCodyProNotification.autocompleteRateLimitError) {
+            "<html><b>Warning:</b> Autocomplete and Chat and Commands Limit Reached...</html>",
+            "You've used all${autocompleteRLE.limit?.let { " $it" }} autocomplete suggestions, " +
+                "and all${chatRLE.limit?.let { " $it" }} chat messages and commands for the month. " +
+                suggestionOrExplanation,
+            "You've used up your autocompletes, chat and commands for the month",
+            shouldShowUpgradeOption)
+      }
+      autocompleteRLE != null -> {
         RateLimitErrorWarningAction(
             "<html><b>Warning:</b> Autocomplete Limit Reached...</html>",
-            "You've used all autocompletion suggestions. The allowed number of request per day is limited at the moment to ensure the service stays functional.",
-            "Autocomplete Limit Reached",
-        )
-      } else if (UpgradeToCodyProNotification.chatRateLimitError) {
+            "You've used all${autocompleteRLE.limit?.let { " $it" }} autocomplete suggestions for the month. " +
+                suggestionOrExplanation,
+            "You've used up your autocompletes for the month",
+            shouldShowUpgradeOption)
+      }
+      chatRLE != null -> {
         RateLimitErrorWarningAction(
-            "<html><b>Warning:</b> Chat Limit Reached...</html>",
-            "You've used all chat messages and commands. The allowed number of request per day is limited at the moment to ensure the service stays functional.",
-            "Chat Limit Reached",
-        )
-      } else {
+            "<html><b>Warning:</b> Chat and Commands Limit Reached...</html>",
+            "You've used all${chatRLE.limit?.let { " $it" }} chat messages and commands for the month. " +
+                suggestionOrExplanation,
+            "You've used up your chat and commands for the month",
+            shouldShowUpgradeOption)
+      }
+      else -> {
         null
       }
+    }
+  }
 }

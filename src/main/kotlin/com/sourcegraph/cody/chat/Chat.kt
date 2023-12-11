@@ -74,12 +74,29 @@ class Chat {
     if (throwable is ResponseErrorException) {
       val errorCode = throwable.toErrorCode()
       if (errorCode == ErrorCode.RateLimitError) {
-        RateLimitStateManager.reportForChat(project)
         val rateLimitError = throwable.toRateLimitError()
+        RateLimitStateManager.reportForChat(project, rateLimitError)
+
+        // TODO(mikolaj):
+        // RFC 872 mentions `feature flag cody-pro: true`
+        // the flag should be a factor in whether to show the upgrade option
+        val isGa = java.lang.Boolean.getBoolean("cody.isGa")
         val text =
-            "<b>Request failed:</b> You've used all${rateLimitError.quotaString()} chat messages and commands." +
-                " The allowed number of request per day is limited at the moment to ensure the service stays functional.${rateLimitError.resetString()}" +
-                "<br><a href=\"https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more.</a>"
+            when {
+              rateLimitError.upgradeIsAvailable && isGa -> {
+                "<b>You've used up your chat and commands for the month:</b> " +
+                    "You've used all${rateLimitError.limit?.let { " $it" }} chat messages and commands for the month. " +
+                    "Upgrade to Cody Pro for unlimited autocompletes, chats, and commands. " +
+                    "<a href=\"https://sourcegraph.com/cody/subscription\">Upgrade</a> " +
+                    "or <a href=\"https://sourcegraph.com/cody/subscription\">learn more</a>."
+              }
+              else -> {
+                "<b>Request failed:</b> You've used all${rateLimitError.quotaString()} chat messages and commands." +
+                    " The allowed number of request per day is limited at the moment to ensure the service stays functional.${rateLimitError.resetString()} " +
+                    "<a href=\"https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more.</a>"
+              }
+            }
+
         val chatMessage = ChatMessage(Speaker.ASSISTANT, text, null)
         chat.addMessageToChat(chatMessage)
         chat.finishMessageProcessing()

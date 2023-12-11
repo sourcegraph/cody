@@ -56,8 +56,8 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
                 CodyAutocompleteStatus.CodyAgentNotRunning
               } else if (token == null) {
                 CodyAutocompleteStatus.CodyNotSignedIn
-              } else if (UpgradeToCodyProNotification.autocompleteRateLimitError ||
-                  UpgradeToCodyProNotification.chatRateLimitError) {
+              } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
+                  UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
                 CodyAutocompleteStatus.RateLimitError
               } else {
                 CodyAutocompleteStatus.Ready
