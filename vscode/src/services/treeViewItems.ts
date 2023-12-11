@@ -1,7 +1,8 @@
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
-import { releaseNotesURL, releaseType, version } from '../version'
+import { releaseNotesURL, releaseType } from '../release'
+import { version } from '../version'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -86,9 +87,9 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'vscode.open', args: [DISCORD_URL.href] },
     },
     {
-        title: 'Sign Out',
-        icon: 'log-out',
-        command: { command: 'cody.auth.signout' },
+        title: 'Account',
+        icon: 'account',
+        command: { command: 'cody.auth.account' },
     },
 ]
 

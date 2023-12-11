@@ -44,6 +44,10 @@ export interface Configuration {
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     autocompleteTimeouts: AutocompleteTimeouts
+
+    testingLocalEmbeddingsModel: string | undefined
+    testingLocalEmbeddingsEndpoint: string | undefined
+    testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
 
 export interface AutocompleteTimeouts {

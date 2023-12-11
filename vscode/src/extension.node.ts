@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
     return activateCommon(context, {
         getRgPath,
         createCommandsController: (...args) => new CommandsController(...args),
-        createLocalEmbeddingsController: () => createLocalEmbeddingsController(context),
+        createLocalEmbeddingsController: config => createLocalEmbeddingsController(context, config),
         createLocalKeywordContextFetcher: (...args) => new LocalKeywordContextFetcher(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),

@@ -18,6 +18,9 @@ describe('TreeViewProvider', () => {
     const verifiedEmail = true
     const codyEnabled = true
     const validUser = true
+    const primaryEmail = 'me@domain.test'
+    const displayName = 'Test Name'
+    const avatarURL = 'https://domain.test/avatar.png'
 
     let tree: TreeViewProvider
 
@@ -53,7 +56,10 @@ describe('TreeViewProvider', () => {
                 verifiedEmail,
                 codyEnabled,
                 upgradeAvailable,
-                siteVersion
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
             )
         )
         return nextUpdate

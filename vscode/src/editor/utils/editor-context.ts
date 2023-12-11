@@ -1,4 +1,4 @@
-import { basename, dirname } from 'path'
+import path, { basename, dirname } from 'path'
 
 import fuzzysort from 'fuzzysort'
 import { throttle } from 'lodash'
@@ -45,6 +45,10 @@ export async function getFileContextFiles(
     if (!uris) {
         return []
     }
+
+    // On Windows, if the user has typed forward slashes, map them to backslashes before
+    // running the search so they match the real paths.
+    query = query.replaceAll(path.posix.sep, path.sep)
 
     const results = fuzzysort.go(query, uris, {
         key: 'fsPath',
@@ -175,6 +179,18 @@ function createContextFilePath(uri: vscode.Uri): ContextFile['path'] {
     return {
         basename: basename(uri.fsPath),
         dirname: dirname(uri.fsPath),
-        relative: vscode.workspace.asRelativePath(uri.fsPath),
+        relative: asRelativePath(uri),
     }
+}
+
+/**
+ * Returns a relative path using the correct slash direction for the current platform.
+ */
+function asRelativePath(uri: vscode.Uri): string {
+    let relativePath = vscode.workspace.asRelativePath(uri.fsPath)
+    // asRelativePath returns forward slashes on Windows but we want to
+    // render a native path like VS Code does in the file quick-pick.
+    relativePath = relativePath.replaceAll(path.posix.sep, path.sep)
+
+    return relativePath
 }
