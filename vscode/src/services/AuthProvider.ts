@@ -248,7 +248,7 @@ export class AuthProvider {
             )
         }
 
-        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+        const userInfo = await this.client.getCurrentUserInfoDotCom()
         const isCodyEnabled = true
 
         // check first if it's a network error

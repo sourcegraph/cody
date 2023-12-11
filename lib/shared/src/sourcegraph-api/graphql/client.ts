@@ -16,6 +16,7 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_AND_VERIFIED_EMAIL_AND_CODY_PRO_QUERY,
+    CURRENT_USER_INFO_DOT_COM_QUERY,
     ENTERPRISE_CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
@@ -59,6 +60,19 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
+interface CurrentUserInfoDotComResponse {
+    currentUser: {
+        id: string
+        hasVerifiedEmail: boolean
+        displayName: string
+        avatarURL: string
+        codyProEnabled: boolean
+        primaryEmail: {
+            email: string
+        }
+    } | null
+}
+
 interface EnterpriseCurrentUserInfoResponse {
     currentUser: {
         id: string
@@ -74,12 +88,7 @@ interface CurrentUserIdHasVerifiedEmailHasCodyProResponse {
     currentUser: {
         id: string
         hasVerifiedEmail: boolean
-        displayName: string
-        avatarURL: string
         codyProEnabled: boolean
-        primaryEmail: {
-            email: string
-        }
     } | null
 }
 
@@ -354,16 +363,36 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getCurrentUserInfoDotCom(): Promise<
+        | {
+              id: string
+              hasVerifiedEmail: boolean
+              codyProEnabled: boolean
+              displayName: string
+              avatarURL: string
+              primaryEmail: {
+                email: string
+            }
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoDotComResponse>>(
+            CURRENT_USER_INFO_DOT_COM_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser
+                    ? { ...data.currentUser }
+                    : new Error('current user not found with verified email and cody pro')
+            )
+        )
+    }
+
     public async getCurrentUserIdAndVerifiedEmailAndCodyPro(): Promise<
         | {
               id: string
               hasVerifiedEmail: boolean
-              displayName: string
-              avatarURL: string
               codyProEnabled: boolean
-              primaryEmail: {
-                  email: string
-              }
           }
         | Error
     > {
