@@ -101,6 +101,9 @@ export class AuthProvider {
                 let authStatus = await this.auth(selectedEndpoint, token || null)
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
+                    if (!newToken) {
+                        return
+                    }
                     authStatus = await this.auth(selectedEndpoint, newToken || null)
                 }
                 await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
