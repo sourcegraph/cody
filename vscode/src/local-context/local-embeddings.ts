@@ -1,6 +1,11 @@
+import { GetFieldType } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import {
+    ContextGroup,
+    ContextStatusProvider,
+    LocalEmbeddingsProvider,
+} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -48,8 +53,8 @@ function getIndexLibraryPaths(): { indexPath: string; appIndexPath?: string } {
 
 interface RepoState {
     indexable: boolean
-    isGit: boolean
     hasIndex: boolean
+    errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
 }
 
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable {
@@ -284,9 +289,19 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             ]
         }
         const repoState = this.repoState.get(path)
-        if (!repoState?.isGit) {
-            return []
+        let stateAndErrors: {
+            state: 'unconsented' | 'no-match'
+            errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
         }
+        if (repoState?.indexable) {
+            stateAndErrors = { state: 'unconsented' }
+        } else if (repoState?.errorReason) {
+            stateAndErrors = { state: 'no-match', errorReason: repoState.errorReason }
+        } else {
+            logDebug('LocalEmbeddings', 'state', '"no-match" state should provide a reason')
+            stateAndErrors = { state: 'no-match' }
+        }
+
         return [
             {
                 name: path,
@@ -294,7 +309,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                     {
                         kind: 'embeddings',
                         type: 'local',
-                        state: repoState?.indexable ? 'unconsented' : 'no-match',
+                        ...stateAndErrors,
                     },
                 ],
             },
@@ -364,7 +379,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             this.repoState.set(repoPath, {
                 hasIndex,
                 indexable: true,
-                isGit: true,
+                errorReason: undefined,
             })
             this.lastRepo = {
                 path: repoPath,
@@ -379,10 +394,19 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
             const notGit = notAGitRepositoryErrorMessage.test(error.message)
 
+            let errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
+            if (notGit) {
+                errorReason = 'not-a-git-repo'
+            } else if (noRemote) {
+                errorReason = 'git-repo-has-no-remote'
+            } else {
+                errorReason = undefined
+            }
+
             this.repoState.set(repoPath, {
                 hasIndex: false,
                 indexable: !(notGit || noRemote),
-                isGit: !notGit,
+                errorReason,
             })
 
             // TODO: Log telemetry error messages to prioritize supporting

@@ -129,14 +129,28 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
         case 'unconsented':
             return <EmbeddingsConsentComponent provider={provider} />
         case 'no-match':
-            return provider.kind === 'embeddings' && provider.type === 'remote' ? (
-                <p className={styles.providerExplanatoryText}>
-                    {/* No repository matching {provider.remoteName} on <a href="about:blank#TODO">{provider.origin}</a> */}
-                    No repository matching {provider.remoteName} on {provider.origin}
-                </p>
-            ) : (
-                <></>
-            )
+            if (provider.kind === 'embeddings') {
+                if (provider.type === 'remote') {
+                    return (
+                        <p className={styles.providerExplanatoryText}>
+                            No repository matching {provider.remoteName} on {provider.origin}
+                        </p>
+                    )
+                }
+                // Error messages for local embeddings missing.
+                switch (provider.errorReason) {
+                    case 'not-a-git-repo':
+                        return <p className={styles.providerExplanatoryText}>Folder is not a Git repository.</p>
+                    case 'git-repo-has-no-remote':
+                        return (
+                            <p className={styles.providerExplanatoryText}>Git repository is missing a remote origin.</p>
+                        )
+                    default:
+                        return <></>
+                }
+            } else {
+                return <></>
+            }
         default:
             return ''
     }

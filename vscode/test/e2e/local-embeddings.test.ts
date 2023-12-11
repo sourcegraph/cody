@@ -66,7 +66,7 @@ test.extend<helpers.WorkspaceDirectory>({
             await use(dir)
         })
     },
-})('non-git repositories should not advertise embeddings', async ({ page, sidebar }) => {
+})('non-git repositories should explain lack of embeddings', async ({ page, sidebar }) => {
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
@@ -75,17 +75,19 @@ test.extend<helpers.WorkspaceDirectory>({
 
     // Embeddings is visible at first as cody-engine starts...
     await expect(chatFrame.getByText('Embeddings')).toBeVisible()
-    // ...and disappears when the engine works out this is not a git repo.
-    await expect(chatFrame.getByText('Embeddings')).not.toBeVisible()
+    // ...and displays this message when the engine works out this is not a git repo.
+    await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible()
+    await expect(chatFrame.getByText('Folder is not a Git repository.')).toBeVisible()
 })
 
-test('git repositories without a remote should show the "no match" state', async ({ page, sidebar }) => {
+test('git repositories without a remote should explain the issue', async ({ page, sidebar }) => {
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
     const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
     await enhancedContextButton.click()
     await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible()
+    await expect(chatFrame.getByText('Git repository is missing a remote origin.')).toBeVisible()
 })
 
 test.extend<helpers.WorkspaceDirectory>({
