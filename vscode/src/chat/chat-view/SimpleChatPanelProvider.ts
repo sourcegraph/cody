@@ -865,7 +865,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
-            const prompts = (await this.editor.controllers.command?.getAllCommands(true)) || []
+            const allCommands = await this.editor.controllers.command?.getAllCommands(true)
+            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
+            const prompts =
+                allCommands?.filter(([id]) => {
+                    return !['/edit', '/doc', '/test', '/ask'].includes(id)
+                }) || []
+
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
