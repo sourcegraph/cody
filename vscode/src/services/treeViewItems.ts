@@ -1,10 +1,7 @@
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 import { releaseNotesURL, releaseType, version } from '../version'
-
-import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
 
@@ -17,7 +14,7 @@ export interface CodySidebarTreeItem {
         command: string
         args?: string[] | { [key: string]: string }[]
     }
-    isNestedItem?: string
+    isNestedItem?: boolean
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
@@ -35,29 +32,6 @@ export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] 
         default:
             return []
     }
-}
-
-// functon to create chat tree items from user chat history
-export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
-    const userHistory = localStorage.getChatHistory()?.chat
-    if (!userHistory) {
-        return []
-    }
-    const chatTreeItems: CodySidebarTreeItem[] = []
-    const chatHistoryEntries = [...Object.entries(userHistory)]
-    chatHistoryEntries.forEach(([id, entry]) => {
-        const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
-        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
-            const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
-            chatTreeItems.push({
-                id,
-                title: getChatPanelTitle(lastDisplayText, false),
-                icon: 'comment-discussion',
-                command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
-            })
-        }
-    })
-    return chatTreeItems.reverse()
 }
 
 const supportItems: CodySidebarTreeItem[] = [

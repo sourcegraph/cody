@@ -12,7 +12,6 @@ import { logDebug } from '../../log'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -260,7 +259,7 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
-        void this.treeView.updateTree(createCodyChatTreeItems())
+        void this.treeView.updateTree()
     }
 
     /**

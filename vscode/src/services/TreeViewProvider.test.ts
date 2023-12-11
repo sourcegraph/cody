@@ -61,7 +61,7 @@ describe('TreeViewProvider', () => {
 
     function findTreeItem(label: string) {
         const items = tree.getChildren()
-        return items.find(item => (item.resourceUri as any)?.label === label)
+        return items.find(item => item.resourceUri?.label === label)
     }
 
     describe('Cody Pro Upgrade', () => {

@@ -38,7 +38,6 @@ import { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -430,7 +429,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 messages: allHistory,
             })
         }
-        await this.treeView.updateTree(createCodyChatTreeItems())
+        await this.treeView.updateTree()
     }
 
     public async clearAndRestartSession(): Promise<void> {

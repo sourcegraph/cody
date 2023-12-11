@@ -12,7 +12,6 @@ import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
@@ -247,7 +246,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree(createCodyChatTreeItems())
+        await this.treeViewProvider.updateTree()
     }
 
     public async clearHistory(chatID?: string): Promise<void> {

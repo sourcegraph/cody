@@ -5,7 +5,42 @@ import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environme
 
 import { AuthStatus } from '../chat/protocol'
 
+import { groupCodyChats } from './HistoryChat'
 import { CodySidebarTreeItem, CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
+
+class ChatTreeItem extends vscode.TreeItem {
+    public children: ChatTreeItem[] | undefined
+
+    constructor(
+        public readonly id: string,
+        title: string,
+        icon?: string,
+        command?: {
+            command: string
+            args?: string[] | { [key: string]: string }[]
+        },
+        collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
+        children?: ChatTreeItem[]
+    ) {
+        super(title, collapsibleState)
+        this.id = id
+        if (icon) {
+            this.iconPath = new vscode.ThemeIcon(icon)
+        }
+        if (command) {
+            this.command = {
+                command: command.command,
+                title,
+                arguments: command.args,
+            }
+        }
+        this.children = children
+    }
+    public async loadChildNodes(): Promise<ChatTreeItem[] | undefined> {
+        await Promise.resolve()
+        return this.children
+    }
+}
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private treeNodes: vscode.TreeItem[] = []
@@ -41,8 +76,10 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Updates the tree view with the provided tree items, filtering out any
      * that do not meet the required criteria to show.
      */
-    public async updateTree(treeItems: CodySidebarTreeItem[]): Promise<void> {
-        this.treeItems = treeItems
+    public async updateTree(treeItems?: CodySidebarTreeItem[]): Promise<void> {
+        if (treeItems) {
+            this.treeItems = treeItems
+        }
         return this.refresh()
     }
 
@@ -84,9 +121,39 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         }
 
         if (this.type === 'chat') {
-            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
+            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', 1)
+            this.initializeGroupedChats()
         }
         this._onDidChangeTreeData.fire()
+    }
+
+    /**
+     * Method to initialize the grouped chats for the History items
+     */
+    private initializeGroupedChats(): void {
+        const groupedChats = groupCodyChats()
+        if (!groupedChats) {
+            return
+        }
+
+        this.treeNodes = []
+
+        // Create a ChatTreeItem for each group and add to treeNodes
+        Object.entries(groupedChats).forEach(([groupLabel, chats]) => {
+            // only display the group in the treeview for which chat exists
+            if (chats.length) {
+                const groupItem = new ChatTreeItem(
+                    groupLabel,
+                    groupLabel,
+                    undefined,
+                    undefined,
+                    vscode.TreeItemCollapsibleState.Collapsed,
+                    chats.map(chat => new ChatTreeItem(chat.id as string, chat.title, chat.icon, chat.command))
+                )
+
+                this.treeNodes.push(groupItem)
+            }
+        })
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
@@ -98,8 +165,16 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Get parents items first
      * Then returns children items for each parent item
      */
-    public getChildren(): vscode.TreeItem[] {
-        return [...this.treeNodes.values()]
+    public async getChildren(element?: ChatTreeItem): Promise<ChatTreeItem[]> {
+        if (element) {
+            // Load children if not already loaded
+            if (!element.children) {
+                await element.loadChildNodes()
+            }
+            return element.children || []
+        }
+        // Cast treeNodes to ChatTreeItem[]
+        return this.treeNodes as ChatTreeItem[]
     }
 
     /**
