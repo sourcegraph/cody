@@ -168,7 +168,7 @@ export class AuthProvider {
             }`,
             {
                 modal: true,
-                detail: `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Pro' : 'Cody Free'}`,
+                detail: `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`,
             },
             'Manage Account',
             'Switch Account...',

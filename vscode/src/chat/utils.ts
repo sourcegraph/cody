@@ -7,9 +7,9 @@ import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from './protocol
  * @param isEmailVerified Whether the user has verified their email. Default to true for non-enterprise instances.
  * @param isCodyEnabled Whether Cody is enabled on the Sourcegraph instance. Default to true for non-enterprise instances.
  * @param version The Sourcegraph instance version.
- * @param avatarURL The user's avatar URL.
- * @param primaryEmail The user's primary email.
- * @param displayName The user's display name.
+ * @param avatarURL The user's avatar URL, or '' if not set.
+ * @param primaryEmail The user's primary email, or '' if not set.
+ * @param displayName The user's display name, or '' if not set.
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
 export function newAuthStatus(

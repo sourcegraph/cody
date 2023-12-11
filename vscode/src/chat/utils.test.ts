@@ -12,9 +12,9 @@ describe('validateAuthStatus', () => {
     const validUser = true
     const endpoint = ''
     const userCanUpgrade = false
-    const primaryEmail = 'email@domain.com'
-    const displayName = 'Hello There'
-    const avatarURL = 'https://example.com/avatar.png'
+    const primaryEmail = 'me@domain.test'
+    const displayName = 'Test Name'
+    const avatarURL = 'https://domain.test/avatar.png'
     // DOTCOM AND APP USERS
     test('returns auth state for invalid user on dotcom or app instance', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
