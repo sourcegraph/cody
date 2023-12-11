@@ -121,8 +121,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         }
 
         if (this.type === 'chat') {
-            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', 1)
             this.initializeGroupedChats()
+            void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
         }
         this._onDidChangeTreeData.fire()
     }
