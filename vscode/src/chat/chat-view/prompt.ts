@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import {
     isMarkdownFile,
@@ -51,7 +52,9 @@ export class DefaultPrompter implements IPrompter {
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
 
-        const preambleMessages = getSimplePreamble()
+        const preInstruction: string | undefined = vscode.workspace.getConfiguration('cody.chat').get('preInstruction')
+
+        const preambleMessages = getSimplePreamble(preInstruction)
         const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
         if (!preambleSucceeded) {
             throw new Error(`Preamble length exceeded context window size ${byteLimit}`)
