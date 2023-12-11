@@ -49,7 +49,28 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         private sourcegraphServerEndpoint: string | null,
         private authToken: string | null
     ) {
-        this.indexRoot = path.join(os.homedir(), '.cody-symf')
+        const indexRoot = path.join(context.globalStorageUri.fsPath, 'symf', 'indexroot')
+        void SymfRunner.removeOldIndexRoot(indexRoot)
+        this.indexRoot = indexRoot
+    }
+
+    // TODO(beyang): remove after GA
+    private static removeOldIndexRoot(newIndexRoot: string): void {
+        const oldIndexRoot = path.join(os.homedir(), '.cody-symf')
+        fs.stat(oldIndexRoot, (oldIndexRootStatErr, stats) => {
+            if (oldIndexRootStatErr) {
+                return
+            }
+            fs.stat(newIndexRoot, newIndexRootStatErr => {
+                if (!newIndexRootStatErr) {
+                    return
+                }
+                if (!stats.isDirectory()) {
+                    return
+                }
+                void rm(oldIndexRoot, { recursive: true, force: true })
+            })
+        })
     }
 
     public dispose(): void {
