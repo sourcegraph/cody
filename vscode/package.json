@@ -928,6 +928,11 @@
           "default": false,
           "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
         },
+        "cody.autocomplete.experimental.hotStreak": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Preload follow-up completions"
+        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
