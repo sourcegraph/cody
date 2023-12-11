@@ -60,7 +60,7 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
-interface CurrentUserInfoDotComResponse {
+interface DotComCurrentUserInfoResponse {
     currentUser: {
         id: string
         hasVerifiedEmail: boolean
@@ -376,7 +376,7 @@ export class SourcegraphGraphQLAPIClient {
           }
         | Error
     > {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoDotComResponse>>(
+        return this.fetchSourcegraphAPI<APIResponse<DotComCurrentUserInfoResponse>>(
             DOT_COM_CURRENT_USER_INFO_QUERY,
             {}
         ).then(response =>
