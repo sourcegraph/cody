@@ -158,7 +158,7 @@ export class AuthProvider {
         }
 
         const option = await vscode.window.showInformationMessage(
-            `${this.authStatus.displayName}\n${this.authStatus.primaryEmail}`,
+            `Signed in as ${this.authStatus.displayName ? `${this.authStatus.displayName} (${this.authStatus.primaryEmail})` : this.authStatus.primaryEmail}`,
             {
                 modal: true,
                 detail: `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Pro' : 'Cody Free'}`,
