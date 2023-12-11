@@ -57,20 +57,24 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     // TODO(beyang): remove after GA
     private static removeOldIndexRoot(newIndexRoot: string): void {
         const oldIndexRoot = path.join(os.homedir(), '.cody-symf')
-        fs.stat(oldIndexRoot, (oldIndexRootStatErr, stats) => {
-            if (oldIndexRootStatErr) {
-                return
-            }
-            fs.stat(newIndexRoot, newIndexRootStatErr => {
-                if (!newIndexRootStatErr) {
+        try {
+            fs.stat(oldIndexRoot, (oldIndexRootStatErr, stats) => {
+                if (oldIndexRootStatErr) {
                     return
                 }
-                if (!stats.isDirectory()) {
-                    return
-                }
-                void rm(oldIndexRoot, { recursive: true, force: true })
+                fs.stat(newIndexRoot, newIndexRootStatErr => {
+                    if (!newIndexRootStatErr) {
+                        return
+                    }
+                    if (!stats.isDirectory()) {
+                        return
+                    }
+                    void rm(oldIndexRoot, { recursive: true, force: true })
+                })
             })
-        })
+        } catch {
+            logDebug('SymfRunner.removeOldIndexRoot', 'Failed to remove old index root', oldIndexRoot)
+        }
     }
 
     public dispose(): void {
