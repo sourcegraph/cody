@@ -53,8 +53,8 @@ function getIndexLibraryPaths(): { indexPath: string; appIndexPath?: string } {
 }
 
 interface RepoState {
+    repoName: string | false
     indexable: boolean
-    hasIndex: boolean
     errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
 }
 
@@ -71,7 +71,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private accessToken: string | undefined
     private endpointIsDotcom = false
     private statusBar: vscode.StatusBarItem | undefined
-    private lastRepo: { path: string; loadResult: boolean } | undefined
+    private lastRepo: { path: string; repoName: string | false } | undefined
     private repoState: Map<string, RepoState> = new Map()
 
     // If indexing is in progress, the path of the repo being indexed.
@@ -175,34 +175,37 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 } else if ('Error' in obj) {
                     this.statusBar.text = '$(warning) Cody Embeddings'
                     this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-                    this.statusBar.tooltip = obj.Error
+                    this.statusBar.tooltip = obj.Error.message
                     this.statusBar.show()
+                } else if ('Done' in obj) {
+                    this.statusBar.text = '$(sparkle) Cody Embeddings'
+                    this.statusBar.backgroundColor = undefined
+                    this.statusBar.show()
+
+                    // TODO: Instead of a self-dismissing status bar, use a VSCode
+                    // notification with a button to focus chat.
+
+                    // Hide this notification after a while.
+                    const statusBar = this.statusBar
+                    this.statusBar = undefined
+                    setTimeout(() => statusBar.hide(), 30_000)
+
+                    if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
+                        const path = this.pathBeingIndexed
+                        void (async () => {
+                            const loadedOk = await this.eagerlyLoad(path)
+                            logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
+                            this.changeEmitter.fire(this)
+                        })()
+                    }
+
+                    this.pathBeingIndexed = undefined
+                    this.statusEmitter.fire(this)
+                } else {
+                    logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
                 }
-            } else if (obj === 'Done') {
-                this.statusBar.text = '$(sparkle) Cody Embeddings'
-                this.statusBar.backgroundColor = undefined
-                this.statusBar.show()
-
-                // Hide this notification after a while.
-                const statusBar = this.statusBar
-                this.statusBar = undefined
-                setTimeout(() => statusBar.hide(), 30_000)
-
-                if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
-                    const path = this.pathBeingIndexed
-                    void (async () => {
-                        const loadedOk = await this.eagerlyLoad(path)
-                        logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
-                        this.changeEmitter.fire(this)
-                    })()
-                }
-
-                this.pathBeingIndexed = undefined
-                this.statusEmitter.fire(this)
             } else {
-                // TODO(dpc): Handle these notifications.
-                logDebug('LocalEmbeddingsController', JSON.stringify(obj))
-                void vscode.window.showInformationMessage(JSON.stringify(obj))
+                logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
             }
         })
 
@@ -279,7 +282,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 },
             ]
         }
-        if (this.lastRepo.loadResult) {
+        if (this.lastRepo.repoName) {
             return [
                 {
                     name: path,
@@ -324,7 +327,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     // Interactions with cody-engine
 
     public async index(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.loadResult)) {
+        if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.repoName)) {
             // TODO: Support index updates.
             logDebug('LocalEmbeddingsController', 'index: No repository to index/already indexed')
             return
@@ -359,7 +362,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             return false
         }
         const cachedState = this.repoState.get(repoPath)
-        if (cachedState && !cachedState.hasIndex) {
+        if (cachedState && !cachedState.repoName) {
             // We already failed to loading this, so use that result
             return false
         }
@@ -380,15 +383,15 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
 
     private async eagerlyLoad(repoPath: string): Promise<boolean> {
         try {
-            const hasIndex = !!(await (await this.getService()).request('embeddings/load', repoPath))
+            const { repoName } = await (await this.getService()).request('embeddings/load', repoPath)
             this.repoState.set(repoPath, {
-                hasIndex,
+                repoName,
                 indexable: true,
                 errorReason: undefined,
             })
             this.lastRepo = {
                 path: repoPath,
-                loadResult: hasIndex,
+                repoName,
             }
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
@@ -409,7 +412,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             }
 
             this.repoState.set(repoPath, {
-                hasIndex: false,
+                repoName: false,
                 indexable: !(notGit || noRemote),
                 errorReason,
             })
@@ -417,17 +420,24 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             // TODO: Log telemetry error messages to prioritize supporting
             // repos without remotes, other SCCS, etc.
 
-            this.lastRepo = { path: repoPath, loadResult: false }
+            this.lastRepo = { path: repoPath, repoName: false }
         }
         this.statusEmitter.fire(this)
-        return this.lastRepo.loadResult
+        return !!this.lastRepo?.repoName
     }
 
     public async query(query: string): Promise<QueryResultSet> {
         if (!this.endpointIsDotcom) {
             return { results: [] }
         }
-        return (await this.getService()).request('embeddings/query', query)
+        const repoName = this.lastRepo?.repoName
+        if (!repoName) {
+            return { results: [] }
+        }
+        return (await this.getService()).request('embeddings/query', {
+            repoName,
+            query,
+        })
     }
 
     // LocalEmbeddingsFetcher
