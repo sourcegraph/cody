@@ -176,9 +176,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                                 displayName: 'Person',
                                 avatarURL: '',
                                 primaryEmail: {
-                                    email: 'person@company.comp'
-                                }
-                            }
+                                    email: 'person@company.comp',
+                                },
+                            },
                         },
                     })
                 )
