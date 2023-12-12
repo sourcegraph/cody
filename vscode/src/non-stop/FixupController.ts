@@ -60,9 +60,7 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel', hasV2Event: true })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.cancel', 'clicked', {
-                    privateMetadata: { op: 'cancel' },
-                })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens.cancel', 'clicked', {})
                 return this.cancel(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
