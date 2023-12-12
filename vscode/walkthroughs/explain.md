@@ -7,6 +7,6 @@
     />
 </video>
 
-Cody can explain code in an easy-to-understand manner. Highlight any code block and execute the `Explain Code` command from your right-click menu, and Cody will explain it to you in conversational language.
+Cody can explain code in an easy-to-understand manner. Highlight any code block and execute the `Explain Code` command from the commands panel, and Cody will explain it to you in conversational language.
 
-You can also execute a command from the [Cody: Commands Menu](command:cody.action.commands.menu). Test. 
+You can also execute a command from the [Cody: Commands Menu](command:cody.action.commands.menu), or by highlighting a selection of code and using the right-click menu or typing `/` in a new chat. 
