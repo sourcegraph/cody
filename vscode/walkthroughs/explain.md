@@ -1,6 +1,5 @@
 ## Explain Selected Code
 
-//TODO: Remove from package.json 
 
 <video autoPlay muted loop playsInline>
     <source
