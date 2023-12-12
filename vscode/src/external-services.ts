@@ -13,7 +13,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
-import { LocalEmbeddingsController } from './local-context/local-embeddings'
+import { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -37,7 +37,8 @@ type ExternalServicesConfiguration = Pick<
     | 'accessToken'
     | 'debugEnable'
     | 'experimentalLocalSymbols'
->
+> &
+    LocalEmbeddingsConfig
 
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
@@ -47,7 +48,6 @@ export async function configureExternalServices(
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
-        | 'createLocalKeywordContextFetcher'
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
@@ -72,14 +72,13 @@ export async function configureExternalServices(
             ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
             : null
 
-    const localEmbeddings = platform.createLocalEmbeddingsController?.()
+    const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         null,

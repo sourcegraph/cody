@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -24,8 +25,21 @@ import {
     standardContextSizeHints,
 } from './provider'
 
+const MAX_RESPONSE_TOKENS = 256
+
 const MULTI_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG]
 const SINGLE_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
+
+const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    maxTokensToSample: 50,
+    stopSequences: SINGLE_LINE_STOP_SEQUENCES,
+    timeoutMs: 5_000,
+}
+const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: MULTI_LINE_STOP_SEQUENCES,
+    timeoutMs: 15_000,
+}
 
 interface UnstableOpenAIOptions {
     maxContextTokens?: number
@@ -33,16 +47,6 @@ interface UnstableOpenAIOptions {
 }
 
 const PROVIDER_IDENTIFIER = 'unstable-openai'
-const MAX_RESPONSE_TOKENS = 256
-
-const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: MULTI_LINE_STOP_SEQUENCES,
-    timeoutMs: 15_000,
-}
 
 export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
@@ -111,45 +115,53 @@ ${OPENING_CODE_TAG}${infillBlock}`
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completions: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]> {
+    ): Promise<void> {
         const prompt = this.createPrompt(snippets)
-        const { dynamicMultilineCompletions, multiline } = this.options
+        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
+
+        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
 
         const requestParams: CodeCompletionsParams = {
+            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
             messages: [{ speaker: 'human', text: prompt }],
-            maxTokensToSample: multiline ? MAX_RESPONSE_TOKENS : 50,
             temperature: 1,
             topP: 0.5,
-            stopSequences: multiline ? MULTI_LINE_STOP_SEQUENCES : SINGLE_LINE_STOP_SEQUENCES,
-            timeoutMs: multiline ? 15000 : 5000,
         }
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
-
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
+        const fetchAndProcessCompletionsImpl = dynamicMultilineCompletions
+            ? fetchAndProcessDynamicMultilineCompletions
+            : fetchAndProcessCompletions
 
         tracer?.params(requestParams)
 
-        const completions = await Promise.all(
-            Array.from({ length: this.options.n }).map(() => {
+        const completions: InlineCompletionItemWithAnalytics[] = []
+        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
+            completions.push(completion)
+            if (completions.length === n) {
+                tracer?.result({ completions })
+                onCompletionReady(completions)
+            }
+        }
+
+        await Promise.all(
+            Array.from({ length: n }).map(() => {
                 return fetchAndProcessCompletionsImpl({
                     client: this.client,
                     requestParams,
                     abortSignal,
                     providerSpecificPostProcess: this.postProcess,
                     providerOptions: this.options,
+                    onCompletionReady: onCompletionReadyImpl,
+                    onHotStreakCompletionReady,
                 })
             })
         )
-
-        tracer?.result({ completions })
-        return completions
     }
 
     private postProcess = (rawResponse: string): string => {

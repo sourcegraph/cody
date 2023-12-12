@@ -43,6 +43,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
+            autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: null,
             autocompleteTimeouts: {},
         })
@@ -115,6 +116,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
                         return false
+                    case 'cody.autocomplete.experimental.hotStreak':
+                        return false
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
@@ -162,6 +165,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
+            autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteTimeouts: {},
         })

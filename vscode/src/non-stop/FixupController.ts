@@ -467,8 +467,6 @@ export class FixupController
             return
         }
 
-        visibleEditor?.revealRange(task.selectionRange)
-
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
         const editOk = task.insertMode
@@ -1104,6 +1102,7 @@ export class FixupController
         // currently do not always show the correct positions for edits.
         // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.applied) {
+            this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didCompleteTask(task)
         }
     }

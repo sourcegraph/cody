@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
-import { majorMinorVersion, releaseNotesURL, version } from '../../src/version'
+import { version as packageVersion } from '../../package.json'
+import { majorMinorVersion, releaseNotesURL } from '../../src/release'
 
 import { Notice } from './Notice'
 
@@ -39,7 +40,7 @@ interface VersionUpdateNoticeProps {
 }
 
 export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({ probablyNewInstall }) => {
-    const [showNotice, setDismissed] = useShowNotice(majorMinorVersion(version), probablyNewInstall)
+    const [showNotice, setDismissed] = useShowNotice(majorMinorVersion(packageVersion), probablyNewInstall)
 
     if (!showNotice) {
         return undefined
@@ -48,8 +49,8 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
     return (
         <Notice
             icon={<Icon />}
-            title={`Cody updated to v${majorMinorVersion(version)}`}
-            linkHref={releaseNotesURL(version)}
+            title={`Cody updated to v${majorMinorVersion(packageVersion)}`}
+            linkHref={releaseNotesURL(packageVersion)}
             linkText="See what’s new →"
             linkTarget="_blank"
             onDismiss={setDismissed}

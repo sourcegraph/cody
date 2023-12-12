@@ -100,6 +100,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected platform: Pick<PlatformContext, 'recipes'>
 
     protected chatModel: string | undefined = undefined
+    protected chatTitle: string | undefined = 'Untitled'
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -171,6 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(history)
         this.chatModel = this.transcript.chatModel
+        this.chatTitle = chatHistory.getChat(chatID)?.chatTitle
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()

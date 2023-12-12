@@ -2,7 +2,8 @@ import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/Featur
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
-import { releaseNotesURL, releaseType, version } from '../version'
+import { releaseNotesURL, releaseType } from '../release'
+import { version } from '../version'
 
 import { localStorage } from './LocalStorageProvider'
 
@@ -51,9 +52,12 @@ export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             chatTreeItems.push({
                 id,
-                title: getChatPanelTitle(lastDisplayText, false),
+                title: entry.chatTitle || getChatPanelTitle(lastDisplayText, false),
                 icon: 'comment-discussion',
-                command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                command: {
+                    command: 'cody.chat.panel.restore',
+                    args: [id, entry.chatTitle || getChatPanelTitle(lastDisplayText)],
+                },
             })
         }
     })
@@ -112,9 +116,9 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'vscode.open', args: [DISCORD_URL.href] },
     },
     {
-        title: 'Sign Out',
-        icon: 'log-out',
-        command: { command: 'cody.auth.signout' },
+        title: 'Account',
+        icon: 'account',
+        command: { command: 'cody.auth.account' },
     },
 ]
 

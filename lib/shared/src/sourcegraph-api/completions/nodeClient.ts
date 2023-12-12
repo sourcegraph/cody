@@ -25,6 +25,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    // Disable gzip compression since the sg instance will start to batch
+                    // responses afterwards.
+                    'Accept-Encoding': 'gzip;q=0',
                     ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
                     ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                     ...this.config.customHeaders,

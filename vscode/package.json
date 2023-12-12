@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.18.1",
+  "version": "0.18.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -250,7 +250,7 @@
     "commands": [
       {
         "command": "cody.welcome",
-        "title": "Help & Getting Started",
+        "title": "Getting Started Guide",
         "category": "Cody",
         "group": "Cody",
         "icon": "$(book)"
@@ -325,6 +325,13 @@
         "command": "cody.settings.extension",
         "category": "Cody",
         "title": "Extension Settings",
+        "group": "Cody",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "cody.settings.extension.chat",
+        "category": "Cody",
+        "title": "Chat Settings",
         "group": "Cody",
         "icon": "$(gear)"
       },
@@ -432,6 +439,14 @@
         "title": "Open Cody Sidebar",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
+      },
+      {
+        "command": "cody.chat.history.edit",
+        "category": "Cody",
+        "title": "Rename Chat",
+        "group": "Cody",
+        "icon": "$(edit)",
+        "when": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.clear",
@@ -666,19 +681,9 @@
           "group": "navigation@3"
         },
         {
-          "command": "cody.feedback",
-          "when": "view == cody.support.tree.view",
-          "group": "7_cody@0"
-        },
-        {
           "command": "cody.welcome",
           "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
-        },
-        {
-          "command": "cody.auth.signin",
-          "when": "view == cody.support.tree.view && cody.activated",
-          "group": "9_cody@0"
         },
         {
           "command": "cody.search.index-update",
@@ -707,15 +712,26 @@
         {
           "command": "cody.chat.restart",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation",
+          "group": "navigation@0",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.settings.extension.chat",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@1",
           "visibility": "visible"
         }
       ],
       "view/item/context": [
         {
+          "command": "cody.chat.history.edit",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "group": "inline@1"
+        },
+        {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "group": "inline"
+          "group": "inline@2"
         }
       ]
     },
@@ -816,7 +832,7 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages.",
           "examples": [
             "Answer all my questions in Spanish."
           ]
@@ -924,6 +940,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
+        },
+        "cody.autocomplete.experimental.hotStreak": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Preload follow-up completions"
         },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",

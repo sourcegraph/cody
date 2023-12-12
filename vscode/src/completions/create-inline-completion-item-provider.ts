@@ -59,6 +59,7 @@ export async function createInlineCompletionItemProvider({
         localMixedContextFlag,
         disableRecyclingOfPreviousRequests,
         dynamicMultilineCompletionsFlag,
+        hotStreakFlag,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLspLight),
@@ -67,6 +68,7 @@ export async function createInlineCompletionItemProvider({
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
@@ -92,6 +94,7 @@ export async function createInlineCompletionItemProvider({
 
         const dynamicMultilineCompletions =
             config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
+        const hotStreak = config.autocompleteExperimentalHotStreak || hotStreakFlag
 
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
@@ -104,6 +107,7 @@ export async function createInlineCompletionItemProvider({
             contextStrategy,
             createBfgRetriever,
             dynamicMultilineCompletions,
+            hotStreak,
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 

@@ -42,6 +42,7 @@ import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/S
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -122,6 +123,18 @@ const register = async (
         disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
+
+    // Enable tracking for pasting chat responses into editor text
+    disposables.push(
+        vscode.workspace.onDidChangeTextDocument(async e => {
+            const changedText = e.contentChanges[0]?.text
+            // Skip if the document is not a file or if the copied text is from insert
+            if (!changedText || e.document.uri.scheme !== 'file') {
+                return
+            }
+            await onTextDocumentChange(changedText)
+        })
+    )
 
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
@@ -314,6 +327,7 @@ const register = async (
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
+        vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         // Commands
         vscode.commands.registerCommand('cody.chat.restart', async () => {
@@ -332,6 +346,9 @@ const register = async (
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
+        ),
+        vscode.commands.registerCommand('cody.settings.extension.chat', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
@@ -490,7 +507,7 @@ const register = async (
     vscode.window.onDidChangeWindowState(async ws => {
         const endpoint = authProvider.getAuthStatus().endpoint
         if (ws.focused && endpoint && isDotCom(endpoint)) {
-            const res = await graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            const res = await graphqlClient.getDotComCurrentUserInfo()
             if (res instanceof Error) {
                 console.error(res)
                 return
@@ -500,6 +517,9 @@ const register = async (
 
             authStatus.hasVerifiedEmail = res.hasVerifiedEmail
             authStatus.userCanUpgrade = !res.codyProEnabled
+            authStatus.primaryEmail = res.primaryEmail.email
+            authStatus.displayName = res.displayName
+            authStatus.avatarURL = res.avatarURL
 
             void chatManager.syncAuthStatus(authStatus)
         }
@@ -555,7 +575,7 @@ const register = async (
         )
     }
 
-    await showSetupNotification(initialConfig)
+    void showSetupNotification(initialConfig)
 
     // Clean up old onboarding experiment state
     void OnboardingExperiment.cleanUpCachedSelection()

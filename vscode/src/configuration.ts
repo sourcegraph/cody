@@ -122,6 +122,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             false
         ),
 
+        autocompleteExperimentalHotStreak: getHiddenSetting('autocomplete.experimental.hotStreak', false),
+
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
         // when something goes wrong, and to suppress event logging in the agent.
@@ -132,6 +134,16 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
             singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
         },
+
+        testingLocalEmbeddingsModel: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.model', undefined)
+            : undefined,
+        testingLocalEmbeddingsEndpoint: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.endpoint', undefined)
+            : undefined,
+        testingLocalEmbeddingsIndexLibraryPath: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
+            : undefined,
     }
 }
 
