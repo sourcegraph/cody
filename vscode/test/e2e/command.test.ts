@@ -28,7 +28,7 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()
 
     // Click on the file link in chat
-    await chatPanelFrame.getByRole('button', {name: '@index.html'}).click()
+    await chatPanelFrame.getByRole('button', { name: '@index.html' }).click()
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
