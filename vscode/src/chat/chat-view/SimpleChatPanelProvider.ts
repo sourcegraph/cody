@@ -853,13 +853,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const displayText = this.editor.getActiveTextEditorSelection()
                 ? createDisplayTextWithFileSelection(humanChatInput, this.editor.getActiveTextEditorSelection())
                 : humanChatInput
-            const { humanMessage, prompt } = recipeMessages
+            const { humanMessage, prompt, error } = recipeMessages
             this.chatModel.addHumanMessage(humanMessage.message, displayText)
             if (humanMessage.newContextUsed) {
                 this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
             }
             await this.saveSession()
             this.postViewTranscript({ speaker: 'assistant' })
+
+            if (error) {
+                this.chatModel.addBotMessage({ text: typeof error === 'string' ? error : error.message })
+                this.postViewTranscript()
+                return
+            }
 
             this.sendLLMRequest(prompt, {
                 update: (responseText: string) => {
@@ -904,7 +910,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
                 allCommands?.filter(([id]) => {
-                    return !['/edit', '/doc', '/test', '/ask'].includes(id)
+                    return !['/edit', '/doc', '/ask'].includes(id)
                 }) || []
 
             void this.postMessage({
