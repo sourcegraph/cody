@@ -51,7 +51,6 @@ export class DefaultPrompter implements IPrompter {
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
-
         const preInstruction: string | undefined = vscode.workspace.getConfiguration('cody.chat').get('preInstruction')
 
         const preambleMessages = getSimplePreamble(preInstruction)
