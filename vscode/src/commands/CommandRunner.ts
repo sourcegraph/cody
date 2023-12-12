@@ -232,10 +232,7 @@ function getDocCommandRange(
         }
     }
 
-    if (languageId === 'python') {
-        const adjustedStartPosition = new vscode.Position(selection.start.line + 1, 0)
-        return new vscode.Selection(adjustedStartPosition, selection.end)
-    }
-
-    return selection
+    const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
+    const adjustedStartPosition = new vscode.Position(startLine, 0)
+    return new vscode.Selection(adjustedStartPosition, selection.end)
 }
