@@ -496,10 +496,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
+
         // If this is a slash command, run it with custom prompt recipe instead
         if (text.startsWith('/')) {
+            if (text.match(/^\/r(eset)?$/)) {
+                await this.clearAndRestartSession()
+                return
+            }
             return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, addEnhancedContext)
         }
+
         const displayText = userContextFiles?.length
             ? createDisplayTextWithFileLinks(userContextFiles, text)
             : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
