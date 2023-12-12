@@ -53,22 +53,17 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         return null
     }
 
-    const tooltips = {
-        enabled: 'Select a chat model',
-        disabled: {
-            codyProUser: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
-            dotComUser: 'Upgrade to Cody Pro to use a different chat model.',
-            enterpriseUser: `${currentModel.title} is the default chat model on your Sourcegraph instance.`,
-        },
-    }
-
     return (
         <div className={styles.container}>
             <VSCodeDropdown
                 disabled={disabled}
                 className={styles.dropdownContainer}
                 onChange={handleChange}
-                title={isEnterpriseUser ? tooltips.disabled.enterpriseUser : undefined}
+                title={
+                    disabled
+                        ? `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`
+                        : undefined
+                }
                 onClick={() =>
                     getVSCodeAPI().postMessage({
                         command: 'event',
@@ -94,6 +89,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                 styles.titleContainer,
                                 isModelDisabled(option.codyProOnly) && styles.disabled
                             )}
+                            title={isEnterpriseUser ? 'Chat model set by your Sourcegraph Enterprise admin' : undefined}
                         >
                             <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${option.provider}`}</span>
