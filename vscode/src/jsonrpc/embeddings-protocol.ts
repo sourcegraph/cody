@@ -30,17 +30,49 @@ export interface QueryResult {
     content: string
 }
 
+export interface IndexHealthRequest {
+    // The name of the repository to scrutinize the index for. Note, this
+    // is a repo name, like github.com/sourcegraph/cody, not a file path.
+    repoName: string
+}
+
+export type IndexHealthResult = IndexHealthResultFound | IndexHealthResultNotFound
+
+export interface IndexHealthResultFound {
+    type: 'found'
+    repoName: string
+    format: 'App' | 'LocalEmbeddings'
+    commit: string
+    model: string
+    dimension: number
+    numItems: number
+    numItemsDeleted: number
+    numItemsNeedEmbedding: number
+    numItemsFailed: number
+    numFiles: number
+}
+
+export interface IndexHealthResultNotFound {
+    type: 'notFound'
+    repoName: string
+}
+
 export interface IndexRequest {
     repoPath: string
     mode: IndexRequestMode
 }
 
-export type IndexRequestMode = IndexRequestModeNew
+export type IndexRequestMode = IndexRequestModeNew | IndexRequestModeContinue
 
 export interface IndexRequestModeNew {
     type: 'new'
     model: string
     dimension: number
+}
+
+export interface IndexRequestModeContinue {
+    type: 'continue'
+    repoName: string
 }
 
 export interface IndexResult {
@@ -56,6 +88,8 @@ export type Requests = {
     'embeddings/echo': [string, string]
     // Instruct local embeddings to index the specified repository path.
     'embeddings/index': [IndexRequest, IndexResult]
+    // Get statistics for the index for a given repository name.
+    'embeddings/index-health': [IndexHealthRequest, IndexHealthResult]
     // Initializes the local embeddings service. You must call this first.
     'embeddings/initialize': [InitializeParams, {}]
     // Searches for and loads an index for the specified repository name.

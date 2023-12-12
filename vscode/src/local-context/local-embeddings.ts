@@ -12,7 +12,7 @@ import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environme
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
-import { QueryResultSet } from '../jsonrpc/embeddings-protocol'
+import { IndexHealthResultFound, QueryResultSet } from '../jsonrpc/embeddings-protocol'
 import { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
@@ -66,12 +66,21 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private readonly endpoint: string
     private readonly indexLibraryPath: string | undefined
 
+    // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
+    // True if the service has finished starting and been initialized.
     private serviceStarted = false
+    // The access token for Cody Gateway.
     private accessToken: string | undefined
+    // Whether the account is a consumer account.
     private endpointIsDotcom = false
+    // The status bar item local embeddings is displaying, if any.
     private statusBar: vscode.StatusBarItem | undefined
+    // The last index we loaded, or attempted to load, if any.
     private lastRepo: { path: string; repoName: string | false } | undefined
+    // The last error from indexing, if any.
+    private lastError: string | undefined
+    // Map of cached states for loaded indexes.
     private repoState: Map<string, RepoState> = new Map()
 
     // If indexing is in progress, the path of the repo being indexed.
@@ -161,50 +170,41 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         })
         // TODO: Add more states for cody-engine fetching and trigger status updates here
         service.registerNotification('embeddings/progress', obj => {
-            if (!this.statusBar) {
-                return
-            }
             if (typeof obj === 'object') {
                 switch (obj.type) {
                     case 'progress': {
+                        this.lastError = undefined
                         const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
-                        this.statusBar.text = `$(loading~spin) Cody Embeddings (${percent.toFixed(0)}%)`
-                        this.statusBar.backgroundColor = undefined
-                        this.statusBar.tooltip = obj.currentPath
-                        this.statusBar.show()
+                        if (this.statusBar) {
+                            this.statusBar.text = `$(loading~spin) Cody Embeddings (${percent.toFixed(0)}%)`
+                            this.statusBar.backgroundColor = undefined
+                            this.statusBar.tooltip = obj.currentPath
+                            this.statusBar.show()
+                        }
                         break
                     }
                     case 'error': {
-                        this.statusBar.text = '$(warning) Cody Embeddings'
-                        this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-                        this.statusBar.tooltip = obj.message
-                        this.statusBar.show()
+                        this.lastError = obj.message
+                        this.loadAfterIndexing()
                         break
                     }
                     case 'done': {
-                        this.statusBar.text = '$(sparkle) Cody Embeddings'
-                        this.statusBar.backgroundColor = undefined
-                        this.statusBar.show()
+                        this.lastError = undefined
 
-                        // TODO: Instead of a self-dismissing status bar, use a VSCode
-                        // notification with a button to focus chat.
+                        if (this.statusBar) {
+                            this.statusBar.text = '$(sparkle) Cody Embeddings'
+                            this.statusBar.backgroundColor = undefined
+                            this.statusBar.show()
 
-                        // Hide this notification after a while.
-                        const statusBar = this.statusBar
-                        this.statusBar = undefined
-                        setTimeout(() => statusBar.hide(), 30_000)
+                            // TODO: Instead of a self-dismissing status bar, use a VSCode
+                            // notification with a button to focus chat.
 
-                        if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
-                            const path = this.pathBeingIndexed
-                            void (async () => {
-                                const loadedOk = await this.eagerlyLoad(path)
-                                logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
-                                this.changeEmitter.fire(this)
-                            })()
+                            // Hide this notification after a while.
+                            const statusBar = this.statusBar
+                            this.statusBar = undefined
+                            setTimeout(() => statusBar.hide(), 30_000)
                         }
-
-                        this.pathBeingIndexed = undefined
-                        this.statusEmitter.fire(this)
+                        this.loadAfterIndexing()
                         break
                     }
                     default: {
@@ -220,7 +220,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
         const paths = getIndexLibraryPaths()
         // Tests may override the index library path
-        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'index library paths', JSON.stringify(paths))
         if (this.indexLibraryPath) {
             logDebug(
                 'LocalEmbeddingsController',
@@ -250,6 +249,22 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         this.serviceStarted = true
         this.changeEmitter.fire(this)
         return service
+    }
+
+    // After indexing succeeds or fails, try to load the index. Update state
+    // indicating we are no longer loading the index.
+    private loadAfterIndexing(): void {
+        if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
+            const path = this.pathBeingIndexed
+            void (async () => {
+                const loadedOk = await this.eagerlyLoad(path)
+                logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
+                this.changeEmitter.fire(this)
+            })()
+        }
+
+        this.pathBeingIndexed = undefined
+        this.statusEmitter.fire(this)
     }
 
     // ContextStatusProvider implementation
@@ -337,11 +352,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     public async index(): Promise<void> {
         if (!(this.endpointIsDotcom && this.lastRepo?.path && !this.lastRepo?.repoName)) {
             // TODO: Support index updates.
-            logDebug('LocalEmbeddingsController', 'index: No repository to index/already indexed')
+            logDebug('LocalEmbeddingsController', 'index', 'no repository to index/already indexed')
             return
         }
         const repoPath = this.lastRepo.path
-        logDebug('LocalEmbeddingsController', 'index: Starting repository', repoPath)
+        logDebug('LocalEmbeddingsController', 'index', 'starting repository', repoPath)
         try {
             await (
                 await this.getService()
@@ -389,6 +404,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         return this.eagerlyLoad(repoPath)
     }
 
+    // Tries to load an index for the repo at the specified path, skipping any
+    // cached results in `load`. This is used:
+    // - When the service starts, to fulfill an earlier load request.
+    // - When indexing finishes, to try to load the updated index.
+    // - To implement the final step of `load`, if we did not hit any cached
+    //   results.
     private async eagerlyLoad(repoPath: string): Promise<boolean> {
         try {
             const { repoName } = await (await this.getService()).request('embeddings/load', repoPath)
@@ -401,6 +422,26 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 path: repoPath,
                 repoName,
             }
+            // Start a health check on the index.
+            void (async () => {
+                try {
+                    const health = await (await this.getService()).request('embeddings/index-health', { repoName })
+                    logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
+                    if (health.type !== 'found') {
+                        return
+                    }
+                    if (health.numItemsNeedEmbedding > 0) {
+                        this.onRepoNeedsEmbedding(repoPath, health)
+                    }
+                } catch (error) {
+                    logDebug(
+                        'LocalEmbeddingsController',
+                        'index-health',
+                        captureException(error),
+                        JSON.stringify(error)
+                    )
+                }
+            })()
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
 
@@ -434,6 +475,20 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         return !!this.lastRepo?.repoName
     }
 
+    // After loading a repo, we asynchronously check whether the repository
+    // still needs embeddings.
+    private onRepoNeedsEmbedding(repoPath: string, health: IndexHealthResultFound): void {
+        this.statusBar?.dispose()
+        this.statusBar = vscode.window.createStatusBarItem('cody-local-embeddings', vscode.StatusBarAlignment.Right, 0)
+        this.statusBar.text = '$(warning) Cody Embeddings'
+        const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
+        this.statusBar.tooltip = new vscode.MarkdownString(
+            `#### ${repoPath} index is incomplete\n${health.numItemsNeedEmbedding} of ${health.numItems} items need embedding.${errorMessage}`
+        )
+        this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+        this.statusBar.show()
+    }
+
     public async query(query: string): Promise<QueryResultSet> {
         if (!this.endpointIsDotcom) {
             return { results: [] }
@@ -452,10 +507,10 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
         try {
             const results = (await this.query(query)).results
-            logDebug('LocalEmbeddingsController', `returning ${results.length} results`)
+            logDebug('LocalEmbeddingsController', 'query', `returning ${results.length} results`)
             return results
         } catch (error) {
-            logDebug('LocalEmbeddingsController', captureException(error), error)
+            logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
             return []
         }
     }
