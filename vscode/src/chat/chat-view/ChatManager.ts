@@ -11,8 +11,6 @@ import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
@@ -186,20 +184,6 @@ export class ChatManager implements vscode.Disposable {
 
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
         await this.sidebarChat.simplifiedOnboardingReloadEmbeddingsState()
-    }
-
-    private createChatPanelsManger(): void {
-        if (!this.chatPanelsManager) {
-            this.chatPanelsManager = new ChatPanelsManager(
-                this.options,
-                this.chatClient,
-                this.embeddingsClient,
-                this.localEmbeddings,
-                this.symf
-            )
-            telemetryService.log('CodyVSCodeExtension:chatPanelsManger:activated', undefined, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.chatPanelsManger', 'activated')
-        }
     }
 
     /**
