@@ -3,6 +3,7 @@ package com.sourcegraph.cody.statusbar
 import com.intellij.ide.actions.AboutAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.project.Project
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.UpgradeToCodyProNotification
@@ -22,7 +23,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
           ReportCodyBugAction())
     } else {
 
-      val warningActions = deriveWarningAction()
+      val warningActions = deriveWarningAction(e.project!!)
 
       addAll(listOfNotNull(warningActions))
       addSeparator()
@@ -36,16 +37,14 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
     }
   }
 
-  private fun deriveWarningAction(): RateLimitErrorWarningAction? {
+  private fun deriveWarningAction(project: Project): RateLimitErrorWarningAction? {
     val autocompleteRLE = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
     val chatRLE = UpgradeToCodyProNotification.chatRateLimitError.get()
 
-    // TODO(mikolaj):
-    // RFC 872 mentions `feature flag cody-pro: true`
-    // the flag should be a factor in whether to show the upgrade option
-    val isGa = java.lang.Boolean.getBoolean("cody.isGa")
+    val codyProJetbrains = UpgradeToCodyProNotification.isCodyProJetbrains(project)
     val shouldShowUpgradeOption =
-        isGa && autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
+        codyProJetbrains &&
+            autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
 
     val suggestionOrExplanation =
         if (shouldShowUpgradeOption)

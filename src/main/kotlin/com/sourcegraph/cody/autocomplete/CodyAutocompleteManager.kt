@@ -262,7 +262,7 @@ class CodyAutocompleteManager {
         val rateLimitError = error.toRateLimitError()
         UpgradeToCodyProNotification.autocompleteRateLimitError.set(rateLimitError)
         UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = true
-        UpgradeToCodyProNotification.create(rateLimitError).notify(project)
+        UpgradeToCodyProNotification.notify(rateLimitError, project)
       }
     }
   }

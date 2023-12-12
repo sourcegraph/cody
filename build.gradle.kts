@@ -337,7 +337,6 @@ tasks {
     systemProperty(
         "cody.autocomplete.enableFormatting",
         project.property("cody.autocomplete.enableFormatting") ?: "true")
-    systemProperty("cody.isGa", "true")
   }
 
   runPluginVerifier {
