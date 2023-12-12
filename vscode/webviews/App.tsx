@@ -350,7 +350,7 @@ You can start a new chat at any time with <span class="keyboard-shortcut"><span>
         os === 'darwin' ? '⌥' : 'Alt'
     }</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
 
-For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://docs.sourcegraph.com/cody).
+For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
 `
     return welcomeMessageMarkdown
 }
