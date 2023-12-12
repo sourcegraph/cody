@@ -20,7 +20,7 @@ private constructor(content: String, shouldShowUpgradeOption: Boolean) :
         NotificationType.WARNING),
     NotificationFullContent {
   init {
-    setIcon(Icons.CodyLogo)
+    icon = Icons.CodyLogo
     val learnMoreAction: AnAction =
         object : DumbAwareAction("Learn more") {
           override fun actionPerformed(anActionEvent: AnActionEvent) {
@@ -68,7 +68,8 @@ private constructor(content: String, shouldShowUpgradeOption: Boolean) :
           when {
             shouldShowUpgradeOption -> {
               "You've used all${rateLimitError.limit?.let { " $it" }} autocomplete suggestions for the month. " +
-                  "Upgrade to Cody Pro for unlimited autocompletes, chats, and commands."
+                  "Upgrade to Cody Pro for unlimited autocompletes, chats, and commands.<br><br>" +
+                  "(Already upgraded to Pro? Restart your IDE for changes to take effect)"
             }
             else -> {
               "You've used all${rateLimitError.quotaString()} autocompletion suggestions.${rateLimitError.resetString()}"

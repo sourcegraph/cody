@@ -88,7 +88,8 @@ class Chat {
                     "You've used all${rateLimitError.limit?.let { " $it" }} chat messages and commands for the month. " +
                     "Upgrade to Cody Pro for unlimited autocompletes, chats, and commands. " +
                     "<a href=\"https://sourcegraph.com/cody/subscription\">Upgrade</a> " +
-                    "or <a href=\"https://sourcegraph.com/cody/subscription\">learn more</a>."
+                    "or <a href=\"https://sourcegraph.com/cody/subscription\">learn more</a>.<br><br>" +
+                    "(Already upgraded to Pro? Restart your IDE for changes to take effect)"
               }
               else -> {
                 "<b>Request failed:</b> You've used all${rateLimitError.quotaString()} chat messages and commands." +
