@@ -15,6 +15,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Settings: Relabel "symf Context" as "Search Context". [pull/2285](https://github.com/sourcegraph/cody/pull/2285)
 - Chat: Removed 'Chat Suggestions' setting. [pull/2284](https://github.com/sourcegraph/cody/pull/2284)
+- Edit: Completed edits are no longer scrolled back into view in the active file. [pull/2297](https://github.com/sourcegraph/cody/pull/2297)
 
 ## [0.18.4]
 
