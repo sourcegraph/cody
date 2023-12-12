@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import {
     isMarkdownFile,
