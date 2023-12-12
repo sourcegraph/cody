@@ -363,19 +363,6 @@ export class AuthProvider {
             metadata: {
                 success: authState?.isLoggedIn ? 1 : 0,
             },
-            privateMetadata: {
-                type: 'callback',
-                from: 'web',
-            },
-        })
-        telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
-            metadata: {
-                success: authState?.isLoggedIn ? 1 : 0,
-            },
-            privateMetadata: {
-                type: 'callback',
-                from: 'web',
-            },
         })
         if (authState?.isLoggedIn) {
             await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
