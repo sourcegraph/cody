@@ -7,4 +7,4 @@
     />
 </video>
 
-Answer questions about both general programming topics and your specific codebase from right inside your editor. Cody knows about your local code and can learn from the code graph and documentation inside your organization to do just that.
+Answer questions about programming topics generally or your codebase specifically with Cody chat. Enable Cody’s “Enhanced Context” or tag specific files and symbols to refine your chat prompt. 
