@@ -23,6 +23,7 @@ import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextMessage
+import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
 import com.sourcegraph.cody.agent.protocol.RecipeInfo
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener
@@ -67,6 +68,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     recipesPanel.layout = BoxLayout(recipesPanel, BoxLayout.Y_AXIS)
     tabbedPane.insertTab("Commands", null, recipesPanel, null, RECIPES_TAB_INDEX)
 
+    addSubscriptionTab()
     // Initiate filling recipes panel in the background
     refreshRecipes()
 
@@ -109,6 +111,41 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     refreshPanelsVisibility()
 
     addWelcomeMessage()
+  }
+
+  @RequiresEdt
+  private fun addSubscriptionTab() {
+    val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+    if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
+      tryRestartingAgentIfNotRunning(project)
+      val server = getServer(project)
+      if (server != null) {
+        val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+        if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
+          val isCurrentUserPro =
+              server
+                  .isCurrentUserPro()
+                  .exceptionally { e ->
+                    logger.warn("Error getting user pro status", e)
+                    null
+                  }
+                  .get()
+          if (isCurrentUserPro != null) {
+            val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
+            tabbedPane.insertTab(
+                "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+          }
+        }
+      }
+    }
+  }
+
+  @RequiresEdt
+  fun refreshSubscriptionTab() {
+    if (tabbedPane.tabCount >= SUBSCRIPTION_TAB_INDEX + 1) {
+      tabbedPane.removeTabAt(SUBSCRIPTION_TAB_INDEX)
+    }
+    addSubscriptionTab()
   }
 
   @RequiresEdt
@@ -239,6 +276,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     }
     allContentLayout.show(allContentPanel, "tabbedPane")
     isChatVisible = true
+    refreshSubscriptionTab()
   }
 
   private fun createRecipeButton(text: String): JButton {
@@ -429,6 +467,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     const val SING_IN_WITH_SOURCEGRAPH_PANEL = "singInWithSourcegraphPanel"
     private const val CHAT_TAB_INDEX = 0
     private const val RECIPES_TAB_INDEX = 1
+    private const val SUBSCRIPTION_TAB_INDEX = 2
     private const val CHAT_MESSAGE_HISTORY_CAPACITY = 100
 
     fun getInstance(project: Project): CodyToolWindowContent {

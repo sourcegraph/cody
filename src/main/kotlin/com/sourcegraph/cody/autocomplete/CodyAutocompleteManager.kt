@@ -226,7 +226,7 @@ class CodyAutocompleteManager {
                             com.sourcegraph.cody.vscode.Position(lineNumber, startPosition),
                             position)))
     notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
-    val completions = server.autocompleteExecute(params)
+    val completions = server!!.autocompleteExecute(params)
 
     // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
     // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
