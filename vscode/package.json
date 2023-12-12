@@ -754,7 +754,7 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
+          "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
           "examples": [
             "https://github.com/sourcegraph/cody",
             "ssh://git@github.com/sourcegraph/cody"
