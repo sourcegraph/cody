@@ -72,7 +72,6 @@ export interface IndexRequestModeNew {
 
 export interface IndexRequestModeContinue {
     type: 'continue'
-    repoName: string
 }
 
 export interface IndexResult {

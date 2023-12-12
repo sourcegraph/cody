@@ -349,11 +349,6 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.status-bar.embeddings",
-        "title": "Cody Embeddings",
-        "when": "cody.embeddings.notice"
-      },
-      {
         "command": "cody.show-page",
         "category": "Cody",
         "title": "Open Account Page",
@@ -500,6 +495,11 @@
         "group": "Cody",
         "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.embeddings.resolveIssue",
+        "title": "Cody Embeddings",
+        "when": "cody.embeddings.hasIssue"
       }
     ],
     "keybindings": [
