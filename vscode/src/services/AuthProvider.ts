@@ -124,13 +124,13 @@ export class AuthProvider {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
-            privateMetadata: {
-                success: Boolean(authState?.isLoggedIn),
+            metadata: {
+                success: Boolean(authState?.isLoggedIn) ? 1 : 0,
             },
         })
         telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
-            privateMetadata: {
-                success: Boolean(authState?.isLoggedIn),
+            metadata: {
+                success: Boolean(authState?.isLoggedIn) ? 1 : 0,
             },
         })
         await showAuthResultMessage(instanceUrl, authState?.authStatus)
@@ -298,20 +298,22 @@ export class AuthProvider {
             success: Boolean(authState?.isLoggedIn),
             hasV2Event: true,
         })
-        telemetryRecorder.recordEvent(`cody.auth.fromCallback.${isApp ? 'app' : 'web'}`, 'succeeded', {
+        telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
             metadata: {
                 success: authState?.isLoggedIn ? 1 : 0,
             },
             privateMetadata: {
                 type: 'callback',
-                from: isApp ? 'app' : 'web',
+                from: 'web',
             },
         })
-        telemetryRecorder.recordEvent(`cody.auth.fromCallback.${isApp ? 'app' : 'web'}`, 'succeeded', {
+        telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
+            metadata: {
+                success: Boolean(authState?.isLoggedIn) ? 1 : 0,
+            },
             privateMetadata: {
                 type: 'callback',
-                from: isApp ? 'app' : 'web',
-                success: Boolean(authState?.isLoggedIn),
+                from: 'web',
             },
         })
         if (authState?.isLoggedIn) {
