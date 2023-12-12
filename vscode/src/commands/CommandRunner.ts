@@ -220,11 +220,8 @@ export function addSelectionToPrompt(prompt: string, code: string): string {
 function getDocCommandRange(
     editor: vscode.TextEditor,
     selection: vscode.Selection,
-    languageId?: string
+    languageId: string
 ): vscode.Selection {
-    const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
-    const pos = new vscode.Position(startLine, 0)
-
     // move the current selection to the defined selection in the text editor document
     if (editor) {
         const visibleRange = editor.visibleRanges
@@ -235,5 +232,7 @@ function getDocCommandRange(
         }
     }
 
-    return new vscode.Selection(pos, pos)
+    const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
+    const adjustedStartPosition = new vscode.Position(startLine, 0)
+    return new vscode.Selection(adjustedStartPosition, selection.end)
 }
