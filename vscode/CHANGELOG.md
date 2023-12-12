@@ -22,6 +22,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Fixes an issue where the sidebar would not properly load when not signed in. [pull/2267](https://github.com/sourcegraph/cody/pull/2267)
+- Fixes an issue where telemetry events were not properly logged with the new chat experience. [pull/2291](https://github.com/sourcegraph/cody/pull/2291)
 
 ### Changed
 
