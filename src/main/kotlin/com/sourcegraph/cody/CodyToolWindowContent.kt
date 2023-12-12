@@ -17,6 +17,7 @@ import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
 import com.intellij.xml.util.XmlStringUtil
+import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
@@ -68,7 +69,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     recipesPanel.layout = BoxLayout(recipesPanel, BoxLayout.Y_AXIS)
     tabbedPane.insertTab("Commands", null, recipesPanel, null, RECIPES_TAB_INDEX)
 
-    addSubscriptionTab()
     // Initiate filling recipes panel in the background
     refreshRecipes()
 
@@ -113,27 +113,27 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     addWelcomeMessage()
   }
 
-  @RequiresEdt
   private fun addSubscriptionTab() {
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
     if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
       tryRestartingAgentIfNotRunning(project)
-      val server = getServer(project)
-      if (server != null) {
-        val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-        if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
-          val isCurrentUserPro =
-              server
-                  .isCurrentUserPro()
-                  .exceptionally { e ->
-                    logger.warn("Error getting user pro status", e)
-                    null
-                  }
-                  .get()
-          if (isCurrentUserPro != null) {
-            val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
-            tabbedPane.insertTab(
-                "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+      CodyAgent.getInitializedServer(project).thenAccept { server ->
+        if (server != null) {
+          val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+          if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
+            val isCurrentUserPro =
+                server
+                    .isCurrentUserPro()
+                    .exceptionally { e ->
+                      logger.warn("Error getting user pro status", e)
+                      null
+                    }
+                    .get()
+            if (isCurrentUserPro != null) {
+              val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
+              tabbedPane.insertTab(
+                  "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+            }
           }
         }
       }
