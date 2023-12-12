@@ -572,8 +572,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             }
 
             if (userPrompt) {
-                console.log({ newContextUsed })
-                // Create a summary of how m
+                // Create a summary of how many code snippets of each context source are being
+                // included in the prompt
                 const contextSummary: { [key: string]: number } = {}
                 for (const { source } of newContextUsed) {
                     if (!source) {
