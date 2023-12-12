@@ -82,6 +82,7 @@ export class DefaultPrompter implements IPrompter {
                 (item: ContextItem) => this.renderContextItem(item)
             )
             newContextUsed.push(...used)
+
             if (limitReached) {
                 warnings.push('Ignored current user-specified context items due to context limit')
                 return { prompt: promptBuilder.build(), warnings, newContextUsed }
