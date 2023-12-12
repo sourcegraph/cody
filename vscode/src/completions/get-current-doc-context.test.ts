@@ -263,7 +263,11 @@ describe('getCurrentDocContext', () => {
         }
 
         beforeAll(async () => {
-            parser = await initTreeSitterParser()
+            const parserOrNull = await initTreeSitterParser()
+            if (parserOrNull === null) {
+                throw new Error('Could not initialize tree-sitter parser')
+            }
+            parser = parserOrNull
         })
 
         afterAll(() => {

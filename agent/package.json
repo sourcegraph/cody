@@ -35,14 +35,12 @@
     "fast-myers-diff": "^3.1.0",
     "minimatch": "^9.0.3",
     "pretty-ms": "^8.0.0",
-    "source-map-support": "^0.5.21",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
     "@types/dedent": "^0.7.0",
     "@types/google-protobuf": "^3.15.10",
     "@types/minimatch": "^5.1.2",
-    "@types/source-map-support": "^0.5.10",
     "@types/vscode": "^1.80.0",
     "esbuild": "^0.18.19",
     "parse-git-diff": "^0.0.14",

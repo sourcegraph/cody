@@ -1,8 +1,5 @@
-import sourcemap from 'source-map-support'
-
 import { rootCommand } from './cli/root'
 
-sourcemap.install()
 console.error('Starting agent...')
 
 const args = process.argv.slice(2)
