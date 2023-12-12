@@ -123,6 +123,14 @@
             }
           },
           {
+            "id": "fix",
+            "title": "Ask Cody to Fix",
+            "description": "Let Cody fix your code for you, right within your file.",
+            "media": {
+              "markdown": "walkthroughs/fix.md"
+            }
+          },
+          {
             "id": "explain",
             "title": "Explain Code",
             "description": "Ask Cody to explain some code. Select some lines and use the \"Explain Code\" command.\n[Open Commands Menu](command:cody.action.commands.menu)",

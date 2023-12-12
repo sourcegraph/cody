@@ -1,10 +1,5 @@
 ## Code Autocomplete
 
-<video autoPlay muted loop playsInline>
-    <source
-        type="video/mp4"
-        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-completion-may2023.mp4"
-    />
-</video>
+//TODO: Add new autocomplete gif
 
 Start writing code or write a comment and Cody will suggest the next few lines for you. Hit tab to accept the suggestion.
