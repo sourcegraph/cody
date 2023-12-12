@@ -40,7 +40,7 @@ export async function showCommandMenu(
     items: (QuickPickItem | QuickPickItemWithSlashCommand)[]
 ): Promise<CommandMenuResponse> {
     const options = {
-        title: `Cody (Shortcut: ${platform() === 'darwin' ? '⌥' : 'Alt+'}C)`,
+        title: `Cody Commands (Shortcut: ${platform() === 'darwin' ? '⌥' : 'Alt+'}C)`,
         placeHolder: 'Search for a command or enter your question here...',
     }
 

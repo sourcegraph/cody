@@ -507,7 +507,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.saveSession(text)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
-        await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
+        await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext, contextSummary => {
+            if (submitType !== 'user') {
+                return
+            }
+
+            const properties = {
+                requestID,
+                chatModel: this.chatModel.modelID,
+                promptText: text,
+                contextSummary,
+            }
+            telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+                metadata: { ...contextSummary },
+            })
+        })
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
             this.webviewPanel.title = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(text)
@@ -536,7 +553,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async generateAssistantResponse(
         requestID: string,
         userContextFiles?: ContextFile[],
-        addEnhancedContext = true
+        addEnhancedContext = true,
+        sendTelemetry?: (contextSummary: {}) => void
     ): Promise<void> {
         try {
             const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
@@ -563,6 +581,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 const warningMsg =
                     'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' ')
                 this.postError(new Error(warningMsg))
+            }
+
+            if (sendTelemetry) {
+                // Create a summary of how many code snippets of each context source are being
+                // included in the prompt
+                const contextSummary: { [key: string]: number } = {}
+                for (const { source } of newContextUsed) {
+                    if (!source) {
+                        continue
+                    }
+                    if (contextSummary[source]) {
+                        contextSummary[source] += 1
+                    } else {
+                        contextSummary[source] = 1
+                    }
+                }
+                sendTelemetry(contextSummary)
             }
 
             this.postViewTranscript({ speaker: 'assistant' })
@@ -865,7 +900,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
-            const prompts = (await this.editor.controllers.command?.getAllCommands(true)) || []
+            const allCommands = await this.editor.controllers.command?.getAllCommands(true)
+            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
+            const prompts =
+                allCommands?.filter(([id]) => {
+                    return !['/edit', '/doc', '/test', '/ask'].includes(id)
+                }) || []
+
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
@@ -1053,7 +1094,7 @@ class ContextProvider implements IContextProvider {
             return []
         }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
-        const contextItems = []
+        const contextItems: ContextItem[] = []
         const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
         for (const result of embeddingsResults) {
             const uri = vscode.Uri.from({
@@ -1069,6 +1110,7 @@ class ContextProvider implements IContextProvider {
                 uri,
                 range,
                 text: result.content,
+                source: 'embeddings',
             })
         }
         return contextItems
@@ -1091,7 +1133,7 @@ class ContextProvider implements IContextProvider {
         }
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
-        const contextItems = []
+        const contextItems: ContextItem[] = []
         const embeddings = await this.embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
         if (isError(embeddings)) {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
@@ -1112,6 +1154,7 @@ class ContextProvider implements IContextProvider {
                 uri,
                 range,
                 text: codeResult.content,
+                source: 'embeddings',
             })
         }
 
@@ -1129,6 +1172,7 @@ class ContextProvider implements IContextProvider {
                 uri,
                 range,
                 text: textResult.content,
+                source: 'embeddings',
             })
         }
 
@@ -1318,6 +1362,7 @@ export function deserializedContextFilesToContextItems(
             uri,
             range,
             text: text || '',
+            source: file.source,
         }
     })
 }
