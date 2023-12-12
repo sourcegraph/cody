@@ -904,7 +904,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
                 allCommands?.filter(([id]) => {
-                    return !['/edit', '/doc', '/test', '/ask'].includes(id)
+                    return !['/edit', '/doc', '/ask'].includes(id)
                 }) || []
 
             void this.postMessage({
