@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Fixes an issue where the wrong rate limite count was shown. [pull/2312](https://github.com/sourcegraph/cody/pull/2312)
+
 ### Changed
 
 ## [0.18.5]
