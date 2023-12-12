@@ -124,14 +124,6 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.commandCodeLenses
                 ),
                 createFeatureToggle(
-                    'Chat Suggestions',
-                    'Experimental',
-                    'Enable automatically suggested chat questions',
-                    'cody.experimental.chatPredictions',
-                    c => c.experimentalChatPredictions,
-                    true
-                ),
-                createFeatureToggle(
                     'Search Context',
                     'Beta',
                     'Enable using the natural language search index as an Enhanced Context chat source',
