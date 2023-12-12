@@ -133,11 +133,6 @@ export class AuthProvider {
                 success: authState?.isLoggedIn ? 1 : 0,
             },
         })
-        telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
-            metadata: {
-                success: authState?.isLoggedIn ? 1 : 0,
-            },
-        })
         await showAuthResultMessage(instanceUrl, authState?.authStatus)
     }
 

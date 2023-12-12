@@ -53,10 +53,13 @@ export class CommandRunner implements vscode.Disposable {
             requestID: command.requestID,
         })
         telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+            metadata: {
+                useCodebaseContex: command.context?.codebase ? 1 : 0,
+                useShellCommand: command.context?.command ? 1 : 0,
+            },
+            interactionID: command.requestID,
             privateMetadata: {
                 mode: command.mode,
-                useCodebaseContex: !!command.context?.codebase,
-                useShellCommand: !!command.context?.command,
                 requestID: command.requestID,
             },
         })

@@ -9,7 +9,7 @@ import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
+import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
 import { computeDiff, Diff } from './diff'
@@ -60,12 +60,12 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel', hasV2Event: true })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.cancel', 'clicked', {})
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'cancel')
                 return this.cancel(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff', hasV2Event: true })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.diff', 'clicked', {})
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'diff')
                 return this.diff(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
@@ -73,19 +73,17 @@ export class FixupController
                     op: 'regenerate',
                     hasV2Event: true,
                 })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.retry', 'clicked', {
-                    privateMetadata: { op: 'regenerate' },
-                })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'retry')
                 return this.retry(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo', hasV2Event: true })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.undo', 'clicked', {})
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'undo')
                 return this.undo(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept', hasV2Event: true })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.accept', 'clicked', {})
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
                 return this.accept(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
@@ -93,7 +91,7 @@ export class FixupController
                     op: 'show_error',
                     hasV2Event: true,
                 })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.showError', 'clicked', {})
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'showError')
                 return this.showError(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.skip-formatting', id => {
@@ -101,7 +99,7 @@ export class FixupController
                     op: 'skip_formatting',
                     hasV2Event: true,
                 })
-                telemetryRecorder.recordEvent('cody.fixup.codeLens.skipFormatting', 'clicked', {})
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'skipFormatting')
                 return this.skipFormatting(id)
             })
         )
@@ -709,10 +707,8 @@ export class FixupController
 
         const tokenCount = countCode(replacementText)
         telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, { hasV2Event: true })
-        const { metadata, privateMetadata } = splitSafeMetadata(tokenCount)
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            metadata,
-            privateMetadata,
+            metadata: tokenCount,
         })
 
         this.setTaskState(task, CodyTaskState.finished)
@@ -825,8 +821,8 @@ export class FixupController
                 hasV2Event: true,
             })
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                metadata: countCode(replacementText),
                 privateMetadata: {
-                    tokenCount: countCode(replacementText),
                     source: task.source,
                 },
             })
@@ -868,8 +864,8 @@ export class FixupController
                     hasV2Event: true,
                 })
                 telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                    metadata: countCode(text),
                     privateMetadata: {
-                        tokenCount: countCode(text),
                         source: task.source,
                     },
                 })
