@@ -566,7 +566,7 @@ const register = async (
         )
     }
 
-    await showSetupNotification(initialConfig)
+    void showSetupNotification(initialConfig)
 
     // Clean up old onboarding experiment state
     void OnboardingExperiment.cleanUpCachedSelection()

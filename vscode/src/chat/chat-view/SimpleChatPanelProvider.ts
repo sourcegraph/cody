@@ -196,7 +196,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         const viewType = CodyChatPanelViewType
-        const panelTitle = getChatPanelTitle(lastQuestion)
+        const panelTitle = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -447,6 +447,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // and can be removed once we retire the old ChatPanelProvider
         return Promise.resolve()
     }
+    public handleChatTitle(title: string): void {
+        this.chatModel.setChatTitle(title)
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
+        }
+    }
 
     public triggerNotice(notice: { key: string }): void {
         void this.postMessage({
@@ -501,6 +507,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext)
+        // Set the title of the webview panel to the current text
+        if (this.webviewPanel) {
+            this.webviewPanel.title = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(text)
+        }
     }
 
     private async handleEdit(requestID: string, text: string): Promise<void> {
@@ -697,6 +707,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             chatID: this.sessionID,
         })
 
+        const chatTitle = this.history.getChat(this.sessionID)?.chatTitle
+        if (chatTitle) {
+            this.handleChatTitle(chatTitle)
+            return
+        }
         // Update webview panel title to match the last message
         const text = this.chatModel.getLastHumanMessages()?.displayText
         if (this.webviewPanel && text) {
@@ -849,7 +864,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
-            const prompts = (await this.editor.controllers.command?.getAllCommands(true)) || []
+            const allCommands = await this.editor.controllers.command?.getAllCommands(true)
+            // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
+            const prompts =
+                allCommands?.filter(([id]) => {
+                    return !['/edit', '/doc', '/test', '/ask'].includes(id)
+                }) || []
+
             void this.postMessage({
                 type: 'custom-prompts',
                 prompts,
@@ -1267,7 +1288,12 @@ async function newChatModelfromTranscriptJSON(json: TranscriptJSON, defaultModel
             ]
         }
     )
-    return new SimpleChatModel(json.chatModel || defaultModelID, (await Promise.all(messages)).flat(), json.id)
+    return new SimpleChatModel(
+        json.chatModel || defaultModelID,
+        (await Promise.all(messages)).flat(),
+        json.id,
+        json.chatTitle
+    )
 }
 
 export function deserializedContextFilesToContextItems(

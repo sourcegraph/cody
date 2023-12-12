@@ -120,6 +120,7 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     disableRecyclingOfPreviousRequests?: boolean
     dynamicMultilineCompletions?: boolean
+    hotStreak?: boolean
 }
 
 interface CompletionRequest {
@@ -157,6 +158,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completeSuggestWidgetSelection = true,
         disableRecyclingOfPreviousRequests = false,
         dynamicMultilineCompletions = false,
+        hotStreak = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -166,6 +168,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completeSuggestWidgetSelection,
             disableRecyclingOfPreviousRequests,
             dynamicMultilineCompletions,
+            hotStreak,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
@@ -338,6 +341,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     artificialDelay,
                     completionIntent,
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
+                    hotStreak: this.config.hotStreak,
                 })
 
                 // Avoid any further work if the completion is invalidated already.

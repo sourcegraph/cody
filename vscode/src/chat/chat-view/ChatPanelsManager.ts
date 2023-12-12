@@ -16,6 +16,7 @@ import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
+import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
 import { SidebarChatOptions } from './SidebarChatProvider'
@@ -34,6 +35,7 @@ export interface IChatPanelProvider extends vscode.Disposable {
     executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
     clearAndRestartSession(): Promise<void>
     clearChatHistory(chatID: ChatID): Promise<void>
+    handleChatTitle(title: string): void
     triggerNotice(notice: { key: string }): void
     webviewPanel?: vscode.WebviewPanel
     webview?: ChatViewProviderWebview
@@ -247,6 +249,25 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     private async updateTreeViewHistory(): Promise<void> {
         await this.treeViewProvider.updateTree()
+    }
+
+    public async editChatHistory(chatID: string, label: string): Promise<void> {
+        await vscode.window
+            .showInputBox({
+                prompt: 'Enter new chat name',
+                value: label,
+            })
+            .then(async title => {
+                const history = chatHistory.getChat(chatID)
+                if (title && history) {
+                    history.chatTitle = title
+                    await chatHistory.saveChat(history)
+                    await this.updateTreeViewHistory()
+                    const chatIDUTC = new Date(chatID).toUTCString()
+                    const provider = this.panelProvidersMap.get(chatID) || this.panelProvidersMap.get(chatIDUTC)
+                    provider?.handleChatTitle(title)
+                }
+            })
     }
 
     public async clearHistory(chatID?: string): Promise<void> {

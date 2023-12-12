@@ -29,7 +29,8 @@ export class SimpleChatModel {
     constructor(
         public modelID: string,
         private messagesWithContext: MessageWithContext[] = [],
-        public readonly sessionID: string = new Date(Date.now()).toUTCString()
+        public readonly sessionID: string = new Date(Date.now()).toUTCString(),
+        public chatTitle?: string
     ) {}
 
     public isEmpty(): boolean {
@@ -111,6 +112,10 @@ export class SimpleChatModel {
         return this.messagesWithContext
     }
 
+    public setChatTitle(title: string): void {
+        this.chatTitle = title
+    }
+
     /**
      * Serializes to the legacy transcript JSON format
      */
@@ -124,6 +129,7 @@ export class SimpleChatModel {
         return {
             id: this.sessionID,
             chatModel: this.modelID,
+            chatTitle: this.chatTitle,
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }
