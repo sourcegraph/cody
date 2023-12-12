@@ -21,6 +21,7 @@ import {
     AuthStatus,
     CODY_FEEDBACK_URL,
 } from './chat/protocol'
+import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -46,6 +47,7 @@ import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { gitAPI } from './repository/repositoryHelpers'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -198,6 +200,15 @@ const register = async (
         localEmbeddings || null,
         symfRunner || null
     )
+    const gitApi = gitAPI()
+    const commitMessageProvider = gitApi ? new CommitMessageProvider({
+        gitApi,
+        chatClient
+    }) : null
+    if(commitMessageProvider){
+        commitMessageProvider.onConfigurationChange(initialConfig)
+        disposables.push(commitMessageProvider)
+    }
 
     disposables.push(new CodeActionProvider({ contextProvider }))
 
@@ -214,6 +225,7 @@ const register = async (
         externalServicesOnDidConfigurationChange(newConfig)
         void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         platform.onConfigurationChange?.(newConfig)
+        commitMessageProvider?.onConfigurationChange(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         embeddingsClient.updateConfiguration(newConfig)

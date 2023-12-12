@@ -42,6 +42,7 @@ export interface Configuration {
     /**
      * Experimental
      */
+    experimentalCommitMessage: boolean
     experimentalGuardrails: boolean
     experimentalLocalSymbols: boolean
     experimentalSymfContext: boolean
