@@ -25,7 +25,7 @@ For example, you can ask Cody:
 - "Make this work" _(seriously, it often works—try it!)_
 
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
-<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/blog-vscode-v018-release/blog-v018-context-controls-002.gif" width="480" alt="Cody Chat">
 
 ## Built-In Commands
 
