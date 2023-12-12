@@ -33,7 +33,7 @@ export function groupCodyChats(): GroupedChats | null {
         const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
-            const chatTitle = getChatPanelTitle(lastDisplayText)
+            const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText)
 
             const currentTimeStamp = new Date()
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
@@ -45,49 +45,49 @@ export function groupCodyChats(): GroupedChats | null {
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             } else if (timeDiff < 48 * 60 * 60 * 1000) {
                 yesterdayChats.push({
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             } else if (timeDiff < 7 * 24 * 60 * 60 * 1000) {
                 NDaysChats.push({
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             } else if (timeDiff < 14 * 24 * 60 * 60 * 1000) {
                 lastWeekChats.push({
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             } else if (timeDiff < 30 * 24 * 60 * 60 * 1000) {
                 NWeeksChats.push({
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             } else if (timeDiff < 60 * 24 * 60 * 60 * 1000) {
                 lastMonthChats.push({
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             } else {
                 NMonthsChats.push({
                     id,
                     title: chatTitle,
                     icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
                 })
             }
         }
