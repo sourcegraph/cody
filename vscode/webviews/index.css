@@ -1,6 +1,12 @@
 @import '@sourcegraph/cody-ui/src/index.css';
 @import '@vscode/codicons/dist/codicon';
 
+@font-face {
+    font-family: cody-icons;
+    font-display: block;
+    src: url('../resources/cody-icons.woff') format('woff');
+}
+
 :root {
     /* Our syntax highlighter expects a dark code background color, regardless of the VS Code color
     theme. */
@@ -47,4 +53,16 @@ a:hover {
 
 .cody-chat-error > span {
     font-weight: bold;
+}
+
+.cody-icons {
+    font: normal normal normal 16px/1 cody-icons;
+    display: inline-block;
+    text-decoration: none;
+    text-rendering: auto;
+    text-align: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    transform: translateY(15%); /* Hacky adjustment for font baseline */
 }

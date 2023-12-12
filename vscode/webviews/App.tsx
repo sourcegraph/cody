@@ -340,13 +340,13 @@ function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [st
 }
 
 function getWelcomeMessageByOS(os: string): string {
-    const welcomeMessageMarkdown = `Start writing code and I’ll autocomplete lines and entire functions for you.
+    const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
-You can ask me to explain, document and edit code using the [Cody Commands](command:cody.action.commands.menu) action (${
+You can use Cody to explain, document and edit code a few ways: by using the <span class="cody-icons">A</span> button, right-clicking on code, or by using the [Cody Commands](command:cody.action.commands.menu) shortcut (${
         os === 'darwin' ? '⌥' : 'Alt'
-    }+C), or by right-clicking on code and using the “Cody” menu.
+    }+C).
 
-See the [Getting Started](command:cody.welcome) guide for more tips and tricks.
+See the [Getting Started Guide](command:cody.welcome) for more tips and tricks.
 `
     return welcomeMessageMarkdown
 }
