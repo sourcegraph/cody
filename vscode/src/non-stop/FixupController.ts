@@ -1051,6 +1051,7 @@ export class FixupController
         // currently do not always show the correct positions for edits.
         // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.applied) {
+            this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didCompleteTask(task)
         }
     }
