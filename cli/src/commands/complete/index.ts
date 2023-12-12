@@ -1,1 +1,0 @@
-export { completeCommand } from './command'

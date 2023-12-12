@@ -69,10 +69,13 @@ interface EvaluationFixture {
 
 async function loadEvaluationConfig(options: EvaluateAutocompleteOptions): Promise<EvaluateAutocompleteOptions[]> {
     if (!options?.evaluationConfig) {
-        return [options]
+        // return [options]
+        throw new Error('missing required property "evaluationConfig"')
     }
+
     const configBuffer = await fspromises.readFile(options.evaluationConfig)
     const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
+    ;(config as any).foobar()
     const result: EvaluateAutocompleteOptions[] = []
     for (const test of config?.workspaces ?? []) {
         if (!test.workspace) {
