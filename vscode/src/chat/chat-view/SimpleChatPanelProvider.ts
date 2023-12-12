@@ -507,12 +507,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.saveSession(text)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
-        await this.generateAssistantResponse(
-            requestID,
-            userContextFiles,
-            addEnhancedContext,
-            submitType === 'user' ? text : undefined
-        )
+        await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext, contextSummary => {
+            if (submitType !== 'user') {
+                return
+            }
+
+            const properties = {
+                requestID,
+                chatModel: this.chatModel.modelID,
+                promptText: text,
+                contextSummary,
+            }
+            telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+                metadata: { ...contextSummary },
+            })
+        })
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
             this.webviewPanel.title = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(text)
@@ -542,7 +554,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         requestID: string,
         userContextFiles?: ContextFile[],
         addEnhancedContext = true,
-        userPrompt: string | undefined = undefined
+        sendTelemetry?: (contextSummary: {}) => void
     ): Promise<void> {
         try {
             const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
@@ -571,7 +583,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.postError(new Error(warningMsg))
             }
 
-            if (userPrompt) {
+            if (sendTelemetry) {
                 // Create a summary of how many code snippets of each context source are being
                 // included in the prompt
                 const contextSummary: { [key: string]: number } = {}
@@ -585,19 +597,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                         contextSummary[source] = 1
                     }
                 }
-
-                const properties = {
-                    requestID,
-                    chatModel: this.chatModel.modelID,
-                    promptText: userPrompt,
-                    contextSummary,
-                }
-                telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
-                    metadata: { ...contextSummary },
-                })
+                sendTelemetry(contextSummary)
             }
 
             this.postViewTranscript({ speaker: 'assistant' })
