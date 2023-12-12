@@ -41,6 +41,7 @@ export function initialize(): void {
     require('./numpy')
     require('./pytorch')
     require('./embeddings')
+    require('./single-question')
     /* eslint-enable @typescript-eslint/no-require-imports */
 }
 

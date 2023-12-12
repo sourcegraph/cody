@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { CodebaseContext } from '../codebase-context'
+import { QueryExpander } from '../codebase-context/query-expansion'
 import { isErrorLike } from '../common'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
@@ -301,7 +302,9 @@ export const useClient = ({
                 null,
                 null,
                 undefined,
-                unifiedContextFetcherClient
+                unifiedContextFetcherClient,
+                undefined,
+                new QueryExpander(chatClient)
             )
 
             const { humanChatInput = '', prefilledOptions } = options ?? {}

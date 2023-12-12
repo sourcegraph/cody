@@ -63,12 +63,14 @@ function logResult(label: string, partial: number, total: number, opts: ColorOpt
 }
 
 export function logAggregateResults(aggregateResults: AggregateTestResults): void {
-    logResult(
-        'Incorrect or partial answers (LLM judge)',
-        aggregateResults.incorrectAnswers + aggregateResults.partialAnswers,
-        aggregateResults.numInteractions,
-        { goodRatioThreshold: 0.05, okRatioThreshold: 0.2 }
-    )
+    logResult('Incorrect answers (LLM judge)', aggregateResults.incorrectAnswers, aggregateResults.numInteractions, {
+        goodRatioThreshold: 0.05,
+        okRatioThreshold: 0.2,
+    })
+    logResult('Partial answers (LLM judge)', aggregateResults.partialAnswers, aggregateResults.numInteractions, {
+        goodRatioThreshold: 0.05,
+        okRatioThreshold: 0.2,
+    })
     logResult('Missing facts', aggregateResults.missingFacts, aggregateResults.facts, {
         goodRatioThreshold: 0.05,
         okRatioThreshold: 0.2,

@@ -1,4 +1,5 @@
 import { CodebaseContext } from '../codebase-context'
+import { QueryExpander } from '../codebase-context/query-expansion'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
@@ -90,7 +91,19 @@ export async function createClient({
         const embeddingsSearch = repoId
             ? new SourcegraphEmbeddingsSearchClient(graphqlClient, config.codebase || repoId, repoId, undefined, true)
             : null
-        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null, null)
+        const codebaseContext = new CodebaseContext(
+            config,
+            config.codebase,
+            embeddingsSearch,
+            null,
+            null,
+            null,
+            null,
+            undefined,
+            undefined,
+            undefined,
+            new QueryExpander(chatClient)
+        )
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 

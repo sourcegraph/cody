@@ -76,8 +76,21 @@ export class ChatQuestion implements Recipe {
         this.debug('ChatQuestion:getContextMessages', 'addEnhancedContext', addEnhancedContext)
         if (addEnhancedContext) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
-            contextMessages.push(...codebaseContextMessages)
+
+            // TODO: Use a feature flag.
+            const useContextWithExpandedQuery = true
+            if (useContextWithExpandedQuery) {
+                const contextWithExpandedQuery = await codebaseContext.getContextWithExpandedQuery(
+                    text,
+                    numResults,
+                    codebaseContextMessages
+                )
+                contextMessages.push(...contextWithExpandedQuery)
+            } else {
+                contextMessages.push(...codebaseContextMessages)
+            }
         }
+
         const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
         this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
         if (isEditorContextRequired) {
