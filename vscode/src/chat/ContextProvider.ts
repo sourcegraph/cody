@@ -350,7 +350,6 @@ async function getCodebaseContext(
         codebase,
         // Use embeddings search if there are no local embeddings.
         (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
-        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         // Use local embeddings if we have them.
