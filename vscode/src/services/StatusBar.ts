@@ -124,9 +124,9 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.commandCodeLenses
                 ),
                 createFeatureToggle(
-                    'Symf Context',
-                    'Experimental',
-                    'Enable context fetched via symf',
+                    'Search Context',
+                    'Beta',
+                    'Enable using the natural language search index as an Enhanced Context chat source',
                     'cody.experimental.symfContext',
                     c => c.experimentalSymfContext,
                     false
