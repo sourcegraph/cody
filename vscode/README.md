@@ -32,7 +32,7 @@ For example, you can ask Cody:
 Streamline your development process by using Cody commands to understand, improve, fix, document, and generate unit tests for your code. 
 
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
-<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/Explain_Code-Sept23-Sm.gif" width="480" alt="Explain Code command">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-explain.gif" width="480" alt="Explain Code command">
 
 ## Custom Commands (Beta)
 
