@@ -7,7 +7,7 @@
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
-<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif" width="480" alt="Cody autocomplete">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-cody-autocomplete-tsx.gif" width="480" alt="Cody autocomplete">
 
 ## Chat
 
