@@ -32,6 +32,13 @@ const defaultDotComChatModels: ChatModelProvider[] = [
         default: false,
         codyProOnly: true,
     },
+    {
+        title: 'Mixtral 8x7B',
+        model: 'openai/gpt-4-1106-preview',
+        provider: 'Fireworks',
+        default: false,
+        codyProOnly: true,
+    },
 ]
 
 /**
