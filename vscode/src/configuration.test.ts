@@ -24,6 +24,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: false,
             editorTitleCommandIcon: true,
+            experimentalCommitMessage: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
@@ -75,6 +76,8 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.languages':
                         return { '*': true }
                     case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.commitMessage':
                         return true
                     case 'cody.commandCodeLenses':
                         return true
@@ -149,6 +152,7 @@ describe('getConfiguration', () => {
             autocompleteLanguages: {
                 '*': true,
             },
+            experimentalCommitMessage: true,
             experimentalChatPredictions: true,
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
