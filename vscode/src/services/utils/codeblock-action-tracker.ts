@@ -4,7 +4,7 @@ import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { getActiveEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../telemetry-v2'
+import { telemetryRecorder } from '../telemetry-v2'
 
 import { countCode, matchCodeSnippets } from './code-count'
 
@@ -39,10 +39,16 @@ export function setLastStoredCode(
     const args = { op, charCount, lineCount, source, requestID }
 
     telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, { args, hasV2Event: true })
-    const { metadata, privateMetadata } = splitSafeMetadata(args)
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
-        metadata,
-        privateMetadata,
+        metadata: {
+            lineCount,
+            charCount,
+        },
+        interactionID: requestID,
+        privateMetadata: {
+            source,
+            op,
+        },
     })
 
     return codeCount
@@ -142,16 +148,17 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             requestID,
             hasV2Event: true,
         })
-        const { metadata, privateMetadata } = splitSafeMetadata({
-            op,
-            lineCount,
-            charCount,
-            source,
-            requestID,
-        })
+
         telemetryRecorder.recordEvent(`cody.${eventType}`, 'paste', {
-            metadata,
-            privateMetadata,
+            metadata: {
+                lineCount,
+                charCount,
+            },
+            interactionID: requestID,
+            privateMetadata: {
+                source,
+                op,
+            },
         })
     }
 }
