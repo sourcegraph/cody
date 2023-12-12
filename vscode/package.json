@@ -117,7 +117,7 @@
           {
             "id": "commands",
             "title": "Cody Commands",
-            "description": "You can use Cody commands to streamline your development process (e.g. generate unit tests, documentation, and more) with just a few clicks.\n[Open Commands Menu](command:cody.action.commands.menu)",
+            "description": "Streamline your development process by using Cody commands to understand, improve, fix, document, and generate unit tests for your code.\n[Open Commands Menu](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/commands.md"
             }
@@ -131,6 +131,14 @@
             }
           },
           {
+            "id": "search",
+            "title": "Natural Language Search (Beta)",
+            "description": "Easily find what you're looking for with Cody Natural Language Search",
+            "media": {
+              "markdown": "walkthroughs/search.md"
+            }
+          },
+          {
             "id": "autocomplete",
             "title": "Code Autocomplete",
             "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
@@ -141,7 +149,7 @@
           {
             "id": "learn-more",
             "title": "Learn More & Feedback",
-            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/CHANGELOG.md).\n💬 Bugs, ideas or feedback? Post a message on our [GitHub Discussions](https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode).",
+            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/CHANGELOG.md).\n💬 Bugs, ideas or feedback? Raise a [GitHub Issue](https://github.com/sourcegraph/cody/issues/new/choose).",
             "media": {
               "markdown": "walkthroughs/learn-more.md"
             }
