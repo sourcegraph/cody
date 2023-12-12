@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.18.2",
+  "version": "0.18.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -441,6 +441,14 @@
         "icon": "$(layout-sidebar-left)"
       },
       {
+        "command": "cody.chat.history.edit",
+        "category": "Cody",
+        "title": "Rename Chat",
+        "group": "Cody",
+        "icon": "$(edit)",
+        "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
         "command": "cody.chat.history.clear",
         "category": "Cody",
         "title": "Delete All Chats",
@@ -716,9 +724,14 @@
       ],
       "view/item/context": [
         {
+          "command": "cody.chat.history.edit",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "group": "inline@1"
+        },
+        {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "group": "inline"
+          "group": "inline@2"
         }
       ]
     },
@@ -927,6 +940,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
+        },
+        "cody.autocomplete.experimental.hotStreak": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Preload follow-up completions"
         },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",

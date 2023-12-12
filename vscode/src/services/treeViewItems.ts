@@ -52,9 +52,12 @@ export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             chatTreeItems.push({
                 id,
-                title: getChatPanelTitle(lastDisplayText, false),
+                title: entry.chatTitle || getChatPanelTitle(lastDisplayText, false),
                 icon: 'comment-discussion',
-                command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                command: {
+                    command: 'cody.chat.panel.restore',
+                    args: [id, entry.chatTitle || getChatPanelTitle(lastDisplayText)],
+                },
             })
         }
     })

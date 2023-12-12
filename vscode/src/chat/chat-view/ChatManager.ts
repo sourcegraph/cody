@@ -60,6 +60,7 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
+            vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
             vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
@@ -125,6 +126,14 @@ export class ChatManager implements vscode.Disposable {
 
         const chatProvider = await this.getChatProvider()
         await chatProvider.executeCustomCommand(title, type)
+    }
+
+    public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
+        const chatID = treeItem?.id
+        const chatLabel = treeItem?.label as vscode.TreeItemLabel
+        if (chatID) {
+            await this.chatPanelsManager?.editChatHistory(chatID, chatLabel.label)
+        }
     }
 
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
