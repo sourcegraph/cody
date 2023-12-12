@@ -131,14 +131,6 @@
             }
           },
           {
-            "id": "explain",
-            "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain Code\" command.\n[Open Commands Menu](command:cody.action.commands.menu)",
-            "media": {
-              "markdown": "walkthroughs/explain.md"
-            }
-          },
-          {
             "id": "search",
             "title": "Natural Language Search (Beta)",
             "description": "Easily find what you're looking for with Cody Natural Language Search",
