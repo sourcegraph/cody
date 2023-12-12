@@ -82,7 +82,7 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/cody/issues"
   },
-  "homepage": "https://docs.sourcegraph.com/cody",
+  "homepage": "https://sourcegraph.com/docs/cody",
   "badges": [
     {
       "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
@@ -149,7 +149,7 @@
           {
             "id": "learn-more",
             "title": "Learn More & Feedback",
-            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/CHANGELOG.md).\n💬 Bugs, ideas or feedback? Raise a [GitHub Issue](https://github.com/sourcegraph/cody/issues/new/choose).",
+            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://sourcegraph.com/docs/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/CHANGELOG.md).\n💬 Bugs, ideas or feedback? Raise a [GitHub Issue](https://github.com/sourcegraph/cody/issues/new/choose).",
             "media": {
               "markdown": "walkthroughs/learn-more.md"
             }
