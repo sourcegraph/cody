@@ -19,6 +19,8 @@ import com.sourcegraph.cody.auth.ui.customAccountsPanel
 import com.sourcegraph.cody.config.*
 import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
 import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
+import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Dimension
 
@@ -117,6 +119,10 @@ class AccountConfigurable(val project: Project) :
     }
 
     applyChannelConfiguration()
+
+    UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+    UpgradeToCodyProNotification.chatRateLimitError.set(null)
+    CodyAutocompleteStatusService.resetApplication(project)
   }
 
   private fun applyChannelConfiguration() {

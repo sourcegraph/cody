@@ -9,8 +9,6 @@ import com.intellij.util.containers.orNull
 import com.sourcegraph.cody.auth.ui.AccountsListModel
 import com.sourcegraph.cody.auth.ui.AccountsListModelBase
 import com.sourcegraph.cody.localapp.LocalAppManager
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
-import com.sourcegraph.common.UpgradeToCodyProNotification
 import javax.swing.JComponent
 
 class CodyAccountListModel(private val project: Project) :
@@ -80,9 +78,6 @@ class CodyAccountListModel(private val project: Project) :
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)
-    UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
-    UpgradeToCodyProNotification.chatRateLimitError.set(null)
-    CodyAutocompleteStatusService.resetApplication(project)
   }
 
   override fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean =
