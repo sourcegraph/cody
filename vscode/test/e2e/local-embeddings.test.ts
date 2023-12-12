@@ -48,6 +48,7 @@ const test = helpers.test
                 use({
                     'cody.testing.localEmbeddings.model': 'stub/stub',
                     'cody.testing.localEmbeddings.indexLibraryPath': dir,
+                    'cody.experimental.cody-engine.path': '/Users/dpc/projects/bfg-private/target/release/bfg',
                 })
             )
         },

@@ -165,44 +165,52 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 return
             }
             if (typeof obj === 'object') {
-                // TODO: Make clicks on this status bar item show detailed status, errors.
-                if ('Progress' in obj) {
-                    const percent = Math.floor((100 * obj.Progress.numItems) / obj.Progress.totalItems)
-                    this.statusBar.text = `$(loading~spin) Cody Embeddings (${percent.toFixed(0)}%)`
-                    this.statusBar.backgroundColor = undefined
-                    this.statusBar.tooltip = obj.Progress.currentPath
-                    this.statusBar.show()
-                } else if ('Error' in obj) {
-                    this.statusBar.text = '$(warning) Cody Embeddings'
-                    this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-                    this.statusBar.tooltip = obj.Error.message
-                    this.statusBar.show()
-                } else if ('Done' in obj) {
-                    this.statusBar.text = '$(sparkle) Cody Embeddings'
-                    this.statusBar.backgroundColor = undefined
-                    this.statusBar.show()
-
-                    // TODO: Instead of a self-dismissing status bar, use a VSCode
-                    // notification with a button to focus chat.
-
-                    // Hide this notification after a while.
-                    const statusBar = this.statusBar
-                    this.statusBar = undefined
-                    setTimeout(() => statusBar.hide(), 30_000)
-
-                    if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
-                        const path = this.pathBeingIndexed
-                        void (async () => {
-                            const loadedOk = await this.eagerlyLoad(path)
-                            logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
-                            this.changeEmitter.fire(this)
-                        })()
+                switch (obj.type) {
+                    case 'progress': {
+                        const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
+                        this.statusBar.text = `$(loading~spin) Cody Embeddings (${percent.toFixed(0)}%)`
+                        this.statusBar.backgroundColor = undefined
+                        this.statusBar.tooltip = obj.currentPath
+                        this.statusBar.show()
+                        break
                     }
+                    case 'error': {
+                        this.statusBar.text = '$(warning) Cody Embeddings'
+                        this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+                        this.statusBar.tooltip = obj.message
+                        this.statusBar.show()
+                        break
+                    }
+                    case 'done': {
+                        this.statusBar.text = '$(sparkle) Cody Embeddings'
+                        this.statusBar.backgroundColor = undefined
+                        this.statusBar.show()
 
-                    this.pathBeingIndexed = undefined
-                    this.statusEmitter.fire(this)
-                } else {
-                    logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
+                        // TODO: Instead of a self-dismissing status bar, use a VSCode
+                        // notification with a button to focus chat.
+
+                        // Hide this notification after a while.
+                        const statusBar = this.statusBar
+                        this.statusBar = undefined
+                        setTimeout(() => statusBar.hide(), 30_000)
+
+                        if (this.pathBeingIndexed && (!this.lastRepo || this.lastRepo.path === this.pathBeingIndexed)) {
+                            const path = this.pathBeingIndexed
+                            void (async () => {
+                                const loadedOk = await this.eagerlyLoad(path)
+                                logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
+                                this.changeEmitter.fire(this)
+                            })()
+                        }
+
+                        this.pathBeingIndexed = undefined
+                        this.statusEmitter.fire(this)
+                        break
+                    }
+                    default: {
+                        logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
+                        break
+                    }
                 }
             } else {
                 logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
@@ -337,7 +345,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         try {
             await (
                 await this.getService()
-            ).request('embeddings/index', { path: repoPath, model: this.model, dimension: 1536 })
+            ).request('embeddings/index', { repoPath, mode: { type: 'new', model: this.model, dimension: 1536 } })
             this.pathBeingIndexed = repoPath
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(

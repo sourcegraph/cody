@@ -31,7 +31,14 @@ export interface QueryResult {
 }
 
 export interface IndexRequest {
-    path: string
+    repoPath: string
+    mode: IndexRequestMode
+}
+
+export type IndexRequestMode = IndexRequestModeNew
+
+export interface IndexRequestModeNew {
+    type: 'new'
     model: string
     dimension: number
 }
@@ -64,24 +71,23 @@ export type Requests = {
 export type ProgressValue = Progress | ProgressError | ProgressDone
 
 export interface Progress {
-    Progress: {
-        currentPath: string
-        repoName: string
-        repoPath: string
-        numItems: number
-        totalItems: number
-    }
+    type: 'progress'
+    currentPath: string
+    repoName: string
+    repoPath: string
+    numItems: number
+    totalItems: number
 }
 
 export interface ProgressDone {
-    Done: string
+    type: 'done'
+    repoName: string
 }
 
 export interface ProgressError {
-    Error: {
-        repoName: string
-        message: string
-    }
+    type: 'error'
+    repoName: string
+    message: string
 }
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
