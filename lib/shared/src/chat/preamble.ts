@@ -1,10 +1,10 @@
 import { Message } from '../sourcegraph-api'
 
-export function getSimplePreamble(): Message[] {
+export function getSimplePreamble(preInstruction?: string | undefined): Message[] {
     return [
         {
             speaker: 'human',
-            text: 'You are Cody, an AI coding assistant from Sourcegraph.',
+            text: `You are Cody, an AI coding assistant from Sourcegraph.${preInstruction ? ` ${preInstruction}` : ''}`,
         },
         {
             speaker: 'assistant',

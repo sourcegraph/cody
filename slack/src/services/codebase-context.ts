@@ -2,7 +2,6 @@ import { memoize } from 'lodash'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { sourcegraphClient } from './sourcegraph-client'
@@ -36,20 +35,10 @@ export async function createCodebaseContext(
         { useContext: contextType, serverEndpoint, experimentalLocalSymbols: false },
         codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcherMock(),
         null,
         null,
         null
     )
 
     return codebaseContext
-}
-
-class LocalKeywordContextFetcherMock implements KeywordContextFetcher {
-    public getContext() {
-        return Promise.resolve([])
-    }
-    public getSearchContext() {
-        return Promise.resolve([])
-    }
 }
