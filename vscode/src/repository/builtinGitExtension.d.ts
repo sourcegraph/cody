@@ -303,7 +303,7 @@ export interface API {
 	registerPostCommitCommandsProvider(provider: PostCommitCommandsProvider): Disposable;
 	registerPushErrorHandler(handler: PushErrorHandler): Disposable;
 	registerBranchProtectionProvider(root: Uri, provider: BranchProtectionProvider): Disposable;
-	registerCommitMessageProvider(provider: CommitMessageProvider): Disposable;
+	registerCommitMessageProvider?(provider: CommitMessageProvider): Disposable;
 }
 
 export interface GitExtension {

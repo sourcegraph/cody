@@ -17,7 +17,7 @@ export class CommitMessageProvider implements ICommitMessageProvider, vscode.Dis
 
     public onConfigurationChange(config: ConfigurationWithAccessToken): void {
 		if(config.experimentalCommitMessage){
-            this._subscription = this.options.gitApi.registerCommitMessageProvider(this);
+            this._subscription = this.options.gitApi.registerCommitMessageProvider?.(this);
         }else {
             this._subscription?.dispose();
             this._subscription = undefined;
