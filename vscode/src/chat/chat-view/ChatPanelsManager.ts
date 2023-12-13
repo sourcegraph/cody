@@ -249,7 +249,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree(createCodyChatTreeItems())
+        await this.treeViewProvider.updateTree(createCodyChatTreeItems(this.options.authProvider.getAuthStatus()))
     }
 
     public async editChatHistory(chatID: string, label: string): Promise<void> {
@@ -259,10 +259,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                 value: label,
             })
             .then(async title => {
-                const history = chatHistory.getChat(chatID)
+                const authProvider = this.options.authProvider
+                const authStatus = authProvider.getAuthStatus()
+
+                const history = chatHistory.getChat(authStatus, chatID)
                 if (title && history) {
                     history.chatTitle = title
-                    await chatHistory.saveChat(history)
+                    await chatHistory.saveChat(authStatus, history)
                     await this.updateTreeViewHistory()
                     const chatIDUTC = new Date(chatID).toUTCString()
                     const provider = this.panelProvidersMap.get(chatID) || this.panelProvidersMap.get(chatIDUTC)

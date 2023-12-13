@@ -3,6 +3,8 @@ import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { AuthStatus } from '../chat/protocol'
+
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
@@ -67,34 +69,67 @@ export class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
-    public getChatHistory(): UserLocalHistory {
-        const history = this.storage.get<UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
-        return history || { chat: {}, input: [] }
+    public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
+        let history = this.storage.get<{ [key: `${string}-${string}`]: UserLocalHistory } | UserLocalHistory | null>(
+            this.KEY_LOCAL_HISTORY,
+            null
+        )
+        if (!history) {
+            return { chat: {}, input: [] }
+        }
+
+        const key = getKeyForAuthStatus(authStatus)
+
+        // For backwards compatibility, we upgrade the local storage key from the old layout that is
+        // not scoped to individual user accounts to be scoped instead.
+        if ('chat' in history) {
+            this.setChatHistory(authStatus, history)
+            history = {
+                [key]: history,
+            }
+        }
+
+        if (!history[key]) {
+            return { chat: {}, input: [] }
+        }
+        return history[key]
     }
 
-    public async setChatHistory(history: UserLocalHistory): Promise<void> {
+    public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
-            await this.storage.update(this.KEY_LOCAL_HISTORY, history)
+            const key = getKeyForAuthStatus(authStatus)
+            let fullHistory = this.storage.get<{ [key: string]: UserLocalHistory } | null>(this.KEY_LOCAL_HISTORY, null)
+
+            if (fullHistory) {
+                fullHistory[key] = history
+            } else {
+                fullHistory = {
+                    [key]: history,
+                }
+            }
+
+            await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
         } catch (error) {
             console.error(error)
         }
     }
 
-    public async deleteChatHistory(chatID: string): Promise<void> {
-        const userHistory = this.getChatHistory()
+    public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {
+        const userHistory = this.getChatHistory(authStatus)
         if (userHistory) {
             try {
                 delete userHistory.chat[chatID]
-                await this.storage.update(this.KEY_LOCAL_HISTORY, { ...userHistory })
+                await this.setChatHistory(authStatus, userHistory)
             } catch (error) {
                 console.error(error)
             }
         }
     }
 
-    public async removeChatHistory(): Promise<void> {
+    // TODO
+    public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
         try {
-            await this.storage.update(this.KEY_LOCAL_HISTORY, null)
+            await this.setChatHistory(authStatus, { chat: {}, input: [] })
         } catch (error) {
             console.error(error)
         }
@@ -156,3 +191,7 @@ export class LocalStorage {
  * The underlying storage is set on extension activation via `localStorage.setStorage(context.globalState)`.
  */
 export const localStorage = new LocalStorage()
+
+function getKeyForAuthStatus(authStatus: AuthStatus): `${string}-${string}` {
+    return `${authStatus.endpoint}-${authStatus.primaryEmail}`
+}
