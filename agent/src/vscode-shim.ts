@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { execSync } from 'child_process'
+import * as fspromises from 'fs/promises'
 import path from 'path'
 
 import type * as vscode from 'vscode'
@@ -28,6 +29,7 @@ import {
     emptyDisposable,
     emptyEvent,
     EventEmitter,
+    FileType,
     UIKind,
     Uri,
 } from '../../vscode/src/testutils/mocks'
@@ -263,7 +265,72 @@ const _workspace: Partial<typeof vscode.workspace> = {
     },
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
+    fs: {
+        stat: async uri => {
+            const stat = await fspromises.stat(uri.fsPath)
+            const type = stat.isFile()
+                ? FileType.File
+                : stat.isDirectory()
+                ? FileType.Directory
+                : stat.isSymbolicLink()
+                ? FileType.SymbolicLink
+                : FileType.Unknown
+
+            return {
+                type,
+                ctime: stat.ctimeMs,
+                mtime: stat.mtimeMs,
+                size: stat.size,
+            }
+        },
+        readDirectory: async uri => {
+            const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
+
+            return entries.map(entry => {
+                const type = entry.isFile()
+                    ? FileType.File
+                    : entry.isDirectory()
+                    ? FileType.Directory
+                    : entry.isSymbolicLink()
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
+
+                return [entry.name, type]
+            })
+        },
+        createDirectory: async uri => {
+            await fspromises.mkdir(uri.fsPath, { recursive: true })
+        },
+        readFile: async uri => {
+            const content = await fspromises.readFile(uri.fsPath)
+            return new Uint8Array(content.buffer)
+        },
+        writeFile: async (uri, content) => {
+            await fspromises.writeFile(uri.fsPath, content)
+        },
+        delete: async (uri, options) => {
+            await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
+        },
+        rename: async (source, target, options) => {
+            if (options?.overwrite ?? false) {
+                await fspromises.unlink(target.fsPath)
+            }
+            await fspromises.link(source.fsPath, target.fsPath)
+            await fspromises.unlink(source.fsPath)
+        },
+        copy: async (source, target, options) => {
+            const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
+            await fspromises.copyFile(source.fsPath, target.fsPath, mode)
+        },
+        isWritableFileSystem: scheme => {
+            if (scheme === 'file') {
+                return true
+            }
+            return false
+        },
+    },
 }
+
 export const workspace = _workspace as typeof vscode.workspace
 
 const statusBarItem: Partial<vscode.StatusBarItem> = {
