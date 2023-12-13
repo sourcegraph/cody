@@ -74,13 +74,21 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
         onHotStreakCompletionReady: (
             docContext: DocumentContext,
             completions: InlineCompletionItemWithAnalytics
         ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void>
+    ): {
+        // This promise returns the main completion that is ready. However, the network request
+        // might be kept open to try and extract follow-up compleitions (hot streaks)...
+        completion: Promise<InlineCompletionItemWithAnalytics[]>
+
+        // ...because of this, the second promise is indicative of how long the network connection
+        // is running and allows a caller to abort the request after the completion has loaded and
+        // before the request has ended
+        request: Promise<void>
+    }
 }
 
 /**

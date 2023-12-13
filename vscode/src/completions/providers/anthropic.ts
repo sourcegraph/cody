@@ -157,64 +157,89 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public async generateCompletions(
+    public generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
-        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
         onHotStreakCompletionReady: (
             docContext: DocumentContext,
             completion: InlineCompletionItemWithAnalytics
         ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<void> {
-        // Create prompt
-        const { messages: prompt } = this.createPrompt(snippets)
-        if (prompt.length > this.promptChars) {
-            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
-        }
-        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
+    ): {
+        completions: Promise<InlineCompletionItemWithAnalytics[]>
+        request: Promise<void>
+    } {
+        let onCompletionsReady: (completions: InlineCompletionItemWithAnalytics[]) => void = () => {}
+        let onCompletionsError: (error: unknown) => void = () => {}
+        const completions = new Promise<InlineCompletionItemWithAnalytics[]>((resolve, reject) => {
+            onCompletionsReady = resolve
+            onCompletionsError = reject
+        })
 
-        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
+        const request = async (): Promise<void> => {
+            try {
+                // Create prompt
+                const { messages: prompt } = this.createPrompt(snippets)
+                if (prompt.length > this.promptChars) {
+                    throw new Error(
+                        `prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`
+                    )
+                }
+                const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
 
-        const requestParams: CodeCompletionsParams = {
-            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
-            temperature: 0.5,
-            messages: prompt,
-        }
+                const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+                const requestParams: CodeCompletionsParams = {
+                    ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
+                    temperature: 0.5,
+                    messages: prompt,
+                }
 
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
+                let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+                if (dynamicMultilineCompletions) {
+                    // If the feature flag is enabled use params adjusted for the experiment.
+                    Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
 
-        tracer?.params(requestParams)
+                    // Use an alternative fetch completions implementation.
+                    fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+                }
 
-        const completions: InlineCompletionItemWithAnalytics[] = []
-        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
-            completions.push(completion)
-            if (completions.length === n) {
-                tracer?.result({ completions })
-                onCompletionReady(completions)
+                tracer?.params(requestParams)
+
+                // Collect all `n` onCompletionsReady callbacks before yielding the result
+                // completions
+                const completions: InlineCompletionItemWithAnalytics[] = []
+                const onCompletionReady = (completion: InlineCompletionItemWithAnalytics): void => {
+                    completions.push(completion)
+                    if (completions.length === n) {
+                        tracer?.result({ completions })
+                        onCompletionsReady(completions)
+                    }
+                }
+
+                await Promise.all(
+                    Array.from({ length: n }).map(() => {
+                        return fetchAndProcessCompletionsImpl({
+                            client: this.client,
+                            requestParams,
+                            abortSignal,
+                            providerSpecificPostProcess: this.postProcess,
+                            providerOptions: this.options,
+                            onCompletionReady,
+                            onHotStreakCompletionReady,
+                        })
+                    })
+                )
+            } catch (error) {
+                onCompletionsError(error)
+                throw error
             }
         }
 
-        await Promise.all(
-            Array.from({ length: n }).map(() => {
-                return fetchAndProcessCompletionsImpl({
-                    client: this.client,
-                    requestParams,
-                    abortSignal,
-                    providerSpecificPostProcess: this.postProcess,
-                    providerOptions: this.options,
-                    onCompletionReady: onCompletionReadyImpl,
-                    onHotStreakCompletionReady,
-                })
-            })
-        )
+        return {
+            completions,
+            request: request(),
+        }
     }
 
     private postProcess = (rawResponse: string): string => {
