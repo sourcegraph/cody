@@ -188,7 +188,15 @@ describe('Agent', () => {
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
     it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
         await streamingChatMessages
-        expect(messages.slice(-1)[0]).toMatchInlineSnapshot(`
+        const actual = messages.at(-1)
+        if (actual?.text) {
+            // trim trailing whitespace from the autocomplete result that Prettier removes causing the inline snapshot assertion to fail.
+            actual.text = actual.text
+                .split('\n')
+                .map(line => line.trimEnd())
+                .join('\n')
+        }
+        expect(actual).toMatchInlineSnapshot(`
           {
             "contextFiles": [],
             "preciseContext": [],
@@ -199,7 +207,7 @@ describe('Agent', () => {
           function sum(arr) {
             let total = 0;
             for (let i = 0; i < arr.length; i++) {
-              total += arr[i]; 
+              total += arr[i];
             }
             return total;
           }
@@ -210,7 +218,7 @@ describe('Agent', () => {
           \`\`\`js
           const numbers = [1, 2, 3, 4, 5];
 
-          const result = sum(numbers); 
+          const result = sum(numbers);
           // result = 15
           \`\`\`
 
