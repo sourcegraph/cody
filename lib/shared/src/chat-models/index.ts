@@ -34,7 +34,7 @@ const defaultDotComChatModels: ChatModelProvider[] = [
     },
     {
         title: 'Mixtral 8x7B',
-        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-fw-chat',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
