@@ -957,7 +957,7 @@
         },
         "cody.autocomplete.formatOnAccept": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
