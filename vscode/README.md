@@ -39,7 +39,7 @@ You can also build your own [Custom Commands (Beta)](https://sourcegraph.com/doc
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/Custom_Command-Sept2023-Sm.gif" width="480" alt="Custom command">
 
-## Swappable LLMs
+## Choose Your LLM
 
 Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 2.0, Claude 2.1, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo, and Claude Instant. 
 
