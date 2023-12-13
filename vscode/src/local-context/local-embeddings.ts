@@ -181,7 +181,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                         this.lastError = undefined
                         const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
                         if (this.statusBar) {
-                            this.statusBar.text = `$(loading~spin) Cody Embeddings (${percent.toFixed(0)}%)`
+                            this.statusBar.text = `$(cody-logo-heavy) Indexing Embeddings… (${percent.toFixed(0)}%)`
                             this.statusBar.backgroundColor = undefined
                             this.statusBar.tooltip = obj.currentPath
                             this.statusBar.show()
@@ -195,20 +195,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                     }
                     case 'done': {
                         this.lastError = undefined
-
-                        if (this.statusBar) {
-                            this.statusBar.text = '$(sparkle) Cody Embeddings'
-                            this.statusBar.backgroundColor = undefined
-                            this.statusBar.show()
-
-                            // TODO: Instead of a self-dismissing status bar, use a VSCode
-                            // notification with a button to focus chat.
-
-                            // Hide this notification after a while.
-                            const statusBar = this.statusBar
-                            this.statusBar = undefined
-                            setTimeout(() => statusBar.hide(), 30_000)
-                        }
                         this.loadAfterIndexing()
                         return
                     }
@@ -260,7 +246,15 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 const loadedOk = await this.eagerlyLoad(path)
                 logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
                 this.changeEmitter.fire(this)
+                if (loadedOk) {
+                    await vscode.window.showInformationMessage('✨ Embeddings Index Complete')
+                }
             })()
+        }
+
+        if (this.statusBar) {
+            this.statusBar.dispose()
+            this.statusBar = undefined
         }
 
         this.pathBeingIndexed = undefined
@@ -504,7 +498,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private updateIssueStatusBar(): void {
         this.statusBar?.dispose()
         this.statusBar = vscode.window.createStatusBarItem('cody-local-embeddings', vscode.StatusBarAlignment.Right, 0)
-        this.statusBar.text = '$(warning) Cody Embeddings'
+        this.statusBar.text = '$(cody-logo-heavy) Embeddings Incomplete'
         const needsEmbeddingMessage = this.lastHealth?.numItemsNeedEmbedding
             ? `\n\n${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth?.numItems} items need embedding. Click to resolve.`
             : ''
