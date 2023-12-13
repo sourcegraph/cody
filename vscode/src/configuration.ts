@@ -84,7 +84,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             '*': true,
             scminput: false,
         }),
-        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
+        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
