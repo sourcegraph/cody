@@ -24,7 +24,7 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
 
     CodyPro = 'cody-pro',
-
+    CodyProJetBrains = 'cody-pro-jetbrains',
     CodyChatMockTest = 'cody-chat-mock-test',
 }
 

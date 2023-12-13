@@ -249,7 +249,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             let stopLoading: () => void | undefined
             const setIsLoading = (isLoading: boolean): void => {
                 if (isLoading) {
-                    stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+                    // We do not want to show a loading spinner when the user is rate limited to
+                    // avoid visual churn.
+                    //
+                    // We still make the request to find out if the user is still rate limited.
+                    const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
+                    if (!hasRateLimitError) {
+                        stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+                    }
                 } else {
                     stopLoading?.()
                 }

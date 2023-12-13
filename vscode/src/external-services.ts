@@ -48,7 +48,6 @@ export async function configureExternalServices(
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
-        | 'createLocalKeywordContextFetcher'
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
@@ -80,7 +79,6 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         null,

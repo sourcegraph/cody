@@ -124,28 +124,12 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.commandCodeLenses
                 ),
                 createFeatureToggle(
-                    'Chat Suggestions',
-                    'Experimental',
-                    'Enable automatically suggested chat questions',
-                    'cody.experimental.chatPredictions',
-                    c => c.experimentalChatPredictions,
-                    true
-                ),
-                createFeatureToggle(
-                    'Symf Context',
-                    'Experimental',
-                    'Enable context fetched via symf',
+                    'Search Context',
+                    'Beta',
+                    'Enable using the natural language search index as an Enhanced Context chat source',
                     'cody.experimental.symfContext',
                     c => c.experimentalSymfContext,
                     false
-                ),
-                createFeatureToggle(
-                    'Simple Chat Context',
-                    'Experimental',
-                    'Enable the new simplifed chat context fetcher',
-                    'cody.experimental.simpleChatContext',
-                    c => c.experimentalSimpleChatContext,
-                    true
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

@@ -54,7 +54,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             typeof res.headers['x-is-cody-pro-user'] !== undefined &&
                             res.headers['x-is-cody-pro-user'] === 'false'
                         const retryAfter = res.headers['retry-after']
-                        const limit = res.headers['x-ratelimit-limit'] ? res.headers['x-ratelimit-limit'][0] : undefined
+
+                        const limit = res.headers['x-ratelimit-limit']
+                            ? getHeader(res.headers['x-ratelimit-limit'])
+                            : undefined
+
                         const error = new RateLimitError(
                             'chat messages and commands',
                             e.message,
@@ -141,4 +145,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
         return () => request.destroy()
     }
+}
+
+function getHeader(value: string | undefined | string[]): string | undefined {
+    if (Array.isArray(value)) {
+        return value[0]
+    }
+    return value
 }
