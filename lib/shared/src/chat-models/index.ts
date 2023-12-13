@@ -34,8 +34,8 @@ const defaultDotComChatModels: ChatModelProvider[] = [
     },
     {
         title: 'Mixtral 8x7B',
-        model: 'openai/gpt-4-1106-preview',
-        provider: 'Fireworks',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-fw-chat',
+        provider: 'Mistral',
         default: false,
         codyProOnly: true,
     },
