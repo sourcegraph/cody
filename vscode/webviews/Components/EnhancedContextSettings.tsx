@@ -215,9 +215,9 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             <PopupFrame
                 isOpen={isOpen}
                 onDismiss={() => setOpen(false)}
-                classNames={[popupStyles.popupTrail, styles.enhancedContextSettingsPopup]}
+                classNames={[popupStyles.popupTrail, styles.popup]}
             >
-                <div className={styles.enhancedContextInnerContainer}>
+                <div className={styles.container}>
                     <div>
                         <VSCodeCheckbox onChange={enabledChanged} checked={enabled} id="enhanced-context-checkbox" />
                     </div>
