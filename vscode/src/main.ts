@@ -203,7 +203,8 @@ const register = async (
     const gitApi = gitAPI()
     const commitMessageProvider = gitApi ? new CommitMessageProvider({
         gitApi,
-        chatClient
+        chatClient,
+        codeCompletionsClient
     }) : null
     if(commitMessageProvider){
         commitMessageProvider.onConfigurationChange(initialConfig)
