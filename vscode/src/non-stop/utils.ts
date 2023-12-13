@@ -83,7 +83,11 @@ export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
         return true
     }
 
-    const { insertSpaces } = editor.options
+    const { languageId } = editor.document
+    const languageConfig = vscode.workspace.getConfiguration(`[${languageId}]`, uri)
+    const languageSetting = languageConfig.get('editor.insertSpaces') as boolean | undefined
+    // Prefer language specific setting.
+    const insertSpaces = languageSetting || editor.options.insertSpaces
 
     // This should never happen: "When getting a text editor's options, this property will always be a boolean (resolved)."
     if (typeof insertSpaces === 'string' || insertSpaces === undefined) {
@@ -101,7 +105,11 @@ export function getEditorTabSize(uri: vscode.Uri): number {
         return 4
     }
 
-    const { tabSize } = editor.options
+    const { languageId } = editor.document
+    const languageConfig = vscode.workspace.getConfiguration(`[${languageId}]`, uri)
+    const languageSetting = languageConfig.get('editor.tabSize') as number | undefined
+    // Prefer language specific setting.
+    const tabSize = languageSetting || editor.options.tabSize
 
     // This should never happen: "When getting a text editor's options, this property will always be a number (resolved)."
     if (typeof tabSize === 'string' || tabSize === undefined) {

@@ -955,6 +955,11 @@
           "default": true,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
         },
+        "cody.autocomplete.formatOnAccept": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
+        },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",
           "default": true,

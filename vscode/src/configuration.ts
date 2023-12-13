@@ -98,6 +98,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
+        autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
 
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
