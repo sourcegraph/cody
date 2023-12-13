@@ -106,7 +106,9 @@ const SearchIndexComponent: React.FunctionComponent<{
         <div>
             {indexStatus === 'failed' ? (
                 <>
-                    <p className={styles.providerExplanatoryText}>The previous indexing attempt failed.</p>
+                    <p className={styles.providerExplanatoryText}>
+                        The previous indexing attempt failed or was cancelled.
+                    </p>
                 </>
             ) : (
                 <p className={styles.providerExplanatoryText}>

@@ -145,27 +145,30 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     private disposables: vscode.Disposable[] = []
     private eventEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter<ContextStatusProvider>()
 
-    // undefined means uninitialized, null means current codebase is empty
+    // undefined means uninitialized, null means there is no current codebase
     private _currentCodebase: CodebaseIdentifiers | null | undefined = undefined
 
+    // undefined means symf is not active or there is no current codebase
+    private symfIndexStatus?: 'unindexed' | 'indexing' | 'ready' | 'failed'
+
     constructor(
-        private editor: Editor,
-        private embeddingsClient: CachedRemoteEmbeddingsClient,
-        private symf: SymfRunner | null
+        private readonly editor: Editor,
+        private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
+        private readonly symf: SymfRunner | null
     ) {
         this.disposables.push(
-            vscode.window.onDidChangeActiveTextEditor(() => this.syncCodebase()),
-            vscode.workspace.onDidChangeWorkspaceFolders(() => this.syncCodebase()),
+            vscode.window.onDidChangeActiveTextEditor(() => this.updateStatus()),
+            vscode.workspace.onDidChangeWorkspaceFolders(() => this.updateStatus()),
             this.eventEmitter
         )
 
         if (this.symf) {
             this.disposables.push(
                 this.symf.onIndexStart(() => {
-                    void this.syncCodebase()
+                    void this.updateStatus()
                 }),
                 this.symf.onIndexEnd(() => {
-                    void this.syncCodebase()
+                    void this.updateStatus()
                 })
             )
         }
@@ -184,7 +187,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
     public get status(): ContextGroup[] {
         if (this._currentCodebase === undefined) {
-            void this.syncCodebase()
+            void this.updateStatus()
             return []
         }
         const codebase = this._currentCodebase
@@ -209,13 +212,13 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     }
 
     private getSymfIndexStatus(): ContextProvider[] {
-        if (!this.symf || !this._currentCodebase) {
+        if (!this.symf || !this._currentCodebase || !this.symfIndexStatus) {
             return []
         }
         return [
             {
                 kind: 'search',
-                state: this._currentCodebase.symfIndexStatus || 'unindexed',
+                state: this.symfIndexStatus || 'unindexed',
             },
         ]
     }
@@ -255,12 +258,20 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     public async currentCodebase(): Promise<CodebaseIdentifiers | null> {
         if (this._currentCodebase === undefined) {
             // lazy initialization
-            await this.syncCodebase()
+            await this.updateStatus()
         }
         return this._currentCodebase || null
     }
 
-    private async syncCodebase(): Promise<void> {
+    private async updateStatus(): Promise<void> {
+        const didCodebaseChange = await this._updateCodebase_NoFire()
+        const didSymfStatusChange = await this._updateSymfStatus_NoFire()
+        if (didCodebaseChange || didSymfStatusChange) {
+            this.eventEmitter.fire(this)
+        }
+    }
+
+    private async _updateCodebase_NoFire(): Promise<boolean> {
         const workspaceRoot = this.editor.getWorkspaceRootUri()
         if (
             this._currentCodebase !== undefined &&
@@ -268,7 +279,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             this._currentCodebase?.remoteRepoId
         ) {
             // do nothing if local codebase identifier is unchanged and we have a remote repo ID
-            return
+            return false
         }
 
         let newCodebase: CodebaseIdentifiers | null = null
@@ -284,18 +295,23 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
                     }
                 }
             }
-
-            if (this.symf) {
-                newCodebase.symfIndexStatus = await this.symf.getIndexStatus(workspaceRoot.fsPath)
-            }
         }
 
-        // codebase local identifier changed, fire callbacks
-        const shouldAlert = !isEqual(this._currentCodebase, newCodebase)
+        const didCodebaseChange = !isEqual(this._currentCodebase, newCodebase)
         this._currentCodebase = newCodebase
-        if (shouldAlert) {
-            this.eventEmitter.fire(this)
+        return didCodebaseChange
+    }
+
+    private async _updateSymfStatus_NoFire(): Promise<boolean> {
+        if (!this.symf) {
+            return false
         }
+        const newSymfStatus = this._currentCodebase?.local
+            ? await this.symf.getIndexStatus(this._currentCodebase.local)
+            : undefined
+        const didSymfStatusChange = this.symfIndexStatus !== newSymfStatus
+        this.symfIndexStatus = newSymfStatus
+        return didSymfStatusChange
     }
 }
 
@@ -303,5 +319,4 @@ interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string
-    symfIndexStatus?: 'unindexed' | 'indexing' | 'ready' | 'failed'
 }

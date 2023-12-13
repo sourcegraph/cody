@@ -143,6 +143,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public async getIndexStatus(scopeDir: string): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
+        if (this.status.isInProgress(scopeDir)) {
+            // Check this before waiting on the lock
+            return 'indexing'
+        }
         const hasIndex = await this.getIndexLock(scopeDir).withRead(async () => {
             return this.unsafeIndexExists(scopeDir)
         })
@@ -152,7 +156,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         if (await this.didIndexFail(scopeDir)) {
             return 'failed'
         }
-        return this.status.isInProgress(scopeDir) ? 'indexing' : 'unindexed'
+        return 'unindexed'
     }
 
     public async ensureIndex(scopeDir: string, options: { hard: boolean } = { hard: false }): Promise<void> {
@@ -262,7 +266,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         const cancellation = new vscode.CancellationTokenSource()
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir, cancellation.token)
         this.status.didStart({ scopeDir, done: upsert, cancel: () => cancellation.cancel() })
-        void upsert.then(() => this.status.didEnd({ scopeDir })).finally(() => cancellation.dispose())
+        void upsert.finally(() => {
+            this.status.didEnd({ scopeDir })
+            cancellation.dispose()
+        })
         return upsert
     }
 
