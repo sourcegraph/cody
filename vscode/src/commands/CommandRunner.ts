@@ -9,6 +9,7 @@ import { getActiveEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -50,6 +51,17 @@ export class CommandRunner implements vscode.Disposable {
             useCodebaseContex: !!command.context?.codebase,
             useShellCommand: !!command.context?.command,
             requestID: command.requestID,
+        })
+        telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+            metadata: {
+                useCodebaseContex: command.context?.codebase ? 1 : 0,
+                useShellCommand: command.context?.command ? 1 : 0,
+            },
+            interactionID: command.requestID,
+            privateMetadata: {
+                mode: command.mode,
+                requestID: command.requestID,
+            },
         })
 
         logDebug('CommandRunner:init', this.kind)
