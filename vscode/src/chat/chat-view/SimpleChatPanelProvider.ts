@@ -24,6 +24,7 @@ import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -51,17 +52,12 @@ import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import {
-    CodebaseStatusProvider,
-    embeddingsUrlScheme,
-    getChatPanelTitle,
-    relativeFileUrl,
-    stripContextWrapper,
-} from './chat-helpers'
+import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { Config, IChatPanelProvider } from './ChatPanelsManager'
+import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
@@ -373,6 +369,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'embeddings/index':
                 void this.localEmbeddings?.index()
                 break
+            case 'symf/index': {
+                void this.codebaseStatusProvider.currentCodebase().then((codebase): void => {
+                    if (codebase) {
+                        void this.symf?.ensureIndex(codebase.local, { hard: true })
+                    }
+                })
+                break
+            }
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
@@ -639,7 +643,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
             })
         } catch (error) {
-            this.postError(new Error(`Error generating assistant response: ${error}`))
+            if (isRateLimitError(error)) {
+                this.postError(error, 'transcript')
+            } else {
+                this.postError(isError(error) ? error : new Error(`Error generating assistant response: ${error}`))
+            }
         }
     }
 
@@ -774,6 +782,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
+            this.postViewTranscript()
             void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
@@ -1006,16 +1015,21 @@ class ContextProvider implements IContextProvider {
         let remoteEmbeddingsError
         searchContext.push(...(await this.getReadmeContext()))
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
+        let hasEmbeddingsContext = false
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
         const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
         try {
-            searchContext.push(...(await localEmbeddingsResults))
+            const r = await localEmbeddingsResults
+            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+            searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
             localEmbeddingsError = error
         }
         try {
-            searchContext.push(...(await remoteEmbeddingsResults))
+            const r = await remoteEmbeddingsResults
+            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+            searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
             remoteEmbeddingsError = error
@@ -1029,9 +1043,14 @@ class ContextProvider implements IContextProvider {
             )
         }
 
-        if (searchContext.length === 0 && this.symf) {
-            // Fallback to symf if embeddings provided no results
-            searchContext.push(...(await this.searchSymf(text)))
+        if (!hasEmbeddingsContext && this.symf) {
+            try {
+                // Fallback to symf if embeddings provided no results
+                searchContext.push(...(await this.searchSymf(text)))
+            } catch (error) {
+                // TODO(beyang): handle this error better
+                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
+            }
         }
 
         const priorityContext: ContextItem[] = []
@@ -1062,12 +1081,18 @@ class ContextProvider implements IContextProvider {
     /**
      * Uses symf to conduct a local search within the current workspace folder
      */
-    private async searchSymf(userText: string): Promise<ContextItem[]> {
+    private async searchSymf(userText: string, blockOnIndex = false): Promise<ContextItem[]> {
         if (!this.symf) {
             return []
         }
         const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot) {
+            return []
+        }
+
+        const indexExists = await this.symf.getIndexStatus(workspaceRoot)
+        if (indexExists !== 'ready' && !blockOnIndex) {
+            void this.symf.ensureIndex(workspaceRoot, { hard: false })
             return []
         }
 

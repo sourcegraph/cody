@@ -876,7 +876,7 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable symf code search context for chat",
-          "default": false
+          "default": true
         },
         "cody.experimental.symf.path": {
           "order": 99,
