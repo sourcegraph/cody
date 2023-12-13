@@ -204,7 +204,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                         HOME: process.env.HOME,
                     },
                     maxBuffer: 1024 * 1024 * 1024,
-                    timeout: 1000 * 30, //  timeout in 30 seconds
+                    timeout: 1000 * 30, // timeout in 30 seconds
                 }
             )
             return stdout
@@ -219,19 +219,19 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         const { indexDir } = this.getIndexDir(scopeDir)
 
         if (!(await fileExists(indexDir))) {
-            //  index directory no longer exists, nothing to do
+            // index directory no longer exists, nothing to do
             return
         }
 
-        //  Unique name for trash directory
+        // Unique name for trash directory
         const trashDir = path.join(trashRootDir, `${path.basename(indexDir)}-${Date.now()}`)
         if (await fileExists(trashDir)) {
-            //  if trashDir already exists, error
+            // if trashDir already exists, error
             throw new Error(`could not delete index ${indexDir}: target trash directory ${trashDir} already exists`)
         }
 
         await rename(indexDir, trashDir)
-        void rm(trashDir, { recursive: true, force: true }) //  delete in background
+        void rm(trashDir, { recursive: true, force: true }) // delete in background
     }
 
     private async unsafeIndexExists(scopeDir: string): Promise<boolean> {
@@ -246,7 +246,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
 
         if (!options.hard && (await this.didIndexFail(scopeDir))) {
-            //  Index build previous failed, so don't try to rebuild
+            // Index build previous failed, so don't try to rebuild
             logDebug('symf', 'index build previously failed and `hard` === false, not rebuilding')
             return
         }
@@ -264,9 +264,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
         let absIndexedDir = path.resolve(scopeDir)
-        //  On Windows, we can't use an absolute path with a dirve letter inside another path
-        //  so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
-        //  sub-path in the index.
+        // On Windows, we can't use an absolute path with a dirve letter inside another path
+        // so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
+        // sub-path in the index.
         if (path.sep === path.win32.sep && absIndexedDir[1] === ':') {
             absIndexedDir = absIndexedDir[0] + absIndexedDir.slice(2)
         }
@@ -319,10 +319,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
                 env: {
                     ...process.env,
-                    GOMAXPROCS: `${maxCPUs}`, //  use at most one cpu for indexing
+                    GOMAXPROCS: `${maxCPUs}`, // use at most one cpu for indexing
                 },
                 stdio: ['ignore', 'ignore', 'ignore'],
-                timeout: 1000 * 60 * 10, //  timeout in 10 minutes
+                timeout: 1000 * 60 * 10, // timeout in 10 minutes
             })
             onExit = () => {
                 proc.kill('SIGKILL')
@@ -341,7 +341,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 )
             }
 
-            //  wait for proc to finish
+            // wait for proc to finish
             await new Promise<void>((resolve, reject) => {
                 proc.on('error', reject)
                 proc.on('exit', code => {
@@ -505,15 +505,15 @@ class RWLock {
     public async withRead<T>(fn: () => Promise<T>): Promise<T> {
         while (this.readers === 0) {
             if (this.mu.isLocked()) {
-                //  If mu is locked at this point, it must be held by the writer.
-                //  We spin in this case, rather than try to acquire the lock,
-                //  because multiple readers blocked on acquiring the lock will
-                //  execute serially when the writer releases the lock (whereas
-                //  we want all reads to be concurrent).
+                // If mu is locked at this point, it must be held by the writer.
+                // We spin in this case, rather than try to acquire the lock,
+                // because multiple readers blocked on acquiring the lock will
+                // execute serially when the writer releases the lock (whereas
+                // we want all reads to be concurrent).
                 await new Promise(resolve => setTimeout(resolve, 100))
                 continue
             }
-            //  No readers or writers: acquire lock for readers
+            // No readers or writers: acquire lock for readers
             await this.mu.acquire()
             break
         }
