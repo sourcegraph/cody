@@ -6,8 +6,7 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-import { logDebug, logError } from '../log'
-import { getEditorInsertSpaces, getEditorTabSize } from '../non-stop/utils'
+import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
@@ -17,6 +16,7 @@ import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
+import { formatCompletion } from './format-completion'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -30,7 +30,6 @@ import { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from '.
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { lines } from './text-processing'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 
@@ -477,8 +476,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        if (this.config.formatOnAccept) {
-            await this.formatCompletion(completion as AutocompleteItem)
+        if (this.config.formatOnAccept && !this.config.isRunningInsideAgent) {
+            await formatCompletion(completion as AutocompleteItem)
         }
 
         resetArtificialDelay()
@@ -498,50 +497,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completion.analyticsItem,
             completion.trackedRange
         )
-    }
-
-    public async formatCompletion(autocompleteItem: AutocompleteItem): Promise<void> {
-        try {
-            const {
-                document,
-                position,
-                docContext: { currentLinePrefix },
-            } = autocompleteItem.requestParams
-
-            const insertedLines = lines(autocompleteItem.analyticsItem.insertText)
-            const endPosition =
-                insertedLines.length <= 1
-                    ? new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
-                    : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
-            const rangeToFormat = new vscode.Range(position, endPosition)
-
-            const formattingChanges = await vscode.commands.executeCommand<vscode.TextEdit[] | undefined>(
-                'vscode.executeFormatRangeProvider',
-                document.uri,
-                rangeToFormat,
-                {
-                    tabSize: getEditorTabSize(document.uri),
-                    insertSpaces: getEditorInsertSpaces(document.uri),
-                }
-            )
-
-            const formattingChangesInRange = (formattingChanges || []).filter(change =>
-                rangeToFormat.contains(change.range)
-            )
-
-            if (formattingChangesInRange.length !== 0) {
-                const edit = new vscode.WorkspaceEdit()
-                for (const change of formattingChangesInRange) {
-                    edit.replace(document.uri, change.range, change.newText)
-                }
-                void vscode.workspace.applyEdit(edit)
-            }
-        } catch (unknownError) {
-            const error = unknownError instanceof Error ? unknownError : new Error('unknown')
-            logError('InlineCompletionItemProvider:formatCompletion:error', error.message, error.stack, {
-                verbose: { error },
-            })
-        }
     }
 
     /**
