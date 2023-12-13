@@ -505,6 +505,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 return
             }
             if (text === '/commands-settings') {
+                // User has clicked the settings button for commands
                 await vscode.commands.executeCommand('cody.settings.commands')
                 return
             }
