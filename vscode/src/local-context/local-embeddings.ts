@@ -495,16 +495,21 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         }
     }
 
+    private getNeedsEmbeddingText(options?: { prefix?: string; suffix?: string }): string {
+        if (!this.lastHealth?.numItemsNeedEmbedding) {
+            return ''
+        }
+        const percentDone = Math.floor((100 * this.lastHealth.numItemsNeedEmbedding) / this.lastHealth.numItems)
+        return `${options?.prefix || ''}Cody Embeddings index for ${
+            this.lastRepo?.path || 'this repository'
+        } is only ${percentDone.toFixed(0)}% complete.${options?.suffix || ''}`
+    }
+
     private updateIssueStatusBar(): void {
         this.statusBar?.dispose()
         this.statusBar = vscode.window.createStatusBarItem('cody-local-embeddings', vscode.StatusBarAlignment.Right, 0)
         this.statusBar.text = 'Embeddings Incomplete'
-        const needsEmbeddingMessage = this.lastHealth?.numItemsNeedEmbedding
-            ? `\n\n${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth
-                  ?.numItems} items are missing from Cody's Embeddings Index for ${
-                  this.lastRepo?.path || 'this repository'
-              }. Click to resolve.`
-            : ''
+        const needsEmbeddingMessage = this.getNeedsEmbeddingText({ prefix: '\n\n', suffix: ' Click to resolve.' })
         const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
         this.statusBar.tooltip = new vscode.MarkdownString(
             `#### Cody Embeddings Incomplete\n\n${needsEmbeddingMessage}${errorMessage}`
@@ -525,17 +530,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 try {
                     const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
                     const choice = await vscode.window.showWarningMessage(
-                        `${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth
-                            ?.numItems} items are missing from Cody's Embeddings Index for ${
-                            this.lastRepo?.path || 'this repository'
-                        }.${errorMessage}`,
-                        'Index',
+                        this.getNeedsEmbeddingText() + errorMessage,
+                        'Continue Indexing',
                         'Cancel'
                     )
                     switch (choice) {
                         case 'Cancel':
                             return
-                        case 'Index':
+                        case 'Continue Indexing':
                             await this.indexRetry()
                     }
                 } catch (error: any) {
