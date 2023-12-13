@@ -123,6 +123,13 @@ export async function createOrUpdateTelemetryRecorderProvider(
 }
 
 /**
+ * Nifty hack from https://stackoverflow.com/questions/54520676/in-typescript-how-to-get-the-keys-of-an-object-type-whose-values-are-of-a-given
+ * that collects the keys of an object where the corresponding value is of a
+ * given type as a type.
+ */
+type KeysWithNumericValues<T> = keyof { [P in keyof T as T[P] extends number ? P : never]: P }
+
+/**
  * splitSafeMetadata is a helper for legacy telemetry helpers that accept typed
  * event metadata with arbitrarily-shaped values. It checks the types of the
  * parameters and automatically splits them into two objects:
@@ -141,7 +148,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
 export function splitSafeMetadata<Properties extends { [key: string]: any }>(
     properties: Properties
 ): {
-    metadata: { [key in keyof Properties]?: number }
+    metadata: { [key in KeysWithNumericValues<Properties>]: number }
     privateMetadata: { [key in keyof Properties]?: any }
 } {
     const safe: { [key in keyof Properties]?: number } = {}
@@ -162,7 +169,9 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
             case 'object': {
                 const { metadata } = splitSafeMetadata(value)
                 Object.entries(metadata).forEach(([nestedKey, value]) => {
-                    safe[`${key}.${nestedKey}`] = value
+                    // We know splitSafeMetadata returns only an object with
+                    // numbers as values. Unit tests ensures this property holds.
+                    safe[`${key}.${nestedKey}`] = value as number
                 })
                 // Preserve the entire original value in unsafe
                 unsafe[key] = value
@@ -173,5 +182,11 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
                 unsafe[key] = value
         }
     }
-    return { metadata: safe, privateMetadata: unsafe }
+    return {
+        // We know we've constructed an object with only numeric values, so
+        // we cast it into the desired type where all the keys with number values
+        // are present. Unit tests ensures this property holds.
+        metadata: safe as { [key in KeysWithNumericValues<Properties>]: number },
+        privateMetadata: unsafe,
+    }
 }
