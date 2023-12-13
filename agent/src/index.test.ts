@@ -185,7 +185,9 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
     it('executing a recipe sends chat/updateMessageInProgress notifications', () => streamingChatMessages, 100)
 
-    it('allows us to cancel chat', async () => {
+    // TODO Fix test - fails intermittently on macOS on Github Actions
+    // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
+    it.skip('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
         await client.executeRecipe('chat-question', 'How do I implement sum?')
     }, 600)
