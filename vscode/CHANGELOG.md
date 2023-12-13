@@ -15,6 +15,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Update Getting Started Guide. [pull/2279](https://github.com/sourcegraph/cody/pull/2279)
+
 ## [0.18.5]
 
 ### Added
