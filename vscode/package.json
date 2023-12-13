@@ -763,14 +763,14 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "The Git repository URL for your code. This will be sent to the Sourcegraph API to fetch the code graph context data. When set to empty, the URL will be inferred from your Git metadata.",
+          "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
           "examples": [
             "https://github.com/sourcegraph/cody",
             "ssh://git@github.com/sourcegraph/cody"
           ]
         },
         "cody.useContext": {
-          "order": 3,
+          "order": 99,
           "type": "string",
           "enum": [
             "embeddings",
@@ -796,17 +796,24 @@
         "cody.autocomplete.enabled": {
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables inline code suggestions in your editor.",
+          "markdownDescription": "Enables code autocompletions.",
           "default": true
         },
         "cody.autocomplete.languages": {
           "order": 5,
           "type": "object",
-          "markdownDescription": "Enable or disable inline code suggestions for specified [languages](https://code.visualstudio.com/docs/languages/identifiers).",
+          "markdownDescription": "Enables or disables code autocompletions for specified [language ids](https://code.visualstudio.com/docs/languages/identifiers). `\"*\"` is the default fallback if no language-specific setting is found.\n\nThe default setting: \n\n```json\n{\n  \"*\": true,\n  \"scminput\": false\n}\n```\n\nTo disable autocomplete for a given [language id](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) set its value to `false`, for example:\n\n```json\n{\n  \"*\": true,\n  \"scminput\": false,\n  \"plaintext\": false\n}\n```",
           "default": {
             "*": true,
             "scminput": false
-          }
+          },
+          "examples": [
+            {
+              "*": true,
+              "scminput": false,
+              "plaintext": false
+            }
+          ]
         },
         "cody.editorTitleCommandIcon": {
           "order": 7,
@@ -841,7 +848,7 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all chat messages.",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
           "examples": [
             "Answer all my questions in Spanish."
           ]
@@ -850,7 +857,7 @@
           "order": 11,
           "title": "Cody Code Actions",
           "type": "boolean",
-          "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
+          "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
           "default": true
         },
         "cody.experimental.simpleChatContext": {
