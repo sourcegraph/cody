@@ -370,7 +370,7 @@ export class Agent extends MessageHandler {
                 throw new Error('Cody client not initialized')
             }
             const provider = await vscode_shim.completionProvider()
-            provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
