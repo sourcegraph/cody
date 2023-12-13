@@ -9,7 +9,9 @@ import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
+import { RateLimitError } from '@sourcegraph/cody-shared'
 import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../log'
 
@@ -99,7 +101,19 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             },
             maxBuffer: 1024 * 1024 * 1024,
             timeout: 1000 * 10, // timeout in 10 seconds
-        }).then(({ stdout }) => stdout.trim())
+        })
+            .then(({ stdout }) => stdout.trim())
+            .catch(error => {
+                if (isError(error) && error.message.includes('429')) {
+                    // HACK: we should move the query term expansion code into the agent so
+                    // we can handle this less hackily.
+                    // This also assumes an upgrade path is available. It's unlikely we'll
+                    // hit this limit on a chat request, so this is mainly to satisfy the
+                    // e2e test.
+                    throw new RateLimitError('chat messages and commands', error.message, true)
+                }
+                throw error
+            })
 
         return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
     }

@@ -24,6 +24,7 @@ import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -642,7 +643,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
             })
         } catch (error) {
-            this.postError(new Error(`Error generating assistant response: ${error}`))
+            if (isRateLimitError(error)) {
+                this.postError(error, 'transcript')
+            } else {
+                this.postError(isError(error) ? error : new Error(`Error generating assistant response: ${error}`))
+            }
         }
     }
 
@@ -777,6 +782,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
+            this.postViewTranscript()
             void this.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
