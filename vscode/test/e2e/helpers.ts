@@ -44,7 +44,9 @@ export const test = base
     })
     // By default, do not add any extra workspace settings.
     .extend<ExtraWorkspaceSettings>({
-        extraWorkspaceSettings: {},
+        extraWorkspaceSettings: {
+            'cody.experimental.symfContext': false,
+        },
     })
     // By default, treat https://sourcegraph.com as "dotcom".
     .extend<DotcomUrlOverride>({
