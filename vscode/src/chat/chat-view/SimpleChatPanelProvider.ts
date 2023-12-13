@@ -988,7 +988,7 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: visible.content,
-                uri: visible.fileUri || vscode.Uri.file(visible.fileName),
+                uri: vscode.Uri.file(visible.fileName),
             },
         ]
     }
