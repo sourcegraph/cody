@@ -51,17 +51,12 @@ import { MessageErrorType } from '../MessageProvider'
 import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import {
-    CodebaseStatusProvider,
-    embeddingsUrlScheme,
-    getChatPanelTitle,
-    relativeFileUrl,
-    stripContextWrapper,
-} from './chat-helpers'
+import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { ChatViewProviderWebview } from './ChatPanelProvider'
 import { Config, IChatPanelProvider } from './ChatPanelsManager'
+import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
