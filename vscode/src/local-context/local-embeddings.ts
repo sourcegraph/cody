@@ -181,7 +181,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                         this.lastError = undefined
                         const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
                         if (this.statusBar) {
-                            this.statusBar.text = `$(cody-logo-heavy) Indexing Embeddings… (${percent.toFixed(0)}%)`
+                            this.statusBar.text = `Indexing Embeddings… (${percent.toFixed(0)}%)`
                             this.statusBar.backgroundColor = undefined
                             this.statusBar.tooltip = obj.currentPath
                             this.statusBar.show()
@@ -247,7 +247,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
                 this.changeEmitter.fire(this)
                 if (loadedOk) {
-                    await vscode.window.showInformationMessage('✨ Embeddings Index Complete')
+                    await vscode.window.showInformationMessage('✨ Cody Embeddings Index Complete')
                 }
             })()
         }
@@ -498,13 +498,16 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     private updateIssueStatusBar(): void {
         this.statusBar?.dispose()
         this.statusBar = vscode.window.createStatusBarItem('cody-local-embeddings', vscode.StatusBarAlignment.Right, 0)
-        this.statusBar.text = '$(cody-logo-heavy) Embeddings Incomplete'
+        this.statusBar.text = 'Embeddings Incomplete'
         const needsEmbeddingMessage = this.lastHealth?.numItemsNeedEmbedding
-            ? `\n\n${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth?.numItems} items need embedding. Click to resolve.`
+            ? `\n\n${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth
+                  ?.numItems} items are missing from Cody's Embeddings Index for ${
+                  this.lastRepo?.path || 'this repository'
+              }. Click to resolve.`
             : ''
         const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
         this.statusBar.tooltip = new vscode.MarkdownString(
-            `#### Cody Embeddings\n\n${this.lastRepo?.path} index is incomplete.${needsEmbeddingMessage}${errorMessage}`
+            `#### Cody Embeddings Incomplete\n\n${needsEmbeddingMessage}${errorMessage}`
         )
         this.statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
         this.statusBar.command = 'cody.embeddings.resolveIssue'
@@ -522,14 +525,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 try {
                     const errorMessage = this.lastError ? `\n\nError: ${this.lastError}` : ''
                     const choice = await vscode.window.showWarningMessage(
-                        `${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth?.numItems} items need embedding.${errorMessage}`,
-                        'Retry',
+                        `${this.lastHealth?.numItemsNeedEmbedding} of ${this.lastHealth
+                            ?.numItems} items are missing from Cody's Embeddings Index for ${
+                            this.lastRepo?.path || 'this repository'
+                        }.${errorMessage}`,
+                        'Index',
                         'Cancel'
                     )
                     switch (choice) {
                         case 'Cancel':
                             return
-                        case 'Retry':
+                        case 'Index':
                             await this.indexRetry()
                     }
                 } catch (error: any) {
