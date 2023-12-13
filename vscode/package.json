@@ -577,6 +577,10 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.embeddings.resolveIssue",
+          "when": "false"
+        },
+        {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
