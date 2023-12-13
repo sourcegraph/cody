@@ -2,9 +2,10 @@ import assert from 'assert'
 import { execSync, spawn } from 'child_process'
 import path from 'path'
 
-import { afterAll, beforeAll, describe, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
+import { ChatMessage } from '@sourcegraph/cody-shared'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { MessageHandler } from './jsonrpc-alias'
@@ -41,35 +42,30 @@ export class TestClient extends MessageHandler {
 }
 
 const dotcom = 'https://sourcegraph.com'
-const clients: { name: string; clientInfo: ClientInfo }[] = [
-    {
-        name: 'FullConfig',
-        clientInfo: {
-            name: 'test-client',
-            version: 'v1',
-            workspaceRootUri: 'file:///path/to/foo',
-            workspaceRootPath: '/path/to/foo',
-            extensionConfiguration: {
-                anonymousUserID: 'abcde1234',
-                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: dotcom,
-                customHeaders: {},
-                autocompleteAdvancedProvider: 'anthropic',
-                autocompleteAdvancedAccessToken: '',
-                autocompleteAdvancedServerEndpoint: '',
-                debug: false,
-                verboseDebug: false,
-            },
-        },
+const clientInfo: ClientInfo = {
+    name: 'test-client',
+    version: 'v1',
+    workspaceRootUri: 'file:///path/to/foo',
+    workspaceRootPath: '/path/to/foo',
+    extensionConfiguration: {
+        anonymousUserID: 'abcde1234',
+        accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
+        serverEndpoint: dotcom,
+        customHeaders: {},
+        autocompleteAdvancedProvider: 'anthropic',
+        autocompleteAdvancedAccessToken: '',
+        autocompleteAdvancedServerEndpoint: '',
+        debug: false,
+        verboseDebug: false,
     },
-]
+}
 
 const cwd = process.cwd()
 const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 const recordingDirectory = path.join(agentDir, 'recordings')
 const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo }) => {
+describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
     // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
     // post in #wg-cody-agent to let the team know the tests have been disabled so that we can
@@ -79,8 +75,8 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
     //     return
     // }
 
-    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
-        it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
+    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
+        it('Agent tests are skipped due to VITEST_ONLY environment variable', () => {})
         return
     }
     const client = new TestClient()
@@ -104,7 +100,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
             CODY_SHIM_TESTING: 'true',
             CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
             CODY_RECORDING_DIRECTORY: recordingDirectory,
-            CODY_RECORDING_NAME: name,
+            CODY_RECORDING_NAME: 'FullConfig',
             ...process.env,
         },
     })
@@ -155,11 +151,18 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
             position: { line: 1, character: 3 },
             triggerKind: 'Invoke',
         })
-        assert(completions.items.length > 0, 'Completions should not be empty')
+        const texts = completions.items.map(item => item.insertText)
+        expect(completions.items.length).toBeGreaterThan(0)
+        expect(texts).toMatchInlineSnapshot(`
+          [
+            "   return a + b;",
+          ]
+        `)
+        client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
+    const messages: ChatMessage[] = []
     const streamingChatMessages = new Promise<void>((resolve, reject) => {
-        let hasReceivedNonNullMessage = false
         let isResolved = false
         client.registerNotification('chat/updateMessageInProgress', msg => {
             if (msg === null) {
@@ -167,23 +170,62 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
                     return
                 }
                 isResolved = true
-                if (hasReceivedNonNullMessage) {
+                if (messages.length > 0) {
                     resolve()
                 } else {
                     reject(new Error('Received null message before non-null message'))
                 }
             } else {
-                hasReceivedNonNullMessage = true
+                messages.push(msg)
             }
         })
     })
 
     it('allows us to execute recipes properly', async () => {
-        await client.executeRecipe('chat-question', 'How do I implement sum?')
+        await client.executeRecipe('chat-question', 'How do I implement sum in JavaScript?')
     }, 20_000)
 
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
-    it('executing a recipe sends chat/updateMessageInProgress notifications', () => streamingChatMessages, 100)
+    it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
+        await streamingChatMessages
+        const actual = messages.at(-1)
+        if (actual?.text) {
+            // trim trailing whitespace from the autocomplete result that Prettier removes causing the inline snapshot assertion to fail.
+            actual.text = actual.text
+                .split('\n')
+                .map(line => line.trimEnd())
+                .join('\n')
+        }
+        expect(actual).toMatchInlineSnapshot(`
+          {
+            "contextFiles": [],
+            "preciseContext": [],
+            "speaker": "assistant",
+            "text": " Here is how to implement a sum function in JavaScript:
+
+          \`\`\`js
+          function sum(arr) {
+            let total = 0;
+            for (let i = 0; i < arr.length; i++) {
+              total += arr[i];
+            }
+            return total;
+          }
+          \`\`\`
+
+          To use:
+
+          \`\`\`js
+          const numbers = [1, 2, 3, 4, 5];
+
+          const result = sum(numbers);
+          // result = 15
+          \`\`\`
+
+          This implements a simple sum function that takes an array of numbers, iterates through the array, and returns the total sum of the numbers.",
+          }
+        `)
+    }, 100)
 
     // TODO Fix test - fails intermittently on macOS on Github Actions
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
