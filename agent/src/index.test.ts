@@ -97,7 +97,7 @@ describe.each(clients)('describe StandardAgent with $name', ({ name, clientInfo 
             'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
         )
     }
-    const agentProcess = spawn('node', [agentScript, 'jsonrpc'], {
+    const agentProcess = spawn('node', ['--enable-source-maps', agentScript, 'jsonrpc'], {
         stdio: 'pipe',
         cwd: agentDir,
         env: {
