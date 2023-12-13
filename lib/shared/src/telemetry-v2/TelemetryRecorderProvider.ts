@@ -7,7 +7,6 @@ import {
 } from '@sourcegraph/telemetry'
 
 import { Configuration, ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
@@ -35,7 +34,6 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
         anonymousUserID: string,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        const client = new SourcegraphGraphQLAPIClient(config)
         super(
             {
                 client: `${extensionDetails.ide || 'unknown'}${
@@ -43,7 +41,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
                 }`,
                 clientVersion: extensionDetails.version,
             },
-            new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
+            new GraphQLTelemetryExporter(anonymousUserID, legacyBackcompatLogEventMode),
             [new ConfigurationMetadataProcessor(config)],
             {
                 ...defaultEventRecordingOptions,

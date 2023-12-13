@@ -13,7 +13,7 @@ import { build } from 'esbuild'
         bundle: true,
         outfile: path.join('dist', 'index.js'),
         platform: 'node',
-        sourcemap: true,
+        sourcemap: 'linked',
         logLevel: 'error',
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),
