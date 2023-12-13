@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import * as fspromises from 'fs/promises'
 import { execSync } from 'child_process'
+import * as fspromises from 'fs/promises'
 import path from 'path'
 
 import type * as vscode from 'vscode'
