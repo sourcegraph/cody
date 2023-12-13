@@ -17,6 +17,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Update Getting Started Guide. [pull/2279](https://github.com/sourcegraph/cody/pull/2279)
+- Commands: Edit commands are no longer shown in the chat slash command menu. [pull/2339](https://github.com/sourcegraph/cody/pull/2339)
 
 ## [0.18.5]
 
