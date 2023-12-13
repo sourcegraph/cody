@@ -188,6 +188,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      */
     public async createWebviewPanel(
         activePanelViewColumn?: vscode.ViewColumn,
+        _chatId?: string,
         lastQuestion?: string
     ): Promise<vscode.WebviewPanel> {
         // Checks if the webview panel already exists and is visible.
