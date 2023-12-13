@@ -128,7 +128,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     public async start(): Promise<void> {
         logDebug('LocalEmbeddingsController', 'start')
         await this.getService()
-        const repoUri = vscode.workspace.workspaceFolders?.[0].uri
+        const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
         if (repoUri) {
             await this.eagerlyLoad(repoUri.fsPath)
         }
@@ -276,7 +276,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             return []
         }
         // TODO: Summarize the path with ~, etc.
-        const path = this.lastRepo?.path || vscode.workspace.workspaceFolders?.[0].uri.fsPath || '(No workspace loaded)'
+        const path =
+            this.lastRepo?.path || vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || '(No workspace loaded)'
         if (!this.lastRepo) {
             return [
                 {

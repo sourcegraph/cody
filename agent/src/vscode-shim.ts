@@ -345,9 +345,32 @@ export function setAgent(newAgent: Agent): void {
     agent = newAgent
 }
 
+const webviewPanel: vscode.WebviewPanel = {
+    active: false,
+    dispose: () => {},
+    onDidChangeViewState: emptyEvent(),
+    onDidDispose: emptyEvent(),
+    options: { enableFindWidget: false, retainContextWhenHidden: false },
+    reveal: () => {},
+    title: 'title',
+    viewColumn: undefined,
+    viewType: 'markdown.preview',
+    visible: false,
+    webview: {
+        asWebviewUri(localResource) {
+            return localResource
+        },
+        cspSource: 'cspSource',
+        html: '<p>html</p>',
+        onDidReceiveMessage: emptyEvent(),
+        options: {},
+        postMessage: () => Promise.resolve(true),
+    },
+}
 const _window: Partial<typeof vscode.window> = {
     createTreeView: () => ({ visible: false }) as any,
     tabGroups,
+    createWebviewPanel: () => webviewPanel,
     registerCustomEditorProvider: () => emptyDisposable,
     registerFileDecorationProvider: () => emptyDisposable,
     registerTerminalLinkProvider: () => emptyDisposable,

@@ -8,6 +8,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../../webviews/NavBar'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
@@ -280,6 +281,9 @@ export async function addWebviewViewHTML(
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
+    if (isRunningInsideAgent()) {
+        return
+    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
