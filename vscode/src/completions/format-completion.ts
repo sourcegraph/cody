@@ -43,7 +43,7 @@ export async function formatCompletion(autocompleteItem: AutocompleteItem): Prom
             void vscode.workspace.applyEdit(edit)
         }
     } catch (unknownError) {
-        const error = unknownError instanceof Error ? unknownError : new Error('unknown')
+        const error = unknownError instanceof Error ? unknownError : new Error(unknownError as string)
         logError('InlineCompletionItemProvider:formatCompletion:error', error.message, error.stack, {
             verbose: { error },
         })
