@@ -513,7 +513,7 @@ importers:
         specifier: ^9.0.2
         version: 9.0.2
       '@types/vscode':
-        specifier: ^1.79.0
+        specifier: ^1.80.0
         version: 1.80.0
       '@types/vscode-webview':
         specifier: ^1.57.1
