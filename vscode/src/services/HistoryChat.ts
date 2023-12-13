@@ -9,20 +9,32 @@ interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]
 }
 
-interface HistoryItems {
+interface HistoryItem {
     label: string
     onSelect: () => Promise<void>
     kind?: vscode.QuickPickItemKind
 }
+
+type ChatGroup = [number, CodySidebarTreeItem[]]
 
 export function groupCodyChats(): GroupedChats | null {
     const todayChats: CodySidebarTreeItem[] = []
     const yesterdayChats: CodySidebarTreeItem[] = []
     const lastWeekChats: CodySidebarTreeItem[] = []
     const lastMonthChats: CodySidebarTreeItem[] = []
-    const NDaysChats: CodySidebarTreeItem[] = []
-    const NWeeksChats: CodySidebarTreeItem[] = []
-    const NMonthsChats: CodySidebarTreeItem[] = []
+    const nDaysChats: CodySidebarTreeItem[] = []
+    const nWeeksChats: CodySidebarTreeItem[] = []
+    const nMonthsChats: CodySidebarTreeItem[] = []
+
+    const chatGroups: ChatGroup[] = [
+        [1, todayChats],
+        [2, yesterdayChats],
+        [7, nDaysChats],
+        [14, lastWeekChats],
+        [30, nWeeksChats],
+        [60, lastMonthChats],
+        [Infinity, nMonthsChats],
+    ]
 
     const chats = chatHistory.localHistory?.chat
     if (!chats) {
@@ -40,55 +52,19 @@ export function groupCodyChats(): GroupedChats | null {
 
             const timeDiff = currentTimeStamp.getTime() - lastInteractionTimestamp.getTime()
 
-            if (timeDiff < 24 * 60 * 60 * 1000) {
-                todayChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
-            } else if (timeDiff < 48 * 60 * 60 * 1000) {
-                yesterdayChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
-            } else if (timeDiff < 7 * 24 * 60 * 60 * 1000) {
-                NDaysChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
-            } else if (timeDiff < 14 * 24 * 60 * 60 * 1000) {
-                lastWeekChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
-            } else if (timeDiff < 30 * 24 * 60 * 60 * 1000) {
-                NWeeksChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
-            } else if (timeDiff < 60 * 24 * 60 * 60 * 1000) {
-                lastMonthChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
-            } else {
-                NMonthsChats.push({
-                    id,
-                    title: chatTitle,
-                    icon: 'comment-discussion',
-                    command: { command: 'cody.chat.panel.restore', args: [id, chatTitle] },
-                })
+            for (const [dayLimit, chatGroup] of chatGroups) {
+                if (timeDiff < dayLimit * 24 * 60 * 60 * 1000) {
+                    chatGroup.push({
+                        id,
+                        title: chatTitle,
+                        icon: 'comment-discussion',
+                        command: {
+                            command: 'cody.chat.panel.restore',
+                            args: [id, chatTitle],
+                        },
+                    })
+                    break
+                }
             }
         }
     })
@@ -96,11 +72,11 @@ export function groupCodyChats(): GroupedChats | null {
     return {
         Today: todayChats.reverse(),
         Yesterday: yesterdayChats.reverse(),
-        'Last Week': lastWeekChats.reverse(),
+        'Last week': lastWeekChats.reverse(),
         'Last month': lastMonthChats.reverse(),
-        'N days ago': NDaysChats.reverse(),
-        'N weeks ago': NWeeksChats.reverse(),
-        'N months ago': NMonthsChats.reverse(),
+        'N days ago': nDaysChats.reverse(),
+        'N weeks ago': nWeeksChats.reverse(),
+        'N months ago': nMonthsChats.reverse(),
     }
 }
 
@@ -110,7 +86,7 @@ export async function displayHistoryQuickPick(): Promise<void> {
         return
     }
 
-    const quickPickItems: HistoryItems[] = []
+    const quickPickItems: HistoryItem[] = []
 
     const addGroupSeparator = (groupName: string): void => {
         quickPickItems.push({
