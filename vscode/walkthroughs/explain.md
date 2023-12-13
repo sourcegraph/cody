@@ -15,4 +15,4 @@ You can also run this command from the [Cody: Commands Menu](command:cody.action
 
 **✨ Pro-tips for understanding code with Cody**
 <br>• Cody can also explain errors too, with the "Ask Cody to Explain" option in the 💡 menus, or by right clicking on any items in the "Problems" tab of VS Code.
-<br>• You can define your own custom code explain commands to suit, such as prompt that requests an explanation focused on potential security issues, using [Custom Commands (Beta)](https://sourcegraph.com/docs/cody/custom-commands).
+<br>• You can define your own custom code explain commands to suit, such as prompt that requests an explanation focused on potential security issues, using [Custom Commands (Beta)](https://docs.sourcegraph.com/cody/custom-commands).
