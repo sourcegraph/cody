@@ -6,7 +6,7 @@ import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { graphqlClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
@@ -52,7 +52,6 @@ export interface Client {
     codebaseContext: CodebaseContext
     sourcegraphStatus: { authenticated: boolean; version: string }
     codyStatus: { enabled: boolean; version: string }
-    graphqlClient: SourcegraphGraphQLAPIClient
 }
 
 export async function createClient({
@@ -65,7 +64,6 @@ export async function createClient({
 }: ClientInit): Promise<Client | null> {
     const fullConfig = { debugEnable: false, ...config }
 
-    const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
     const sourcegraphVersion = await graphqlClient.getSiteVersion()
 
     const sourcegraphStatus = { authenticated: false, version: '' }
@@ -206,7 +204,6 @@ export async function createClient({
             codebaseContext,
             sourcegraphStatus,
             codyStatus,
-            graphqlClient,
         }
     }
 

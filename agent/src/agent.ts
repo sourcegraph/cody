@@ -12,7 +12,7 @@ import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { graphqlClient, LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -387,7 +387,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 throw new Error('Cody client not initialized')
             }
-            const id = await client.graphqlClient.getCurrentUserId()
+            const id = await graphqlClient.getCurrentUserId()
             if (typeof id === 'string') {
                 return id
             }
@@ -400,7 +400,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 throw new Error('Cody client not initialized')
             }
-            const res = await client.graphqlClient.getCurrentUserCodyProEnabled()
+            const res = await graphqlClient.getCurrentUserCodyProEnabled()
             if (res instanceof Error) {
                 throw res
             }
@@ -431,19 +431,28 @@ export class Agent extends MessageHandler {
          */
         this.registerRequest('graphql/logEvent', async event => {
             const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
             if (typeof event.argument === 'object') {
                 event.argument = JSON.stringify(event.argument)
             }
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-            await client?.graphqlClient.logEvent(event, 'all')
+            await graphqlClient.logEvent(event, 'all')
             return null
         })
 
-        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
+        const assertClientIsInitialized = async (): Promise<void> => {
             const client = await this.client
-            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+        }
+
+        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
+            const result = await graphqlClient.getRepoIdIfEmbeddingExists(repoName)
             if (result instanceof Error) {
                 console.error('getRepoIdIfEmbeddingExists', result)
             }
@@ -451,8 +460,8 @@ export class Agent extends MessageHandler {
         })
 
         this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
-            const client = await this.client
-            const result = await client?.graphqlClient.getRepoId(repoName)
+            await assertClientIsInitialized()
+            const result = await graphqlClient.getRepoId(repoName)
             if (result instanceof Error) {
                 console.error('getRepoId', result)
             }
@@ -489,14 +498,10 @@ export class Agent extends MessageHandler {
         if (codyClient && this.clientInfo) {
             // Update telemetry
             this.agentTelemetryRecorderProvider?.unsubscribe()
-            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
-                codyClient.graphqlClient,
-                this.clientInfo,
-                {
-                    // Add tracking metadata if provided
-                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
-                }
-            )
+            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(this.clientInfo, {
+                // Add tracking metadata if provided
+                getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
+            })
         }
 
         return
@@ -562,7 +567,7 @@ export class Agent extends MessageHandler {
         }
 
         const event = `${eventProperties.prefix}:${feature}:${action}`
-        await client.graphqlClient.logEvent(
+        await graphqlClient.logEvent(
             {
                 event,
                 url: '',
