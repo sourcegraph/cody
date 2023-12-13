@@ -82,7 +82,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
-            scminput: false,
         }),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
