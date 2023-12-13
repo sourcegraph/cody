@@ -1,6 +1,6 @@
 ## Fix Code
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-ask-to-fix.gif"> 
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-ask-to-fix.gif">
 
 Something wrong with your code? Use Cody’s "Ask Cody to Fix" command to fix it, or explain the problem.
 
