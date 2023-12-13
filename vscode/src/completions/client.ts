@@ -169,7 +169,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 }
 
                 const message = `error parsing streaming CodeCompletionResponse: ${error}`
-                log?.onError(message)
+                log?.onError(message, error)
                 throw new TracedError(message, traceId)
             }
         } else {
@@ -187,7 +187,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 }
             } catch (error) {
                 const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-                log?.onError(message)
+                log?.onError(message, error)
                 throw new TracedError(message, traceId)
             }
         }

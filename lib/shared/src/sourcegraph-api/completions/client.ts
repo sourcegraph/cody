@@ -9,7 +9,7 @@ export interface CompletionLogger {
     ):
         | undefined
         | {
-              onError: (error: string) => void
+              onError: (error: string, rawError?: unknown) => void
               onComplete: (response: string | CompletionResponse | string[] | CompletionResponse[]) => void
               onEvents: (events: Event[]) => void
           }
