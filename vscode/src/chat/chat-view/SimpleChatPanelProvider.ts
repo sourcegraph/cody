@@ -1044,8 +1044,13 @@ class ContextProvider implements IContextProvider {
         }
 
         if (!hasEmbeddingsContext && this.symf) {
-            // Fallback to symf if embeddings provided no results
-            searchContext.push(...(await this.searchSymf(text)))
+            try {
+                // Fallback to symf if embeddings provided no results
+                searchContext.push(...(await this.searchSymf(text)))
+            } catch (error) {
+                // TODO(beyang): handle this error better
+                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
+            }
         }
 
         const priorityContext: ContextItem[] = []
