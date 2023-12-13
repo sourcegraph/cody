@@ -158,6 +158,17 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.syncCodebase()),
             this.eventEmitter
         )
+
+        if (this.symf) {
+            this.disposables.push(
+                this.symf.onIndexStart(() => {
+                    void this.syncCodebase()
+                }),
+                this.symf.onIndexEnd(() => {
+                    void this.syncCodebase()
+                })
+            )
+        }
     }
 
     public dispose(): void {
@@ -201,14 +212,10 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         if (!this.symf || !this._currentCodebase) {
             return []
         }
-        const symfIndexExists = this._currentCodebase.symfIndexExists || false
-        if (!symfIndexExists) {
-            return []
-        }
         return [
             {
                 kind: 'search',
-                state: 'ready',
+                state: this._currentCodebase.symfIndexStatus || 'unindexed',
             },
         ]
     }
@@ -279,8 +286,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             }
 
             if (this.symf) {
-                const symfIndexExists = await this.symf.indexExists(workspaceRoot.fsPath)
-                newCodebase.symfIndexExists = symfIndexExists
+                newCodebase.symfIndexStatus = await this.symf.getIndexStatus(workspaceRoot.fsPath)
             }
         }
 
@@ -297,5 +303,5 @@ interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string
-    symfIndexExists?: boolean
+    symfIndexStatus?: 'unindexed' | 'indexing' | 'ready' | 'failed'
 }

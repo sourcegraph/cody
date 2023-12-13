@@ -373,6 +373,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             case 'embeddings/index':
                 void this.localEmbeddings?.index()
                 break
+            case 'symf/index': {
+                void this.codebaseStatusProvider.currentCodebase().then((codebase): void => {
+                    if (codebase) {
+                        void this.symf?.ensureIndex(codebase.local, { hard: true })
+                    }
+                })
+                break
+            }
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
@@ -1006,16 +1014,21 @@ class ContextProvider implements IContextProvider {
         let remoteEmbeddingsError
         searchContext.push(...(await this.getReadmeContext()))
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
+        let hasEmbeddingsContext = false
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
         const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
         try {
-            searchContext.push(...(await localEmbeddingsResults))
+            const r = await localEmbeddingsResults
+            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+            searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
             localEmbeddingsError = error
         }
         try {
-            searchContext.push(...(await remoteEmbeddingsResults))
+            const r = await remoteEmbeddingsResults
+            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+            searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
             remoteEmbeddingsError = error
@@ -1029,7 +1042,7 @@ class ContextProvider implements IContextProvider {
             )
         }
 
-        if (searchContext.length === 0 && this.symf) {
+        if (!hasEmbeddingsContext && this.symf) {
             // Fallback to symf if embeddings provided no results
             searchContext.push(...(await this.searchSymf(text)))
         }
@@ -1062,12 +1075,18 @@ class ContextProvider implements IContextProvider {
     /**
      * Uses symf to conduct a local search within the current workspace folder
      */
-    private async searchSymf(userText: string): Promise<ContextItem[]> {
+    private async searchSymf(userText: string, blockOnIndex = false): Promise<ContextItem[]> {
         if (!this.symf) {
             return []
         }
         const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
         if (!workspaceRoot) {
+            return []
+        }
+
+        const indexExists = await this.symf.getIndexStatus(workspaceRoot)
+        if (indexExists !== 'ready' && !blockOnIndex) {
+            void this.symf.ensureIndex(workspaceRoot, { hard: false })
             return []
         }
 

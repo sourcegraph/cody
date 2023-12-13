@@ -8,6 +8,7 @@ import {
     ContextProvider,
     EnhancedContextContextT,
     LocalEmbeddingsProvider,
+    SearchProvider,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
 import { PopupFrame } from '../Popups/Popup'
@@ -35,11 +36,13 @@ export const EnhancedContextEnabled: React.Context<boolean> = React.createContex
 export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHandlersT> = React.createContext({
     onConsentToEmbeddings: (_): void => {},
     onEnabledChange: (_): void => {},
+    onShouldBuildSymfIndex: (_): void => {},
 })
 
 export interface EnhancedContextEventHandlersT {
     onConsentToEmbeddings: (provider: LocalEmbeddingsProvider) => void
     onEnabledChange: (enabled: boolean) => void
+    onShouldBuildSymfIndex: (provider: SearchProvider) => void
 }
 
 export function useEnhancedContextContext(): EnhancedContextContextT {
@@ -89,6 +92,34 @@ function labelFor(kind: string): string {
     // All our context providers are single words; just convert them to title
     // case
     return kind[0].toUpperCase() + kind.slice(1)
+}
+
+const SearchIndexComponent: React.FunctionComponent<{
+    provider: SearchProvider
+    indexStatus: 'failed' | 'unindexed'
+}> = ({ provider, indexStatus }): React.ReactNode => {
+    const events = useEnhancedContextEventHandlers()
+    const onClick = (): void => {
+        events.onShouldBuildSymfIndex(provider)
+    }
+    return (
+        <div>
+            {indexStatus === 'failed' ? (
+                <>
+                    <p className={styles.providerExplanatoryText}>The previous indexing attempt failed.</p>
+                </>
+            ) : (
+                <p className={styles.providerExplanatoryText}>
+                    The repository&apos;s contents will be indexed locally.
+                </p>
+            )}
+            <p>
+                <VSCodeButton onClick={onClick}>
+                    {indexStatus === 'failed' ? 'Retry local index' : 'Build local index'}
+                </VSCodeButton>
+            </p>
+        </div>
+    )
 }
 
 const EmbeddingsConsentComponent: React.FunctionComponent<{ provider: LocalEmbeddingsProvider }> = ({
@@ -151,6 +182,14 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
             } else {
                 return <></>
             }
+        case 'unindexed':
+            if (provider.kind === 'search') {
+                return <SearchIndexComponent indexStatus="unindexed" provider={provider} />
+            }
+        case 'failed':
+            if (provider.kind === 'search') {
+                return <SearchIndexComponent indexStatus="failed" provider={provider} />
+            }
         default:
             return ''
     }
@@ -163,6 +202,7 @@ const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvi
         case 'indexing':
             stateIcon = <i className="codicon codicon-loading codicon-modifier-spin" />
             break
+        case 'unindexed':
         case 'unconsented':
             stateIcon = <i className="codicon codicon-circle-outline" />
             break
@@ -171,6 +211,9 @@ const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvi
             break
         case 'no-match':
             stateIcon = <i className="codicon codicon-circle-slash" />
+            break
+        case 'failed':
+            stateIcon = <i className="codicon codicon-error" />
             break
         default:
             stateIcon = '?'
