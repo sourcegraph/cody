@@ -26,7 +26,7 @@ export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): D
 
     const firstLine = getFirstLine(initialCompletion)
     const matchingSuffixLength = getMatchingSuffixLength(firstLine, currentLineSuffix)
-    const updatedPosition = position.translate(0, firstLine.length - 1)
+    const updatedPosition = position.translate(0, Math.max(firstLine.length - 1, 0))
 
     completionPostProcessLogger.info({
         completionPostProcessId,

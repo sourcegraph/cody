@@ -66,6 +66,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const onConsentToEmbeddings = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'embeddings/index' })
     }, [vscodeAPI])
+    const onShouldBuildSymfIndex = useCallback((): void => {
+        vscodeAPI.postMessage({ command: 'symf/index' })
+    }, [vscodeAPI])
 
     useEffect(
         () =>
@@ -240,6 +243,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         <EnhancedContextEventHandlers.Provider
                             value={{
                                 onConsentToEmbeddings,
+                                onShouldBuildSymfIndex,
                                 onEnabledChange: (enabled): void => {
                                     if (enabled !== enhancedContextEnabled) {
                                         setEnhancedContextEnabled(enabled)

@@ -57,6 +57,7 @@ export type WebviewMessage =
       }
     | { command: 'edit'; text: string }
     | { command: 'embeddings/index' }
+    | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
     | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }

@@ -42,9 +42,9 @@ export interface LocalEmbeddingsProvider {
     errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
 }
 
-interface SearchProvider {
+export interface SearchProvider {
     kind: 'search'
-    state: 'indeterminate' | 'indexing' | 'ready'
+    state: 'unindexed' | 'indexing' | 'ready' | 'failed'
 }
 
 interface GraphProvider {

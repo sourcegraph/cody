@@ -103,11 +103,16 @@ export const logger: CompletionLogger = {
         let hasFinished = false
         let lastCompletion = ''
 
-        function onError(err: string): void {
+        function onError(err: string, rawError?: unknown): void {
             if (hasFinished) {
                 return
             }
             hasFinished = true
+
+            if (process.env.NODE_ENV === 'development') {
+                console.error(rawError)
+            }
+
             logError(
                 'CompletionLogger:onError',
                 JSON.stringify({

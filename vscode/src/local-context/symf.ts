@@ -9,7 +9,9 @@ import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
+import { RateLimitError } from '@sourcegraph/cody-shared'
 import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../log'
 
@@ -17,32 +19,12 @@ import { getSymfPath } from './download-symf'
 
 const execFile = promisify(_execFile)
 
-export interface IndexStartEvent {
-    scopeDir: string
-    cancel: () => void
-    done: Promise<void>
-}
-
-export interface IndexEndEvent {
-    scopeDir: string
-}
-
 export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
     // The root of all symf index directories
     private indexRoot: string
     private indexLocks: Map<string, RWLock> = new Map()
 
-    private indexStartEmitter = new vscode.EventEmitter<IndexStartEvent>()
-    public onIndexStart(cb: (e: IndexStartEvent) => void): vscode.Disposable {
-        return this.indexStartEmitter.event(cb)
-    }
-
-    private indexEndEmitter = new vscode.EventEmitter<IndexEndEvent>()
-    public onIndexEnd(cb: (e: IndexEndEvent) => void): vscode.Disposable {
-        return this.indexEndEmitter.event(cb)
-    }
-
-    private disposables: vscode.Disposable[] = [this.indexStartEmitter, this.indexEndEmitter]
+    private status: IndexStatus = new IndexStatus()
 
     constructor(
         private context: vscode.ExtensionContext,
@@ -78,7 +60,15 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public dispose(): void {
-        this.disposables.forEach(d => d.dispose())
+        this.status.dispose()
+    }
+
+    public onIndexStart(cb: (e: IndexStartEvent) => void): vscode.Disposable {
+        return this.status.onDidStart(cb)
+    }
+
+    public onIndexEnd(cb: (e: IndexEndEvent) => void): vscode.Disposable {
+        return this.status.onDidEnd(cb)
     }
 
     public setSourcegraphAuth(endpoint: string | null, authToken: string | null): void {
@@ -111,7 +101,19 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             },
             maxBuffer: 1024 * 1024 * 1024,
             timeout: 1000 * 10, // timeout in 10 seconds
-        }).then(({ stdout }) => stdout.trim())
+        })
+            .then(({ stdout }) => stdout.trim())
+            .catch(error => {
+                if (isError(error) && error.message.includes('429')) {
+                    // HACK: we should move the query term expansion code into the agent so
+                    // we can handle this less hackily.
+                    // This also assumes an upgrade path is available. It's unlikely we'll
+                    // hit this limit on a chat request, so this is mainly to satisfy the
+                    // e2e test.
+                    throw new RateLimitError('chat messages and commands', error.message, true)
+                }
+                throw error
+            })
 
         return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
     }
@@ -154,10 +156,21 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         })
     }
 
-    public async indexExists(scopeDir: string): Promise<boolean> {
-        return this.getIndexLock(scopeDir).withRead(async () => {
+    public async getIndexStatus(scopeDir: string): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
+        if (this.status.isInProgress(scopeDir)) {
+            // Check this before waiting on the lock
+            return 'indexing'
+        }
+        const hasIndex = await this.getIndexLock(scopeDir).withRead(async () => {
             return this.unsafeIndexExists(scopeDir)
         })
+        if (hasIndex) {
+            return 'ready'
+        }
+        if (await this.didIndexFail(scopeDir)) {
+            return 'failed'
+        }
+        return 'unindexed'
     }
 
     public async ensureIndex(scopeDir: string, options: { hard: boolean } = { hard: false }): Promise<void> {
@@ -266,8 +279,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     private unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
         const cancellation = new vscode.CancellationTokenSource()
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir, cancellation.token)
-        this.indexStartEmitter.fire({ scopeDir, done: upsert, cancel: () => cancellation.cancel() })
-        void upsert.then(() => this.indexEndEmitter.fire({ scopeDir })).finally(() => cancellation.dispose())
+        this.status.didStart({ scopeDir, done: upsert, cancel: () => cancellation.cancel() })
+        void upsert.finally(() => {
+            this.status.didEnd({ scopeDir })
+            cancellation.dispose()
+        })
         return upsert
     }
 
@@ -378,6 +394,49 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         const absIndexedDir = path.resolve(scopeDir)
         const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
         await rm(failureSentinelFile, { force: true })
+    }
+}
+
+export interface IndexStartEvent {
+    scopeDir: string
+    cancel: () => void
+    done: Promise<void>
+}
+
+export interface IndexEndEvent {
+    scopeDir: string
+}
+
+class IndexStatus implements vscode.Disposable {
+    private startEmitter = new vscode.EventEmitter<IndexStartEvent>()
+    private stopEmitter = new vscode.EventEmitter<IndexEndEvent>()
+    private inProgressDirs = new Set<string>()
+
+    public dispose(): void {
+        this.startEmitter.dispose()
+        this.stopEmitter.dispose()
+    }
+
+    public didStart(event: IndexStartEvent): void {
+        this.inProgressDirs.add(event.scopeDir)
+        this.startEmitter.fire(event)
+    }
+
+    public didEnd(event: IndexEndEvent): void {
+        this.inProgressDirs.delete(event.scopeDir)
+        this.stopEmitter.fire(event)
+    }
+
+    public onDidStart(cb: (e: IndexStartEvent) => void): vscode.Disposable {
+        return this.startEmitter.event(cb)
+    }
+
+    public onDidEnd(cb: (e: IndexEndEvent) => void): vscode.Disposable {
+        return this.stopEmitter.event(cb)
+    }
+
+    public isInProgress(scopeDir: string): boolean {
+        return this.inProgressDirs.has(scopeDir)
     }
 }
 

@@ -20,7 +20,6 @@ describe('getConfiguration', () => {
             autocomplete: true,
             autocompleteLanguages: {
                 '*': true,
-                scminput: false,
             },
             commandCodeLenses: false,
             editorTitleCommandIcon: true,
@@ -69,7 +68,7 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.enabled':
                         return false
                     case 'cody.autocomplete.languages':
-                        return { '*': true, scminput: false }
+                        return { '*': true }
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.commandCodeLenses':
@@ -142,7 +141,6 @@ describe('getConfiguration', () => {
             autocomplete: false,
             autocompleteLanguages: {
                 '*': true,
-                scminput: false,
             },
             experimentalChatPredictions: true,
             commandCodeLenses: true,
