@@ -128,7 +128,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
     public async start(): Promise<void> {
         logDebug('LocalEmbeddingsController', 'start')
         await this.getService()
-        const repoUri = vscode.workspace.workspaceFolders?.[0].uri
+        const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
         if (repoUri) {
             await this.eagerlyLoad(repoUri.fsPath)
         }
@@ -246,7 +246,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                 const loadedOk = await this.eagerlyLoad(path)
                 logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
                 this.changeEmitter.fire(this)
-                if (loadedOk) {
+                if (loadedOk && !this.lastError) {
                     await vscode.window.showInformationMessage('✨ Cody Embeddings Index Complete')
                 }
             })()
@@ -276,7 +276,8 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             return []
         }
         // TODO: Summarize the path with ~, etc.
-        const path = this.lastRepo?.path || vscode.workspace.workspaceFolders?.[0].uri.fsPath || '(No workspace loaded)'
+        const path =
+            this.lastRepo?.path || vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || '(No workspace loaded)'
         if (!this.lastRepo) {
             return [
                 {
@@ -499,7 +500,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         if (!this.lastHealth?.numItemsNeedEmbedding) {
             return ''
         }
-        const percentDone = Math.floor((100 * this.lastHealth.numItemsNeedEmbedding) / this.lastHealth.numItems)
+        const percentDone = Math.floor(
+            (100 * (this.lastHealth.numItems - this.lastHealth.numItemsNeedEmbedding)) / this.lastHealth.numItems
+        )
         return `${options?.prefix || ''}Cody Embeddings index for ${
             this.lastRepo?.path || 'this repository'
         } is only ${percentDone.toFixed(0)}% complete.${options?.suffix || ''}`

@@ -5,7 +5,7 @@ import { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
 
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
- * framework: https://docs.sourcegraph.com/dev/background-information/telemetry
+ * framework: https://sourcegraph.com/docs/dev/background-information/telemetry
  *
  * If configured to do so, it will also attempt to send events to the old
  * event-logging mutations if the instance is older than 5.2.0.

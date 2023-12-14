@@ -494,7 +494,7 @@ export class SourcegraphGraphQLAPIClient {
 
     /**
      * recordTelemetryEvents uses the new Telemetry API to record events that
-     * gets exported: https://docs.sourcegraph.com/dev/background-information/telemetry
+     * gets exported: https://sourcegraph.com/docs/dev/background-information/telemetry
      *
      * Only available on Sourcegraph 5.2.0 and later.
      *
@@ -541,7 +541,7 @@ export class SourcegraphGraphQLAPIClient {
              * Only log events to the connected instance, not dotcom. Used when
              * another mechanism handles reporting to dotcom (i.e. the old
              * client and/or the new telemetry framework, which exports events
-             * from all instances: https://docs.sourcegraph.com/dev/background-information/telemetry)
+             * from all instances: https://sourcegraph.com/docs/dev/background-information/telemetry)
              */
             case 'connected-instance-only':
                 return this.sendEventLogRequestToAPI(event)

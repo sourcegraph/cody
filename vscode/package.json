@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.18.5",
+  "version": "0.18.6",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -82,7 +82,7 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/cody/issues"
   },
-  "homepage": "https://docs.sourcegraph.com/cody",
+  "homepage": "https://sourcegraph.com/docs/cody",
   "badges": [
     {
       "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
@@ -237,7 +237,7 @@
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Natural Language Search (Experimental)",
+          "name": "Natural Language Search (Beta)",
           "visibility": "visible",
           "when": "cody.activated"
         },
@@ -302,7 +302,7 @@
         "command": "cody.command.smell-code",
         "category": "Cody Command",
         "title": "Find Code Smells",
-        "icon": "$(symbol-keyword)",
+        "icon": "$(checklist)",
         "when": "cody.activated && editorFocus"
       },
       {
@@ -810,15 +810,13 @@
         "cody.autocomplete.languages": {
           "order": 5,
           "type": "object",
-          "markdownDescription": "Enables or disables code autocompletions for specified [language ids](https://code.visualstudio.com/docs/languages/identifiers). `\"*\"` is the default fallback if no language-specific setting is found.\n\nThe default setting: \n\n```json\n{\n  \"*\": true,\n  \"scminput\": false\n}\n```\n\nTo disable autocomplete for a given [language id](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) set its value to `false`, for example:\n\n```json\n{\n  \"*\": true,\n  \"scminput\": false,\n  \"plaintext\": false\n}\n```",
+          "markdownDescription": "Enables or disables code autocompletions for specified [language ids](https://code.visualstudio.com/docs/languages/identifiers). `\"*\"` is the default fallback if no language-specific setting is found.\n\nThe default setting: \n\n```json\n{\n  \"*\": true\n}\n```\n\nTo disable autocomplete for a given [language id](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) set its value to `false`, for example:\n\n```json\n{\n  \"*\": true,\n  \"plaintext\": false\n}\n```",
           "default": {
-            "*": true,
-            "scminput": false
+            "*": true
           },
           "examples": [
             {
               "*": true,
-              "scminput": false,
               "plaintext": false
             }
           ]
@@ -878,7 +876,7 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable symf code search context for chat",
-          "default": false
+          "default": true
         },
         "cody.experimental.symf.path": {
           "order": 99,
