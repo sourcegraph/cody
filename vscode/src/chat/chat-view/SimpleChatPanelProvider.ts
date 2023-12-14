@@ -941,13 +941,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const prompts =
                 allCommands?.filter(([id, { mode }]) => {
                     /** The /ask command is only useful outside of chat */
-                    const isRedudantCommand = id === '/ask'
+                    const isRedundantCommand = id === '/ask'
                     /**
                      * Hack: Custom edit commands are currently broken in this chat.
                      * We filter our anything that has this mode, apart from our own internal doc command - which we override ourselves
                      */
                     const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
-                    return !isRedudantCommand && !isCustomEdit
+                    return !isRedundantCommand && !isCustomEdit
                 }) || []
 
             void this.postMessage({
