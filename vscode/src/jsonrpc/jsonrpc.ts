@@ -343,7 +343,7 @@ export class MessageHandler {
                                 id: msg.id,
                                 error: {
                                     code,
-                                    message,
+                                    message: `${message}\n${stack}`,
                                     data: JSON.stringify({ error, stack }),
                                 },
                             }

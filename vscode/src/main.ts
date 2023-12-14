@@ -233,7 +233,7 @@ const register = async (
         })
     )
 
-    if (symfRunner) {
+    if (symfRunner && config.experimentalSymfContext) {
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()

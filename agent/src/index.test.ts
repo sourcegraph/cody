@@ -57,6 +57,7 @@ const clientInfo: ClientInfo = {
         autocompleteAdvancedServerEndpoint: '',
         debug: false,
         verboseDebug: false,
+        codebase: 'github.com/sourcegraph/cody',
     },
 }
 
@@ -119,12 +120,14 @@ describe('Agent', () => {
         // fine as long as we didn't send the second unauthenticated config
         // change.
         client.notify('extensionConfiguration/didChange', {
+            ...clientInfo.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: '',
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
         client.notify('extensionConfiguration/didChange', {
+            ...clientInfo.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: clientInfo.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: clientInfo.extensionConfiguration?.serverEndpoint ?? dotcom,
@@ -182,7 +185,7 @@ describe('Agent', () => {
     })
 
     it('allows us to execute recipes properly', async () => {
-        await client.executeRecipe('chat-question', 'How do I implement sum in JavaScript?')
+        await client.executeRecipe('chat-question', 'Hello')
     }, 20_000)
 
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
@@ -196,33 +199,13 @@ describe('Agent', () => {
                 .map(line => line.trimEnd())
                 .join('\n')
         }
+
         expect(actual).toMatchInlineSnapshot(`
           {
             "contextFiles": [],
             "preciseContext": [],
             "speaker": "assistant",
-            "text": " Here is how to implement a sum function in JavaScript:
-
-          \`\`\`js
-          function sum(arr) {
-            let total = 0;
-            for (let i = 0; i < arr.length; i++) {
-              total += arr[i];
-            }
-            return total;
-          }
-          \`\`\`
-
-          To use:
-
-          \`\`\`js
-          const numbers = [1, 2, 3, 4, 5];
-
-          const result = sum(numbers);
-          // result = 15
-          \`\`\`
-
-          This implements a simple sum function that takes an array of numbers, iterates through the array, and returns the total sum of the numbers.",
+            "text": " Hello! I'm Cody, an AI assistant created by Sourcegraph to help with programming tasks. I don't have any context about the codebase or your questions yet, but I'm ready to assist you based on the information you provide. I won't make any assumptions or provide hypothetical examples without proper context. Please feel free to share code snippets or details about what you're working on, and I'll do my best to provide helpful answers!",
           }
         `)
     }, 100)

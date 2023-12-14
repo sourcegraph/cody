@@ -24,6 +24,7 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import {
+    CancellationTokenSource,
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
     emptyDisposable,
@@ -184,6 +185,7 @@ const configuration: vscode.WorkspaceConfiguration = {
     },
 }
 
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
@@ -394,9 +396,9 @@ const _window: Partial<typeof vscode.window> = {
     registerWebviewViewProvider: () => emptyDisposable,
     createStatusBarItem: (() => statusBarItem) as any,
     visibleTextEditors,
-    withProgress: (_, handler) => handler({ report: () => {} }, 'window.withProgress.cancelationToken' as any),
+    withProgress: (_, handler) => handler({ report: () => {} }, new CancellationTokenSource().token),
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
-    onDidChangeVisibleTextEditors: (() => ({})) as any,
+    onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: (() => ({})) as any,
     showErrorMessage: (message: string, ...items: any[]) => {
         if (agent) {

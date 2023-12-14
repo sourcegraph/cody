@@ -57,7 +57,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
             update: () => Promise.resolve(),
             setKeysForSync: () => {},
         },
-        logUri: {} as any,
+        logUri: vscode.Uri.file(paths.log),
         logPath: {} as any,
         secrets: {
             onDidChange: vscode_shim.emptyEvent(),
@@ -151,6 +151,8 @@ export class Agent extends MessageHandler {
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
+            this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
+            vscode_shim.setWorkspaceDocuments(this.workspace)
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
