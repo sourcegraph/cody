@@ -13,7 +13,11 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
-        const { prompt, warnings, newContextUsed } = await new DefaultPrompter().makePrompt(
+        const {
+            prompt,
+            contextLimitWarnings: warnings,
+            newContextUsed,
+        } = await new DefaultPrompter().makePrompt(
             chat,
             {
                 getExplicitContext: () => [],
@@ -55,7 +59,11 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
-        const { prompt, warnings, newContextUsed } = await new DefaultPrompter().makePrompt(
+        const {
+            prompt,
+            contextLimitWarnings: warnings,
+            newContextUsed,
+        } = await new DefaultPrompter().makePrompt(
             chat,
             {
                 getExplicitContext: () => [],

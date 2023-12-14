@@ -24,7 +24,7 @@ import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -303,6 +303,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.onInitialized()
                 break
+            case 'reset':
+                await this.clearAndRestartSession()
+                break
             case 'submit': {
                 const requestID = uuid.v4()
                 await this.handleHumanMessageSubmitted(
@@ -382,7 +385,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             default:
-                this.postError(new Error('Invalid request type from Webview Panel'))
+                this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
@@ -443,7 +446,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (this.chatModel.isEmpty()) {
             return
         }
+
+        this.cancelInProgressCompletion()
         await this.saveSession()
+
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.sessionID = this.chatModel.sessionID
         this.postViewTranscript()
@@ -593,7 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.config.experimentalSymfContext ? this.symf : null,
                 this.codebaseStatusProvider
             )
-            const { prompt, warnings, newContextUsed } = await this.prompter.makePrompt(
+            const { prompt, contextLimitWarnings, newContextUsed } = await this.prompter.makePrompt(
                 this.chatModel,
                 contextProvider,
                 addEnhancedContext,
@@ -602,10 +608,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
             this.chatModel.setNewContextUsed(newContextUsed)
 
-            if (warnings.length > 0) {
-                const warningMsg =
-                    'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' ')
-                this.postError(new Error(warningMsg))
+            if (contextLimitWarnings.length > 0) {
+                const warningMsg = contextLimitWarnings
+                    .map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.'))
+                    .join(' ')
+                this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
             }
 
             if (sendTelemetry) {
@@ -778,7 +785,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             return
         }
         // Update webview panel title to match the last message
-        const text = this.chatModel.getLastHumanMessages()?.displayText
+        const text = this.chatModel.getLastHumanMessage()?.displayText
         if (this.webviewPanel && text) {
             this.webviewPanel.title = getChatPanelTitle(text)
         }

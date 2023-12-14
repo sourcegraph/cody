@@ -88,6 +88,9 @@ export type WebviewMessage =
           uriJSON: unknown
           range: { start: { line: number; character: number }; end: { line: number; character: number } }
       }
+    | {
+          command: 'reset'
+      }
 
 /**
  * A message sent from the extension host to the webview.
