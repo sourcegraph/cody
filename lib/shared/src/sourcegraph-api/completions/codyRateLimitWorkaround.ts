@@ -9,7 +9,6 @@ export function convertCodyGatewayErrorToRateLimitError(error: string, feature: 
         graphqlClient
             .getCurrentUserCodyProEnabled()
             .then(user => {
-                console.log({ user })
                 if (!('codyProEnabled' in user)) {
                     throw user
                 }

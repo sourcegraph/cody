@@ -118,6 +118,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         return
                     }
 
+                    // HACK: convert rate limit errors to RateLimitError instances, parsing metadata
+                    // from the error message
                     for (const event of parseResult.events) {
                         if (
                             isDotCom(this.config.serverEndpoint) &&
