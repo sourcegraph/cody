@@ -288,7 +288,10 @@ export class ChatPanelProvider extends MessageProvider {
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: error.message })
+        const errorMessage = this.contextProvider.config.debugVerbose
+            ? `${error.message}\n${error.stack}`
+            : error.message
+        void this.webview?.postMessage({ type: 'errors', errors: errorMessage })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {

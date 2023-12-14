@@ -63,6 +63,19 @@ export enum StatusBarAlignment {
     Right = 2,
 }
 
+export enum LogLevel {
+    Off = 0,
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warning = 4,
+    Error = 5,
+}
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2,
+}
+
 export enum CommentThreadCollapsibleState {
     Collapsed = 0,
     Expanded = 1,
@@ -453,6 +466,22 @@ export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
             invokeCallback(listener, data)
         }
     }
+
+    /**
+     * Custom extension of the VS Code API to make it possible to `await` on the
+     * result of `EventEmitter.fire()`.  Most event listeners return a
+     * meaningful `Promise` that is discarded in the signature of the `fire()`
+     * function.  Being able to await on returned promise makes it possible to
+     * write more robust tests because we don't need to rely on magic timeouts. */
+    public async fireAsync(data: T): Promise<void> {
+        const promises: Promise<void>[] = []
+        for (const listener of this.listeners) {
+            const value = invokeCallback(listener, data)
+            promises.push(Promise.resolve(value))
+        }
+        await Promise.all(promises)
+    }
+
     dispose(): void {
         this.listeners.clear()
     }

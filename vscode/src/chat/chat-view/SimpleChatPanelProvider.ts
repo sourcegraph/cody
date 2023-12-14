@@ -739,7 +739,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 onError: error => {
                     this.cancelInProgressCompletion()
                     typewriter.close()
-                    typewriter.stop()
+                    typewriter.stop(error)
                     callbacks.error(lastContent, error)
                 },
             },
