@@ -19,6 +19,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     userInfo,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
+    const dropdownRef = useRef<DropdownProps>(null)
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -54,8 +55,6 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     if (!models.length || models.length < 1) {
         return null
     }
-
-    const dropdownRef = useRef<DropdownProps>(null)
 
     const enabledDropdownProps: Pick<DropdownProps, 'title' | 'onClickCapture'> = {
         title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
