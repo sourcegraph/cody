@@ -77,7 +77,7 @@ export async function createOrUpdateEventLogger(
  *
  * In the future, all usages of TelemetryService will be removed in
  * favour of the new libraries. For more information, see:
- * https://docs.sourcegraph.com/dev/background-information/telemetry
+ * https://sourcegraph.com/docs/dev/background-information/telemetry
  * @param eventName The name of the event.
  * @param properties Event properties. Do NOT include any private information, such as full URLs
  * that may contain private repository names or search queries.
@@ -122,7 +122,7 @@ function logEvent(
  *
  * In the future, all usages of TelemetryService will be removed in
  * favour of the new libraries. For more information, see:
- * https://docs.sourcegraph.com/dev/background-information/telemetry
+ * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
 export const telemetryService: TelemetryService = {
     log(eventName, properties, opts) {

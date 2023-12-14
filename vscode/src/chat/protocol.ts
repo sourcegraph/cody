@@ -57,6 +57,7 @@ export type WebviewMessage =
       }
     | { command: 'edit'; text: string }
     | { command: 'embeddings/index' }
+    | { command: 'symf/index' }
     | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
     | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; metadata?: CodeBlockMeta }
@@ -118,7 +119,7 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
  * URLs for the Sourcegraph instance and app.
  */
 export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
-export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
+export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
@@ -127,7 +128,7 @@ export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/is
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
-    'https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits'
+    'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
 
 /**
