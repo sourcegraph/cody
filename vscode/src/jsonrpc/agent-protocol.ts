@@ -43,6 +43,8 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
+    'command/execute': [ExecuteCommandParams, any]
+
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
     'graphql/currentUserId': [null, string]
@@ -65,9 +67,11 @@ export type Requests = {
 
     'git/codebaseName': [{ url: string }, string | null]
 
+    'webview/didDispose': [{ id: string }, null]
     // ================
     // Server -> Client
     // ================
+    'webview/create': [{ id: string; data: any }, null]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -118,6 +122,8 @@ export type Notifications = {
     // The chat transcript grows indefinitely if this notification is never sent.
     'transcript/reset': [null]
 
+    'webview/receiveMessage': [{ id: string; message: any }]
+
     // ================
     // Server -> Client
     // ================
@@ -127,6 +133,8 @@ export type Notifications = {
     'chat/updateMessageInProgress': [ChatMessage | null]
 
     'debug/message': [DebugMessage]
+
+    'webview/postMessage': [{ id: string; message: any }]
 }
 
 export interface CancelParams {
@@ -315,6 +323,11 @@ export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
+}
+
+export interface ExecuteCommandParams {
+    command: string
+    arguments?: any[]
 }
 
 export interface DebugMessage {

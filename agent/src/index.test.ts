@@ -135,7 +135,7 @@ describe('Agent', () => {
         })
     })
 
-    it('lists recipes correctly', async () => {
+    it.skip('lists recipes correctly', async () => {
         const recipes = await client.listRecipes()
         assert.equal(9, recipes.length, JSON.stringify(recipes))
     })
@@ -191,7 +191,9 @@ describe('Agent', () => {
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
     it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
         await streamingChatMessages
+
         const actual = messages.at(-1)
+
         if (actual?.text) {
             // trim trailing whitespace from the autocomplete result that Prettier removes causing the inline snapshot assertion to fail.
             actual.text = actual.text

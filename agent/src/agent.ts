@@ -17,10 +17,13 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import { onMessageInProgress } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { logDebug } from '../../vscode/src/log'
 
 import { newTextEditor } from './AgentTextEditor'
+import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
@@ -49,8 +52,8 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // Placeholder string values for extension path/uri. These are only used
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
-        extensionPath: '__extensionPath_should_never_be_read_from',
-        extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
+        extensionPath: paths.config,
+        extensionUri: vscode.Uri.file(paths.config),
         globalState: {
             keys: () => [],
             get: () => undefined,
@@ -58,7 +61,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
             setKeysForSync: () => {},
         },
         logUri: vscode.Uri.file(paths.log),
-        logPath: {} as any,
+        logPath: paths.log,
         secrets: {
             onDidChange: vscode_shim.emptyEvent(),
             get(key) {
@@ -75,11 +78,11 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
                 return Promise.resolve()
             },
         },
-        storageUri: {} as any,
+        storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
         workspaceState: {} as any,
         globalStorageUri: vscode.Uri.file(paths.data),
-        storagePath: {} as any,
+        storagePath: paths.data,
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     })
 }
@@ -125,6 +128,7 @@ export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
+    public webPanels = new AgentWebPanels()
 
     private clientInfo: ClientInfo | null = null
 
@@ -148,7 +152,6 @@ export class Agent extends MessageHandler {
 
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
-        vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
@@ -187,6 +190,34 @@ export class Agent extends MessageHandler {
                 }
             }
 
+            const webPanels = this.webPanels
+
+            vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
+                console.log('CUSTOM_WEBVIEW')
+                const panel = new AgentWebPanel(viewType, title, showOptions, options)
+                logDebug(
+                    'createWebviewPanel',
+                    JSON.stringify({
+                        viewType,
+                        title,
+                        showOptions,
+                        options,
+                    })
+                )
+                webPanels.add(panel)
+                panel.onDidPostMessage(message => {
+                    this.notify('webview/postMessage', {
+                        id: panel.panelID,
+                        message,
+                    })
+                })
+                this.request('webview/create', {
+                    id: panel.panelID,
+                    data: null,
+                })
+                return panel
+            })
+
             const codyStatus = codyClient.codyStatus
             return {
                 name: 'cody-agent',
@@ -199,6 +230,7 @@ export class Agent extends MessageHandler {
         this.registerNotification('initialized', () => {})
 
         this.registerRequest('shutdown', async () => {
+            messageSubscription.dispose()
             if (this?.params?.polly) {
                 this.params.polly.disconnectFrom('node-http')
                 await this.params.polly.stop()
@@ -261,6 +293,14 @@ export class Agent extends MessageHandler {
         this.registerNotification('transcript/reset', async () => {
             const client = await this.client
             client?.reset()
+        })
+
+        const messageSubscription = onMessageInProgress(messageInProgress => {
+            this.notify('chat/updateMessageInProgress', messageInProgress ?? null)
+        })
+
+        this.registerRequest('command/execute', async params => {
+            await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
         })
 
         this.registerRequest('recipes/execute', async (data, token) => {
@@ -474,6 +514,25 @@ export class Agent extends MessageHandler {
             provider.clearLastCandidate()
         })
 
+        this.registerRequest('webview/didDispose', async ({ id }) => {
+            const panel = this.webPanels.panels.get(id)
+            if (!panel) {
+                console.log(`No panel with id ${id} found`)
+                return null
+            }
+            panel.dispose()
+            return null
+        })
+
+        this.registerNotification('webview/receiveMessage', async ({ id, message }) => {
+            const panel = this.webPanels.panels.get(id)
+            if (!panel) {
+                console.log(`No panel with id ${id} found`)
+                return
+            }
+            panel.receiveMessage.fire(message)
+        })
+
         this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })
@@ -542,7 +601,7 @@ export class Agent extends MessageHandler {
     /**
      * @deprecated use `this.telemetryRecorderProvider.getRecorder()` instead.
      */
-    private async logEvent(feature: string, action: string, mode: LogEventMode): Promise<null> {
+    public async logEvent(feature: string, action: string, mode: LogEventMode): Promise<null> {
         const client = await this.client
         if (!client) {
             return null

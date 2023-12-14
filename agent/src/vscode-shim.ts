@@ -33,6 +33,7 @@ import {
     FileType,
     UIKind,
     Uri,
+    ViewColumn,
 } from '../../vscode/src/testutils/mocks'
 
 import type { Agent } from './agent'
@@ -169,6 +170,8 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.autocomplete.experimental.syntacticPostProcessing':
                 // False because we don't embed WASM with the agent yet.
                 return false
+            case 'cody.experimental.symfContext':
+                return false
             case 'cody.codebase':
                 return connectionConfig?.codebase
             case 'cody.advanced.agent.ide':
@@ -189,6 +192,7 @@ export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.Te
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
 export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
@@ -347,32 +351,67 @@ export function setAgent(newAgent: Agent): void {
     agent = newAgent
 }
 
-const webviewPanel: vscode.WebviewPanel = {
-    active: false,
-    dispose: () => {},
-    onDidChangeViewState: emptyEvent(),
-    onDidDispose: emptyEvent(),
-    options: { enableFindWidget: false, retainContextWhenHidden: false },
-    reveal: () => {},
-    title: 'title',
-    viewColumn: undefined,
-    viewType: 'markdown.preview',
-    visible: false,
-    webview: {
-        asWebviewUri(localResource) {
-            return localResource
+export function defaultWebviewPanel(params: {
+    viewType: string
+    title: string
+    showOptions: vscode.ViewColumn | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
+    options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
+    onDidReceiveMessage: vscode.EventEmitter<any>
+    onDidPostMessage: vscode.EventEmitter<any>
+}): vscode.WebviewPanel {
+    return {
+        active: false,
+        dispose: () => {},
+        onDidChangeViewState: emptyEvent(),
+        onDidDispose: emptyEvent(),
+        options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
+        reveal: () => {
+            console.log('WEBVIEW: REVEAL')
         },
-        cspSource: 'cspSource',
-        html: '<p>html</p>',
-        onDidReceiveMessage: emptyEvent(),
-        options: {},
-        postMessage: () => Promise.resolve(true),
-    },
+        title: params.title,
+        viewColumn: typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
+        viewType: params.viewType,
+        visible: false,
+        webview: {
+            asWebviewUri(localResource) {
+                console.log({ localResource })
+                return localResource
+            },
+            cspSource: 'cspSource',
+            html: '<p>html</p>',
+            onDidReceiveMessage: params.onDidReceiveMessage.event,
+            options: {},
+            postMessage: message => {
+                params.onDidPostMessage.fire(message)
+                return Promise.resolve(true)
+            },
+        },
+    }
 }
+
+const webviewPanel: vscode.WebviewPanel = defaultWebviewPanel({
+    viewType: 'agent',
+    title: 'Agent',
+    showOptions: ViewColumn.One,
+    options: undefined,
+    onDidReceiveMessage: new EventEmitter<any>(),
+    onDidPostMessage: new EventEmitter<any>(),
+})
+
+let shimmedCreateWebviewPanel: typeof vscode.window.createWebviewPanel = () => {
+    console.log('DEFAULT_WEBVIEW')
+    return webviewPanel
+}
+export function setCreateWebviewPanel(newCreateWebviewPanel: typeof vscode.window.createWebviewPanel): void {
+    shimmedCreateWebviewPanel = newCreateWebviewPanel
+}
+
 const _window: Partial<typeof vscode.window> = {
     createTreeView: () => ({ visible: false }) as any,
     tabGroups,
-    createWebviewPanel: () => webviewPanel,
+    createWebviewPanel: (...params) => {
+        return shimmedCreateWebviewPanel(...params)
+    },
     registerCustomEditorProvider: () => emptyDisposable,
     registerFileDecorationProvider: () => emptyDisposable,
     registerTerminalLinkProvider: () => emptyDisposable,
