@@ -20,6 +20,9 @@
 - Chat
   - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
   - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
+- Product-led growth
+  - [ ] [Cody Free/Pro subscription tab](#cody-freepro-subscription-tab)
+  - [ ] [Cody Free/Pro rate limit errors](#cody-freepro-rate-limit-errors)
 - Other
   - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
   - [ ] [Automatic repository recognition](#automatic-repository-recognition)
@@ -238,6 +241,34 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 #### Expected behaviour
 
 * Scrollbar is **not moving automatically** while new message tokens are generated. You can easily read older messages without interruptions and scrolling is smooth.
+
+## [Product-led growth](https://handbook.sourcegraph.com/departments/data-analytics/product-led-growth/)
+
+### Cody Free/Pro subscription tab
+
+1. Log in to Sourcegraph.com with a **Free** account and `cody-pro-jetbrains` feature flag enabled.
+2. Go to the `Cody` toolbar and open `Subscription` tab.
+3. Verify:
+    * The current tier should be `Cody Free`.
+    * The `Upgrade` button is visible and it points to `https://sourcegraph.com/cody/subscription`.
+    * The `Check Usage` button is visible and it points to `https://sourcegraph.com/cody/manage`.
+4. Go to accounts settings and switch to **Pro** account.
+5. Go to `Subscription` tab.
+6. Verify:
+    * The current tier should be `Cody Pro`.
+    * The `Upgrade` is **not visible**.
+7. Go to account settings and switch to an Enterprise account (AKA *non-dotcom*).
+8. Verify: `Subscription` panel is not visible in `Cody` toolbar.
+9. Go to accounts settings and switch back to the **Free** account.
+10. Verify: `Subscription` panel is visible.
+
+### Cody Free/Pro rate limit errors
+
+1. Log in to a Sourcegraph.com with a **Free account with rate limits exceeded**.
+2. Go to the `Chat` and type a message.
+3. Verify: A notification about the exceeded rate limit is shown. It should suggest upgrading to Cody Pro.
+4. Trigger autocomplete in the editor.
+5. Verify: A similar notification is shown to the user.
 
 ## Other
 
