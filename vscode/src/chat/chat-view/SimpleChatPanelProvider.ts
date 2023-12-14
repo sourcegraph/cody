@@ -29,6 +29,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
+import { executeEdit } from '../../edit/execute'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
@@ -508,6 +509,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await this.clearAndRestartSession()
                 return
             }
+            if (text.match(/^\/edit(\s)?/)) {
+                await executeEdit({ instruction: text.replace(/^\/(edit)/, '').trim() }, 'chat')
+                return
+            }
+            if (text.match(/^\/doc(\s)?/)) {
+                await vscode.commands.executeCommand('cody.command.document-code')
+                return
+            }
             if (text === '/commands-settings') {
                 // User has clicked the settings button for commands
                 await vscode.commands.executeCommand('cody.settings.commands')
@@ -930,8 +939,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const allCommands = await this.editor.controllers.command?.getAllCommands(true)
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
-                allCommands?.filter(([id, { mode = '' }]) => {
-                    return !['/edit', '/doc', '/ask'].includes(id) && !['edit', 'insert'].includes(mode)
+                allCommands?.filter(([id]) => {
+                    return !['/ask'].includes(id)
                 }) || []
 
             void this.postMessage({
