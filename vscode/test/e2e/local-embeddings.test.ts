@@ -113,7 +113,7 @@ test.extend<helpers.WorkspaceDirectory>({
     await expect(enableEmbeddingsButton).toBeVisible({ timeout: 60000 })
     await enableEmbeddingsButton.click()
 
-    await expect(chatFrame.getByText('Indexed')).toBeVisible({ timeout: 30000 })
+    await expect(chatFrame.getByText('Embeddings — Indexed')).toBeVisible({ timeout: 30000 })
 
     // Search the embeddings. This test uses the "stub" embedding model, which
     // is deterministic, but the searches are not semantic.
