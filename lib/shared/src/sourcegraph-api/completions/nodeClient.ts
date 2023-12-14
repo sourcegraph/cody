@@ -2,11 +2,13 @@ import http from 'http'
 import https from 'https'
 
 import { isError } from '../../utils'
+import { isDotCom } from '../environments'
 import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
+import { convertCodyGatewayErrorToRateLimitError } from './codyRateLimitWorkaround'
 import { parseEvents } from './parse'
 import { CompletionCallbacks, CompletionParameters } from './types'
 
@@ -114,6 +116,27 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     if (isError(parseResult)) {
                         console.error(parseResult)
                         return
+                    }
+
+                    // HACK: convert rate limit errors to RateLimitError instances, parsing metadata
+                    // from the error message
+                    for (const event of parseResult.events) {
+                        if (
+                            isDotCom(this.config.serverEndpoint) &&
+                            event.type === 'error' &&
+                            event.error.startsWith('Sourcegraph Cody Gateway: unexpected status code 429: ')
+                        ) {
+                            // Extract stuff from this string:
+                            // 'Sourcegraph Cody Gateway: unexpected status code 429: you have exceeded the rate limit of 10 requests. Retry after 2023-12-15 14:36:37 +0000 UTC\n'
+                            convertCodyGatewayErrorToRateLimitError(event.error, 'chat messages and commands')
+                                .then(error => {
+                                    cb.onError(error, 429)
+                                })
+                                .catch(() => {
+                                    // This promise always resolves
+                                })
+                            return
+                        }
                     }
 
                     log?.onEvents(parseResult.events)
