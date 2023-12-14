@@ -126,7 +126,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         ) {
                             // Extract stuff from this string:
                             // 'Sourcegraph Cody Gateway: unexpected status code 429: you have exceeded the rate limit of 10 requests. Retry after 2023-12-15 14:36:37 +0000 UTC\n'
-                            convertCodyGatewayErrorToRateLimitError(event.error)
+                            convertCodyGatewayErrorToRateLimitError(event.error, 'chat messages and commands')
                                 .then(error => {
                                     cb.onError(error, 429)
                                 })

@@ -1,7 +1,7 @@
 import { RateLimitError } from '../errors'
 import { graphqlClient } from '../graphql'
 
-export function convertCodyGatewayErrorToRateLimitError(error: string): Promise<RateLimitError> {
+export function convertCodyGatewayErrorToRateLimitError(error: string, feature: string): Promise<RateLimitError> {
     return new Promise(resolve => {
         const limit = /exceeded the rate limit of (\d+) requests/.exec(error)
         const retryAfter = /Retry after (.*)\n/.exec(error)
@@ -14,7 +14,7 @@ export function convertCodyGatewayErrorToRateLimitError(error: string): Promise<
                     throw user
                 }
                 const rateLimitError = new RateLimitError(
-                    'chat messages and commands',
+                    feature,
                     error,
                     !user.codyProEnabled,
                     limit ? parseInt(limit[0], 10) : undefined,
@@ -24,7 +24,7 @@ export function convertCodyGatewayErrorToRateLimitError(error: string): Promise<
             })
             .catch(() => {
                 const rateLimitError = new RateLimitError(
-                    'chat messages and commands',
+                    feature,
                     error,
                     true,
                     limit ? parseInt(limit[0], 10) : undefined,

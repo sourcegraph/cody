@@ -11,6 +11,7 @@ import type {
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     isAbortError,
+    isRateLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
@@ -152,11 +153,11 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                     if (chunk.event === 'error') {
                         if (
                             isDotCom(config.serverEndpoint) &&
-                            chunk.event.startsWith('Sourcegraph Cody Gateway: unexpected status code 429: ')
+                            chunk.data.startsWith('{"error":"Sourcegraph Cody Gateway: unexpected status code 429: ')
                         ) {
                             // Extract stuff from this string:
                             // 'Sourcegraph Cody Gateway: unexpected status code 429: you have exceeded the rate limit of 10 requests. Retry after 2023-12-15 14:36:37 +0000 UTC\n'
-                            throw await convertCodyGatewayErrorToRateLimitError(chunk.event)
+                            throw await convertCodyGatewayErrorToRateLimitError(chunk.event, 'completions')
                         }
                     }
 
@@ -177,6 +178,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 return lastResponse
             } catch (error) {
+                if (isRateLimitError(error as Error)) {
+                    throw error
+                }
                 if (isAbortError(error as Error) && lastResponse) {
                     log?.onComplete(lastResponse)
                 }

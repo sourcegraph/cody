@@ -9,7 +9,6 @@ import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
-import { RateLimitError } from '@sourcegraph/cody-shared'
 import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -105,12 +104,17 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             .then(({ stdout }) => stdout.trim())
             .catch(error => {
                 if (isError(error) && error.message.includes('429')) {
-                    // HACK: we should move the query term expansion code into the agent so
-                    // we can handle this less hackily.
-                    // This also assumes an upgrade path is available. It's unlikely we'll
-                    // hit this limit on a chat request, so this is mainly to satisfy the
-                    // e2e test.
-                    throw new RateLimitError('chat messages and commands', error.message, true)
+                    // The rate limit error constructed below does not have the proper PLG errors.
+                    // Instead, we continue here and wait for the rate limit error that will come
+                    // from the generation request.
+                    return userQuery
+
+                    // // HACK: we should move the query term expansion code into the agent so
+                    // // we can handle this less hackily.
+                    // // This also assumes an upgrade path is available. It's unlikely we'll
+                    // // hit this limit on a chat request, so this is mainly to satisfy the
+                    // // e2e test.
+                    // throw new RateLimitError('chat messages and commands', error.message, true)
                 }
                 throw error
             })
