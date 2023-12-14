@@ -552,15 +552,15 @@ describe('InlineCompletionItemProvider', () => {
                     'rate limited oh no'
                 )
                 expect(addError).toHaveBeenCalledWith(
-                    canUpgrade ?
-                        expect.objectContaining({
-                            title: 'Upgrade to Continue Using Cody Autocomplete',
-                            description: 'You\'ve used all 1234 autocompletions for the month.',
-                        }) :
-                        expect.objectContaining({
-                            title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                            description: 'You\'ve used all autocompletions for today.',
-                        })
+                    canUpgrade
+                        ? expect.objectContaining({
+                              title: 'Upgrade to Continue Using Cody Autocomplete',
+                              description: "You've used all 1234 autocompletions for the month.",
+                          })
+                        : expect.objectContaining({
+                              title: 'Cody Autocomplete Disabled Due to Rate Limit',
+                              description: "You've used all autocompletions for today.",
+                          })
                 )
 
                 await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
