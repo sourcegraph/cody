@@ -60,7 +60,7 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 
 All code in this repository is open source (Apache 2).
 
-Quickstart: `pnpm install && cd vscode && pnpm run dev` to run a local build of the Cody VS Code extension.
+Quickstart: `pnpm install && pnpm build && cd vscode && pnpm run dev` to run a local build of the Cody VS Code extension.
 
 See [development docs](doc/dev/index.md) for more.
 
