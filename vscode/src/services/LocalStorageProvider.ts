@@ -69,7 +69,14 @@ export class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
+    private dbg(action: string): void {
+        console.log('########## ' + action + ' ##########')
+        console.log(this.storage.get<any>(this.KEY_LOCAL_HISTORY, null))
+        console.log('##############################')
+    }
+
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
+        this.dbg('getChatHistory')
         let history = this.storage.get<{ [key: `${string}-${string}`]: UserLocalHistory } | UserLocalHistory | null>(
             this.KEY_LOCAL_HISTORY,
             null
@@ -82,11 +89,15 @@ export class LocalStorage {
 
         // For backwards compatibility, we upgrade the local storage key from the old layout that is
         // not scoped to individual user accounts to be scoped instead.
-        if ('chat' in history) {
-            void this.setChatHistory(authStatus, history)
+        if (history && !isChatHistoryV2(history)) {
+            console.log('ATTEMPTING UPGRADE PROCEDURE')
             history = {
                 [key]: history,
             }
+
+            // We use a raw write here to ensure we do not _append_ a key but actually replace
+            // existing `chat` and `input` keys.
+            void this.storage.update(this.KEY_LOCAL_HISTORY, history)
         }
 
         if (!history[key]) {
@@ -96,6 +107,7 @@ export class LocalStorage {
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
+        this.dbg('setChatHistory')
         try {
             const key = getKeyForAuthStatus(authStatus)
             let fullHistory = this.storage.get<{ [key: string]: UserLocalHistory } | null>(this.KEY_LOCAL_HISTORY, null)
@@ -194,4 +206,8 @@ export const localStorage = new LocalStorage()
 
 function getKeyForAuthStatus(authStatus: AuthStatus): `${string}-${string}` {
     return `${authStatus.endpoint}-${authStatus.primaryEmail}`
+}
+
+function isChatHistoryV2(history: { [key: `${string}-${string}`]: UserLocalHistory } | UserLocalHistory): boolean {
+    return !!Object.keys(history).find(k => k.includes('-'))
 }
