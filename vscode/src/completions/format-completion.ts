@@ -20,7 +20,8 @@ export async function formatCompletion(autocompleteItem: AutocompleteItem): Prom
             insertedLines.length <= 1
                 ? new vscode.Position(position.line, currentLinePrefix.length + insertedLines[0].length)
                 : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
-        const rangeToFormat = new vscode.Range(position, endPosition)
+        // Start at the beginning of the line to format the whole line if needed.
+        const rangeToFormat = new vscode.Range(new vscode.Position(position.line, 0), endPosition)
 
         const formattingChanges = await vscode.commands.executeCommand<vscode.TextEdit[] | undefined>(
             'vscode.executeFormatRangeProvider',
