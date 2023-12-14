@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { ComponentProps, useCallback, useRef, useState } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -9,6 +9,8 @@ import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import styles from './ChatModelDropdownMenu.module.css'
+
+type DropdownProps = ComponentProps<typeof VSCodeDropdown>
 
 export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({
     models,
@@ -53,24 +55,30 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         return null
     }
 
+    const dropdownRef = useRef<DropdownProps>(null)
+
+    const enabledDropdownProps: Pick<DropdownProps, 'title' | 'onClickCapture'> = {
+        title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
+        onClickCapture: () => {
+            // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+            if (!dropdownRef.current?.open) {
+                getVSCodeAPI().postMessage({
+                    command: 'event',
+                    eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
+                    properties: undefined,
+                })
+            }
+        },
+    }
+
     return (
         <div className={styles.container}>
             <VSCodeDropdown
+                ref={dropdownRef}
                 disabled={disabled}
                 className={styles.dropdownContainer}
                 onChange={handleChange}
-                title={
-                    disabled
-                        ? `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`
-                        : undefined
-                }
-                onClick={() =>
-                    getVSCodeAPI().postMessage({
-                        command: 'event',
-                        eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-                        properties: undefined,
-                    })
-                }
+                {...(!disabled && enabledDropdownProps)}
             >
                 {models?.map((option, index) => (
                     <VSCodeOption
