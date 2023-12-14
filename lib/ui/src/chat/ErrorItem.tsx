@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { ChatError, RateLimitError } from '@sourcegraph/cody-shared'
+import { ChatError, ContextWindowLimitError, RateLimitError } from '@sourcegraph/cody-shared'
 
 import { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
@@ -25,6 +25,16 @@ export const ErrorItem: React.FunctionComponent<{
         )
     }
 
+    if (typeof error !== 'string' && error.name === ContextWindowLimitError.errorName && postMessage) {
+        return (
+            <ContextWindowLimitErrorItem
+                error={error as ContextWindowLimitError}
+                ChatButtonComponent={ChatButtonComponent}
+                postMessage={postMessage}
+            />
+        )
+    }
+
     return <RequestErrorItem error={error.message} />
 })
 
@@ -38,6 +48,35 @@ export const RequestErrorItem: React.FunctionComponent<{
         <div className="cody-chat-error">
             <span>Request failed: </span>
             {error}
+        </div>
+    )
+})
+
+export const ContextWindowLimitErrorItem: React.FunctionComponent<{
+    error: ContextWindowLimitError
+    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+    postMessage: ApiPostMessage
+}> = React.memo(function ContextWindowLimitErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+    const onClick = useCallback(() => {
+        postMessage({ command: 'reset' })
+    }, [postMessage])
+
+    return (
+        <div className={styles.errorItem}>
+            <div className={styles.icon}>
+                <span className="codicon codicon-warning" />
+            </div>
+            <div className={styles.body}>
+                <header>
+                    <h1>Context limit reached</h1>
+                    <p>{error.message}</p>
+                </header>
+                {ChatButtonComponent && (
+                    <div className={styles.actions}>
+                        <ChatButtonComponent label="Start new chat" action="" appearance="primary" onClick={onClick} />
+                    </div>
+                )}
+            </div>
         </div>
     )
 })

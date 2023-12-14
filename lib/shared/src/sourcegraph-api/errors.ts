@@ -106,3 +106,12 @@ export function isAbortError(error: unknown): boolean {
 }
 
 export class TimeoutError extends Error {}
+
+export class ContextWindowLimitError extends Error {
+    public static readonly errorName = 'ContextWindowLimitError'
+    public readonly name = ContextWindowLimitError.errorName
+
+    constructor(public readonly message: string) {
+        super(message)
+    }
+}
