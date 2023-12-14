@@ -7,6 +7,7 @@ import { rimraf } from 'rimraf'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
+import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import * as vscode from './vscode-shim'
 
 describe('vscode-shim', () => {
@@ -56,7 +57,7 @@ describe('vscode-shim', () => {
 
 // Skipping vscode.workspace.fs tests on Windows for now since the assertions were failing
 // Follow-up https://github.com/sourcegraph/cody/issues/2342
-describe.skipIf(os.platform().includes('win'))('vscode.workspace.fs', () => {
+describe.skipIf(os.platform().startsWith('win'))('vscode.workspace.fs', () => {
     let tmpdir: URI
 
     beforeEach(async () => {
@@ -159,5 +160,72 @@ describe.skipIf(os.platform().includes('win'))('vscode.workspace.fs', () => {
 
     it('isWritableFileSystem', () => {
         expect(vscode.workspace.fs.isWritableFileSystem('file')).toBe(true)
+    })
+})
+
+describe('vscode.workspace.findFiles', () => {
+    let tmpdir: URI
+
+    beforeEach(async () => {
+        const testFolderPath = await fspromises.mkdtemp(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+        tmpdir = vscode.Uri.file(testFolderPath)
+        const workspaceDocuments = new AgentWorkspaceDocuments()
+        while (vscode.workspaceFolders.pop()) {
+            // clear
+        }
+        workspaceDocuments.workspaceRootUri = tmpdir
+        vscode.setWorkspaceDocuments(workspaceDocuments)
+        await fspromises.writeFile(path.join(tmpdir.fsPath, 'README.md'), '# Bananas are great')
+        await fspromises.writeFile(path.join(tmpdir.fsPath, 'other.txt'), 'Other file')
+        await fspromises.mkdir(path.join(tmpdir.fsPath, 'scripts'))
+        await fspromises.writeFile(path.join(tmpdir.fsPath, 'scripts', 'hello.sh'), 'echo Hello')
+    })
+    afterEach(async () => {
+        await rimraf.rimraf(tmpdir.fsPath)
+    })
+    it('findFiles(README)', async () => {
+        const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
+        const files = await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)
+        expect(files.map(file => file.fsPath)).toEqual([path.join(tmpdir.fsPath, 'README.md')])
+    })
+
+    it('findFiles("")', async () => {
+        const files = await vscode.workspace.findFiles('', undefined, undefined)
+        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+          [
+            "README.md",
+            "other.txt",
+            "scripts/hello.sh",
+          ]
+        `)
+    })
+
+    it('findFiles("**.sh")', async () => {
+        const files = await vscode.workspace.findFiles('**/*.sh', undefined, undefined)
+        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+          [
+            "scripts/hello.sh",
+          ]
+        `)
+    })
+
+    it('findFiles(exclude="**.sh")', async () => {
+        const files = await vscode.workspace.findFiles('', '**/*.sh', undefined)
+        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+          [
+            "README.md",
+            "other.txt",
+          ]
+        `)
+    })
+
+    it('findFiles(maxResults)', async () => {
+        const files = await vscode.workspace.findFiles('', undefined, 2)
+        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+          [
+            "README.md",
+            "other.txt",
+          ]
+        `)
     })
 })

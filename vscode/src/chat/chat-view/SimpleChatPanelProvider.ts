@@ -505,6 +505,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
+        console.log({ addEnhancedContext })
         if (submitType === 'suggestion') {
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
@@ -708,8 +709,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 },
                 onError: error => {
                     this.cancelInProgressCompletion()
-                    typewriter.stop()
                     callbacks.error(lastContent, error)
+                    typewriter.stop(error)
                 },
             },
             { model: this.chatModel.modelID }
@@ -879,6 +880,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         userInputContextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
+        console.log({ addEnhancedContext })
         try {
             const requestID = uuid.v4()
             const recipeMessages = await this.recipeAdapter.computeRecipeMessages(

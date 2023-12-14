@@ -157,8 +157,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
 
         const agent = new Agent({ polly })
 
-        console.log = console.error
-
         // Force the agent process to exit when stdin/stdout close as an attempt to
         // prevent zombie agent processes. We experienced this problem when we
         // forcefully exit the IntelliJ process during local `./gradlew :runIde`

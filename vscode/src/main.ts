@@ -233,7 +233,10 @@ const register = async (
         })
     )
 
-    if (symfRunner) {
+    // Important to respect `config.experimentalSymfContext`. The agent
+    // currently crashes with a cryptic error when running with symf enabled so
+    // we need a way to reliably disable symf until we fix the root problem.
+    if (symfRunner && config.experimentalSymfContext) {
         const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
