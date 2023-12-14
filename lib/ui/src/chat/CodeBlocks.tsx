@@ -175,6 +175,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
 
         for (const preElement of preElements) {
             const preText = preElement.textContent
+            console.log('preText', preText)
             if (preText?.trim() && preElement.parentNode) {
                 const eventMetadata = { requestID: metadata?.requestID, source: metadata?.source }
 
@@ -189,6 +190,23 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                const div = document.createElement('div')
+                div.innerText = 'loading'
+                buttons.append(div)
+
+                // create a promise that will resolve in 2s
+                const promise = new Promise<void>(resolve => {
+                    setTimeout(() => {
+                        resolve()
+                    }, 2000)
+                })
+                promise
+                    .then(() => {
+                        div.innerText = 'done'
+                    })
+                    .catch(error => {
+                        console.error('promise failed', error)
+                    })
 
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
