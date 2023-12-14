@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Adds support for Mixtral by Mistral in the LLM dropdown list. [issues/2307](https://github.com/sourcegraph/cody/issues/2307)
+
 ### Fixed
 
 - Context: The "Continue Indexing" button works on Windows. [issues/2328](https://github.com/sourcegraph/cody/issues/2328)

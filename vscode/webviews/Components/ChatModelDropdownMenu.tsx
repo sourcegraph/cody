@@ -4,7 +4,7 @@ import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
-import { AnthropicLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
+import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
@@ -115,6 +115,9 @@ export const ProviderIcon = ({ model, className }: { model: string; className?: 
     }
     if (model.startsWith('anthropic/')) {
         return <AnthropicLogo className={className} />
+    }
+    if (model.includes('mixtral')) {
+        return <MistralLogo className={className} />
     }
     return <></>
 }
