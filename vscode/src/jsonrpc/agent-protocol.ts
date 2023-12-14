@@ -11,6 +11,7 @@ import {
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
+import { WebviewMessage } from '../chat/protocol'
 import { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -43,6 +44,7 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
+    'chat/new': [null, string]
     'command/execute': [ExecuteCommandParams, any]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
@@ -122,7 +124,7 @@ export type Notifications = {
     // The chat transcript grows indefinitely if this notification is never sent.
     'transcript/reset': [null]
 
-    'webview/receiveMessage': [{ id: string; message: any }]
+    'webview/receiveMessage': [{ id: string; message: WebviewMessage }]
 
     // ================
     // Server -> Client
@@ -134,7 +136,7 @@ export type Notifications = {
 
     'debug/message': [DebugMessage]
 
-    'webview/postMessage': [{ id: string; message: any }]
+    'webview/postMessage': [{ id: string; message: WebviewMessage }]
 }
 
 export interface CancelParams {

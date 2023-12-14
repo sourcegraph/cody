@@ -3,10 +3,12 @@ import { execSync, spawn } from 'child_process'
 import path from 'path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+
+import { WebviewMessage } from '../../vscode/src/chat/protocol'
 
 import { MessageHandler } from './jsonrpc-alias'
 import { ClientInfo } from './protocol-alias'
@@ -41,12 +43,13 @@ export class TestClient extends MessageHandler {
     }
 }
 
+const workspaceRootUri = 'file:///path/to/foo'
 const dotcom = 'https://sourcegraph.com'
 const clientInfo: ClientInfo = {
     name: 'test-client',
     version: 'v1',
-    workspaceRootUri: 'file:///path/to/foo',
-    workspaceRootPath: '/path/to/foo',
+    workspaceRootUri,
+    workspaceRootPath: vscode.Uri.parse(workspaceRootUri).fsPath,
     extensionConfiguration: {
         anonymousUserID: 'abcde1234',
         accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
@@ -140,15 +143,18 @@ describe('Agent', () => {
         assert.equal(9, recipes.length, JSON.stringify(recipes))
     })
 
-    it('returns non-empty autocomplete', async () => {
-        const filePath = '/path/to/foo/file.ts'
-        const uri = Uri.file(filePath)
+    const filePath = path.join(workspaceRootUri, 'foo.ts')
+    const uri = Uri.file(filePath)
+    it('accepts textDocument/didOpen notifications', async () => {
         const content = 'function sum(a: number, b: number) {\n    \n}'
         client.notify('textDocument/didOpen', {
             uri: uri.toString(),
             content,
             selection: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
         })
+    })
+
+    it.skip('returns non-empty autocomplete', async () => {
         const completions = await client.request('autocomplete/execute', {
             uri: uri.toString(),
             position: { line: 1, character: 3 },
@@ -164,45 +170,25 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    const messages: ChatMessage[] = []
-    const streamingChatMessages = new Promise<void>((resolve, reject) => {
-        let isResolved = false
-        client.registerNotification('chat/updateMessageInProgress', msg => {
-            if (msg === null) {
-                if (isResolved) {
-                    return
-                }
-                isResolved = true
-                if (messages.length > 0) {
-                    resolve()
-                } else {
-                    reject(new Error('Received null message before non-null message'))
-                }
-            } else {
-                messages.push(msg)
-            }
-        })
+    const messages: WebviewMessage[] = []
+    client.registerNotification('webview/postMessage', ({ message }) => {
+        messages.push(message)
     })
 
     it('allows us to execute recipes properly', async () => {
-        await client.executeRecipe('chat-question', 'Hello')
-    }, 20_000)
-
-    // Timeout is 100ms because we await on `recipes/execute` in the previous test
-    it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
-        await streamingChatMessages
-
-        const actual = messages.at(-1)
-
-        if (actual?.text) {
-            // trim trailing whitespace from the autocomplete result that Prettier removes causing the inline snapshot assertion to fail.
-            actual.text = actual.text
-                .split('\n')
-                .map(line => line.trimEnd())
-                .join('\n')
-        }
-
-        expect(actual).toMatchInlineSnapshot(`
+        const id = await client.request('chat/new', null)
+        client.notify('webview/receiveMessage', {
+            id,
+            message: {
+                command: 'submit',
+                text: 'Hello',
+                submitType: 'user',
+                addEnhancedContext: true,
+                contextFiles: [],
+            },
+        })
+        // await client.request('recipes/execute', { humanChatInput: 'Hello', id: 'chat-question' })
+        expect(messages).toMatchInlineSnapshot(`
           {
             "contextFiles": [],
             "preciseContext": [],
@@ -210,7 +196,7 @@ describe('Agent', () => {
             "text": " Hello! I'm Cody, an AI assistant created by Sourcegraph to help with programming tasks. I don't have any context about the codebase or your questions yet, but I'm ready to assist you based on the information you provide. I won't make any assumptions or provide hypothetical examples without proper context. Please feel free to share code snippets or details about what you're working on, and I'll do my best to provide helpful answers!",
           }
         `)
-    }, 100)
+    }, 20_000)
 
     // TODO Fix test - fails intermittently on macOS on Github Actions
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723

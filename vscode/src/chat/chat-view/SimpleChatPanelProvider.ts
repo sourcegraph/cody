@@ -765,8 +765,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     private postViewTranscript(messageInProgress?: ChatMessage): void {
-        // console.log({ messageInProgress })
-        simpleChatPanelProviderMessages.fire(messageInProgress)
         const messages: ChatMessage[] = this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
         if (messageInProgress) {
             messages.push(messageInProgress)
@@ -978,9 +976,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         return this.initDoer.do(() => this.webview?.postMessage(message))
     }
 }
-
-const simpleChatPanelProviderMessages = new vscode.EventEmitter<ChatMessage | undefined>()
-export const onMessageInProgress = simpleChatPanelProviderMessages.event
 
 class ContextProvider implements IContextProvider {
     constructor(

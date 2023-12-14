@@ -17,7 +17,7 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { onMessageInProgress } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
+import { WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { logDebug } from '../../vscode/src/log'
@@ -150,6 +150,8 @@ export class Agent extends MessageHandler {
         },
     ])
 
+    private resolveChatPanelId: ((chatPanelId: string) => void) | null = null
+
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
         vscode_shim.setAgent(this)
@@ -193,7 +195,6 @@ export class Agent extends MessageHandler {
             const webPanels = this.webPanels
 
             vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
-                console.log('CUSTOM_WEBVIEW')
                 const panel = new AgentWebPanel(viewType, title, showOptions, options)
                 logDebug(
                     'createWebviewPanel',
@@ -211,10 +212,15 @@ export class Agent extends MessageHandler {
                         message,
                     })
                 })
-                this.request('webview/create', {
-                    id: panel.panelID,
-                    data: null,
-                })
+                if (this.resolveChatPanelId) {
+                    this.resolveChatPanelId(panel.panelID)
+                    this.resolveChatPanelId = null
+                } else {
+                    this.request('webview/create', {
+                        id: panel.panelID,
+                        data: null,
+                    })
+                }
                 return panel
             })
 
@@ -230,7 +236,6 @@ export class Agent extends MessageHandler {
         this.registerNotification('initialized', () => {})
 
         this.registerRequest('shutdown', async () => {
-            messageSubscription.dispose()
             if (this?.params?.polly) {
                 this.params.polly.disconnectFrom('node-http')
                 await this.params.polly.stop()
@@ -295,8 +300,23 @@ export class Agent extends MessageHandler {
             client?.reset()
         })
 
-        const messageSubscription = onMessageInProgress(messageInProgress => {
-            this.notify('chat/updateMessageInProgress', messageInProgress ?? null)
+        this.registerRequest('chat/new', async () => {
+            const id = await new Promise<string>((resolve, reject) => {
+                this.resolveChatPanelId = resolve
+                vscode.commands.executeCommand('cody.chat.panel.new').then(
+                    () => {
+                        reject()
+                    },
+                    error => reject(error)
+                )
+                setTimeout(() => {
+                    reject(new Error('Timed out waiting for chat panel to be created'))
+                }, 1000)
+            })
+            this.receiveWebviewMessage(id, {
+                command: 'initialized',
+            })
+            return id
         })
 
         this.registerRequest('command/execute', async params => {
@@ -536,6 +556,15 @@ export class Agent extends MessageHandler {
         this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })
+    }
+
+    private receiveWebviewMessage(id: string, message: WebviewMessage): void {
+        const panel = this.webPanels.panels.get(id)
+        if (!panel) {
+            console.log(`No panel with id ${id} found`)
+            return
+        }
+        panel.receiveMessage.fire(message)
     }
 
     /**
