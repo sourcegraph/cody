@@ -83,7 +83,7 @@ export class LocalStorage {
         // For backwards compatibility, we upgrade the local storage key from the old layout that is
         // not scoped to individual user accounts to be scoped instead.
         if ('chat' in history) {
-            this.setChatHistory(authStatus, history)
+            void this.setChatHistory(authStatus, history)
             history = {
                 [key]: history,
             }
