@@ -37,13 +37,28 @@ Streamline your development process by using Cody commands to understand, improv
 You can also build your own [Custom Commands (Beta)](https://sourcegraph.com/docs/cody/capabilities/commands#custom-commands) to tailor Cody to your workflow. Custom Commands are defined as JSON within your repository and can be saved to your workspace for your teammates to reuse.
 
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
-<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/Custom_Command-Sept2023-Sm.gif" width="480" alt="Custom command">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-convert-html-to-md.gif" width="480" alt="Custom command">
 
 ## Choose Your LLM
 
-Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 2.0, Claude 2.1, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo, and Claude Instant.
+Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 2.0, Claude 2.1, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo, Claude Instant, and Mixtral.
 
 Administrators for Sourcegraph Enterprise instances can choose betweeen Claude and ChatGPT models to set for their teams as well.
+
+## Cody Natural Language Search (Beta)
+
+Cody builds a Search index of your local files to make it easier to find what you’re looking for. Use a natural language query like “password hashing” or "connection retries" to quickly find and open the files that match your search.
+
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-natural-language.gif" width="480" alt="Natural Language Search">
+
+## Usage
+
+Cody Free: This version of Cody is available entirely free for all developers. It includes up to 500 autocomplete suggestions & 20 chat/command invocations per month.
+
+Cody Pro: This is an expanded version of Cody for developers who want to use it every day, for either work or personal projects, with no usage limits. Cody Pro will be available for free until February 14, 2024, and after that Cody Pro will be available for $9/user/month.
+
+You can find more information on our [pricing page](https://sourcegraph.com/pricing).
 
 ## Programming Languages
 
