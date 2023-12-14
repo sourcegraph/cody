@@ -573,7 +573,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         sendTelemetry?: (contextSummary: {}) => void
     ): Promise<void> {
         try {
-            const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
+            const contextWindowBytes = getContextWindowForModel(this.chatModel.modelID)
 
             const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
             const contextProvider = new ContextProvider(
@@ -1431,4 +1431,20 @@ function getErrorMessage(error: unknown): string {
         return error.message
     }
     return String(error)
+}
+
+function getContextWindowForModel(modelID: string): number {
+    if (modelID.includes('claude-2') || modelID.includes('claude-instant')) {
+        return 28000 // 7000 tokens * 4 bytes per token
+    }
+    if (modelID.includes('openai/gpt-4-1106-preview')) {
+        return 28000 // 7000 tokens * 4 bytes per token
+    }
+    if (modelID.endsWith('openai/gpt-3.5-turbo')) {
+        return 15000 // 4,096 tokens * < 4 bytes per token
+    }
+    if (modelID.includes('mixtral-8x7b-instruct') && modelID.includes('fireworks')) {
+        return 28000 // 7000 tokens * 4 bytes per token
+    }
+    return 28000 // assume default to Claude-2-like model
 }
