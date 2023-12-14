@@ -34,7 +34,7 @@ export class RateLimitError extends Error {
         if (upgradeIsAvailable) {
             this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for the month.`
         } else {
-            // Don't display Pro & Enterprise’s fair use limit users, as they're for abuse protection only
+            // Don't display Pro & Enterprise’s fair use limit numbers, as they're for abuse protection only
             this.userMessage = `You've used all ${feature} for today.`
         }
         this.retryAfterDate = retryAfter
