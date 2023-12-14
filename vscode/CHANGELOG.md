@@ -14,6 +14,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Updates the code smell icon so it does not stand out in some VS Code themes.
+
 ## [0.18.6]
 
 ### Added

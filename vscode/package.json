@@ -302,7 +302,7 @@
         "command": "cody.command.smell-code",
         "category": "Cody Command",
         "title": "Find Code Smells",
-        "icon": "$(symbol-keyword)",
+        "icon": "$(checklist)",
         "when": "cody.activated && editorFocus"
       },
       {
