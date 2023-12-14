@@ -2,6 +2,8 @@
 
 [Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is a free AI coding assistant that can write, understand, fix, and find your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
 
+Cody is now generally available. If you're using Cody Pro, make sure to update to the latest version of the IDE extension to get the latest features and unlimited rate limits.
+
 ## Autocomplete
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
