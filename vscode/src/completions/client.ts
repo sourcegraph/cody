@@ -3,12 +3,15 @@ import type {
     CompletionLogger,
     CompletionsClientConfig,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { convertCodyGatewayErrorToRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/codyRateLimitWorkaround'
 import type {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     isAbortError,
+    isRateLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
@@ -141,6 +144,17 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
 
                 for await (const chunk of iterator) {
+                    if (chunk.event === 'error') {
+                        if (
+                            isDotCom(config.serverEndpoint) &&
+                            chunk.data.startsWith('{"error":"Sourcegraph Cody Gateway: unexpected status code 429: ')
+                        ) {
+                            // Extract stuff from this string:
+                            // 'Sourcegraph Cody Gateway: unexpected status code 429: you have exceeded the rate limit of 10 requests. Retry after 2023-12-15 14:36:37 +0000 UTC\n'
+                            throw await convertCodyGatewayErrorToRateLimitError(chunk.event, 'completions')
+                        }
+                    }
+
                     if (chunk.event === 'completion') {
                         if (signal?.aborted) {
                             break // Stop processing the already received chunks.
@@ -158,6 +172,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 return lastResponse
             } catch (error) {
+                if (isRateLimitError(error as Error)) {
+                    throw error
+                }
                 if (isAbortError(error as Error) && lastResponse) {
                     log?.onComplete(lastResponse)
                 }
