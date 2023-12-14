@@ -1,13 +1,14 @@
 import * as vscode from 'vscode'
 
-import { logError } from '../log'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { AutocompleteItem } from './inline-completion-item-provider'
+import { logCompletionFormatEvent, logError } from './logger'
 import { lines } from './text-processing'
 
 export async function formatCompletion(autocompleteItem: AutocompleteItem): Promise<void> {
     try {
+        const startedAt = performance.now()
         const {
             document,
             position,
@@ -36,16 +37,38 @@ export async function formatCompletion(autocompleteItem: AutocompleteItem): Prom
         )
 
         if (formattingChangesInRange.length !== 0) {
-            const edit = new vscode.WorkspaceEdit()
-            for (const change of formattingChangesInRange) {
-                edit.replace(document.uri, change.range, change.newText)
-            }
-            void vscode.workspace.applyEdit(edit)
+            await vscode.window.activeTextEditor?.edit(
+                edit => {
+                    for (const change of formattingChangesInRange) {
+                        edit.replace(change.range, change.newText)
+                    }
+                },
+                { undoStopBefore: false, undoStopAfter: true }
+            )
         }
-    } catch (unknownError) {
-        const error = unknownError instanceof Error ? unknownError : new Error(unknownError as string)
-        logError('InlineCompletionItemProvider:formatCompletion:error', error.message, error.stack, {
-            verbose: { error },
+
+        logCompletionFormatEvent({
+            duration: performance.now() - startedAt,
+            languageId: document.languageId,
+            formatter: getFormatter(document.languageId),
         })
+    } catch (unknownError) {
+        logError(unknownError instanceof Error ? unknownError : new Error(unknownError as string))
     }
+}
+
+function getFormatter(languageId: string): string | undefined {
+    // Access the configuration for the specific languageId
+    const config = vscode.workspace.getConfiguration(`[${languageId}]`)
+
+    // Get the default formatter setting
+    const defaultFormatter = config.get('editor.defaultFormatter')
+
+    if (defaultFormatter) {
+        return defaultFormatter as string
+    }
+
+    // Fallback: Check the global default formatter if specific language formatter is not set
+    const globalConfig = vscode.workspace.getConfiguration()
+    return globalConfig.get('editor.defaultFormatter')
 }
