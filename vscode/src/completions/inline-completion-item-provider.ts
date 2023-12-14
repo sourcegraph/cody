@@ -591,8 +591,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 return
             }
 
+            const isEnterpriseUser = this.config.isDotComUser !== true
             const canUpgrade = error.upgradeIsAvailable
-            const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+            const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+
             let errorTitle: string
             let pageName: string
             if (canUpgrade) {

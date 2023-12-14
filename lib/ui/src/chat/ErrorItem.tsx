@@ -55,16 +55,16 @@ export const RateLimitErrorItem: React.FunctionComponent<{
     // has not since upgraded.
     const isEnterpriseUser = userInfo?.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
-    const tier = isEnterpriseUser ? 'enterprise' : userInfo?.isCodyProUser ? 'pro' : 'free'
+    const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 
     // Only log once on mount
     React.useEffect(() => {
         // Log as abuseUsageLimit if pro user run into rate limit
         postMessage({
             command: 'event',
-            eventName: userInfo?.isCodyProUser
-                ? 'CodyVSCodeExtension:abuseUsageLimitCTA:shown'
-                : 'CodyVSCodeExtension:upsellUsageLimitCTA:shown',
+            eventName: canUpgrade
+                ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
+                : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
             properties: { limit_type: 'chat_commands', tier },
         })
 
