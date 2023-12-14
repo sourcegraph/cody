@@ -94,7 +94,7 @@ class Chat {
                 else -> {
                   "<b>Request failed:</b> You've used all${rateLimitError.quotaString()} chat messages and commands." +
                       " The allowed number of request per day is limited at the moment to ensure the service stays functional.${rateLimitError.resetString()} " +
-                      "<a href=\"https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more.</a>"
+                      "<a href=\"https://sourcegraph.com/docs/cody/core-concepts/cody-gateway#rate-limits-and-quotas\">Learn more.</a>"
                 }
               }
 

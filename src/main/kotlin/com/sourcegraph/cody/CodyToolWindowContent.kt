@@ -290,7 +290,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
   private fun addWelcomeMessage() {
     val welcomeText =
-        "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips."
+        "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips."
     addMessageToChat(ChatMessage(Speaker.ASSISTANT, welcomeText))
   }
 

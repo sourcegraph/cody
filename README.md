@@ -145,7 +145,7 @@ The plugin works with all JetBrains IDEs, including:
 
 - **Authorization**: List of accounts that can be used to interact with the plugin. Each account can be configured with:
   - **Server**: The URL of your Sourcegraph instance. It can be configured with your private instance if you're adding an enterprise account.
-  - **Token**: See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide on how to
+  - **Token**: See our [user docs](https://sourcegraph.com/docs/cli/how-tos/creating_an_access_token) for a video guide on how to
     create an access token.
   - **Custom request headers**: Any custom headers to send with every request to Sourcegraph.
     - Use any number of pairs: `header1, value1, header2, value2, ...`.
@@ -190,6 +190,7 @@ You can configure the plugin on three levels:
 ## System Properties
 
 ### Autocomplete system properties
+
 In order to disable newly introduced features we are giving an option to disable them via system properties:
 
 1. **Disable formatting autocomplete elements** `cody.autocomplete.enableFormatting=false`

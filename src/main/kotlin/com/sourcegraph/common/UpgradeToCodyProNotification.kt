@@ -34,7 +34,7 @@ private constructor(content: String, shouldShowUpgradeOption: Boolean) :
                 when {
                   shouldShowUpgradeOption -> "https://sourcegraph.com/cody/subscription"
                   else ->
-                      "https://docs.sourcegraph.com/cody/core-concepts/cody-gateway#rate-limits-and-quotas"
+                      "https://sourcegraph.com/docs/cody/core-concepts/cody-gateway#rate-limits-and-quotas"
                 }
             openInBrowser(anActionEvent.project, learnMoreLink)
             hideBalloon()
