@@ -212,12 +212,12 @@ describe('InlineCompletionItemProvider', () => {
             expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
             expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
         })
 
@@ -245,7 +245,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(completions?.items).not.toHaveLength(0)
 
             // Accepting completion should not have triggered the notice.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).not.toHaveBeenCalled()
         })
     })

@@ -23,25 +23,42 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: string
+    codeActions: boolean
+    commandCodeLenses: boolean
+    editorTitleCommandIcon: boolean
+
+    /**
+     * Autocomplete
+     */
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    codeActions: boolean
-    experimentalChatPredictions: boolean
-    commandCodeLenses: boolean
-    experimentalSimpleChatContext: boolean
-    experimentalSymfContext: boolean
-    editorTitleCommandIcon: boolean
-    experimentalGuardrails: boolean
-    experimentalLocalSymbols: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
+    autocompleteFormatOnAccept?: boolean
+
+    /**
+     * Experimental
+     */
+    experimentalGuardrails: boolean
+    experimentalLocalSymbols: boolean
+    experimentalSymfContext: boolean
+    experimentalSimpleChatContext: boolean
+    experimentalChatPredictions: boolean
+
+    /**
+     * Experimental autocomplete
+     */
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
+
+    /**
+     * Hidden settings
+     */
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     autocompleteTimeouts: AutocompleteTimeouts

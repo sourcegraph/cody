@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 
+import { getFileNameAfterLastDash } from '../utils'
+
 import { FixupTask } from './FixupTask'
-import { CodyTaskState, fixupTaskList, getFileNameAfterLastDash } from './utils'
+import { CodyTaskState, fixupTaskList } from './utils'
 
 type taskID = string
 type fileName = string
