@@ -5,6 +5,8 @@ import path from 'path'
 
 import type * as vscode from 'vscode'
 
+import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
@@ -36,7 +38,6 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
@@ -118,11 +119,79 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
-const configuration = new AgentWorkspaceConfiguration(
-    [],
-    () => clientInfo,
-    () => extensionConfiguration
-)
+// const configuration = new AgentWorkspaceConfiguration(
+//     [],
+//     () => clientInfo,
+//     () => extensionConfiguration
+// )
+
+const configuration: vscode.WorkspaceConfiguration = {
+    has(section) {
+        return true
+    },
+    get: (section, defaultValue?: any) => {
+        const clientNameToIDE = (value: string): Configuration['agentIDE'] | undefined => {
+            return (
+                {
+                    vscode: 'VSCode',
+                    jetbrains: 'JetBrains',
+                    emacs: 'Emacs',
+                    neovim: 'Neovim',
+                } as const
+            )[value.toLowerCase()]
+        }
+
+        const fromCustomConfiguration = extensionConfiguration?.customConfiguration?.[section]
+        if (fromCustomConfiguration !== undefined) {
+            return fromCustomConfiguration
+        }
+        switch (section) {
+            case 'cody.serverEndpoint':
+                return extensionConfiguration?.serverEndpoint
+            case 'cody.proxy':
+                return extensionConfiguration?.proxy ?? null
+            case 'cody.customHeaders':
+                return extensionConfiguration?.customHeaders
+            case 'cody.telemetry.level':
+                // Use the dedicated `telemetry/recordEvent` to send telemetry from
+                // agent clients.  The reason we disable telemetry via config is
+                // that we don't want to submit vscode-specific events when
+                // running inside the agent.
+                return 'agent'
+            case 'cody.autocomplete.enabled':
+                return true
+            case 'cody.autocomplete.advanced.provider':
+                return extensionConfiguration?.autocompleteAdvancedProvider ?? null
+            case 'cody.autocomplete.advanced.serverEndpoint':
+                return extensionConfiguration?.autocompleteAdvancedServerEndpoint ?? null
+            case 'cody.autocomplete.advanced.model':
+                return extensionConfiguration?.autocompleteAdvancedModel ?? null
+            case 'cody.autocomplete.advanced.accessToken':
+                return extensionConfiguration?.autocompleteAdvancedAccessToken ?? null
+            case 'cody.advanced.agent.running':
+                return true
+            case 'cody.debug.enable':
+                return extensionConfiguration?.debug ?? false
+            case 'cody.debug.verbose':
+                return extensionConfiguration?.verboseDebug ?? false
+            case 'cody.autocomplete.experimental.syntacticPostProcessing':
+                // False because we don't embed WASM with the agent yet.
+                return false
+            case 'cody.codebase':
+                return extensionConfiguration?.codebase
+            case 'cody.advanced.agent.ide':
+                return clientNameToIDE(clientInfo?.name ?? '')
+            default:
+                return defaultValue
+        }
+    },
+    update(section, value, configurationTarget, overrideInLanguage) {
+        return Promise.resolve()
+    },
+    inspect(section) {
+        return undefined
+    },
+}
 
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
@@ -316,9 +385,9 @@ const _workspace: Partial<typeof vscode.workspace> = {
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: section => {
         console.log({ section })
-        if (section) {
-            return configuration.withPrefix(section)
-        }
+        // if (section) {
+        //     return configuration.withPrefix(section)
+        // }
         return configuration
     },
     fs,

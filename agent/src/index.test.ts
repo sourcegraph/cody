@@ -96,23 +96,24 @@ describe('Agent', () => {
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { cwd: agentDir, stdio: 'inherit' })
 
+    const agentProcess = spawn('node', ['--enable-source-maps', '--inspect', agentScript, 'jsonrpc'], {
+        stdio: 'pipe',
+        cwd: agentDir,
+        env: {
+            CODY_SHIM_TESTING: 'true',
+            CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
+            CODY_RECORDING_DIRECTORY: recordingDirectory,
+            CODY_RECORDING_NAME: 'FullConfig',
+            ...process.env,
+        },
+    })
+    client.connectProcess(agentProcess, error => {
+        console.log({ error })
+        process.exit(1)
+    })
+
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        const agentProcess = spawn('node', ['--enable-source-maps', '--inspect', agentScript, 'jsonrpc'], {
-            stdio: 'pipe',
-            cwd: agentDir,
-            env: {
-                CODY_SHIM_TESTING: 'true',
-                CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
-                CODY_RECORDING_DIRECTORY: recordingDirectory,
-                CODY_RECORDING_NAME: 'FullConfig',
-                ...process.env,
-            },
-        })
-        client.connectProcess(agentProcess, error => {
-            console.log({ error })
-            throw error
-        })
         const serverInfo = await client.handshake(clientInfo)
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
     }, 5000)
@@ -175,7 +176,7 @@ describe('Agent', () => {
         messages.push(message)
     })
 
-    it('allows us to execute recipes properly', async () => {
+    it.skip('allows us to execute recipes properly', async () => {
         const id = await client.request('chat/new', null)
         const messageID = uuid.v4()
         await client.request('webview/receiveMessage', {

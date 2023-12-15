@@ -23,9 +23,6 @@ function shimDirectory(): string {
 
 export default defineConfig({
     logLevel: 'warn',
-    test: {
-        threads: false,
-    },
     resolve: {
         alias: { vscode: shimDirectory() },
     },
