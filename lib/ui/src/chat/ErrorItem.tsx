@@ -68,12 +68,12 @@ export const ContextWindowLimitErrorItem: React.FunctionComponent<{
             </div>
             <div className={styles.body}>
                 <header>
-                    <h1>Context limit reached</h1>
+                    <h1>Context Limit Reached</h1>
                     <p>{error.message}</p>
                 </header>
                 {ChatButtonComponent && (
                     <div className={styles.actions}>
-                        <ChatButtonComponent label="Start new chat" action="" appearance="primary" onClick={onClick} />
+                        <ChatButtonComponent label="Start New Chat" action="" appearance="primary" onClick={onClick} />
                     </div>
                 )}
             </div>
