@@ -352,6 +352,9 @@ importers:
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
+      '@opencodegraph/client':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: ^0.45.1
         version: 0.45.1(@opentelemetry/api@1.7.0)
@@ -4483,6 +4486,35 @@ packages:
       '@octokit/webhooks-methods': 3.0.3
       '@octokit/webhooks-types': 6.11.0
       aggregate-error: 3.1.0
+    dev: false
+
+  /@opencodegraph/client@0.0.2:
+    resolution: {integrity: sha512-aoA2ZYSguvq2C7y0pTk7XJnHhtB6ztzear6GOucR/xEmDMc43T/gQL0lnCG/eQkJXKKHVS4T++XEQJmN+TeHVA==}
+    dependencies:
+      '@opencodegraph/protocol': 0.0.1
+      '@opencodegraph/provider': 0.0.2
+      '@opencodegraph/schema': 0.0.1
+      lru-cache: 10.1.0
+      picomatch: 3.0.1
+      rxjs: 7.8.1
+    dev: false
+
+  /@opencodegraph/protocol@0.0.1:
+    resolution: {integrity: sha512-IndtaDuY1dm2U66okicW8VNuYilUfJG9mCLGKMXriIbIGyTwqYLKF3EcPeqLUc7xrDwr1KAhl50xlUJGoAxi3Q==}
+    dependencies:
+      '@opencodegraph/schema': 0.0.1
+    dev: false
+
+  /@opencodegraph/provider@0.0.2:
+    resolution: {integrity: sha512-f7fLevPz8dfK7vMQsqwPTFhEL1h34gxU1uM6S1jbij17gJMXe9zQgl/xAbkuzrzw6cQuWk77fk4L0lkjRWLa0Q==}
+    dependencies:
+      '@opencodegraph/protocol': 0.0.1
+      '@opencodegraph/schema': 0.0.1
+      picomatch: 3.0.1
+    dev: false
+
+  /@opencodegraph/schema@0.0.1:
+    resolution: {integrity: sha512-v7ulJvSH4yLULEq5dimchQ+Wp0qvOt5Lh/pyhOqxLrMz/mvdKvrY8JBHJDE5S0mnZrYXDSWbq2LYOxdUbhK45g==}
     dev: false
 
   /@opentelemetry/api-logs@0.45.1:
@@ -12237,6 +12269,11 @@ packages:
     resolution: {integrity: sha512-svTf/fzsKHffP42sujkO/Rjs37BCIsQVRCeNYIm9WN8rgT7ffoUnRtZCqU+6BqcSBdv8gwJeTz8knJpgACeQMw==}
     engines: {node: 14 || >=16.14}
 
+  /lru-cache@10.1.0:
+    resolution: {integrity: sha512-/1clY/ui8CzjKFyjdvwPWJUYKiFVXG2I2cY0ssG7h4+hwk+XOIX7ZSG9Q7TW8TW3Kp3BUSqgFWBLgL4PJ+Blag==}
+    engines: {node: 14 || >=16.14}
+    dev: false
+
   /lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
     dependencies:
@@ -13666,6 +13703,11 @@ packages:
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+
+  /picomatch@3.0.1:
+    resolution: {integrity: sha512-I3EurrIQMlRc9IaAZnqRR044Phh2DXY+55o7uJ0V+hYZAcQYSuFWsc9q5PvyDHUSCe1Qxn/iBz+78s86zWnGag==}
+    engines: {node: '>=10'}
+    dev: false
 
   /pify@4.0.1:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}
