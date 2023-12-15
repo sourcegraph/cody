@@ -82,6 +82,8 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
                 ? 'jaccard-similarity'
+                : config.autocompleteExperimentalGraphContext === 'opencodegraph'
+                ? 'opencodegraph'
                 : lspLightContextFlag
                 ? 'lsp-light'
                 : bfgContextFlag

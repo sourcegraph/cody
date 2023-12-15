@@ -5,9 +5,17 @@ import { ContextRetriever } from '../types'
 import { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
+import { OpenCodeGraphRetriever } from './retrievers/opencodegraph/opencodegraph-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
 
-export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'bfg-mixed' | 'local-mixed' | 'none'
+export type ContextStrategy =
+    | 'lsp-light'
+    | 'bfg'
+    | 'jaccard-similarity'
+    | 'bfg-mixed'
+    | 'local-mixed'
+    | 'opencodegraph'
+    | 'none'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
@@ -52,6 +60,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 // we simply mix them later anyways.
                 this.graphRetriever = SectionHistoryRetriever.createInstance()
                 this.disposables.push(this.localRetriever, this.graphRetriever)
+            case 'opencodegraph':
+                this.localRetriever = new JaccardSimilarityRetriever()
+                this.graphRetriever = new OpenCodeGraphRetriever()
         }
     }
 
