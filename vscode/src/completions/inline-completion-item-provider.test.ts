@@ -212,12 +212,12 @@ describe('InlineCompletionItemProvider', () => {
             expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
             expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
         })
 
@@ -245,7 +245,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(completions?.items).not.toHaveLength(0)
 
             // Accepting completion should not have triggered the notice.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).not.toHaveBeenCalled()
         })
     })
@@ -516,7 +516,9 @@ describe('InlineCompletionItemProvider', () => {
                 .fn(getInlineCompletions)
                 .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', false, 1234, '86400'))
             const addError = vi.fn()
-            const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                statusBar: { addError, hasError: () => addError.mock.calls.length } as any,
+            })
 
             await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                 'rate limited oh no'
@@ -524,8 +526,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(addError).toHaveBeenCalledWith(
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                    description:
-                        "You've used all 1234 autocompletions for the month. Usage will reset tomorrow at 1:00 PM",
+                    description: "You've used all autocompletions for today. Usage will reset tomorrow at 1:00 PM",
                 })
             )
 
@@ -543,18 +544,23 @@ describe('InlineCompletionItemProvider', () => {
                     .fn(getInlineCompletions)
                     .mockRejectedValue(new RateLimitError('autocompletions', 'rate limited oh no', canUpgrade, 1234))
                 const addError = vi.fn()
-                const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
+                const provider = new MockableInlineCompletionItemProvider(fn, {
+                    statusBar: { addError, hasError: () => addError.mock.calls.length } as any,
+                })
 
                 await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                     'rate limited oh no'
                 )
                 expect(addError).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        title: canUpgrade
-                            ? 'Upgrade to Continue Using Cody Autocomplete'
-                            : 'Cody Autocomplete Disabled Due to Rate Limit',
-                        description: "You've used all 1234 autocompletions for the month.",
-                    })
+                    canUpgrade
+                        ? expect.objectContaining({
+                              title: 'Upgrade to Continue Using Cody Autocomplete',
+                              description: "You've used all 1234 autocompletions for the month.",
+                          })
+                        : expect.objectContaining({
+                              title: 'Cody Autocomplete Disabled Due to Rate Limit',
+                              description: "You've used all autocompletions for today.",
+                          })
                 )
 
                 await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
@@ -569,7 +575,9 @@ describe('InlineCompletionItemProvider', () => {
             let error = new Error('unexpected')
             const fn = vi.fn(getInlineCompletions).mockImplementation(() => Promise.reject(error))
             const addError = vi.fn()
-            const provider = new MockableInlineCompletionItemProvider(fn, { statusBar: { addError } as any })
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                statusBar: { addError, hasError: () => addError.mock.calls.length } as any,
+            })
 
             await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(
                 'unexpected'

@@ -56,6 +56,12 @@
     line-height: 1.4;
     margin: 0 1rem;
     color: var(--vscode-search-resultsInfoForeground);
+    display: none;
+}
+
+.outer-container:hover .instructions,
+.outer-container:focus-within .instructions {
+    display: block;
 }
 
 .search-result-row-inner {

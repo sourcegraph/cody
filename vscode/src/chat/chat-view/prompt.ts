@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import {
     isMarkdownFile,
@@ -26,7 +28,7 @@ export interface IPrompter {
         byteLimit: number
     ): Promise<{
         prompt: Message[]
-        warnings: string[]
+        contextLimitWarnings: string[]
         newContextUsed: ContextItem[]
     }>
 }
@@ -44,14 +46,15 @@ export class DefaultPrompter implements IPrompter {
         byteLimit: number
     ): Promise<{
         prompt: Message[]
-        warnings: string[]
+        contextLimitWarnings: string[]
         newContextUsed: ContextItem[]
     }> {
         const promptBuilder = new PromptBuilder(byteLimit)
         const newContextUsed: ContextItem[] = []
         const warnings: string[] = []
+        const preInstruction: string | undefined = vscode.workspace.getConfiguration('cody.chat').get('preInstruction')
 
-        const preambleMessages = getSimplePreamble()
+        const preambleMessages = getSimplePreamble(preInstruction)
         const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
         if (!preambleSucceeded) {
             throw new Error(`Preamble length exceeded context window size ${byteLimit}`)
@@ -66,7 +69,7 @@ export class DefaultPrompter implements IPrompter {
                 warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
                 return {
                     prompt: promptBuilder.build(),
-                    warnings,
+                    contextLimitWarnings: warnings,
                     newContextUsed,
                 }
             }
@@ -81,7 +84,7 @@ export class DefaultPrompter implements IPrompter {
             newContextUsed.push(...used)
             if (limitReached) {
                 warnings.push('Ignored current user-specified context items due to context limit')
-                return { prompt: promptBuilder.build(), warnings, newContextUsed }
+                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
             }
         }
 
@@ -95,7 +98,7 @@ export class DefaultPrompter implements IPrompter {
             )
             if (limitReached) {
                 warnings.push('Ignored prior context items due to context limit')
-                return { prompt: promptBuilder.build(), warnings, newContextUsed }
+                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
             }
         }
 
@@ -124,7 +127,7 @@ export class DefaultPrompter implements IPrompter {
 
         return {
             prompt: promptBuilder.build(),
-            warnings,
+            contextLimitWarnings: warnings,
             newContextUsed,
         }
     }

@@ -129,15 +129,15 @@ pnpm --filter cody-ai run start:dev:desktop
 
 ## Telemetry events
 
-Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://docs.sourcegraph.com/dev/background-information/telemetry). Events primarily comprise of:
+Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://sourcegraph.com/docs/dev/background-information/telemetry). Events primarily comprise of:
 
 1. `feature`, a string denoting the feature that the event is associated with.
    1. **All events must use a `feature` that starts with `cody.`**, for example `cody.myFeature`
    2. The feature name should not include the name of the extension, as that is already included in the event metadata.
 2. `action`, a string denoting the action on the feature that the event is associated with.
-3. `parameters`, which includes safe numeric `metadata` and [unsafe arbitrarily-shaped `privateMetadata`](https://docs.sourcegraph.com/dev/background-information/telemetry#sensitive-attributes).
+3. `parameters`, which includes safe numeric `metadata` and [unsafe arbitrarily-shaped `privateMetadata`](https://sourcegraph.com/docs/dev/background-information/telemetry#sensitive-attributes).
 
-Extensive additional context is added by the extension itself (e.g. extension name and version) and the Sourcegraph backend (e.g. feature flags and actor information), so the event should only provide metadata about the specific action. Learn more in [events lifecycle](https://docs.sourcegraph.com/dev/background-information/telemetry#event-lifecycle).
+Extensive additional context is added by the extension itself (e.g. extension name and version) and the Sourcegraph backend (e.g. feature flags and actor information), so the event should only provide metadata about the specific action. Learn more in [events lifecycle](https://sourcegraph.com/docs/dev/background-information/telemetry#event-lifecycle).
 
 For now, all events in VSCode should be updated to use both the legacy event clients and the new clients, for example:
 
@@ -174,7 +174,7 @@ telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
      * enumeration of categorized values instead, so that it can be included
      * in the exported-by-default metadata field instead.
      *
-     * Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry#sensitive-attributes
+     * Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry#sensitive-attributes
      */
     source,
   },
@@ -185,6 +185,6 @@ When events are recorded to both systems:
 
 1. `telemetryService` will _only_ send the event directly to dotcom's `event_logs`.
 2. `telemetryRecorder` will make sure the connected instance receives the event in the new framework, if the instance is 5.2.0 or later, or translated to the legacy `event_logs` format, if the instance is older.
-   1. In instances 5.2.1 or later, the event will [also be exported from the instance](https://docs.sourcegraph.com/dev/background-information/telemetry/architecture).
+   1. In instances 5.2.1 or later, the event will [also be exported from the instance](https://sourcegraph.com/docs/dev/background-information/telemetry/architecture).
 
 Allowed values for various fields are declared and tracked in [`lib/shared/src/telemetry-v2`](../lib/shared/src/telemetry-v2).

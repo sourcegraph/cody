@@ -20,7 +20,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     chatPreInstruction: 'My name is John Doe.',
     useContext: 'embeddings',
     autocomplete: true,
-    autocompleteLanguages: { '*': true, scminput: false },
+    autocompleteLanguages: { '*': true },
     commandCodeLenses: false,
     editorTitleCommandIcon: true,
     experimentalChatPredictions: false,
@@ -42,6 +42,9 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteTimeouts: {},
+    testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsIndexLibraryPath: undefined,
+    testingLocalEmbeddingsModel: undefined,
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({

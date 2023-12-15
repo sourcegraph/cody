@@ -2,8 +2,9 @@ import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/Featur
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { releaseNotesURL, releaseType } from '../release'
+import { version } from '../version'
 
-import { getProcessInfo } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 
 export type CodyTreeItemType = 'command' | 'support' | 'search' | 'chat'
@@ -20,6 +21,7 @@ export interface CodySidebarTreeItem {
     isNestedItem?: string
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
+    requireDotCom?: boolean
 }
 
 /**
@@ -50,9 +52,12 @@ export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             chatTreeItems.push({
                 id,
-                title: getChatPanelTitle(lastDisplayText, false),
+                title: entry.chatTitle || getChatPanelTitle(lastDisplayText, false),
                 icon: 'comment-discussion',
-                command: { command: 'cody.chat.panel.restore', args: [id, getChatPanelTitle(lastDisplayText)] },
+                command: {
+                    command: 'cody.chat.panel.restore',
+                    args: [id, entry.chatTitle || getChatPanelTitle(lastDisplayText)],
+                },
             })
         }
     })
@@ -65,6 +70,7 @@ const supportItems: CodySidebarTreeItem[] = [
         description: 'Upgrade to Pro',
         icon: 'zap',
         command: { command: 'cody.show-page', args: ['upgrade'] },
+        requireDotCom: true,
         requireUpgradeAvailable: true,
         requireFeature: FeatureFlag.CodyPro,
     },
@@ -72,6 +78,7 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Usage',
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
+        requireDotCom: true,
         requireFeature: FeatureFlag.CodyPro,
     },
     {
@@ -85,12 +92,12 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'workbench.action.openGlobalKeybindings', args: ['@ext:sourcegraph.cody-ai'] },
     },
     {
-        title: 'Release Notes',
-        description: `v${getProcessInfo().extensionVersion}`,
+        title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
+        description: `v${version}`,
         icon: 'github',
         command: {
             command: 'vscode.open',
-            args: [`https://github.com/sourcegraph/cody/releases/tag/vscode-v${getProcessInfo().extensionVersion}`],
+            args: [releaseNotesURL(version)],
         },
     },
     {
@@ -109,9 +116,9 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'vscode.open', args: [DISCORD_URL.href] },
     },
     {
-        title: 'Sign Out',
-        icon: 'log-out',
-        command: { command: 'cody.auth.signout' },
+        title: 'Account',
+        icon: 'account',
+        command: { command: 'cody.auth.account' },
     },
 ]
 
@@ -142,7 +149,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Smell',
-        icon: 'symbol-keyword',
+        icon: 'checklist',
         command: { command: 'cody.command.smell-code' },
         description: 'Identify code smells',
     },

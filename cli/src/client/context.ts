@@ -1,6 +1,5 @@
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -27,20 +26,10 @@ export async function createCodebaseContext(
         { useContext: contextType, serverEndpoint, experimentalLocalSymbols: false },
         codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcherMock(),
         null,
         null,
         null
     )
 
     return codebaseContext
-}
-
-class LocalKeywordContextFetcherMock implements KeywordContextFetcher {
-    public getContext() {
-        return Promise.resolve([])
-    }
-    public getSearchContext() {
-        return Promise.resolve([])
-    }
 }

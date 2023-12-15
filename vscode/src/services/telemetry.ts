@@ -4,10 +4,10 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
-import { version as packageVersion } from '../../package.json'
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
+import { version } from '../version'
 
 import { localStorage } from './LocalStorageProvider'
 
@@ -17,17 +17,12 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-export const extensionVersion =
-    vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion
 export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
     arch,
-    // Prefer the runtime package json over the version that is inlined during build times. This
-    // way we will be able to include pre-release builds that are published with a different version
-    // identifier.
-    version: extensionVersion,
+    version,
 })
 
 /**
@@ -82,7 +77,7 @@ export async function createOrUpdateEventLogger(
  *
  * In the future, all usages of TelemetryService will be removed in
  * favour of the new libraries. For more information, see:
- * https://docs.sourcegraph.com/dev/background-information/telemetry
+ * https://sourcegraph.com/docs/dev/background-information/telemetry
  * @param eventName The name of the event.
  * @param properties Event properties. Do NOT include any private information, such as full URLs
  * that may contain private repository names or search queries.
@@ -127,7 +122,7 @@ function logEvent(
  *
  * In the future, all usages of TelemetryService will be removed in
  * favour of the new libraries. For more information, see:
- * https://docs.sourcegraph.com/dev/background-information/telemetry
+ * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
 export const telemetryService: TelemetryService = {
     log(eventName, properties, opts) {

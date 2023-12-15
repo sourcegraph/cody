@@ -10,13 +10,27 @@ describe('validateAuthStatus', () => {
     const verifiedEmail = true
     const codyEnabled = true
     const validUser = true
-    const endpoint = 'https://example.com'
+    const endpoint = ''
     const userCanUpgrade = false
+    const primaryEmail = 'me@domain.test'
+    const displayName = 'Test Name'
+    const avatarURL = 'https://domain.test/avatar.png'
     // DOTCOM AND APP USERS
     test('returns auth state for invalid user on dotcom or app instance', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
         expect(
-            newAuthStatus(endpoint, isDotComOrApp, !validUser, !verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+            newAuthStatus(
+                endpoint,
+                isDotComOrApp,
+                !validUser,
+                !verifiedEmail,
+                codyEnabled,
+                userCanUpgrade,
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
+            )
         ).toEqual(expected)
     })
 
@@ -30,9 +44,23 @@ describe('validateAuthStatus', () => {
             siteHasCodyEnabled: true,
             isLoggedIn: true,
             endpoint,
+            avatarURL,
+            primaryEmail,
+            displayName,
         }
         expect(
-            newAuthStatus(endpoint, isDotComOrApp, validUser, verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+            newAuthStatus(
+                endpoint,
+                isDotComOrApp,
+                validUser,
+                verifiedEmail,
+                codyEnabled,
+                userCanUpgrade,
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
+            )
         ).toEqual(expected)
     })
 
@@ -44,9 +72,23 @@ describe('validateAuthStatus', () => {
             requiresVerifiedEmail: true,
             siteHasCodyEnabled: true,
             endpoint,
+            avatarURL,
+            primaryEmail,
+            displayName,
         }
         expect(
-            newAuthStatus(endpoint, isDotComOrApp, validUser, !verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+            newAuthStatus(
+                endpoint,
+                isDotComOrApp,
+                validUser,
+                !verifiedEmail,
+                codyEnabled,
+                userCanUpgrade,
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
+            )
         ).toEqual(expected)
     })
 
@@ -58,16 +100,41 @@ describe('validateAuthStatus', () => {
             siteHasCodyEnabled: true,
             isLoggedIn: true,
             endpoint,
+            avatarURL,
+            primaryEmail,
+            displayName,
         }
         expect(
-            newAuthStatus(endpoint, !isDotComOrApp, validUser, verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+            newAuthStatus(
+                endpoint,
+                !isDotComOrApp,
+                validUser,
+                verifiedEmail,
+                codyEnabled,
+                userCanUpgrade,
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
+            )
         ).toEqual(expected)
     })
 
     test('returns auth status for invalid user on enterprise instance with Cody enabled', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
         expect(
-            newAuthStatus(endpoint, !isDotComOrApp, !validUser, verifiedEmail, codyEnabled, userCanUpgrade, siteVersion)
+            newAuthStatus(
+                endpoint,
+                !isDotComOrApp,
+                !validUser,
+                verifiedEmail,
+                codyEnabled,
+                userCanUpgrade,
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
+            )
         ).toEqual(expected)
     })
 
@@ -77,6 +144,9 @@ describe('validateAuthStatus', () => {
             authenticated: true,
             siteHasCodyEnabled: false,
             endpoint,
+            avatarURL,
+            primaryEmail,
+            displayName,
         }
         expect(
             newAuthStatus(
@@ -86,7 +156,10 @@ describe('validateAuthStatus', () => {
                 !verifiedEmail,
                 !codyEnabled,
                 userCanUpgrade,
-                siteVersion
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
             )
         ).toEqual(expected)
     })
@@ -101,7 +174,10 @@ describe('validateAuthStatus', () => {
                 verifiedEmail,
                 !codyEnabled,
                 userCanUpgrade,
-                siteVersion
+                siteVersion,
+                avatarURL,
+                primaryEmail,
+                displayName
             )
         ).toEqual(expected)
     })

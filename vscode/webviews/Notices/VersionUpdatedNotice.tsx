@@ -1,5 +1,8 @@
 import { useState } from 'react'
 
+import { version as packageVersion } from '../../package.json'
+import { majorMinorVersion, releaseNotesURL } from '../../src/release'
+
 import { Notice } from './Notice'
 
 import styles from './VersionUpdatedNotice.module.css'
@@ -32,47 +35,22 @@ const useShowNotice = (currentVersion: string, probablyNewInstall: boolean): [bo
     return [showNotice, setDismissed]
 }
 
-const whatsNewURL = (version: string): string => {
-    /**
-     * Our nightlies don't have tags or release notes on GH, so we just link to our
-     * GH releases page for lack of a better option
-     * */
-    if (version.includes('-')) {
-        return 'https://github.com/sourcegraph/cody/releases'
-    }
-
-    /**
-     * At the top of each GitHub release notes we include a link to the
-     * release's blog post for that point release (e.g. 0.8.x). So even
-     * if they update from 0.7.1 -> 0.8.3 they'll have a blog post link handy
-     */
-    return `https://github.com/sourcegraph/cody/releases/tag/vscode-v${version}`
-}
-
 interface VersionUpdateNoticeProps {
-    version: string
     probablyNewInstall: boolean
 }
 
-export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({
-    version,
-    probablyNewInstall,
-}) => {
-    /* Only consider the first two components */
-    const majorMinorVersion = version.split('.').slice(0, 2).join('.')
+export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({ probablyNewInstall }) => {
+    const [showNotice, setDismissed] = useShowNotice(majorMinorVersion(packageVersion), probablyNewInstall)
 
-    const [showNotice, setDismissed] = useShowNotice(majorMinorVersion, probablyNewInstall)
-
-    /* Ignore 0.6, this all begins with 0.7+ */
-    if (!showNotice || majorMinorVersion === '0.6') {
+    if (!showNotice) {
         return undefined
     }
 
     return (
         <Notice
             icon={<Icon />}
-            title={`Cody updated to v${majorMinorVersion}`}
-            linkHref={whatsNewURL(version)}
+            title={`Cody updated to v${majorMinorVersion(packageVersion)}`}
+            linkHref={releaseNotesURL(packageVersion)}
             linkText="See what’s new →"
             linkTarget="_blank"
             onDismiss={setDismissed}

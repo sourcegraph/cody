@@ -1,4 +1,4 @@
-export const DOTCOM_URL = new URL('https://sourcegraph.com')
+export const DOTCOM_URL = new URL(process.env.TESTING_DOTCOM_URL || 'https://sourcegraph.com')
 export const INTERNAL_S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
 

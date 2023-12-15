@@ -5,6 +5,7 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -28,22 +29,44 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
-export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
+const MAX_RESPONSE_TOKENS = 256
 
-export interface AnthropicOptions {
-    maxContextTokens?: number
-    client: Pick<CodeCompletionsClient, 'complete'>
+export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
+export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+
+const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    timeoutMs: 5_000,
+    maxTokensToSample: 50,
+    stopSequences: SINGLE_LINE_STOP_SEQUENCES,
 }
 
-const MAX_RESPONSE_TOKENS = 256
+const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    timeoutMs: 15_000,
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    stopSequences: MULTI_LINE_STOP_SEQUENCES,
+}
+
 const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
     CodeCompletionsParams,
     'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
 > = {
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: MULTI_LINE_STOP_SEQUENCES,
     timeoutMs: 15_000,
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    // Do not stop after two consecutive new lines to get the full syntax node content. For example:
+    //
+    // function quickSort(array) {
+    //   if (array.length <= 1) {
+    //     return array
+    //   }
+    //
+    //   // the implementation continues here after two new lines.
+    // }
+    stopSequences: undefined,
+}
+
+export interface AnthropicOptions {
+    maxContextTokens?: number
+    client: Pick<CodeCompletionsClient, 'complete'>
 }
 
 export class AnthropicProvider extends Provider {
@@ -137,29 +160,26 @@ export class AnthropicProvider extends Provider {
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completion: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]> {
+    ): Promise<void> {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
-        const { dynamicMultilineCompletions, multiline } = this.options
+        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
+
+        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
 
         const requestParams: CodeCompletionsParams = {
+            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
             temperature: 0.5,
             messages: prompt,
-            ...(multiline
-                ? {
-                      maxTokensToSample: MAX_RESPONSE_TOKENS,
-                      stopSequences: MULTI_LINE_STOP_SEQUENCES,
-                      timeoutMs: 15000,
-                  }
-                : {
-                      maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
-                      stopSequences: SINGLE_LINE_STOP_SEQUENCES,
-                      timeoutMs: 5000,
-                  }),
         }
 
         let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
@@ -173,20 +193,28 @@ export class AnthropicProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completions = await Promise.all(
-            Array.from({ length: this.options.n }).map(() => {
+        const completions: InlineCompletionItemWithAnalytics[] = []
+        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
+            completions.push(completion)
+            if (completions.length === n) {
+                tracer?.result({ completions })
+                onCompletionReady(completions)
+            }
+        }
+
+        await Promise.all(
+            Array.from({ length: n }).map(() => {
                 return fetchAndProcessCompletionsImpl({
                     client: this.client,
                     requestParams,
                     abortSignal,
                     providerSpecificPostProcess: this.postProcess,
                     providerOptions: this.options,
+                    onCompletionReady: onCompletionReadyImpl,
+                    onHotStreakCompletionReady,
                 })
             })
         )
-
-        tracer?.result({ completions })
-        return completions
     }
 
     private postProcess = (rawResponse: string): string => {

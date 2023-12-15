@@ -8,6 +8,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../../webviews/NavBar'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
@@ -60,6 +61,7 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
+            vscode.commands.registerCommand('cody.chat.history.edit', async item => this.editChatHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat)),
             vscode.commands.registerCommand('cody.chat.open.file', async fsPath => this.openFileFromChat(fsPath))
@@ -125,6 +127,14 @@ export class ChatManager implements vscode.Disposable {
 
         const chatProvider = await this.getChatProvider()
         await chatProvider.executeCustomCommand(title, type)
+    }
+
+    public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
+        const chatID = treeItem?.id
+        const chatLabel = treeItem?.label as vscode.TreeItemLabel
+        if (chatID) {
+            await this.chatPanelsManager?.editChatHistory(chatID, chatLabel.label)
+        }
     }
 
     public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
@@ -271,6 +281,9 @@ export async function addWebviewViewHTML(
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
+    if (isRunningInsideAgent()) {
+        return
+    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')

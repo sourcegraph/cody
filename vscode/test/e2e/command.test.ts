@@ -7,16 +7,6 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' }).click()
-    await page
-        .getByRole('option', {
-            name: 'Simple Chat Context, Experimental, Enable the new simplifed chat context fetcher',
-        })
-        .locator('span')
-        .filter({ hasText: 'Experimental' })
-        .first()
-        .click()
-
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view
@@ -30,20 +20,16 @@ test('submit command from command palette', async ({ page, sidebar }) => {
 
     // Find the chat iframe
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+
     // Check if the command shows up with the current file name
-    await expect(chatPanelFrame.getByText('/explain @index.html')).toBeVisible()
+    await chatPanelFrame.getByText('✨ Context: 1 file').click()
+
     // Check if assistant responsed
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()
 
-    // Close the file
-    await page.getByRole('tab', { name: 'index.html', exact: true }).getByText('index.html').click()
-    await page
-        .getByRole('tab', { name: 'index.html, Editor Group 1' })
-        .getByRole('button', { name: /Close.*/ })
-        .click()
-
     // Click on the file link in chat
-    await chatPanelFrame.getByRole('link', { name: '@index.html' }).click()
+    await chatPanelFrame.getByRole('button', { name: '@index.html' }).click()
+
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
 })

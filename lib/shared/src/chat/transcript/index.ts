@@ -16,6 +16,7 @@ export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
     chatModel?: string
+    chatTitle?: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
     scope?: TranscriptJSONScope
@@ -65,7 +66,8 @@ export class Transcript {
                 }
             ),
             json.id,
-            json.chatModel
+            json.chatModel,
+            json.chatTitle
         )
     }
 
@@ -75,13 +77,16 @@ export class Transcript {
 
     public chatModel: string | undefined = undefined
 
-    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string) {
+    public chatTitle: string | undefined = undefined
+
+    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string, title?: string) {
         this.interactions = interactions
         this.internalID =
             id ||
             this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
             new Date().toISOString()
         this.chatModel = chatModel
+        this.chatTitle = title || this.getLastInteraction()?.getHumanMessage()?.displayText
     }
 
     public get id(): string {
@@ -94,6 +99,10 @@ export class Transcript {
             return
         }
         this.chatModel = chatModel
+    }
+
+    public setChatTitle(title: string): void {
+        this.chatTitle = title
     }
 
     public get isEmpty(): boolean {
@@ -235,6 +244,7 @@ export class Transcript {
         return {
             id: this.id,
             chatModel: this.chatModel,
+            chatTitle: this.chatTitle,
             interactions,
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
@@ -251,6 +261,7 @@ export class Transcript {
         return {
             id: this.id,
             chatModel: this.chatModel,
+            chatTitle: this.chatTitle,
             interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope

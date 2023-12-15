@@ -10,9 +10,6 @@
   "exclude": ["dist"],
   "references": [
     {
-      "path": "../agent",
-    },
-    {
       "path": "../lib/shared",
     },
   ],

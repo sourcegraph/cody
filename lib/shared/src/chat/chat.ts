@@ -17,7 +17,18 @@ export class ChatClient {
 
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
-        const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
+
+        const augmentedMessages =
+            // HACK: The fireworks chat inference endpoints requires the last message to be from a
+            // human. This will be the case in most of the prompts but if for some reason we have an
+            // assistant at the end, we slice the last message for now.
+            params?.model?.startsWith('fireworks/')
+                ? isLastMessageFromHuman
+                    ? messages
+                    : messages.slice(0, -1)
+                : isLastMessageFromHuman
+                ? messages.concat([{ speaker: 'assistant' }])
+                : messages
 
         return this.completions.stream(
             {

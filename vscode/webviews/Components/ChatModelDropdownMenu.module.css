@@ -3,7 +3,7 @@
     border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
 }
 
-svg {
+.container svg {
     opacity: 0.8;
 }
 
@@ -12,48 +12,48 @@ svg {
     font-size: 12px;
 }
 
-vscode-dropdown {
+.container vscode-dropdown {
     border-radius: 2px;
     border: none;
     background: none;
 }
 
-vscode-dropdown:focus,
-vscode-dropdown:focus-visible,
-vscode-dropdown:focus-within,
-vscode-dropdown:focus::part(listbox),
-vscode-dropdown:focus-visible::part(listbox),
-vscode-dropdown:focus-within::part(listbox) {
+.container vscode-dropdown:focus,
+.container vscode-dropdown:focus-visible,
+.container vscode-dropdown:focus-within,
+.container vscode-dropdown:focus::part(listbox),
+.container vscode-dropdown:focus-visible::part(listbox),
+.container vscode-dropdown:focus-within::part(listbox) {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
 }
 
-vscode-dropdown::part(indicator) {
+.container vscode-dropdown::part(indicator) {
     margin-inline-start: 6px;
     opacity: 0.8;
 }
 
-vscode-dropdown[disabled] {
+.container vscode-dropdown[disabled] {
     opacity: 0.6;
 }
 
-vscode-dropdown[disabled]::part(indicator) {
+.container vscode-dropdown[disabled]::part(indicator) {
     display: none;
 }
 
-vscode-dropdown[disabled]::part(control),
-vscode-dropdown[disabled]::part(listbox) {
+.container vscode-dropdown[disabled]::part(control),
+.container vscode-dropdown[disabled]::part(listbox) {
     cursor: default;
 }
 
-vscode-dropdown::part(listbox) {
+.container vscode-dropdown::part(listbox) {
     width: auto;
     border-radius: 2px;
     padding: 2px;
     background-color: var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background));
 }
 
-vscode-dropdown[disabled]::part(listbox) {
+.container vscode-dropdown[disabled]::part(listbox) {
     cursor: pointer;
 }
 
@@ -63,12 +63,12 @@ vscode-dropdown[disabled]::part(listbox) {
     align-items: center;
 }
 
-vscode-option[disabled] {
+.container vscode-option[disabled] {
     cursor: pointer;
     opacity: unset;
 }
 
-vscode-option::part(content) {
+.container vscode-option::part(content) {
     padding: 6px 8px;
     display: flex;
     gap: 6px;
@@ -91,7 +91,7 @@ vscode-option::part(content) {
     color: rgba(255,255,255,0.9);
 }
 
-vscode-option:hover .badge {
+.container vscode-option:hover .badge {
     box-shadow:
         0px 0px 2px 1px var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background)),
         0px 0px 4px 0px var(--list-active-selection-foreground),

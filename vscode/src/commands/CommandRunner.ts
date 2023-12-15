@@ -9,6 +9,7 @@ import { getActiveEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -50,6 +51,17 @@ export class CommandRunner implements vscode.Disposable {
             useCodebaseContex: !!command.context?.codebase,
             useShellCommand: !!command.context?.command,
             requestID: command.requestID,
+        })
+        telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+            metadata: {
+                useCodebaseContex: command.context?.codebase ? 1 : 0,
+                useShellCommand: command.context?.command ? 1 : 0,
+            },
+            interactionID: command.requestID,
+            privateMetadata: {
+                mode: command.mode,
+                requestID: command.requestID,
+            },
         })
 
         logDebug('CommandRunner:init', this.kind)
@@ -220,20 +232,16 @@ export function addSelectionToPrompt(prompt: string, code: string): string {
 function getDocCommandRange(
     editor: vscode.TextEditor,
     selection: vscode.Selection,
-    languageId?: string
+    languageId: string
 ): vscode.Selection {
     const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
-    const pos = new vscode.Position(startLine, 0)
+    const adjustedStartPosition = new vscode.Position(startLine, 0)
 
-    // move the current selection to the defined selection in the text editor document
-    if (editor) {
-        const visibleRange = editor.visibleRanges
-        // reveal the range of the selection minus 5 lines if visibleRange doesn't contain the selection
-        if (!visibleRange.some(range => range.contains(selection))) {
-            // reveal the range of the selection minus 5 lines
-            editor?.revealRange(selection, vscode.TextEditorRevealType.InCenter)
-        }
+    if (editor && !editor.visibleRanges.some(range => range.contains(adjustedStartPosition))) {
+        // reveal the range of the selection if visibleRange doesn't contain the selection
+        // we only use the start position as it is possible that the selection covers more than the entire visible area
+        editor.revealRange(selection, vscode.TextEditorRevealType.InCenter)
     }
 
-    return new vscode.Selection(pos, pos)
+    return new vscode.Selection(adjustedStartPosition, selection.end)
 }

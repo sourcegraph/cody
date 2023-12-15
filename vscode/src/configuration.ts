@@ -82,9 +82,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
-            scminput: false,
         }),
-        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
+        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
@@ -98,6 +97,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
+        autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
 
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
@@ -122,6 +122,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             false
         ),
 
+        autocompleteExperimentalHotStreak: getHiddenSetting('autocomplete.experimental.hotStreak', false),
+
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
         // when something goes wrong, and to suppress event logging in the agent.
@@ -132,6 +134,16 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             multiline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.multiline', undefined),
             singleline: getHiddenSetting<number | undefined>('autocomplete.advanced.timeout.singleline', undefined),
         },
+
+        testingLocalEmbeddingsModel: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.model', undefined)
+            : undefined,
+        testingLocalEmbeddingsEndpoint: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.endpoint', undefined)
+            : undefined,
+        testingLocalEmbeddingsIndexLibraryPath: isTesting
+            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
+            : undefined,
     }
 }
 

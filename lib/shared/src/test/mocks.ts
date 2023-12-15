@@ -13,7 +13,6 @@ import {
 } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentClassificationOption, IntentDetector } from '../intent-detector'
-import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
@@ -63,18 +62,6 @@ export class MockIntentDetector implements IntentDetector {
         fallback: Intent
     ): Promise<Intent> {
         return Promise.resolve(fallback)
-    }
-}
-
-export class MockKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
-
-    public getContext(query: string, numResults: number): Promise<ContextResult[]> {
-        return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
-    }
-
-    public getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
-        return this.mocks.getSearchContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
 
@@ -153,8 +140,6 @@ export const defaultEmbeddingsClient = new MockEmbeddingsClient()
 
 export const defaultIntentDetector = new MockIntentDetector()
 
-export const defaultKeywordContextFetcher = new MockKeywordContextFetcher()
-
 export const defaultEditor = new MockEditor()
 
 export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
@@ -168,7 +153,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
                 'dummy-codebase',
                 defaultEmbeddingsClient,
-                defaultKeywordContextFetcher,
                 null,
                 null,
                 null

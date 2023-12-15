@@ -19,6 +19,9 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (trace) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }
+        // Disable gzip compression since the sg instance will start to batch
+        // responses afterwards.
+        headersInstance.set('Accept-Encoding', 'gzip;q=0')
         fetchEventSource(this.completionsEndpoint, {
             method: 'POST',
             headers: Object.fromEntries(headersInstance.entries()),

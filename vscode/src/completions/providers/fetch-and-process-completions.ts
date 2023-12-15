@@ -4,25 +4,26 @@ import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api
 
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext, getDerivedDocContext } from '../get-current-doc-context'
+import { DocumentContext } from '../get-current-doc-context'
 import { completionPostProcessLogger } from '../post-process-logger'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
-import {
-    getMatchingSuffixLength,
-    InlineCompletionItemWithAnalytics,
-    processCompletion,
-} from '../text-processing/process-inline-completions'
+import { InlineCompletionItemWithAnalytics, processCompletion } from '../text-processing/process-inline-completions'
 import { forkSignal } from '../utils'
 
+import { getUpdatedDocContext } from './dynamic-multiline'
+import { createHotStreakExtractor, HotStreakExtractor } from './hot-streak'
 import { ProviderOptions } from './provider'
 
-interface FetchAndProcessCompletionsParams {
+export interface FetchAndProcessCompletionsParams {
     client: Pick<CodeCompletionsClient, 'complete'>
     requestParams: CodeCompletionsParams
     abortSignal: AbortSignal
     providerSpecificPostProcess: (insertText: string) => string
     providerOptions: Readonly<ProviderOptions>
+
+    onCompletionReady: (completions: InlineCompletionItemWithAnalytics) => void
+    onHotStreakCompletionReady: (docContext: DocumentContext, completions: InlineCompletionItemWithAnalytics) => void
 }
 
 /**
@@ -31,9 +32,12 @@ interface FetchAndProcessCompletionsParams {
  */
 export async function fetchAndProcessDynamicMultilineCompletions(
     params: FetchAndProcessCompletionsParams
-): Promise<InlineCompletionItemWithAnalytics> {
+): Promise<void> {
     const { client, requestParams, abortSignal, providerOptions, providerSpecificPostProcess } = params
     const { multiline, docContext } = providerOptions
+
+    let completedCompletion: undefined | InlineCompletionItemWithAnalytics
+    let hotStreakExtractor: undefined | HotStreakExtractor
 
     // The Async executor is required to return the completion early if a partial result from SSE can be used.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
@@ -42,8 +46,19 @@ export async function fetchAndProcessDynamicMultilineCompletions(
             const abortController = forkSignal(abortSignal)
 
             function stopStreamingAndUsePartialResponse(completionItem: InlineCompletionItemWithAnalytics): void {
-                resolve({ ...completionItem, stopReason: 'streaming-truncation' })
+                completedCompletion = completionItem
+                params.onCompletionReady({ ...completionItem, stopReason: 'streaming-truncation' })
+                resolve()
                 abortController.abort()
+
+                if (providerOptions.hotStreak) {
+                    hotStreakExtractor = createHotStreakExtractor({
+                        completedCompletion,
+                        ...params,
+                    })
+                } else {
+                    abortController.abort()
+                }
             }
 
             const completionPostProcessId = uuid.v4()
@@ -59,16 +74,20 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                         stage: `start ${responseChunkNumber}`,
                     })
 
-                    const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
+                    const rawCompletion = providerSpecificPostProcess(incompleteResponse.completion)
 
                     completionPostProcessLogger.info({
                         completionPostProcessId,
                         stage: 'incomplete response',
-                        text: initialCompletion,
+                        text: rawCompletion,
                         obj: {
                             multiline,
                         },
                     })
+
+                    if (completedCompletion) {
+                        hotStreakExtractor?.extract(rawCompletion, false)
+                    }
 
                     /**
                      * This completion was triggered with the multiline trigger at the end of current line.
@@ -76,7 +95,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                      */
                     if (multiline) {
                         completionPostProcessLogger.info({ completionPostProcessId, stage: 'multiline', text: '' })
-                        const completion = canUsePartialCompletion(initialCompletion, {
+                        const completion = canUsePartialCompletion(rawCompletion, {
                             document: providerOptions.document,
                             docContext: {
                                 completionPostProcessId,
@@ -90,8 +109,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                         }
                     } else {
                         /**
-                         * This completion was started without the multline trigger at the end of current line.
-                         * Check if the the first completion line ends with the multline trigger. If that's the case
+                         * This completion was started without the multiline trigger at the end of current line.
+                         * Check if the the first completion line ends with the multiline trigger. If that's the case
                          * continue streaming and pretend like this completion was multiline in the first place:
                          *
                          * 1. Update `docContext` with the `multilineTrigger` value.
@@ -99,12 +118,12 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                          */
                         const updatedDocContext = getUpdatedDocContext({
                             ...params,
-                            initialCompletion,
+                            initialCompletion: rawCompletion,
                             completionPostProcessId,
                         })
 
                         if (updatedDocContext.multilineTrigger) {
-                            const completion = canUsePartialCompletion(initialCompletion, {
+                            const completion = canUsePartialCompletion(rawCompletion, {
                                 document: providerOptions.document,
                                 docContext: updatedDocContext,
                                 isDynamicMultilineCompletion: true,
@@ -127,16 +146,17 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                                         docContext: updatedDocContext,
                                     }
                                 )
+
                                 stopStreamingAndUsePartialResponse(processedCompletion)
                             }
                         } else {
                             /**
-                             * This completion was started without the multline trigger at the end of current line
+                             * This completion was started without the multiline trigger at the end of current line
                              * and the first generated line does not end with a multiline trigger.
                              *
                              * Process this completion as a singleline completion: cut-off after the first new line char.
                              */
-                            const completion = canUsePartialCompletion(initialCompletion, providerOptions)
+                            const completion = canUsePartialCompletion(rawCompletion, providerOptions)
 
                             if (completion) {
                                 const firstLine = getFirstLine(completion.insertText)
@@ -168,140 +188,124 @@ export async function fetchAndProcessDynamicMultilineCompletions(
 
             /**
              * We were not able to use a partial streaming response as a completion and receive the full
-             * compeltion text generated by the LLM.
+             * completion text generated by the LLM.
              */
-            const initialCompletion = providerSpecificPostProcess(result.completion)
-            completionPostProcessLogger.info({
-                completionPostProcessId,
-                stage: 'full response',
-                text: initialCompletion,
-            })
+            const rawCompletion = providerSpecificPostProcess(result.completion)
 
-            const updatedDocContext = getUpdatedDocContext({
-                ...params,
-                completionPostProcessId,
-                initialCompletion,
-            })
+            if (!completedCompletion) {
+                completionPostProcessLogger.info({
+                    completionPostProcessId,
+                    stage: 'full response',
+                    text: rawCompletion,
+                })
 
-            const completion = parseAndTruncateCompletion(initialCompletion, {
-                document: providerOptions.document,
-                docContext: updatedDocContext,
-            })
+                const updatedDocContext = getUpdatedDocContext({
+                    ...params,
+                    completionPostProcessId,
+                    initialCompletion: rawCompletion,
+                })
 
-            completionPostProcessLogger.info({
-                completionPostProcessId,
-                stage: 'full response resolve',
-                text: completion.insertText,
-            })
+                const completion = parseAndTruncateCompletion(rawCompletion, {
+                    document: providerOptions.document,
+                    docContext: updatedDocContext,
+                })
 
-            const processedCompletion = processCompletion(completion, {
-                document: providerOptions.document,
-                position: updatedDocContext.position,
-                docContext: updatedDocContext,
-            })
-            resolve({ ...processedCompletion, stopReason: result.stopReason })
+                completionPostProcessLogger.info({
+                    completionPostProcessId,
+                    stage: 'full response resolve',
+                    text: completion.insertText,
+                })
+
+                completedCompletion = processCompletion(completion, {
+                    document: providerOptions.document,
+                    position: updatedDocContext.position,
+                    docContext: updatedDocContext,
+                })
+
+                params.onCompletionReady({ ...completedCompletion, stopReason: result.stopReason })
+                resolve()
+                abortController.abort()
+
+                if (params.providerOptions.hotStreak) {
+                    hotStreakExtractor = createHotStreakExtractor({
+                        completedCompletion,
+                        ...params,
+                    })
+                }
+            }
+
+            hotStreakExtractor?.extract(rawCompletion, true)
         } catch (error) {
             reject(error)
         }
     })
 }
 
-export async function fetchAndProcessCompletions(
-    params: FetchAndProcessCompletionsParams
-): Promise<InlineCompletionItemWithAnalytics> {
+export async function fetchAndProcessCompletions(params: FetchAndProcessCompletionsParams): Promise<void> {
     const { client, requestParams, abortSignal, providerOptions, providerSpecificPostProcess } = params
+
+    let completedCompletion: undefined | InlineCompletionItemWithAnalytics
+    let hotStreakExtractor: undefined | HotStreakExtractor
 
     // The Async executor is required to return the completion early if a partial result from SSE can be used.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
     return new Promise(async (resolve, reject) => {
         try {
             const abortController = forkSignal(abortSignal)
-
             const result = await client.complete(
                 requestParams,
                 (incompleteResponse: CompletionResponse) => {
-                    const initialCompletion = providerSpecificPostProcess(incompleteResponse.completion)
-                    const completion = canUsePartialCompletion(initialCompletion, providerOptions)
+                    const rawCompletion = providerSpecificPostProcess(incompleteResponse.completion)
 
-                    if (completion) {
-                        const processedCompletion = processCompletion(completion, providerOptions)
-                        resolve({ ...processedCompletion, stopReason: 'streaming-truncation' })
+                    if (!completedCompletion) {
+                        const completion = canUsePartialCompletion(rawCompletion, providerOptions)
+                        if (completion) {
+                            completedCompletion = processCompletion(completion, providerOptions)
+                            params.onCompletionReady({ ...completedCompletion, stopReason: 'streaming-truncation' })
+                            resolve()
+
+                            if (params.providerOptions.hotStreak) {
+                                hotStreakExtractor = createHotStreakExtractor({
+                                    completedCompletion,
+                                    ...params,
+                                })
+                            }
+                        } else {
+                            // If we don't have a complete completion yet and the current chunk is
+                            // not enough to be used as a completion, we wait for the next chunk.
+                            return
+                        }
+                    }
+
+                    if (params.providerOptions.hotStreak) {
+                        hotStreakExtractor?.extract(rawCompletion, false)
+                    } else {
                         abortController.abort()
                     }
                 },
                 abortController.signal
             )
 
-            const initialCompletion = providerSpecificPostProcess(result.completion)
-            const completion = parseAndTruncateCompletion(initialCompletion, providerOptions)
+            const rawCompletion = providerSpecificPostProcess(result.completion)
 
-            const processedCompletion = processCompletion(completion, providerOptions)
-            resolve({ ...processedCompletion, stopReason: result.stopReason })
+            if (!completedCompletion) {
+                const completion = parseAndTruncateCompletion(rawCompletion, providerOptions)
+                completedCompletion = processCompletion(completion, providerOptions)
+                params.onCompletionReady({ ...completedCompletion, stopReason: result.stopReason })
+
+                if (params.providerOptions.hotStreak) {
+                    hotStreakExtractor = createHotStreakExtractor({
+                        completedCompletion,
+                        ...params,
+                    })
+                }
+            }
+
+            hotStreakExtractor?.extract(rawCompletion, true)
+
+            resolve()
         } catch (error) {
             reject(error)
         }
     })
-}
-
-interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsParams {
-    completionPostProcessId: string
-    initialCompletion: string
-}
-
-/**
- * 1. Generates the updated document context pretending like the first line of the completion is already in the document.
- * 2. If the updated document context has the multiline trigger, returns the updated document context.
- * 3. Otherwise, returns the initial document context.
- */
-function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
-    const { completionPostProcessId, initialCompletion, providerOptions } = params
-    const {
-        position,
-        document,
-        docContext,
-        docContext: { prefix, suffix, currentLineSuffix },
-    } = providerOptions
-
-    const firstLine = getFirstLine(initialCompletion)
-    const matchingSuffixLength = getMatchingSuffixLength(firstLine, currentLineSuffix)
-    const updatedPosition = position.translate(0, firstLine.length - 1)
-
-    completionPostProcessLogger.info({
-        completionPostProcessId,
-        stage: 'getDerivedDocContext',
-        text: initialCompletion,
-    })
-
-    const updatedDocContext = getDerivedDocContext({
-        languageId: document.languageId,
-        position: updatedPosition,
-        dynamicMultilineCompletions: true,
-        documentDependentContext: {
-            prefix: prefix + firstLine,
-            // Remove the characters that are being replaced by the completion
-            // to reduce the chances of breaking the parse tree with redundant symbols.
-            suffix: suffix.slice(matchingSuffixLength),
-            injectedPrefix: null,
-            completionPostProcessId,
-        },
-    })
-
-    const isMultilineBasedOnFirstLine = Boolean(updatedDocContext.multilineTrigger)
-
-    if (isMultilineBasedOnFirstLine) {
-        completionPostProcessLogger.info({
-            completionPostProcessId,
-            stage: 'isMultilineBasedOnFirstLine',
-            text: initialCompletion,
-        })
-
-        return {
-            ...docContext,
-            completionPostProcessId,
-            multilineTrigger: updatedDocContext.multilineTrigger,
-            multilineTriggerPosition: updatedDocContext.multilineTriggerPosition,
-        }
-    }
-
-    return docContext
 }

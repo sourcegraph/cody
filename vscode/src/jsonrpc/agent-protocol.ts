@@ -49,6 +49,8 @@ export type Requests = {
 
     'graphql/currentUserIsPro': [null, boolean]
 
+    'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
+
     /**
      * @deprecated use 'telemetry/recordEvent' instead.
      */

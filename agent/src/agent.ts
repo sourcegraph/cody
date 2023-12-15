@@ -10,6 +10,7 @@ import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -369,7 +370,7 @@ export class Agent extends MessageHandler {
                 throw new Error('Cody client not initialized')
             }
             const provider = await vscode_shim.completionProvider()
-            provider.handleDidAcceptCompletionItem(completionID)
+            await provider.handleDidAcceptCompletionItem(completionID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
@@ -399,7 +400,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 throw new Error('Cody client not initialized')
             }
-            const res = await client.graphqlClient.getCurrentUserIdAndVerifiedEmailAndCodyPro()
+            const res = await client.graphqlClient.getCurrentUserCodyProEnabled()
             if (res instanceof Error) {
                 throw res
             }
@@ -469,6 +470,10 @@ export class Agent extends MessageHandler {
                 console.log('Completion provider is not initialized: unable to clear last candidate')
             }
             provider.clearLastCandidate()
+        })
+
+        this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
+            return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })
     }
 

@@ -8,7 +8,7 @@ import { asPoint } from '../tree-sitter/parse-tree-cache'
 import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getContextRange } from './doc-context-getters'
-import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
+import { DocumentContext, getCurrentDocContext, insertIntoDocContext } from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletionContext) {
@@ -366,6 +366,125 @@ describe('getCurrentDocContext', () => {
                     expect(triggerNode.text).toBe(multilineTrigger)
                 }
             )
+        })
+    })
+})
+
+describe('insertCompletionIntoDocContext', () => {
+    it('inserts the completion and updates document prefix/suffix and cursor position', () => {
+        const { document, position } = documentAndPosition(
+            dedent`
+                function helloWorld() {
+                    █
+                }
+            `
+        )
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
+            dynamicMultilineCompletions: false,
+        })
+
+        const updatedDocContext = insertIntoDocContext(
+            docContext,
+            "console.log('hello')\n    console.log('world')",
+            document.languageId
+        )
+
+        expect(updatedDocContext).toEqual({
+            prefix: dedent`
+                function helloWorld() {
+                    console.log('hello')
+                    console.log('world')`,
+            suffix: '\n}',
+            currentLinePrefix: "    console.log('world')",
+            currentLineSuffix: '',
+            prevNonEmptyLine: "    console.log('hello')",
+            nextNonEmptyLine: '}',
+            multilineTrigger: null,
+            multilineTriggerPosition: null,
+            injectedPrefix: null,
+            position: { character: 24, line: 2 },
+        })
+    })
+
+    it('does not duplicate the insertion characters when an existing suffix is being replaced by the single-line completion', () => {
+        const { document, position } = documentAndPosition(
+            dedent`
+                function helloWorld() {
+                    console.log(█, 'world')
+                }
+            `
+        )
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
+            dynamicMultilineCompletions: false,
+        })
+
+        const updatedDocContext = insertIntoDocContext(docContext, "'hello', 'world')", document.languageId)
+
+        expect(updatedDocContext).toEqual({
+            prefix: dedent`
+                function helloWorld() {
+                    console.log('hello', 'world')`,
+            suffix: '\n}',
+            currentLinePrefix: "    console.log('hello', 'world')",
+            currentLineSuffix: '',
+            prevNonEmptyLine: 'function helloWorld() {',
+            nextNonEmptyLine: '}',
+            multilineTrigger: null,
+            multilineTriggerPosition: null,
+            injectedPrefix: null,
+            // Note: The position is always moved at the end of the line that the text was inserted
+            position: { character: "    console.log('hello', 'world')".length, line: 1 },
+        })
+    })
+
+    it('does not duplicate the insertion characters when an existing suffix is being replaced by the multi-line completion', () => {
+        const { document, position } = documentAndPosition(
+            dedent`
+                function helloWorld() {
+                    f(1, {█2)
+                }
+            `
+        )
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
+            dynamicMultilineCompletions: false,
+        })
+
+        const updatedDocContext = insertIntoDocContext(
+            docContext,
+            '\n        propA: foo,\n        propB: bar,\n    }, 2)',
+            document.languageId
+        )
+
+        expect(updatedDocContext).toEqual({
+            prefix: dedent`
+                function helloWorld() {
+                    f(1, {
+                        propA: foo,
+                        propB: bar,
+                    }, 2)
+            `,
+            suffix: '\n}',
+            currentLinePrefix: '    }, 2)',
+            currentLineSuffix: '',
+            prevNonEmptyLine: '        propB: bar,',
+            nextNonEmptyLine: '}',
+            multilineTrigger: null,
+            multilineTriggerPosition: null,
+            injectedPrefix: null,
+            // Note: The position is always moved at the end of the line that the text was inserted
+            position: { character: '    }, 2)'.length, line: 4 },
         })
     })
 })

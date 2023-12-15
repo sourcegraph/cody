@@ -16,6 +16,7 @@ import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
+import { formatCompletion } from './format-completion'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -116,10 +117,14 @@ export interface CodyCompletionItemProviderConfig {
     contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
 
+    // Settings
+    formatOnAccept?: boolean
+
     // Feature flags
     completeSuggestWidgetSelection?: boolean
     disableRecyclingOfPreviousRequests?: boolean
     dynamicMultilineCompletions?: boolean
+    hotStreak?: boolean
 }
 
 interface CompletionRequest {
@@ -135,7 +140,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     // completions, we use consult this field inside the completion callback instead.
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
-    private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
@@ -156,8 +160,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     constructor({
         completeSuggestWidgetSelection = true,
+        formatOnAccept = true,
         disableRecyclingOfPreviousRequests = false,
         dynamicMultilineCompletions = false,
+        hotStreak = false,
         tracer = null,
         createBfgRetriever,
         ...config
@@ -165,8 +171,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config = {
             ...config,
             completeSuggestWidgetSelection,
+            formatOnAccept,
             disableRecyclingOfPreviousRequests,
             dynamicMultilineCompletions,
+            hotStreak,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
@@ -207,7 +215,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             vscode.commands.registerCommand(
                 'cody.autocomplete.inline.accepted',
                 ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                    this.handleDidAcceptCompletionItem(codyCompletion)
+                    void this.handleDidAcceptCompletionItem(codyCompletion)
                 }
             )
         )
@@ -247,7 +255,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             let stopLoading: () => void | undefined
             const setIsLoading = (isLoading: boolean): void => {
                 if (isLoading) {
-                    stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+                    // We do not want to show a loading spinner when the user is rate limited to
+                    // avoid visual churn.
+                    //
+                    // We still make the request to find out if the user is still rate limited.
+                    const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
+                    if (!hasRateLimitError) {
+                        stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+                    }
                 } else {
                     stopLoading?.()
                 }
@@ -339,6 +354,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     artificialDelay,
                     completionIntent,
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
+                    hotStreak: this.config.hotStreak,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
@@ -447,17 +463,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * Callback to be called when the user accepts a completion. For VS Code, this is part of the
      * action inside the `AutocompleteItem`. Agent needs to call this callback manually.
      */
-    public handleDidAcceptCompletionItem(
+    public async handleDidAcceptCompletionItem(
         completionOrItemId:
-            | Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
+            | Pick<AutocompleteItem, 'range' | 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
             | CompletionItemID
-    ): void {
+    ): Promise<void> {
         const completion =
             typeof completionOrItemId === 'string'
                 ? suggestedCompletionItemIDs.get(completionOrItemId)
                 : completionOrItemId
         if (!completion) {
             return
+        }
+
+        if (this.config.formatOnAccept && !this.config.isRunningInsideAgent) {
+            await formatCompletion(completion as AutocompleteItem)
         }
 
         resetArtificialDelay()
@@ -575,12 +595,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      */
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
-            if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
+            // If there's already an existing error, don't add another one.
+            const hasRateLimitError = this.config.statusBar.hasError(error.name)
+            if (hasRateLimitError) {
                 return
             }
-            this.resetRateLimitErrorsAfter = error.retryAfterDate?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
+
+            const isEnterpriseUser = this.config.isDotComUser !== true
             const canUpgrade = error.upgradeIsAvailable
-            const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+            const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+
             let errorTitle: string
             let pageName: string
             if (canUpgrade) {
@@ -594,6 +618,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.config.statusBar.addError({
                 title: errorTitle,
                 description: (error.userMessage + ' ' + (error.retryMessage ?? '')).trim(),
+                errorType: error.name,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {

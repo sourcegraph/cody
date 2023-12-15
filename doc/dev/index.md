@@ -4,7 +4,7 @@
 
 1. Install [asdf](https://asdf-vm.com/)
 1. Run `asdf install` (if needed, run `asdf plugin add NAME` for any missing plugins)
-1. Run `pnpm install`
+1. Run `pnpm install && pnpm build`
 
 ### Build and run the VS Code extension
 

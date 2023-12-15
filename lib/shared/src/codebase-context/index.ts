@@ -6,7 +6,6 @@ import {
     ContextResult,
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
-    KeywordContextFetcher,
     LocalEmbeddingsFetcher,
 } from '../local-context'
 import {
@@ -34,7 +33,6 @@ export class CodebaseContext {
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
         private readonly codebase: string | undefined,
         public embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
         public localEmbeddings: LocalEmbeddingsFetcher | null,
@@ -49,19 +47,6 @@ export class CodebaseContext {
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
-    }
-
-    private mergeContextResults(keywordResults: ContextResult[], filenameResults: ContextResult[]): ContextResult[] {
-        // Just take the single most relevant filename suggestion for now. Otherwise, because our reranking relies solely
-        // on filename, the filename results would dominate the keyword results.
-        const merged = filenameResults.slice(-1).concat(keywordResults)
-
-        const uniques = new Map<string, ContextResult>()
-        for (const result of merged) {
-            uniques.set(result.fileName, result)
-        }
-
-        return Array.from(uniques.values())
     }
 
     /**
@@ -119,8 +104,7 @@ export class CodebaseContext {
             }
         }
         return {
-            results:
-                (await this.keywords?.getSearchContext(query, options.numCodeResults + options.numTextResults)) || [],
+            results: [],
             endpoint: this.config.serverEndpoint,
         }
     }
@@ -216,13 +200,8 @@ export class CodebaseContext {
 
     private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         try {
-            const keywordResultsPromise = this.getKeywordSearchResults(query, options)
-            const filenameResultsPromise = this.getFilenameSearchResults(query, options)
-
-            const [keywordResults, filenameResults] = await Promise.all([keywordResultsPromise, filenameResultsPromise])
-
-            const combinedResults = this.mergeContextResults(keywordResults, filenameResults)
-            const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
+            const filenameResults = await this.getFilenameSearchResults(query, options)
+            const rerankedResults = await (this.rerank ? this.rerank(query, filenameResults) : filenameResults)
             const messages = resultsToMessages(rerankedResults)
 
             this.embeddingResultsError = ''
@@ -233,14 +212,6 @@ export class CodebaseContext {
             this.embeddingResultsError = `Error retrieving local context: ${error}`
             return []
         }
-    }
-
-    private async getKeywordSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
-        if (!this.keywords) {
-            return []
-        }
-        const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
-        return results
     }
 
     private async getFilenameSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
