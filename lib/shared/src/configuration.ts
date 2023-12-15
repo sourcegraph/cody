@@ -53,7 +53,7 @@ export interface Configuration {
     internalUnstable: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'opencodegraph' | null
 
     /**
      * Hidden settings
