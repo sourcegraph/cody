@@ -48,8 +48,9 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.updateStatus()),
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody.codebase')) {
-                    this.updateStatus()
+                    return this.updateStatus()
                 }
+                return Promise.resolve()
             }),
             this.eventEmitter
         )
