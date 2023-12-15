@@ -8,7 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Use the proper token limits for enterprise users.
+- Chat: Use the proper token limits for enterprise users. [pulls/2395](https://github.com/sourcegraph/cody/pull/2395)
 
 ### Changed
 
