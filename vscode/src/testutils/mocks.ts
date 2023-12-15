@@ -453,6 +453,14 @@ export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
             invokeCallback(listener, data)
         }
     }
+    public async fireAsync(data: T): Promise<void> {
+        const promises: Promise<void>[] = []
+        for (const listener of this.listeners) {
+            const value = invokeCallback(listener, data)
+            promises.push(Promise.resolve(value))
+        }
+        await Promise.all(promises)
+    }
     dispose(): void {
         this.listeners.clear()
     }

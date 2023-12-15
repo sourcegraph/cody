@@ -5,8 +5,6 @@ import path from 'path'
 
 import type * as vscode from 'vscode'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
@@ -38,6 +36,8 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
+import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
+import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
@@ -98,95 +98,31 @@ export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
     if (newClientInfo.extensionConfiguration) {
-        setConnectionConfig(newClientInfo.extensionConfiguration)
+        setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
 }
 
-export let connectionConfig: ExtensionConfiguration | undefined
-export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
-    connectionConfig = newConfig
+export let extensionConfiguration: ExtensionConfiguration | undefined
+export function setExtensionConfiguration(newConfig: ExtensionConfiguration): void {
+    extensionConfiguration = newConfig
 }
 
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
-    if (!connectionConfig) {
+    if (!extensionConfiguration) {
         return true
     }
 
     return (
-        connectionConfig.accessToken !== newConfig.accessToken ||
-        connectionConfig.serverEndpoint !== newConfig.serverEndpoint
+        extensionConfiguration.accessToken !== newConfig.accessToken ||
+        extensionConfiguration.serverEndpoint !== newConfig.serverEndpoint
     )
 }
 
-const configuration: vscode.WorkspaceConfiguration = {
-    has(section) {
-        return true
-    },
-    get: (section, defaultValue?: any) => {
-        const clientNameToIDE = (value: string): Configuration['agentIDE'] | undefined => {
-            return (
-                {
-                    vscode: 'VSCode',
-                    jetbrains: 'JetBrains',
-                    emacs: 'Emacs',
-                    neovim: 'Neovim',
-                } as const
-            )[value.toLowerCase()]
-        }
-
-        const fromCustomConfiguration = connectionConfig?.customConfiguration?.[section]
-        if (fromCustomConfiguration !== undefined) {
-            return fromCustomConfiguration
-        }
-        switch (section) {
-            case 'cody.serverEndpoint':
-                return connectionConfig?.serverEndpoint
-            case 'cody.proxy':
-                return connectionConfig?.proxy ?? null
-            case 'cody.customHeaders':
-                return connectionConfig?.customHeaders
-            case 'cody.telemetry.level':
-                // Use the dedicated `telemetry/recordEvent` to send telemetry from
-                // agent clients.  The reason we disable telemetry via config is
-                // that we don't want to submit vscode-specific events when
-                // running inside the agent.
-                return 'agent'
-            case 'cody.autocomplete.enabled':
-                return true
-            case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider ?? null
-            case 'cody.autocomplete.advanced.serverEndpoint':
-                return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
-            case 'cody.autocomplete.advanced.model':
-                return connectionConfig?.autocompleteAdvancedModel ?? null
-            case 'cody.autocomplete.advanced.accessToken':
-                return connectionConfig?.autocompleteAdvancedAccessToken ?? null
-            case 'cody.advanced.agent.running':
-                return true
-            case 'cody.debug.enable':
-                return connectionConfig?.debug ?? false
-            case 'cody.debug.verbose':
-                return connectionConfig?.verboseDebug ?? false
-            case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                // False because we don't embed WASM with the agent yet.
-                return false
-            case 'cody.experimental.symfContext':
-                return false
-            case 'cody.codebase':
-                return connectionConfig?.codebase
-            case 'cody.advanced.agent.ide':
-                return clientNameToIDE(clientInfo?.name ?? '')
-            default:
-                return defaultValue
-        }
-    },
-    update(section, value, configurationTarget, overrideInLanguage) {
-        return Promise.resolve()
-    },
-    inspect(section) {
-        return undefined
-    },
-}
+const configuration = new AgentWorkspaceConfiguration(
+    [],
+    () => clientInfo,
+    () => extensionConfiguration
+)
 
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
@@ -211,9 +147,118 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
 }
 
 const workspaceFolders: vscode.WorkspaceFolder[] = []
+const fs: typeof vscode.workspace.fs = {
+    stat: async uri => {
+        const stat = await fspromises.stat(uri.fsPath)
+        const type = stat.isFile()
+            ? FileType.File
+            : stat.isDirectory()
+            ? FileType.Directory
+            : stat.isSymbolicLink()
+            ? FileType.SymbolicLink
+            : FileType.Unknown
+
+        return {
+            type,
+            ctime: stat.ctimeMs,
+            mtime: stat.mtimeMs,
+            size: stat.size,
+        }
+    },
+    readDirectory: async uri => {
+        const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
+
+        return entries.map(entry => {
+            const type = entry.isFile()
+                ? FileType.File
+                : entry.isDirectory()
+                ? FileType.Directory
+                : entry.isSymbolicLink()
+                ? FileType.SymbolicLink
+                : FileType.Unknown
+
+            return [entry.name, type]
+        })
+    },
+    createDirectory: async uri => {
+        await fspromises.mkdir(uri.fsPath, { recursive: true })
+    },
+    readFile: async uri => {
+        const content = await fspromises.readFile(uri.fsPath)
+        return new Uint8Array(content.buffer)
+    },
+    writeFile: async (uri, content) => {
+        await fspromises.writeFile(uri.fsPath, content)
+    },
+    delete: async (uri, options) => {
+        await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
+    },
+    rename: async (source, target, options) => {
+        if (options?.overwrite ?? false) {
+            await fspromises.unlink(target.fsPath)
+        }
+        await fspromises.link(source.fsPath, target.fsPath)
+        await fspromises.unlink(source.fsPath)
+    },
+    copy: async (source, target, options) => {
+        const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
+        await fspromises.copyFile(source.fsPath, target.fsPath, mode)
+    },
+    isWritableFileSystem: scheme => {
+        if (scheme === 'file') {
+            return true
+        }
+        return false
+    },
+}
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
+    async findFiles(include, exclude, maxResults, token) {
+        if (typeof include !== 'string') {
+            throw new Error('workspaces.findFiles: include must be a string')
+        }
+        if (exclude !== undefined && typeof exclude !== 'string') {
+            throw new Error('workspaces.findFiles: exclude must be a string')
+        }
+
+        const result: vscode.Uri[] = []
+        const loop = async (dir: vscode.Uri): Promise<void> => {
+            console.log({ dir: dir.toString() })
+            if (token?.isCancellationRequested) {
+                return
+            }
+            const files = await fs.readDirectory(dir)
+            for (const [name, fileType] of files) {
+                const uri = Uri.file(path.join(dir.fsPath, name))
+                if (!matchesGlobPatterns([include], exclude ? [exclude] : [], uri.path)) {
+                    continue
+                }
+                if (fileType === FileType.Directory) {
+                    await loop(uri)
+                } else if (fileType === FileType.File) {
+                    result.push(uri)
+                    if (maxResults !== undefined && result.length >= maxResults) {
+                        return
+                    }
+                }
+            }
+        }
+
+        await Promise.all(
+            workspaceFolders.map(async folder => {
+                try {
+                    const stat = await fs.stat(folder.uri)
+                    if (stat.type === FileType.Directory) {
+                        await loop(folder.uri)
+                    }
+                } catch {
+                    // ignore invalid workspace folders
+                }
+            })
+        )
+        return result
+    },
     openTextDocument: uriOrString => {
         if (!workspaceDocuments) {
             return Promise.reject(new Error('workspaceDocuments is uninitialized'))
@@ -269,71 +314,14 @@ const _workspace: Partial<typeof vscode.workspace> = {
         return relativePath
     },
     createFileSystemWatcher: () => emptyFileWatcher,
-    getConfiguration: (() => configuration) as any,
-    fs: {
-        stat: async uri => {
-            const stat = await fspromises.stat(uri.fsPath)
-            const type = stat.isFile()
-                ? FileType.File
-                : stat.isDirectory()
-                ? FileType.Directory
-                : stat.isSymbolicLink()
-                ? FileType.SymbolicLink
-                : FileType.Unknown
-
-            return {
-                type,
-                ctime: stat.ctimeMs,
-                mtime: stat.mtimeMs,
-                size: stat.size,
-            }
-        },
-        readDirectory: async uri => {
-            const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
-
-            return entries.map(entry => {
-                const type = entry.isFile()
-                    ? FileType.File
-                    : entry.isDirectory()
-                    ? FileType.Directory
-                    : entry.isSymbolicLink()
-                    ? FileType.SymbolicLink
-                    : FileType.Unknown
-
-                return [entry.name, type]
-            })
-        },
-        createDirectory: async uri => {
-            await fspromises.mkdir(uri.fsPath, { recursive: true })
-        },
-        readFile: async uri => {
-            const content = await fspromises.readFile(uri.fsPath)
-            return new Uint8Array(content.buffer)
-        },
-        writeFile: async (uri, content) => {
-            await fspromises.writeFile(uri.fsPath, content)
-        },
-        delete: async (uri, options) => {
-            await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
-        },
-        rename: async (source, target, options) => {
-            if (options?.overwrite ?? false) {
-                await fspromises.unlink(target.fsPath)
-            }
-            await fspromises.link(source.fsPath, target.fsPath)
-            await fspromises.unlink(source.fsPath)
-        },
-        copy: async (source, target, options) => {
-            const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
-            await fspromises.copyFile(source.fsPath, target.fsPath, mode)
-        },
-        isWritableFileSystem: scheme => {
-            if (scheme === 'file') {
-                return true
-            }
-            return false
-        },
+    getConfiguration: section => {
+        console.log({ section })
+        if (section) {
+            return configuration.withPrefix(section)
+        }
+        return configuration
     },
+    fs,
 }
 
 export const workspace = _workspace as typeof vscode.workspace
@@ -356,7 +344,7 @@ export function defaultWebviewPanel(params: {
     showOptions: vscode.ViewColumn | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
     options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
     onDidReceiveMessage: vscode.EventEmitter<any>
-    onDidPostMessage: vscode.EventEmitter<any>
+    onDidPostMessage: EventEmitter<any>
 }): vscode.WebviewPanel {
     return {
         active: false,
@@ -364,9 +352,7 @@ export function defaultWebviewPanel(params: {
         onDidChangeViewState: emptyEvent(),
         onDidDispose: emptyEvent(),
         options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
-        reveal: () => {
-            console.log('WEBVIEW: REVEAL')
-        },
+        reveal: () => {},
         title: params.title,
         viewColumn: typeof params.showOptions === 'number' ? params.showOptions : params.showOptions.viewColumn,
         viewType: params.viewType,
@@ -380,9 +366,9 @@ export function defaultWebviewPanel(params: {
             html: '<p>html</p>',
             onDidReceiveMessage: params.onDidReceiveMessage.event,
             options: {},
-            postMessage: message => {
-                params.onDidPostMessage.fire(message)
-                return Promise.resolve(true)
+            postMessage: async message => {
+                await params.onDidPostMessage.fireAsync(message)
+                return true
             },
         },
     }

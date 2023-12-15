@@ -295,6 +295,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * This is the entrypoint for handling messages from the webview.
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        console.log({ onDidReceiveMessage: message })
         switch (message.command) {
             case 'ready':
                 await this.postViewConfig()
@@ -307,7 +308,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await this.clearAndRestartSession()
                 break
             case 'submit': {
-                const requestID = uuid.v4()
+                const requestID = message?.messageID ?? uuid.v4()
                 await this.handleHumanMessageSubmitted(
                     requestID,
                     message.text,
@@ -504,6 +505,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean
     ): Promise<void> {
+        console.log({ text })
         if (submitType === 'suggestion') {
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
@@ -634,8 +636,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
             this.postViewTranscript({ speaker: 'assistant' })
 
+            console.log({ prompt })
             this.sendLLMRequest(prompt, {
                 update: content => {
+                    console.log({ content })
                     this.postViewTranscript(
                         toViewMessage({
                             message: {

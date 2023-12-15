@@ -187,13 +187,16 @@ class MessageDecoder extends Writable {
                         }
                         this.callback(null, data)
                     } catch (error: any) {
-                        console.log(
+                        console.error(
                             `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}'. Error:\n${error}`
                         )
                         if (tracePath) {
                             appendFileSync(tracePath, '<- ' + JSON.stringify({ error }, null, 4) + '\n')
                         }
-                        this.callback(error, null)
+                        process.stderr.write(
+                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}'. Error:\n${error}`
+                        )
+                        process.exit(1)
                     }
 
                     continue

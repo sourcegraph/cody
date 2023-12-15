@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import {
+import type { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import type { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import type {
     KnownKeys,
     KnownString,
     TelemetryEventMarketingTrackingInput,
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 
-import { WebviewMessage } from '../chat/protocol'
-import { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
+import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -70,6 +70,8 @@ export type Requests = {
     'git/codebaseName': [{ url: string }, string | null]
 
     'webview/didDispose': [{ id: string }, null]
+    'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
+
     // ================
     // Server -> Client
     // ================
@@ -124,8 +126,6 @@ export type Notifications = {
     // The chat transcript grows indefinitely if this notification is never sent.
     'transcript/reset': [null]
 
-    'webview/receiveMessage': [{ id: string; message: WebviewMessage }]
-
     // ================
     // Server -> Client
     // ================
@@ -136,7 +136,7 @@ export type Notifications = {
 
     'debug/message': [DebugMessage]
 
-    'webview/postMessage': [{ id: string; message: WebviewMessage }]
+    'webview/postMessage': [{ id: string; message: ExtensionMessage }]
 }
 
 export interface CancelParams {

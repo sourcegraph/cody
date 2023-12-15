@@ -1,7 +1,7 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { defaultWebviewPanel } from './vscode-shim'
+import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 
 export class AgentWebPanels {
     public panels = new Map<string, AgentWebPanel>()
@@ -13,8 +13,8 @@ export class AgentWebPanels {
 export class AgentWebPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
     public panel: vscode.WebviewPanel
-    public receiveMessage = new vscode.EventEmitter<any>()
-    public postMessage = new vscode.EventEmitter<any>()
+    public receiveMessage = new EventEmitter<any>()
+    public postMessage = new EventEmitter<any>()
     public onDidPostMessage = this.postMessage.event
     constructor(
         viewType: string,

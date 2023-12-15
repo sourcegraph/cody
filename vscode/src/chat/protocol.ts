@@ -31,6 +31,7 @@ export type WebviewMessage =
           submitType: ChatSubmitType
           addEnhancedContext?: boolean
           contextFiles?: ContextFile[]
+          messageID?: string
       }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }

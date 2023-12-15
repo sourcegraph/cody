@@ -1,17 +1,17 @@
 import assert from 'assert'
 import { execSync, spawn } from 'child_process'
+import fspromises from 'fs/promises'
 import path from 'path'
 
+import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-
-import { WebviewMessage } from '../../vscode/src/chat/protocol'
+import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
 
 import { MessageHandler } from './jsonrpc-alias'
-import { ClientInfo } from './protocol-alias'
+import { ClientInfo, ServerInfo } from './protocol-alias'
 
 export class TestClient extends MessageHandler {
     constructor() {
@@ -20,20 +20,17 @@ export class TestClient extends MessageHandler {
             console.log(`${message.channel}: ${message.message}`)
         })
     }
-    public async handshake(clientInfo: ClientInfo) {
-        const info = await this.request('initialize', clientInfo)
-        this.notify('initialized', null)
-        return info
-    }
 
-    public listRecipes() {
-        return this.request('recipes/list', null)
-    }
-
-    public async executeRecipe(id: RecipeID, humanChatInput: string) {
-        return this.request('recipes/execute', {
-            id,
-            humanChatInput,
+    public async handshake(clientInfo: ClientInfo): Promise<ServerInfo> {
+        return new Promise((resolve, reject) => {
+            setTimeout(reject, 1000)
+            this.request('initialize', clientInfo).then(
+                info => {
+                    this.notify('initialized', null)
+                    resolve(info)
+                },
+                error => reject(error)
+            )
         })
     }
 
@@ -43,13 +40,14 @@ export class TestClient extends MessageHandler {
     }
 }
 
-const workspaceRootUri = 'file:///path/to/foo'
+const workspaceRootUri = vscode.Uri.parse('file:///Users/olafurpg/dev/sourcegraph/bfg-demo')
+const workspaceRootPath = workspaceRootUri.fsPath
 const dotcom = 'https://sourcegraph.com'
 const clientInfo: ClientInfo = {
     name: 'test-client',
     version: 'v1',
-    workspaceRootUri,
-    workspaceRootPath: vscode.Uri.parse(workspaceRootUri).fsPath,
+    workspaceRootUri: workspaceRootUri.toString(),
+    workspaceRootPath,
     extensionConfiguration: {
         anonymousUserID: 'abcde1234',
         accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
@@ -68,6 +66,16 @@ const cwd = process.cwd()
 const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 const recordingDirectory = path.join(agentDir, 'recordings')
 const agentScript = path.join(agentDir, 'dist', 'index.js')
+
+if (process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true') {
+    console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
+    execSync('src login', { stdio: 'inherit' })
+    assert.strictEqual(
+        process.env.SRC_ENDPOINT,
+        clientInfo.extensionConfiguration?.serverEndpoint,
+        'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
+    )
+}
 
 describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
@@ -88,34 +96,26 @@ describe('Agent', () => {
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { cwd: agentDir, stdio: 'inherit' })
 
-    if (process.env.CODY_RECORDING_MODE === 'record') {
-        console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
-        execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(
-            process.env.SRC_ENDPOINT,
-            clientInfo.extensionConfiguration?.serverEndpoint,
-            'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
-        )
-    }
-    const agentProcess = spawn('node', ['--enable-source-maps', agentScript, 'jsonrpc'], {
-        stdio: 'pipe',
-        cwd: agentDir,
-        env: {
-            CODY_SHIM_TESTING: 'true',
-            CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
-            CODY_RECORDING_DIRECTORY: recordingDirectory,
-            CODY_RECORDING_NAME: 'FullConfig',
-            ...process.env,
-        },
-    })
-
-    client.connectProcess(agentProcess)
-
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
+        const agentProcess = spawn('node', ['--enable-source-maps', '--inspect', agentScript, 'jsonrpc'], {
+            stdio: 'pipe',
+            cwd: agentDir,
+            env: {
+                CODY_SHIM_TESTING: 'true',
+                CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
+                CODY_RECORDING_DIRECTORY: recordingDirectory,
+                CODY_RECORDING_NAME: 'FullConfig',
+                ...process.env,
+            },
+        })
+        client.connectProcess(agentProcess, error => {
+            console.log({ error })
+            throw error
+        })
         const serverInfo = await client.handshake(clientInfo)
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
-    })
+    }, 5000)
 
     it('handles config changes correctly', () => {
         // Send two config change notifications because this is what the
@@ -139,25 +139,25 @@ describe('Agent', () => {
     })
 
     it.skip('lists recipes correctly', async () => {
-        const recipes = await client.listRecipes()
+        const recipes = await client.request('recipes/list', null)
         assert.equal(9, recipes.length, JSON.stringify(recipes))
     })
 
-    const filePath = path.join(workspaceRootUri, 'foo.ts')
+    const filePath = path.join(workspaceRootPath, 'src', 'main.ts')
     const uri = Uri.file(filePath)
     it('accepts textDocument/didOpen notifications', async () => {
-        const content = 'function sum(a: number, b: number) {\n    \n}'
+        const content = await fspromises.readFile(filePath, 'utf8')
         client.notify('textDocument/didOpen', {
             uri: uri.toString(),
             content,
-            selection: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+            selection: { start: { line: 4, character: 0 }, end: { line: 4, character: 0 } },
         })
     })
 
     it.skip('returns non-empty autocomplete', async () => {
         const completions = await client.request('autocomplete/execute', {
             uri: uri.toString(),
-            position: { line: 1, character: 3 },
+            position: { line: 4, character: 0 },
             triggerKind: 'Invoke',
         })
         const texts = completions.items.map(item => item.insertText)
@@ -170,14 +170,15 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    const messages: WebviewMessage[] = []
+    const messages: ExtensionMessage[] = []
     client.registerNotification('webview/postMessage', ({ message }) => {
         messages.push(message)
     })
 
     it('allows us to execute recipes properly', async () => {
         const id = await client.request('chat/new', null)
-        client.notify('webview/receiveMessage', {
+        const messageID = uuid.v4()
+        await client.request('webview/receiveMessage', {
             id,
             message: {
                 command: 'submit',
@@ -185,10 +186,12 @@ describe('Agent', () => {
                 submitType: 'user',
                 addEnhancedContext: true,
                 contextFiles: [],
+                messageID,
             },
         })
-        // await client.request('recipes/execute', { humanChatInput: 'Hello', id: 'chat-question' })
-        expect(messages).toMatchInlineSnapshot(`
+        await new Promise<void>(resolve => setTimeout(resolve, 1000))
+        console.log('foo')
+        expect(messages.map(message => message.type)).toMatchInlineSnapshot(`
           {
             "contextFiles": [],
             "preciseContext": [],
@@ -202,7 +205,7 @@ describe('Agent', () => {
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
     it.skip('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.executeRecipe('chat-question', 'How do I implement sum?')
+        await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
     }, 600)
 
     afterAll(async () => {

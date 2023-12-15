@@ -65,8 +65,8 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         secrets: {
             onDidChange: vscode_shim.emptyEvent(),
             get(key) {
-                if (key === 'cody.access-token' && vscode_shim.connectionConfig) {
-                    return Promise.resolve(vscode_shim.connectionConfig.accessToken)
+                if (key === 'cody.access-token' && vscode_shim.extensionConfiguration) {
+                    return Promise.resolve(vscode_shim.extensionConfiguration.accessToken)
                 }
                 return Promise.resolve(secretStorage.get(key))
             },
@@ -207,6 +207,7 @@ export class Agent extends MessageHandler {
                 )
                 webPanels.add(panel)
                 panel.onDidPostMessage(message => {
+                    console.log({ id: panel.panelID, postMessage: message })
                     this.notify('webview/postMessage', {
                         id: panel.panelID,
                         message,
@@ -313,9 +314,10 @@ export class Agent extends MessageHandler {
                     reject(new Error('Timed out waiting for chat panel to be created'))
                 }, 1000)
             })
-            this.receiveWebviewMessage(id, {
-                command: 'initialized',
-            })
+            this.receiveWebviewMessage(id, { command: 'ready' })
+            this.receiveWebviewMessage(id, { command: 'initialized' })
+            this.receiveWebviewMessage(id, { command: 'get-chat-models' })
+            this.receiveWebviewMessage(id, { command: 'ready' })
             return id
         })
 
@@ -544,13 +546,9 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerNotification('webview/receiveMessage', async ({ id, message }) => {
-            const panel = this.webPanels.panels.get(id)
-            if (!panel) {
-                console.log(`No panel with id ${id} found`)
-                return
-            }
-            panel.receiveMessage.fire(message)
+        this.registerRequest('webview/receiveMessage', async ({ id, message }) => {
+            await this.receiveWebviewMessage(id, message)
+            return null
         })
 
         this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
@@ -558,13 +556,14 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private receiveWebviewMessage(id: string, message: WebviewMessage): void {
+    private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {
+        console.log({ receiveWebviewMessage: id, message })
         const panel = this.webPanels.panels.get(id)
         if (!panel) {
             console.log(`No panel with id ${id} found`)
             return
         }
-        panel.receiveMessage.fire(message)
+        await panel.receiveMessage.fireAsync(message)
     }
 
     /**
@@ -594,7 +593,7 @@ export class Agent extends MessageHandler {
 
     private async createAgentClient(config: ExtensionConfiguration): Promise<Client | null> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
-        vscode_shim.setConnectionConfig(config)
+        vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange) {

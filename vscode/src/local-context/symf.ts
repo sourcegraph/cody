@@ -314,7 +314,6 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         let wasCancelled = false
         let onExit: (() => void) | undefined
         try {
-            console.log({ symfPath })
             const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
                 env: {
                     ...process.env,
