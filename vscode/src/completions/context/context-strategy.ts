@@ -60,9 +60,11 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 // we simply mix them later anyways.
                 this.graphRetriever = SectionHistoryRetriever.createInstance()
                 this.disposables.push(this.localRetriever, this.graphRetriever)
+                break
             case 'opencodegraph':
                 this.localRetriever = new JaccardSimilarityRetriever()
                 this.graphRetriever = new OpenCodeGraphRetriever()
+                break
         }
     }
 
@@ -118,6 +120,15 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'jaccard-similarity': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
+                }
+                break
+            }
+            case 'opencodegraph': {
+                if (this.localRetriever) {
+                    retrievers.push(this.localRetriever)
+                }
+                if (this.graphRetriever) {
+                    retrievers.push(this.graphRetriever)
                 }
                 break
             }

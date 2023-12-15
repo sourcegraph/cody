@@ -373,6 +373,9 @@ importers:
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
+      '@opencodegraph/client':
+        specifier: '*'
+        version: link:../../opencodegraph/lib/client
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
