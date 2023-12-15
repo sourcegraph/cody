@@ -1359,6 +1359,7 @@ function contextFilesToContextItems(
             return {
                 uri,
                 range,
+                source: file.source,
                 text: text || '',
             }
         })

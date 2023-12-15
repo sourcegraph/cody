@@ -34,6 +34,7 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
         uri:
             contextMessage.file.uri ||
             relativeFileUrl(contextMessage.file.fileName, activeEditorSelectionRangeToRange(range)),
+        source: contextMessage.file.source,
         range: range && new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
     }
 }
@@ -77,7 +78,7 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
         }
         contextFiles.push({
             fileName: relFsPath,
-            source: 'embeddings',
+            source: item.source,
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
         })
