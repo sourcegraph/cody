@@ -8,7 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Fixes an issue where GPT 3.5 requests were sometimes left hanging. [pull/2391](https://github.com/sourcegraph/cody/pull/2391)
+- Fixes an issue where GPT 3.5 requests were sometimes left hanging. [pull/2386](https://github.com/sourcegraph/cody/pull/2386)
 
 ### Changed
 
