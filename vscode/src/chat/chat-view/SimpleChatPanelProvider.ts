@@ -1464,7 +1464,7 @@ function getContextWindowForModel(modelID: string): number {
         return 28000 // 7000 tokens * 4 bytes per token
     }
     if (modelID.endsWith('openai/gpt-3.5-turbo')) {
-        return 15000 // 4,096 tokens * < 4 bytes per token
+        return 10000 // 4,096 tokens * < 4 bytes per token
     }
     if (modelID.includes('mixtral-8x7b-instruct') && modelID.includes('fireworks')) {
         return 28000 // 7000 tokens * 4 bytes per token
