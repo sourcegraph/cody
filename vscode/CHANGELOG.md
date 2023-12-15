@@ -10,6 +10,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- test commit
+
 ## [1.0.1]
 
 ### Added
