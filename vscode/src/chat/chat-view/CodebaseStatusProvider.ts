@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     ContextGroup,
@@ -119,19 +120,18 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         if (!codebase) {
             return []
         }
-        const remoteName = codebase?.setting || codebase?.remote
-        if (remoteName && codebase?.remoteRepoId) {
+        if (codebase?.remote && codebase?.remoteRepoId) {
             return [
                 {
                     kind: 'embeddings',
                     type: 'remote',
                     state: 'ready',
                     origin: this.embeddingsClient.getEndpoint(),
-                    remoteName,
+                    remoteName: codebase.remote,
                 },
             ]
         }
-        if (!remoteName || isDotCom(this.embeddingsClient.getEndpoint())) {
+        if (!codebase?.remote || isDotCom(this.embeddingsClient.getEndpoint())) {
             // Dotcom users or no remote codebase name: remote embeddings omitted from context
             return []
         }
@@ -142,7 +142,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
                 type: 'remote',
                 state: 'no-match',
                 origin: this.embeddingsClient.getEndpoint(),
-                remoteName,
+                remoteName: codebase.remote,
             },
         ]
     }
@@ -179,16 +179,9 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         let newCodebase: CodebaseIdentifiers | null = null
         if (workspaceRoot) {
             newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
-            // if there wasn't a setting in the config, try to infer it from the remote URL
-            if (!newCodebase.setting) {
-                const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-                if (remoteUrl) {
-                    newCodebase.remote = convertGitCloneURLToCodebaseName(remoteUrl) || undefined
-                }
-            }
-            const remoteName = newCodebase.setting || newCodebase.remote
-            if (remoteName) {
-                const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(remoteName)
+            newCodebase.remote = config.codebase || detectCodebaseName(workspaceRoot)
+            if (newCodebase.remote) {
+                const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
                 if (!isError(repoId)) {
                     newCodebase.remoteRepoId = repoId ?? undefined
                 }
@@ -211,4 +204,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         this.symfIndexStatus = newSymfStatus
         return didSymfStatusChange
     }
+}
+
+function detectCodebaseName(uri: URI): string | undefined {
+    const remoteUrl = repositoryRemoteUrl(uri)
+    if (remoteUrl) {
+        return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
+    }
+    return undefined
 }
