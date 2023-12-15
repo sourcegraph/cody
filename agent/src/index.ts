@@ -1,4 +1,9 @@
-import { rootCommand } from './cli/root'
+import type { Command } from 'commander'
+
+console.log = console.error
+
+// Using require to be able to redirect console.log to console.error
+const rootCommand: Command = require('./cli/root').rootCommand
 
 const args = process.argv.slice(2)
 const { operands } = rootCommand.parseOptions(args)

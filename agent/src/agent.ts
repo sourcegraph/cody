@@ -178,66 +178,67 @@ export class Agent extends MessageHandler {
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
             try {
                 await initializeVscodeExtension(this.workspace.workspaceRootUri)
+
+                // must be done here, as the commands are not registered when calling setClientAndTelemetry above
+                // but setClientAndTelemetry must called before initializing the vscode extension.
+                await this.reloadAuth()
+
+                const codyClient = await this.client
+                if (!codyClient) {
+                    return {
+                        name: 'cody-agent',
+                        authenticated: false,
+                        codyEnabled: false,
+                        codyVersion: null,
+                    }
+                }
+
+                const webPanels = this.webPanels
+
+                vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
+                    const panel = new AgentWebPanel(viewType, title, showOptions, options)
+                    logDebug(
+                        'createWebviewPanel',
+                        JSON.stringify({
+                            viewType,
+                            title,
+                            showOptions,
+                            options,
+                        })
+                    )
+                    webPanels.add(panel)
+                    panel.onDidPostMessage(message => {
+                        console.log({ id: panel.panelID, postMessage: message })
+                        this.notify('webview/postMessage', {
+                            id: panel.panelID,
+                            message,
+                        })
+                    })
+                    if (this.resolveChatPanelId) {
+                        this.resolveChatPanelId(panel.panelID)
+                        this.resolveChatPanelId = null
+                    } else {
+                        this.request('webview/create', {
+                            id: panel.panelID,
+                            data: null,
+                        })
+                    }
+                    return panel
+                })
+
+                const codyStatus = codyClient.codyStatus
+                return {
+                    name: 'cody-agent',
+                    authenticated: codyClient.sourcegraphStatus.authenticated,
+                    codyEnabled:
+                        codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
+                    codyVersion: codyStatus.version,
+                }
             } catch (error) {
                 process.stderr.write(
                     `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
                 )
                 process.exit(1)
-            }
-
-            // must be done here, as the commands are not registered when calling setClientAndTelemetry above
-            // but setClientAndTelemetry must called before initializing the vscode extension.
-            await this.reloadAuth()
-
-            const codyClient = await this.client
-            if (!codyClient) {
-                return {
-                    name: 'cody-agent',
-                    authenticated: false,
-                    codyEnabled: false,
-                    codyVersion: null,
-                }
-            }
-
-            const webPanels = this.webPanels
-
-            vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
-                const panel = new AgentWebPanel(viewType, title, showOptions, options)
-                logDebug(
-                    'createWebviewPanel',
-                    JSON.stringify({
-                        viewType,
-                        title,
-                        showOptions,
-                        options,
-                    })
-                )
-                webPanels.add(panel)
-                panel.onDidPostMessage(message => {
-                    console.log({ id: panel.panelID, postMessage: message })
-                    this.notify('webview/postMessage', {
-                        id: panel.panelID,
-                        message,
-                    })
-                })
-                if (this.resolveChatPanelId) {
-                    this.resolveChatPanelId(panel.panelID)
-                    this.resolveChatPanelId = null
-                } else {
-                    this.request('webview/create', {
-                        id: panel.panelID,
-                        data: null,
-                    })
-                }
-                return panel
-            })
-
-            const codyStatus = codyClient.codyStatus
-            return {
-                name: 'cody-agent',
-                authenticated: codyClient.sourcegraphStatus.authenticated,
-                codyEnabled: codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
-                codyVersion: codyStatus.version,
             }
         })
 

@@ -176,7 +176,7 @@ describe('Agent', () => {
         messages.push(message)
     })
 
-    it.skip('allows us to execute recipes properly', async () => {
+    it('allows us to execute recipes properly', async () => {
         const id = await client.request('chat/new', null)
         const messageID = uuid.v4()
         await client.request('webview/receiveMessage', {
