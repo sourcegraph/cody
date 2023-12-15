@@ -1,3 +1,5 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
@@ -22,14 +24,18 @@ export async function openFilePath(
     currentViewColumn?: vscode.ViewColumn,
     range?: ActiveTextEditorSelectionRange
 ): Promise<void> {
-    void vscode.commands.executeCommand('vscode.open', filePath)
-    if (!workspaceRootUri) {
-        throw new Error('Failed to open file: missing workspace')
+    filePath = 'lib\\main.dart'
+    let fileUri: vscode.Uri
+    if (path.isAbsolute(filePath)) {
+        fileUri = vscode.Uri.file(filePath)
+    } else if (workspaceRootUri) {
+        fileUri = vscode.Uri.joinPath(workspaceRootUri, filePath)
+    } else {
+        throw new Error('Failed to open file: must be an absolute path or there must be a workspace root URI')
     }
 
     try {
-        const workspaceFileUri = vscode.Uri.joinPath(workspaceRootUri, filePath)
-        const doc = await vscode.workspace.openTextDocument(workspaceFileUri)
+        const doc = await vscode.workspace.openTextDocument(fileUri)
         const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
 
         // Open file next to current webview panel column
