@@ -21,6 +21,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
 
+        // Keep track if we have send any message to the completion callbacks
+        let didSendMessage = false
+
         const request = requestFn(
             this.completionsEndpoint,
             {
@@ -69,8 +72,10 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             retryAfter
                         )
                         cb.onError(error, res.statusCode)
+                        didSendMessage = true
                     } else {
                         cb.onError(e, res.statusCode)
+                        didSendMessage = true
                     }
                 }
 
@@ -130,6 +135,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             // 'Sourcegraph Cody Gateway: unexpected status code 429: you have exceeded the rate limit of 10 requests. Retry after 2023-12-15 14:36:37 +0000 UTC\n'
                             convertCodyGatewayErrorToRateLimitError(event.error, 'chat messages and commands')
                                 .then(error => {
+                                    didSendMessage = true
                                     cb.onError(error, 429)
                                 })
                                 .catch(() => {
@@ -139,6 +145,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
                     }
 
+                    didSendMessage = true
                     log?.onEvents(parseResult.events)
                     this.sendEvents(parseResult.events, cb)
                     bufferText = parseResult.remainingBuffer
@@ -152,11 +159,24 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             let error = e
             if (error.message.includes('ECONNREFUSED')) {
                 error = new Error(
-                    'Could not connect to Cody. Please ensure that Cody app is running or that you are connected to the Sourcegraph server.'
+                    'Could not connect to Cody. Please ensure that you are connected to the Sourcegraph server.'
                 )
             }
+            didSendMessage = true
             log?.onError(error.message, e)
             cb.onError(error)
+        })
+
+        // If the connection is closed and we did neither:
+        //
+        // - Receive an error HTTP code
+        // - Or any request body
+        //
+        // We still want to close the request.
+        request.on('close', () => {
+            if (!didSendMessage) {
+                cb.onError(new Error('Connection unexpectedly closed'))
+            }
         })
 
         request.write(JSON.stringify(params))
