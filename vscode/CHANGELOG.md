@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Clicking absolute file paths in the context files for a chat now opens those files on Windows [issues/2399](https://github.com/sourcegraph/cody/issues/2399)/[pull/2400](https://github.com/sourcegraph/cody/pull/2400)
+
 ### Changed
 
 ## [1.0.1]
