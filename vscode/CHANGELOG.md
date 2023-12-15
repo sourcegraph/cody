@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Use the proper token limits for enterprise users.
+
 ### Changed
 
 ## [1.0.0]
