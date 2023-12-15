@@ -121,7 +121,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
               languageIds?: string[] | undefined
           }
         | undefined {
-        throw new Error('Method not implemented.')
+        return undefined
+        // throw new Error('Method not implemented.')
     }
 
     public async update(
@@ -130,12 +131,12 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
         overrideInLanguage?: boolean | undefined
     ): Promise<void> {
-        if (configurationTarget !== undefined) {
-            throw new Error('WorkspaceConfiguration.update(configurationTarget) must be undefined.')
-        }
-        if (overrideInLanguage !== undefined) {
-            throw new Error('WorkspaceConfiguration.update(overrideInLanguage) must be undefined.')
-        }
+        // if (configurationTarget !== undefined && configurationTarget !== 1 /* Global */) {
+        //     throw new Error('WorkspaceConfiguration.update(configurationTarget) must be undefined or Global.')
+        // }
+        // if (overrideInLanguage !== undefined) {
+        //     throw new Error('WorkspaceConfiguration.update(overrideInLanguage) must be undefined.')
+        // }
         this.dictionary[this.actualSection(section)] = value
     }
 }

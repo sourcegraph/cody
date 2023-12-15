@@ -15,7 +15,7 @@ class CustomConsoleReporter extends ConsoleReporter {
 }
 
 export function installVsCode(): Promise<string> {
-    return downloadAndUnzipVSCode(vscodeVersion, undefined, new CustomConsoleReporter(process.stdout.isTTY))
+    return downloadAndUnzipVSCode(vscodeVersion, undefined, new CustomConsoleReporter(process.stderr.isTTY))
 }
 
 export function installChromium(): Promise<void> {

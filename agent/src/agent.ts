@@ -176,7 +176,14 @@ export class Agent extends MessageHandler {
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            await initializeVscodeExtension(this.workspace.workspaceRootUri)
+            try {
+                await initializeVscodeExtension(this.workspace.workspaceRootUri)
+            } catch (error) {
+                process.stderr.write(
+                    `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
+                )
+                process.exit(1)
+            }
 
             // must be done here, as the commands are not registered when calling setClientAndTelemetry above
             // but setClientAndTelemetry must called before initializing the vscode extension.
