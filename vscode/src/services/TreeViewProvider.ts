@@ -19,6 +19,7 @@ export class ChatTreeItem extends vscode.TreeItem {
             command: string
             args?: string[] | { [key: string]: string }[]
         },
+        contextValue?: string,
         collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
         children?: ChatTreeItem[]
     ) {
@@ -33,6 +34,9 @@ export class ChatTreeItem extends vscode.TreeItem {
                 title,
                 arguments: command.args,
             }
+        }
+        if (contextValue) {
+            this.contextValue = contextValue
         }
         this.children = children
     }
@@ -49,6 +53,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
     private authStatus: AuthStatus | undefined
     private treeItems: CodySidebarTreeItem[]
+
+    public revivedChatItems: string[] = []
 
     constructor(
         private type: CodyTreeItemType,
@@ -121,7 +127,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         }
 
         if (this.type === 'chat') {
-            this.initializeGroupedChats()
+            await this.initializeGroupedChats()
             void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
         }
         this._onDidChangeTreeData.fire()
@@ -130,7 +136,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     /**
      * Method to initialize the grouped chats for the History items
      */
-    private initializeGroupedChats(): void {
+    private async initializeGroupedChats(): Promise<void> {
         const groupedChats = groupCodyChats()
         if (!groupedChats) {
             return
@@ -138,22 +144,35 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
         this.treeNodes = []
 
+        let firstGroup = true
+
         // Create a ChatTreeItem for each group and add to treeNodes
         Object.entries(groupedChats).forEach(([groupLabel, chats]) => {
             // only display the group in the treeview for which chat exists
+
             if (chats.length) {
+                const collapsibleState =
+                    firstGroup || chats.some(chat => this.revivedChatItems.includes(chat.id as string))
+                        ? vscode.TreeItemCollapsibleState.Expanded
+                        : vscode.TreeItemCollapsibleState.Collapsed
+
                 const groupItem = new ChatTreeItem(
                     groupLabel,
                     groupLabel,
                     undefined,
                     undefined,
-                    vscode.TreeItemCollapsibleState.Collapsed,
-                    chats.map(chat => new ChatTreeItem(chat.id as string, chat.title, chat.icon, chat.command))
+                    undefined,
+                    collapsibleState,
+                    chats.map(
+                        chat => new ChatTreeItem(chat.id as string, chat.title, chat.icon, chat.command, 'cody.chats')
+                    )
                 )
 
                 this.treeNodes.push(groupItem)
+                firstGroup = false
             }
         })
+        await Promise.resolve()
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {

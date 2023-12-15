@@ -146,6 +146,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
         if (chatID && panel) {
             await provider.revive(panel, chatID)
+            this.treeViewProvider.revivedChatItems.push(chatID)
+            await this.treeViewProvider.updateTree()
         } else {
             await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
         }
