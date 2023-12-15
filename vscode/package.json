@@ -148,7 +148,7 @@
           },
           {
             "id": "search",
-            "title": "Natural Language Search (Beta)",
+            "title": "Natural Language Search HELLO (Beta)",
             "description": "Easily find what you're looking for with Cody Natural Language Search.\n[Show Search](command:cody.search.focus)",
             "media": {
               "markdown": "walkthroughs/search.md"
@@ -237,7 +237,7 @@
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Natural Language Search (Beta)",
+          "name": "Natural Language Search HELLO (Beta)",
           "visibility": "visible",
           "when": "cody.activated"
         },
