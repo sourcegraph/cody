@@ -167,6 +167,9 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                         chat => new ChatTreeItem(chat.id as string, chat.title, chat.icon, chat.command, 'cody.chats')
                     )
                 )
+                if (collapsibleState === vscode.TreeItemCollapsibleState.Expanded) {
+                    this._onDidChangeTreeData.fire(groupItem)
+                }
 
                 this.treeNodes.push(groupItem)
                 firstGroup = false
