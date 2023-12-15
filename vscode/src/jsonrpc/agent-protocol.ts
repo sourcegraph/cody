@@ -45,6 +45,9 @@ export type Requests = {
     'recipes/execute': [ExecuteRecipeParams, null]
 
     'chat/new': [null, string]
+
+    'chat/submitMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
+
     'command/execute': [ExecuteCommandParams, any]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]

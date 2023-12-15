@@ -1,6 +1,8 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
+import { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 
 export class AgentWebPanels {
@@ -12,9 +14,13 @@ export class AgentWebPanels {
 
 export class AgentWebPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
+    public chatID: string | undefined
+    public isMessageInProgress = false
+    public messageInProgressChange = new EventEmitter<ExtensionMessage>()
+    public readonly onMessageInProgressDidChange = this.messageInProgressChange.event
     public panel: vscode.WebviewPanel
-    public receiveMessage = new EventEmitter<any>()
-    public postMessage = new EventEmitter<any>()
+    public receiveMessage = new EventEmitter<WebviewMessage>()
+    public postMessage = new EventEmitter<ExtensionMessage>()
     public onDidPostMessage = this.postMessage.event
     constructor(
         viewType: string,

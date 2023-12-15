@@ -308,7 +308,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await this.clearAndRestartSession()
                 break
             case 'submit': {
-                const requestID = message?.messageID ?? uuid.v4()
+                const requestID = uuid.v4()
                 await this.handleHumanMessageSubmitted(
                     requestID,
                     message.text,
@@ -636,10 +636,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
             this.postViewTranscript({ speaker: 'assistant' })
 
-            console.log({ prompt })
             this.sendLLMRequest(prompt, {
                 update: content => {
-                    console.log({ content })
                     this.postViewTranscript(
                         toViewMessage({
                             message: {

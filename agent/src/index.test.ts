@@ -1,9 +1,7 @@
 import assert from 'assert'
 import { execSync, spawn } from 'child_process'
-import fspromises from 'fs/promises'
 import path from 'path'
 
-import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
@@ -40,7 +38,7 @@ export class TestClient extends MessageHandler {
     }
 }
 
-const workspaceRootUri = vscode.Uri.parse('file:///Users/olafurpg/dev/sourcegraph/bfg-demo')
+const workspaceRootUri = vscode.Uri.parse('file:///demo/example/project')
 const workspaceRootPath = workspaceRootUri.fsPath
 const dotcom = 'https://sourcegraph.com'
 const clientInfo: ClientInfo = {
@@ -139,7 +137,7 @@ describe('Agent', () => {
         })
     })
 
-    it.skip('lists recipes correctly', async () => {
+    it('lists recipes correctly', async () => {
         const recipes = await client.request('recipes/list', null)
         assert.equal(9, recipes.length, JSON.stringify(recipes))
     })
@@ -147,18 +145,19 @@ describe('Agent', () => {
     const filePath = path.join(workspaceRootPath, 'src', 'main.ts')
     const uri = Uri.file(filePath)
     it('accepts textDocument/didOpen notifications', async () => {
-        const content = await fspromises.readFile(filePath, 'utf8')
+        const content = 'function sum(a: number, b: number) {\n    \n}'
         client.notify('textDocument/didOpen', {
             uri: uri.toString(),
             content,
-            selection: { start: { line: 4, character: 0 }, end: { line: 4, character: 0 } },
+            selection: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
         })
     })
 
-    it.skip('returns non-empty autocomplete', async () => {
+    // TODO: fix this test
+    it('returns non-empty autocomplete', async () => {
         const completions = await client.request('autocomplete/execute', {
             uri: uri.toString(),
-            position: { line: 4, character: 0 },
+            position: { line: 1, character: 3 },
             triggerKind: 'Invoke',
         })
         const texts = completions.items.map(item => item.insertText)
@@ -178,8 +177,7 @@ describe('Agent', () => {
 
     it('allows us to execute recipes properly', async () => {
         const id = await client.request('chat/new', null)
-        const messageID = uuid.v4()
-        await client.request('webview/receiveMessage', {
+        const reply = await client.request('chat/submitMessage', {
             id,
             message: {
                 command: 'submit',
@@ -187,20 +185,11 @@ describe('Agent', () => {
                 submitType: 'user',
                 addEnhancedContext: true,
                 contextFiles: [],
-                messageID,
             },
         })
-        await new Promise<void>(resolve => setTimeout(resolve, 1000))
-        console.log('foo')
-        expect(messages.map(message => message.type)).toMatchInlineSnapshot(`
-          {
-            "contextFiles": [],
-            "preciseContext": [],
-            "speaker": "assistant",
-            "text": " Hello! I'm Cody, an AI assistant created by Sourcegraph to help with programming tasks. I don't have any context about the codebase or your questions yet, but I'm ready to assist you based on the information you provide. I won't make any assumptions or provide hypothetical examples without proper context. Please feel free to share code snippets or details about what you're working on, and I'll do my best to provide helpful answers!",
-          }
-        `)
-    }, 20_000)
+        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1)?.text : reply
+        expect(lastMessage).toMatchInlineSnapshot('" Hello!"')
+    }, 10_000)
 
     // TODO Fix test - fails intermittently on macOS on Github Actions
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723

@@ -17,7 +17,7 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { WebviewMessage } from '../../vscode/src/chat/protocol'
+import { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { logDebug } from '../../vscode/src/log'
@@ -151,6 +151,7 @@ export class Agent extends MessageHandler {
     ])
 
     private resolveChatPanelId: ((chatPanelId: string) => void) | null = null
+    private chatPostMessage = new Map<string, vscode.EventEmitter<ExtensionMessage>>()
 
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
@@ -207,13 +208,25 @@ export class Agent extends MessageHandler {
                         })
                     )
                     webPanels.add(panel)
+
                     panel.onDidPostMessage(message => {
-                        console.log({ id: panel.panelID, postMessage: message })
+                        if (message.type === 'transcript') {
+                            panel.chatID = message.chatID
+                            if (panel.isMessageInProgress !== message.isMessageInProgress) {
+                                panel.isMessageInProgress = message.isMessageInProgress
+                                panel.messageInProgressChange.fire(message)
+                            }
+                            const emitter = this.chatPostMessage.get(panel.panelID)
+                            if (emitter) {
+                                emitter.fire(message)
+                            }
+                        }
                         this.notify('webview/postMessage', {
                             id: panel.panelID,
                             message,
                         })
                     })
+
                     if (this.resolveChatPanelId) {
                         this.resolveChatPanelId(panel.panelID)
                         this.resolveChatPanelId = null
@@ -307,26 +320,6 @@ export class Agent extends MessageHandler {
         this.registerNotification('transcript/reset', async () => {
             const client = await this.client
             client?.reset()
-        })
-
-        this.registerRequest('chat/new', async () => {
-            const id = await new Promise<string>((resolve, reject) => {
-                this.resolveChatPanelId = resolve
-                vscode.commands.executeCommand('cody.chat.panel.new').then(
-                    () => {
-                        reject()
-                    },
-                    error => reject(error)
-                )
-                setTimeout(() => {
-                    reject(new Error('Timed out waiting for chat panel to be created'))
-                }, 1000)
-            })
-            this.receiveWebviewMessage(id, { command: 'ready' })
-            this.receiveWebviewMessage(id, { command: 'initialized' })
-            this.receiveWebviewMessage(id, { command: 'get-chat-models' })
-            this.receiveWebviewMessage(id, { command: 'ready' })
-            return id
         })
 
         this.registerRequest('command/execute', async params => {
@@ -552,6 +545,57 @@ export class Agent extends MessageHandler {
             }
             panel.dispose()
             return null
+        })
+
+        this.registerRequest('chat/new', async () => {
+            const id = await new Promise<string>((resolve, reject) => {
+                // The result of executing the chat doesn't give us access to
+                // the created webview so we infer the relationship by listening
+                // to webview creation.
+                this.resolveChatPanelId = resolve
+                vscode.commands.executeCommand('cody.chat.panel.new').then(
+                    () => {
+                        reject()
+                    },
+                    error => reject(error)
+                )
+                setTimeout(() => {
+                    reject(new Error('Timed out waiting for chat panel to be created'))
+                }, 1000)
+            })
+            this.receiveWebviewMessage(id, { command: 'ready' })
+            this.receiveWebviewMessage(id, { command: 'initialized' })
+            this.receiveWebviewMessage(id, { command: 'get-chat-models' })
+            this.receiveWebviewMessage(id, { command: 'ready' })
+            return id
+        })
+
+        this.registerRequest('chat/submitMessage', async ({ id, message }) => {
+            if (message.command !== 'submit') {
+                throw new Error('Invalid message, must have a command of "submit"')
+            }
+            const panel = this.webPanels.panels.get(id)
+            if (!panel) {
+                throw new Error(`No panel with id ${id} found`)
+            }
+            if (panel.isMessageInProgress) {
+                throw new Error('Message is already in progress')
+            }
+            let disposable: vscode.Disposable | undefined
+            const result = new Promise<ExtensionMessage>((resolve, reject) => {
+                disposable = panel.onMessageInProgressDidChange(message => {
+                    if (message.type === 'transcript' && !message.isMessageInProgress) {
+                        resolve(message)
+                    } else if (message.type !== 'transcript') {
+                        reject(new Error(`expected transcript message, received ${JSON.stringify(message)}`))
+                    }
+                })
+                this.receiveWebviewMessage(id, message)
+            })
+            result.finally(() => {
+                disposable?.dispose()
+            })
+            return result
         })
 
         this.registerRequest('webview/receiveMessage', async ({ id, message }) => {
