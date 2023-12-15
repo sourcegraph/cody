@@ -1,123 +1,112 @@
-import * as vscode from 'vscode';
-import type { CommitMessageProvider as ICommitMessageProvider, Repository, API as ScmAPI} from '../repository/builtinGitExtension';
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+import * as vscode from 'vscode'
 
-import { CodeCompletionsClient } from '../completions/client'
-import dedent from 'dedent'
+import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { CommitMessage as CommitMessageRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/generate-commit-message'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+
+import type {
+    Repository,
+    API as ScmAPI,
+    CommitMessageProvider as VSCodeCommitMessageProvider,
+} from '../repository/builtinGitExtension'
+
 export interface CommitMessageProviderOptions {
-    chatClient: ChatClient,
-    codeCompletionsClient: CodeCompletionsClient
-    gitApi: ScmAPI,
+    chatClient: ChatClient
+    editor: Editor
+    gitApi: ScmAPI
+    recipe: CommitMessageRecipe
 }
 
 export interface CommitMessageGuide {
-    examples?: string[],
     template?: string
 }
 
-export class CommitMessageProvider implements ICommitMessageProvider, vscode.Disposable {
-    public icon = new vscode.ThemeIcon('cody-logo');
+export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscode.Disposable {
+    public icon = new vscode.ThemeIcon('cody-logo')
     public title = 'Generate Commit Message (Cody)'
 
     private disposables: vscode.Disposable[] = []
-    private _subscription?: vscode.Disposable;
+    private _subscription?: vscode.Disposable
 
     constructor(private readonly options: CommitMessageProviderOptions) {}
 
     public onConfigurationChange(config: ConfigurationWithAccessToken): void {
-		if(config.experimentalCommitMessage){
-            this._subscription = this.options.gitApi.registerCommitMessageProvider?.(this);
-        }else {
-            this._subscription?.dispose();
-            this._subscription = undefined;
+        if (config.experimentalCommitMessage) {
+            this._subscription = this.options.gitApi.registerCommitMessageProvider?.(this)
+        } else {
+            this._subscription?.dispose()
+            this._subscription = undefined
         }
-	}
+    }
 
     public dispose(): void {
-        this.disposables.forEach(d => d.dispose());
+        this.disposables.forEach(d => d.dispose())
     }
-    public async provideCommitMessage(repository: Repository, changes: string[], cancellationToken?: any): Promise<string | undefined> {
-        // TODO: load commit template from settings
-        // TODO: Logging, metrics & telemetry.
-        // TODO: Handle loading of examples? Maybe a query for similar commits based on the changes?
-        // TODO: Handle cancellation
-        if(changes.length == 0){
+    public async provideCommitMessage(
+        repository: Repository,
+        changes: string[],
+        cancellationToken?: any
+    ): Promise<string | undefined> {
+        //TODO: Handle cancellation
+
+        // we ignore the changes coming form VSCode here as the resulting commit messages were just not as good
+        // it could maybe be something to fall back on for web, but the recipe doesn't work for that atm. anyways.
+        const humanPrompt = await this.options.recipe.getHumanPrompt(undefined, this.options)
+        if (!humanPrompt) {
             return Promise.reject()
         }
-        try {
-            return await this.generateCommitMessage(changes)
-        }catch(error){
-            if(isRateLimitError(error)){
-                //TODO: we probably want a typed union of all commands & arg arrays somewhere?
-                await vscode.commands.executeCommand('cody.show-rate-limit-modal',
-                ...[error.userMessage, error.retryMessage, error.upgradeIsAvailable])
-            }
-            throw error
+
+        const { isEmpty, prompt } = humanPrompt
+        if (isEmpty) {
+            return ''
         }
-    }
 
-    private async generateCommitMessage(changes: string[], guide: CommitMessageGuide = {}): Promise<string> {
-        // TODO: ideally this would me moved to a shared module so we can add way more smart context logic to it
-        // that can be used in similar places like similar to  a similar thing in `@cli/src/commands/generateCommitMessage.ts`
+        let completion = ''
 
-        const template = guide.template?.trim() || 'A commit message consists of scoped title of max 72 characters, and a body with additional details about and reasons for the change. Commit messages are concise, technical, and specific to the change. They also mention any UI or user-facing changes.'
-        const examples = guide.examples?.map(msg => dedent`
-            <commit-message>
-            ${msg.trim()}
-            </commit-message>
-        `) || [
-            dedent`
-            <commit-message>
-            feat(app): add new feature
-
-            - adds new UX elements
-            - updated tests
-            - improves the way teh feature loads data
-            </commit-message>
-        `]
-
-        const instructions: Message[] = [
-            {speaker: 'human', text: template},
-            {speaker: 'human', text: dedent`
-            Here are a few examples:
-            <examples>
-                ${examples.map(example => `<example>
-                    ${example}
-                </example>`).join('\n')}
-            </examples>`
-            },
-            {speaker: 'human', text: dedent`
-            Here is a diff:
-            <diffs>
-                ${changes.map(diff => `<diff>
-                    ${diff}
-                </diff>`).join('\n')}
-            </diffs>
-            `}, // IDEA: handle max / pick most important changes?
-            {
-                speaker: 'human',
-                text: 'Based on the the instructions and examples write a commit message for the diff.'
-            },
-            {
-                speaker: 'assistant',
-                text: '<commit-message>'
+        try {
+            await new Promise((resolve, reject) => {
+                this.options.chatClient.chat(
+                    [
+                        { speaker: 'human', text: prompt },
+                        {
+                            speaker: 'assistant',
+                            text: 'Here is a suggested commit message for the diff:\n\n<commit-message>',
+                        },
+                    ],
+                    {
+                        onComplete: () => {
+                            resolve(completion.slice(0, completion.indexOf('</commit-message>')).trim())
+                        },
+                        onError: error => {
+                            reject(error)
+                        },
+                        onChange: text => {
+                            completion = text
+                        },
+                    },
+                    {
+                        maxTokensToSample: 1000,
+                        temperature: 0,
+                        stopSequences: ['</commit-message>'],
+                    }
+                )
+            })
+        } catch (error) {
+            if (isRateLimitError(error)) {
+                vscode.commands.executeCommand(
+                    'cody.show-rate-limit-modal',
+                    error.userMessage,
+                    error.retryMessage,
+                    error.upgradeIsAvailable
+                )
             }
-        ]
+            return Promise.reject(error)
+        }
 
-        const {completion, stopReason: _} = await this.options.codeCompletionsClient.complete({
-            maxTokensToSample: 1000,
-            messages: instructions,
-            temperature: 0,
-            stopSequences: ['</commit-message>'],
-            timeoutMs: 5000 // TODO: is there a standard defined somewhere? Is this including network latency or the "model" timeout?
-        })
-        return completion.slice(0, completion.indexOf('/commit-message')).trim()
-
-        // TODO: check if we completed succesfully. Bit difficult now because response.stopReason isn't typed
-
+        // I was adding a truncated message before, but because it's simply a suggesting anyways
+        // it didn't actually feel as helpful as I first thought.
+        return completion.trim()
     }
 }
-

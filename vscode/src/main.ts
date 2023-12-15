@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { CommitMessage as CommitMessageRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/generate-commit-message'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -21,7 +22,6 @@ import {
     AuthStatus,
     CODY_FEEDBACK_URL,
 } from './chat/protocol'
-import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -33,6 +33,8 @@ import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { gitAPI } from './repository/repositoryHelpers'
+import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -47,7 +49,6 @@ import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { gitAPI } from './repository/repositoryHelpers'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -200,13 +201,21 @@ const register = async (
         localEmbeddings || null,
         symfRunner || null
     )
+
+    // Commit Message Provider
     const gitApi = gitAPI()
-    const commitMessageProvider = gitApi ? new CommitMessageProvider({
-        gitApi,
-        chatClient,
-        codeCompletionsClient
-    }) : null
-    if(commitMessageProvider){
+    // TODO: see comment in `recipe.ts line 18` for better typed access?
+    const commitMessageRecipe: CommitMessageRecipe | undefined = platform.recipes.find(
+        recipe => recipe.id === 'commit-message'
+    ) as CommitMessageRecipe
+    const commitMessageProvider: CommitMessageProvider | null = null
+    if (commitMessageRecipe && gitApi) {
+        const commitMessageProvider = new CommitMessageProvider({
+            chatClient,
+            editor,
+            gitApi,
+            recipe: commitMessageRecipe,
+        })
         commitMessageProvider.onConfigurationChange(initialConfig)
         disposables.push(commitMessageProvider)
     }
