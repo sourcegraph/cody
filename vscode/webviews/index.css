@@ -1,6 +1,12 @@
 @import '@sourcegraph/cody-ui/src/index.css';
 @import '@vscode/codicons/dist/codicon';
 
+@font-face {
+    font-family: cody-icons;
+    font-display: block;
+    src: url('../resources/cody-icons.woff') format('woff');
+}
+
 :root {
     /* Our syntax highlighter expects a dark code background color, regardless of the VS Code color
     theme. */
@@ -47,4 +53,42 @@ a:hover {
 
 .cody-chat-error > span {
     font-weight: bold;
+}
+
+.cody-icons {
+    font: normal normal normal 16px/1 cody-icons;
+    display: inline-block;
+    text-decoration: none;
+    text-rendering: auto;
+    text-align: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    transform: translateY(25%); /* Hacky adjustment for font baseline */
+}
+
+.keyboard-shortcut {
+    color: var(--vscode-keybindingLabel-foreground);
+    display: inline-flex;
+    align-items: center;
+    line-height: 10px;
+    white-space: nowrap;
+}
+
+.keyboard-shortcut > span {
+    display: inline-block;
+    background-color: var(--vscode-keybindingLabel-background);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--vscode-keybindingLabel-border) var(--vscode-keybindingLabel-border) var(--vscode-keybindingLabel-bottomBorder) var(--vscode-keybindingLabel-border);
+    border-radius: 3px;
+    box-shadow: inset 0 -1px 0 var(--vscode-widget-shadow);
+    vertical-align: middle;
+    font-size: 11px;
+    padding: 3px 5px;
+    margin: 0 2px;
+}
+
+.keyboard-shortcut > span:first-child {
+    margin-left: 0;
 }

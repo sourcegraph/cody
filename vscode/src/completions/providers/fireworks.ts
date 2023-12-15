@@ -79,15 +79,35 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences'> = {
+const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    timeoutMs: 5_000,
     // To speed up sample generation in single-line case, we request a lower token limit
     // since we can't terminate on the first `\n`.
     maxTokensToSample: 30,
     stopSequences: ['\n'],
 }
-const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences'> = {
+const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    timeoutMs: 15_000,
     maxTokensToSample: MAX_RESPONSE_TOKENS,
     stopSequences: ['\n\n', '\n\r\n'],
+}
+
+const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
+    timeoutMs: 15_000,
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    // Do not stop after two consecutive new lines to get the full syntax node content. For example:
+    //
+    // function quickSort(array) {
+    //   if (array.length <= 1) {
+    //     return array
+    //   }
+    //
+    //   // the implementation continues here after two new lines.
+    // }
+    stopSequences: undefined,
 }
 
 export class FireworksProvider extends Provider {
@@ -173,30 +193,37 @@ export class FireworksProvider extends Provider {
 
         const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
 
-        const timeoutMs: number = useExtendedGeneration
-            ? this.timeouts?.multiline === undefined
-                ? 15_000
-                : this.timeouts.multiline
-            : this.timeouts?.singleline === undefined
-            ? 5_000
-            : this.timeouts.singleline
-        if (timeoutMs === 0) {
-            onCompletionReady([])
-            return
-        }
-
         const requestParams: CodeCompletionsParams = {
             ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
             topK: 0,
             model,
-            timeoutMs,
         }
 
-        const fetchAndProcessCompletionsImpl = dynamicMultilineCompletions
-            ? fetchAndProcessDynamicMultilineCompletions
-            : fetchAndProcessCompletions
+        // Apply custom multiline timeouts if they are defined.
+        if (this.timeouts?.multiline && useExtendedGeneration) {
+            requestParams.timeoutMs = this.timeouts.multiline
+        }
+
+        // Apply custom singleline timeouts if they are defined.
+        if (this.timeouts?.singleline && !useExtendedGeneration) {
+            requestParams.timeoutMs = this.timeouts.singleline
+        }
+
+        if (requestParams.timeoutMs === 0) {
+            onCompletionReady([])
+            return
+        }
+
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
 
         tracer?.params(requestParams)
 

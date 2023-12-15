@@ -43,6 +43,7 @@ import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/S
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
 import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -123,6 +124,18 @@ const register = async (
         disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
+
+    // Enable tracking for pasting chat responses into editor text
+    disposables.push(
+        vscode.workspace.onDidChangeTextDocument(async e => {
+            const changedText = e.contentChanges[0]?.text
+            // Skip if the document is not a file or if the copied text is from insert
+            if (!changedText || e.document.uri.scheme !== 'file') {
+                return
+            }
+            await onTextDocumentChange(changedText)
+        })
+    )
 
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.18.4",
+  "version": "1.0.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -82,7 +82,7 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/cody/issues"
   },
-  "homepage": "https://docs.sourcegraph.com/cody",
+  "homepage": "https://sourcegraph.com/docs/cody",
   "badges": [
     {
       "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
@@ -104,46 +104,54 @@
       {
         "id": "welcome",
         "title": "Getting Started with Cody",
-        "description": "Discover how Cody can help you write and understand code faster.",
+        "description": "Discover how Cody can help you write, understand and fix code faster",
         "steps": [
-          {
-            "id": "chat",
-            "title": "Ask Cody a Question",
-            "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.walkthrough.showChat)",
-            "media": {
-              "markdown": "walkthroughs/chat.md"
-            }
-          },
-          {
-            "id": "commands",
-            "title": "Cody Commands",
-            "description": "You can use Cody commands to streamline your development process (e.g. generate unit tests, documentation, and more) with just a few clicks.\n[Open Commands Menu](command:cody.action.commands.menu)",
-            "media": {
-              "markdown": "walkthroughs/commands.md"
-            }
-          },
-          {
-            "id": "explain",
-            "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain Code\" command.\n[Open Commands Menu](command:cody.action.commands.menu)",
-            "media": {
-              "markdown": "walkthroughs/explain.md"
-            }
-          },
           {
             "id": "autocomplete",
             "title": "Code Autocomplete",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
+            "description": "Start writing code and Cody will complete the line (or the entire function) for you. Hit tab to accept the suggestion.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
             }
           },
           {
-            "id": "learn-more",
-            "title": "Learn More & Feedback",
-            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/CHANGELOG.md).\n💬 Bugs, ideas or feedback? Post a message on our [GitHub Discussions](https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode).",
+            "id": "chat",
+            "title": "Cody Chat",
+            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.walkthrough.showChat)",
             "media": {
-              "markdown": "walkthroughs/learn-more.md"
+              "markdown": "walkthroughs/chat.md"
+            }
+          },
+          {
+            "id": "edit",
+            "title": "Edit Code",
+            "description": "Ask Cody to perform code edits with your instructions.",
+            "media": {
+              "markdown": "walkthroughs/edit.md"
+            }
+          },
+          {
+            "id": "fix",
+            "title": "Fix Code",
+            "description": "Use Cody to fix or explain problems in your code.",
+            "media": {
+              "markdown": "walkthroughs/fix.md"
+            }
+          },
+          {
+            "id": "commands",
+            "title": "Cody Commands",
+            "description": "Discover all the built-in Cody commands, and create your own custom commands.\n[Show Commands](command:cody.commands.tree.view.focus)",
+            "media": {
+              "markdown": "walkthroughs/commands.md"
+            }
+          },
+          {
+            "id": "search",
+            "title": "Natural Language Search (Beta)",
+            "description": "Easily find what you're looking for with Cody Natural Language Search.\n[Show Search](command:cody.search.focus)",
+            "media": {
+              "markdown": "walkthroughs/search.md"
             }
           }
         ]
@@ -229,7 +237,7 @@
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Natural Language Search (Experimental)",
+          "name": "Natural Language Search (Beta)",
           "visibility": "visible",
           "when": "cody.activated"
         },
@@ -294,7 +302,7 @@
         "command": "cody.command.smell-code",
         "category": "Cody Command",
         "title": "Find Code Smells",
-        "icon": "$(symbol-keyword)",
+        "icon": "$(checklist)",
         "when": "cody.activated && editorFocus"
       },
       {
@@ -503,6 +511,11 @@
         "group": "Cody",
         "icon": "$(clear-all)",
         "when": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.embeddings.resolveIssue",
+        "title": "Cody Embeddings",
+        "when": "cody.embeddings.hasIssue"
       }
     ],
     "keybindings": [
@@ -578,6 +591,10 @@
         {
           "command": "cody.action.commands.custom.menu",
           "when": "cody.activated"
+        },
+        {
+          "command": "cody.embeddings.resolveIssue",
+          "when": "false"
         },
         {
           "command": "cody.focus",
@@ -768,14 +785,14 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "The Git repository URL for your code. This will be sent to the Sourcegraph API to fetch the code graph context data. When set to empty, the URL will be inferred from your Git metadata.",
+          "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
           "examples": [
             "https://github.com/sourcegraph/cody",
             "ssh://git@github.com/sourcegraph/cody"
           ]
         },
         "cody.useContext": {
-          "order": 3,
+          "order": 99,
           "type": "string",
           "enum": [
             "embeddings",
@@ -801,17 +818,22 @@
         "cody.autocomplete.enabled": {
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables inline code suggestions in your editor.",
+          "markdownDescription": "Enables code autocompletions.",
           "default": true
         },
         "cody.autocomplete.languages": {
           "order": 5,
           "type": "object",
-          "markdownDescription": "Enable or disable inline code suggestions for specified [languages](https://code.visualstudio.com/docs/languages/identifiers).",
+          "markdownDescription": "Enables or disables code autocompletions for specified [language ids](https://code.visualstudio.com/docs/languages/identifiers). `\"*\"` is the default fallback if no language-specific setting is found.\n\nThe default setting: \n\n```json\n{\n  \"*\": true\n}\n```\n\nTo disable autocomplete for a given [language id](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) set its value to `false`, for example:\n\n```json\n{\n  \"*\": true,\n  \"plaintext\": false\n}\n```",
           "default": {
-            "*": true,
-            "scminput": false
-          }
+            "*": true
+          },
+          "examples": [
+            {
+              "*": true,
+              "plaintext": false
+            }
+          ]
         },
         "cody.editorTitleCommandIcon": {
           "order": 7,
@@ -846,7 +868,7 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all chat messages.",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
           "examples": [
             "Answer all my questions in Spanish."
           ]
@@ -855,7 +877,7 @@
           "order": 11,
           "title": "Cody Code Actions",
           "type": "boolean",
-          "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
+          "markdownDescription": "Add Cody options to Quick Fix menus for fixing, explaining, documenting, and editing code.",
           "default": true
         },
         "cody.experimental.simpleChatContext": {
@@ -868,7 +890,7 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable symf code search context for chat",
-          "default": false
+          "default": true
         },
         "cody.experimental.symf.path": {
           "order": 99,
@@ -944,6 +966,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
+        "cody.autocomplete.formatOnAccept": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",

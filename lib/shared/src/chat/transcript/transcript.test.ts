@@ -6,13 +6,7 @@ import { CodebaseContext } from '../../codebase-context'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { CODY_INTRO_PROMPT } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
-import {
-    defaultKeywordContextFetcher,
-    MockEditor,
-    MockEmbeddingsClient,
-    MockIntentDetector,
-    newRecipeContext,
-} from '../../test/mocks'
+import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newRecipeContext } from '../../test/mocks'
 import { ChatQuestion } from '../recipes/chat-question'
 
 import { Transcript } from '.'
@@ -85,7 +79,6 @@ describe('Transcript', () => {
                     },
                     'dummy-codebase',
                     embeddings,
-                    defaultKeywordContextFetcher,
                     null,
                     null,
                     null
@@ -129,7 +122,6 @@ describe('Transcript', () => {
                     },
                     'dummy-codebase',
                     embeddings,
-                    defaultKeywordContextFetcher,
                     null,
                     null,
                     null
@@ -166,7 +158,6 @@ describe('Transcript', () => {
             { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
             'dummy-codebase',
             embeddings,
-            defaultKeywordContextFetcher,
             null,
             null,
             null
@@ -259,7 +250,6 @@ describe('Transcript', () => {
             { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
             'dummy-codebase',
             embeddings,
-            defaultKeywordContextFetcher,
             null,
             null,
             null
@@ -342,7 +332,6 @@ describe('Transcript', () => {
             { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
             'dummy-codebase',
             embeddings,
-            defaultKeywordContextFetcher,
             null,
             null,
             null

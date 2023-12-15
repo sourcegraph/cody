@@ -7,13 +7,11 @@ describe('getInlineCompletionItemProviderFilters', () => {
         const filters = await getInlineCompletionItemProviderFilters({
             '*': true,
             go: false,
-            scminput: false,
         })
 
         const enabledLanguages = filters.map(f => f.language)
 
         expect(enabledLanguages).not.include('go')
-        expect(enabledLanguages).not.include('scminput')
         expect(enabledLanguages).include('typescript')
         expect(enabledLanguages).include('javascript')
     })
@@ -23,7 +21,8 @@ describe('getInlineCompletionItemProviderFilters', () => {
             '*': false,
             go: true,
             typescript: true,
-            scminput: false,
+            rust: false,
+            scminput: true,
         })
 
         const enabledLanguages = filters.map(f => f.language)

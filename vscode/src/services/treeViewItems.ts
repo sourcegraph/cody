@@ -120,7 +120,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Smell',
-        icon: 'symbol-keyword',
+        icon: 'checklist',
         command: { command: 'cody.command.smell-code' },
         description: 'Identify code smells',
     },

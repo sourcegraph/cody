@@ -1,4 +1,4 @@
 
 ## Test plan
 
-<!-- Required. See https://docs.sourcegraph.com/dev/background-information/testing_principles. -->
+<!-- Required. See https://sourcegraph.com/docs/dev/background-information/testing_principles. -->

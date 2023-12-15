@@ -1,4 +1,4 @@
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatError, ContextFile } from '@sourcegraph/cody-shared'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -33,6 +33,7 @@ export class SimpleChatRecipeAdapter {
     ): Promise<{
         humanMessage: MessageWithContext
         prompt: Message[]
+        error?: string | ChatError
     } | null> {
         const recipe = this.platform.recipes.find(recipe => recipe.id === recipeID)
         if (!recipe) {
@@ -74,6 +75,7 @@ export class SimpleChatRecipeAdapter {
         return {
             humanMessage,
             prompt: preambleMessages.concat(prompt),
+            error: interaction?.getAssistantMessage()?.error,
         }
     }
 }

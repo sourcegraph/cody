@@ -35,14 +35,33 @@ export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 
 const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    timeoutMs: 5_000,
     maxTokensToSample: 50,
     stopSequences: SINGLE_LINE_STOP_SEQUENCES,
-    timeoutMs: 5_000,
 }
+
 const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
+    timeoutMs: 15_000,
     maxTokensToSample: MAX_RESPONSE_TOKENS,
     stopSequences: MULTI_LINE_STOP_SEQUENCES,
+}
+
+const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
+    CodeCompletionsParams,
+    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+> = {
     timeoutMs: 15_000,
+    maxTokensToSample: MAX_RESPONSE_TOKENS,
+    // Do not stop after two consecutive new lines to get the full syntax node content. For example:
+    //
+    // function quickSort(array) {
+    //   if (array.length <= 1) {
+    //     return array
+    //   }
+    //
+    //   // the implementation continues here after two new lines.
+    // }
+    stopSequences: undefined,
 }
 
 export interface AnthropicOptions {
@@ -163,9 +182,14 @@ export class AnthropicProvider extends Provider {
             messages: prompt,
         }
 
-        const fetchAndProcessCompletionsImpl = dynamicMultilineCompletions
-            ? fetchAndProcessDynamicMultilineCompletions
-            : fetchAndProcessCompletions
+        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
+        if (dynamicMultilineCompletions) {
+            // If the feature flag is enabled use params adjusted for the experiment.
+            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
+
+            // Use an alternative fetch completions implementation.
+            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
+        }
 
         tracer?.params(requestParams)
 

@@ -1,7 +1,7 @@
 import { useArgs } from '@storybook/preview-api'
 import { Meta, StoryObj } from '@storybook/react'
 
-import { LocalEmbeddingsProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { LocalEmbeddingsProvider, SearchProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
@@ -77,6 +77,9 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
 
         const eventHandlers: EnhancedContextEventHandlersT = {
             onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
+                updateArgs({ state: 'indexing' })
+            },
+            onShouldBuildSymfIndex(provider: SearchProvider): void {
                 updateArgs({ state: 'indexing' })
             },
             onEnabledChange(enabled: boolean): void {

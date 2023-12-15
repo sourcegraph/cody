@@ -5,6 +5,7 @@ import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { errorToChatError, InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { contextItemsToContextFiles } from './chat-helpers'
@@ -91,7 +92,7 @@ export class SimpleChatModel {
         })
     }
 
-    public getLastHumanMessages(): MessageWithContext | undefined {
+    public getLastHumanMessage(): MessageWithContext | undefined {
         return this.messagesWithContext.findLast(message => message.message.speaker === 'human')
     }
 
@@ -166,6 +167,7 @@ export interface ContextItem {
     uri: vscode.Uri
     range?: vscode.Range
     text: string
+    source?: ContextFileSource
 }
 
 export function contextItemId(contextItem: ContextItem): string {

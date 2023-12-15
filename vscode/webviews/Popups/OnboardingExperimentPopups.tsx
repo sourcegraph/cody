@@ -18,7 +18,7 @@ export const EmbeddingsNotFoundPopup: React.FunctionComponent<OnboardingPopupPro
         title="Embeddings Not Found"
         text="No embeddings index was found for this repository."
         linkText="Learn more"
-        linkHref="https://docs.sourcegraph.com/cody/explanations/indexing"
+        linkHref="https://sourcegraph.com/docs/cody/explanations/indexing"
     />
 )
 
@@ -33,7 +33,7 @@ export const EmbeddingsNotFoundEnterprisePopup: React.FunctionComponent<Onboardi
         title="Embeddings Not Found"
         text="This repository does not have Cody embeddings generated."
         linkText="Learn more"
-        linkHref="https://docs.sourcegraph.com/cody/explanations/code_graph_context#configuring-embeddings"
+        linkHref="https://sourcegraph.com/docs/cody/explanations/code_graph_context#configuring-embeddings"
         actionButtons={
             <>
                 <VSCodeButton onClick={reloadStatus}>Reload</VSCodeButton>
@@ -60,7 +60,7 @@ export const EmbeddingsEnabledPopup: React.FunctionComponent<EmbeddingsEnabledPo
             title="Embeddings Enabled"
             text={`This repository (${repoName}) has been indexed by ${indexSource}.`}
             linkText="Learn more"
-            linkHref="https://docs.sourcegraph.com/cody/explanations/indexing"
+            linkHref="https://sourcegraph.com/docs/cody/explanations/indexing"
         />
     )
 }

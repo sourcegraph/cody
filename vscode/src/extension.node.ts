@@ -15,7 +15,6 @@ import { VSCODE_WEB_RECIPES } from './extension.web'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { createLocalEmbeddingsController } from './local-context/local-embeddings'
-import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
 import { OpenTelemetryService } from './services/OpenTelemetryService.node'
@@ -32,7 +31,6 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
         getRgPath,
         createCommandsController: (...args) => new CommandsController(...args),
         createLocalEmbeddingsController: config => createLocalEmbeddingsController(context, config),
-        createLocalKeywordContextFetcher: (...args) => new LocalKeywordContextFetcher(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createSymfRunner: (...args) => new SymfRunner(...args),

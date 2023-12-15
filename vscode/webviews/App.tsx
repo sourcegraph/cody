@@ -66,6 +66,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const onConsentToEmbeddings = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'embeddings/index' })
     }, [vscodeAPI])
+    const onShouldBuildSymfIndex = useCallback((): void => {
+        vscodeAPI.postMessage({ command: 'symf/index' })
+    }, [vscodeAPI])
 
     useEffect(
         () =>
@@ -240,6 +243,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         <EnhancedContextEventHandlers.Provider
                             value={{
                                 onConsentToEmbeddings,
+                                onShouldBuildSymfIndex,
                                 onEnabledChange: (enabled): void => {
                                     if (enabled !== enhancedContextEnabled) {
                                         setEnhancedContextEnabled(enabled)
@@ -340,13 +344,17 @@ function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [st
 }
 
 function getWelcomeMessageByOS(os: string): string {
-    const welcomeMessageMarkdown = `Start writing code and I’ll autocomplete lines and entire functions for you.
+    const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
-You can ask me to explain, document and edit code using the [Cody Commands](command:cody.action.commands.menu) action (${
+To run [Cody Commands](command:cody.action.commands.menu) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
         os === 'darwin' ? '⌥' : 'Alt'
-    }+C), or by right-clicking on code and using the “Cody” menu.
+    }</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
 
-See the [Getting Started](command:cody.welcome) guide for more tips and tricks.
+You can start a new chat at any time with <span class="keyboard-shortcut"><span>${
+        os === 'darwin' ? '⌥' : 'Alt'
+    }</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
+
+For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
 `
     return welcomeMessageMarkdown
 }
