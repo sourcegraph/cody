@@ -105,6 +105,7 @@ export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
 export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
     if (!connectionConfig) {
         return true
