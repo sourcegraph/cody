@@ -20,7 +20,7 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "axios": "^1.3.6",
     "envalid": "^7.3.1",
-    "hnswlib-node": "^1.4.2",
+    "hnswlib-node": "^2.1.0",
     "langchain": "^0.0.105",
     "lodash": "^4.17.21",
     "octokit": "^2.1.0",
