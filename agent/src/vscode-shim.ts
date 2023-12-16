@@ -104,7 +104,7 @@ export let connectionConfig: ExtensionConfiguration | undefined
 export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
-
+export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
     if (!connectionConfig) {
         return true
@@ -396,8 +396,8 @@ const _window: Partial<typeof vscode.window> = {
     visibleTextEditors,
     withProgress: (_, handler) => handler({ report: () => {} }, 'window.withProgress.cancelationToken' as any),
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
-    onDidChangeVisibleTextEditors: (() => ({})) as any,
-    onDidChangeTextEditorSelection: (() => ({})) as any,
+    onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
+    onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
     showErrorMessage: (message: string, ...items: any[]) => {
         if (agent) {
             agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
