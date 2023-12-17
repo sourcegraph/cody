@@ -9,7 +9,7 @@
     "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
-    "node": "^v20.4.0",
+    "node": "^20.10.0",
     "pnpm": "^8.6.7"
   },
   "browser": {
@@ -41,7 +41,7 @@
     "@storybook/react": "^7.0.26",
     "@storybook/react-vite": "^7.0.26",
     "@storybook/testing-library": "^0.0.14-next.2",
-    "@types/node": "20.4.0",
+    "@types/node": "20.10.5",
     "@types/prettier": "2.7.3",
     "@types/react": "18.2.42",
     "@types/react-dom": "18.2.17",
