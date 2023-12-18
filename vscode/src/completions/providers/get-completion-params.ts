@@ -85,7 +85,6 @@ export function getCompletionParamsAndFetchImpl(
     const partialRequestParams: Omit<CodeCompletionsParams, 'messages'> = {
         ...(useExtendedGeneration ? multilineParams : singlelineParams),
         temperature: 0.2,
-        topK: 0,
     }
 
     // Apply custom multiline timeouts if they are defined.

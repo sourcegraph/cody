@@ -150,6 +150,7 @@ export class AnthropicProvider extends Provider {
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: this.createPrompt(snippets).messages,
+            temperature: 0.5,
         }
 
         const { n } = this.options

@@ -124,7 +124,8 @@ ${OPENING_CODE_TAG}${infillBlock}`
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
-            topK: 0.5,
+            temperature: 1,
+            topP: 0.5,
         }
 
         const { n } = this.options

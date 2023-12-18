@@ -174,6 +174,8 @@ export class FireworksProvider extends Provider {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             model,
+            temperature: 0.2,
+            topK: 0,
         }
 
         if (requestParams.timeoutMs === 0) {
