@@ -17,9 +17,7 @@ import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
 import com.intellij.xml.util.XmlStringUtil
-import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
-import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.protocol.ChatMessage
@@ -117,7 +115,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
     if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
       tryRestartingAgentIfNotRunning(project)
-      CodyAgent.getInitializedServer(project).thenAccept { server ->
+      getInitializedServer(project).thenAccept { server ->
         if (server != null) {
           val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
           if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
@@ -148,18 +146,20 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     addSubscriptionTab()
   }
 
-  @RequiresEdt
-  fun refreshRecipes() {
+  private fun refreshRecipes() {
     recipesPanel.removeAll()
     recipesPanel.emptyText.text = "Loading commands..."
     recipesPanel.revalidate()
     recipesPanel.repaint()
-    val server = getServer(project)
-    if (server == null) {
-      setRecipesPanelError()
-      return
-    }
-    ApplicationManager.getApplication().executeOnPooledThread { // Non-blocking data fetch
+    ApplicationManager.getApplication().executeOnPooledThread { loadCommands() }
+  }
+
+  private fun loadCommands() {
+    tryRestartingAgentIfNotRunning(project)
+    getInitializedServer(project).thenAccept { server ->
+      if (server == null) {
+        setRecipesPanelError()
+      }
       try {
         server.recipesList().thenAccept { recipes: List<RecipeInfo> ->
           ApplicationManager.getApplication().invokeLater {
