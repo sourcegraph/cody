@@ -9,6 +9,7 @@ import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
+import { RateLimitError } from '@sourcegraph/cody-shared'
 import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -104,11 +105,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             .then(({ stdout }) => stdout.trim())
             .catch(error => {
                 if (isError(error) && error.message.includes('429')) {
-                    // HACK: if we hit a rate limit error from symf, just return the original
-                    // user query without term expansion, because we expect that we'll immediately
-                    // hit a rate limit error again when the chat request is sent (but there
-                    // we'll have the appropriate metadata to handle it properly).
-                    return userQuery
+                    // HACK: we should move the query term expansion code into the agent so
+                    // we can handle this less hackily.
+                    // This also assumes an upgrade path is available. It's unlikely we'll
+                    // hit this limit on a chat request, so this is mainly to satisfy the
+                    // e2e test.
+                    throw new RateLimitError('chat messages and commands', error.message, true)
                 }
                 throw error
             })
