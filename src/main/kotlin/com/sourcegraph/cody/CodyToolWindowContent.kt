@@ -114,23 +114,24 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private fun addSubscriptionTab() {
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
     if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
-      tryRestartingAgentIfNotRunning(project)
-      getInitializedServer(project).thenAccept { server ->
-        if (server != null) {
-          val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-          if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
-            val isCurrentUserPro =
-                server
-                    .isCurrentUserPro()
-                    .exceptionally { e ->
-                      logger.warn("Error getting user pro status", e)
-                      null
-                    }
-                    .get()
-            if (isCurrentUserPro != null) {
-              val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
-              tabbedPane.insertTab(
-                  "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+      ApplicationManager.getApplication().executeOnPooledThread {
+        getInitializedServer(project).thenAccept { server ->
+          if (server != null) {
+            val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+            if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
+              val isCurrentUserPro =
+                  server
+                      .isCurrentUserPro()
+                      .exceptionally { e ->
+                        logger.warn("Error getting user pro status", e)
+                        null
+                      }
+                      .get()
+              if (isCurrentUserPro != null) {
+                val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
+                tabbedPane.insertTab(
+                    "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+              }
             }
           }
         }
@@ -155,7 +156,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   private fun loadCommands() {
-    tryRestartingAgentIfNotRunning(project)
     getInitializedServer(project).thenAccept { server ->
       if (server == null) {
         setRecipesPanelError()
@@ -210,7 +210,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     for (recipe in recipes) {
       val recipeButton = createRecipeButton(recipe.title)
       recipeButton.addActionListener {
-        GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
+        ApplicationManager.getApplication().executeOnPooledThread {
+          GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
+        }
         val editorManager = FileEditorManager.getInstance(project)
         CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
             editorManager.selectedTextEditor)
@@ -375,7 +377,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       messagesPanel.revalidate()
       messagesPanel.repaint()
       chatMessageHistory.clearHistory()
-      getInitializedServer(project).thenAccept { it?.transcriptReset() }
+      ApplicationManager.getApplication().executeOnPooledThread {
+        getInitializedServer(project).thenAccept { it?.transcriptReset() }
+      }
       ensureBlinkingCursorIsNotDisplayed()
     }
   }

@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.context
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
@@ -58,19 +59,21 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
     if (repoName == null) {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
-      CodyAgent.getInitializedServer(project).thenCompose { server: CodyAgentServer? ->
-        server?.getRepoIdIfEmbeddingExists(GetRepoIDResponse(repoName))?.thenCompose {
-            repoIdWithEmbeddings ->
-          if (repoIdWithEmbeddings != null) {
-            CompletableFuture.runAsync {
-              setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
-            }
-          } else {
-            server.getRepoId(GetRepoIDResponse(repoName)).thenAccept { repoId ->
-              if (repoId != null) {
-                setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
-              } else {
-                setEmbeddingStatus(RepositoryNotFoundOnSourcegraphInstance(repoName))
+      ApplicationManager.getApplication().executeOnPooledThread {
+        CodyAgent.getInitializedServer(project).thenCompose { server: CodyAgentServer? ->
+          server?.getRepoIdIfEmbeddingExists(GetRepoIDResponse(repoName))?.thenCompose {
+              repoIdWithEmbeddings ->
+            if (repoIdWithEmbeddings != null) {
+              CompletableFuture.runAsync {
+                setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
+              }
+            } else {
+              server.getRepoId(GetRepoIDResponse(repoName)).thenAccept { repoId ->
+                if (repoId != null) {
+                  setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
+                } else {
+                  setEmbeddingStatus(RepositoryNotFoundOnSourcegraphInstance(repoName))
+                }
               }
             }
           }
