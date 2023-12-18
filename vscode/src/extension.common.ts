@@ -14,6 +14,7 @@ import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-c
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
+import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { OpenTelemetryService } from './services/OpenTelemetryService.node'
 import { captureException, SentryService } from './services/sentry/sentry'
 
@@ -34,6 +35,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
     createOpenTelemetryService?: (config: Pick<Configuration, 'serverEndpoint'>) => OpenTelemetryService
+    createCommitMessageProvider?: Constructor<typeof CommitMessageProvider>
     recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }

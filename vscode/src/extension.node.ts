@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
-import { CommitMessage } from '@sourcegraph/cody-shared/src/chat/recipes/generate-commit-message'
 import { PrDescription } from '@sourcegraph/cody-shared/src/chat/recipes/generate-pr-description'
 import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate-release-notes'
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
@@ -18,6 +17,7 @@ import { FilenameContextFetcher } from './local-context/filename-context-fetcher
 import { createLocalEmbeddingsController } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
+import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { OpenTelemetryService } from './services/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
 
@@ -38,6 +38,7 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        createCommitMessageProvider: (...args) => new CommitMessageProvider(...args),
 
         // Include additional recipes that require Node packages (such as `child_process`).
         recipes: [
@@ -45,7 +46,6 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
             new GitHistory(),
             new ReleaseNotes(),
             new PrDescription(),
-            new CommitMessage(),
             new LocalIndexedKeywordSearch(),
             new ContextSearch(),
         ],

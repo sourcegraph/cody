@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { CommitMessage as CommitMessageRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/generate-commit-message'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -204,18 +203,9 @@ const register = async (
 
     // Commit Message Provider
     const gitApi = gitAPI()
-    // TODO: see comment in `recipe.ts line 18` for better typed access?
-    const commitMessageRecipe: CommitMessageRecipe | undefined = platform.recipes.find(
-        recipe => recipe.id === 'commit-message'
-    ) as CommitMessageRecipe
-    const commitMessageProvider: CommitMessageProvider | null = null
-    if (commitMessageRecipe && gitApi) {
-        const commitMessageProvider = new CommitMessageProvider({
-            chatClient,
-            editor,
-            gitApi,
-            recipe: commitMessageRecipe,
-        })
+    let commitMessageProvider: CommitMessageProvider | null = null
+    if (gitApi && platform.createCommitMessageProvider) {
+        commitMessageProvider = platform.createCommitMessageProvider({ chatClient, editor, gitApi })
         commitMessageProvider.onConfigurationChange(initialConfig)
         disposables.push(commitMessageProvider)
     }
