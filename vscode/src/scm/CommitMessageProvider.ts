@@ -56,8 +56,6 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         changes: string[],
         cancellationToken?: vscode.CancellationToken
     ): Promise<string | undefined> {
-        // we ignore the changes coming form VSCode here as the resulting commit messages were just not as good
-        // it could maybe be something to fall back on for web, but the recipe doesn't work for that atm. anyways.
         const humanPrompt = await this.getHumanPrompt(changes)
         if (!humanPrompt) {
             return Promise.reject()
