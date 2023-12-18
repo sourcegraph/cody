@@ -102,6 +102,7 @@ export async function createInlineCompletionItemProvider({
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
+            formatOnAccept: config.autocompleteFormatOnAccept,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,

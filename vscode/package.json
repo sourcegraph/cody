@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.18.5",
+  "version": "1.0.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -82,7 +82,7 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/cody/issues"
   },
-  "homepage": "https://docs.sourcegraph.com/cody",
+  "homepage": "https://sourcegraph.com/docs/cody",
   "badges": [
     {
       "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
@@ -237,7 +237,7 @@
         {
           "type": "webview",
           "id": "cody.search",
-          "name": "Natural Language Search (Experimental)",
+          "name": "Natural Language Search (Beta)",
           "visibility": "visible",
           "when": "cody.activated"
         },
@@ -876,7 +876,7 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable symf code search context for chat",
-          "default": false
+          "default": true
         },
         "cody.experimental.symf.path": {
           "order": 99,
@@ -952,6 +952,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
+        "cody.autocomplete.formatOnAccept": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",

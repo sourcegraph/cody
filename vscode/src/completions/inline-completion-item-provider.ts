@@ -17,6 +17,7 @@ import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
+import { formatCompletion } from './format-completion'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -118,6 +119,9 @@ export interface CodyCompletionItemProviderConfig {
     contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
 
+    // Settings
+    formatOnAccept?: boolean
+
     // Feature flags
     completeSuggestWidgetSelection?: boolean
     disableRecyclingOfPreviousRequests?: boolean
@@ -158,6 +162,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     constructor({
         completeSuggestWidgetSelection = true,
+        formatOnAccept = true,
         disableRecyclingOfPreviousRequests = false,
         dynamicMultilineCompletions = false,
         hotStreak = false,
@@ -168,6 +173,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config = {
             ...config,
             completeSuggestWidgetSelection,
+            formatOnAccept,
             disableRecyclingOfPreviousRequests,
             dynamicMultilineCompletions,
             hotStreak,
@@ -211,7 +217,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             vscode.commands.registerCommand(
                 'cody.autocomplete.inline.accepted',
                 ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                    this.handleDidAcceptCompletionItem(codyCompletion)
+                    void this.handleDidAcceptCompletionItem(codyCompletion)
                 }
             )
         )
@@ -459,17 +465,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * Callback to be called when the user accepts a completion. For VS Code, this is part of the
      * action inside the `AutocompleteItem`. Agent needs to call this callback manually.
      */
-    public handleDidAcceptCompletionItem(
+    public async handleDidAcceptCompletionItem(
         completionOrItemId:
-            | Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
+            | Pick<AutocompleteItem, 'range' | 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
             | CompletionItemID
-    ): void {
+    ): Promise<void> {
         const completion =
             typeof completionOrItemId === 'string'
                 ? suggestedCompletionItemIDs.get(completionOrItemId)
                 : completionOrItemId
         if (!completion) {
             return
+        }
+
+        if (this.config.formatOnAccept && !this.config.isRunningInsideAgent) {
+            await formatCompletion(completion as AutocompleteItem)
         }
 
         resetArtificialDelay()
@@ -593,8 +603,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 return
             }
 
+            const isEnterpriseUser = this.config.isDotComUser !== true
             const canUpgrade = error.upgradeIsAvailable
-            const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+            const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+
             let errorTitle: string
             let pageName: string
             if (canUpgrade) {
