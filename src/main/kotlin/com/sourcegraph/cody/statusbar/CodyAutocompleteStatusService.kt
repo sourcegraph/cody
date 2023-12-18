@@ -37,35 +37,38 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
   }
 
   override fun onCodyAutocompleteStatusReset(project: Project) {
-    val notify =
-        synchronized(this) {
-          val oldStatus = status
-          ApplicationManager.getApplication()
-          val service =
-              ApplicationManager.getApplication().getService(CodyAccountManager::class.java)
-          val token =
-              CodyAuthenticationManager.instance
-                  .getActiveAccount(project)
-                  ?.let(service::findCredentials)
-          status =
-              if (!ConfigUtil.isCodyEnabled()) {
-                CodyAutocompleteStatus.CodyDisabled
-              } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
-                CodyAutocompleteStatus.AutocompleteDisabled
-              } else if (!CodyAgent.isConnected(project)) {
-                CodyAutocompleteStatus.CodyAgentNotRunning
-              } else if (token == null) {
-                CodyAutocompleteStatus.CodyNotSignedIn
-              } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
-                  UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
-                CodyAutocompleteStatus.RateLimitError
-              } else {
-                CodyAutocompleteStatus.Ready
-              }
-          return@synchronized oldStatus != status
-        }
-    if (notify) {
-      updateCodyStatusBarIcons()
+    ApplicationManager.getApplication().executeOnPooledThread {
+      val notify = didStatusChanged(project)
+      if (notify) {
+        updateCodyStatusBarIcons()
+      }
+    }
+  }
+
+  private fun didStatusChanged(project: Project): Boolean {
+    synchronized(this) {
+      val oldStatus = status
+      val service = ApplicationManager.getApplication().getService(CodyAccountManager::class.java)
+      val token =
+          CodyAuthenticationManager.instance
+              .getActiveAccount(project)
+              ?.let(service::findCredentials)
+      status =
+          if (!ConfigUtil.isCodyEnabled()) {
+            CodyAutocompleteStatus.CodyDisabled
+          } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
+            CodyAutocompleteStatus.AutocompleteDisabled
+          } else if (!CodyAgent.isConnected(project)) {
+            CodyAutocompleteStatus.CodyAgentNotRunning
+          } else if (token == null) {
+            CodyAutocompleteStatus.CodyNotSignedIn
+          } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
+              UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
+            CodyAutocompleteStatus.RateLimitError
+          } else {
+            CodyAutocompleteStatus.Ready
+          }
+      return oldStatus != status
     }
   }
 
