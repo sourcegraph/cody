@@ -20,7 +20,7 @@ import { InlineCompletionItemWithAnalytics } from '../text-processing/process-in
 import { ContextSnippet } from '../types'
 import { messagesToText } from '../utils'
 
-import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
+import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     CompletionProviderTracer,
     Provider,
@@ -34,35 +34,10 @@ const MAX_RESPONSE_TOKENS = 256
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 
-const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
-    timeoutMs: 5_000,
-    maxTokensToSample: 50,
-    stopSequences: SINGLE_LINE_STOP_SEQUENCES,
-}
-
-const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
-    timeoutMs: 15_000,
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: MULTI_LINE_STOP_SEQUENCES,
-}
-
-const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    timeoutMs: 15_000,
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    // Do not stop after two consecutive new lines to get the full syntax node content. For example:
-    //
-    // function quickSort(array) {
-    //   if (array.length <= 1) {
-    //     return array
-    //   }
-    //
-    //   // the implementation continues here after two new lines.
-    // }
-    stopSequences: undefined,
-}
+const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
+    singlelineStopRequences: SINGLE_LINE_STOP_SEQUENCES,
+    multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
+})
 
 export interface AnthropicOptions {
     maxContextTokens?: number
@@ -167,30 +142,17 @@ export class AnthropicProvider extends Provider {
         ) => void,
         tracer?: CompletionProviderTracer
     ): Promise<void> {
-        // Create prompt
-        const { messages: prompt } = this.createPrompt(snippets)
-        if (prompt.length > this.promptChars) {
-            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
-        }
-        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
-
-        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
+            providerOptions: this.options,
+            lineNumberDependentCompletionParams,
+        })
 
         const requestParams: CodeCompletionsParams = {
-            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
-            temperature: 0.5,
-            messages: prompt,
+            ...partialRequestParams,
+            messages: this.createPrompt(snippets).messages,
         }
 
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
-
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
-
+        const { n } = this.options
         tracer?.params(requestParams)
 
         const completions: InlineCompletionItemWithAnalytics[] = []

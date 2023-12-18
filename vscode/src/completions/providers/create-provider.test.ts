@@ -10,7 +10,7 @@ import {
 
 import { CodeCompletionsClient } from '../client'
 
-import { createProviderConfig } from './createProvider'
+import { createProviderConfig } from './create-provider'
 
 const DEFAULT_VSCODE_SETTINGS: Configuration = {
     serverEndpoint: DOTCOM_URL.href,
