@@ -122,7 +122,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     }
 
                     didSendMessage = true
-
                     log?.onEvents(parseResult.events)
                     this.sendEvents(parseResult.events, cb)
                     bufferText = parseResult.remainingBuffer

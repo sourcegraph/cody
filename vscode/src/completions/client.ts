@@ -9,6 +9,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import {
     isAbortError,
+    isRateLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
@@ -147,6 +148,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
 
                 for await (const chunk of iterator) {
+                    if (chunk.event === 'error') {
+                        throw new Error(chunk.data)
+                    }
+
                     if (chunk.event === 'completion') {
                         if (signal?.aborted) {
                             break // Stop processing the already received chunks.
@@ -164,6 +169,9 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 return lastResponse
             } catch (error) {
+                if (isRateLimitError(error as Error)) {
+                    throw error
+                }
                 if (isAbortError(error as Error) && lastResponse) {
                     log?.onComplete(lastResponse)
                 }
