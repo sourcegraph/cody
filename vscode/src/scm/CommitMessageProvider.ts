@@ -18,6 +18,7 @@ import type {
     API as ScmAPI,
     CommitMessageProvider as VSCodeCommitMessageProvider,
 } from '../repository/builtinGitExtension'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 const execFile = promisify(_execFile)
 
@@ -56,6 +57,7 @@ export class CommitMessageProvider implements VSCodeCommitMessageProvider, vscod
         changes: string[],
         cancellationToken?: vscode.CancellationToken
     ): Promise<string | undefined> {
+        telemetryRecorder.recordEvent('cody.generateCommitMessage', 'clicked')
         const humanPrompt = await this.getHumanPrompt(changes)
         if (!humanPrompt) {
             return Promise.reject()
