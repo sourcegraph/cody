@@ -69,14 +69,7 @@ export class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
-    private dbg(action: string): void {
-        console.log('########## ' + action + ' ##########')
-        console.log(this.storage.get<any>(this.KEY_LOCAL_HISTORY, null))
-        console.log('##############################')
-    }
-
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        this.dbg('getChatHistory')
         let history = this.storage.get<{ [key: `${string}-${string}`]: UserLocalHistory } | UserLocalHistory | null>(
             this.KEY_LOCAL_HISTORY,
             null
@@ -90,9 +83,8 @@ export class LocalStorage {
         // For backwards compatibility, we upgrade the local storage key from the old layout that is
         // not scoped to individual user accounts to be scoped instead.
         if (history && !isChatHistoryV2(history)) {
-            console.log('ATTEMPTING UPGRADE PROCEDURE')
             history = {
-                [key]: history,
+                [key]: history as UserLocalHistory,
             }
 
             // We use a raw write here to ensure we do not _append_ a key but actually replace
@@ -100,17 +92,21 @@ export class LocalStorage {
             void this.storage.update(this.KEY_LOCAL_HISTORY, history)
         }
 
-        if (!history[key]) {
+        if (!Object.hasOwn(history, key)) {
             return { chat: {}, input: [] }
         }
-        return history[key]
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore: TS seems to be consufed about using `key` as the key here
+        return history[key] as UserLocalHistory
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
-        this.dbg('setChatHistory')
         try {
             const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<{ [key: string]: UserLocalHistory } | null>(this.KEY_LOCAL_HISTORY, null)
+            let fullHistory = this.storage.get<{ [key: `${string}-${string}`]: UserLocalHistory } | null>(
+                this.KEY_LOCAL_HISTORY,
+                null
+            )
 
             if (fullHistory) {
                 fullHistory[key] = history
@@ -138,7 +134,6 @@ export class LocalStorage {
         }
     }
 
-    // TODO
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
         try {
             await this.setChatHistory(authStatus, { chat: {}, input: [] })
