@@ -836,8 +836,8 @@
         "cody.experimental.commitMessage": {
           "order": 8,
           "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds a commit message generator button to the scm input field."
+          "default": true,
+          "markdownDescription": "Adds a button to the SCM input field to generate a relevant commit message for the current changes."
         },
         "cody.commandCodeLenses": {
           "order": 8,
