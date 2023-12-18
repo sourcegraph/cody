@@ -53,7 +53,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        this.isEnabled = config.get('experimental.commandLenses') as boolean
+        this.isEnabled = config.get('commandCodeLenses') as boolean
 
         if (this.isEnabled && !this._disposables.length) {
             this.init()
