@@ -31,7 +31,6 @@ export type RecipeID =
     | 'custom-prompt'
     | 'next-questions'
     | 'pr-description'
-    | 'commit-message'
     | 'release-notes'
     | 'translate-to-language'
 
