@@ -191,7 +191,7 @@ class MessageDecoder extends Writable {
                             appendFileSync(tracePath, '<- ' + JSON.stringify({ error }, null, 4) + '\n')
                         }
                         process.stderr.write(
-                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}', banana=${process.env.CODY_BANANA}, contentLengthRemaining=${this.contentLengthRemaining}. Error:\n${error}\n`
+                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}', contentLengthRemaining=${this.contentLengthRemaining}. Error:\n${error}\n`
                         )
                         // Kill the process to surface the error as early as
                         // possible. Before, we did `this.callback(error, null)`
