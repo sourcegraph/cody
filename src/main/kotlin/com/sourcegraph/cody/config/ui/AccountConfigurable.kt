@@ -15,6 +15,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.auth.ui.customAccountsPanel
 import com.sourcegraph.cody.config.*
 import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
@@ -123,6 +124,7 @@ class AccountConfigurable(val project: Project) :
     UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
     UpgradeToCodyProNotification.chatRateLimitError.set(null)
     CodyAutocompleteStatusService.resetApplication(project)
+    CodyToolWindowContent.getInstance(project).refreshSubscriptionTab()
   }
 
   private fun applyChannelConfiguration() {

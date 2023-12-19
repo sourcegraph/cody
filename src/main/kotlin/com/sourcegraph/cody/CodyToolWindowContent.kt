@@ -10,16 +10,19 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
+import com.intellij.vcs.log.runInEdtAsync
 import com.intellij.xml.util.XmlStringUtil
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
+import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextMessage
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
@@ -109,42 +112,43 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     refreshPanelsVisibility()
 
     addWelcomeMessage()
+    refreshSubscriptionTab()
   }
 
-  private fun addSubscriptionTab() {
-    val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-    if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
-      ApplicationManager.getApplication().executeOnPooledThread {
-        getInitializedServer(project).thenAccept { server ->
-          if (server != null) {
-            val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-            if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
-              val isCurrentUserPro =
-                  server
-                      .isCurrentUserPro()
-                      .exceptionally { e ->
-                        logger.warn("Error getting user pro status", e)
-                        null
-                      }
-                      .get()
-              if (isCurrentUserPro != null) {
-                val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
-                tabbedPane.insertTab(
-                    "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
-              }
-            }
-          }
+  fun refreshSubscriptionTab() {
+    runInEdtAsync(Disposer.newCheckedDisposable()) {
+      tryRestartingAgentIfNotRunning(project)
+      getInitializedServer(project).thenAccept { server ->
+        if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
+          addNewSubscriptionTab(server)
+        } else {
+          tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
+          addNewSubscriptionTab(server)
         }
       }
     }
   }
 
-  @RequiresEdt
-  fun refreshSubscriptionTab() {
-    if (tabbedPane.tabCount >= SUBSCRIPTION_TAB_INDEX + 1) {
-      tabbedPane.removeTabAt(SUBSCRIPTION_TAB_INDEX)
+  private fun addNewSubscriptionTab(server: CodyAgentServer) {
+    val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+    if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
+      val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+      if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
+        val isCurrentUserPro =
+            server
+                .isCurrentUserPro()
+                .exceptionally { e ->
+                  logger.warn("Error getting user pro status", e)
+                  null
+                }
+                .get()
+        if (isCurrentUserPro != null) {
+          val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
+          tabbedPane.insertTab(
+              "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+        }
+      }
     }
-    addSubscriptionTab()
   }
 
   private fun refreshRecipes() {
@@ -278,7 +282,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     }
     allContentLayout.show(allContentPanel, "tabbedPane")
     isChatVisible = true
-    refreshSubscriptionTab()
   }
 
   private fun createRecipeButton(text: String): JButton {
