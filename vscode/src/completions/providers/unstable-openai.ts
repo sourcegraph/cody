@@ -16,7 +16,11 @@ import {
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import {
+    generateCompletions,
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './generate-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -124,35 +128,20 @@ ${OPENING_CODE_TAG}${infillBlock}`
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
-            temperature: 1,
-            topP: 0.5,
+            topK: 0.5,
         }
 
-        const { n } = this.options
-        tracer?.params(requestParams)
-
-        const completions: InlineCompletionItemWithAnalytics[] = []
-        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
-            completions.push(completion)
-            if (completions.length === n) {
-                tracer?.result({ completions })
-                onCompletionReady(completions)
-            }
-        }
-
-        await Promise.all(
-            Array.from({ length: n }).map(() => {
-                return fetchAndProcessCompletionsImpl({
-                    client: this.client,
-                    requestParams,
-                    abortSignal,
-                    providerSpecificPostProcess: this.postProcess,
-                    providerOptions: this.options,
-                    onCompletionReady: onCompletionReadyImpl,
-                    onHotStreakCompletionReady,
-                })
-            })
-        )
+        await generateCompletions({
+            client: this.client,
+            requestParams,
+            abortSignal,
+            providerSpecificPostProcess: this.postProcess,
+            providerOptions: this.options,
+            tracer,
+            fetchAndProcessCompletionsImpl,
+            onCompletionReady,
+            onHotStreakCompletionReady,
+        })
     }
 
     private postProcess = (rawResponse: string): string => {

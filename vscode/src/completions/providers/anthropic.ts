@@ -20,7 +20,11 @@ import { InlineCompletionItemWithAnalytics } from '../text-processing/process-in
 import { ContextSnippet } from '../types'
 import { messagesToText } from '../utils'
 
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import {
+    generateCompletions,
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './generate-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -153,31 +157,17 @@ export class AnthropicProvider extends Provider {
             temperature: 0.5,
         }
 
-        const { n } = this.options
-        tracer?.params(requestParams)
-
-        const completions: InlineCompletionItemWithAnalytics[] = []
-        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
-            completions.push(completion)
-            if (completions.length === n) {
-                tracer?.result({ completions })
-                onCompletionReady(completions)
-            }
-        }
-
-        await Promise.all(
-            Array.from({ length: n }).map(() => {
-                return fetchAndProcessCompletionsImpl({
-                    client: this.client,
-                    requestParams,
-                    abortSignal,
-                    providerSpecificPostProcess: this.postProcess,
-                    providerOptions: this.options,
-                    onCompletionReady: onCompletionReadyImpl,
-                    onHotStreakCompletionReady,
-                })
-            })
-        )
+        await generateCompletions({
+            client: this.client,
+            requestParams,
+            abortSignal,
+            providerSpecificPostProcess: this.postProcess,
+            providerOptions: this.options,
+            tracer,
+            fetchAndProcessCompletionsImpl,
+            onCompletionReady,
+            onHotStreakCompletionReady,
+        })
     }
 
     private postProcess = (rawResponse: string): string => {
