@@ -472,6 +472,10 @@ export class Agent extends MessageHandler {
             provider.clearLastCandidate()
         })
 
+        this.registerNotification('chat/resetConversation', async () => {
+            throw new Error('chat reset not implemented')
+        })
+
         this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })

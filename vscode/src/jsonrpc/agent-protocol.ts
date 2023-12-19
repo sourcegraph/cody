@@ -126,6 +126,8 @@ export type Notifications = {
     // 'chat/executeRecipe' request.
     'chat/updateMessageInProgress': [ChatMessage | null]
 
+    'chat/resetConversation': [string] // todo send model
+
     'debug/message': [DebugMessage]
 }
 
