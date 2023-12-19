@@ -46,7 +46,7 @@
     "@types/react": "18.2.42",
     "@types/react-dom": "18.2.17",
     "@vitejs/plugin-react": "^4.0.2",
-    "esbuild": "^0.18.11",
+    "esbuild": "^0.19.10",
     "eslint": "^8.55.0",
     "eslint-plugin-storybook": "^0.6.12",
     "jsdom": "^22.1.0",
