@@ -117,7 +117,7 @@ describe('Agent', () => {
     })
     client.connectProcess(agentProcess, error => {
         console.log({ error })
-        // process.exit(1)
+        process.exit(1)
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -176,10 +176,6 @@ describe('Agent', () => {
             .replace('/* CURSOR */', '')
             .replace('/* SELECTION_START */', '')
             .replace('/* SELECTION_END */', '')
-        console.log({
-            content,
-            selection: content.slice(selectionStart, selectionEnd - '/* SELECTION_START */'.length),
-        })
 
         const document = AgentTextDocument.from(uri, content)
         const start =
@@ -189,7 +185,6 @@ describe('Agent', () => {
                 ? document.positionAt(selectionEnd)
                 : undefined
         const end = cursor >= 0 ? start : selectionStart >= 0 ? document.positionAt(selectionStart) : undefined
-        console.log({ uri: uri.toString() })
         client.notify('textDocument/didOpen', {
             uri: uri.toString(),
             content,

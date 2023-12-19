@@ -109,7 +109,6 @@ export class DefaultPrompter implements IPrompter {
         if (lastMessage.message.speaker === 'assistant') {
             throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
         }
-        console.log({ useEnhancedContext })
         if (useEnhancedContext) {
             // Add additional context from current editor or broader search
             const additionalContextItems = await contextProvider.getEnhancedContext(lastMessage.message.text)
