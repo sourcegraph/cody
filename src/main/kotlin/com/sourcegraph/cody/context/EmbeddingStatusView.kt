@@ -103,7 +103,7 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
   }
 
   fun setOpenedFileName(fileName: String, filePath: String?) {
-    openedFileContent.setText(fileName)
-    openedFileContent.setToolTipText(filePath)
+    openedFileContent.text = fileName
+    openedFileContent.toolTipText = filePath
   }
 }

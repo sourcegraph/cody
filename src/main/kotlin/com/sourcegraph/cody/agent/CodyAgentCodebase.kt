@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.config.CodyProjectSettings
+import com.sourcegraph.common.ProjectFileUtils
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.vcs.RepoUtil
 
@@ -31,6 +32,12 @@ class CodyAgentCodebase(private val underlying: CodyAgentServer, private val pro
   fun onFileOpened(project: Project, file: VirtualFile) {
     application.executeOnPooledThread {
       onRepositoryNameChange(RepoUtil.findRepositoryName(project, file))
+
+      val openedFileName = file.name
+      val relativeFilePath: String? = ProjectFileUtils.getRelativePathToProjectRoot(project, file)
+      CodyToolWindowContent.getInstance(project)
+          .embeddingStatusView
+          .setOpenedFileName(openedFileName, relativeFilePath)
     }
   }
 
