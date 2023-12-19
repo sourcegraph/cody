@@ -2,7 +2,8 @@
     <id>com.sourcegraph.jetbrains</id>
     <name>Sourcegraph Cody + Code Search</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
-    <change-notes><![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
+    <change-notes>
+        <![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
 
     <!--
         See https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html
@@ -27,25 +28,25 @@
         <httpRequestHandler implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
 
         <projectConfigurable
-            parentId="tools"
-            instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            id="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            displayName="Sourcegraph &amp; Cody"
-            nonDefaultProject="false"
+                parentId="tools"
+                instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                id="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                displayName="Sourcegraph &amp; Cody"
+                nonDefaultProject="false"
         />
         <projectConfigurable
-            parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            instance="com.sourcegraph.cody.config.ui.CodyConfigurable"
-            id="com.sourcegraph.cody.config.ui.CodyConfigurable"
-            displayName="Cody"
-            nonDefaultProject="false"
+                parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                instance="com.sourcegraph.cody.config.ui.CodyConfigurable"
+                id="com.sourcegraph.cody.config.ui.CodyConfigurable"
+                displayName="Cody"
+                nonDefaultProject="false"
         />
         <projectConfigurable
-            parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            instance="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
-            id="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
-            displayName="Code Search"
-            nonDefaultProject="false"
+                parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                instance="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
+                id="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
+                displayName="Code Search"
+                nonDefaultProject="false"
         />
 
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
@@ -58,11 +59,11 @@
 
         <!-- Cody -->
         <toolWindow
-            id="Cody"
-            icon="/icons/codyLogoMonochromatic.svg"
-            anchor="right"
-            secondary="false"
-            factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
+                id="Cody"
+                icon="/icons/codyLogoMonochromatic.svg"
+                anchor="right"
+                secondary="false"
+                factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
 
         <!-- autocomplete -->
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
@@ -83,58 +84,58 @@
 
     <actions>
         <action
-            id="sourcegraph.openFile"
-            class="com.sourcegraph.website.OpenFileAction"
-            text="Open Selection in Sourcegraph Web"
-            description="Open selection in Sourcegraph Web"
-            icon="/icons/sourcegraphLogo.svg">
+                id="sourcegraph.openFile"
+                class="com.sourcegraph.website.OpenFileAction"
+                text="Open Selection in Sourcegraph Web"
+                description="Open selection in Sourcegraph Web"
+                icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
-            id="sourcegraph.searchSelection"
-            class="com.sourcegraph.website.SearchSelectionAction"
-            text="Search Selection on Sourcegraph Web"
-            description="Search selection on Sourcegraph web"
-            icon="/icons/sourcegraphLogo.svg">
+                id="sourcegraph.searchSelection"
+                class="com.sourcegraph.website.SearchSelectionAction"
+                text="Search Selection on Sourcegraph Web"
+                description="Search selection on Sourcegraph web"
+                icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
-            id="sourcegraph.searchRepository"
-            class="com.sourcegraph.website.SearchRepositoryAction"
-            text="Search Selection in Repository on Sourcegraph Web"
-            description="Search selection in repository on Sourcegraph web"
-            icon="/icons/sourcegraphLogo.svg">
+                id="sourcegraph.searchRepository"
+                class="com.sourcegraph.website.SearchRepositoryAction"
+                text="Search Selection in Repository on Sourcegraph Web"
+                description="Search selection in repository on Sourcegraph web"
+                icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
-            id="sourcegraph.copy"
-            class="com.sourcegraph.website.CopyAction"
-            text="Copy Sourcegraph File Link"
-            description="Copy Sourcegraph file link"
-            icon="/icons/sourcegraphLogo.svg">
+                id="sourcegraph.copy"
+                class="com.sourcegraph.website.CopyAction"
+                text="Copy Sourcegraph File Link"
+                description="Copy Sourcegraph file link"
+                icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
-            id="com.sourcegraph.website.OpenRevisionAction"
-            class="com.sourcegraph.website.OpenRevisionAction"
-            text="Open Revision Diff in Sourcegraph Web"
-            icon="/icons/sourcegraphLogo.svg">
+                id="com.sourcegraph.website.OpenRevisionAction"
+                class="com.sourcegraph.website.OpenRevisionAction"
+                text="Open Revision Diff in Sourcegraph Web"
+                icon="/icons/sourcegraphLogo.svg">
             <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
             <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
             <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
             <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
         </action>
         <action
-            id="sourcegraph.openFindPopup"
-            class="com.sourcegraph.find.OpenFindAction"
-            text="Find with Sourcegraph..."
-            description="Search all your repos on Sourcegraph"
-            icon="/icons/sourcegraphLogo.svg">
+                id="sourcegraph.openFindPopup"
+                class="com.sourcegraph.find.OpenFindAction"
+                text="Find with Sourcegraph..."
+                description="Search all your repos on Sourcegraph"
+                icon="/icons/sourcegraphLogo.svg">
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
             <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
         <action
-            id="sourcegraph.login"
-            class="com.sourcegraph.config.OpenPluginSettingsAction"
-            text="Log in to Sourcegraph"
-            description="Log in to Sourcegraph"
-            icon="/icons/sourcegraphLogo.svg">
+                id="sourcegraph.login"
+                class="com.sourcegraph.config.OpenPluginSettingsAction"
+                text="Log in to Sourcegraph"
+                description="Log in to Sourcegraph"
+                icon="/icons/sourcegraphLogo.svg">
         </action>
 
         <!-- autocomplete -->
@@ -171,16 +172,21 @@
         </action>
 
         <action
-            id="cody.downloadAndInstallCodyAction"
-            class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
-            text="Download Cody App"
-            icon="/icons/codyLogoSm.svg"/>
+                id="cody.downloadAndInstallCodyAction"
+                class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
+                text="Download Cody App"
+                icon="/icons/codyLogoSm.svg"/>
 
         <action
-            id="cody.runCodyAppAction"
-            class="com.sourcegraph.cody.recipes.RunCodyAppAction"
-            text="Run Cody App"
-            icon="/icons/codyLogoSm.svg"/>
+                id="cody.runCodyAppAction"
+                class="com.sourcegraph.cody.recipes.RunCodyAppAction"
+                text="Run Cody App"
+                icon="/icons/codyLogoSm.svg"/>
+
+        <action
+                id="cody.restartAgent"
+                class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
+                text="Restart Cody Agent"/>
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
