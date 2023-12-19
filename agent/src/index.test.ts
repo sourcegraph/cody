@@ -155,7 +155,7 @@ describe('Agent', () => {
         expect(completions.items.length).toBeGreaterThan(0)
         expect(texts).toMatchInlineSnapshot(`
           [
-            "   return a + b",
+            "   return a + b;",
           ]
         `)
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })

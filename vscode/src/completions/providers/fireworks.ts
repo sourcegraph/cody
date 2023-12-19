@@ -6,12 +6,15 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
-import { getCompletionParamsAndFetchImpl, getLineNumberDependentCompletionParams } from './get-completion-params'
+import {
+    generateCompletions,
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './generate-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -157,57 +160,35 @@ export class FireworksProvider extends Provider {
         ) => void,
         tracer?: CompletionProviderTracer
     ): Promise<void> {
-        const { multiline, n } = this.options
-
-        const model =
-            this.model === 'starcoder-hybrid'
-                ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                : MODEL_MAP[this.model]
-
         const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
             providerOptions: this.options,
             timeouts: this.timeouts,
             lineNumberDependentCompletionParams,
         })
 
+        const { multiline } = this.options
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
-            model,
             temperature: 0.2,
             topK: 0,
+            model:
+                this.model === 'starcoder-hybrid'
+                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                    : MODEL_MAP[this.model],
         }
 
-        if (requestParams.timeoutMs === 0) {
-            onCompletionReady([])
-            return
-        }
-
-        tracer?.params(requestParams)
-
-        const completions: InlineCompletionItemWithAnalytics[] = []
-        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
-            completions.push(completion)
-            if (completions.length === n) {
-                completionPostProcessLogger.flush()
-                tracer?.result({ completions })
-                onCompletionReady(completions)
-            }
-        }
-
-        await Promise.all(
-            Array.from({ length: n }).map(() => {
-                return fetchAndProcessCompletionsImpl({
-                    client: this.client,
-                    requestParams,
-                    abortSignal,
-                    providerSpecificPostProcess: this.postProcess,
-                    providerOptions: this.options,
-                    onCompletionReady: onCompletionReadyImpl,
-                    onHotStreakCompletionReady,
-                })
-            })
-        )
+        await generateCompletions({
+            client: this.client,
+            requestParams,
+            abortSignal,
+            providerSpecificPostProcess: this.postProcess,
+            providerOptions: this.options,
+            tracer,
+            fetchAndProcessCompletionsImpl,
+            onCompletionReady,
+            onHotStreakCompletionReady,
+        })
     }
 
     private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {
