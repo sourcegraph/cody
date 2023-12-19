@@ -1071,7 +1071,7 @@
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.2",
-    "@vscode/test-web": "^0.0.47",
+    "@vscode/test-web": "^0.0.50",
     "@vscode/vsce": "^2.22.0",
     "cody-icons-font": "workspace:^",
     "concurrently": "^8.2.0",
