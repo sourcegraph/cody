@@ -9,7 +9,7 @@ import com.sourcegraph.config.ConfigUtil
 
 class RateLimitErrorWarningAction(
     actionText: String,
-    private val dialogMessage: String,
+    private val dialogContent: String,
     private val dialogTitle: String,
     private val shouldShowUpgradeOption: Boolean
 ) : DumbAwareAction(actionText) {
@@ -25,7 +25,7 @@ class RateLimitErrorWarningAction(
     val result =
         Messages.showDialog(
             e.project,
-            dialogMessage,
+            dialogContent,
             dialogTitle,
             actions,
             /* defaultOptionIndex= */ 1,

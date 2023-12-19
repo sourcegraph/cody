@@ -47,41 +47,44 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
             autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
 
     val suggestionOrExplanation =
-        if (shouldShowUpgradeOption)
-            CodyBundle.getString("status-widget.warning.upgrade-suggestion")
-        else CodyBundle.getString("status-widget.warning.explanation")
+        if (shouldShowUpgradeOption) CodyBundle.getString("status-widget.warning.upgrade")
+        else CodyBundle.getString("status-widget.warning.explain")
 
-    return when {
-      autocompleteRLE != null && chatRLE != null -> {
-        RateLimitErrorWarningAction(
-            CodyBundle.getString("status-widget.warning.autocompletion-and-chat.action-title"),
-            CodyBundle.getString("status-widget.warning.autocompletion-and-chat.content")
-                .fmt(
-                    autocompleteRLE.limit?.let { " $it" } ?: "",
-                    chatRLE.limit?.let { " $it" } ?: "",
-                    suggestionOrExplanation),
-            CodyBundle.getString("status-widget.warning.autocompletion-and-chat.dialog-title"),
-            shouldShowUpgradeOption)
-      }
-      autocompleteRLE != null -> {
-        RateLimitErrorWarningAction(
-            CodyBundle.getString("status-widget.warning.autocompletion.action-title"),
-            CodyBundle.getString("status-widget.warning.autocompletion.content")
-                .fmt(autocompleteRLE.limit?.let { " $it" } ?: "", suggestionOrExplanation),
-            CodyBundle.getString("status-widget.warning.autocompletion.dialog-title"),
-            shouldShowUpgradeOption)
-      }
-      chatRLE != null -> {
-        RateLimitErrorWarningAction(
-            CodyBundle.getString("status-widget.warning.chat.action-title"),
-            CodyBundle.getString("status-widget.warning.chat.content")
-                .fmt(chatRLE.limit?.let { " $it" } ?: "", suggestionOrExplanation),
-            CodyBundle.getString("status-widget.warning.chat.dialog-title"),
-            shouldShowUpgradeOption)
-      }
-      else -> {
-        null
-      }
+    var (action, content, title) =
+        when {
+          autocompleteRLE != null && chatRLE != null -> {
+            Triple(
+                CodyBundle.getString("status-widget.warning.autocompletion-and-chat.action-title"),
+                CodyBundle.getString("status-widget.warning.autocompletion-and-chat.content")
+                    .fmt(
+                        autocompleteRLE.limit?.let { " $it" } ?: "",
+                        chatRLE.limit?.let { " $it" } ?: "",
+                        suggestionOrExplanation),
+                CodyBundle.getString("status-widget.warning.autocompletion-and-chat.dialog-title"))
+          }
+          autocompleteRLE != null -> {
+
+            Triple(
+                CodyBundle.getString("status-widget.warning.autocompletion.action-title"),
+                CodyBundle.getString("status-widget.warning.autocompletion.content")
+                    .fmt(autocompleteRLE.limit?.let { " $it" } ?: "", suggestionOrExplanation),
+                CodyBundle.getString("status-widget.warning.autocompletion.dialog-title"))
+          }
+          chatRLE != null -> {
+            Triple(
+                CodyBundle.getString("status-widget.warning.chat.action-title"),
+                CodyBundle.getString("status-widget.warning.chat.content")
+                    .fmt(chatRLE.limit?.let { " $it" } ?: "", suggestionOrExplanation),
+                CodyBundle.getString("status-widget.warning.chat.dialog-title"))
+          }
+          else -> return null
+        }
+
+    if (!shouldShowUpgradeOption) {
+      title = CodyBundle.getString("status-widget.warning.pro.dialog-title")
+      content = CodyBundle.getString("status-widget.warning.pro.content")
     }
+
+    return RateLimitErrorWarningAction(action, content, title, shouldShowUpgradeOption)
   }
 }

@@ -22,7 +22,7 @@ object CodyBundle {
    * @return the formatted string
    */
   fun String.fmt(vararg args: String): String {
-    return MessageFormat.format(this, *args as Array<Any>)
+    return MessageFormat.format(this, *args)
   }
 
   fun getString(@PropertyKey(resourceBundle = BUNDLE) key: String): String {
