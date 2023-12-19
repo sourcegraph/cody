@@ -7,7 +7,7 @@ export class DocumentOffsets {
     private lines: number[] = []
     private content: string
     constructor(public readonly document: TextDocument) {
-        this.content = document?.content || ''
+        this.content = document.content || ''
         this.lines.push(0)
         let index = 0
         while (index < this.content.length) {

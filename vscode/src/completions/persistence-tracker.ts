@@ -16,6 +16,7 @@ const MEASURE_TIMEOUTS = [
     300 * 1000, // 5 minutes
     600 * 1000, // 10 minutes
 ]
+
 interface TrackedCompletion {
     id: CompletionAnalyticsID
     uri: vscode.Uri
@@ -27,6 +28,7 @@ interface TrackedCompletion {
     insertRange: vscode.Range
     latestRange: vscode.Range
 }
+
 export class PersistenceTracker implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private managedTimeouts: Set<NodeJS.Timeout> = new Set()
@@ -151,7 +153,6 @@ export class PersistenceTracker implements vscode.Disposable {
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
         const documentCompletions = this.trackedCompletions.get(event.document.uri.toString())
-
         if (!documentCompletions) {
             return
         }
@@ -160,6 +161,10 @@ export class PersistenceTracker implements vscode.Disposable {
             range: change.range,
             text: change.text,
         }))
+
+        if (mutableChanges.length === 0) {
+            return
+        }
 
         for (const trackedCompletion of documentCompletions) {
             trackedCompletion.latestRange = updateRangeMultipleChanges(trackedCompletion.latestRange, mutableChanges)

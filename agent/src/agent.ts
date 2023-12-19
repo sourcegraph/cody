@@ -17,6 +17,7 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import { diffDocuments } from '../../vscode/src/editor/utils/document-diff'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
@@ -223,11 +224,20 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = TextDocumentWithUri.fromDocument(document)
+
+            // Get document with old content before updating. This is not a deep copy!
+            const oldDocument = this.workspace.getDocument(documentWithUri.uri)
+            let contentChanges: vscode.TextDocumentContentChangeEvent[] = []
+            if (oldDocument) {
+                contentChanges = diffDocuments(oldDocument, { getText: () => document.content ?? '' })
+            }
+
             const textDocument = this.workspace.addDocument(documentWithUri)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
+
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
+                contentChanges,
                 reason: undefined,
             })
         })

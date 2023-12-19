@@ -409,6 +409,9 @@ importers:
       detect-indent:
         specifier: ^7.0.1
         version: 7.0.1
+      fast-myers-diff:
+        specifier: ^3.1.0
+        version: 3.1.0
       glob:
         specifier: ^7.2.3
         version: 7.2.3
