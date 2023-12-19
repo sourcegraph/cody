@@ -69,6 +69,22 @@ export class LocalStorage {
 
     public getChatHistory(): UserLocalHistory {
         const history = this.storage.get<UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
+
+        // Handle localStorage issues where the storage key exists but the chat
+        // an input keys do not
+        if (history) {
+            if (!('chat' in history)) {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore: TS expects this branch to not be possible
+                history.chat = {}
+            }
+            if (!('input' in history)) {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore: TS expects this branch to not be possible
+                history.input = []
+            }
+        }
+
         return history || { chat: {}, input: [] }
     }
 
