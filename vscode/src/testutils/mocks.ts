@@ -472,8 +472,9 @@ export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
      * result of `EventEmitter.fire()`.  Most event listeners return a
      * meaningful `Promise` that is discarded in the signature of the `fire()`
      * function.  Being able to await on returned promise makes it possible to
-     * write more robust tests because we don't need to rely on magic timeouts. */
-    public async fireAsync(data: T): Promise<void> {
+     * write more robust tests because we don't need to rely on magic timeouts.
+     */
+    public async cody_fireAsync(data: T): Promise<void> {
         const promises: Promise<void>[] = []
         for (const listener of this.listeners) {
             const value = invokeCallback(listener, data)

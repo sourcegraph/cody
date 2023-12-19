@@ -668,7 +668,7 @@ export class Agent extends MessageHandler {
             console.log(`No panel with id ${id} found`)
             return
         }
-        await panel.receiveMessage.fireAsync(message)
+        await panel.receiveMessage.cody_fireAsync(message)
     }
 
     /**

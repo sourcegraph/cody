@@ -406,7 +406,7 @@ export function defaultWebviewPanel(params: {
             onDidReceiveMessage: params.onDidReceiveMessage.event,
             options: {},
             postMessage: async message => {
-                await params.onDidPostMessage.fireAsync(message)
+                await params.onDidPostMessage.cody_fireAsync(message)
                 return true
             },
         },
