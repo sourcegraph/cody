@@ -1,10 +1,10 @@
 import assert from 'assert'
 import { execSync, spawn } from 'child_process'
 import fspromises from 'fs/promises'
+import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
 import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
@@ -50,40 +50,11 @@ export class TestClient extends MessageHandler {
     }
 }
 
-const workspaceRootUri = vscode.Uri.file(path.join(__dirname, '__tests__', 'example-ts'))
-const workspaceRootPath = workspaceRootUri.fsPath
 const dotcom = 'https://sourcegraph.com'
-const clientInfo: ClientInfo = {
-    name: 'test-client',
-    version: 'v1',
-    workspaceRootUri: workspaceRootUri.toString(),
-    workspaceRootPath,
-    extensionConfiguration: {
-        anonymousUserID: 'abcde1234',
-        accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-        serverEndpoint: dotcom,
-        customHeaders: {},
-        autocompleteAdvancedProvider: 'anthropic',
-        autocompleteAdvancedAccessToken: '',
-        autocompleteAdvancedServerEndpoint: '',
-        debug: false,
-        verboseDebug: false,
-        codebase: 'github.com/sourcegraph/cody',
-    },
-}
-
-const cwd = process.cwd()
-const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
-const agentScript = path.join(agentDir, 'dist', 'index.js')
-
 if (process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true') {
     console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
     execSync('src login', { stdio: 'inherit' })
-    assert.strictEqual(
-        process.env.SRC_ENDPOINT,
-        clientInfo.extensionConfiguration?.serverEndpoint,
-        'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
-    )
+    assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
 }
 
 describe('Agent', () => {
@@ -101,6 +72,32 @@ describe('Agent', () => {
         return
     }
     const client = new TestClient()
+
+    const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
+    const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+    const workspaceRootPath = workspaceRootUri.fsPath
+    const clientInfo: ClientInfo = {
+        name: 'test-client',
+        version: 'v1',
+        workspaceRootUri: workspaceRootUri.toString(),
+        workspaceRootPath,
+        extensionConfiguration: {
+            anonymousUserID: 'abcde1234',
+            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
+            serverEndpoint: dotcom,
+            customHeaders: {},
+            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedAccessToken: '',
+            autocompleteAdvancedServerEndpoint: '',
+            debug: false,
+            verboseDebug: false,
+            codebase: 'github.com/sourcegraph/cody',
+        },
+    }
+
+    const cwd = process.cwd()
+    const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
+    const agentScript = path.join(agentDir, 'dist', 'index.js')
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { cwd: agentDir, stdio: 'inherit' })
@@ -124,6 +121,8 @@ describe('Agent', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
+        await fspromises.mkdir(workspaceRootPath, { recursive: true })
+        await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
         try {
             const serverInfo = await client.handshake(clientInfo)
             assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
@@ -253,6 +252,7 @@ describe('Agent', () => {
     }, 600)
 
     afterAll(async () => {
+        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 20_000)
