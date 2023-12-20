@@ -5,6 +5,8 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 
 import { AuthStatus } from '../chat/protocol'
 
+type ChatHistoryKey = `${string}-${string}`
+
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
@@ -70,7 +72,7 @@ export class LocalStorage {
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        let history = this.storage.get<{ [key: `${string}-${string}`]: UserLocalHistory } | UserLocalHistory | null>(
+        let history = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | UserLocalHistory | null>(
             this.KEY_LOCAL_HISTORY,
             null
         )
@@ -85,6 +87,12 @@ export class LocalStorage {
         if (history && !isChatHistoryV2(history)) {
             history = {
                 [key]: history as UserLocalHistory,
+
+                // For backward compatibility, we do not want to delete the `chat` and `input` keys.
+                // As otherwise, downgrading to a prior version would completely block the startup
+                // as the client would throw.
+                chat: {},
+                input: [],
             }
 
             // We use a raw write here to ensure we do not _append_ a key but actually replace
@@ -103,7 +111,7 @@ export class LocalStorage {
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<{ [key: `${string}-${string}`]: UserLocalHistory } | null>(
+            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
@@ -199,10 +207,10 @@ export class LocalStorage {
  */
 export const localStorage = new LocalStorage()
 
-function getKeyForAuthStatus(authStatus: AuthStatus): `${string}-${string}` {
+function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
     return `${authStatus.endpoint}-${authStatus.primaryEmail}`
 }
 
-function isChatHistoryV2(history: { [key: `${string}-${string}`]: UserLocalHistory } | UserLocalHistory): boolean {
+function isChatHistoryV2(history: { [key: ChatHistoryKey]: UserLocalHistory } | UserLocalHistory): boolean {
     return !!Object.keys(history).find(k => k.includes('-'))
 }
