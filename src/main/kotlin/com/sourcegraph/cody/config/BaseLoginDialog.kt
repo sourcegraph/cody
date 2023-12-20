@@ -25,6 +25,9 @@ abstract class BaseLoginDialog(
 
   protected val loginPanel = CodyLoginPanel(executorFactory, isAccountUnique)
 
+  var id: String = ""
+    private set
+
   var login: String = ""
     private set
 
@@ -71,6 +74,7 @@ abstract class BaseLoginDialog(
           login = details.username
           displayName = details.displayName
           token = newToken
+          id = details.id
 
           close(OK_EXIT_CODE, true)
         }

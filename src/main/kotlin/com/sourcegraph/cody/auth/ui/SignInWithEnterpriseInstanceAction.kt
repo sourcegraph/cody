@@ -23,7 +23,8 @@ class SignInWithEnterpriseInstanceAction(
 
     dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
-      accountsHost.addAccount(dialog.server, dialog.login, dialog.displayName, dialog.token)
+      accountsHost.addAccount(
+          dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
       if (project != null && ConfigUtil.isCodyEnabled()) {
         // Open Cody sidebar
         val toolWindowManager = ToolWindowManager.getInstance(project)

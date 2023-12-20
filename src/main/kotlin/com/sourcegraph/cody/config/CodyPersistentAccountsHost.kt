@@ -12,9 +12,10 @@ class CodyPersistentAccountsHost(private val project: Project?) : CodyAccountsHo
       server: SourcegraphServerPath,
       login: String,
       displayName: String?,
-      token: String
+      token: String,
+      id: String
   ) {
-    val codyAccount = CodyAccount.create(login, displayName, server)
+    val codyAccount = CodyAccount.create(login, displayName, server, id)
     CodyAuthenticationManager.instance.updateAccountToken(codyAccount, token)
     if (project != null) {
       CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)

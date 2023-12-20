@@ -14,29 +14,56 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
-import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.UserLevelConfig
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
+
+private const val RUN_ONCE_CODY_ACCOUNTS_IDS_REFRESH = "CodyAccountsIdsRefresh"
+private const val RUN_ONCE_TOGGLE_CODY_TOOL_WINDOW_AFTER_MIGRATION =
+    "ToggleCodyToolWindowAfterMigration"
+private const val RUN_ONCE_CODY_APPLICATION_SETTINGS_MIGRATION = "CodyApplicationSettingsMigration"
+private const val RUN_ONCE_CODY_PROJECT_SETTINGS_MIGRATION = "CodyProjectSettingsMigration"
 
 class SettingsMigration : Activity {
 
   private val codyAuthenticationManager = CodyAuthenticationManager.instance
 
   override fun runActivity(project: Project) {
-    RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
+    RunOnceUtil.runOnceForProject(project, RUN_ONCE_CODY_PROJECT_SETTINGS_MIGRATION) {
       val customRequestHeaders = extractCustomRequestHeaders(project)
       migrateProjectSettings(project)
       migrateAccounts(project, customRequestHeaders)
     }
-    RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
-    RunOnceUtil.runOnceForApp("ToggleCodyToolWindowAfterMigration") {
+    RunOnceUtil.runOnceForApp(RUN_ONCE_CODY_APPLICATION_SETTINGS_MIGRATION) {
+      migrateApplicationSettings()
+    }
+    RunOnceUtil.runOnceForApp(RUN_ONCE_TOGGLE_CODY_TOOL_WINDOW_AFTER_MIGRATION) {
       ApplicationManager.getApplication().invokeLater { toggleCodyToolbarWindow(project) }
+    }
+    RunOnceUtil.runOnceForApp(RUN_ONCE_CODY_ACCOUNTS_IDS_REFRESH) {
+      val customRequestHeaders = extractCustomRequestHeaders(project)
+      refreshAccountsIds(customRequestHeaders)
+    }
+  }
+
+  private fun refreshAccountsIds(customRequestHeaders: String) {
+    codyAuthenticationManager.getAccounts().forEach { codyAccount ->
+      val server = SourcegraphServerPath.from(codyAccount.server.url, customRequestHeaders)
+      val token = codyAuthenticationManager.getTokenForAccount(codyAccount)
+      if (token != null) {
+        loadUserDetails(
+            SourcegraphApiRequestExecutor.Factory.instance,
+            token,
+            EmptyProgressIndicator(ModalityState.NON_MODAL),
+            server) {
+              codyAccount.id = it.id
+              codyAuthenticationManager.updateAccountToken(codyAccount, token)
+            }
+      }
     }
   }
 
@@ -70,8 +97,7 @@ class SettingsMigration : Activity {
             dotcomAccessToken,
             server,
             requestExecutorFactory,
-            EmptyProgressIndicator(ModalityState.NON_MODAL),
-            customRequestHeaders)
+            EmptyProgressIndicator(ModalityState.NON_MODAL))
       } else {
         addAccountIfUnique(
             dotcomAccessToken,
@@ -118,10 +144,9 @@ class SettingsMigration : Activity {
       server: SourcegraphServerPath,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       progressIndicator: EmptyProgressIndicator,
-      id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(CodyAccount.create(it.name, it.displayName, server, id), accessToken)
+      addAccount(CodyAccount.create(it.name, it.displayName, server, it.id), accessToken)
     }
   }
 
@@ -131,10 +156,9 @@ class SettingsMigration : Activity {
       server: SourcegraphServerPath,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       progressIndicator: EmptyProgressIndicator,
-      id: String = Account.generateId(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val codyAccount = CodyAccount.create(it.name, it.displayName, server, id)
+      val codyAccount = CodyAccount.create(it.name, it.displayName, server, it.id)
       addAccount(codyAccount, accessToken)
       if (CodyAuthenticationManager.instance.getActiveAccount(project) == null)
           CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)

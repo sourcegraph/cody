@@ -4,7 +4,13 @@ import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.util.Key
 
 interface CodyAccountsHost {
-  fun addAccount(server: SourcegraphServerPath, login: String, displayName: String?, token: String)
+  fun addAccount(
+      server: SourcegraphServerPath,
+      login: String,
+      displayName: String?,
+      token: String,
+      id: String
+  )
 
   fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean
 

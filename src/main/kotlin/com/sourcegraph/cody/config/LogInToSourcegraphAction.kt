@@ -35,7 +35,8 @@ class LogInToSourcegraphAction : BaseAddAccountWithTokenAction() {
             authMethod)
     dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
-      accountsHost.addAccount(dialog.server, dialog.login, dialog.displayName, dialog.token)
+      accountsHost.addAccount(
+          dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
     }
   }
 }
@@ -54,7 +55,8 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
 
     dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
-      accountsHost.addAccount(dialog.server, dialog.login, dialog.displayName, dialog.token)
+      accountsHost.addAccount(
+          dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
     }
   }
 }

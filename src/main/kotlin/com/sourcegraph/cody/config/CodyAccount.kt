@@ -21,7 +21,7 @@ data class CodyAccount(
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
     override val server: SourcegraphServerPath =
         SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, ""),
-    @Attribute("id") override val id: String = generateId(),
+    @Attribute("id") override var id: String = generateId(),
 ) : ServerAccount() {
 
   fun isCodyApp(): Boolean {

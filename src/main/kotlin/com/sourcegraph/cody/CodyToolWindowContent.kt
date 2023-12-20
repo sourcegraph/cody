@@ -131,24 +131,50 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
   private fun addNewSubscriptionTab(server: CodyAgentServer) {
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-    if (activeAccountType != null && activeAccountType.isDotcomAccount()) {
-      val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
-      if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
-        val isCurrentUserPro =
-            server
-                .isCurrentUserPro()
-                .exceptionally { e ->
-                  logger.warn("Error getting user pro status", e)
-                  null
-                }
-                .get()
-        if (isCurrentUserPro != null) {
-          val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
-          tabbedPane.insertTab(
-              "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+    if (activeAccountType != null) {
+      val jetbrainsUserId = activeAccountType.id
+      var agentUserId = getUserId(server)
+      var retryCount = 3
+      while (jetbrainsUserId != agentUserId && retryCount > 0) {
+        Thread.sleep(200)
+        retryCount--
+        logger.warn("Retrying call for userId from agent")
+        agentUserId = getUserId(server)
+      }
+      if (jetbrainsUserId != agentUserId) {
+        logger.error("User id in JetBrains is different from agent")
+        return
+      }
+
+      if (activeAccountType.isDotcomAccount()) {
+        val codyProFeatureFlag = server.evaluateFeatureFlag(GetFeatureFlag("CodyProJetBrains"))
+        if (codyProFeatureFlag.get() != null && codyProFeatureFlag.get()!!) {
+          val isCurrentUserPro =
+              server
+                  .isCurrentUserPro()
+                  .exceptionally { e ->
+                    logger.warn("Error getting user pro status", e)
+                    null
+                  }
+                  .get()
+          if (isCurrentUserPro != null) {
+            val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
+            tabbedPane.insertTab(
+                "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+          }
         }
       }
     }
+  }
+
+  private fun getUserId(server: CodyAgentServer): String? {
+    return server
+        .currentUserId()
+        .exceptionally {
+          logger.warn("Unable to fetch user id from agent")
+          null
+        }
+        .get()
   }
 
   private fun refreshRecipes() {

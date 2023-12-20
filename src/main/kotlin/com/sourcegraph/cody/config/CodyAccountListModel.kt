@@ -69,9 +69,10 @@ class CodyAccountListModel(private val project: Project) :
       server: SourcegraphServerPath,
       login: String,
       displayName: String?,
-      token: String
+      token: String,
+      id: String
   ) {
-    val account = CodyAccount.create(login, displayName, server)
+    val account = CodyAccount.create(login, displayName, server, id)
     if (accountsListModel.isEmpty) {
       activeAccount = account
     }
