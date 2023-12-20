@@ -16,9 +16,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Logging improvements for accuracy .[pulls/2444](https://github.com/sourcegraph/cody/pull/2444)
-
 ### Changed
+
+- Logging improvements for accuracy. [pulls/2444](https://github.com/sourcegraph/cody/pull/2444)
 
 ## [1.0.2]
 
