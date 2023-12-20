@@ -8,6 +8,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## [1.0.2]
+
+### Added
+
+### Fixed
+
 - Chat: Honor the cody.codebase setting for manually setting the remote codebase context. [pulls/2415](https://github.com/sourcegraph/cody/pull/2415)
 - Fixes the Code Lenses feature. [issues/2428](https://github.com/sourcegraph/cody/issues/2428)
 

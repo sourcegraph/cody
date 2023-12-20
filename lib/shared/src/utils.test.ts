@@ -3,6 +3,12 @@ import { describe, expect, test } from 'vitest'
 import { convertGitCloneURLToCodebaseName, convertGitCloneURLToCodebaseNameOrError, isError } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
+    test('converst Azure DevOps URL', () => {
+        expect(convertGitCloneURLToCodebaseName('https://dev.azure.com/organization/project/_git/repository')).toEqual(
+            'dev.azure.com/organization/project/repository'
+        )
+    })
+
     test('converts GitHub SSH URL', () => {
         expect(convertGitCloneURLToCodebaseName('git@github.com:sourcegraph/sourcegraph.git')).toEqual(
             'github.com/sourcegraph/sourcegraph'
