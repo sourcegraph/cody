@@ -544,10 +544,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 return
             }
 
+            const authStatus = this.authProvider.getAuthStatus()
+
             const properties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
-                promptText: text,
+                promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
                 contextSummary,
             }
             telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
