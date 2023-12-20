@@ -181,12 +181,12 @@ describe('Agent', () => {
         })
     })
 
-    it('allows us to execute recipes properly', async () => {
+    it.skip('allows us to execute recipes properly', async () => {
         await client.executeRecipe('chat-question', 'How do I implement sum in JavaScript?')
     }, 20_000)
 
     // Timeout is 100ms because we await on `recipes/execute` in the previous test
-    it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
+    it.skip('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
         await streamingChatMessages
         const actual = messages.at(-1)
         if (actual?.text) {

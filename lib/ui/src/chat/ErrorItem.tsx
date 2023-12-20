@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { ChatError, RateLimitError } from '@sourcegraph/cody-shared'
+import { ChatError, ContextWindowLimitError, RateLimitError } from '@sourcegraph/cody-shared'
 
 import { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
 
@@ -25,6 +25,16 @@ export const ErrorItem: React.FunctionComponent<{
         )
     }
 
+    if (typeof error !== 'string' && error.name === ContextWindowLimitError.errorName && postMessage) {
+        return (
+            <ContextWindowLimitErrorItem
+                error={error as ContextWindowLimitError}
+                ChatButtonComponent={ChatButtonComponent}
+                postMessage={postMessage}
+            />
+        )
+    }
+
     return <RequestErrorItem error={error.message} />
 })
 
@@ -42,6 +52,35 @@ export const RequestErrorItem: React.FunctionComponent<{
     )
 })
 
+export const ContextWindowLimitErrorItem: React.FunctionComponent<{
+    error: ContextWindowLimitError
+    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+    postMessage: ApiPostMessage
+}> = React.memo(function ContextWindowLimitErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+    const onClick = useCallback(() => {
+        postMessage({ command: 'reset' })
+    }, [postMessage])
+
+    return (
+        <div className={styles.errorItem}>
+            <div className={styles.icon}>
+                <span className="codicon codicon-warning" />
+            </div>
+            <div className={styles.body}>
+                <header>
+                    <h1>Context Limit Reached</h1>
+                    <p>{error.message}</p>
+                </header>
+                {ChatButtonComponent && (
+                    <div className={styles.actions}>
+                        <ChatButtonComponent label="Start New Chat" action="" appearance="primary" onClick={onClick} />
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+})
+
 /**
  * An error message shown in the chat.
  */
@@ -55,16 +94,16 @@ export const RateLimitErrorItem: React.FunctionComponent<{
     // has not since upgraded.
     const isEnterpriseUser = userInfo?.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
-    const tier = isEnterpriseUser ? 'enterprise' : userInfo?.isCodyProUser ? 'pro' : 'free'
+    const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 
     // Only log once on mount
     React.useEffect(() => {
         // Log as abuseUsageLimit if pro user run into rate limit
         postMessage({
             command: 'event',
-            eventName: userInfo?.isCodyProUser
-                ? 'CodyVSCodeExtension:abuseUsageLimitCTA:shown'
-                : 'CodyVSCodeExtension:upsellUsageLimitCTA:shown',
+            eventName: canUpgrade
+                ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
+                : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
             properties: { limit_type: 'chat_commands', tier },
         })
 

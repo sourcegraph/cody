@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { getConfiguration } from './configuration'
@@ -15,7 +16,7 @@ describe('getConfiguration', () => {
             proxy: null,
             codebase: '',
             customHeaders: {},
-            chatPreInstruction: undefined,
+            chatPreInstruction: '',
             useContext: 'embeddings',
             autocomplete: true,
             autocompleteLanguages: {
@@ -40,12 +41,16 @@ describe('getConfiguration', () => {
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
+            autocompleteFormatOnAccept: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: null,
             autocompleteTimeouts: {},
-        })
+            testingLocalEmbeddingsEndpoint: undefined,
+            testingLocalEmbeddingsIndexLibraryPath: undefined,
+            testingLocalEmbeddingsModel: undefined,
+        } satisfies Configuration)
     })
 
     it('reads values from config', () => {
@@ -111,6 +116,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
+                    case 'cody.autocomplete.formatOnAccept':
+                        return true
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
@@ -161,11 +168,15 @@ describe('getConfiguration', () => {
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
+            autocompleteFormatOnAccept: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteTimeouts: {},
-        })
+            testingLocalEmbeddingsEndpoint: undefined,
+            testingLocalEmbeddingsIndexLibraryPath: undefined,
+            testingLocalEmbeddingsModel: undefined,
+        } satisfies Configuration)
     })
 })

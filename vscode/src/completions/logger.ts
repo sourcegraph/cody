@@ -183,6 +183,16 @@ interface ErrorEventPayload {
     count: number
 }
 
+/** Emitted when a completion is formatted on accept */
+interface FormatEventPayload {
+    // `formatCompletion` duration.
+    duration: number
+    // Current document langauge ID
+    languageId: string
+    // Formatter name extracted from user settings JSON.
+    formatter?: string
+}
+
 export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
@@ -257,6 +267,11 @@ export function logCompletionErrorEvent(params: ErrorEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
+}
+export function logCompletionFormatEvent(params: FormatEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent('format', { version: 0, metadata, privateMetadata }, params)
 }
 /**
  * The following events are added to ensure the logging bookkeeping works as expected in production

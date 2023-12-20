@@ -24,11 +24,13 @@ import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
+import { executeEdit } from '../../edit/execute'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
@@ -49,7 +51,7 @@ import {
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { MessageErrorType } from '../MessageProvider'
-import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
 import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
@@ -302,6 +304,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 logDebug('SimpleChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.onInitialized()
                 break
+            case 'reset':
+                await this.clearAndRestartSession()
+                break
             case 'submit': {
                 const requestID = uuid.v4()
                 await this.handleHumanMessageSubmitted(
@@ -381,7 +386,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             default:
-                this.postError(new Error('Invalid request type from Webview Panel'))
+                this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
@@ -442,7 +447,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (this.chatModel.isEmpty()) {
             return
         }
+
+        this.cancelInProgressCompletion()
         await this.saveSession()
+
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.sessionID = this.chatModel.sessionID
         this.postViewTranscript()
@@ -506,6 +514,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         if (text.startsWith('/')) {
             if (text.match(/^\/r(eset)?$/)) {
                 await this.clearAndRestartSession()
+                return
+            }
+            if (text.match(/^\/edit(\s)?/)) {
+                await executeEdit({ instruction: text.replace(/^\/(edit)/, '').trim() }, 'chat')
+                return
+            }
+            if (text.match(/^\/doc(\s)?/)) {
+                await vscode.commands.executeCommand('cody.command.document-code')
                 return
             }
             if (text === '/commands-settings') {
@@ -573,7 +589,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         sendTelemetry?: (contextSummary: {}) => void
     ): Promise<void> {
         try {
-            const contextWindowBytes = 28000 // 7000 tokens * 4 bytes per token
+            const contextWindowBytes = getContextWindowForModel(
+                this.authProvider.getAuthStatus(),
+                this.chatModel.modelID
+            )
 
             const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
             const contextProvider = new ContextProvider(
@@ -584,7 +603,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.config.experimentalSymfContext ? this.symf : null,
                 this.codebaseStatusProvider
             )
-            const { prompt, warnings, newContextUsed } = await this.prompter.makePrompt(
+            const { prompt, contextLimitWarnings, newContextUsed } = await this.prompter.makePrompt(
                 this.chatModel,
                 contextProvider,
                 addEnhancedContext,
@@ -593,10 +612,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
             this.chatModel.setNewContextUsed(newContextUsed)
 
-            if (warnings.length > 0) {
-                const warningMsg =
-                    'Warning: ' + warnings.map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.')).join(' ')
-                this.postError(new Error(warningMsg))
+            if (contextLimitWarnings.length > 0) {
+                const warningMsg = contextLimitWarnings
+                    .map(w => (w.trim().endsWith('.') ? w.trim() : w.trim() + '.'))
+                    .join(' ')
+                this.postError(new ContextWindowLimitError(warningMsg), 'transcript')
             }
 
             if (sendTelemetry) {
@@ -769,7 +789,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             return
         }
         // Update webview panel title to match the last message
-        const text = this.chatModel.getLastHumanMessages()?.displayText
+        const text = this.chatModel.getLastHumanMessage()?.displayText
         if (this.webviewPanel && text) {
             this.webviewPanel.title = getChatPanelTitle(text)
         }
@@ -930,8 +950,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const allCommands = await this.editor.controllers.command?.getAllCommands(true)
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
-                allCommands?.filter(([id, { mode = '' }]) => {
-                    return !['/edit', '/doc', '/ask'].includes(id) && !['edit', 'insert'].includes(mode)
+                allCommands?.filter(([id, { mode }]) => {
+                    /** The /ask command is only useful outside of chat */
+                    const isRedundantCommand = id === '/ask'
+                    /**
+                     * Hack: Custom edit commands are currently broken in this chat.
+                     * We filter our anything that has this mode, apart from our own internal doc command - which we override ourselves
+                     */
+                    const isCustomEdit = (mode === 'edit' || mode === 'insert') && id !== '/doc'
+                    return !isRedundantCommand && !isCustomEdit
                 }) || []
 
             void this.postMessage({
@@ -1431,4 +1458,37 @@ function getErrorMessage(error: unknown): string {
         return error.message
     }
     return String(error)
+}
+
+function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
+    // In enterprise mode, we let the sg instance dictate the token limits and allow users to
+    // overwrite it locally (for debugging purposes).
+    //
+    // This is similiar to the behavior we had before introducing the new chat and allows BYOK
+    // customers to set a model of their choice without us having to map it to a known model on
+    // the client.
+    if (authStatus.endpoint && !isDotCom(authStatus.endpoint)) {
+        const codyConfig = vscode.workspace.getConfiguration('cody')
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        if (tokenLimit) {
+            return tokenLimit * 4 // bytes per token
+        }
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens * 4 // butes per token
+        }
+
+        return 28000 // 7000 tokens * 4 bytes per token
+    }
+
+    if (modelID.includes('openai/gpt-4-1106-preview')) {
+        return 28000 // 7000 tokens * 4 bytes per token
+    }
+    if (modelID.endsWith('openai/gpt-3.5-turbo')) {
+        return 10000 // 4,096 tokens * < 4 bytes per token
+    }
+    if (modelID.includes('mixtral-8x7b-instruct') && modelID.includes('fireworks')) {
+        return 28000 // 7000 tokens * 4 bytes per token
+    }
+    return 28000 // assume default to Claude-2-like model
 }
