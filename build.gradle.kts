@@ -340,7 +340,7 @@ tasks {
   }
 
   runPluginVerifier {
-    ideVersions.set(listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2"))
+    ideVersions.set(listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2", "2023.3"))
     val skippedFailureLevels =
         EnumSet.of(
             FailureLevel.DEPRECATED_API_USAGES,
