@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.1.1",
-    "@types/google-protobuf": "^3.15.10",
+    "@types/google-protobuf": "3.15.10",
     "@sourcegraph/eslint-config": "0.37.1",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/tsconfig": "^4.0.1",

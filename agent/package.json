@@ -37,9 +37,9 @@
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
-    "@types/google-protobuf": "^3.15.10",
-    "@types/minimatch": "^5.1.2",
-    "@types/vscode": "^1.80.0",
+    "@types/google-protobuf": "3.15.10",
+    "@types/minimatch": "5.1.2",
+    "@types/vscode": "1.80.0",
     "parse-git-diff": "^0.0.14",
     "pkg": "^5.8.1",
     "rimraf": "^5.0.5",

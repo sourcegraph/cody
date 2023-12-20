@@ -58,7 +58,7 @@ importers:
         specifier: ^0.0.14-next.2
         version: 0.0.14-next.2
       '@types/google-protobuf':
-        specifier: ^3.15.10
+        specifier: 3.15.10
         version: 3.15.10
       '@types/node':
         specifier: 20.4.0
@@ -155,13 +155,13 @@ importers:
         version: 3.0.7
     devDependencies:
       '@types/google-protobuf':
-        specifier: ^3.15.10
+        specifier: 3.15.10
         version: 3.15.10
       '@types/minimatch':
-        specifier: ^5.1.2
+        specifier: 5.1.2
         version: 5.1.2
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
       esbuild:
         specifier: ^0.18.19
@@ -195,7 +195,7 @@ importers:
         version: 1.0.8
     devDependencies:
       '@types/prompts':
-        specifier: ^2.4.4
+        specifier: 2.4.4
         version: 2.4.4
 
   e2e:
@@ -274,22 +274,22 @@ importers:
         version: 3.4.4
     devDependencies:
       '@types/dompurify':
-        specifier: ^3.0.2
+        specifier: 3.0.2
         version: 3.0.2
       '@types/highlight.js':
-        specifier: ^9.12.4
+        specifier: 9.12.4
         version: 9.12.4
       '@types/isomorphic-fetch':
-        specifier: ^0.0.39
+        specifier: 0.0.39
         version: 0.0.39
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/marked':
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
 
   lib/ui:
@@ -341,7 +341,7 @@ importers:
         version: 4.3.1
     devDependencies:
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
 
   vscode:
@@ -389,7 +389,7 @@ importers:
         specifier: ^7.6.2
         version: 7.6.2
       '@types/stream-json':
-        specifier: ^1.7.3
+        specifier: 1.7.3
         version: 1.7.3
       '@vscode/codicons':
         specifier: ^0.0.35
@@ -474,49 +474,49 @@ importers:
         specifier: ^1.33.0
         version: 1.33.0
       '@types/axios':
-        specifier: ^0.14.0
+        specifier: 0.14.0
         version: 0.14.0
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/express':
-        specifier: ^4.17.17
+        specifier: 4.17.17
         version: 4.17.17
       '@types/glob':
-        specifier: ^8.0.0
+        specifier: 8.1.0
         version: 8.1.0
       '@types/isomorphic-fetch':
-        specifier: ^0.0.39
+        specifier: 0.0.39
         version: 0.0.39
       '@types/js-levenshtein':
-        specifier: ^1.1.1
+        specifier: 1.1.1
         version: 1.1.1
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/mocha':
-        specifier: ^10.0.1
+        specifier: 10.0.1
         version: 10.0.1
       '@types/mock-require':
-        specifier: ^2.0.1
+        specifier: 2.0.1
         version: 2.0.1
       '@types/progress':
-        specifier: ^2.0.5
+        specifier: 2.0.5
         version: 2.0.5
       '@types/semver':
-        specifier: ^7.5.0
+        specifier: 7.5.0
         version: 7.5.0
       '@types/unzipper':
-        specifier: ^0.10.7
+        specifier: 0.10.7
         version: 0.10.7
       '@types/uuid':
-        specifier: ^9.0.2
+        specifier: 9.0.2
         version: 9.0.2
       '@types/vscode':
-        specifier: ^1.79.0
+        specifier: 1.80.0
         version: 1.80.0
       '@types/vscode-webview':
-        specifier: ^1.57.1
+        specifier: 1.57.1
         version: 1.57.1
       '@vscode/test-electron':
         specifier: ^2.3.2
@@ -577,7 +577,7 @@ importers:
         version: 4.17.21
     devDependencies:
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
 
 packages:
@@ -6136,6 +6136,7 @@ packages:
 
   /@types/axios@0.14.0:
     resolution: {integrity: sha512-KqQnQbdYE54D7oa/UmYVMZKq7CO4l8DEENzOKc4aBRwxCXSlJXGz83flFx5L7AWrOQnmuN3kVsRdt+GZPPjiVQ==}
+    deprecated: This is a stub types definition for axios (https://github.com/mzabriskie/axios). axios provides its own type definitions, so you don't need @types/axios installed!
     dependencies:
       axios: 1.3.6
     transitivePeerDependencies:
@@ -6271,7 +6272,7 @@ packages:
     resolution: {integrity: sha512-IO+MJPVhoqz+28h1qLAcBEH2+xHMK6MTyHJc7MTnnYb6wsoLR29POVGJ7LycmVXIqyy/4/2ShP5sUwTXuOwb/w==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 20.5.7
+      '@types/node': 20.4.0
     dev: true
 
   /@types/google-protobuf@3.15.10:
@@ -6409,7 +6410,7 @@ packages:
   /@types/mock-require@2.0.1:
     resolution: {integrity: sha512-O7U5DVGboY/Crueb5/huUCIRjKtRVRaLmRDbZJBlDQgJn966z3aiFDN+6AtYviu2ExwMkl34LjT/IiC0OPtKuQ==}
     dependencies:
-      '@types/node': 20.5.7
+      '@types/node': 20.4.0
     dev: true
 
   /@types/node-fetch@2.6.4:
@@ -6435,6 +6436,7 @@ packages:
 
   /@types/node@20.5.7:
     resolution: {integrity: sha512-dP7f3LdZIysZnmvP3ANJYTSwg+wLLl8p7RqniVlV7j+oXSXAbt9h0WIBFmJy5inWZoX9wZN6eXx+YXd9Rh3RBA==}
+    dev: true
 
   /@types/normalize-package-data@2.4.0:
     resolution: {integrity: sha512-f5j5b/Gf71L+dbqxIpQ4Z2WlmI/mPJ0fOkGGmFgtb6sAu97EPczzbS3/tJKxmcYDj55OX6ssqwDAWOHIYDRDGA==}
@@ -6459,7 +6461,7 @@ packages:
   /@types/progress@2.0.5:
     resolution: {integrity: sha512-ZYYVc/kSMkhH9W/4dNK/sLNra3cnkfT2nJyOAIDY+C2u6w72wa0s1aXAezVtbTsnN8HID1uhXCrLwDE2ZXpplg==}
     dependencies:
-      '@types/node': 20.5.7
+      '@types/node': 20.4.0
     dev: true
 
   /@types/promise.allsettled@1.0.3:
@@ -6504,7 +6506,7 @@ packages:
   /@types/rimraf@3.0.2:
     resolution: {integrity: sha512-F3OznnSLAUxFrCEu/L5PY8+ny8DtcFRjx7fZZ9bycvXRi3KPTRS9HOitGZwvPg0juRhXFWIeKX58cnX5YqLohQ==}
     dependencies:
-      '@types/glob': 7.2.0
+      '@types/glob': 8.1.0
       '@types/node': 20.4.0
     dev: true
 
@@ -6547,7 +6549,7 @@ packages:
   /@types/stream-json@1.7.3:
     resolution: {integrity: sha512-Jqsyq5VPOTWorvEmzWhEWH5tJnHA+bB8vt/Zzb11vSDj8esfSHDMj2rbVjP0mfJQzl3YBJSXBBq08iiyaBK3KA==}
     dependencies:
-      '@types/node': 20.5.7
+      '@types/node': 20.4.0
       '@types/stream-chain': 2.0.1
     dev: false
 
