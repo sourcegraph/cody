@@ -82,8 +82,8 @@ importers:
         specifier: ^8.55.0
         version: 8.55.0
       eslint-plugin-storybook:
-        specifier: ^0.6.12
-        version: 0.6.12(eslint@8.55.0)(typescript@5.1.6)
+        specifier: ^0.6.15
+        version: 0.6.15(eslint@8.55.0)(typescript@5.1.6)
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0
@@ -5630,7 +5630,7 @@ packages:
       '@babel/core': 7.21.8
       '@babel/preset-env': 7.21.5(@babel/core@7.21.8)
       '@babel/types': 7.21.5
-      '@storybook/csf': 0.1.1
+      '@storybook/csf': 0.1.2
       '@storybook/csf-tools': 7.0.26
       '@storybook/node-logger': 7.0.26
       '@storybook/types': 7.0.26
@@ -5651,7 +5651,7 @@ packages:
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       '@storybook/client-logger': 7.0.26
-      '@storybook/csf': 0.1.1
+      '@storybook/csf': 0.1.2
       '@storybook/global': 5.0.0
       '@storybook/theming': 7.0.26(react-dom@18.2.0)(react@18.2.0)
       '@storybook/types': 7.0.26
@@ -5716,7 +5716,7 @@ packages:
       '@storybook/builder-manager': 7.0.26
       '@storybook/core-common': 7.0.26
       '@storybook/core-events': 7.0.26
-      '@storybook/csf': 0.1.1
+      '@storybook/csf': 0.1.2
       '@storybook/csf-tools': 7.0.26
       '@storybook/docs-mdx': 0.1.0
       '@storybook/global': 5.0.0
@@ -5775,7 +5775,7 @@ packages:
       '@babel/parser': 7.21.9
       '@babel/traverse': 7.21.5
       '@babel/types': 7.21.5
-      '@storybook/csf': 0.1.1
+      '@storybook/csf': 0.1.2
       '@storybook/types': 7.0.26
       fs-extra: 11.1.1
       recast: 0.23.2
@@ -5800,7 +5800,6 @@ packages:
     resolution: {integrity: sha512-ePrvE/pS1vsKR9Xr+o+YwdqNgHUyXvg+1Xjx0h9LrVx7Zq4zNe06pd63F5EvzTbCbJsHj7GHr9tkiaqm7U8WRA==}
     dependencies:
       type-fest: 2.19.0
-    dev: false
 
   /@storybook/docs-mdx@0.1.0:
     resolution: {integrity: sha512-JDaBR9lwVY4eSH5W8EGHrhODjygPd6QImRbwjAuJNEnY0Vw4ie3bPkeGfnacB3OBW6u/agqPv2aRlR46JcAQLg==}
@@ -5843,7 +5842,7 @@ packages:
       '@storybook/channels': 7.0.26
       '@storybook/client-logger': 7.0.26
       '@storybook/core-events': 7.0.26
-      '@storybook/csf': 0.1.1
+      '@storybook/csf': 0.1.2
       '@storybook/global': 5.0.0
       '@storybook/router': 7.0.26(react-dom@18.2.0)(react@18.2.0)
       '@storybook/theming': 7.0.26(react-dom@18.2.0)(react@18.2.0)
@@ -5887,7 +5886,7 @@ packages:
       '@storybook/channels': 7.0.26
       '@storybook/client-logger': 7.0.26
       '@storybook/core-events': 7.0.26
-      '@storybook/csf': 0.1.1
+      '@storybook/csf': 0.1.2
       '@storybook/global': 5.0.0
       '@storybook/types': 7.0.26
       '@types/qs': 6.9.6
@@ -6318,10 +6317,6 @@ packages:
     resolution: {integrity: sha512-qC4bCqYGy1y/NP7dDVr7KJarn+PbX1nSpwA7JXdu0HxT3QYjO8MJ+cntENtHFVy2dRAyBV23OZ6MxsW1AM1L8g==}
     dev: true
 
-  /@types/json-schema@7.0.11:
-    resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
-    dev: true
-
   /@types/json-schema@7.0.14:
     resolution: {integrity: sha512-U3PUjAudAdJBeC2pgN8uTIKgxrb4nlDF3SF0++EldXQvQBGkpFZMSnwQiIoDU77tv45VgNkl/L4ouD+rEomujw==}
     dev: true
@@ -6664,7 +6659,7 @@ packages:
     peerDependencies:
       eslint: '*'
     dependencies:
-      '@types/json-schema': 7.0.11
+      '@types/json-schema': 7.0.14
       '@typescript-eslint/scope-manager': 5.4.0
       '@typescript-eslint/types': 5.4.0
       '@typescript-eslint/typescript-estree': 5.4.0(typescript@5.1.6)
@@ -6825,7 +6820,7 @@ packages:
     peerDependencies:
       eslint: ^6.0.0 || ^7.0.0 || ^8.0.0
     dependencies:
-      '@types/json-schema': 7.0.11
+      '@types/json-schema': 7.0.14
       '@types/semver': 7.5.0
       '@typescript-eslint/scope-manager': 5.54.1
       '@typescript-eslint/types': 5.54.1
@@ -9442,8 +9437,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-storybook@0.6.12(eslint@8.55.0)(typescript@5.1.6):
-    resolution: {integrity: sha512-XbIvrq6hNVG6rpdBr+eBw63QhOMLpZneQVSooEDow8aQCWGCk/5vqtap1yxpVydNfSxi3S/3mBBRLQqKUqQRww==}
+  /eslint-plugin-storybook@0.6.15(eslint@8.55.0)(typescript@5.1.6):
+    resolution: {integrity: sha512-lAGqVAJGob47Griu29KXYowI4G7KwMoJDOkEip8ujikuDLxU+oWJ1l0WL6F2oDO4QiyUFXvtDkEkISMOPzo+7w==}
     engines: {node: 12.x || 14.x || >= 16}
     peerDependencies:
       eslint: '>=6'
