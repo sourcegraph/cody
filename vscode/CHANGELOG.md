@@ -8,6 +8,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## [1.0.3]
+
+### Added
+
+### Fixed
+
 - Fixes an issue where the prompt text was logged when not intended. [pulls/2444](https://github.com/sourcegraph/cody/pull/2444)
 
 ### Changed
