@@ -358,6 +358,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
                     hotStreak: this.config.hotStreak,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
+                    isDotComUser: this.config.isDotComUser,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
@@ -500,7 +501,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completion.logId,
             completion.requestParams.document,
             completion.analyticsItem,
-            completion.trackedRange
+            completion.trackedRange,
+            this.config.isDotComUser
         )
     }
 
@@ -546,7 +548,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         if (!completion) {
             return
         }
-        CompletionLogger.suggested(completion.logId, completion.analyticsItem)
+        CompletionLogger.suggested(completion.logId)
     }
 
     /**
@@ -558,7 +560,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
-        CompletionLogger.partiallyAccept(completion.logId, completion.analyticsItem, acceptedLength)
+        CompletionLogger.partiallyAccept(
+            completion.logId,
+            completion.analyticsItem,
+            acceptedLength,
+            this.config.isDotComUser
+        )
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {

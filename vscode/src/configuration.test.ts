@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { getConfiguration } from './configuration'
 
@@ -12,7 +11,6 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: DOTCOM_URL.href,
             proxy: null,
             codebase: '',
             customHeaders: {},
@@ -37,9 +35,7 @@ describe('getConfiguration', () => {
             debugFilter: null,
             telemetryLevel: 'all',
             autocompleteAdvancedProvider: null,
-            autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
-            autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteFormatOnAccept: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
@@ -104,12 +100,8 @@ describe('getConfiguration', () => {
                         return 'My name is Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-openai'
-                    case 'cody.autocomplete.advanced.serverEndpoint':
-                        return 'https://example.com/llm'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-32b'
-                    case 'cody.autocomplete.advanced.accessToken':
-                        return 'foobar'
                     case 'cody.autocomplete.advanced.timeout.multiline':
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.singleline':
@@ -136,7 +128,6 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: 'http://example.com',
             proxy: 'socks5://127.0.0.1:9999',
             codebase: 'my/codebase',
             useContext: 'keyword',
@@ -164,9 +155,7 @@ describe('getConfiguration', () => {
             debugFilter: /.*/,
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-openai',
-            autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedModel: 'starcoder-32b',
-            autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteExperimentalSyntacticPostProcessing: true,

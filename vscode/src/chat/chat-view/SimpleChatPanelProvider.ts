@@ -549,6 +549,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const properties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
+                // 🚨 SECURITY: included only for DotCom users.
                 promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
                 contextSummary,
             }
