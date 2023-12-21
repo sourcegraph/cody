@@ -150,7 +150,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async clearHistory(): Promise<void> {
-        await chatHistory.clear()
+        await chatHistory.clear(this.authProvider.getAuthStatus())
         // Reset the current transcript
         this.transcript = new Transcript()
         await this.clearAndRestartSession()
@@ -163,7 +163,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Restores a session from a chatID
      */
     public async restoreSession(chatID: string): Promise<void> {
-        const history = chatHistory.getChat(chatID)
+        const history = chatHistory.getChat(this.authProvider.getAuthStatus(), chatID)
         if (!history || chatID === this.sessionID) {
             return
         }
@@ -172,7 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.createNewChatID(chatID)
         this.transcript = Transcript.fromJSON(history)
         this.chatModel = this.transcript.chatModel
-        this.chatTitle = chatHistory.getChat(chatID)?.chatTitle
+        this.chatTitle = chatHistory.getChat(this.authProvider.getAuthStatus(), chatID)?.chatTitle
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -732,14 +732,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private async saveChatHistory(): Promise<void> {
         const json = await this.transcript.toJSON()
-        await chatHistory.saveChat(json)
+        await chatHistory.saveChat(this.authProvider.getAuthStatus(), json)
     }
 
     /**
      * Delete history from current chat history and local storage
      */
     protected async deleteHistory(chatID: string): Promise<void> {
-        await chatHistory.deleteChat(chatID)
+        await chatHistory.deleteChat(this.authProvider.getAuthStatus(), chatID)
         this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:deleteChatHistoryButton:clicked', undefined, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.deleteChatHistoryButton', 'clicked')
@@ -751,7 +751,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     public async exportHistory(): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked', undefined, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = localStorage.getChatHistory()?.chat
+        const historyJson = localStorage.getChatHistory(this.authProvider.getAuthStatus())?.chat
         const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
         if (!exportPath || !historyJson) {
             return
@@ -774,7 +774,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Send history to view
      */
     private sendHistory(): void {
-        const userHistory = chatHistory.localHistory
+        const userHistory = chatHistory.getLocalHistory(this.authProvider.getAuthStatus())
         if (userHistory) {
             this.handleHistory(userHistory)
         }

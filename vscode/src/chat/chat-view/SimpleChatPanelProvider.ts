@@ -213,7 +213,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         const viewType = CodyChatPanelViewType
-        const panelTitle = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(lastQuestion)
+        const panelTitle =
+            this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+            getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -439,7 +441,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * is a no-op.
      */
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = this.history.getChat(sessionID)
+        const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return
         }
@@ -452,14 +454,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public async saveSession(humanInput?: string): Promise<void> {
-        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON(), humanInput)
+        const allHistory = await this.history.saveChat(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.toTranscriptJSON(),
+            humanInput
+        )
         if (allHistory) {
             void this.postMessage({
                 type: 'history',
                 messages: allHistory,
             })
         }
-        await this.treeView.updateTree(createCodyChatTreeItems())
+        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -581,7 +587,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
-            this.webviewPanel.title = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(text)
+            this.webviewPanel.title =
+                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+                getChatPanelTitle(text)
         }
     }
 
@@ -805,7 +813,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             chatID: this.sessionID,
         })
 
-        const chatTitle = this.history.getChat(this.sessionID)?.chatTitle
+        const chatTitle = this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle
         if (chatTitle) {
             this.handleChatTitle(chatTitle)
             return

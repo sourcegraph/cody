@@ -60,6 +60,9 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
+    // We keep track of the currently authenticated account and dispose open chats when it changes
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string }
+
     protected disposables: vscode.Disposable[] = []
 
     constructor(
@@ -92,6 +95,17 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
         if (!authStatus.isLoggedIn) {
             this.disposePanels()
+        } else if (
+            this.currentAuthAccount &&
+            (this.currentAuthAccount.endpoint !== authStatus.endpoint ||
+                this.currentAuthAccount.primaryEmail !== authStatus.primaryEmail)
+        ) {
+            this.disposePanels()
+        }
+
+        this.currentAuthAccount = {
+            endpoint: authStatus.endpoint ?? '',
+            primaryEmail: authStatus.primaryEmail,
         }
 
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
@@ -245,7 +259,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree(createCodyChatTreeItems())
+        await this.treeViewProvider.updateTree(createCodyChatTreeItems(this.options.authProvider.getAuthStatus()))
     }
 
     public async editChatHistory(chatID: string, label: string): Promise<void> {
@@ -255,10 +269,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                 value: label,
             })
             .then(async title => {
-                const history = chatHistory.getChat(chatID)
+                const authProvider = this.options.authProvider
+                const authStatus = authProvider.getAuthStatus()
+
+                const history = chatHistory.getChat(authStatus, chatID)
                 if (title && history) {
                     history.chatTitle = title
-                    await chatHistory.saveChat(history)
+                    await chatHistory.saveChat(authStatus, history)
                     await this.updateTreeViewHistory()
                     const chatIDUTC = new Date(chatID).toUTCString()
                     const provider = this.panelProvidersMap.get(chatID) || this.panelProvidersMap.get(chatIDUTC)

@@ -6,6 +6,7 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
+import { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -112,6 +113,7 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
+    authStatus: AuthStatus
     isDotComUser?: boolean
 
     contextStrategy: ContextStrategy
@@ -204,7 +206,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
         )
 
-        const chatHistory = localStorage.getChatHistory()?.chat
+        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
