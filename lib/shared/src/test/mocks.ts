@@ -150,8 +150,9 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         codebaseContext:
             args.codebaseContext ||
             new CodebaseContext(
-                { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+                { useContext: 'none', experimentalLocalSymbols: false },
                 'dummy-codebase',
+                () => 'https://example.com',
                 defaultEmbeddingsClient,
                 null,
                 null,

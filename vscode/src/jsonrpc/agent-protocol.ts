@@ -212,9 +212,7 @@ export interface ExtensionConfiguration {
     anonymousUserID?: string
 
     autocompleteAdvancedProvider?: string
-    autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedModel?: string | null
-    autocompleteAdvancedAccessToken?: string | null
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string
