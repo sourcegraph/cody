@@ -28,7 +28,6 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     const handleChange = useCallback(
         (event: any): void => {
             const selectedModel = models[event.target?.selectedIndex]
-
             if (showCodyProBadge && selectedModel.codyProOnly) {
                 getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
                 getVSCodeAPI().postMessage({
