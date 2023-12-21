@@ -186,10 +186,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
         const models = ChatModelProvider.get(authStatus.endpoint)
-        const defaultModel = models.find(m => m.default) || models[0]
-        if (!defaultModel) {
-            throw new Error('No chat model found in server-provided config')
-        }
 
         return this.options.contextProvider.config.experimentalSimpleChatContext
             ? new SimpleChatPanelProvider({
@@ -205,7 +201,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                       this.options.contextProvider,
                       this.options.platform
                   ),
-                  defaultModelID: defaultModel.model,
+                  models,
               })
             : new ChatPanelProvider(this.options)
     }
