@@ -109,7 +109,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
-    private readonly modelID: string
 
     private history = new ChatHistoryManager()
     private prompter: IPrompter = new DefaultPrompter()
@@ -151,8 +150,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.treeView = treeView
         this.guardrails = guardrails
         this.recipeAdapter = recipeAdapter
-        this.modelID = this.selectModel(models)
-        this.chatModel = new SimpleChatModel(this.modelID)
+        this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
 
         // Advise local embeddings to start up if necessary.
@@ -446,7 +444,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             return
         }
         this.cancelInProgressCompletion()
-        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.modelID)
+        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
 
