@@ -7,7 +7,7 @@ import { completion } from '../test-helpers'
 import { getInlineCompletions, params, V } from './helpers'
 
 describe('[getInlineCompletions] no request when accepting', () => {
-    // In VS Code, accepting a completion will immediatly start a new completion request. If the
+    // In VS Code, accepting a completion will immediately start a new completion request. If the
     // user, however, accepted a single line completion, chances are that the current line is
     // finished (ie. the LLM already gave the best guess at completing the line).
     //
