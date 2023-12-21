@@ -355,6 +355,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'chatModel':
                 this.chatModel.modelID = message.model
+                // Store the selected model in local storage to retrieve later
+                await localStorage.set('model', message.model)
                 break
             case 'get-chat-models':
                 await this.postChatModels()
@@ -383,9 +385,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'links':
                 void openExternalLinks(message.value)
-                break
-            case 'saveModel':
-                await localStorage.set('model', message.model)
                 break
             case 'openFile':
                 await openFilePath(message.filePath, this.webviewPanel?.viewColumn, message.range)
