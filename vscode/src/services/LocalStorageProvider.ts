@@ -1,11 +1,22 @@
 import * as uuid from 'uuid'
 import { Memento } from 'vscode'
 
-import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { AuthStatus } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
+type AccountKeyedChatHistory = {
+    [key: ChatHistoryKey]: UserLocalHistory
+} & {
+    // For backward compatibility, we do not want to delete the `chat` and `input` keys.
+    // As otherwise, downgrading to a prior version would completely block the startup
+    // as the client would throw.
+    //
+    // TODO: This can be removed in a future version
+    chat: ChatHistory
+    input: []
+}
 
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
@@ -72,10 +83,7 @@ export class LocalStorage {
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        let history = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | UserLocalHistory | null>(
-            this.KEY_LOCAL_HISTORY,
-            null
-        )
+        let history = this.storage.get<AccountKeyedChatHistory | UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
         if (!history) {
             return { chat: {}, input: [] }
         }
@@ -84,28 +92,27 @@ export class LocalStorage {
 
         // For backwards compatibility, we upgrade the local storage key from the old layout that is
         // not scoped to individual user accounts to be scoped instead.
-        if (history && !isChatHistoryV2(history)) {
+        if (history && !isMigratedChatHistory(history)) {
+            // HACK: We spread both parts here as TS would otherwise have issues validating the type
+            //       of AccountKeyedChatHistory. This is only three fields though.
             history = {
-                [key]: history as UserLocalHistory,
-
-                // For backward compatibility, we do not want to delete the `chat` and `input` keys.
-                // As otherwise, downgrading to a prior version would completely block the startup
-                // as the client would throw.
-                chat: {},
-                input: [],
-            }
-
+                ...{ [key]: history },
+                ...{
+                    chat: {},
+                    input: [],
+                },
+            } satisfies AccountKeyedChatHistory
             // We use a raw write here to ensure we do not _append_ a key but actually replace
             // existing `chat` and `input` keys.
-            void this.storage.update(this.KEY_LOCAL_HISTORY, history)
+            // The result is not awaited to avoid changing this API to be async.
+            this.storage.update(this.KEY_LOCAL_HISTORY, history).then(() => {}, console.error)
         }
 
         if (!Object.hasOwn(history, key)) {
             return { chat: {}, input: [] }
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore: TS seems to be consufed about using `key` as the key here
-        return history[key] as UserLocalHistory
+
+        return (history as any)[key]
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
@@ -211,6 +218,13 @@ function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
     return `${authStatus.endpoint}-${authStatus.primaryEmail}`
 }
 
-function isChatHistoryV2(history: { [key: ChatHistoryKey]: UserLocalHistory } | UserLocalHistory): boolean {
+/**
+ * As part of #2261, we migrated the storage format of the chat history to be keyed by the current
+ * user account. This checks if the new format is used by checking if any key contains a hyphen (the
+ * separator between endpoint and email in the new format).
+ */
+function isMigratedChatHistory(
+    history: AccountKeyedChatHistory | UserLocalHistory
+): history is AccountKeyedChatHistory {
     return !!Object.keys(history).find(k => k.includes('-'))
 }
