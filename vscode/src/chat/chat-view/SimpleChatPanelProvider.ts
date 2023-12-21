@@ -24,6 +24,7 @@ import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -49,7 +50,7 @@ import {
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { MessageErrorType } from '../MessageProvider'
-import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
 import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
@@ -542,10 +543,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 return
             }
 
+            const authStatus = this.authProvider.getAuthStatus()
+
             const properties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
-                promptText: text,
+                promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
                 contextSummary,
             }
             telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
@@ -587,7 +590,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         sendTelemetry?: (contextSummary: {}) => void
     ): Promise<void> {
         try {
-            const contextWindowBytes = getContextWindowForModel(this.chatModel.modelID)
+            const contextWindowBytes = getContextWindowForModel(
+                this.authProvider.getAuthStatus(),
+                this.chatModel.modelID
+            )
 
             const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
             const contextProvider = new ContextProvider(
@@ -1455,10 +1461,27 @@ function getErrorMessage(error: unknown): string {
     return String(error)
 }
 
-function getContextWindowForModel(modelID: string): number {
-    if (modelID.includes('claude-2') || modelID.includes('claude-instant')) {
+function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
+    // In enterprise mode, we let the sg instance dictate the token limits and allow users to
+    // overwrite it locally (for debugging purposes).
+    //
+    // This is similiar to the behavior we had before introducing the new chat and allows BYOK
+    // customers to set a model of their choice without us having to map it to a known model on
+    // the client.
+    if (authStatus.endpoint && !isDotCom(authStatus.endpoint)) {
+        const codyConfig = vscode.workspace.getConfiguration('cody')
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        if (tokenLimit) {
+            return tokenLimit * 4 // bytes per token
+        }
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens * 4 // butes per token
+        }
+
         return 28000 // 7000 tokens * 4 bytes per token
     }
+
     if (modelID.includes('openai/gpt-4-1106-preview')) {
         return 28000 // 7000 tokens * 4 bytes per token
     }

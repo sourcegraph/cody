@@ -13,6 +13,41 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Chat: Display chats in the treeview provider grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
+- Autocomplete: Accepting a full line completion will not immedialty start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
+
+## [1.0.3]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Logging improvements for accuracy. [pulls/2444](https://github.com/sourcegraph/cody/pull/2444)
+
+## [1.0.2]
+
+### Added
+
+### Fixed
+
+- Chat: Honor the cody.codebase setting for manually setting the remote codebase context. [pulls/2415](https://github.com/sourcegraph/cody/pull/2415)
+- Fixes the Code Lenses feature. [issues/2428](https://github.com/sourcegraph/cody/issues/2428)
+
+### Changed
+
+## [1.0.1]
+
+### Added
+
+### Fixed
+
+- Fixes an issue where GPT 3.5 requests were sometimes left hanging. [pull/2386](https://github.com/sourcegraph/cody/pull/2386)
+- Chat: Use the proper token limits for enterprise users. [pulls/2395](https://github.com/sourcegraph/cody/pull/2395)
+
+### Changed
+
+- Hide the LLM dropdown in the new Chat UX for enterprise instances where there is no choice to switch models. [pulls/2393](https://github.com/sourcegraph/cody/pull/2393)
 
 ## [1.0.0]
 

@@ -152,6 +152,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
 
+    private lastAcceptedCompletionItem: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'> | undefined
+
     private disposables: vscode.Disposable[] = []
 
     private isProbablyNewInstall = true
@@ -355,6 +357,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     completionIntent,
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
                     hotStreak: this.config.hotStreak,
+                    lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
@@ -490,6 +493,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.requestManager.removeFromCache(completion.requestParams)
 
         this.handleFirstCompletionOnboardingNotices(completion.requestParams)
+
+        this.lastAcceptedCompletionItem = completion
 
         CompletionLogger.accepted(
             completion.logId,
