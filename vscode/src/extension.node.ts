@@ -17,6 +17,7 @@ import { FilenameContextFetcher } from './local-context/filename-context-fetcher
 import { createLocalEmbeddingsController } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
+import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { OpenTelemetryService } from './services/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
 
@@ -37,6 +38,7 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        createCommitMessageProvider: (...args) => new CommitMessageProvider(...args),
 
         // Include additional recipes that require Node packages (such as `child_process`).
         recipes: [

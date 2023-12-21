@@ -39,6 +39,7 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
+    | 'experimentalCommitMessage'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'commandCodeLenses'

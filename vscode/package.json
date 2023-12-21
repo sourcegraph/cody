@@ -833,6 +833,12 @@
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
+        "cody.experimental.commitMessage": {
+          "order": 8,
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Adds a button to the SCM input field to generate a relevant commit message for the current changes."
+        },
         "cody.commandCodeLenses": {
           "order": 8,
           "type": "boolean",

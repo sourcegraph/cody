@@ -2,10 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-
-import { CancellationToken, Command, Disposable, Event, ProviderResult, Uri } from 'vscode'
-
-export { ProviderResult } from 'vscode'
+import { Command, Disposable, Event, ProviderResult, ThemeIcon, Uri } from 'vscode'
 
 export interface Git {
     readonly path: string
@@ -13,17 +10,6 @@ export interface Git {
 
 export interface InputBox {
     value: string
-}
-
-export const enum ForcePushMode {
-    Force,
-    ForceWithLease,
-}
-
-export const enum RefType {
-    Head,
-    RemoteHead,
-    Tag,
 }
 
 export interface Ref {
@@ -67,30 +53,6 @@ export interface Remote {
     readonly isReadOnly: boolean
 }
 
-export const enum Status {
-    INDEX_MODIFIED,
-    INDEX_ADDED,
-    INDEX_DELETED,
-    INDEX_RENAMED,
-    INDEX_COPIED,
-
-    MODIFIED,
-    DELETED,
-    UNTRACKED,
-    IGNORED,
-    INTENT_TO_ADD,
-    INTENT_TO_RENAME,
-    TYPE_CHANGED,
-
-    ADDED_BY_US,
-    ADDED_BY_THEM,
-    DELETED_BY_US,
-    DELETED_BY_THEM,
-    BOTH_ADDED,
-    BOTH_DELETED,
-    BOTH_MODIFIED,
-}
-
 export interface Change {
     /**
      * Returns either `originalUri` or `renameUri`, depending
@@ -129,6 +91,10 @@ export interface LogOptions {
     /** Max number of log entries to retrieve. If not specified, the default is 32. */
     readonly maxEntries?: number
     readonly path?: string
+    /** A commit range, such as "0a47c67f0fb52dd11562af48658bc1dff1d75a38..0bb4bdea78e1db44d728fd6894720071e303304f" */
+    readonly range?: string
+    readonly reverse?: boolean
+    readonly sortByAuthorDate?: boolean
 }
 
 export interface CommitOptions {
@@ -214,6 +180,7 @@ export interface Repository {
     deleteBranch(name: string, force?: boolean): Promise<void>
     getBranch(name: string): Promise<Branch>
     getBranches(query: BranchQuery, cancellationToken?: CancellationToken): Promise<Ref[]>
+    getBranchBase(name: string): Promise<Branch | undefined>
     setBranchUpstream(name: string, upstream: string): Promise<void>
 
     getRefs(query: RefQuery, cancellationToken?: CancellationToken): Promise<Ref[]>
@@ -299,6 +266,16 @@ export interface BranchProtectionProvider {
     provideBranchProtection(): BranchProtection[]
 }
 
+export interface CommitMessageProvider {
+    readonly title: string
+    readonly icon?: Uri | { light: Uri; dark: Uri } | ThemeIcon
+    provideCommitMessage(
+        repository: Repository,
+        changes: string[],
+        cancellationToken?: CancellationToken
+    ): Promise<string | undefined>
+}
+
 export type APIState = 'uninitialized' | 'initialized'
 
 export interface PublishEvent {
@@ -326,6 +303,7 @@ export interface API {
     registerPostCommitCommandsProvider(provider: PostCommitCommandsProvider): Disposable
     registerPushErrorHandler(handler: PushErrorHandler): Disposable
     registerBranchProtectionProvider(root: Uri, provider: BranchProtectionProvider): Disposable
+    registerCommitMessageProvider?(provider: CommitMessageProvider): Disposable
 }
 
 export interface GitExtension {
@@ -338,7 +316,6 @@ export interface GitExtension {
      * Throws error if git extension is disabled. You can listen to the
      * [GitExtension.onDidChangeEnablement](#GitExtension.onDidChangeEnablement) event
      * to know when the extension becomes enabled/disabled.
-     *
      * @param version Version number.
      * @returns API instance
      */

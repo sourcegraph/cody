@@ -106,6 +106,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
          */
 
         autocompleteExperimentalGraphContext,
+        experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', false),
         experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', false),

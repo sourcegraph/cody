@@ -32,6 +32,8 @@ import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { gitAPI } from './repository/repositoryHelpers'
+import { CommitMessageProvider } from './scm/CommitMessageProvider'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -199,6 +201,15 @@ const register = async (
         symfRunner || null
     )
 
+    // Commit Message Provider
+    const gitApi = gitAPI()
+    let commitMessageProvider: CommitMessageProvider | null = null
+    if (gitApi && platform.createCommitMessageProvider) {
+        commitMessageProvider = platform.createCommitMessageProvider({ chatClient, editor, gitApi })
+        commitMessageProvider.onConfigurationChange(initialConfig)
+        disposables.push(commitMessageProvider)
+    }
+
     disposables.push(new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
@@ -214,6 +225,7 @@ const register = async (
         externalServicesOnDidConfigurationChange(newConfig)
         void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         platform.onConfigurationChange?.(newConfig)
+        commitMessageProvider?.onConfigurationChange(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         embeddingsClient.updateConfiguration(newConfig)
