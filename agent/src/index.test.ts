@@ -54,7 +54,6 @@ const clientInfo: ClientInfo = {
         customHeaders: {},
         autocompleteAdvancedProvider: 'anthropic',
         autocompleteAdvancedAccessToken: '',
-        autocompleteAdvancedServerEndpoint: '',
         debug: false,
         verboseDebug: false,
     },

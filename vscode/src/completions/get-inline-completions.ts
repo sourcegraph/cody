@@ -36,6 +36,7 @@ export interface InlineCompletionsParams {
     contextMixer: ContextMixer
 
     // UI state
+    isDotComUser: boolean
     lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -182,6 +183,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         dynamicMultilineCompletions,
         hotStreak,
         lastAcceptedCompletionItem,
+        isDotComUser,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -331,7 +333,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    CompletionLogger.loaded(logId, reqContext, completions, source)
+    CompletionLogger.loaded(logId, reqContext, completions, source, isDotComUser)
 
     return {
         logId,
