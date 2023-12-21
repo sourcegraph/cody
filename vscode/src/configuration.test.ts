@@ -36,7 +36,6 @@ describe('getConfiguration', () => {
             telemetryLevel: 'all',
             autocompleteAdvancedProvider: null,
             autocompleteAdvancedModel: null,
-            autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteFormatOnAccept: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
@@ -101,12 +100,8 @@ describe('getConfiguration', () => {
                         return 'My name is Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-openai'
-                    case 'cody.autocomplete.advanced.serverEndpoint':
-                        return 'https://example.com/llm'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-32b'
-                    case 'cody.autocomplete.advanced.accessToken':
-                        return 'foobar'
                     case 'cody.autocomplete.advanced.timeout.multiline':
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.singleline':
@@ -161,7 +156,6 @@ describe('getConfiguration', () => {
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-openai',
             autocompleteAdvancedModel: 'starcoder-32b',
-            autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteExperimentalSyntacticPostProcessing: true,

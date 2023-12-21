@@ -34,7 +34,6 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     telemetryLevel: 'all',
     autocompleteAdvancedProvider: null,
     autocompleteAdvancedModel: null,
-    autocompleteAdvancedAccessToken: null,
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,

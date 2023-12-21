@@ -33,7 +33,6 @@ export interface Configuration {
     autocompleteLanguages: Record<string, boolean>
     autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
     autocompleteAdvancedModel: string | null
-    autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
 
