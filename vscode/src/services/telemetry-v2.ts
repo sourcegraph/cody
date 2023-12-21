@@ -17,7 +17,7 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
 /**
  * Recorder for recording telemetry events in the new telemetry framework:
- * https://docs.sourcegraph.com/dev/background-information/telemetry
+ * https://sourcegraph.com/docs/dev/background-information/telemetry
  *
  * See GraphQLTelemetryExporter to learn more about how events are exported
  * when recorded using the new recorder.
@@ -70,7 +70,7 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { no
 /**
  * Initializes or configures new event-recording globals, which leverage the
  * new telemetry framework:
- * https://docs.sourcegraph.com/dev/background-information/telemetry
+ * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
 export async function createOrUpdateTelemetryRecorderProvider(
     config: ConfigurationWithAccessToken,
@@ -143,7 +143,7 @@ type KeysWithNumericValues<T> = keyof { [P in keyof T as T[P] extends number ? P
  *
  * We export privateMetadata has special treatment in Sourcegraph.com, but do
  * not export it in private instances unless allowlisted. See
- * https://docs.sourcegraph.com/dev/background-information/telemetry#sensitive-attributes
+ * https://sourcegraph.com/docs/dev/background-information/telemetry#sensitive-attributes
  * for more details.
  *
  * This is only available as a migration helper - where possible, prefer to use

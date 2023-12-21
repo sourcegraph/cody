@@ -92,7 +92,7 @@ export class SimpleChatModel {
         })
     }
 
-    public getLastHumanMessages(): MessageWithContext | undefined {
+    public getLastHumanMessage(): MessageWithContext | undefined {
         return this.messagesWithContext.findLast(message => message.message.speaker === 'human')
     }
 

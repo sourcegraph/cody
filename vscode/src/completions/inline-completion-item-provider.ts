@@ -6,6 +6,7 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
+import { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -16,6 +17,7 @@ import { ContextMixer } from './context/context-mixer'
 import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
+import { formatCompletion } from './format-completion'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -111,10 +113,14 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
+    authStatus: AuthStatus
     isDotComUser?: boolean
 
     contextStrategy: ContextStrategy
     createBfgRetriever?: () => BfgRetriever
+
+    // Settings
+    formatOnAccept?: boolean
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -148,6 +154,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
 
+    private lastAcceptedCompletionItem: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'> | undefined
+
     private disposables: vscode.Disposable[] = []
 
     private isProbablyNewInstall = true
@@ -156,6 +164,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     constructor({
         completeSuggestWidgetSelection = true,
+        formatOnAccept = true,
         disableRecyclingOfPreviousRequests = false,
         dynamicMultilineCompletions = false,
         hotStreak = false,
@@ -166,6 +175,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config = {
             ...config,
             completeSuggestWidgetSelection,
+            formatOnAccept,
             disableRecyclingOfPreviousRequests,
             dynamicMultilineCompletions,
             hotStreak,
@@ -196,7 +206,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
         )
 
-        const chatHistory = localStorage.getChatHistory()?.chat
+        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
@@ -209,7 +219,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             vscode.commands.registerCommand(
                 'cody.autocomplete.inline.accepted',
                 ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                    this.handleDidAcceptCompletionItem(codyCompletion)
+                    void this.handleDidAcceptCompletionItem(codyCompletion)
                 }
             )
         )
@@ -349,6 +359,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     completionIntent,
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
                     hotStreak: this.config.hotStreak,
+                    lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
+                    isDotComUser: this.config.isDotComUser,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
@@ -457,17 +469,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * Callback to be called when the user accepts a completion. For VS Code, this is part of the
      * action inside the `AutocompleteItem`. Agent needs to call this callback manually.
      */
-    public handleDidAcceptCompletionItem(
+    public async handleDidAcceptCompletionItem(
         completionOrItemId:
-            | Pick<AutocompleteItem, 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
+            | Pick<AutocompleteItem, 'range' | 'requestParams' | 'logId' | 'analyticsItem' | 'trackedRange'>
             | CompletionItemID
-    ): void {
+    ): Promise<void> {
         const completion =
             typeof completionOrItemId === 'string'
                 ? suggestedCompletionItemIDs.get(completionOrItemId)
                 : completionOrItemId
         if (!completion) {
             return
+        }
+
+        if (this.config.formatOnAccept && !this.config.isRunningInsideAgent) {
+            await formatCompletion(completion as AutocompleteItem)
         }
 
         resetArtificialDelay()
@@ -481,11 +497,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         this.handleFirstCompletionOnboardingNotices(completion.requestParams)
 
+        this.lastAcceptedCompletionItem = completion
+
         CompletionLogger.accepted(
             completion.logId,
             completion.requestParams.document,
             completion.analyticsItem,
-            completion.trackedRange
+            completion.trackedRange,
+            this.config.isDotComUser
         )
     }
 
@@ -531,7 +550,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         if (!completion) {
             return
         }
-        CompletionLogger.suggested(completion.logId, completion.analyticsItem)
+        CompletionLogger.suggested(completion.logId)
     }
 
     /**
@@ -543,7 +562,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
-        CompletionLogger.partiallyAccept(completion.logId, completion.analyticsItem, acceptedLength)
+        CompletionLogger.partiallyAccept(
+            completion.logId,
+            completion.analyticsItem,
+            acceptedLength,
+            this.config.isDotComUser
+        )
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
@@ -591,8 +615,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 return
             }
 
+            const isEnterpriseUser = this.config.isDotComUser !== true
             const canUpgrade = error.upgradeIsAvailable
-            const tier = this.config.isDotComUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+            const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+
             let errorTitle: string
             let pageName: string
             if (canUpgrade) {

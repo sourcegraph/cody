@@ -28,7 +28,7 @@ export interface IPrompter {
         byteLimit: number
     ): Promise<{
         prompt: Message[]
-        warnings: string[]
+        contextLimitWarnings: string[]
         newContextUsed: ContextItem[]
     }>
 }
@@ -46,7 +46,7 @@ export class DefaultPrompter implements IPrompter {
         byteLimit: number
     ): Promise<{
         prompt: Message[]
-        warnings: string[]
+        contextLimitWarnings: string[]
         newContextUsed: ContextItem[]
     }> {
         const promptBuilder = new PromptBuilder(byteLimit)
@@ -69,7 +69,7 @@ export class DefaultPrompter implements IPrompter {
                 warnings.push(`Ignored ${reverseTranscript.length - i} transcript messages due to context limit`)
                 return {
                     prompt: promptBuilder.build(),
-                    warnings,
+                    contextLimitWarnings: warnings,
                     newContextUsed,
                 }
             }
@@ -84,7 +84,7 @@ export class DefaultPrompter implements IPrompter {
             newContextUsed.push(...used)
             if (limitReached) {
                 warnings.push('Ignored current user-specified context items due to context limit')
-                return { prompt: promptBuilder.build(), warnings, newContextUsed }
+                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
             }
         }
 
@@ -98,7 +98,7 @@ export class DefaultPrompter implements IPrompter {
             )
             if (limitReached) {
                 warnings.push('Ignored prior context items due to context limit')
-                return { prompt: promptBuilder.build(), warnings, newContextUsed }
+                return { prompt: promptBuilder.build(), contextLimitWarnings: warnings, newContextUsed }
             }
         }
 
@@ -127,7 +127,7 @@ export class DefaultPrompter implements IPrompter {
 
         return {
             prompt: promptBuilder.build(),
-            warnings,
+            contextLimitWarnings: warnings,
             newContextUsed,
         }
     }

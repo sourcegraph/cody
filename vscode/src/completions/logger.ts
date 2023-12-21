@@ -2,7 +2,6 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -183,6 +182,16 @@ interface ErrorEventPayload {
     count: number
 }
 
+/** Emitted when a completion is formatted on accept */
+interface FormatEventPayload {
+    // `formatCompletion` duration.
+    duration: number
+    // Current document langauge ID
+    languageId: string
+    // Formatter name extracted from user settings JSON.
+    formatter?: string
+}
+
 export function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
@@ -257,6 +266,11 @@ export function logCompletionErrorEvent(params: ErrorEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
+}
+export function logCompletionFormatEvent(params: FormatEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent('format', { version: 0, metadata, privateMetadata }, params)
 }
 /**
  * The following events are added to ensure the logging bookkeeping works as expected in production
@@ -451,7 +465,8 @@ export function loaded(
     id: CompletionLogID,
     params: RequestParams,
     items: InlineCompletionItemWithAnalytics[],
-    source: InlineCompletionsResultSource
+    source: InlineCompletionsResultSource,
+    isDotComUser: boolean
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
@@ -471,7 +486,6 @@ export function loaded(
     }
 
     if (event.items.length === 0) {
-        const isDotComUser = isDotComServer()
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 }
@@ -482,7 +496,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID, completion: InlineCompletionItemWithAnalytics): void {
+export function suggested(id: CompletionLogID): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
@@ -520,7 +534,8 @@ export function accepted(
     id: CompletionLogID,
     document: vscode.TextDocument,
     completion: InlineCompletionItemWithAnalytics,
-    trackedRange: vscode.Range | undefined
+    trackedRange: vscode.Range | undefined,
+    isDotComUser: boolean
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
@@ -575,7 +590,7 @@ export function accepted(
     logSuggestionEvents()
     logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
-        acceptedItem: completionItemToItemInfo(completion),
+        acceptedItem: completionItemToItemInfo(completion, isDotComUser),
     })
     statistics.logAccepted()
 
@@ -597,7 +612,8 @@ export function accepted(
 export function partiallyAccept(
     id: CompletionLogID,
     completion: InlineCompletionItemWithAnalytics,
-    acceptedLength: number
+    acceptedLength: number,
+    isDotComUser: boolean
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     // Only log partial acceptances if the completion was not yet fully accepted
@@ -617,7 +633,7 @@ export function partiallyAccept(
 
     logCompletionPartiallyAcceptedEvent({
         ...getSharedParams(completionEvent),
-        acceptedItem: completionItemToItemInfo(completion),
+        acceptedItem: completionItemToItemInfo(completion, isDotComUser),
         acceptedLength,
         acceptedLengthDelta,
     })
@@ -758,7 +774,7 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
     }
 }
 
-function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser = false): CompletionItemInfo {
+function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser: boolean): CompletionItemInfo {
     const { lineCount, charCount } = lineAndCharCount(item)
 
     const completionItemInfo: CompletionItemInfo = {
@@ -806,10 +822,4 @@ function getOtherCompletionProvider(): string[] {
 function isRunningInsideAgent(): boolean {
     const config = getConfiguration(vscode.workspace.getConfiguration())
     return !!config.isRunningInsideAgent
-}
-
-// 🚨 SECURITY: this helper ensures we log additional data only for DotCom users.
-function isDotComServer(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return isDotCom(config.serverEndpoint)
 }

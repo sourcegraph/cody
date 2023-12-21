@@ -5,7 +5,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
@@ -88,6 +88,9 @@ export type WebviewMessage =
           uriJSON: unknown
           range: { start: { line: number; character: number }; end: { line: number; character: number } }
       }
+    | {
+          command: 'reset'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -113,13 +116,14 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
  */
 export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
-export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
+export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
@@ -128,7 +132,7 @@ export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/is
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
-    'https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits'
+    'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
 
 /**

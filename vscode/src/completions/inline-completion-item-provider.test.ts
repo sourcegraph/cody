@@ -6,6 +6,7 @@ import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
@@ -38,6 +39,21 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
+const DUMMY_AUTH_STATUS: AuthStatus = {
+    endpoint: 'https://fastsourcegraph.com',
+    isLoggedIn: true,
+    showInvalidAccessTokenError: false,
+    authenticated: true,
+    hasVerifiedEmail: true,
+    requiresVerifiedEmail: true,
+    siteHasCodyEnabled: true,
+    siteVersion: '1234',
+    primaryEmail: 'heisenberg@exmaple.com',
+    displayName: 'w.w.',
+    avatarURL: '',
+    userCanUpgrade: false,
+}
+
 graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
@@ -58,6 +74,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             }),
             triggerNotice: null,
             contextStrategy: 'none',
+            authStatus: DUMMY_AUTH_STATUS,
             ...superArgs,
         })
         this.getInlineCompletions = mockGetInlineCompletions
@@ -212,17 +229,17 @@ describe('InlineCompletionItemProvider', () => {
             expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
             expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).toHaveBeenCalledOnce()
         })
 
         it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
-            await localStorage.setChatHistory({
+            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
                 chat: { a: null as any },
                 input: [''],
             })
@@ -245,7 +262,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(completions?.items).not.toHaveLength(0)
 
             // Accepting completion should not have triggered the notice.
-            provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
             expect(triggerNotice).not.toHaveBeenCalled()
         })
     })
@@ -498,6 +515,48 @@ describe('InlineCompletionItemProvider', () => {
             expect(fn).not.toHaveBeenCalled()
             expect(items).toBe(null)
         })
+
+        it('passes forward the last accepted completion item', async () => {
+            const { document, position } = documentAndPosition(
+                dedent`
+                    function foo() {
+                        console.l█
+                    }
+                `,
+                'typescript'
+            )
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [{ insertText: 'og();', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+
+            const { document: updatedDocument, position: updatedPosition } = documentAndPosition(
+                dedent`
+                    function foo() {
+                        console.log();█
+                    }
+                `,
+                'typescript'
+            )
+
+            await provider.provideInlineCompletionItems(updatedDocument, updatedPosition, DUMMY_CONTEXT)
+
+            expect(fn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    lastAcceptedCompletionItem: expect.objectContaining({
+                        analyticsItem: expect.objectContaining({
+                            insertText: 'og();',
+                        }),
+                    }),
+                })
+            )
+        })
     })
 
     describe('error reporting', () => {
@@ -526,7 +585,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(addError).toHaveBeenCalledWith(
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                    description: "You've used all 1234 autocompletions for today. Usage will reset tomorrow at 1:00 PM",
+                    description: "You've used all autocompletions for today. Usage will reset tomorrow at 1:00 PM",
                 })
             )
 
@@ -552,12 +611,15 @@ describe('InlineCompletionItemProvider', () => {
                     'rate limited oh no'
                 )
                 expect(addError).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        title: canUpgrade
-                            ? 'Upgrade to Continue Using Cody Autocomplete'
-                            : 'Cody Autocomplete Disabled Due to Rate Limit',
-                        description: `You've used all 1234 autocompletions for ${canUpgrade ? 'the month' : 'today'}.`,
-                    })
+                    canUpgrade
+                        ? expect.objectContaining({
+                              title: 'Upgrade to Continue Using Cody Autocomplete',
+                              description: "You've used all 1234 autocompletions for the month.",
+                          })
+                        : expect.objectContaining({
+                              title: 'Cody Autocomplete Disabled Due to Rate Limit',
+                              description: "You've used all autocompletions for today.",
+                          })
                 )
 
                 await expect(provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)).rejects.toThrow(

@@ -1,7 +1,7 @@
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
-import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { AuthStatus, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 import { releaseNotesURL, releaseType } from '../release'
 import { version } from '../version'
 
@@ -39,8 +39,8 @@ export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] 
 }
 
 // functon to create chat tree items from user chat history
-export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
-    const userHistory = localStorage.getChatHistory()?.chat
+export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTreeItem[] {
+    const userHistory = localStorage.getChatHistory(authStatus)?.chat
     if (!userHistory) {
         return []
     }
@@ -149,7 +149,7 @@ const commandsItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Smell',
-        icon: 'symbol-keyword',
+        icon: 'checklist',
         command: { command: 'cody.command.smell-code' },
         description: 'Identify code smells',
     },

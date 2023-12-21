@@ -28,9 +28,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -354,7 +352,7 @@ You can start a new chat at any time with <span class="keyboard-shortcut"><span>
         os === 'darwin' ? '⌥' : 'Alt'
     }</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
 
-For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://docs.sourcegraph.com/cody).
+For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
 `
     return welcomeMessageMarkdown
 }

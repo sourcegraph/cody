@@ -295,6 +295,7 @@ export const useClient = ({
             const codebaseContext = new CodebaseContext(
                 config,
                 undefined,
+                () => config.serverEndpoint,
                 null,
                 null,
                 null,
