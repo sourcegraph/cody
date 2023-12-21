@@ -8,11 +8,20 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## [1.0.4]
+
+### Added
+
+### Fixed
+
 - Fixed config parsing to ensure we read the right remote server endpoint everywhere. [pulls/2456](https://github.com/sourcegraph/cody/pull/2456)
 
 ### Changed
 
 - Autocomplete: Accepting a full line completion will not immediately start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
+- Changes to the model in the new chat experience on the Cody Pro plan will now be remembered. [pull/2438](https://github.com/sourcegraph/cody/pull/2438)
 
 ## [1.0.3]
 
