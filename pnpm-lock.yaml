@@ -201,8 +201,8 @@ importers:
   e2e:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.5.8
-        version: 0.5.8
+        specifier: ^0.12.0
+        version: 0.12.0
       '@azure/openai':
         specifier: 1.0.0-beta.5
         version: 1.0.0-beta.5
@@ -347,8 +347,8 @@ importers:
   vscode:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.4.2
-        version: 0.4.3
+        specifier: ^0.12.0
+        version: 0.12.0
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
@@ -595,17 +595,8 @@ packages:
       '@jridgewell/trace-mapping': 0.3.18
     dev: true
 
-  /@anthropic-ai/sdk@0.4.3:
-    resolution: {integrity: sha512-SZrlXvjUUYT9rPmSzlTtmVk1OjVNpkCzILRluhiYwNcxXfQyvPJDi0CI6PyymygcgtqEF5EVqhKmC/PtPsNEIw==}
-    dependencies:
-      '@fortaine/fetch-event-source': 3.0.6
-      cross-fetch: 3.1.6
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
-  /@anthropic-ai/sdk@0.5.8:
-    resolution: {integrity: sha512-iHenjcE2Q/az6VZiP1DueOSvKNRmxsly6Rx2yjJBoy7OBYVFGVjEdgs2mPQHtTX0ibKAR7tPq6F6MQbKDPWcKg==}
+  /@anthropic-ai/sdk@0.12.0:
+    resolution: {integrity: sha512-yL4/NdbdjuqRW5SMLngbO7PWQMcFIBK5lT725TmZ+8bJ9BMvR2e0+ChtAEWUid/N19MWpYg/mbcxUaTQDdMj1A==}
     dependencies:
       '@types/node': 18.17.1
       '@types/node-fetch': 2.6.4
@@ -615,9 +606,19 @@ packages:
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.6.11
+      web-streams-polyfill: 3.2.1
     transitivePeerDependencies:
       - encoding
       - supports-color
+    dev: false
+
+  /@anthropic-ai/sdk@0.4.3:
+    resolution: {integrity: sha512-SZrlXvjUUYT9rPmSzlTtmVk1OjVNpkCzILRluhiYwNcxXfQyvPJDi0CI6PyymygcgtqEF5EVqhKmC/PtPsNEIw==}
+    dependencies:
+      '@fortaine/fetch-event-source': 3.0.6
+      cross-fetch: 3.1.6
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@aw-web-design/x-default-browser@1.4.88:
