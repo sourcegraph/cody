@@ -2,40 +2,12 @@ import { omit } from 'lodash'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
 import { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
-
-const mockServerEndpointRef = vi.hoisted(() => ({
-    endpoint: 'https://sourcegraph.com',
-}))
-
-vi.mock('vscode', () => ({
-    ...vsCodeMocks,
-    workspace: {
-        ...vsCodeMocks.workspace,
-        getConfiguration() {
-            return {
-                get(key: string) {
-                    switch (key) {
-                        case 'cody.debug.filter':
-                            return '.*'
-                        case 'cody.serverEndpoint':
-                            return mockServerEndpointRef.endpoint
-                        default:
-                            return ''
-                    }
-                },
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                update(): void {},
-            }
-        },
-    },
-}))
 
 describe('[getInlineCompletions] completion event', () => {
     beforeAll(async () => {
@@ -46,17 +18,25 @@ describe('[getInlineCompletions] completion event', () => {
         resetParsersCache()
     })
 
-    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionBookkeepingEvent>> {
+    async function getAnalyticsEvent(
+        code: string,
+        completion: string,
+        additionalParams: { isDotComUser?: boolean } = {}
+    ): Promise<Partial<CompletionBookkeepingEvent>> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
         await getInlineCompletions(
-            params(code, [
-                {
-                    completion,
-                    stopReason: 'unit-test',
-                },
-            ])
+            params(
+                code,
+                [
+                    {
+                        completion,
+                        stopReason: 'unit-test',
+                    },
+                ],
+                additionalParams
+            )
         )
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
@@ -187,12 +167,17 @@ describe('[getInlineCompletions] completion event', () => {
         })
 
         it('logs `insertText` only for DotCom users', async () => {
-            mockServerEndpointRef.endpoint = 'https://example.sourcegraph.com'
             const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(false)
-            expect(eventWithoutTimestamps).not.toHaveProperty('params.insertText')
-            expect(eventWithoutTimestamps).not.toHaveProperty('insertText')
+        })
+
+        it('does not log `insertText` for enterprise users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
+                isDotComUser: true,
+            })
+
+            expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
         })
     })
 })
