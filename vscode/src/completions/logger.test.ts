@@ -53,7 +53,7 @@ describe('logger', () => {
         CompletionLogger.reset_testOnly()
     })
 
-    it('logs a suggestion life cycle', async () => {
+    it('logs a suggestion life cycle', () => {
         const item = { id: completionItemId, insertText: 'foo' }
         const id = CompletionLogger.create(defaultArgs)
         expect(typeof id).toBe('string')
@@ -135,7 +135,7 @@ describe('logger', () => {
         })
     })
 
-    it('reuses the completion ID for the same completion', async () => {
+    it('reuses the completion ID for the same completion', () => {
         const item = { id: completionItemId, insertText: 'foo' }
 
         const id1 = CompletionLogger.create(defaultArgs)
