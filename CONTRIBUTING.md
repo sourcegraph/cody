@@ -15,11 +15,23 @@ using the `jetbrains-ide` & `team/integrations` labels.
 - Install Java 11 via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`.
   Confirm that you have Java 11 installed with `java -version`.
 - Clone `https://github.com/sourcegraph/sourcegraph`
-- Clone `https://github.com/sourcegraph/cody` in a sibling directory. The toplevel directories for
-  sourcegraph/sourcegraph and sourcegraph/cody must be next to each other.
+- Clone `https://github.com/sourcegraph/cody` in a sibling directory.
+  The toplevel directories for sourcegraph/sourcegraph and sourcegraph/cody must be next to each other.
 - Install the following two IntelliJ plugins to format Java and Kotlin on file save
     - https://plugins.jetbrains.com/plugin/8527-google-java-format
     - https://plugins.jetbrains.com/plugin/14912-ktfmt
+
+Few tips and tricks regarding versioning of the tooling:
+
+- If you are using macOS make sure to install `pnpm`  version `8.6.7`  using `corepack` and
+  not `brew`: `corepack install --global pnpm@8.6.7`.
+  Currently `brew` does not allow you to pick custom `pnpm` version which is
+  causing [various issues](https://github.com/pnpm/pnpm/issues/6903).
+- Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
+- If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
+  Otherwise you won't see effects of your changes.
+- Running `:runIde PplatformRuntimeVersion=X.Y` for the first time might fail due to missing IntelliJ installation. You
+  can fix it by running `:runIde PplatformVersion=X.Y` once - even if compilation fails it fixes your caches.
 
 | What                                                             | Command                                                                  |
 |------------------------------------------------------------------|--------------------------------------------------------------------------|
@@ -27,6 +39,7 @@ using the `jetbrains-ide` & `team/integrations` labels.
 | Run the plugin locally with fresh build of Cody                  | `./gradlew -PforceAgentBuild=true :runIDE`                               |
 | Run the plugin locally with fresh build of a local clone of Cody | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIDE`       |
 | Run the plugin locally with fresh build of Code Search assets    | `./gradlew -PforceCodeSearchBuild=true :runIDE`                          |
+| Run the plugin locally with different IntelliJ version           | `./gradlew -PplatformRuntimeVersion=2023.1 :runIDE`                      |
 | Build Code Search assets (separate terminal)                     | `pnpm build`                                                             |
 | Continuously re-build Code Search assets (separate terminal)     | `pnpm watch`                                                             |
 | Code Search "Find with Sourcegraph" window                       | `pnpm standalone && open http://localhost:3000/`                         |
@@ -71,7 +84,7 @@ We plan to make releases every other Monday. Nightly version can be released as 
 
 ### 1. Push a Git Tag
 
-First, choose whether to publish a new version of nightly or stable. 
+First, choose whether to publish a new version of nightly or stable.
 
 Use the following command for a **nightly** release:
 
@@ -96,15 +109,20 @@ Wait for the `Release to Marketplace` GitHub workflow to complete.
 
 For every stable release, create a GitHub release summarizing the changes.
 
-Visit [releases page](https://github.com/sourcegraph/jetbrains/releases) and click `Draft a new release`, choose your tag and use `Generate release notes`. Release notes should appear automatically. Be aware that the automatic release are based on the history of commits, so sometimes the titles are not properly formatted, capitalized or grammatically correct. **This may sometimes require manual tweaks.**
+Visit [releases page](https://github.com/sourcegraph/jetbrains/releases) and click `Draft a new release`, choose your
+tag and use `Generate release notes`. Release notes should appear automatically. Be aware that the automatic release are
+based on the history of commits, so sometimes the titles are not properly formatted, capitalized or grammatically
+correct. **This may sometimes require manual tweaks.**
 
-Try to maintain a similar style to that of the previous releases, similar to [our first release](https://github.com/sourcegraph/jetbrains/releases/tag/v5.2.2301).
+Try to maintain a similar style to that of the previous releases, similar
+to [our first release](https://github.com/sourcegraph/jetbrains/releases/tag/v5.2.2301).
 
 It's also optional create GitHub releases for nightly builds where it makes sense.
 
 ### 3. Announce the New Release on our internal Slack channel
 
-It is mandatory to post about both stable and nightly releases on our internal `wg-cody-jetbrains` Slack channel. You can refer to past posts in the channel's history for examples.
+It is mandatory to post about both stable and nightly releases on our internal `wg-cody-jetbrains` Slack channel. You
+can refer to past posts in the channel's history for examples.
 
 ## Enabling web view debugging
 

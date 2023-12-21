@@ -1,15 +1,8 @@
 import com.jetbrains.plugin.structure.base.utils.isDirectory
-import java.lang.IllegalArgumentException
 import java.net.URL
-import java.nio.file.FileSystems
-import java.nio.file.FileVisitResult
-import java.nio.file.Files
-import java.nio.file.PathMatcher
-import java.nio.file.Paths
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.StandardCopyOption
+import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.EnumSet
+import java.util.*
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
@@ -260,6 +253,13 @@ tasks {
     return buildCodyDir
   }
 
+  fun getIdeaInstallDir(ideaVersion: String): File? {
+    val gradleHome = project.gradle.gradleUserHomeDir
+    val cacheDir = File(gradleHome, "caches/modules-2/files-2.1/com.jetbrains.intellij.idea/ideaIC")
+    val ideaDir = File(cacheDir, ideaVersion)
+    return ideaDir.walk().find { it.name == "ideaIC-$ideaVersion" }
+  }
+
   register("buildCodeSearch") { buildCodeSearch() }
   register("buildCody") { buildCody() }
 
@@ -337,6 +337,15 @@ tasks {
     systemProperty(
         "cody.autocomplete.enableFormatting",
         project.property("cody.autocomplete.enableFormatting") ?: "true")
+
+    val platformRuntimeVersion = project.findProperty("platformRuntimeVersion")
+    if (platformRuntimeVersion != null) {
+      val ideaInstallDir =
+          getIdeaInstallDir(platformRuntimeVersion.toString())
+              ?: throw GradleException(
+                  "Could not find IntelliJ install for $platformRuntimeVersion")
+      ideDir.set(ideaInstallDir)
+    }
   }
 
   runPluginVerifier {
