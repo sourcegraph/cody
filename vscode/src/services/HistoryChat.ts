@@ -15,26 +15,37 @@ interface HistoryItem {
     kind?: vscode.QuickPickItemKind
 }
 
-type ChatGroup = [number, CodySidebarTreeItem[]]
+interface ChatGroup {
+    [groupName: string]: CodySidebarTreeItem[]
+}
+
+const dateEqual = (d1: Date, d2: Date): boolean => {
+    return d1.getDate() === d2.getDate() && monthYearEqual(d1, d2)
+}
+const monthYearEqual = (d1: Date, d2: Date): boolean => {
+    return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
+}
 
 export function groupCodyChats(): GroupedChats | null {
     const todayChats: CodySidebarTreeItem[] = []
     const yesterdayChats: CodySidebarTreeItem[] = []
-    const lastWeekChats: CodySidebarTreeItem[] = []
+    const thisMonthChats: CodySidebarTreeItem[] = []
     const lastMonthChats: CodySidebarTreeItem[] = []
-    const nDaysChats: CodySidebarTreeItem[] = []
-    const nWeeksChats: CodySidebarTreeItem[] = []
     const nMonthsChats: CodySidebarTreeItem[] = []
 
-    const chatGroups: ChatGroup[] = [
-        [1, todayChats],
-        [2, yesterdayChats],
-        [7, nDaysChats],
-        [14, lastWeekChats],
-        [30, nWeeksChats],
-        [60, lastMonthChats],
-        [Infinity, nMonthsChats],
-    ]
+    const today = new Date()
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const lastMonth = new Date()
+    lastMonth.setDate(0)
+
+    const chatGroups: ChatGroup = {
+        Today: todayChats,
+        Yesterday: yesterdayChats,
+        'This month': thisMonthChats,
+        'Last month': lastMonthChats,
+        'N months ago': nMonthsChats,
+    }
 
     const chats = chatHistory.localHistory?.chat
     if (!chats) {
@@ -47,35 +58,37 @@ export function groupCodyChats(): GroupedChats | null {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText)
 
-            const currentTimeStamp = new Date()
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
+            let groupLabel = 'N months ago'
 
-            const timeDiff = currentTimeStamp.getTime() - lastInteractionTimestamp.getTime()
-
-            for (const [dayLimit, chatGroup] of chatGroups) {
-                if (timeDiff < dayLimit * 24 * 60 * 60 * 1000) {
-                    chatGroup.push({
-                        id,
-                        title: chatTitle,
-                        icon: 'comment-discussion',
-                        command: {
-                            command: 'cody.chat.panel.restore',
-                            args: [id, chatTitle],
-                        },
-                    })
-                    break
-                }
+            if (dateEqual(today, lastInteractionTimestamp)) {
+                groupLabel = 'Today'
+            } else if (dateEqual(yesterday, lastInteractionTimestamp)) {
+                groupLabel = 'Yesterday'
+            } else if (monthYearEqual(today, lastInteractionTimestamp)) {
+                groupLabel = 'This month'
+            } else if (monthYearEqual(lastMonth, lastInteractionTimestamp)) {
+                groupLabel = 'Last month'
             }
+
+            const chatGroup = chatGroups[groupLabel]
+            chatGroup.push({
+                id,
+                title: chatTitle,
+                icon: 'comment-discussion',
+                command: {
+                    command: 'cody.chat.panel.restore',
+                    args: [id, chatTitle],
+                },
+            })
         }
     })
 
     return {
         Today: todayChats.reverse(),
         Yesterday: yesterdayChats.reverse(),
-        'Last week': lastWeekChats.reverse(),
+        'This month': thisMonthChats.reverse(),
         'Last month': lastMonthChats.reverse(),
-        'N days ago': nDaysChats.reverse(),
-        'N weeks ago': nWeeksChats.reverse(),
         'N months ago': nMonthsChats.reverse(),
     }
 }

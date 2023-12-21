@@ -195,7 +195,6 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             }
             return element.children || []
         }
-        // Cast treeNodes to ChatTreeItem[]
         return this.treeNodes as ChatTreeItem[]
     }
 
