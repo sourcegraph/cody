@@ -8,7 +8,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-
 ### Changed
 
 ## [1.0.4]
@@ -22,6 +21,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Autocomplete: Accepting a full line completion will not immediately start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
+- Changes to the model in the new chat experience on the Cody Pro plan will now be remembered. [pull/2438](https://github.com/sourcegraph/cody/pull/2438)
 
 ## [1.0.3]
 
