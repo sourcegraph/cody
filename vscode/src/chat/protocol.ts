@@ -77,7 +77,6 @@ export type WebviewMessage =
     | { command: 'abort' }
     | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
-    | { command: 'saveModel'; model: string }
     | {
           command: 'simplified-onboarding'
           type: 'reload-state' | 'web-sign-in-token'
