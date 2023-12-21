@@ -498,6 +498,48 @@ describe('InlineCompletionItemProvider', () => {
             expect(fn).not.toHaveBeenCalled()
             expect(items).toBe(null)
         })
+
+        it('passes forward the last accepted completion item', async () => {
+            const { document, position } = documentAndPosition(
+                dedent`
+                    function foo() {
+                        console.l█
+                    }
+                `,
+                'typescript'
+            )
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [{ insertText: 'og();', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
+
+            const { document: updatedDocument, position: updatedPosition } = documentAndPosition(
+                dedent`
+                    function foo() {
+                        console.log();█
+                    }
+                `,
+                'typescript'
+            )
+
+            await provider.provideInlineCompletionItems(updatedDocument, updatedPosition, DUMMY_CONTEXT)
+
+            expect(fn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    lastAcceptedCompletionItem: expect.objectContaining({
+                        analyticsItem: expect.objectContaining({
+                            insertText: 'og();',
+                        }),
+                    }),
+                })
+            )
+        })
     })
 
     describe('error reporting', () => {

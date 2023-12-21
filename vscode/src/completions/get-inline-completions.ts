@@ -8,7 +8,7 @@ import { logError } from '../log'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
-import { DocumentContext } from './get-current-doc-context'
+import { DocumentContext, insertIntoDocContext } from './get-current-doc-context'
 import { AutocompleteItem } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { CompletionLogID } from './logger'
@@ -26,6 +26,7 @@ export interface InlineCompletionsParams {
     selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
     docContext: DocumentContext
     completionIntent?: CompletionIntent
+    lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
 
     // Prompt parameters
     providerConfig: ProviderConfig
@@ -180,6 +181,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         completionIntent,
         dynamicMultilineCompletions,
         hotStreak,
+        lastAcceptedCompletionItem,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -203,6 +205,27 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     if (triggerKind !== TriggerKind.Manual && position.line !== 0 && position.line === document.lineCount - 1) {
         const lineAbove = Math.max(position.line - 1, 0)
         if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
+            return null
+        }
+    }
+
+    // Do not trigger when the user just accepted a single-line completion
+    if (
+        triggerKind !== TriggerKind.Manual &&
+        lastAcceptedCompletionItem &&
+        lastAcceptedCompletionItem.requestParams.document.uri.toString() === document.uri.toString() &&
+        lastAcceptedCompletionItem.requestParams.docContext.multilineTrigger === null
+    ) {
+        const docContextOfLastAcceptedAndInsertedCompletionItem = insertIntoDocContext(
+            lastAcceptedCompletionItem.requestParams.docContext,
+            lastAcceptedCompletionItem.analyticsItem.insertText,
+            lastAcceptedCompletionItem.requestParams.document.languageId
+        )
+        if (
+            docContext.prefix === docContextOfLastAcceptedAndInsertedCompletionItem.prefix &&
+            docContext.suffix === docContextOfLastAcceptedAndInsertedCompletionItem.suffix &&
+            docContext.position.isEqual(docContextOfLastAcceptedAndInsertedCompletionItem.position)
+        ) {
             return null
         }
     }
