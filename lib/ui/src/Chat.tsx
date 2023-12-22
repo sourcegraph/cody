@@ -259,12 +259,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
                 const symbolName = isFileType ? '' : `#${selected.fileName}`
-                // Add empty space at the end to end the file matching process
                 const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
-                const inputSuffix = input.includes(fileDisplayText)
-                    ? input.slice(input.lastIndexOf(fileDisplayText) + fileDisplayText.length, -1)
-                    : ''
-                const newInput = `${inputPrefix}${fileDisplayText}${inputSuffix} `
+                // Add empty space at the end to end the file matching process
+                const newInput = `${inputPrefix}${fileDisplayText} `
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
                 setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
