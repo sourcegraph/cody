@@ -104,7 +104,8 @@ export let connectionConfig: ExtensionConfiguration | undefined
 export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
-
+export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
     if (!connectionConfig) {
         return true
@@ -153,12 +154,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return true
             case 'cody.autocomplete.advanced.provider':
                 return connectionConfig?.autocompleteAdvancedProvider ?? null
-            case 'cody.autocomplete.advanced.serverEndpoint':
-                return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
             case 'cody.autocomplete.advanced.model':
                 return connectionConfig?.autocompleteAdvancedModel ?? null
-            case 'cody.autocomplete.advanced.accessToken':
-                return connectionConfig?.autocompleteAdvancedAccessToken ?? null
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':
@@ -396,8 +393,8 @@ const _window: Partial<typeof vscode.window> = {
     visibleTextEditors,
     withProgress: (_, handler) => handler({ report: () => {} }, 'window.withProgress.cancelationToken' as any),
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
-    onDidChangeVisibleTextEditors: (() => ({})) as any,
-    onDidChangeTextEditorSelection: (() => ({})) as any,
+    onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
+    onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
     showErrorMessage: (message: string, ...items: any[]) => {
         if (agent) {
             agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
