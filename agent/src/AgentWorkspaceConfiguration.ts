@@ -71,12 +71,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return true
             case 'cody.autocomplete.advanced.provider':
                 return extensionConfig?.autocompleteAdvancedProvider ?? null
-            case 'cody.autocomplete.advanced.serverEndpoint':
-                return extensionConfig?.autocompleteAdvancedServerEndpoint ?? null
             case 'cody.autocomplete.advanced.model':
                 return extensionConfig?.autocompleteAdvancedModel ?? null
-            case 'cody.autocomplete.advanced.accessToken':
-                return extensionConfig?.autocompleteAdvancedAccessToken ?? null
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':

@@ -87,8 +87,6 @@ describe('Agent', () => {
             serverEndpoint: dotcom,
             customHeaders: {},
             autocompleteAdvancedProvider: 'anthropic',
-            autocompleteAdvancedAccessToken: '',
-            autocompleteAdvancedServerEndpoint: '',
             debug: false,
             verboseDebug: false,
             codebase: 'github.com/sourcegraph/cody',
