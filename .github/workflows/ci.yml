@@ -107,6 +107,8 @@ jobs:
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         if: matrix.runner == 'ubuntu'
+      - run: pnpm -C vscode run test:e2e
+        if: matrix.runner != 'ubuntu'
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
