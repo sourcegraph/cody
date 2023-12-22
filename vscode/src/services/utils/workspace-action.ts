@@ -24,7 +24,6 @@ export async function openFilePath(
     currentViewColumn?: vscode.ViewColumn,
     range?: ActiveTextEditorSelectionRange
 ): Promise<void> {
-    filePath = 'lib\\main.dart'
     let fileUri: vscode.Uri
     if (path.isAbsolute(filePath)) {
         fileUri = vscode.Uri.file(filePath)
