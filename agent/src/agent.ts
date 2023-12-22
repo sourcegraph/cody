@@ -554,7 +554,7 @@ export class Agent extends MessageHandler {
             }
             const panel = this.webPanels.panels.get(id)
             if (!panel) {
-                return Promise.resolve({type: 'errors', errors: `No panel with id ${id} found`} as ExtensionMessage)
+                return Promise.resolve({ type: 'errors', errors: `No panel with id ${id} found` } as ExtensionMessage)
             }
             if (panel.isMessageInProgress) {
                 throw new Error('Message is already in progress')
