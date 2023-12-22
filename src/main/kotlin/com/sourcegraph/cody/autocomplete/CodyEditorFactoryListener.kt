@@ -166,7 +166,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         return
       }
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-      val document = TextDocument(file.path, editor.document.text, getSelection(editor))
+      val document = TextDocument.fromPath(file.path, editor.document.text, getSelection(editor))
       client.server!!.textDocumentDidChange(document)
       if (client.codebase == null || skipCodebaseOnFileOpened) {
         return

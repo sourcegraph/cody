@@ -18,7 +18,6 @@ public class CodyAgentClient {
 
   private static final Logger logger = Logger.getInstance(CodyAgentClient.class);
   @Nullable public CodyAgentServer server;
-  @Nullable public CodyAgentDocuments documents;
   @Nullable public CodyAgentCodebase codebase;
   // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
   @Nullable public Consumer<ChatMessage> onChatUpdateMessageInProgress;

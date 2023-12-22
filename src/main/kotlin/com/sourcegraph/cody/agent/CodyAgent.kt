@@ -162,7 +162,6 @@ class CodyAgent(private val project: Project) : Disposable {
             .create()
     val server = launcher.remoteProxy
     client.server = server
-    client.documents = CodyAgentDocuments(server)
     client.codebase = CodyAgentCodebase(server, project)
     listeningToJsonRpc = launcher.startListening()
   }

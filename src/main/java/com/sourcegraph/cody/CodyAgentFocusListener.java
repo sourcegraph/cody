@@ -30,7 +30,7 @@ public class CodyAgentFocusListener implements FocusChangeListener {
     if (client.server == null) {
       return;
     }
-    client.server.textDocumentDidFocus(new TextDocument(file.getPath()));
+    client.server.textDocumentDidFocus(TextDocument.fromPath(file.getPath()));
 
     if (client.codebase == null) {
       return;

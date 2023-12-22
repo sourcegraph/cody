@@ -1,21 +1,23 @@
 package com.sourcegraph.cody.agent.protocol
 
-import java.net.URI
+import com.sourcegraph.cody.agent.protocol.util.Rfc3986UriEncoder
 import java.nio.file.Paths
 
-data class TextDocument
-// JvmOverloads needed until CodyAgentFocusListener
-// and CodyFileEditorListener are converted to Kotlin.
-@JvmOverloads
-constructor(
-    var uri: URI,
-    var content: String? = null,
-    var selection: Range? = null,
+class TextDocument
+private constructor(
+    var uri: String,
+    var content: String?,
+    var selection: Range?,
 ) {
-  @JvmOverloads
-  constructor(
-      filePath: String,
-      content: String? = null,
-      selection: Range? = null,
-  ) : this(Paths.get(filePath).toUri(), content, selection)
+
+  companion object {
+
+    @JvmStatic
+    @JvmOverloads
+    fun fromPath(path: String, content: String? = null, selection: Range? = null): TextDocument {
+      val uri = Paths.get(path).toUri().toString()
+      val rfc3986Uri = Rfc3986UriEncoder.encode(uri)
+      return TextDocument(rfc3986Uri, content, selection)
+    }
+  }
 }

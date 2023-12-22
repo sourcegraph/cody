@@ -43,7 +43,7 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
                         }
 
                         server.textDocumentDidOpen(
-                            new TextDocument(file.getPath(), document.getText()));
+                            TextDocument.fromPath(file.getPath(), document.getText()));
 
                         CodyAgentClient client = CodyAgent.getClient(source.getProject());
                         if (client.codebase == null) {
@@ -63,6 +63,6 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (server == null) {
       return;
     }
-    server.textDocumentDidClose(new TextDocument(file.getPath()));
+    server.textDocumentDidClose(TextDocument.fromPath(file.getPath()));
   }
 }
