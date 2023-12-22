@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatInputHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
@@ -61,7 +61,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 void this.contextProvider.localEmbeddings?.start()
 
                 return this.onHumanMessageSubmitted(
-                    message.text,
+                    message.input,
                     message.submitType,
                     message.contextFiles,
                     message.addEnhancedContext
@@ -69,7 +69,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             case 'edit':
                 this.transcript.removeLastInteraction()
                 // TODO: This should replay the submitted context files and/or enhanced context fetching
-                await this.onHumanMessageSubmitted(message.text, 'user')
+                await this.onHumanMessageSubmitted(message.input, 'user')
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
                 break
@@ -187,7 +187,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     }
 
     private async onHumanMessageSubmitted(
-        text: string,
+        input: ChatInputHistory,
         submitType: ChatSubmitType,
         contextFiles?: ContextFile[],
         addEnhancedContext = true
@@ -196,14 +196,14 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             verbose: { text, submitType, addEnhancedContext },
         })
 
-        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), text)
+        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), input)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
 
-        return this.executeRecipe('chat-question', text, 'chat', contextFiles, addEnhancedContext)
+        return this.executeRecipe('chat-question', input.inputText, 'chat', contextFiles, addEnhancedContext)
     }
 
     /**

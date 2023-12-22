@@ -2,7 +2,7 @@ import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatInputHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -27,7 +27,7 @@ export type WebviewMessage =
       } // new event log internal API (use createWebviewTelemetryService wrapper)
     | {
           command: 'submit'
-          text: string
+          input: ChatInputHistory
           submitType: ChatSubmitType
           addEnhancedContext?: boolean
           contextFiles?: ContextFile[]

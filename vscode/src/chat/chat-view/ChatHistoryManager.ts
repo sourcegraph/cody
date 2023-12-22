@@ -1,5 +1,5 @@
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatInputHistory, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { localStorage } from '../../services/LocalStorageProvider'
 import { AuthStatus } from '../protocol'
@@ -14,7 +14,11 @@ export class ChatHistoryManager {
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
-    public async saveChat(authStatus: AuthStatus, chat: TranscriptJSON, input?: string): Promise<UserLocalHistory> {
+    public async saveChat(
+        authStatus: AuthStatus,
+        chat: TranscriptJSON,
+        input?: ChatInputHistory
+    ): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
         if (input) {
@@ -29,13 +33,13 @@ export class ChatHistoryManager {
     }
 
     // HumanInputHistory is the history list when user presses "up" in the chat input box
-    public async saveHumanInputHistory(authStatus: AuthStatus, input: string): Promise<UserLocalHistory> {
+    public async saveHumanInputHistory(authStatus: AuthStatus, input: ChatInputHistory): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)
         history.input.push(input)
         await localStorage.setChatHistory(authStatus, history)
         return history
     }
-    public getHumanInputHistory(authStatus: AuthStatus): string[] {
+    public getHumanInputHistory(authStatus: AuthStatus): ChatInputHistory[] {
         const history = localStorage.getChatHistory(authStatus)
         if (!history) {
             return []

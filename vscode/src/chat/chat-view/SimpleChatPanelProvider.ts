@@ -13,7 +13,7 @@ import {
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatEventSource, ChatInputHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -453,7 +453,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.postViewTranscript()
     }
 
-    public async saveSession(humanInput?: string): Promise<void> {
+    public async saveSession(humanInput?: ChatInputHistory): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
             this.chatModel.toTranscriptJSON(),
@@ -561,7 +561,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ? createDisplayTextWithFileLinks(userContextFiles, text)
             : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
         this.chatModel.addHumanMessage({ text }, displayText)
-        await this.saveSession(text)
+        await this.saveSession({ inputText: text })
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext, contextSummary => {

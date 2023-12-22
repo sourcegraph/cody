@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatInputHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
@@ -46,8 +46,8 @@ interface ChatboxProps {
     contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
-    inputHistory: string[]
-    setInputHistory: (history: string[]) => void
+    inputHistory: ChatInputHistory[]
+    setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: VSCodeWrapper
     telemetryService: TelemetryService
     suggestions?: string[]
