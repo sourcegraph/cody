@@ -11,7 +11,6 @@ import com.intellij.openapi.fileTypes.PlainTextFileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Computable
 import com.intellij.util.ui.SwingHelper
-import com.intellij.util.ui.UIUtil
 import javax.swing.JComponent
 import javax.swing.JEditorPane
 
@@ -19,7 +18,7 @@ sealed interface MessagePart
 
 class TextPart(val component: JEditorPane) : MessagePart {
   fun updateText(text: String) {
-    SwingHelper.setHtml(component, text, UIUtil.getLabelForeground())
+    SwingHelper.setHtml(component, text, null)
   }
 }
 

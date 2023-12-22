@@ -1,32 +1,33 @@
 ## Checklist
 
 - Onboarding
-  - [ ] [Sign in with GitHub](#sign-in-with-github)
-  - [ ] [Sign in with GitLab](#sign-in-with-gitlab)
-  - [ ] [Sign in with Google](#sign-in-with-google)
+    - [ ] [Sign in with GitHub](#sign-in-with-github)
+    - [ ] [Sign in with GitLab](#sign-in-with-gitlab)
+    - [ ] [Sign in with Google](#sign-in-with-google)
 - Autocomplete
-  - [ ] [Single-line autocomplete](#single-line-autocomplete)
-  - [ ] [Multi-line autocomplete](#multi-line-autocomplete)
-  - [ ] [Infilling autocomplete](#infilling-autocomplete)
-  - [ ] [Cycle through autocomplete](#cycle-through-autocomplete)
+    - [ ] [Single-line autocomplete](#single-line-autocomplete)
+    - [ ] [Multi-line autocomplete](#multi-line-autocomplete)
+    - [ ] [Infilling autocomplete](#infilling-autocomplete)
+    - [ ] [Cycle through autocomplete](#cycle-through-autocomplete)
 - Commands
-  - [ ] [General commands availability](#general-commands-availability)
-  - [ ] [Explain Selected Code (Detailed)](#explain-selected-code-detailed)
-  - [ ] [Explain Selected Code (High Level)](#explain-selected-code-high-level)
-  - [ ] [Generate Docstring](#generate-docstring)
-  - [ ] [Generate Unit Test](#generate-unit-test)
-  - [ ] [Improve Variable Names](#improve-variable-names)
-  - [ ] [Smell Code](#smell-code)
+    - [ ] [General commands availability](#general-commands-availability)
+    - [ ] [Explain Selected Code (Detailed)](#explain-selected-code-detailed)
+    - [ ] [Explain Selected Code (High Level)](#explain-selected-code-high-level)
+    - [ ] [Generate Docstring](#generate-docstring)
+    - [ ] [Generate Unit Test](#generate-unit-test)
+    - [ ] [Improve Variable Names](#improve-variable-names)
+    - [ ] [Smell Code](#smell-code)
 - Chat
-  - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
-  - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
+    - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
+    - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
 - Product-led growth
-  - [ ] [Cody Free/Pro subscription tab](#cody-freepro-subscription-tab)
-  - [ ] [Cody Free/Pro rate limit errors](#cody-freepro-rate-limit-errors)
+    - [ ] [Cody Free/Pro subscription tab](#cody-freepro-subscription-tab)
+    - [ ] [Cody Free/Pro rate limit errors](#cody-freepro-rate-limit-errors)
 - Other
-  - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
-  - [ ] [Automatic repository recognition](#automatic-repository-recognition)
-  - [ ] [Persistent custom repository](#persistent-custom-repository)
+    - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
+    - [ ] [Automatic repository recognition](#automatic-repository-recognition)
+    - [ ] [Persistent custom repository](#persistent-custom-repository)
+    - [ ] [Colour scheme changes](#colour-scheme-changes)
 
 ## Onboarding
 
@@ -45,11 +46,13 @@ Prerequisite: You have to **sign out** from all existing accounts.
 
 ### Sign in with GitLab
 
-Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-github), and the authorization is also done through the browser. Expected behaviour is identical.
+Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-github), and the authorization is also done
+through the browser. Expected behaviour is identical.
 
 ### Sign in with Google
 
-Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-github), and the authorization is also done through the browser. Expected behaviour is identical.
+Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-github), and the authorization is also done
+through the browser. Expected behaviour is identical.
 
 ## Autocomplete
 
@@ -128,7 +131,8 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 #### Expected behaviour
 
 * User is automatically switched to `Chat` tab.
-* Chat responds with a **detailed** description of the selected code and will elaborate on the fields, classes, and methods, going into technical details, often structuring the text in bullet points.
+* Chat responds with a **detailed** description of the selected code and will elaborate on the fields, classes, and
+  methods, going into technical details, often structuring the text in bullet points.
 
 ### Explain Selected Code (High Level)
 
@@ -156,7 +160,8 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 #### Expected behaviour
 
 * User is automatically switched to `Chat` tab.
-* Language has been identified as Java, so the documentation syntax is also in that language (see: `@param` and `@return` tags).
+* Language has been identified as Java, so the documentation syntax is also in that language (see: `@param`
+  and `@return` tags).
 * Chat responds with generated docstring, similar to this:
     ```java
     /*
@@ -218,7 +223,8 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 #### Expected behaviour
 
 * User is automatically switched to `Chat` tab.
-* Chat responds with **potential issues** and **suggestions** like missing nullability checks or input sanitization (response may vary).
+* Chat responds with **potential issues** and **suggestions** like missing nullability checks or input sanitization (
+  response may vary).
 
 ## Chat
 
@@ -240,7 +246,8 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 
 #### Expected behaviour
 
-* Scrollbar is **not moving automatically** while new message tokens are generated. You can easily read older messages without interruptions and scrolling is smooth.
+* Scrollbar is **not moving automatically** while new message tokens are generated. You can easily read older messages
+  without interruptions and scrolling is smooth.
 
 ## [Product-led growth](https://handbook.sourcegraph.com/departments/data-analytics/product-led-growth/)
 
@@ -283,17 +290,20 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 
 #### Expected behaviour
 
-* Browser automatically opened at `sourcegraph.com` with the `Code Search` feature. Results are found with `System.out.println` occurrences.
+* Browser automatically opened at `sourcegraph.com` with the `Code Search` feature. Results are found
+  with `System.out.println` occurrences.
 
 ### Automatic repository recognition
 
 1. Open project with enabled Git VCS. This repository must be publicly available on GitHub.
 2. Open to `Cody` toolbar.
-3. Click on repository button to open `Context Selection` dialog. Button is placed inside `Cody` toolbar on left, bottom corner.
+3. Click on repository button to open `Context Selection` dialog. Button is placed inside `Cody` toolbar on left, bottom
+   corner.
 
 #### Expected behaviour
 
-* Repository `Git URL` has been successfully inferred from VCS history. Value is similar to `github.com/sourcegraph/jetbrains`.
+* Repository `Git URL` has been successfully inferred from VCS history. Value is similar
+  to `github.com/sourcegraph/jetbrains`.
 
 ### Persistent custom repository
 
@@ -307,3 +317,16 @@ Onboarding through GitLab is similar to [Sign in with GitHub](#sign-in-with-gith
 #### Expected behaviour
 
 * Repository `Git URL` is same as before restart.
+
+### Colour scheme changes
+
+1. Ask Cody Chat question to which it will reply with various layout elements (list, code snippets, etc)
+2. Change theme in settings or using Themes action.
+3. Verify that chat text is readable, as well as that there is clear colour distinction between user and assistant
+   sections. Both sections colors should also correspond to the chosen theme.
+
+Repeat the above starting from different themes.
+
+#### Expected behaviour
+
+Changing theme should lead to full repaint of the colours according to the current theme.

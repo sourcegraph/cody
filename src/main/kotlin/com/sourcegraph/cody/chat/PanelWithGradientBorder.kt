@@ -2,6 +2,7 @@ package com.sourcegraph.cody.chat
 
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.ColorUtil
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.ui.Colors
@@ -14,23 +15,24 @@ import javax.swing.border.Border
 
 open class PanelWithGradientBorder(private val gradientWidth: Int, speaker: Speaker) : JPanel() {
 
-  private val isHuman: Boolean
+  private val isHuman: Boolean = speaker == Speaker.HUMAN
 
-  init {
-    val emptyBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0)
-    val background = UIUtil.getPanelBackground()
-    val topBorder: Border =
-        BorderFactory.createMatteBorder(1, 0, 0, 0, ColorUtil.brighter(background, 2))
+  private fun recomputeLayout() {
+    val panelBackground = UIUtil.getPanelBackground()
+    val separatorForeground = JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground()
+    val topBorder: Border = BorderFactory.createMatteBorder(1, 0, 0, 0, separatorForeground)
     val bottomBorder: Border =
-        BorderFactory.createMatteBorder(0, 0, 1, 0, ColorUtil.brighter(background, 3))
+        BorderFactory.createMatteBorder(0, 0, 1, 0, ColorUtil.brighter(separatorForeground, 1))
     val topAndBottomBorder: Border = BorderFactory.createCompoundBorder(topBorder, bottomBorder)
-    isHuman = speaker == Speaker.HUMAN
+    val emptyBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+
     this.border = if (isHuman) emptyBorder else topAndBottomBorder
-    this.background = if (isHuman) ColorUtil.darker(background, 2) else background
     this.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
+    this.background = if (isHuman) ColorUtil.darker(panelBackground, 2) else panelBackground
   }
 
   override fun paintComponent(g: Graphics) {
+    recomputeLayout()
     super.paintComponent(g)
     paintLeftBorderGradient(g)
   }
