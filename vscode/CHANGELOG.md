@@ -9,8 +9,46 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat no longer shows "embeddings" as the source for all automatically included context files [issues/2244](https://github.com/sourcegraph/cody/issues/2244)/[pull/2408](https://github.com/sourcegraph/cody/pull/2408)
+- @-mentioning files on Windows no longer sometimes renders visible markdown for the links in the chat [issues/2388](https://github.com/sourcegraph/cody/issues/2388)/[pull/2398](https://github.com/sourcegraph/cody/pull/2398)
+- Mentioning multiple files in chat no longer only includes the first file [issues/2402](https://github.com/sourcegraph/cody/issues/2402)/[pull/2405](https://github.com/sourcegraph/cody/pull/2405)
 
 ### Changed
+
+## [1.0.4]
+
+### Added
+
+### Fixed
+
+- Fixed config parsing to ensure we read the right remote server endpoint everywhere. [pulls/2456](https://github.com/sourcegraph/cody/pull/2456)
+
+### Changed
+
+- Autocomplete: Accepting a full line completion will not immediately start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
+- Changes to the model in the new chat experience on the Cody Pro plan will now be remembered. [pull/2438](https://github.com/sourcegraph/cody/pull/2438)
+
+## [1.0.3]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Logging improvements for accuracy. [pulls/2444](https://github.com/sourcegraph/cody/pull/2444)
+
+## [1.0.2]
+
+### Added
+
+### Fixed
+
+- Chat: Honor the cody.codebase setting for manually setting the remote codebase context. [pulls/2415](https://github.com/sourcegraph/cody/pull/2415)
+- Fixes the Code Lenses feature. [issues/2428](https://github.com/sourcegraph/cody/issues/2428)
+
+### Changed
+
+- The chat history is now associated to the currently logged in account. [issues/2261](https://github.com/sourcegraph/cody/issues/2261)
 
 ## [1.0.1]
 

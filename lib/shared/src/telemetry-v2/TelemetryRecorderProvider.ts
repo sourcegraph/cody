@@ -4,6 +4,7 @@ import {
     NoOpTelemetryExporter,
     TelemetryEventInput,
     TelemetryProcessor,
+    TimestampTelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
 import { Configuration, ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
@@ -44,7 +45,11 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
                 clientVersion: extensionDetails.version,
             },
             new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
-            [new ConfigurationMetadataProcessor(config)],
+            [
+                new ConfigurationMetadataProcessor(config),
+                // Generate timestamps when recording events, instead of serverside
+                new TimestampTelemetryProcessor(),
+            ],
             {
                 ...defaultEventRecordingOptions,
                 bufferTimeMs: 0, // disable buffering for now

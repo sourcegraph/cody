@@ -5,6 +5,8 @@ export const isError = (value: unknown): value is Error => value instanceof Erro
 // - "github:sourcegraph/sourcegraph" a common SSH host alias
 // - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
 // - "git@github.com:sourcegraph/sourcegraph.git"
+// - "https://dev.azure.com/organization/project/_git/repository"
+
 export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
     const result = convertGitCloneURLToCodebaseNameOrError(cloneURL)
     if (isError(result)) {
@@ -34,6 +36,10 @@ export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): strin
             return `${host}/${owner}/${repo}`
         }
         const uri = new URL(cloneURL)
+        // Handle Azure DevOps URLs
+        if (uri.hostname && uri.hostname.includes('dev.azure') && uri.pathname) {
+            return `${uri.hostname}${uri.pathname.replace('/_git', '')}`
+        }
         // Handle GitHub URLs
         if (uri.protocol.startsWith('github') || uri.href.startsWith('github')) {
             return `github.com/${uri.pathname.replace('.git', '')}`
