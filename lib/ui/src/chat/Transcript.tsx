@@ -188,14 +188,18 @@ export const Transcript: React.FunctionComponent<
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length && ChatModelDropdownMenu && onCurrentChatModelChange && userInfo && (
-                    <ChatModelDropdownMenu
-                        models={chatModels}
-                        disabled={transcript.length > 1}
-                        onCurrentChatModelChange={onCurrentChatModelChange}
-                        userInfo={userInfo}
-                    />
-                )}
+                {!!chatModels?.length &&
+                    ChatModelDropdownMenu &&
+                    onCurrentChatModelChange &&
+                    userInfo &&
+                    userInfo.isDotComUser && (
+                        <ChatModelDropdownMenu
+                            models={chatModels}
+                            disabled={transcript.length > 1}
+                            onCurrentChatModelChange={onCurrentChatModelChange}
+                            userInfo={userInfo}
+                        />
+                    )}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}

@@ -27,7 +27,7 @@
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/telemetry": "^0.14.0",
+    "@sourcegraph/telemetry": "^0.16.0",
     "commander": "^11.1.0",
     "csv-writer": "^1.6.0",
     "env-paths": "^3.0.0",

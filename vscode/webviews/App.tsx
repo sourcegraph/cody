@@ -28,9 +28,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)

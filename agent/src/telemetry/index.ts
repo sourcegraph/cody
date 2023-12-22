@@ -6,6 +6,7 @@ import {
     MarketingTrackingProvider,
     MarketingTrackingTelemetryProcessor,
     TelemetryRecorderProvider,
+    TimestampTelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
 import { ClientInfo } from '../protocol-alias'
@@ -26,7 +27,11 @@ export class AgentHandlerTelemetryRecorderProvider extends TelemetryRecorderProv
                 clientVersion: clientInfo.version,
             },
             new GraphQLTelemetryExporter(graphql, clientInfo.extensionConfiguration?.anonymousUserID || '', 'all'),
-            [new MarketingTrackingTelemetryProcessor(marketingTrackingProvider)],
+            [
+                new MarketingTrackingTelemetryProcessor(marketingTrackingProvider),
+                // Generate timestamps when recording events, instead of serverside
+                new TimestampTelemetryProcessor(),
+            ],
             {
                 ...defaultEventRecordingOptions,
                 bufferTimeMs: 0, // disable buffering for now

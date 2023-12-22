@@ -196,7 +196,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             verbose: { text, submitType, addEnhancedContext },
         })
 
-        await chatHistory.saveHumanInputHistory(text)
+        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }

@@ -32,8 +32,9 @@ export async function createCodebaseContext(
         repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(sourcegraphClient, codebase, repoId) : null
 
     const codebaseContext = new CodebaseContext(
-        { useContext: contextType, serverEndpoint, experimentalLocalSymbols: false },
+        { useContext: contextType, experimentalLocalSymbols: false },
         codebase,
+        () => serverEndpoint,
         embeddingsSearch,
         null,
         null,

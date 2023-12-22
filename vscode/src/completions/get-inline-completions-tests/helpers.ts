@@ -54,6 +54,7 @@ export function params(
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
+        isDotComUser = false,
         ...params
     }: Params = {}
 ): InlineCompletionsParams {
@@ -107,6 +108,7 @@ export function params(
             position,
             prefix: docContext.prefix,
         }),
+        isDotComUser,
         ...params,
     }
 }

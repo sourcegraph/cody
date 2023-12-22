@@ -60,9 +60,9 @@ describe('logger', () => {
 
         CompletionLogger.start(id)
         CompletionLogger.networkRequestStarted(id, defaultContextSummary)
-        CompletionLogger.loaded(id, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
-        CompletionLogger.suggested(id, item)
-        CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0))
+        CompletionLogger.loaded(id, defaultRequestParams, [item], InlineCompletionsResultSource.Network, false)
+        CompletionLogger.suggested(id)
+        CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
         const shared = {
             id: expect.any(String),
@@ -85,7 +85,6 @@ describe('logger', () => {
                 {
                     charCount: 3,
                     lineCount: 1,
-                    insertText: 'foo',
                     lineTruncatedCount: undefined,
                     nodeTypes: undefined,
                     parseErrorCount: undefined,
@@ -142,8 +141,8 @@ describe('logger', () => {
         const id1 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id1)
         CompletionLogger.networkRequestStarted(id1, defaultContextSummary)
-        CompletionLogger.loaded(id1, defaultRequestParams, [item], InlineCompletionsResultSource.Network)
-        CompletionLogger.suggested(id1, item)
+        CompletionLogger.loaded(id1, defaultRequestParams, [item], InlineCompletionsResultSource.Network, false)
+        CompletionLogger.suggested(id1)
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
         const completionId = loggerItem?.params.id
@@ -152,9 +151,9 @@ describe('logger', () => {
         const id2 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id2)
         CompletionLogger.networkRequestStarted(id2, defaultContextSummary)
-        CompletionLogger.loaded(id2, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
-        CompletionLogger.suggested(id2, item)
-        CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0))
+        CompletionLogger.loaded(id2, defaultRequestParams, [item], InlineCompletionsResultSource.Cache, false)
+        CompletionLogger.suggested(id2)
+        CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)
@@ -192,8 +191,8 @@ describe('logger', () => {
         const id3 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id3)
         CompletionLogger.networkRequestStarted(id3, defaultContextSummary)
-        CompletionLogger.loaded(id3, defaultRequestParams, [item], InlineCompletionsResultSource.Cache)
-        CompletionLogger.suggested(id3, item)
+        CompletionLogger.loaded(id3, defaultRequestParams, [item], InlineCompletionsResultSource.Cache, false)
+        CompletionLogger.suggested(id3)
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
         expect(loggerItem3?.params.id).not.toBe(completionId)
@@ -204,7 +203,7 @@ describe('logger', () => {
 
         const id = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id)
-        CompletionLogger.partiallyAccept(id, item, 5)
+        CompletionLogger.partiallyAccept(id, item, 5, false)
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:partiallyAccepted',
@@ -216,7 +215,7 @@ describe('logger', () => {
         )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
-        CompletionLogger.partiallyAccept(id, item, 10)
+        CompletionLogger.partiallyAccept(id, item, 10, false)
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:partiallyAccepted',
@@ -228,8 +227,8 @@ describe('logger', () => {
         )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
-        CompletionLogger.partiallyAccept(id, item, 5)
-        CompletionLogger.partiallyAccept(id, item, 8)
+        CompletionLogger.partiallyAccept(id, item, 5, false)
+        CompletionLogger.partiallyAccept(id, item, 8, false)
         expect(logSpy).toHaveBeenCalledTimes(2)
     })
 })

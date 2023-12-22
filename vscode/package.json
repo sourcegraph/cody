@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -922,15 +922,7 @@
             "fireworks",
             "unstable-openai"
           ],
-          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
-        },
-        "cody.autocomplete.advanced.serverEndpoint": {
-          "type": "string",
-          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
-        },
-        "cody.autocomplete.advanced.accessToken": {
-          "type": "string",
-          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The provider used for code autocomplete. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.model": {
           "type": "string",
@@ -1023,7 +1015,7 @@
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.14.0",
+    "@sourcegraph/telemetry": "^0.16.0",
     "@storybook/preview-api": "^7.6.2",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.35",

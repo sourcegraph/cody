@@ -6,12 +6,15 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
-import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
+import {
+    generateCompletions,
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './generate-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -79,36 +82,10 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-const SINGLE_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
-    timeoutMs: 5_000,
-    // To speed up sample generation in single-line case, we request a lower token limit
-    // since we can't terminate on the first `\n`.
-    maxTokensToSample: 30,
-    stopSequences: ['\n'],
-}
-const MULTI_LINE_COMPLETION_ARGS: Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'> = {
-    timeoutMs: 15_000,
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    stopSequences: ['\n\n', '\n\r\n'],
-}
-
-const DYNAMIC_MULTLILINE_COMPLETIONS_ARGS: Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
-> = {
-    timeoutMs: 15_000,
-    maxTokensToSample: MAX_RESPONSE_TOKENS,
-    // Do not stop after two consecutive new lines to get the full syntax node content. For example:
-    //
-    // function quickSort(array) {
-    //   if (array.length <= 1) {
-    //     return array
-    //   }
-    //
-    //   // the implementation continues here after two new lines.
-    // }
-    stopSequences: undefined,
-}
+const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
+    singlelineStopRequences: ['\n'],
+    multilineStopSequences: ['\n\n', '\n\r\n'],
+})
 
 export class FireworksProvider extends Provider {
     private model: FireworksModel
@@ -183,73 +160,35 @@ export class FireworksProvider extends Provider {
         ) => void,
         tracer?: CompletionProviderTracer
     ): Promise<void> {
-        const { multiline, n, dynamicMultilineCompletions, hotStreak } = this.options
-        const prompt = this.createPrompt(snippets)
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
+            providerOptions: this.options,
+            timeouts: this.timeouts,
+            lineNumberDependentCompletionParams,
+        })
 
-        const model =
-            this.model === 'starcoder-hybrid'
-                ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                : MODEL_MAP[this.model]
-
-        const useExtendedGeneration = multiline || dynamicMultilineCompletions || hotStreak
-
+        const { multiline } = this.options
         const requestParams: CodeCompletionsParams = {
-            ...(useExtendedGeneration ? MULTI_LINE_COMPLETION_ARGS : SINGLE_LINE_COMPLETION_ARGS),
-            messages: [{ speaker: 'human', text: prompt }],
+            ...partialRequestParams,
+            messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             temperature: 0.2,
             topK: 0,
-            model,
+            model:
+                this.model === 'starcoder-hybrid'
+                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                    : MODEL_MAP[this.model],
         }
 
-        // Apply custom multiline timeouts if they are defined.
-        if (this.timeouts?.multiline && useExtendedGeneration) {
-            requestParams.timeoutMs = this.timeouts.multiline
-        }
-
-        // Apply custom singleline timeouts if they are defined.
-        if (this.timeouts?.singleline && !useExtendedGeneration) {
-            requestParams.timeoutMs = this.timeouts.singleline
-        }
-
-        if (requestParams.timeoutMs === 0) {
-            onCompletionReady([])
-            return
-        }
-
-        let fetchAndProcessCompletionsImpl = fetchAndProcessCompletions
-        if (dynamicMultilineCompletions) {
-            // If the feature flag is enabled use params adjusted for the experiment.
-            Object.assign(requestParams, DYNAMIC_MULTLILINE_COMPLETIONS_ARGS)
-
-            // Use an alternative fetch completions implementation.
-            fetchAndProcessCompletionsImpl = fetchAndProcessDynamicMultilineCompletions
-        }
-
-        tracer?.params(requestParams)
-
-        const completions: InlineCompletionItemWithAnalytics[] = []
-        const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
-            completions.push(completion)
-            if (completions.length === n) {
-                completionPostProcessLogger.flush()
-                tracer?.result({ completions })
-                onCompletionReady(completions)
-            }
-        }
-
-        await Promise.all(
-            Array.from({ length: n }).map(() => {
-                return fetchAndProcessCompletionsImpl({
-                    client: this.client,
-                    requestParams,
-                    abortSignal,
-                    providerSpecificPostProcess: this.postProcess,
-                    providerOptions: this.options,
-                    onCompletionReady: onCompletionReadyImpl,
-                    onHotStreakCompletionReady,
-                })
-            })
-        )
+        await generateCompletions({
+            client: this.client,
+            requestParams,
+            abortSignal,
+            providerSpecificPostProcess: this.postProcess,
+            providerOptions: this.options,
+            tracer,
+            fetchAndProcessCompletionsImpl,
+            onCompletionReady,
+            onHotStreakCompletionReady,
+        })
     }
 
     private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {

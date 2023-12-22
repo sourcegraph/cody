@@ -147,7 +147,7 @@ export class ChatPanelProvider extends MessageProvider {
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
-        await chatHistory.saveHumanInputHistory(text)
+        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
@@ -231,7 +231,9 @@ export class ChatPanelProvider extends MessageProvider {
             chatID: this.sessionID,
         })
 
-        const currentTitle = chatHistory.getChat(this.sessionID)?.chatTitle || this.transcript.chatTitle
+        const currentTitle =
+            chatHistory.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+            this.transcript.chatTitle
         if (currentTitle) {
             this.handleChatTitle(currentTitle)
             return
@@ -273,7 +275,7 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
-        void this.treeView.updateTree(createCodyChatTreeItems())
+        void this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
     }
 
     /**
@@ -405,7 +407,9 @@ export class ChatPanelProvider extends MessageProvider {
 
         this.startUpChatID = chatID
 
-        const chatTitle = chatID ? chatHistory.getChat(chatID)?.chatTitle : lastQuestion
+        const chatTitle = chatID
+            ? chatHistory.getChat(this.authProvider.getAuthStatus(), chatID)?.chatTitle
+            : lastQuestion
 
         const viewType = CodyChatPanelViewType
         const panelTitle = chatTitle || getChatPanelTitle(lastQuestion)
@@ -434,7 +438,7 @@ export class ChatPanelProvider extends MessageProvider {
     public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<void> {
         logDebug('ChatPanelProvider:revive', 'reviving webview panel')
         this.startUpChatID = chatID
-        const title = chatHistory.getChat(chatID)?.chatTitle
+        const title = chatHistory.getChat(this.authProvider.getAuthStatus(), chatID)?.chatTitle
         if (chatID && title) {
             this.chatTitle = title
             webviewPanel.title = title

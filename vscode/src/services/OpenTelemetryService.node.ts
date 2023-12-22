@@ -4,7 +4,7 @@ import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { version } from '../version'
@@ -16,11 +16,11 @@ export class OpenTelemetryService {
     // be run in parallel
     private reconfigurePromiseMutex: Promise<void> = Promise.resolve()
 
-    constructor(protected config: Pick<Configuration, 'serverEndpoint'>) {
+    constructor(protected config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) {
         this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(() => this.reconfigure())
     }
 
-    public onConfigurationChange(newConfig: Pick<Configuration, 'serverEndpoint'>): void {
+    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>): void {
         this.config = newConfig
         this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(() => this.reconfigure())
     }

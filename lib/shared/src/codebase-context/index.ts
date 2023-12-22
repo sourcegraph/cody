@@ -15,7 +15,7 @@ import {
     populatePreciseCodeContextTemplate,
 } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
-import { DOTCOM_URL } from '../sourcegraph-api/environments'
+import { isDotCom } from '../sourcegraph-api/environments'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
@@ -30,8 +30,9 @@ export interface ContextSearchOptions {
 export class CodebaseContext {
     private embeddingResultsError = ''
     constructor(
-        private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
-        private readonly codebase: string | undefined,
+        private config: Pick<Configuration, 'useContext' | 'experimentalLocalSymbols'>,
+        private codebase: string | undefined,
+        private getServerEndpoint: () => string,
         public embeddings: EmbeddingsSearch | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
@@ -100,12 +101,12 @@ export class CodebaseContext {
         if (this.embeddings && this.config.useContext !== 'keyword') {
             return {
                 results: await this.getEmbeddingSearchResults(query, options),
-                endpoint: this.config.serverEndpoint,
+                endpoint: this.getServerEndpoint(),
             }
         }
         return {
             results: [],
-            endpoint: this.config.serverEndpoint,
+            endpoint: this.getServerEndpoint(),
         }
     }
 
@@ -128,7 +129,7 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
-        if (this.config.serverEndpoint === DOTCOM_URL.toString() && this.localEmbeddings) {
+        if (isDotCom(this.getServerEndpoint()) && this.localEmbeddings) {
             // TODO(dpc): Check whether the local embeddings index exists for
             // this repo before relying on it.
             // TODO(dpc): Fetch code and text results.

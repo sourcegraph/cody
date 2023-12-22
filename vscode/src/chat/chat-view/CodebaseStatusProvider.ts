@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     ContextGroup,
@@ -11,6 +12,7 @@ import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { getConfiguration } from '../../configuration'
 import { SymfRunner } from '../../local-context/symf'
 import { repositoryRemoteUrl } from '../../repository/repositoryHelpers'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
@@ -19,6 +21,7 @@ interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string
+    setting?: string
 }
 
 /**
@@ -43,6 +46,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(() => this.updateStatus()),
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.updateStatus()),
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('cody.codebase')) {
+                    return this.updateStatus()
+                }
+                return Promise.resolve()
+            }),
             this.eventEmitter
         )
 
@@ -157,9 +166,11 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
     private async _updateCodebase_NoFire(): Promise<boolean> {
         const workspaceRoot = this.editor.getWorkspaceRootUri()
+        const config = getConfiguration()
         if (
             this._currentCodebase !== undefined &&
             workspaceRoot?.fsPath === this._currentCodebase?.local &&
+            config.codebase === this._currentCodebase?.setting &&
             this._currentCodebase?.remoteRepoId
         ) {
             // do nothing if local codebase identifier is unchanged and we have a remote repo ID
@@ -168,15 +179,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
         let newCodebase: CodebaseIdentifiers | null = null
         if (workspaceRoot) {
-            newCodebase = { local: workspaceRoot.fsPath }
-            const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-            if (remoteUrl) {
-                newCodebase.remote = convertGitCloneURLToCodebaseName(remoteUrl) || undefined
-                if (newCodebase.remote) {
-                    const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
-                    if (!isError(repoId)) {
-                        newCodebase.remoteRepoId = repoId ?? undefined
-                    }
+            newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
+            newCodebase.remote = config.codebase || detectCodebaseName(workspaceRoot)
+            if (newCodebase.remote) {
+                const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
+                if (!isError(repoId)) {
+                    newCodebase.remoteRepoId = repoId ?? undefined
                 }
             }
         }
@@ -197,4 +205,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         this.symfIndexStatus = newSymfStatus
         return didSymfStatusChange
     }
+}
+
+function detectCodebaseName(uri: URI): string | undefined {
+    const remoteUrl = repositoryRemoteUrl(uri)
+    if (remoteUrl) {
+        return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
+    }
+    return undefined
 }
