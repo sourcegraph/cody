@@ -1381,7 +1381,15 @@ function contextFilesToContextItems(
     return Promise.all(
         files.map(async (file: ContextFile): Promise<ContextItem> => {
             const range = viewRangeToRange(file.range)
-            const uri = file.uri || vscode.Uri.file(file.fileName)
+            const uri = file.uri
+                ? // This object may have came via postMessage and might not be a
+                  // real vscode.Uri instance so convert it if required (otherwise
+                  // toString() later will be '[Object object]' and not what we
+                  // expect).
+                  typeof file.uri === 'object'
+                    ? vscode.Uri.from(file.uri)
+                    : file.uri
+                : vscode.Uri.file(file.fileName)
             let text = file.content
             if (!text && fetchContent) {
                 text = await editor.getTextEditorContentForFile(uri, range)
