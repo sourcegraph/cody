@@ -142,7 +142,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
         agentUserId = getUserId(server)
       }
       if (jetbrainsUserId != agentUserId) {
-        logger.error("User id in JetBrains is different from agent")
+        if (agentUserId != null) {
+          logger.error("User id in JetBrains is different from agent")
+          return
+        }
         return
       }
 
