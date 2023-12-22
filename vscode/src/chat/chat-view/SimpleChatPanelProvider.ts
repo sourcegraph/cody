@@ -24,6 +24,7 @@ import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -38,6 +39,7 @@ import { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -50,7 +52,7 @@ import {
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { MessageErrorType } from '../MessageProvider'
-import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
 import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
@@ -77,7 +79,7 @@ interface SimpleChatPanelProviderOptions {
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
     recipeAdapter: SimpleChatRecipeAdapter
-    defaultModelID: string
+    models: ChatModelProvider[]
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
@@ -107,7 +109,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
-    private readonly defaultModelID: string
 
     private history = new ChatHistoryManager()
     private prompter: IPrompter = new DefaultPrompter()
@@ -134,7 +135,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         symf,
         editor,
         treeView,
-        defaultModelID,
+        models,
         recipeAdapter,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
@@ -149,9 +150,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.treeView = treeView
         this.guardrails = guardrails
         this.recipeAdapter = recipeAdapter
-        this.defaultModelID = defaultModelID
-
-        this.chatModel = new SimpleChatModel(defaultModelID)
+        this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
 
         // Advise local embeddings to start up if necessary.
@@ -169,6 +168,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             this.config.experimentalSymfContext ? this.symf : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+    }
+
+    // Select the chat model to use in Chat
+    private selectModel(models: ChatModelProvider[]): string {
+        // Check for the last selected model
+        const lastSelectedModelID = localStorage.get('model')
+        if (lastSelectedModelID) {
+            // If the last selected model exists in the list of models then we return it
+            const model = models.find(m => m.model === lastSelectedModelID)
+            if (model) {
+                return lastSelectedModelID
+            }
+        }
+        // If the user has not selected a model before then we return the default model
+        const defaultModel = models.find(m => m.default) || models[0]
+        if (!defaultModel) {
+            throw new Error('No chat model found in server-provided config')
+        }
+        return defaultModel.model
     }
 
     private completionCanceller?: () => void
@@ -195,7 +213,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
 
         const viewType = CodyChatPanelViewType
-        const panelTitle = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(lastQuestion)
+        const panelTitle =
+            this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+            getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -335,6 +355,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'chatModel':
                 this.chatModel.modelID = message.model
+                // Store the selected model in local storage to retrieve later
+                await localStorage.set('model', message.model)
                 break
             case 'get-chat-models':
                 await this.postChatModels()
@@ -419,12 +441,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
      * is a no-op.
      */
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = this.history.getChat(sessionID)
+        const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return
         }
         this.cancelInProgressCompletion()
-        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.defaultModelID)
+        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
         this.sessionID = newModel.sessionID
 
@@ -432,14 +454,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     public async saveSession(humanInput?: string): Promise<void> {
-        const allHistory = await this.history.saveChat(this.chatModel.toTranscriptJSON(), humanInput)
+        const allHistory = await this.history.saveChat(
+            this.authProvider.getAuthStatus(),
+            this.chatModel.toTranscriptJSON(),
+            humanInput
+        )
         if (allHistory) {
             void this.postMessage({
                 type: 'history',
                 messages: allHistory,
             })
         }
-        await this.treeView.updateTree(createCodyChatTreeItems())
+        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -543,10 +569,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 return
             }
 
+            const authStatus = this.authProvider.getAuthStatus()
+
             const properties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
-                promptText: text,
+                // 🚨 SECURITY: included only for DotCom users.
+                promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
                 contextSummary,
             }
             telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
@@ -558,7 +587,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
-            this.webviewPanel.title = this.history.getChat(this.sessionID)?.chatTitle || getChatPanelTitle(text)
+            this.webviewPanel.title =
+                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+                getChatPanelTitle(text)
         }
     }
 
@@ -588,7 +619,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         sendTelemetry?: (contextSummary: {}) => void
     ): Promise<void> {
         try {
-            const contextWindowBytes = getContextWindowForModel(this.chatModel.modelID)
+            const contextWindowBytes = getContextWindowForModel(
+                this.authProvider.getAuthStatus(),
+                this.chatModel.modelID
+            )
 
             const userContextItems = await contextFilesToContextItems(this.editor, userContextFiles || [], true)
             const contextProvider = new ContextProvider(
@@ -779,7 +813,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             chatID: this.sessionID,
         })
 
-        const chatTitle = this.history.getChat(this.sessionID)?.chatTitle
+        const chatTitle = this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle
         if (chatTitle) {
             this.handleChatTitle(chatTitle)
             return
@@ -1347,7 +1381,15 @@ function contextFilesToContextItems(
     return Promise.all(
         files.map(async (file: ContextFile): Promise<ContextItem> => {
             const range = viewRangeToRange(file.range)
-            const uri = file.uri || vscode.Uri.file(file.fileName)
+            const uri = file.uri
+                ? // This object may have came via postMessage and might not be a
+                  // real vscode.Uri instance so convert it if required (otherwise
+                  // toString() later will be '[Object object]' and not what we
+                  // expect).
+                  typeof file.uri === 'object'
+                    ? vscode.Uri.from(file.uri)
+                    : file.uri
+                : vscode.Uri.file(file.fileName)
             let text = file.content
             if (!text && fetchContent) {
                 text = await editor.getTextEditorContentForFile(uri, range)
@@ -1368,7 +1410,7 @@ function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range 
     return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
 }
 
-async function newChatModelfromTranscriptJSON(json: TranscriptJSON, defaultModelID: string): Promise<SimpleChatModel> {
+async function newChatModelfromTranscriptJSON(json: TranscriptJSON, modelID: string): Promise<SimpleChatModel> {
     const messages: MessageWithContext[][] = json.interactions.map(
         (interaction: InteractionJSON): MessageWithContext[] => {
             return [
@@ -1393,12 +1435,7 @@ async function newChatModelfromTranscriptJSON(json: TranscriptJSON, defaultModel
             ]
         }
     )
-    return new SimpleChatModel(
-        json.chatModel || defaultModelID,
-        (await Promise.all(messages)).flat(),
-        json.id,
-        json.chatTitle
-    )
+    return new SimpleChatModel(json.chatModel || modelID, (await Promise.all(messages)).flat(), json.id, json.chatTitle)
 }
 
 export function deserializedContextFilesToContextItems(
@@ -1456,10 +1493,27 @@ function getErrorMessage(error: unknown): string {
     return String(error)
 }
 
-function getContextWindowForModel(modelID: string): number {
-    if (modelID.includes('claude-2') || modelID.includes('claude-instant')) {
+function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
+    // In enterprise mode, we let the sg instance dictate the token limits and allow users to
+    // overwrite it locally (for debugging purposes).
+    //
+    // This is similiar to the behavior we had before introducing the new chat and allows BYOK
+    // customers to set a model of their choice without us having to map it to a known model on
+    // the client.
+    if (authStatus.endpoint && !isDotCom(authStatus.endpoint)) {
+        const codyConfig = vscode.workspace.getConfiguration('cody')
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        if (tokenLimit) {
+            return tokenLimit * 4 // bytes per token
+        }
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens * 4 // butes per token
+        }
+
         return 28000 // 7000 tokens * 4 bytes per token
     }
+
     if (modelID.includes('openai/gpt-4-1106-preview')) {
         return 28000 // 7000 tokens * 4 bytes per token
     }
