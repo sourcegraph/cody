@@ -1181,6 +1181,8 @@ class ContextProvider implements IContextProvider {
                 return {
                     uri: displayUri,
                     range,
+                    // TODO(dantup): Set source (a value from `ContextFileSource`) here.
+                    // source: 'user',
                     text,
                 }
             })
