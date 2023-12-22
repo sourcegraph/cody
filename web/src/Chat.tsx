@@ -53,6 +53,10 @@ export const Chat: React.FunctionComponent<
         inputRowClassName={styles.inputRow}
         chatInputClassName={styles.chatInput}
         isCodyEnabled={true}
+        userInfo={{
+            isDotComUser: true,
+            isCodyProUser: false,
+        }}
     />
 )
 

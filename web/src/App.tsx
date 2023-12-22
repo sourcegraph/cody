@@ -117,6 +117,10 @@ export const App: React.FunctionComponent = () => {
                                 setInputHistory={setInputHistory}
                                 isCodyEnabled={true}
                                 onSubmit={onSubmit}
+                                userInfo={{
+                                    isDotComUser: true,
+                                    isCodyProUser: false,
+                                }}
                             />
                         </>
                     )

@@ -44,7 +44,7 @@ export const Transcript: React.FunctionComponent<
         chatModels?: ChatModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
-        userInfo?: UserAccountInfo
+        userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
@@ -224,6 +224,7 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
+                        userInfo={userInfo}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
