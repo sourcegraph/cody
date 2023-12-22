@@ -8,7 +8,9 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/to/test.js')
 
-        expect(result).toEqual('Hello [_@test.js_](command:cody.chat.open.file?"/path/to/test.js:range:0")')
+        expect(result).toEqual(
+            'Hello [_@test.js_](command:cody.chat.open.file?%22%2Fpath%2Fto%2Ftest.js%3Arange%3A0%22)'
+        )
     })
 
     it('replaces file name with symbol with markdown link', () => {
@@ -17,7 +19,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(text, '@e2e/cody.ts:2-2#codySymbol', '/foo/test/e2e/cody.ts', 2)
 
         expect(result).toEqual(
-            'What is [_@e2e/cody.ts:2-2#codySymbol_](command:cody.chat.open.file?"/foo/test/e2e/cody.ts:range:2")?'
+            'What is [_@e2e/cody.ts:2-2#codySymbol_](command:cody.chat.open.file?%22%2Ffoo%2Ftest%2Fe2e%2Fcody.ts%3Arange%3A2%22)?'
         )
     })
 
@@ -26,7 +28,9 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@my file.js', '/path/to/my file.js')
 
-        expect(result).toEqual('Loaded [_@my file.js_](command:cody.chat.open.file?"/path/to/my file.js:range:0")')
+        expect(result).toEqual(
+            'Loaded [_@my file.js_](command:cody.chat.open.file?%22%2Fpath%2Fto%2Fmy%20file.js%3Arange%3A0%22)'
+        )
     })
 
     it('returns original text if no match', () => {
@@ -43,7 +47,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/with/@#special$chars.js')
 
         expect(result).toEqual(
-            'Loaded [_@test.js_](command:cody.chat.open.file?"/path/with/@#special$chars.js:range:0")'
+            'Loaded [_@test.js_](command:cody.chat.open.file?%22%2Fpath%2Fwith%2F%40%23special%24chars.js%3Arange%3A0%22)'
         )
     })
 
@@ -52,7 +56,9 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 10)
 
-        expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:10")')
+        expect(result).toEqual(
+            'Error in [_@test.js_](command:cody.chat.open.file?%22%2Fpath%2Ftest.js%3Arange%3A10%22)'
+        )
     })
 
     it('handles non alphanumeric characters follows the file name in input', () => {
@@ -60,7 +66,9 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 10)
 
-        expect(result).toEqual('What is [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:10")?')
+        expect(result).toEqual(
+            'What is [_@test.js_](command:cody.chat.open.file?%22%2Fpath%2Ftest.js%3Arange%3A10%22)?'
+        )
     })
 
     it('handles edge case where start line at 0 - exclude start line in markdown link', () => {
@@ -68,7 +76,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
         const result = replaceFileNameWithMarkdownLink(text, '@test.js', '/path/test.js', 0)
 
-        expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?"/path/test.js:range:0")')
+        expect(result).toEqual('Error in [_@test.js_](command:cody.chat.open.file?%22%2Fpath%2Ftest.js%3Arange%3A0%22)')
     })
 
     it('handles names that showed up more than once', () => {
@@ -77,7 +85,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(text, '@foo.js', '/path/foo.js', 10)
 
         expect(result).toEqual(
-            'Compare and explain [_@foo.js_](command:cody.chat.open.file?"/path/foo.js:range:10") and @bar.js. What does [_@foo.js_](command:cody.chat.open.file?"/path/foo.js:range:10") do?'
+            'Compare and explain [_@foo.js_](command:cody.chat.open.file?%22%2Fpath%2Ffoo.js%3Arange%3A10%22) and @bar.js. What does [_@foo.js_](command:cody.chat.open.file?%22%2Fpath%2Ffoo.js%3Arange%3A10%22) do?'
         )
     })
 
@@ -87,7 +95,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(text, '@foo.js', '/path/foo.js', 10)
 
         expect(result).toEqual(
-            'Compare and explain [_@foo.js_](command:cody.chat.open.file?"/path/foo.js:range:10") and @bar.js. What does @foo.js#FooBar() do?'
+            'Compare and explain [_@foo.js_](command:cody.chat.open.file?%22%2Fpath%2Ffoo.js%3Arange%3A10%22) and @bar.js. What does @foo.js#FooBar() do?'
         )
     })
 
@@ -103,7 +111,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         )
 
         expect(result).toEqual(
-            '[_@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()_](command:cody.chat.open.file?"/vscode/src/logged-rerank.ts:range:7") what does this do'
+            '[_@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()_](command:cody.chat.open.file?%22%2Fvscode%2Fsrc%2Flogged-rerank.ts%3Arange%3A7%22) what does this do'
         )
     })
 })

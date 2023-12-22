@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     CodyLLMSiteConfiguration,
     GraphQLAPIClientConfig,
@@ -10,10 +9,9 @@ import {
 
 import { CodeCompletionsClient } from '../client'
 
-import { createProviderConfig } from './createProvider'
+import { createProviderConfig } from './create-provider'
 
 const DEFAULT_VSCODE_SETTINGS: Configuration = {
-    serverEndpoint: DOTCOM_URL.href,
     proxy: null,
     codebase: '',
     customHeaders: {},
@@ -35,9 +33,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     debugFilter: null,
     telemetryLevel: 'all',
     autocompleteAdvancedProvider: null,
-    autocompleteAdvancedServerEndpoint: null,
     autocompleteAdvancedModel: null,
-    autocompleteAdvancedAccessToken: null,
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
@@ -138,7 +134,6 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'unstable-openai',
-                    autocompleteAdvancedServerEndpoint: 'https://unstable-openai.com',
                 }),
                 dummyCodeCompletionsClient,
                 { provider: 'azure-open-ai', completionModel: 'gpt-35-turbo-test' }
