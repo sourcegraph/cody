@@ -16,6 +16,7 @@
     "vite.config.ts",
     "package.json",
     ".storybook/*.ts",
+    "../lib/shared/src/chat/typewriter.ts",
     "../lib/shared/src/telemetry/EventLogger.ts",
   ],
   "exclude": ["scripts", "dist", "test/integration", "**/test-data"],
