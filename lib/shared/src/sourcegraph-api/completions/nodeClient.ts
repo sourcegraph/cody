@@ -21,6 +21,16 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
         // Keep track if we have send any message to the completion callbacks
         let didSendMessage = false
+        let didSendError = false
+
+        // Call the error callback only once per request.
+        const onErrorOnce = (error: Error, statusCode?: number | undefined): void => {
+            if (!didSendError) {
+                cb.onError(error, statusCode)
+                didSendMessage = true
+                didSendError = true
+            }
+        }
 
         const request = requestFn(
             this.completionsEndpoint,
@@ -69,11 +79,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             limit ? parseInt(limit, 10) : undefined,
                             retryAfter
                         )
-                        cb.onError(error, res.statusCode)
-                        didSendMessage = true
+                        onErrorOnce(error, res.statusCode)
                     } else {
-                        cb.onError(e, res.statusCode)
-                        didSendMessage = true
+                        onErrorOnce(e, res.statusCode)
                     }
                 }
 
@@ -138,9 +146,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     'Could not connect to Cody. Please ensure that you are connected to the Sourcegraph server.'
                 )
             }
-            didSendMessage = true
             log?.onError(error.message, e)
-            cb.onError(error)
+            onErrorOnce(error)
         })
 
         // If the connection is closed and we did neither:
@@ -151,7 +158,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         // We still want to close the request.
         request.on('close', () => {
             if (!didSendMessage) {
-                cb.onError(new Error('Connection unexpectedly closed'))
+                onErrorOnce(new Error('Connection unexpectedly closed'))
             }
         })
 
