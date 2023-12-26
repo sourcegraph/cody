@@ -16,6 +16,7 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { Uri } from './uri'
@@ -732,3 +733,42 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
+
+export const DEFAULT_VSCODE_SETTINGS = {
+    proxy: null,
+    codebase: '',
+    customHeaders: {},
+    chatPreInstruction: '',
+    useContext: 'embeddings',
+    autocomplete: true,
+    autocompleteLanguages: {
+        '*': true,
+    },
+    commandCodeLenses: false,
+    editorTitleCommandIcon: true,
+    experimentalChatPredictions: false,
+    experimentalGuardrails: false,
+    experimentalLocalSymbols: false,
+    experimentalSimpleChatContext: true,
+    experimentalSymfContext: false,
+    experimentalTracing: false,
+    codeActions: true,
+    isRunningInsideAgent: false,
+    agentIDE: undefined,
+    debugEnable: false,
+    debugVerbose: false,
+    debugFilter: null,
+    telemetryLevel: 'all',
+    autocompleteAdvancedProvider: null,
+    autocompleteAdvancedModel: null,
+    autocompleteCompleteSuggestWidgetSelection: true,
+    autocompleteFormatOnAccept: true,
+    autocompleteExperimentalSyntacticPostProcessing: true,
+    autocompleteExperimentalDynamicMultilineCompletions: false,
+    autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalGraphContext: null,
+    autocompleteTimeouts: {},
+    testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsIndexLibraryPath: undefined,
+    testingLocalEmbeddingsModel: undefined,
+} satisfies Configuration
