@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { addDebugEventToActiveSpan } from '../services/open-telemetry/debug-utils'
+
 import { detectMultiline } from './detect-multiline'
 import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
 
@@ -17,11 +19,6 @@ export interface DocumentDependentContext {
      * suggestion widget and injects the item into the prefix.
      */
     injectedPrefix: string | null
-    /**
-     * @deprecated
-     * will be removed after migrating `completionPostProcessLogger` to OpenTelemtry exporter.
-     */
-    completionPostProcessId?: string
 }
 
 interface GetCurrentDocContextParams {
@@ -126,16 +123,24 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
     const { position, documentDependentContext, languageId, dynamicMultilineCompletions } = params
     const linesContext = getLinesContext(documentDependentContext)
 
+    const { multilineTrigger, multilineTriggerPosition } = detectMultiline({
+        docContext: { ...linesContext, ...documentDependentContext },
+        languageId,
+        dynamicMultilineCompletions,
+        position,
+    })
+
+    addDebugEventToActiveSpan('getDerivedDocContext', {
+        multilineTrigger,
+        multilineTriggerPosition,
+    })
+
     return {
         ...documentDependentContext,
         ...linesContext,
         position,
-        ...detectMultiline({
-            docContext: { ...linesContext, ...documentDependentContext },
-            languageId,
-            dynamicMultilineCompletions,
-            position,
-        }),
+        multilineTrigger,
+        multilineTriggerPosition,
     }
 }
 

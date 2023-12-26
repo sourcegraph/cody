@@ -3,11 +3,11 @@ import { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
+import { addDebugEventToActiveSpan } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
-import { completionPostProcessLogger } from '../post-process-logger'
 import { InlineCompletionItem } from '../types'
 
 import { dropParserFields, ParsedCompletion } from './parse-completion'
@@ -32,12 +32,11 @@ export function processInlineCompletions(
     items: ParsedCompletion[],
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItemWithAnalytics[] {
-    completionPostProcessLogger.info({
-        completionPostProcessId: 'constant',
-        stage: 'enter',
+    addDebugEventToActiveSpan('enter', {
+        currentLinePrefix: params.docContext.currentLinePrefix,
         text: items[0]?.insertText,
-        isCollapsedGroup: true,
     })
+
     // Remove low quality results
     const visibleResults = removeLowQualityCompletions(items)
 
@@ -46,12 +45,11 @@ export function processInlineCompletions(
 
     // Rank results
     const rankedResults = rankCompletions(uniqueResults)
-    completionPostProcessLogger.info({
-        completionPostProcessId: 'constant',
-        stage: 'exit',
+
+    addDebugEventToActiveSpan('exit', {
+        currentLinePrefix: params.docContext.currentLinePrefix,
         text: rankedResults[0]?.insertText,
     })
-    completionPostProcessLogger.flush()
 
     return rankedResults.map(dropParserFields)
 }
