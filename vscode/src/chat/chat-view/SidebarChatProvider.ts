@@ -145,7 +145,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, this.webviewPanel?.viewColumn)
+                await openFilePath(message.filePath, undefined, this.webviewPanel?.viewColumn)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)

@@ -1,19 +1,138 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
 import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { CodebaseIdentifiers } from './CodebaseStatusProvider'
 import { ContextItem } from './SimpleChatModel'
 
 export const relativeFileUrlScheme = 'cody-file-relative'
-export const embeddingsUrlScheme = 'cody-embeddings'
+export const embeddingsUrlScheme = 'cody-remote-embeddings'
 
-export function relativeFileUrl(fileName: string, range?: vscode.Range): vscode.Uri {
+/**
+ * Returns a URI for a snippet returned from the remote embeddings endpoint
+ */
+export function remoteEmbeddingSnippetUri(codebase: CodebaseIdentifiers, result: EmbeddingsSearchResult): vscode.Uri {
+    return vscode.Uri.from({
+        scheme: embeddingsUrlScheme,
+        authority: codebase.remote,
+        path: '/' + result.fileName,
+        fragment: `L${result.startLine}-${result.endLine}`,
+        query: `local=${encodeURIComponent(codebase.local)}`,
+    })
+}
+
+/**
+ * Return a URI for a local file that's relative to a workspace folder.
+ */
+export function relativeFileUri(
+    absParentDir: string,
+    relPath: string,
+    range?: ActiveTextEditorSelectionRange
+): vscode.Uri {
+    return vscode.Uri.from({
+        scheme: relativeFileUrlScheme,
+        authority: absParentDir.endsWith('/') ? absParentDir.slice(0, -1) : absParentDir,
+        path: relPath.startsWith('/') ? relPath : '/' + relPath,
+        fragment: range && rangeToFragment(range),
+    })
+}
+
+/**
+ * Returns a URI for a file from a legacy ContextFile instance
+ */
+export function legacyContextFileUri(fileName: string, range?: vscode.Range): vscode.Uri {
     return vscode.Uri.from({
         scheme: relativeFileUrlScheme,
         path: fileName,
-        fragment: range && `L${range.start.line}-${range.end.line}`,
+        fragment: range && rangeToFragment(range),
     })
+}
+
+export function rangeToFragment(range: ActiveTextEditorSelectionRange): string {
+    return `L${range.start.line}-${range.end.line}`
+}
+
+export function fragmentToRange(fragment: string): ActiveTextEditorSelectionRange | undefined {
+    const match = fragment.match(/^L(\d+)-(\d+)$/)
+    if (!match) {
+        return undefined
+    }
+    return {
+        start: {
+            line: parseInt(match[1], 10),
+            character: 0,
+        },
+        end: {
+            line: parseInt(match[2], 10),
+            character: 0,
+        },
+    }
+}
+
+export async function openUri(
+    uri: vscode.Uri,
+    range?: ActiveTextEditorSelectionRange,
+    currentViewColumn?: vscode.ViewColumn
+): Promise<void> {
+    switch (uri.scheme) {
+        case embeddingsUrlScheme: {
+            const localCodebaseDir = new URLSearchParams(uri.query).get('local')
+            if (!localCodebaseDir) {
+                throw new Error(`Failed to open embeddings: missing local codebase dir from uri ${uri}`)
+            }
+            const relpath = uri.path.startsWith('/') ? uri.path.slice(1) : uri.path
+            await openFile(path.join(localCodebaseDir, relpath), range, currentViewColumn)
+            break
+        }
+        case relativeFileUrlScheme: {
+            let containerDir = uri.authority || ''
+            const relPath = uri.path.startsWith('/') ? uri.path.slice(1) : uri.path
+
+            if (containerDir === '') {
+                for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
+                    const absPath = path.join(workspaceFolder.uri.fsPath, relPath)
+                    try {
+                        await vscode.workspace.fs.stat(vscode.Uri.file(absPath))
+                        containerDir = workspaceFolder.uri.fsPath
+                        break
+                    } catch {
+                        continue
+                    }
+                }
+            }
+            if (!range) {
+                range = uri.fragment ? fragmentToRange(uri.fragment) : undefined
+            }
+
+            const absPath = path.join(containerDir, relPath)
+            await openFile(absPath, range, currentViewColumn)
+            break
+        }
+        case 'file':
+            await openFile(uri.fsPath, fragmentToRange(uri.fragment), currentViewColumn)
+            break
+        default:
+            throw new Error(`Failed to open uri ${uri}: unsupported scheme "${uri.scheme}"`)
+    }
+}
+
+export async function openFile(
+    absPath: string,
+    range?: ActiveTextEditorSelectionRange,
+    currentViewColumn?: vscode.ViewColumn
+): Promise<void> {
+    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absPath))
+
+    let viewColumn = vscode.ViewColumn.Beside
+    if (currentViewColumn) {
+        viewColumn = currentViewColumn - 1 || currentViewColumn + 1
+    }
+    const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
+    await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
 }
 
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
@@ -33,7 +152,7 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
         text: contextText,
         uri:
             contextMessage.file.uri ||
-            relativeFileUrl(contextMessage.file.fileName, activeEditorSelectionRangeToRange(range)),
+            legacyContextFileUri(contextMessage.file.fileName, activeEditorSelectionRangeToRange(range)),
         range: range && new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
     }
 }
@@ -76,6 +195,7 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
             relFsPath = relFsPath.slice(1)
         }
         contextFiles.push({
+            uri: item.uri,
             fileName: relFsPath,
             source: 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
