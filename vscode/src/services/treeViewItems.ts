@@ -1,3 +1,5 @@
+import { findLast } from 'lodash'
+
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
@@ -47,8 +49,11 @@ export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTree
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory)]
     chatHistoryEntries.forEach(([id, entry]) => {
-        const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
-        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
+        const lastHumanMessage = findLast(
+            entry?.interactions,
+            message => message.humanMessage.displayText !== undefined
+        )
+        if (lastHumanMessage?.humanMessage?.displayText) {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             chatTreeItems.push({
                 id,

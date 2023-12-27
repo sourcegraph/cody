@@ -44,6 +44,18 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
     }
 }
 
+class CodyNodeHttpAdapter extends NodeHttpAdapter {
+    public async onRequest(request: any): Promise<void> {
+        if (request?.body) {
+            request.body = request.body
+                .replaceAll(/`([^`]*)(cody-vscode-shim-test[^`]*)`/g, '`$2`')
+                .replaceAll(/(\\\\)(\w)/g, '/$2')
+        }
+
+        return super.onRequest(request)
+    }
+}
+
 /**
  * The default file system persister with the following customizations
  *
@@ -120,7 +132,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 console.error('CODY_RECORDING_MODE is required when CODY_RECORDING_DIRECTORY is set.')
                 process.exit(1)
             }
-            Polly.register(NodeHttpAdapter)
+            Polly.register(CodyNodeHttpAdapter)
             Polly.register(CodyPersister)
             polly = new Polly(options.recordingName ?? 'CodyAgent', {
                 flushRequestsOnStop: true,

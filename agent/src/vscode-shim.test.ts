@@ -189,9 +189,13 @@ describe('vscode.workspace.findFiles', () => {
         expect(files.map(file => file.fsPath)).toEqual([path.join(tmpdir.fsPath, 'README.md')])
     })
 
+    function relativize(file: URI): string {
+        return path.relative(tmpdir.fsPath, file.fsPath).replaceAll('\\', '/')
+    }
+
     it('findFiles("")', async () => {
         const files = await vscode.workspace.findFiles('', undefined, undefined)
-        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+        expect(files.map(relativize).sort()).toMatchInlineSnapshot(`
           [
             "README.md",
             "other.txt",
@@ -202,7 +206,7 @@ describe('vscode.workspace.findFiles', () => {
 
     it('findFiles("**.sh")', async () => {
         const files = await vscode.workspace.findFiles('**/*.sh', undefined, undefined)
-        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+        expect(files.map(relativize)).toMatchInlineSnapshot(`
           [
             "scripts/hello.sh",
           ]
@@ -211,7 +215,7 @@ describe('vscode.workspace.findFiles', () => {
 
     it('findFiles(exclude="**.sh")', async () => {
         const files = await vscode.workspace.findFiles('', '**/*.sh', undefined)
-        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+        expect(files.map(relativize).sort()).toMatchInlineSnapshot(`
           [
             "README.md",
             "other.txt",
@@ -221,7 +225,7 @@ describe('vscode.workspace.findFiles', () => {
 
     it('findFiles(maxResults)', async () => {
         const files = await vscode.workspace.findFiles('', undefined, 2)
-        expect(files.map(file => path.relative(tmpdir.fsPath, file.fsPath))).toMatchInlineSnapshot(`
+        expect(files.map(relativize).sort()).toMatchInlineSnapshot(`
           [
             "README.md",
             "other.txt",
