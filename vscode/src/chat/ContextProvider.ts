@@ -26,7 +26,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -146,6 +146,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
         const codebaseContext = await getCodebaseContext(
             this.config,
+            this.authProvider.getAuthStatus(),
             this.rgPath,
             this.symf,
             this.editor,
@@ -191,6 +192,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             // Update codebase context
             const codebaseContext = await getCodebaseContext(
                 newConfig,
+                this.authProvider.getAuthStatus(),
                 this.rgPath,
                 this.symf,
                 this.editor,
@@ -309,6 +311,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
  */
 async function getCodebaseContext(
     config: Config,
+    authStatus: AuthStatus,
     rgPath: string | null,
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
@@ -348,6 +351,7 @@ async function getCodebaseContext(
     return new CodebaseContext(
         config,
         codebase,
+        () => authStatus.endpoint ?? '',
         // Use embeddings search if there are no local embeddings.
         (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,

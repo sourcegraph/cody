@@ -13,7 +13,6 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
 
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
-    serverEndpoint: string
     proxy?: string | null
     codebase?: string
     debugEnable: boolean
@@ -33,9 +32,7 @@ export interface Configuration {
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
     autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
-    autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
-    autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
 
@@ -74,6 +71,7 @@ export interface AutocompleteTimeouts {
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {
+    serverEndpoint: string
     /** The access token, which is stored in the secret storage (not configuration). */
     accessToken: string | null
 }

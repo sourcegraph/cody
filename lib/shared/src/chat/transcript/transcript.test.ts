@@ -74,10 +74,10 @@ describe('Transcript', () => {
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
-                        serverEndpoint: 'https://example.com',
                         experimentalLocalSymbols: false,
                     },
                     'dummy-codebase',
+                    () => 'https://example.com',
                     embeddings,
                     null,
                     null,
@@ -117,10 +117,10 @@ describe('Transcript', () => {
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
-                        serverEndpoint: 'https://example.com',
                         experimentalLocalSymbols: false,
                     },
                     'dummy-codebase',
+                    () => 'https://example.com',
                     embeddings,
                     null,
                     null,
@@ -155,8 +155,9 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
+            () => 'https://example.com',
             embeddings,
             null,
             null,
@@ -247,8 +248,9 @@ describe('Transcript', () => {
             isEditorContextRequired: () => true,
         })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
+            () => 'https://example.com',
             embeddings,
             null,
             null,
@@ -329,8 +331,9 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
+            () => 'https://example.com',
             embeddings,
             null,
             null,

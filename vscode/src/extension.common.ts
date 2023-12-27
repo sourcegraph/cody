@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
@@ -32,8 +32,8 @@ export interface PlatformContext {
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
-    createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
-    createOpenTelemetryService?: (config: Pick<Configuration, 'serverEndpoint'>) => OpenTelemetryService
+    createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
+    createOpenTelemetryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => OpenTelemetryService
     recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }
