@@ -91,6 +91,10 @@ export type WebviewMessage =
     | {
           command: 'reset'
       }
+    | {
+          command: 'find-attribution'
+          text: string
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -112,6 +116,7 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | { type: 'attribution'; attribution: { text: string; status: 'found' | 'not-found' | 'unavailable' } }
 
 /**
  * The subset of configuration that is visible to the webview.

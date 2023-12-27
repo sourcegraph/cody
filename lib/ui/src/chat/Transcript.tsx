@@ -46,6 +46,7 @@ export const Transcript: React.FunctionComponent<
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
         userInfo?: UserAccountInfo
         postMessage?: ApiPostMessage
+        findAttribution: (text: string) => Promise<'found' | 'not-found' | 'unavailable'>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -77,6 +78,7 @@ export const Transcript: React.FunctionComponent<
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    findAttribution,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -181,6 +183,7 @@ export const Transcript: React.FunctionComponent<
                     ChatButtonComponent={ChatButtonComponent}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    findAttribution={findAttribution}
                 />
             )
         }
@@ -224,6 +227,7 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
+                        findAttribution={findAttribution}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (

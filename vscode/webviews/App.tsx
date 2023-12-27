@@ -61,6 +61,28 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
+    interface AttributionCallback {
+        promise: Promise<'found' | 'not-found' | 'unavailable'>
+        resolve: (value: 'found' | 'not-found' | 'unavailable') => void
+    }
+    const [attribution, setAttribution] = useState<Record<string, AttributionCallback>>({})
+    const findAttribution = (text: string): Promise<'found' | 'not-found' | 'unavailable'> => {
+        setAttribution(record => {
+            if (record[text] === undefined) {
+                const callback: Partial<AttributionCallback> = {}
+                callback.promise = new Promise<'found' | 'not-found' | 'unavailable'>(
+                    resolve => (callback.resolve = resolve)
+                )
+                record[text] = callback as AttributionCallback
+                vscodeAPI.postMessage({
+                    command: 'find-attribution',
+                    text,
+                })
+            }
+            return record
+        })
+        return attribution[text].promise
+    }
     const onConsentToEmbeddings = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'embeddings/index' })
     }, [vscodeAPI])
@@ -152,9 +174,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'chatModels':
                         setChatModels(message.models)
                         break
+                    case 'attribution':
+                        attribution[message.attribution.text].resolve(message.attribution.status)
                 }
             }),
-        [errorMessages, view, vscodeAPI]
+        [errorMessages, view, vscodeAPI, attribution]
     )
 
     useEffect(() => {
@@ -278,6 +302,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        findAttribution={findAttribution}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

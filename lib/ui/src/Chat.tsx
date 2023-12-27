@@ -72,6 +72,7 @@ interface ChatProps extends ChatClassNames {
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage
+    findAttribution: (text: string) => Promise<'found' | 'not-found' | 'unavailable'>
 }
 
 export interface UserAccountInfo {
@@ -227,6 +228,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    findAttribution,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -566,6 +568,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    findAttribution={findAttribution}
                 />
             )}
 

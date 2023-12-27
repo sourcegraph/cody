@@ -26,6 +26,7 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     metadata?: CodeBlockMeta
+    findAttribution: (text: string) => Promise<'found' | 'not-found' | 'unavailable'>
 }
 
 export interface CodeBlockMeta {
@@ -159,15 +160,17 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonOnSubmit,
     metadata,
     inProgress,
+    findAttribution,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        console.log('Code blocks/in progress')
         // Attach code block actions only when the message is completed
         if (inProgress) {
             return
         }
-
+        console.log('Code blocks/donedone')
         const preElements = rootRef.current?.querySelectorAll('pre')
         if (!preElements?.length || !copyButtonOnSubmit) {
             return
@@ -175,7 +178,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
 
         for (const preElement of preElements) {
             const preText = preElement.textContent
-            console.log('preText', preText)
             if (preText?.trim() && preElement.parentNode) {
                 const eventMetadata = { requestID: metadata?.requestID, source: metadata?.source }
 
@@ -191,18 +193,13 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
                 const div = document.createElement('div')
-                div.innerText = 'loading'
+                div.innerText = 'unknown'
                 buttons.append(div)
 
-                // create a promise that will resolve in 2s
-                const promise = new Promise<void>(resolve => {
-                    setTimeout(() => {
-                        resolve()
-                    }, 2000)
-                })
+                const promise = findAttribution(preText)
                 promise
-                    .then(() => {
-                        div.innerText = 'done'
+                    .then(status => {
+                        div.innerText = status
                     })
                     .catch(error => {
                         console.error('promise failed', error)
@@ -226,6 +223,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         metadata?.requestID,
         metadata?.source,
         inProgress,
+        findAttribution,
     ])
 
     return useMemo(

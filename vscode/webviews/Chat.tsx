@@ -64,6 +64,7 @@ interface ChatboxProps {
     chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
+    findAttribution: (text: string) => Promise<'found' | 'not-found' | 'unavailable'>
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -88,6 +89,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatModels,
     enableNewChatUI,
     userInfo,
+    findAttribution,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -247,6 +249,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
+            findAttribution={findAttribution}
         />
     )
 }

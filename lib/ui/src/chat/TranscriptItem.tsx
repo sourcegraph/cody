@@ -63,6 +63,7 @@ export const TranscriptItem: React.FunctionComponent<
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo?: UserAccountInfo
         postMessage?: ApiPostMessage
+        findAttribution: (text: string) => Promise<'found' | 'not-found' | 'unavailable'>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -91,6 +92,7 @@ export const TranscriptItem: React.FunctionComponent<
     ChatButtonComponent,
     userInfo,
     postMessage,
+    findAttribution,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const EditTextArea =
@@ -185,6 +187,7 @@ export const TranscriptItem: React.FunctionComponent<
                                 insertButtonOnSubmit={insertButtonOnSubmit}
                                 metadata={message.metadata}
                                 inProgress={inProgress}
+                                findAttribution={findAttribution}
                             />
                         )
                     ) : (

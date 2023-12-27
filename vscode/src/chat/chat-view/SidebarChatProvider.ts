@@ -177,6 +177,24 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 // chat models selector is not supported in old UI
                 await this.webview?.postMessage({ type: 'chatModels', models: [] })
                 break
+            case 'find-attribution':
+                console.log('FIND ATTRIBUTION')
+                setTimeout(() => {
+                    this.webview
+                        ?.postMessage({
+                            type: 'attribution',
+                            attribution: { text: message.text, status: 'unavailable' },
+                        })
+                        .then(
+                            () => {
+                                console.log('FIND ATTRIBUTION/Responded')
+                            },
+                            () => {
+                                console.log('FIND ATTRIBUTION/Rejected')
+                            }
+                        )
+                }, 1000)
+                break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')
         }
