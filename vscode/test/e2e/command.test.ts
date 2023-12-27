@@ -4,6 +4,9 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('submit command from command palette', async ({ page, sidebar }) => {
+    // This test is a bit slow on ubuntu
+    test.setTimeout(60000)
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

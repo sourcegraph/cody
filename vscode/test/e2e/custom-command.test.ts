@@ -9,6 +9,9 @@ test.beforeEach(() => {
     resetLoggedEvents()
 })
 test('open the Custom Commands in sidebar and add new user recipe', async ({ page, sidebar }) => {
+    // This test is a bit slow on ubuntu
+    test.setTimeout(60000)
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
