@@ -309,6 +309,9 @@ importers:
       classnames:
         specifier: ^2.3.2
         version: 2.3.2
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
 
   slack:
     dependencies:
