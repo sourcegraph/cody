@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import { AttributionStatus, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import { CodeBlockActionsProps } from '../Chat'
 import {
@@ -10,6 +10,7 @@ import {
     CopyCodeBlockIcon,
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
+    ShieldIcon,
 } from '../icons/CodeBlockActionIcons'
 
 import styles from './CodeBlocks.module.css'
@@ -26,6 +27,8 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     metadata?: CodeBlockMeta
+
+    findAttribution: (text: string) => Promise<AttributionStatus>
 }
 
 export interface CodeBlockMeta {
@@ -159,6 +162,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonOnSubmit,
     metadata,
     inProgress,
+    findAttribution,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -186,6 +190,33 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     insertButtonOnSubmit,
                     eventMetadata
                 )
+                const flexFiller = document.createElement('div')
+                flexFiller.style.display = 'flex'
+                flexFiller.style.flexGrow = '1'
+                buttons.append(flexFiller)
+                const attributionContainer = document.createElement('div')
+                attributionContainer.innerHTML = ShieldIcon
+                attributionContainer.style.height = '16px'
+                attributionContainer.style.padding = '3px'
+                buttons.append(attributionContainer)
+
+                findAttribution(preText)
+                    .then(status => {
+                        switch (status) {
+                            case 'found':
+                                attributionContainer.style.color = 'var(--hl-dark-red)'
+                                break
+                            case 'not-found':
+                                attributionContainer.style.color = 'var(--hl-dark-green)'
+                                break
+                            case 'unavailable':
+                                attributionContainer.style.color = 'var(--hl-dark-yellow)'
+                                break
+                        }
+                    })
+                    .catch(error => {
+                        console.error('promise failed', error)
+                    })
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
@@ -208,6 +239,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         metadata?.requestID,
         metadata?.source,
         inProgress,
+        findAttribution,
     ])
 
     return useMemo(

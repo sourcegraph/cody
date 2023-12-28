@@ -21,9 +21,10 @@ interface AnnotatedText {
     duration: number
 }
 
+export type AttributionStatus = 'found' | 'not-found' | 'unavailable'
+
 /**
  * Returns markdown text with attribution information added in.
- *
  * @param guardrails client to use to lookup if a snippet of codes attributions
  * @param text markdown text
  */

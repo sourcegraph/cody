@@ -9,6 +9,7 @@ import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { AttributionStatus } from '@sourcegraph/cody-shared/src/guardrails'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
@@ -26,6 +27,15 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
+
+const findAttribution = (text: string): Promise<AttributionStatus> => {
+    // Fake implementation: wait 1s and return 'found'
+    return new Promise<AttributionStatus>(resolve => {
+        setTimeout(() => {
+            resolve('found')
+        }, 1000)
+    })
+}
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
@@ -278,6 +288,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        findAttribution={findAttribution}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

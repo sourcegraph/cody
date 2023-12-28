@@ -36,6 +36,7 @@ import { UserContextSelectorComponent } from './UserContextSelector'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
+import { AttributionStatus } from '@sourcegraph/cody-shared/src/guardrails'
 
 interface ChatboxProps {
     welcomeMessage?: string
@@ -64,6 +65,7 @@ interface ChatboxProps {
     chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
+    findAttribution: (text: string) => Promise<AttributionStatus>
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -88,6 +90,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatModels,
     enableNewChatUI,
     userInfo,
+    findAttribution,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -247,6 +250,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
+            findAttribution={findAttribution}
         />
     )
 }
