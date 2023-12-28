@@ -636,15 +636,6 @@ export class Agent extends MessageHandler {
                 })
             })
 
-            console.log({
-                createWebviewPanel: panel.panelID,
-                viewType,
-                title,
-                showOptions,
-                options,
-                isResolve: !!this.resolveChatPanelId,
-                stack: new Error().stack,
-            })
             if (this.resolveChatPanelId) {
                 this.resolveChatPanelId(panel.panelID)
                 this.resolveChatPanelId = null
@@ -662,7 +653,6 @@ export class Agent extends MessageHandler {
     }
 
     private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {
-        console.log({ receiveWebviewMessage: id, message })
         const panel = this.webPanels.panels.get(id)
         if (!panel) {
             console.log(`No panel with id ${id} found`)
@@ -728,7 +718,11 @@ export class Agent extends MessageHandler {
     }
 
     private async reloadAuth(): Promise<void> {
-        await vscode_shim.commands.executeCommand('agent.auth.reload')
+        await vscode_shim.commands.executeCommand('agent.auth.reload').then(() => {
+            // TODO(#56621): JetBrains: persistent chat history:
+            // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
+            this.webPanels.panels.clear()
+        })
     }
 
     /**
