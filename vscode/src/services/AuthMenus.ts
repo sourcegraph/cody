@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isDotCom, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 export interface LoginMenuItem {
     id: string
@@ -19,9 +19,6 @@ export type AuthMenuType = 'signin' | 'switch'
 
 function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
-    if (isLocalApp(uri)) {
-        return `${icon}Cody App`
-    }
     if (isDotCom(uri)) {
         return `${icon}Sourcegraph.com`
     }
@@ -30,6 +27,10 @@ function getItemLabel(uri: string, current: boolean): string {
 
 export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
     // Create option items
+
+    // Exclude App from the history list.
+    historyItems = historyItems?.filter(uri => uri !== LOCAL_APP_URL.toString())
+
     const historySize = historyItems?.length
     const history =
         historySize > 0

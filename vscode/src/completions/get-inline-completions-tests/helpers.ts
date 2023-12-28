@@ -55,6 +55,7 @@ export function params(
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
+        isDotComUser = false,
         ...params
     }: Params = {}
 ): InlineCompletionsParams {
@@ -67,10 +68,7 @@ export function params(
                 : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
         },
     }
-    const providerConfig = createProviderConfig({
-        client,
-        model: null,
-    })
+    const providerConfig = createProviderConfig({ client })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
 
@@ -84,6 +82,7 @@ export function params(
         position,
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
+        dynamicMultilineCompletions: false,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -110,6 +109,7 @@ export function params(
             position,
             prefix: docContext.prefix,
         }),
+        isDotComUser,
         ...params,
     }
 }

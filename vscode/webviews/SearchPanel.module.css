@@ -15,14 +15,20 @@
     display: grid;
 }
 
+.input-row {
+    gap: 0.3rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+}
+
 .search-input {
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-input-background);
     border-color: var(--vscode-input-border, transparent);
     resize: none;
     border-radius: 2px;
-    height: 1.3em;
-    padding: 8px 8px 8px 8px;
+    box-sizing: border-box;
+    height: 26px;
+    padding: 4px 6px;
     font: inherit;
 }
 
@@ -45,14 +51,38 @@
     border-color: var(--vscode-inputOption-activeBorder, transparent);
 }
 
+.instructions {
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0 1rem;
+    color: var(--vscode-search-resultsInfoForeground);
+    display: none;
+}
+
+.outer-container:hover .instructions,
+.outer-container:focus-within .instructions {
+    display: block;
+}
+
 .search-result-row-inner {
     height: 22px;
     display: flex;
     position: relative;
 }
 
+.search-result-row {
+    cursor: pointer;
+    user-select: none;
+}
+
 .search-result-row:hover {
     background-color: var(--vscode-list-hoverBackground);
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .search-result-row:hover,
+body[data-vscode-theme-kind='vscode-high-contrast'] .search-result-row:hover {
+    outline: 1px dashed var(--vscode-contrastActiveBorder);
+    outline-offset: -1px;
 }
 
 .search-result-row-inner-selected {
@@ -91,36 +121,34 @@
 }
 
 .search-result-twistie-noindent {
-    padding-left: 0px;
+    padding-left: 0;
 }
 
 .search-result-content {
     height: 100%;
     line-height: 22px;
+    overflow: hidden;
+}
+
+.filematch-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 }
 
-.filematch-label {
-    vertical-align: center;
-}
-
 .filematch-icon {
     color: var(--vscode-banner-iconForeground);
-}
-
-.filematch-icon > i {
-    vertical-align: 'text-bottom';
+    line-height: 1;
 }
 
 .filematch-description {
-    font-size: 0.9em;
+    font-size: 12px;
     color: var(--vscode-search-resultsInfoForeground);
-}
-
-.input-row {
-    border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
-    gap: 0.3rem;
-    padding: 0.75rem 0.75rem 1rem 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    flex: 1; /* Let this one ellipsis before the label */
 }

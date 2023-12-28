@@ -16,6 +16,8 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -59,6 +61,19 @@ export enum ConfigurationTarget {
 export enum StatusBarAlignment {
     Left = 1,
     Right = 2,
+}
+
+export enum LogLevel {
+    Off = 0,
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warning = 4,
+    Error = 5,
+}
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2,
 }
 
 export enum CommentThreadCollapsibleState {
@@ -451,6 +466,23 @@ export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
             invokeCallback(listener, data)
         }
     }
+
+    /**
+     * Custom extension of the VS Code API to make it possible to `await` on the
+     * result of `EventEmitter.fire()`.  Most event listeners return a
+     * meaningful `Promise` that is discarded in the signature of the `fire()`
+     * function.  Being able to await on returned promise makes it possible to
+     * write more robust tests because we don't need to rely on magic timeouts.
+     */
+    public async cody_fireAsync(data: T): Promise<void> {
+        const promises: Promise<void>[] = []
+        for (const listener of this.listeners) {
+            const value = invokeCallback(listener, data)
+            promises.push(Promise.resolve(value))
+        }
+        await Promise.all(promises)
+    }
+
     dispose(): void {
         this.listeners.clear()
     }
@@ -624,6 +656,11 @@ const languages: Partial<typeof vscode_types.languages> = {
     },
 }
 
+export enum UIKind {
+    Desktop = 1,
+    Web = 2,
+}
+
 export const vsCodeMocks = {
     Range,
     Position,
@@ -632,7 +669,10 @@ export const vsCodeMocks = {
     EndOfLine,
     CancellationTokenSource,
     ThemeColor,
+    ThemeIcon,
+    TreeItem,
     WorkspaceEdit,
+    UIKind,
     Uri,
     languages,
     window: {
@@ -697,11 +737,6 @@ export const vsCodeMocks = {
     DiagnosticSeverity,
 } as const
 
-export enum UIKind {
-    Desktop = 1,
-    Web = 2,
-}
-
 export function emptyEvent<T>(): vscode_types.Event<T> {
     return () => emptyDisposable
 }
@@ -711,3 +746,19 @@ export enum ProgressLocation {
     Window = 10,
     Notification = 15,
 }
+
+export class MockFeatureFlagProvider extends FeatureFlagProvider {
+    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
+        super(null as any)
+    }
+
+    public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
+        return Promise.resolve(this.enabledFlags.has(flag))
+    }
+    public syncAuthStatus(): void {
+        return
+    }
+}
+
+export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
+export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))

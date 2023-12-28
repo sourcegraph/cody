@@ -6,13 +6,7 @@ import { CodebaseContext } from '../../codebase-context'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { CODY_INTRO_PROMPT } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
-import {
-    defaultKeywordContextFetcher,
-    MockEditor,
-    MockEmbeddingsClient,
-    MockIntentDetector,
-    newRecipeContext,
-} from '../../test/mocks'
+import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newRecipeContext } from '../../test/mocks'
 import { ChatQuestion } from '../recipes/chat-question'
 
 import { Transcript } from '.'
@@ -80,12 +74,12 @@ describe('Transcript', () => {
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
-                        serverEndpoint: 'https://example.com',
                         experimentalLocalSymbols: false,
                     },
                     'dummy-codebase',
+                    () => 'https://example.com',
                     embeddings,
-                    defaultKeywordContextFetcher,
+                    null,
                     null,
                     null
                 ),
@@ -123,12 +117,12 @@ describe('Transcript', () => {
                 codebaseContext: new CodebaseContext(
                     {
                         useContext: 'embeddings',
-                        serverEndpoint: 'https://example.com',
                         experimentalLocalSymbols: false,
                     },
                     'dummy-codebase',
+                    () => 'https://example.com',
                     embeddings,
-                    defaultKeywordContextFetcher,
+                    null,
                     null,
                     null
                 ),
@@ -161,10 +155,11 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
+            () => 'https://example.com',
             embeddings,
-            defaultKeywordContextFetcher,
+            null,
             null,
             null
         )
@@ -253,10 +248,11 @@ describe('Transcript', () => {
             isEditorContextRequired: () => true,
         })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
+            () => 'https://example.com',
             embeddings,
-            defaultKeywordContextFetcher,
+            null,
             null,
             null
         )
@@ -335,10 +331,11 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            { useContext: 'embeddings', experimentalLocalSymbols: false },
             'dummy-codebase',
+            () => 'https://example.com',
             embeddings,
-            defaultKeywordContextFetcher,
+            null,
             null,
             null
         )

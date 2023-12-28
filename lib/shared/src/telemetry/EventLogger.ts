@@ -83,7 +83,7 @@ export class EventLogger {
      *
      * In the future, all usages of TelemetryService will be removed in
      * favour of the new libraries. For more information, see:
-     * https://docs.sourcegraph.com/dev/background-information/telemetry
+     * https://sourcegraph.com/docs/dev/background-information/telemetry
      *
      * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
      * properties may get sent to analytics tools, so must not include private information, such as
@@ -113,10 +113,7 @@ export class EventLogger {
             configurationDetails: {
                 contextSelection: this.config.useContext,
                 chatPredictions: this.config.experimentalChatPredictions,
-                inline: this.config.inlineChat,
-                nonStop: this.config.experimentalNonStop,
                 guardrails: this.config.experimentalGuardrails,
-                newChatUI: this.config.experimentalChatPanel,
             },
             version: this.extensionDetails.version, // for backcompat
             hasV2Event,

@@ -2,53 +2,79 @@
 
 import type * as vscode from 'vscode'
 
+import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
-import { TextDocument } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
-    private readonly documents: Map<string, TextDocument> = new Map()
+    // Keys are `vscode.Uri.toString()` formatted. We don't use `vscode.Uri` as
+    // keys because hashcode/equals behave unreliably.
+    private readonly agentDocuments: Map<string, AgentTextDocument> = new Map()
+
     public workspaceRootUri: vscode.Uri | undefined
-    public activeDocumentFilePath: string | null = null
-    public loadedDocument(document: TextDocument): TextDocument {
-        const fromCache = this.documents.get(document.filePath)
+    public activeDocumentFilePath: vscode.Uri | null = null
+
+    public loadedDocument(document: TextDocumentWithUri): AgentTextDocument {
+        const fromCache = this.agentDocuments.get(document.underlying.uri)
+        if (!fromCache) {
+            return new AgentTextDocument(document)
+        }
+
         if (document.content === undefined) {
-            document.content = fromCache?.content
+            document.underlying.content = fromCache.getText()
         }
+
         if (document.selection === undefined) {
-            document.selection = fromCache?.selection
+            document.underlying.selection = fromCache.underlying.selection
         }
-        return document
+
+        fromCache.update(document)
+
+        return fromCache
     }
 
     public setActiveTextEditor(textEditor: vscode.TextEditor): void {
-        this.activeDocumentFilePath = textEditor.document.fileName
+        this.activeDocumentFilePath = textEditor.document.uri
         vscode_shim.onDidChangeActiveTextEditor.fire(textEditor)
         vscode_shim.window.activeTextEditor = textEditor
     }
 
-    public agentTextDocument(document: TextDocument): AgentTextDocument {
-        return new AgentTextDocument(this.loadedDocument(document))
+    public allUris(): string[] {
+        return [...this.agentDocuments.keys()]
     }
 
-    public allFilePaths(): string[] {
-        return [...this.documents.keys()]
+    public allDocuments(): AgentTextDocument[] {
+        return [...this.agentDocuments.values()]
     }
-    public allDocuments(): TextDocument[] {
-        return [...this.documents.values()]
+
+    public getDocument(uri: vscode.Uri): AgentTextDocument | undefined {
+        return this.agentDocuments.get(uri.toString())
     }
-    public getDocument(filePath: string): TextDocument | undefined {
-        return this.documents.get(filePath)
+
+    public getDocumentFromUriString(uriString: string): AgentTextDocument | undefined {
+        return this.agentDocuments.get(uriString)
     }
-    public addDocument(document: TextDocument): void {
-        this.documents.set(document.filePath, this.loadedDocument(document))
-        const tabs: readonly vscode.Tab[] = this.allFilePaths().map(filePath => this.vscodeTab(filePath))
+
+    public addDocument(document: TextDocumentWithUri): AgentTextDocument {
+        const agentDocument = this.loadedDocument(document)
+        this.agentDocuments.set(document.underlying.uri, agentDocument)
+
+        const tabs: vscode.Tab[] = []
+        for (const uri of this.allUris()) {
+            const document = this.getDocumentFromUriString(uri)
+            if (!document) {
+                continue
+            }
+            tabs.push(this.vscodeTab(document.uri))
+        }
+
         vscode_shim.tabGroups.all = [
             {
                 tabs,
                 isActive: true,
-                activeTab: this.vscodeTab(this.activeDocumentFilePath ?? ''),
+                activeTab: this.activeDocumentFilePath ? this.vscodeTab(this.activeDocumentFilePath) : undefined,
                 viewColumn: vscode_shim.ViewColumn.Active,
             },
         ]
@@ -57,23 +83,29 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             vscode_shim.visibleTextEditors.pop()
         }
         for (const document of this.allDocuments()) {
-            vscode_shim.visibleTextEditors.push(newTextEditor(this.agentTextDocument(document)))
+            vscode_shim.visibleTextEditors.push(newTextEditor(document))
         }
+
+        vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
+
+        return agentDocument
     }
-    public deleteDocument(filePath: string): void {
-        this.documents.delete(filePath)
+
+    public deleteDocument(uri: vscode.Uri): void {
+        this.agentDocuments.delete(uri.toString())
     }
-    private vscodeTab(filePath: string): vscode.Tab {
+
+    private vscodeTab(uri: vscode.Uri): vscode.Tab {
         return {
             input: {
-                uri: filePath,
+                uri,
             },
             label: 'label',
             group: { activeTab: undefined, isActive: false, tabs: [], viewColumn: -1 },
         } as any
     }
 
-    public openTextDocument(filePath: string): Promise<vscode.TextDocument> {
-        return Promise.resolve(this.agentTextDocument({ filePath }))
+    public openTextDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
+        return Promise.resolve(this.loadedDocument(new TextDocumentWithUri(uri)))
     }
 }

@@ -2,17 +2,18 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { ChatMessage, ChatModelProvider } from '@sourcegraph/cody-shared'
 
 import {
+    ApiPostMessage,
     ChatButtonProps,
     ChatModelDropdownMenuProps,
-    ChatModelSelection,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
     CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    UserAccountInfo,
 } from '../Chat'
 
 import { FileLinkProps } from './components/ContextFiles'
@@ -40,9 +41,11 @@ export const Transcript: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
-        chatModels?: ChatModelSelection[]
+        chatModels?: ChatModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-        onCurrentChatModelChange?: (model: ChatModelSelection) => void
+        onCurrentChatModelChange?: (model: ChatModelProvider) => void
+        userInfo?: UserAccountInfo
+        postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -72,6 +75,8 @@ export const Transcript: React.FunctionComponent<
     chatModels,
     ChatModelDropdownMenu,
     onCurrentChatModelChange,
+    userInfo,
+    postMessage,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -141,7 +146,7 @@ export const Transcript: React.FunctionComponent<
     const messageToTranscriptItem =
         (offset: number) =>
         (message: ChatMessage, index: number): JSX.Element | null => {
-            if (!message?.displayText) {
+            if (!message?.displayText && !message.error) {
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
@@ -165,15 +170,17 @@ export const Transcript: React.FunctionComponent<
                     textAreaComponent={textAreaComponent}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText.startsWith('/')}
+                    showEditButton={offsetIndex && !messageInProgress?.speaker && !message.displayText?.startsWith('/')}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
-                    showFeedbackButtons={index !== 0 && !isTranscriptError}
+                    showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
+                    userInfo={userInfo}
+                    postMessage={postMessage}
                 />
             )
         }
@@ -181,13 +188,18 @@ export const Transcript: React.FunctionComponent<
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length && ChatModelDropdownMenu && onCurrentChatModelChange && (
-                    <ChatModelDropdownMenu
-                        models={chatModels}
-                        disabled={transcript.length > 1}
-                        onCurrentChatModelChange={onCurrentChatModelChange}
-                    />
-                )}
+                {!!chatModels?.length &&
+                    ChatModelDropdownMenu &&
+                    onCurrentChatModelChange &&
+                    userInfo &&
+                    userInfo.isDotComUser && (
+                        <ChatModelDropdownMenu
+                            models={chatModels}
+                            disabled={transcript.length > 1}
+                            onCurrentChatModelChange={onCurrentChatModelChange}
+                            userInfo={userInfo}
+                        />
+                    )}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
@@ -211,6 +223,7 @@ export const Transcript: React.FunctionComponent<
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
+                        postMessage={postMessage}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (

@@ -9,6 +9,7 @@ export interface ChatButton {
     label: string
     action: string
     onClick: (action: string) => void
+    appearance?: 'primary' | 'secondary' | 'icon'
 }
 
 export interface ChatMessage extends Message {
@@ -18,13 +19,31 @@ export interface ChatMessage extends Message {
     buttons?: ChatButton[]
     data?: any
     metadata?: ChatMetadata
+    error?: ChatError
 }
 
-export interface InteractionMessage extends Message {
-    displayText?: string
+export interface InteractionMessage extends ChatMessage {
     prefix?: string
-    error?: string
-    metadata?: ChatMetadata
+}
+
+export interface ChatError {
+    kind?: string
+    name: string
+    message: string
+
+    // Rate-limit properties
+    retryAfter?: string | null
+    limit?: number
+    userMessage?: string
+    retryAfterDate?: Date
+    retryAfterDateString?: string // same as retry after Date but JSON serializable
+    retryMessage?: string
+    feature?: string
+    upgradeIsAvailable?: boolean
+
+    // Prevent Error from being passed as ChatError.
+    // Errors should be converted using errorToChatError.
+    isChatErrorGuard: 'isChatErrorGuard'
 }
 
 export interface ChatMetadata {
@@ -48,7 +67,6 @@ export interface OldChatHistory {
 
 export type ChatEventSource =
     | 'chat'
-    | 'inline-chat'
     | 'editor'
     | 'menu'
     | 'code-action'
@@ -57,3 +75,17 @@ export type ChatEventSource =
     | 'code-lens'
     | CodyDefaultCommands
     | RecipeID
+
+/**
+ * Converts an Error to a ChatError. Note that this cannot be done naively,
+ * because some of the Error object's keys are typically not enumerable, and so
+ * would be omitted during serialization.
+ */
+export function errorToChatError(error: Error): ChatError {
+    return {
+        isChatErrorGuard: 'isChatErrorGuard',
+        ...error,
+        message: error.message,
+        name: error.name,
+    }
+}

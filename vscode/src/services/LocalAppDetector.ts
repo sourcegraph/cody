@@ -3,53 +3,55 @@ import * as vscode from 'vscode'
 import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { version } from '../../package.json'
-import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
+import { LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../commands/utils/helpers'
 import { fetch } from '../fetch'
 import { logDebug, logError } from '../log'
 
-import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
-import { secretStorage } from './SecretStorageProvider'
+import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 
 type OnChangeCallback = (type: string) => Promise<void>
+
+// The  OS and Arch support for Cody app
+function isOsSupportedByApp(os?: string, arch?: string): boolean {
+    if (!os || !arch) {
+        return false
+    }
+    return os === 'darwin' || os === 'linux'
+}
+
 /**
  * Detects whether the user has the Sourcegraph app installed locally.
  */
 export class LocalAppDetector implements vscode.Disposable {
-    private localEnv: LocalEnv
-
     // Check if the platform is supported and the user has a home directory
     private isSupported = false
 
     private localAppMarkers
     private appFsPaths: string[] = []
-    private tokenFsPath: vscode.Uri | null = null
 
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
 
     constructor(options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
-        this.localEnv = { ...envInit }
-        this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
-        this.isSupported =
-            isOsSupportedByApp(this.localEnv.os, this.localEnv.arch) && this.localEnv.homeDir !== undefined
+        const env = getProcessInfo()
+        this.localAppMarkers = LOCAL_APP_LOCATIONS[env.os]
+        this.isSupported = isOsSupportedByApp(env.os, env.arch) && env.homeDir !== undefined
     }
 
-    public async getProcessInfo(isLoggedIn = false): Promise<LocalEnv> {
+    public async getProcessInfo(isLoggedIn = false): Promise<void> {
         if (isLoggedIn && this._watchers.length > 0) {
             this.dispose()
         }
         await this.fetchServer()
-        return this.localEnv
     }
 
     public async init(): Promise<void> {
         // Start with init state
         this.dispose()
-        this.localEnv = { ...envInit }
         logDebug('LocalAppDetector', 'initializing')
-        const homeDir = this.localEnv.homeDir
+        const homeDir = getProcessInfo().homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
             logError('LocalAppDetector:init:failed', 'osNotSupported')
@@ -68,70 +70,28 @@ export class LocalAppDetector implements vscode.Disposable {
             watcher.onDidChange(() => this.fetchApp())
             this._watchers.push(watcher)
             this.appFsPaths.push(dirPath + marker.file)
-            if (marker.hasToken) {
-                this.tokenFsPath = vscode.Uri.file(dirPath + marker.file)
-            }
         }
         await this.fetchApp()
     }
 
     // Check if App is installed
     private async fetchApp(): Promise<void> {
-        if (this.localEnv.isAppInstalled || !this.appFsPaths) {
+        if (!this.appFsPaths) {
             return
         }
         if (await Promise.any(this.appFsPaths.map(file => pathExists(vscode.Uri.file(file))))) {
-            this.localEnv.isAppInstalled = true
             this.appFsPaths = []
             await this.found('app')
-            await this.fetchToken()
             return
-        }
-    }
-
-    // Get token from app.json if it exists
-    private async fetchToken(): Promise<void> {
-        if (!this.tokenFsPath || this.localEnv.hasAppJson) {
-            return
-        }
-        await this.tryFetchAppJson(this.tokenFsPath)
-    }
-
-    // Check if `uri` has the an app token. This skips the checks for an
-    // existing token and will forcibly load new tokens.
-    //
-    // This is a stop-gap so LocalAppWatcher/simplified onboarding can force
-    // LocalAppDetector and downstream to pick up an app token even after the
-    // user has logged in to dotcom.
-    public async tryFetchAppJson(uri: vscode.Uri): Promise<void> {
-        const appJson = await loadAppJson(uri)
-        if (!appJson) {
-            return
-        }
-        const token = appJson.token
-        // Once the token is found, we can stop watching the files
-        if (token?.length) {
-            this.localEnv.hasAppJson = true
-            this.tokenFsPath = null
-            await this.found('token')
-            await secretStorage.storeToken(LOCAL_APP_URL.href, token)
-            await this.fetchServer()
         }
     }
 
     // Check if App is running
     private async fetchServer(): Promise<void> {
-        if (this.localEnv.isAppRunning) {
-            return
-        }
         try {
             const response = await fetch(`${LOCAL_APP_URL.href}__version`)
             if (response.status === 200) {
-                this.localEnv.isAppRunning = true
                 await this.found('server')
-            }
-            if (!this.localEnv.hasAppJson) {
-                await this.fetchToken()
             }
         } catch {
             return
@@ -140,8 +100,7 @@ export class LocalAppDetector implements vscode.Disposable {
 
     // Notify the caller that the app has been found
     // NOTE: Call this function only when the app is found
-    private async found(type: 'app' | 'token' | 'server'): Promise<void> {
-        this.localEnv.isAppInstalled = true
+    private async found(type: 'app' | 'server'): Promise<void> {
         await this.onChange(type)
         logDebug('LocalAppDetector:found', type)
     }
@@ -153,7 +112,6 @@ export class LocalAppDetector implements vscode.Disposable {
         }
         this._watchers = []
         this.appFsPaths = []
-        this.tokenFsPath = null
     }
 }
 
@@ -174,24 +132,16 @@ export function expandHomeDir(path: string, homeDir: string | null | undefined):
     return path
 }
 
-async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
-    try {
-        const data = await vscode.workspace.fs.readFile(uri)
-        return JSON.parse(data.toString()) as AppJson
-    } catch {
-        return null
-    }
+const envInit: LocalEnv = {
+    arch: process.arch,
+    os: process.platform,
+    homeDir: process.env.HOME,
+
+    extensionVersion: version,
+
+    uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
 }
 
-export const envInit: LocalEnv = {
-    os: process.platform,
-    arch: process.arch,
-    homeDir: process.env.HOME,
-    uriScheme: vscode.env.uriScheme,
-    appName: vscode.env.appName,
-    extensionVersion: version,
-    uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-    isAppInstalled: false,
-    isAppRunning: false,
-    hasAppJson: false,
+export function getProcessInfo(): LocalEnv {
+    return { ...envInit }
 }

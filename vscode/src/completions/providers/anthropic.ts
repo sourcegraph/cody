@@ -3,10 +3,9 @@ import * as vscode from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
+import { DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -17,11 +16,15 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
-import { forkSignal, messagesToText } from '../utils'
+import { messagesToText } from '../utils'
 
+import {
+    generateCompletions,
+    getCompletionParamsAndFetchImpl,
+    getLineNumberDependentCompletionParams,
+} from './generate-completions'
 import {
     CompletionProviderTracer,
     Provider,
@@ -30,27 +33,29 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+const MAX_RESPONSE_TOKENS = 256
+
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
+export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+
+const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
+    singlelineStopRequences: SINGLE_LINE_STOP_SEQUENCES,
+    multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
+})
 
 export interface AnthropicOptions {
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    model?: 'claude-instant-1.2-cyan' | 'claude-instant-1.2'
 }
-
-const MAX_RESPONSE_TOKENS = 256
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
-    private model: AnthropicOptions['model']
 
-    constructor(options: ProviderOptions, { maxContextTokens, client, model }: Required<AnthropicOptions>) {
+    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<AnthropicOptions>) {
         super(options)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
-        this.model = model
     }
 
     public emptyPromptLength(): number {
@@ -134,79 +139,38 @@ export class AnthropicProvider extends Provider {
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completion: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completion: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]> {
-        // Create prompt
-        const { messages: prompt } = this.createPrompt(snippets)
-        if (prompt.length > this.promptChars) {
-            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
-        }
+    ): Promise<void> {
+        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl({
+            providerOptions: this.options,
+            lineNumberDependentCompletionParams,
+        })
 
         const requestParams: CodeCompletionsParams = {
+            ...partialRequestParams,
+            messages: this.createPrompt(snippets).messages,
             temperature: 0.5,
-            messages: prompt,
-            ...(this.model === 'claude-instant-1.2-cyan' ? { model: 'anthropic/claude-instant-1.2-cyan' } : undefined),
-            ...(this.options.multiline
-                ? {
-                      maxTokensToSample: MAX_RESPONSE_TOKENS,
-                      stopSequences: MULTI_LINE_STOP_SEQUENCES,
-                      timeoutMs: 15000,
-                  }
-                : {
-                      maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
-                      stopSequences: SINGLE_LINE_STOP_SEQUENCES,
-                      timeoutMs: 5000,
-                  }),
         }
 
-        tracer?.params(requestParams)
-
-        const completions = await Promise.all(
-            Array.from({ length: this.options.n }).map(() => {
-                return this.fetchAndProcessCompletions(this.client, requestParams, abortSignal)
-            })
-        )
-
-        tracer?.result({ completions })
-        return completions
-    }
-
-    private async fetchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CodeCompletionsParams,
-        abortSignal: AbortSignal
-    ): Promise<InlineCompletionItemWithAnalytics> {
-        // The Async executor is required to return the completion early if a partial result from SSE can be used.
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            try {
-                const abortController = forkSignal(abortSignal)
-
-                const result = await client.complete(
-                    params,
-                    (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        const completion = canUsePartialCompletion(processedCompletion, this.options)
-
-                        if (completion) {
-                            resolve({ ...completion, stopReason: 'streaming-truncation' })
-                            abortController.abort()
-                        }
-                    },
-                    abortController.signal
-                )
-
-                const processedCompletion = this.postProcess(result.completion)
-                const completion = parseAndTruncateCompletion(processedCompletion, this.options)
-
-                resolve({ ...completion, stopReason: result.stopReason })
-            } catch (error) {
-                reject(error)
-            }
+        await generateCompletions({
+            client: this.client,
+            requestParams,
+            abortSignal,
+            providerSpecificPostProcess: this.postProcess,
+            providerOptions: this.options,
+            tracer,
+            fetchAndProcessCompletionsImpl,
+            onCompletionReady,
+            onHotStreakCompletionReady,
         })
     }
 
-    private postProcess(rawResponse: string): string {
+    private postProcess = (rawResponse: string): string => {
         let completion = extractFromCodeBlock(rawResponse)
 
         const trimmedPrefixContainNewline = this.options.docContext.prefix
@@ -227,30 +191,13 @@ export class AnthropicProvider extends Provider {
     }
 }
 
-export function createProviderConfig({
-    maxContextTokens = 2048,
-    model,
-    ...otherOptions
-}: Omit<AnthropicOptions, 'model'> & { model: string | null }): ProviderConfig {
-    let definedModel: 'claude-instant-1.2-cyan' | 'claude-instant-1.2'
-    switch (model) {
-        case 'claude-instant-1.2-cyan':
-            definedModel = 'claude-instant-1.2-cyan'
-            break
-        case 'claude-instant-1.2':
-        case null:
-            definedModel = 'claude-instant-1.2'
-            break
-        default:
-            throw new Error(`Invalid model: ${model}`)
-    }
-
+export function createProviderConfig({ maxContextTokens = 2048, ...otherOptions }: AnthropicOptions): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, { maxContextTokens, model: definedModel, ...otherOptions })
+            return new AnthropicProvider(options, { maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: 'anthropic',
-        model: definedModel,
+        model: 'claude-instant-1.2',
     }
 }

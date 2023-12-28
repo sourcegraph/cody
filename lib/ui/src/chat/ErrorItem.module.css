@@ -1,0 +1,126 @@
+.error-item {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.error-item .icon {
+    font-size: 24px;
+}
+
+.error-item .body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.error-item vscode-button {
+    margin: 0;
+}
+
+.error-item h1, .error-item p {
+    margin: 0;
+}
+
+.error-item header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-right: 30px;
+}
+
+.error-item header h1 {
+    text-transform: uppercase;
+    font-size: 11px;
+    margin: 0;
+}
+
+.error-item header p {
+    max-width: 40em;
+    opacity: 0.9;
+}
+
+.error-item .actions {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.error-item .retry-message {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.error-item .banner-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    overflow: hidden;
+    height: 100px;
+
+}
+
+@property --error-item-reflection-position {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+}
+
+.error-item .banner {
+    --error-item-reflection-position: -100%;
+
+    padding: 6px 30px;
+    transform: translateY(50%) translateX(25%) rotate(45deg);
+    border: 1px solid rgba(0 0 0 / 16%);
+    background:
+        linear-gradient(
+            45deg,
+            rgb(255 220 220 / 0%) calc(var(--error-item-reflection-position) + 35%),
+            rgb(255 220 220 / 50%) calc(var(--error-item-reflection-position) + 50%),
+            rgb(255 220 220 / 0%) calc(var(--error-item-reflection-position) + 65%)
+        ),
+        linear-gradient(rgb(255 255 255 / 55%), rgb(255 255 255 / 55%)),
+        repeating-conic-gradient(#4AC1E8, #7048E8, #FF5543, #7048E8, #4AC1E8);
+    box-shadow: 0 4px 8px 0 rgb(0 0 0 / 15%);
+    transition: box-shadow 650ms ease-in-out;
+    color: #080808;
+    text-shadow: 1px 1px 0 rgb(255 255 255 / 75%);
+    font-size: 9px;
+    line-height: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.error-item .banner:hover {
+    --error-item-reflection-position: 100%;
+
+    transition: --error-item-reflection-position 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+                box-shadow 750ms ease-in-out;
+    box-shadow: 0 4px 8px 0 rgb(0 0 0 / 15%),
+                0 0 10px 0 rgb(255 255 255 / 35%);
+;
+}
+
+.error-item .banner::before {
+    content: ' ';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 5px;
+    transform: translateX(-22px) rotate(135deg);
+    background: linear-gradient(rgb(255 255 255 / 0%), rgb(255 255 255 / 80%));
+}
+
+.error-item .banner::after {
+    content: ' ';
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    width: 100px;
+    height: 5px;
+    transform: translateY(-27px) rotate(225deg);
+    background: linear-gradient(rgb(255 255 255 / 0%), rgb(255 255 255 / 80%));
+}

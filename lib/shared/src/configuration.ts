@@ -13,7 +13,6 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
 
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
-    serverEndpoint: string
     proxy?: string | null
     codebase?: string
     debugEnable: boolean
@@ -23,29 +22,48 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: string
+    codeActions: boolean
+    commandCodeLenses: boolean
+    editorTitleCommandIcon: boolean
+
+    /**
+     * Autocomplete
+     */
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    inlineChat: boolean
-    codeActions: boolean
-    experimentalChatPanel: boolean
-    experimentalChatPredictions: boolean
-    experimentalSearchPanel: boolean
-    experimentalCommandLenses: boolean
-    editorTitleCommandIcon: boolean
-    experimentalGuardrails: boolean
-    experimentalNonStop: boolean
-    experimentalLocalSymbols: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
-    autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
-    autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
+    autocompleteFormatOnAccept?: boolean
+
+    /**
+     * Experimental
+     */
+    experimentalGuardrails: boolean
+    experimentalLocalSymbols: boolean
+    experimentalSymfContext: boolean
+    experimentalSimpleChatContext: boolean
+    experimentalChatPredictions: boolean
+
+    /**
+     * Experimental autocomplete
+     */
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     internalUnstable: boolean
+    autocompleteExperimentalDynamicMultilineCompletions?: boolean
+    autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
+
+    /**
+     * Hidden settings
+     */
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     autocompleteTimeouts: AutocompleteTimeouts
+
+    testingLocalEmbeddingsModel: string | undefined
+    testingLocalEmbeddingsEndpoint: string | undefined
+    testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
 
 export interface AutocompleteTimeouts {
@@ -54,6 +72,7 @@ export interface AutocompleteTimeouts {
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {
+    serverEndpoint: string
     /** The access token, which is stored in the secret storage (not configuration). */
     accessToken: string | null
 }

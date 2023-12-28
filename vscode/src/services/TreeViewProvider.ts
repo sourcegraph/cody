@@ -1,5 +1,10 @@
 import * as vscode from 'vscode'
 
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
+import { AuthStatus } from '../chat/protocol'
+
 import { CodySidebarTreeItem, CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
 
 export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -7,10 +12,15 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
+    private authStatus: AuthStatus | undefined
+    private treeItems: CodySidebarTreeItem[]
 
-    constructor(private type: CodyTreeItemType) {
-        this.updateTree(getCodyTreeItems(type))
-        this.refresh()
+    constructor(
+        private type: CodyTreeItemType,
+        private readonly featureFlagProvider: FeatureFlagProvider
+    ) {
+        this.treeItems = getCodyTreeItems(type)
+        void this.refresh()
     }
 
     /**
@@ -28,11 +38,42 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     /**
-     * Updates the tree view with the provided tree items.
+     * Updates the tree view with the provided tree items, filtering out any
+     * that do not meet the required criteria to show.
      */
-    public updateTree(treeItems: CodySidebarTreeItem[]): void {
+    public async updateTree(treeItems: CodySidebarTreeItem[]): Promise<void> {
+        this.treeItems = treeItems
+        return this.refresh()
+    }
+
+    /**
+     * Refreshes the visible tree items, filtering out any
+     * that do not meet the required criteria to show.
+     */
+    public async refresh(): Promise<void> {
+        // TODO(dantup): This method can be made not-async again when we don't need to call evaluateFeatureFlag
         const updatedTree: vscode.TreeItem[] = []
-        treeItems.forEach(item => {
+        this.treeNodes = updatedTree // Set this before any awaits so last call here always wins regardless of async scheduling.
+        for (const item of this.treeItems) {
+            if (item.requireDotCom) {
+                const isConnectedtoDotCom = this.authStatus?.endpoint && isDotCom(this.authStatus?.endpoint)
+                if (!isConnectedtoDotCom) {
+                    continue
+                }
+            }
+
+            if (item.requireFeature && !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))) {
+                continue
+            }
+
+            if (
+                item.requireUpgradeAvailable &&
+                (await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPro)) &&
+                !(this.authStatus?.userCanUpgrade ?? false)
+            ) {
+                continue
+            }
+
             const treeItem = new vscode.TreeItem({ label: item.title })
             treeItem.id = item.id
             treeItem.iconPath = new vscode.ThemeIcon(item.icon)
@@ -40,19 +81,17 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
             treeItem.command = { command: item.command.command, title: item.title, arguments: item.command.args }
 
             updatedTree.push(treeItem)
-        })
-        this.treeNodes = updatedTree
-        this.refresh()
-    }
+        }
 
-    /**
-     * Refresh the tree view to get the latest data
-     */
-    public refresh(): void {
         if (this.type === 'chat') {
             void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', this.treeNodes.length)
         }
         this._onDidChangeTreeData.fire()
+    }
+
+    public syncAuthStatus(authStatus: AuthStatus): void {
+        this.authStatus = authStatus
+        void this.refresh()
     }
 
     /**
@@ -83,7 +122,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public reset(): void {
         void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', false)
         this.treeNodes = []
-        this.refresh()
+        void this.refresh()
     }
 
     /**

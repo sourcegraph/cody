@@ -1,4 +1,3 @@
-import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -8,10 +7,9 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
-import { LocalAppWatcher } from '../../services/LocalAppWatcher'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import {
@@ -21,15 +19,9 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import {
-    APP_LANDING_URL,
-    APP_REPOSITORIES_URL,
-    archConvertor,
-    ExtensionMessage,
-    isOsSupportedByApp,
-    WebviewMessage,
-} from '../protocol'
+import { ExtensionMessage, WebviewMessage } from '../protocol'
 
+import { chatHistory } from './ChatHistoryManager'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -42,25 +34,19 @@ export interface SidebarChatOptions extends MessageProviderOptions {
 
 export class SidebarChatProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     public webview?: SidebarChatWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
 
     constructor({ extensionUri, ...options }: SidebarChatOptions) {
         super(options)
         this.extensionUri = extensionUri
-
-        const localAppWatcher = new LocalAppWatcher()
-        this.disposables.push(localAppWatcher)
-        this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
-        this.disposables.push(localAppWatcher.onTokenFileChange(tokenFile => this.tokenFileChanged(tokenFile)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
+                await this.contextProvider.syncAuthStatus()
                 break
             case 'initialized':
                 logDebug('SidebarChatProvider:onDidReceiveMessage', 'initialized')
@@ -68,9 +54,21 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.init()
                 break
             case 'submit':
-                return this.onHumanMessageSubmitted(message.text, message.submitType, message.contextFiles)
+                // Hint local embeddings, if any, should start so subsequent
+                // messages can use local embeddings. We delay to this point so
+                // local embeddings service start-up updating the context
+                // provider does not cause autocompletes to disappear.
+                void this.contextProvider.localEmbeddings?.start()
+
+                return this.onHumanMessageSubmitted(
+                    message.text,
+                    message.submitType,
+                    message.contextFiles,
+                    message.addEnhancedContext
+                )
             case 'edit':
                 this.transcript.removeLastInteraction()
+                // TODO: This should replay the submitted context files and/or enhanced context fetching
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
@@ -92,14 +90,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await this.executeRecipe(message.recipe, '', 'chat')
                 break
             case 'auth':
-                if (message.type === 'app' && message.endpoint) {
-                    await this.authProvider.appAuth(message.endpoint)
-                    // Log app button click events: e.g. app:download:clicked or app:connect:clicked
-                    const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`, undefined, { hasV2Event: true }) // TODO(sqs): remove when new events are working
-                    telemetryRecorder.recordEvent(`cody.${value}`, 'clicked')
-                    break
-                }
                 if (message.type === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
@@ -161,14 +151,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
             case 'simplified-onboarding':
-                if (message.type === 'install-app') {
-                    void this.simplifiedOnboardingInstallApp()
-                    break
-                }
-                if (message.type === 'open-app') {
-                    void openExternalLinks(APP_REPOSITORIES_URL.href)
-                    break
-                }
                 if (message.type === 'reload-state') {
                     void this.simplifiedOnboardingReloadEmbeddingsState()
                     break
@@ -188,34 +170,20 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
                     break
                 }
                 break
+            case 'show-page':
+                await vscode.commands.executeCommand('show-page', message.page)
+                break
+            case 'get-chat-models':
+                // chat models selector is not supported in old UI
+                await this.webview?.postMessage({ type: 'chatModels', models: [] })
+                break
             default:
-                this.handleError('Invalid request type from Webview', 'system')
+                this.handleError(new Error('Invalid request type from Webview'), 'system')
         }
-    }
-
-    private async simplifiedOnboardingInstallApp(): Promise<void> {
-        const os = process.platform
-        const arch = process.arch
-        const DOWNLOAD_URL =
-            os && arch && isOsSupportedByApp(os, arch)
-                ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
-                : APP_LANDING_URL.href
-        await openExternalLinks(DOWNLOAD_URL)
     }
 
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
         await this.contextProvider.forceUpdateCodebaseContext()
-    }
-
-    private appWatcherChanged(appWatcher: LocalAppWatcher): void {
-        void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
-        void this.simplifiedOnboardingReloadEmbeddingsState()
-    }
-
-    private tokenFileChanged(file: vscode.Uri): void {
-        void this.authProvider.appDetector
-            .tryFetchAppJson(file)
-            .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
     }
 
     private async onHumanMessageSubmitted(
@@ -224,9 +192,11 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         contextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', {
+            verbose: { text, submitType, addEnhancedContext },
+        })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
@@ -256,6 +226,7 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             type: 'transcript',
             messages: transcript,
             isMessageInProgress,
+            chatID: this.sessionID,
         })
     }
 
@@ -279,14 +250,14 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string, type: MessageErrorType): void {
+    public handleError(error: Error, type: MessageErrorType): void {
         if (type === 'transcript') {
-            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            this.transcript.addErrorAsAssistantResponse(error)
             void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
@@ -306,27 +277,48 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
             return
         }
 
-        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
-            try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+        const cancellation = new vscode.CancellationTokenSource()
 
-                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context,
-                })
-            } catch (error) {
-                // Handle or log the error as appropriate
-                console.error('Error retrieving context files:', error)
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
+            } else {
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             }
-        }, 100)
-
-        await debouncedContextFileQuery(query)
+        } catch (error) {
+            // Handle or log the error as appropriate
+            console.error('Error retrieving context files:', error)
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
+        }
     }
+
     /**
      *
      * @param notice Triggers displaying a notice.
@@ -369,7 +361,6 @@ export class SidebarChatProvider extends MessageProvider implements vscode.Webvi
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
-        this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')

@@ -41,16 +41,22 @@ export function getEditor(): LastActiveTextEditor {
         return lastActiveTextEditor
     }
 
-    // Check if the active editor is:
-    // a. a file that cody supports
-    // b. a file that is ignored by Cody
-    const activeEditor = vscode.window.activeTextEditor
-    if (activeEditor?.document.uri) {
-        // Update the lastActiveTextEditor if the active editor is a valid file
-        if (validFileSchemes.has(activeEditor.document.uri.scheme)) {
-            lastActiveTextEditor.active = activeEditor
-            lastActiveTextEditor.ignored = isCodyIgnoredFile(activeEditor?.document.uri)
+    // When the webview panel is focused, calling activeTextEditor will return undefined.
+    // This allows us to get the active editor before the webview panel is focused.
+    const get = (): LastActiveTextEditor => {
+        // Check if the active editor is:
+        // a. a file that cody supports
+        // b. a file that is ignored by Cody
+        const activeEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
+        if (activeEditor?.document.uri.scheme) {
+            // Update the lastActiveTextEditor if the active editor is a valid file
+            if (validFileSchemes.has(activeEditor.document.uri.scheme)) {
+                lastActiveTextEditor.active = activeEditor
+                lastActiveTextEditor.ignored = isCodyIgnoredFile(activeEditor?.document.uri)
+            }
         }
+        return lastActiveTextEditor
     }
-    return lastActiveTextEditor
+
+    return get()
 }

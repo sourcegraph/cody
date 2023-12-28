@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -11,7 +12,7 @@ import { CodeCompletionsClient } from './client'
 import { ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import { createProviderConfig } from './providers/createProvider'
+import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 interface InlineCompletionItemProviderArgs {
@@ -56,16 +57,18 @@ export async function createInlineCompletionItemProvider({
         bfgContextFlag,
         bfgMixedContextFlag,
         localMixedContextFlag,
-        disableNetworkCache,
         disableRecyclingOfPreviousRequests,
+        dynamicMultilineCompletionsFlag,
+        hotStreakFlag,
     ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLspLight),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfg),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
     if (providerConfig) {
         const contextStrategy: ContextStrategy =
@@ -75,6 +78,10 @@ export async function createInlineCompletionItemProvider({
                 ? 'bfg'
                 : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
                 ? 'bfg-mixed'
+                : config.autocompleteExperimentalGraphContext === 'local-mixed'
+                ? 'local-mixed'
+                : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
+                ? 'jaccard-similarity'
                 : lspLightContextFlag
                 ? 'lsp-light'
                 : bfgContextFlag
@@ -85,16 +92,25 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : 'jaccard-similarity'
 
+        const dynamicMultilineCompletions =
+            config.autocompleteExperimentalDynamicMultilineCompletions || dynamicMultilineCompletionsFlag
+        const hotStreak = config.autocompleteExperimentalHotStreak || hotStreakFlag
+
+        const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
+            authStatus: authProvider.getAuthStatus(),
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            disableNetworkCache,
+            formatOnAccept: config.autocompleteFormatOnAccept,
             disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,
             createBfgRetriever,
+            dynamicMultilineCompletions,
+            hotStreak,
+            isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 
         const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
@@ -128,6 +144,13 @@ export async function createInlineCompletionItemProvider({
     }
 }
 
+// Languages which should be disabled, but they are not present in
+// https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers
+// But they exist in the `vscode.languages.getLanguages()` return value.
+//
+// To avoid confusing users with unknown language IDs, we disable them here programmatically.
+const DISABLED_LANGUAGES = new Set(['scminput'])
+
 export async function getInlineCompletionItemProviderFilters(
     autocompleteLanguages: Record<string, boolean>
 ): Promise<vscode.DocumentFilter[]> {
@@ -135,7 +158,10 @@ export async function getInlineCompletionItemProviderFilters(
     const languageIds = await vscode.languages.getLanguages()
 
     return languageIds.flatMap(language => {
-        const enabled = language in perLanguageConfig ? perLanguageConfig[language] : isEnabledForAll
+        const enabled =
+            !DISABLED_LANGUAGES.has(language) && language in perLanguageConfig
+                ? perLanguageConfig[language]
+                : isEnabledForAll
 
         return enabled ? [{ language, scheme: 'file' }] : []
     })

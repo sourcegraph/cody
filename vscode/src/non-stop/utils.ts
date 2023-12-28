@@ -1,13 +1,12 @@
-import * as vscode from 'vscode'
-
 export enum CodyTaskState {
     'idle' = 1,
     'working' = 2,
-    'applying' = 3,
-    'formatting' = 4,
-    'applied' = 5,
-    'finished' = 6,
-    'error' = 7,
+    'inserting' = 3,
+    'applying' = 4,
+    'formatting' = 5,
+    'applied' = 6,
+    'finished' = 7,
+    'error' = 8,
 }
 
 export type CodyTaskList = {
@@ -31,6 +30,11 @@ export const fixupTaskList: CodyTaskList = {
         id: 'working',
         icon: 'sync~spin',
         description: 'Cody is preparing a response',
+    },
+    [CodyTaskState.inserting]: {
+        id: 'inserting',
+        icon: 'pencil',
+        description: 'The edit is being inserted to the document',
     },
     [CodyTaskState.applying]: {
         id: 'applying',
@@ -57,51 +61,4 @@ export const fixupTaskList: CodyTaskList = {
         icon: 'stop',
         description: 'The task failed',
     },
-}
-
-/**
- * Get the last part of the file path after the last slash
- */
-export function getFileNameAfterLastDash(filePath: string): string {
-    const lastDashIndex = filePath.lastIndexOf('/')
-    if (lastDashIndex === -1) {
-        return filePath
-    }
-    return filePath.slice(lastDashIndex + 1)
-}
-
-export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
-    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
-    if (!editor) {
-        // Default to the same as VS Code default
-        return true
-    }
-
-    const { insertSpaces } = editor.options
-
-    // This should never happen: "When getting a text editor's options, this property will always be a boolean (resolved)."
-    if (typeof insertSpaces === 'string' || insertSpaces === undefined) {
-        console.error('Unexpected value when getting "insertSpaces" for the current editor.')
-        return true
-    }
-
-    return insertSpaces
-}
-
-export function getEditorTabSize(uri: vscode.Uri): number {
-    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
-    if (!editor) {
-        // Default to the same as VS Code default
-        return 4
-    }
-
-    const { tabSize } = editor.options
-
-    // This should never happen: "When getting a text editor's options, this property will always be a number (resolved)."
-    if (typeof tabSize === 'string' || tabSize === undefined) {
-        console.error('Unexpected value when getting "tabSize" for the current editor.')
-        return 4
-    }
-
-    return tabSize
 }

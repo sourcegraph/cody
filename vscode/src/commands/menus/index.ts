@@ -1,3 +1,5 @@
+import { platform } from 'os'
+
 import { debounce } from 'lodash'
 import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
@@ -38,7 +40,7 @@ export async function showCommandMenu(
     items: (QuickPickItem | QuickPickItemWithSlashCommand)[]
 ): Promise<CommandMenuResponse> {
     const options = {
-        title: 'Cody (Shortcut: ⌥C)',
+        title: `Cody Commands (Shortcut: ${platform() === 'darwin' ? '⌥' : 'Alt+'}C)`,
         placeHolder: 'Search for a command or enter your question here...',
     }
 
@@ -129,7 +131,7 @@ export async function showCommandMenu(
 
 export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<QuickPickItem> {
     const CustomCommandsMenuOptions: QuickPickOptions = {
-        title: 'Cody: Custom Commands (Experimental)',
+        title: 'Cody: Custom Commands (Beta)',
         placeHolder: 'Search command to run...',
     }
 
@@ -162,7 +164,7 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
  */
 export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
     const CustomCommandConfigMenuOptions = {
-        title: 'Cody: Configure Custom Commands (Experimental)',
+        title: 'Cody: Configure Custom Commands (Beta)',
         placeHolder: 'Choose an option',
     }
 

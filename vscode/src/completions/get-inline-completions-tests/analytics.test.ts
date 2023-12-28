@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
-import { CompletionEvent } from '../logger'
+import { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'
@@ -18,17 +18,25 @@ describe('[getInlineCompletions] completion event', () => {
         resetParsersCache()
     })
 
-    async function getAnalyticsEvent(code: string, completion: string): Promise<Partial<CompletionEvent>> {
+    async function getAnalyticsEvent(
+        code: string,
+        completion: string,
+        additionalParams: { isDotComUser?: boolean } = {}
+    ): Promise<Partial<CompletionBookkeepingEvent>> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
         await getInlineCompletions(
-            params(code, [
-                {
-                    completion,
-                    stopReason: 'unit-test',
-                },
-            ])
+            params(
+                code,
+                [
+                    {
+                        completion,
+                        stopReason: 'unit-test',
+                    },
+                ],
+                additionalParams
+            )
         )
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
@@ -67,12 +75,14 @@ describe('[getInlineCompletions] completion event', () => {
                       "atCursor": "{",
                       "grandparent": "function_declaration",
                       "greatGrandparent": "program",
+                      "lastAncestorOnTheSameLine": "function_declaration",
                       "parent": "statement_block",
                     },
                     "nodeTypesWithCompletion": {
                       "atCursor": "{",
                       "grandparent": "function_declaration",
                       "greatGrandparent": "program",
+                      "lastAncestorOnTheSameLine": "function_declaration",
                       "parent": "statement_block",
                     },
                     "parseErrorCount": 0,
@@ -96,8 +106,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
+                  "traceId": undefined,
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)
@@ -118,12 +128,14 @@ describe('[getInlineCompletions] completion event', () => {
                       "atCursor": "return",
                       "grandparent": "statement_block",
                       "greatGrandparent": "function_declaration",
+                      "lastAncestorOnTheSameLine": "function_declaration",
                       "parent": "return_statement",
                     },
                     "nodeTypesWithCompletion": {
                       "atCursor": "return",
                       "grandparent": "statement_block",
                       "greatGrandparent": "function_declaration",
+                      "lastAncestorOnTheSameLine": "return_statement",
                       "parent": "return_statement",
                     },
                     "parseErrorCount": 0,
@@ -147,11 +159,25 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "source": "Network",
+                  "traceId": undefined,
                   "triggerKind": "Automatic",
-                  "type": "inline",
                 },
               }
             `)
+        })
+
+        it('logs `insertText` only for DotCom users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+
+            expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(false)
+        })
+
+        it('does not log `insertText` for enterprise users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
+                isDotComUser: true,
+            })
+
+            expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
         })
     })
 })

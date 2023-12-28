@@ -1,8 +1,12 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
-
+import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
+
+export const FIX_PROMPT_TOPICS = {
+    SOURCE: 'PROBLEMCODE4179',
+    RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
+}
 
 export class FixupCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
@@ -45,10 +49,10 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
         const instruction = await this.getCodeActionInstruction(document.getText(range), diagnostics)
-        const source = 'code-action'
+        const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
-            arguments: [{ instruction, range, intent: 'fix' satisfies FixupIntent }, source],
+            arguments: [{ instruction, range, intent: 'fix', document } satisfies ExecuteEditArguments, source],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
@@ -57,16 +61,16 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
 
     // Public for testing
     public async getCodeActionInstruction(code: string, diagnostics: vscode.Diagnostic[]): Promise<string> {
-        const prompt: string[] = [`<problemCode>${code}</problemCode>\n`]
+        const prompt: string[] = [`<${FIX_PROMPT_TOPICS.SOURCE}>${code}</${FIX_PROMPT_TOPICS.SOURCE}>\n`]
 
         for (let i = 0; i < diagnostics.length; i++) {
             const { message, source, severity, relatedInformation } = diagnostics[i]
 
             const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
             prompt.push(
-                `Fix the following ${
-                    source ? `${source} ` : ''
-                }${diagnosticType} from within <problemCode></problemCode>: ${message}`
+                `Fix the following ${source ? `${source} ` : ''}${diagnosticType} from within <${
+                    FIX_PROMPT_TOPICS.SOURCE
+                }></${FIX_PROMPT_TOPICS.SOURCE}>: ${message}`
             )
 
             if (relatedInformation?.length) {
@@ -87,10 +91,15 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         relatedInformation: vscode.DiagnosticRelatedInformation[]
     ): Promise<string[]> {
         const prompt: string[] = []
-        for (const { location, message } of relatedInformation) {
+        for (let i = 0; i < relatedInformation.length; i++) {
+            const { location, message } = relatedInformation[i]
             prompt.push(message)
             const document = await vscode.workspace.openTextDocument(location.uri)
-            prompt.push(`<relatedCode>${document.getText(location.range)}</relatedCode>\n`)
+            prompt.push(
+                `<${FIX_PROMPT_TOPICS.RELATED}${i}>${document.getText(location.range)}</${
+                    FIX_PROMPT_TOPICS.RELATED
+                }${i}>\n`
+            )
         }
         return prompt
     }

@@ -4,6 +4,7 @@ import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'
+import { telemetryRecorder } from '../telemetry-v2'
 
 import { countCode, matchCodeSnippets } from './code-count'
 
@@ -37,7 +38,18 @@ export function setLastStoredCode(
     const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
     const args = { op, charCount, lineCount, source, requestID }
 
-    telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
+    telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, { args, hasV2Event: true })
+    telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
+        metadata: {
+            lineCount,
+            charCount,
+        },
+        interactionID: requestID,
+        privateMetadata: {
+            source,
+            op,
+        },
+    })
 
     return codeCount
 }
@@ -127,14 +139,27 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
     // the copied code should be the same as the clipboard text
     if (matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, newCode)) {
         const op = 'paste'
-        const eventType = source.startsWith('inline') ? 'inlineChat' : 'keyDown'
-        // 'CodyVSCodeExtension:inlineChat:Paste:clicked' or 'CodyVSCodeExtension:keyDown:Paste:clicked'
+        const eventType = 'keyDown'
+        // e.g.'CodyVSCodeExtension:keyDown:Paste:clicked'
         telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
             op,
             lineCount,
             charCount,
             source,
             requestID,
+            hasV2Event: true,
+        })
+
+        telemetryRecorder.recordEvent(`cody.${eventType}`, 'paste', {
+            metadata: {
+                lineCount,
+                charCount,
+            },
+            interactionID: requestID,
+            privateMetadata: {
+                source,
+                op,
+            },
         })
     }
 }

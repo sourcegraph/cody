@@ -31,17 +31,11 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             config: {
                 debugEnable: true,
                 serverEndpoint: 'https://example.com',
-                appName: 'VS Code',
-                uriScheme: 'vscode',
                 os: 'linux',
                 arch: 'x64',
                 homeDir: '/home/user',
-                isAppInstalled: false,
-                isAppRunning: false,
-                hasAppJson: false,
                 uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
-                experimentalChatPanel: false,
             },
             authStatus: {
                 ...defaultAuthStatus,

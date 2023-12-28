@@ -13,6 +13,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
+import { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -21,6 +22,7 @@ interface ExternalServices {
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    localEmbeddings: LocalEmbeddingsController | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -35,7 +37,8 @@ type ExternalServicesConfiguration = Pick<
     | 'accessToken'
     | 'debugEnable'
     | 'experimentalLocalSymbols'
->
+> &
+    LocalEmbeddingsConfig
 
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
@@ -44,13 +47,15 @@ export async function configureExternalServices(
     editor: Editor,
     platform: Pick<
         PlatformContext,
-        | 'createLocalKeywordContextFetcher'
+        | 'createLocalEmbeddingsController'
         | 'createFilenameContextFetcher'
         | 'createCompletionsClient'
         | 'createSentryService'
+        | 'createOpenTelemetryService'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
+    const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClint(initialConfig, logger)
 
@@ -63,15 +68,20 @@ export async function configureExternalServices(
         )
     }
     const embeddingsSearch =
-        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+        repoId && !isError(repoId)
+            ? new SourcegraphEmbeddingsSearchClient(graphqlClient, initialConfig.codebase || repoId, repoId)
+            : null
+
+    const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
         initialConfig,
         initialConfig.codebase,
+        () => initialConfig.serverEndpoint,
         embeddingsSearch,
-        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        null,
         null,
         symf,
         undefined
@@ -85,11 +95,14 @@ export async function configureExternalServices(
         chatClient,
         codeCompletionsClient,
         guardrails,
+        localEmbeddings,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
+            openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)
+            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

@@ -1,4 +1,4 @@
-## Explain Selected Code
+## Explain Code
 
 <video autoPlay muted loop playsInline>
     <source
@@ -7,6 +7,12 @@
     />
 </video>
 
-Cody can explain code in an easy-to-understand manner. Highlight any code block and execute the `Explain Code` command from your right-click menu, and Cody will explain it to you in conversational language.
+Use Cody to get an in-depth explanation of any piece of code in any programming language.
 
-You can also execute a command from the [Cody: Commands Menu (Shortcut: ⌥C)](command:cody.action.commands.menu).
+To get started: select code in your editor, right click, and choose "Cody → Explain Code".
+
+You can also run this command from the [Cody: Commands Menu](command:cody.action.commands.menu), which has the default keyboard shortcut of `Option` `C` on macOS and `Alt` `C` on Windows & Linux.
+
+**✨ Pro-tips for understanding code with Cody**
+<br>• Cody can also explain errors too, with the "Ask Cody to Explain" option in the 💡 menus, or by right clicking on any items in the "Problems" tab of VS Code.
+<br>• You can define your own custom code explain commands to suit, such as prompt that requests an explanation focused on potential security issues, using [Custom Commands (Beta)](https://sourcegraph.com/docs/cody/custom-commands).

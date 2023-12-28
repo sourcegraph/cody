@@ -28,7 +28,6 @@ import {
     getCurrentVSCodeDocTextByURI,
     getDirContextMessages,
     getEditorTestContext,
-    getFilePathContext,
     getFilesFromDir,
     getFoldingRanges,
     isInWorkspace,
@@ -64,46 +63,47 @@ export class VSCodeEditorContext {
      */
     public async getEditorOpenTabsContext(skipDirectory?: string): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
+        try {
+            // Get open tabs from the current editor
+            const tabGroups = vscode.window.tabGroups.all
+            const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
 
-        // Get open tabs
-        const tabGroups = vscode.window.tabGroups.all
-        const openTabs = tabGroups.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
-
-        for (const tab of openTabs) {
-            // Skip non-file URIs
-            if (tab.uri.scheme !== 'file') {
-                continue
-            }
-
-            // Skip tabs in skipDirectory
-            if (skipDirectory && tab.uri.fsPath.includes(skipDirectory)) {
-                continue
-            }
-
-            // Get context using file path for files not in the current workspace
-            if (!isInWorkspace(tab.uri)) {
-                const contextMessage = await this.getFilePathContext(tab.uri.fsPath)
-                contextMessages.push(...contextMessage)
-                continue
-            }
-
-            // Get file name and extract context from current workspace file
-            const fileUri = tab.uri
-            const fileName = createVSCodeRelativePath(fileUri.fsPath)
-            const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
-
-            // Truncate file text
-            const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
-
-            // Create context message
-            const message = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(truncatedText, fileName),
-                {
-                    fileName,
+            for (const tab of openTabs) {
+                // Skip non-file URIs
+                if (tab.uri.scheme !== 'file') {
+                    continue
                 }
-            )
 
-            contextMessages.push(...message)
+                // Skip tabs in skipDirectory
+                if (skipDirectory && tab.uri.fsPath.includes(skipDirectory)) {
+                    continue
+                }
+
+                // Get context using file path for files not in the current workspace
+                if (!isInWorkspace(tab.uri)) {
+                    const contextMessage = await this.getFilePathContext(tab.uri.fsPath)
+                    contextMessages.push(...contextMessage)
+                    continue
+                }
+
+                // Get file name and extract context from current workspace file
+                const fileUri = tab.uri
+                const fileName = createVSCodeRelativePath(fileUri.fsPath)
+                const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
+                const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
+
+                // Create context message
+                const message = getContextMessageWithResponse(
+                    populateCurrentEditorContextTemplate(truncatedText, fileName),
+                    {
+                        fileName,
+                    }
+                )
+
+                contextMessages.push(...message)
+            }
+        } catch {
+            // no ops
         }
 
         return contextMessages
@@ -133,7 +133,12 @@ export class VSCodeEditorContext {
         currentFileName?: string,
         isUnitTestRequest = false
     ): Promise<ContextMessage[]> {
-        const directoryUri = vscode.Uri.file(directoryPath)
+        let directoryUri = vscode.Uri.file(directoryPath)
+        const currentWorkspaceUri = this.editor.getWorkspaceRootUri()
+        // Turns relative path into absolute path
+        if (currentWorkspaceUri && !directoryPath.startsWith(currentWorkspaceUri.fsPath)) {
+            directoryUri = vscode.Uri.joinPath(currentWorkspaceUri, directoryPath)
+        }
         const filteredFiles = await getFilesFromDir(directoryUri, isUnitTestRequest)
 
         if (isUnitTestRequest && currentFileName) {
@@ -159,11 +164,12 @@ export class VSCodeEditorContext {
     public async getFilePathContext(filePath: string): Promise<ContextMessage[]> {
         const fileName = createVSCodeRelativePath(filePath)
         try {
-            const decoded = await getFilePathContext(filePath)
+            const decoded = await getCurrentVSCodeDocTextByURI(vscode.Uri.file(filePath))
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             // Make sure the truncatedContent is in JSON format
             return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
+                content: decoded,
             })
         } catch (error) {
             console.error(error)

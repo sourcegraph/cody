@@ -1,14 +1,15 @@
-import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
 import { View } from '../../../webviews/NavBar'
-import { getFileContextFile, getOpenTabsContextFile, getSymbolContextFile } from '../../editor/utils/editor-context'
+import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
+import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -20,15 +21,11 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import {
-    ConfigurationSubsetForWebview,
-    ExtensionMessage,
-    getChatModelsForWebview,
-    LocalEnv,
-    WebviewMessage,
-} from '../protocol'
+import { ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 
-import { addWebviewViewHTML } from './ChatManager'
+import { getChatPanelTitle } from './chat-helpers'
+import { chatHistory } from './ChatHistoryManager'
+import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -37,32 +34,39 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
 export interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
+    featureFlagProvider: FeatureFlagProvider
 }
 
 export class ChatPanelProvider extends MessageProvider {
     private extensionUri: vscode.Uri
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     public webview?: ChatViewProviderWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
     public treeView: TreeViewProvider
+    private readonly featureFlagProvider: FeatureFlagProvider
 
-    constructor({ treeView, extensionUri, ...options }: ChatPanelProviderOptions) {
+    constructor({ treeView, extensionUri, featureFlagProvider, ...options }: ChatPanelProviderOptions) {
         super(options)
         this.extensionUri = extensionUri
+        this.featureFlagProvider = featureFlagProvider
         this.treeView = treeView
+
+        this.contextProvider.onDidChangeStatus(_ => {
+            this.postEnhancedContextStatusToWebview()
+        })
+        // Hint local embeddings to start.
+        void this.contextProvider.localEmbeddings?.start()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                // The web view is ready to receive events. We need to make sure that it has an up
-                // to date config, even if it was already published
-                await this.authProvider.announceNewAuthStatus()
-                await this.handleWebviewContext()
+                this.handleWebviewContext()
                 break
             case 'initialized':
                 logDebug('ChatPanelProvider:onDidReceiveMessage', 'initialized')
                 await this.init(this.startUpChatID)
-                this.handleChatModel()
+                await this.handleChatModels()
                 break
             case 'submit':
                 return this.onHumanMessageSubmitted(
@@ -85,6 +89,9 @@ export class ChatPanelProvider extends MessageProvider {
                     { hasV2Event: true }
                 )
                 telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+                break
+            case 'get-chat-models':
+                await this.handleChatModels()
                 break
             case 'chatModel':
                 this.chatModel = message.model
@@ -121,8 +128,14 @@ export class ChatPanelProvider extends MessageProvider {
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
+            case 'embeddings/index':
+                this.contextProvider.localEmbeddingsIndexRepository()
+                break
+            case 'show-page':
+                await vscode.commands.executeCommand('cody.show-page', message.page)
+                break
             default:
-                this.handleError('Invalid request type from Webview Panel', 'system')
+                this.handleError(new Error('Invalid request type from Webview Panel'), 'system')
         }
     }
 
@@ -134,7 +147,7 @@ export class ChatPanelProvider extends MessageProvider {
     ): Promise<void> {
         logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
 
-        MessageProvider.inputHistory.push(text)
+        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), text)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
@@ -160,7 +173,7 @@ export class ChatPanelProvider extends MessageProvider {
      * For Webview panel only
      * This sent the initiate contextStatus and config to webview
      */
-    private async handleWebviewContext(): Promise<void> {
+    private handleWebviewContext(): void {
         const authStatus = this.authProvider.getAuthStatus()
         const editorContext = this.editor.getActiveTextEditor()
         const contextStatus = {
@@ -178,18 +191,33 @@ export class ChatPanelProvider extends MessageProvider {
             contextStatus,
         })
 
-        const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
+        const localProcess = getProcessInfo()
         const config: ConfigurationSubsetForWebview & LocalEnv = {
             ...localProcess,
             debugEnable: this.contextProvider.config.debugEnable,
             serverEndpoint: this.contextProvider.config.serverEndpoint,
-            experimentalChatPanel: this.contextProvider.config.experimentalChatPanel,
         }
         void this.webview?.postMessage({
             type: 'config',
             config,
             authStatus,
         })
+    }
+
+    private async handleChatModels(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+        if (authStatus?.configOverwrites?.chatModel) {
+            ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
+        }
+        // selection is available to pro only at Dec GA
+        const isCodyProFeatureFlagEnabled = await this.featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyPro)
+        const models = ChatModelProvider.get(authStatus.endpoint, this.chatModel)?.map(model => {
+            return {
+                ...model,
+                codyProOnly: isCodyProFeatureFlagEnabled ? model.codyProOnly : false,
+            }
+        })
+        await this.webview?.postMessage({ type: 'chatModels', models })
     }
 
     /**
@@ -200,12 +228,28 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'transcript',
             messages: transcript,
             isMessageInProgress,
+            chatID: this.sessionID,
         })
 
+        const currentTitle =
+            chatHistory.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+            this.transcript.chatTitle
+        if (currentTitle) {
+            this.handleChatTitle(currentTitle)
+            return
+        }
         // Update / reset webview panel title
         const text = this.transcript.getLastInteraction()?.getHumanMessage()?.displayText || 'New Chat'
         if (this.webviewPanel) {
-            this.webviewPanel.title = text.length > 10 ? `${text?.slice(0, 20)}...` : text
+            this.webviewPanel.title = getChatPanelTitle(text)
+        }
+    }
+
+    public handleChatTitle(title: string): void {
+        this.chatTitle = title
+        this.transcript.setChatTitle(title)
+        if (this.webviewPanel) {
+            this.webviewPanel.title = title
         }
     }
 
@@ -231,42 +275,23 @@ export class ChatPanelProvider extends MessageProvider {
             type: 'history',
             messages: userHistory,
         })
-        this.treeView.updateTree(createCodyChatTreeItems(userHistory))
-    }
-
-    /**
-     * Sends the available chat models to the webview based on the authenticated endpoint.
-     * Maps over the allowed models, adding a 'default' property if the model matches the currently selected chatModel.
-     */
-    protected handleChatModel(): void {
-        const endpoint = this.authProvider.getAuthStatus()?.endpoint
-        const allowedModels = getChatModelsForWebview(endpoint)
-        const models = this.chatModel
-            ? allowedModels.map(model => {
-                  return {
-                      ...model,
-                      default: model.model === this.chatModel,
-                  }
-              })
-            : allowedModels
-
-        void this.webview?.postMessage({
-            type: 'chatModels',
-            models,
-        })
+        void this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
     }
 
     /**
      * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
      */
-    public handleError(errorMsg: string, type: MessageErrorType): void {
+    public handleError(error: Error, type: MessageErrorType): void {
         if (type === 'transcript') {
-            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            this.transcript.addErrorAsAssistantResponse(error)
             void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+        const errorMessage = this.contextProvider.config.debugVerbose
+            ? `${error.message}\n${error.stack}`
+            : error.message
+        void this.webview?.postMessage({ type: 'errors', errors: errorMessage })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
@@ -286,26 +311,46 @@ export class ChatPanelProvider extends MessageProvider {
             return
         }
 
-        const debouncedContextFileQuery = debounce(async (query: string): Promise<void> => {
-            try {
-                const MAX_RESULTS = 10
-                const fileResultsPromise = getFileContextFile(query, MAX_RESULTS)
-                const symbolResultsPromise = getSymbolContextFile(query, MAX_RESULTS)
+        const cancellation = new vscode.CancellationTokenSource()
 
-                const [fileResults, symbolResults] = await Promise.all([fileResultsPromise, symbolResultsPromise])
-                const context = [...new Set([...fileResults, ...symbolResults])]
-
-                await this.webview?.postMessage({
-                    type: 'userContextFiles',
-                    context,
-                })
-            } catch (error) {
-                // Handle or log the error as appropriate
-                console.error('Error retrieving context files:', error)
+        try {
+            const MAX_RESULTS = 20
+            if (query.startsWith('#')) {
+                // It would be nice if the VS Code symbols API supports
+                // cancellation, but it doesn't
+                const symbolResults = await getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: symbolResults,
+                    })
+                }
+            } else {
+                const fileResults = await getFileContextFiles(query, MAX_RESULTS, cancellation.token)
+                // Check if cancellation was requested while getFileContextFiles
+                // was executing, which means a new request has already begun
+                // (i.e. prevent race conditions where slow old requests get
+                // processed after later faster requests)
+                if (!cancellation.token.isCancellationRequested) {
+                    await this.webview?.postMessage({
+                        type: 'userContextFiles',
+                        context: fileResults,
+                    })
+                }
             }
-        }, 100)
-
-        await debouncedContextFileQuery(query)
+        } catch (error) {
+            // Handle or log the error as appropriate
+            console.error('Error retrieving context files:', error)
+        } finally {
+            // Cancel any previous search request after we update the UI
+            // to avoid a flash of empty results as you type
+            this.contextFilesQueryCancellation?.cancel()
+            this.contextFilesQueryCancellation = cancellation
+        }
     }
 
     /**
@@ -330,12 +375,8 @@ export class ChatPanelProvider extends MessageProvider {
             messages: view,
         })
 
-        if (view !== 'chat') {
-            return
-        }
-
         if (!this.webviewPanel) {
-            await this.createWebviewPanel(this.sessionID)
+            await this.createWebviewPanel(vscode.ViewColumn.Beside, this.sessionID)
         }
         this.webviewPanel?.reveal()
     }
@@ -354,13 +395,12 @@ export class ChatPanelProvider extends MessageProvider {
     /**
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
-    public async createWebviewPanel(chatID?: string, lastQuestion?: string): Promise<vscode.WebviewPanel | undefined> {
-        // Create the webview panel only if the user is logged in.
-        // Allows users to login via the sidebar webview.
-        if (!this.authProvider.getAuthStatus()?.isLoggedIn || !this.contextProvider.config.experimentalChatPanel) {
-            await vscode.commands.executeCommand('setContext', 'cody.chatPanel', false)
-            return
-        }
+    public async createWebviewPanel(
+        activePanelViewColumn?: vscode.ViewColumn,
+        chatID?: string,
+        lastQuestion?: string
+    ): Promise<vscode.WebviewPanel> {
+        telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
 
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
@@ -370,16 +410,18 @@ export class ChatPanelProvider extends MessageProvider {
 
         this.startUpChatID = chatID
 
-        const viewType = 'cody.chatPanel'
-        // truncate firstQuestion to first 10 chars
-        const text = lastQuestion && lastQuestion?.length > 10 ? `${lastQuestion?.slice(0, 20)}...` : lastQuestion
-        const panelTitle = text || 'New Chat'
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        const chatTitle = chatID
+            ? chatHistory.getChat(this.authProvider.getAuthStatus(), chatID)?.chatTitle
+            : lastQuestion
 
+        const viewType = CodyChatPanelViewType
+        const panelTitle = chatTitle || getChatPanelTitle(lastQuestion)
+        const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
             viewType,
             panelTitle,
-            { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
+            { viewColumn, preserveFocus: true },
             {
                 enableScripts: true,
                 retainContextWhenHidden: true,
@@ -389,17 +431,52 @@ export class ChatPanelProvider extends MessageProvider {
             }
         )
 
-        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
+        return this.registerWebviewPanel(panel)
+    }
+
+    /**
+     * Revives the chat panel when the extension is reactivated.
+     * Registers the existing webviewPanel and sets the chatID.
+     */
+    public async revive(webviewPanel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        logDebug('ChatPanelProvider:revive', 'reviving webview panel')
+        this.startUpChatID = chatID
+        const title = chatHistory.getChat(this.authProvider.getAuthStatus(), chatID)?.chatTitle
+        if (chatID && title) {
+            this.chatTitle = title
+            webviewPanel.title = title
+        }
+        await this.registerWebviewPanel(webviewPanel)
+    }
+
+    /**
+     * Registers the given webview panel by setting up its options, icon, and handlers.
+     * Also stores the panel reference and disposes it when closed.
+     */
+    private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
+
+        panel.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [webviewPath],
+            enableCommandUris: true,
+        }
+
         await addWebviewViewHTML(this.extensionUri, panel)
 
         // Register webview
         this.webviewPanel = panel
         this.webview = panel.webview
+        // TODO(abeatrix): ContextProvider is shared so each new chat panel
+        // should not overwrite the context provider's webview, or it
+        // will break the previous chat panel.
         this.contextProvider.webview = panel.webview
-        this.authProvider.webview = panel.webview
+        this.postEnhancedContextStatusToWebview()
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
+            this.cancelCompletion()
             this.webviewPanel = undefined
             panel.dispose()
         })
@@ -407,9 +484,18 @@ export class ChatPanelProvider extends MessageProvider {
         this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
-        await vscode.commands.executeCommand('setContext', 'cody.chatPanel', true)
-        telemetryService.log('CodyVSCodeExtension:createWebviewPanel:clicked', undefined, { hasV2Event: true })
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
         return panel
+    }
+
+    // Sends context status updates to the webview, if any.
+    private postEnhancedContextStatusToWebview(): void {
+        void this.webview?.postMessage({
+            type: 'enhanced-context',
+            context: {
+                groups: this.contextProvider.status,
+            },
+        })
     }
 }

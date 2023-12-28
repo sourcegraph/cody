@@ -62,6 +62,10 @@ export interface ProviderOptions {
     multiline: boolean
     // Number of parallel LLM requests per completion.
     n: number
+
+    // feature flags
+    dynamicMultilineCompletions?: boolean
+    hotStreak?: boolean
 }
 
 export abstract class Provider {
@@ -70,8 +74,13 @@ export abstract class Provider {
     public abstract generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
+        onCompletionReady: (completions: InlineCompletionItemWithAnalytics[]) => void,
+        onHotStreakCompletionReady: (
+            docContext: DocumentContext,
+            completions: InlineCompletionItemWithAnalytics
+        ) => void,
         tracer?: CompletionProviderTracer
-    ): Promise<InlineCompletionItemWithAnalytics[]>
+    ): Promise<void>
 }
 
 /**

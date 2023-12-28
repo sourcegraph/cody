@@ -28,18 +28,10 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    // Collapse the task tree view
-    await page.getByRole('button', { name: 'Fixups Section' }).click()
-
-    await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
-
-    // Check if embeddings server connection error is visible
-    await expect(sidebar.getByText('Error while establishing embeddings server connection.')).not.toBeVisible()
-
     // Sign out.
     await signOut(page)
 
-    await expect(sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })).toBeVisible()
-    await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
+    const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
+    await expect(sidebarFrame.getByRole('heading', { name: 'Sign In to Get Started' })).toBeVisible()
     await assertEvents(loggedEvents, expectedEvents)
 })

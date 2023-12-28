@@ -10,7 +10,7 @@ export interface RecipeContext {
     editor: Editor
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
-    responseMultiplexer: BotResponseMultiplexer
+    responseMultiplexer?: BotResponseMultiplexer
     addEnhancedContext: boolean
     userInputContextFiles?: ContextFile[]
 }
@@ -22,23 +22,28 @@ export type RecipeID =
     | 'local-indexed-keyword-search'
     | 'explain-code-detailed'
     | 'explain-code-high-level'
-    | 'inline-touch'
     | 'find-code-smells'
     | 'fixup'
     | 'generate-docstring'
     | 'generate-unit-test'
     | 'git-history'
     | 'improve-variable-names'
-    | 'inline-chat'
     | 'custom-prompt'
     | 'next-questions'
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 
+export enum RecipeType {
+    Ask = 'ask',
+    Edit = 'edit',
+}
+
 export interface Recipe {
     id: RecipeID
     title: string // Title Case
     multiplexerTopic?: string
+    type?: RecipeType
+    stopSequences?: string[]
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

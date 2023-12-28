@@ -1,4 +1,4 @@
-import { basename, extname } from 'path'
+import path from 'path'
 
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
@@ -61,7 +61,11 @@ export async function newInteractionWithError(errorMsg: string, displayText = ''
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', displayText },
-            { speaker: 'assistant', displayText: errorMsg, error: errorMsg },
+            {
+                speaker: 'assistant',
+                displayText: errorMsg,
+                error: { isChatErrorGuard: 'isChatErrorGuard', name: 'newInteractionWithError', message: errorMsg },
+            },
             Promise.resolve([]),
             []
         )
@@ -164,8 +168,8 @@ export function toSlashCommand(command: string): string {
  * Otherwise, it will search only the current directory.
  */
 export function createVSCodeSearchPattern(fsPath: string, fromRoot = false): string {
-    const fileName = basename(fsPath)
-    const fileExtension = extname(fsPath)
+    const fileName = path.basename(fsPath)
+    const fileExtension = path.extname(fsPath)
     const fileNameWithoutExt = fileName.replace(fileExtension, '')
 
     const root = fromRoot ? '**' : ''
@@ -175,8 +179,8 @@ export function createVSCodeSearchPattern(fsPath: string, fromRoot = false): str
 }
 
 export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
-    const fileExtension = extname(fsPath)
-    const fileName = basename(fsPath, fileExtension)
+    const fileExtension = path.extname(fsPath)
+    const fileName = path.basename(fsPath, fileExtension)
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
@@ -225,9 +229,12 @@ export function isValidTestFileName(fsPath: string): boolean {
         return false
     }
 
-    const fileNameWithoutExt = basename(fsPath, extname(fsPath))
+    const fileNameWithoutExt = path.basename(fsPath, path.extname(fsPath))
 
     const suffixTest = /([._-](test|spec))|Test|Spec$/
 
     return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
 }
+
+// REGEX for trailing non-alphanumeric characters
+export const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/

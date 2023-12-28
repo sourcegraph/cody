@@ -9,6 +9,8 @@ import { FeedbackOptionItems } from './FeedbackOptions'
 interface StatusBarError {
     title: string
     description: string
+    errorType: StatusBarErrorName
+    onShow?: () => void
     onSelect?: () => void
 }
 
@@ -16,6 +18,7 @@ export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
     addError(error: StatusBarError): () => void
+    hasError(error: StatusBarErrorName): boolean
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -25,6 +28,8 @@ const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
+
+type StatusBarErrorName = 'auth' | 'RateLimitError'
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -65,6 +70,10 @@ export function createStatusBar(): CodyStatusBar {
             }
         }
 
+        if (errors.length > 0) {
+            errors.map(error => error.error.onShow?.())
+        }
+
         const option = await vscode.window.showQuickPick(
             // These description should stay in sync with the settings in package.json
             [
@@ -94,13 +103,6 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
-                    'Editor Title Icon',
-                    undefined,
-                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
-                    'cody.editorTitleCommandIcon',
-                    c => c.editorTitleCommandIcon
-                ),
-                createFeatureToggle(
                     'Code Actions',
                     undefined,
                     'Enable Cody fix and explain options in the Quick Fix menu',
@@ -108,33 +110,26 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.codeActions
                 ),
                 createFeatureToggle(
-                    'Chat Suggestions',
-                    'Experimental',
-                    'Enable automatically suggested chat questions',
-                    'cody.experimental.chatPredictions',
-                    c => c.experimentalChatPredictions,
-                    true
-                ),
-                createFeatureToggle(
-                    'New Chat UI',
-                    'Experimental',
-                    'Enable new chat panel UI',
-                    'cody.experimental.chatPanel',
-                    c => c.experimentalChatPanel
-                ),
-                createFeatureToggle(
-                    'New Search UI',
-                    'Experimental',
-                    'Enable new search panel',
-                    'cody.experimental.newSearch',
-                    c => c.experimentalSearchPanel
+                    'Editor Title Icon',
+                    undefined,
+                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
+                    'cody.editorTitleCommandIcon',
+                    c => c.editorTitleCommandIcon
                 ),
                 createFeatureToggle(
                     'Code Lenses',
-                    'Experimental',
+                    undefined,
                     'Enable Code Lenses in documents for quick access to Cody commands',
-                    'cody.experimental.commandLenses',
-                    c => c.experimentalCommandLenses
+                    'cody.commandCodeLenses',
+                    c => c.commandCodeLenses
+                ),
+                createFeatureToggle(
+                    'Search Context',
+                    'Beta',
+                    'Enable using the natural language search index as an Enhanced Context chat source',
+                    'cody.experimental.symfContext',
+                    c => c.experimentalSymfContext,
+                    false
                 ),
                 createFeatureToggle(
                     'Unstable Experimental Features',
@@ -236,6 +231,9 @@ export function createStatusBar(): CodyStatusBar {
                     rerender()
                 }
             }
+        },
+        hasError(errorName: StatusBarErrorName): boolean {
+            return errors.some(e => e.error.errorType === errorName)
         },
         dispose() {
             statusBarItem.dispose()

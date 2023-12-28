@@ -82,6 +82,25 @@ if (customDefaultSettingsFile) {
     writeJsonFileSync('package.json', packageJSON)
 }
 
+if (releaseType === ReleaseType.Stable) {
+    console.log('Removing experimental settings before the stable release...')
+
+    try {
+        const properties = packageJSON?.contributes?.configuration?.properties
+        if (properties) {
+            for (const key in properties) {
+                if (key.includes('.experimental.')) {
+                    delete properties[key]
+                }
+            }
+            fs.writeFileSync(packageJSONPath, JSON.stringify(packageJSON, null, 2), 'utf8')
+        }
+    } catch (error) {
+        console.error('Error removing experimental settings', error)
+        process.exit(1) // Exit with a non-zero status code in case of an error
+    }
+}
+
 // Tokens are stored in the GitHub repository's secrets.
 const tokens = {
     vscode: dryRun ? 'dry-run' : process.env.VSCODE_MARKETPLACE_TOKEN,
@@ -94,7 +113,7 @@ if (!tokens.vscode || !tokens.openvsx) {
 
 // The insiders build is the stable version suffixed with "-" and the Unix time.
 //
-// For example: 0.4.4 in package.json -> 0.4.4-1689391131.
+// For example: 0.4.4 in package.json -> 0.5.1689391131
 const insidersVersion = semver.inc(packageJSONVersion, 'minor')?.replace(/\.\d+$/, `.${Math.ceil(Date.now() / 1000)}`)
 if (!insidersVersion) {
     console.error('Could not increment version for insiders release.')

@@ -2,21 +2,25 @@
 * CSS styles for storybooks to define variables and otherwise resemble the VS Code.
 */
 
+vscode-button::part(control) {
+    font-size: inherit;
+}
+
 .container {
     max-width: 600px;
     margin: 2rem auto;
-    border: solid 1px #ffffff33;
-    font-size: var(--vscode-editor-font-size);
+    font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
 }
 
 .container a {
     color: var(--vscode-link-color);
+    text-decoration: none;
 }
 
 .test-dark-sidebar {
-    background-color: rgb(28, 33, 40);
+    background-color: rgba(28 33 40 100%);
 }
 
 .test-dark-sidebar-bottom {
@@ -36,58 +40,146 @@
  */
 
 :root {
+    --vscode-button-background: #007acc;
     --vscode-button-secondaryBackground: #3a3d41;
     --vscode-button-secondaryForeground: #ffffff;
     --vscode-button-secondaryHoverBackground: #45494e;
+    --vscode-checkbox-background: #313131;
+    --vscode-checkbox-border: #3c3c3c;
     --vscode-editor-background: #151c28;
-    --vscode-editor-font-size: 13px;
+    --vscode-editor-font-size: 12px;
     --vscode-editor-foreground: var(--foreground);
+    --vscode-focusBorder: #4daafc;
+    --vscode-font-size: 13px;
     --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --type-ramp-base-font-size: 13px;
+    --type-ramp-base-line-height: normal;
     --vscode-input-background: #313131;
     --vscode-input-foreground: #cccccc;
+    --vscode-inputOption-activeBorder: #2488db;
+    --vscode-inputOption-hoverBackground: rgba(90, 93, 94, 0.5);
+    --vscode-inputOption-activeBackground: rgba(36, 137, 219, 0.51);
+    --vscode-inputOption-activeForeground: #ffffff;
     --vscode-inputValidation-errorBackground: #ff000033;
     --vscode-inputValidation-errorBorder: #ff0000;
-    --vscode-link-color: #7777ff;
-    --vscode-sideBarSectionHeader-border: #ffffff33;
-    --vscode-sideBarTitle-foreground: #ffffffcc;
+    --vscode-link-color: #4daafc;
+    --vscode-list-activeSelectionBackground: #04395e;
+    --vscode-list-activeSelectionForeground: #ffffff;
+    --vscode-list-warningForeground: #855600;
+    --vscode-problemsErrorIcon-foreground: #f48771;
+    --vscode-quickInput-background: #222222;
+    --vscode-quickInput-foreground: #cccccc;
     --vscode-sideBar-background: #181818;
     --vscode-sideBar-foreground: #cccccc;
+    --vscode-sideBarSectionHeader-border: #ffffff33;
+    --vscode-sideBarTitle-foreground: #ffffffcc;
     --vscode-tab-activeForeground: #ffffff;
     --vscode-tab-inactiveBackground: #00000033;
     --vscode-tab-inactiveForeground: #ffffff77;
-    --vscode-list-warningForeground: #855600;
-    --vscode-problemsErrorIcon-foreground: #f48771;
-    --vscode-widget-shadow: rgba(0, 0, 0, 0.2);
+    --vscode-textLink-foreground: #4daafc;
+    --vscode-widget-shadow: rgba(0 0 0 0.2);
+    --vscode-dropdown-background: #313131;
+    --vscode-dropdown-border: #3c3c3c;
+    --vscode-dropdown-foreground: #cccccc;
+    --vscode-dropdown-listBackground: #1f1f1f;
 }
 
 @font-face {
-	font-family: 'codicon';
-	font-display: block;
-	src: url('./codicon.ttf') format('truetype');
+    font-family: 'codicon';
+    font-display: block;
+    src: url('./codicon.ttf') format('truetype');
 }
 
 :global .codicon[class*='codicon-'] {
-	font: normal normal normal 16px/1 codicon;
-	display: inline-block;
-	text-decoration: none;
-	text-rendering: auto;
-	text-align: center;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	user-select: none;
+    font: normal normal normal 16px/1 codicon;
+    display: inline-block;
+    text-decoration: none;
+    text-rendering: auto;
+    text-align: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
 }
 
 :global .codicon-modifier-disabled {
-	opacity: 0.5;
+    opacity: 0.5;
 }
 
-:global .codicon-check::before { content: '\eab2' }
-:global .codicon-close::before { content: '\ea76' }
-:global .codicon-gear::before { content: '\eaf8' }
-:global .codicon-link::before { content: '\eb15' }
-:global .codicon-rocket::before { content: '\eb44' }
-:global .codicon-stop-circle::before { content: '\eba5' }
-:global .codicon-terminal::before { content: '\ea85' }
-:global .codicon-thumbsdown::before { content: '\eb6b' }
-:global .codicon-thumbsup::before { content: '\eb6c' }
-:global .codicon-trash::before { content: '\ea81' }
+:global .codicon-sync.codicon-modifier-spin:local,
+:global .codicon-loading.codicon-modifier-spin:local,
+:global .codicon-gear.codicon-modifier-spin:local {
+    animation: codicon-spin 1.5s steps(30) infinite;
+}
+
+@keyframes codicon-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* If your Storybook is missing a glyph, add a definition here. See
+ * https://github.com/microsoft/vscode-codicons/blob/main/dist/codicon.css
+ */
+:global .codicon-check::before {
+    content: '\eab2';
+}
+:global .codicon-circle-outline::before {
+    content: '\eabc';
+}
+:global .codicon-circle-slash::before {
+    content: '\eabd';
+}
+:global .codicon-close::before {
+    content: '\ea76';
+}
+:global .codicon-folder::before {
+    content: '\ea83';
+}
+:global .codicon-gear::before {
+    content: '\eaf8';
+}
+:global .codicon-link::before {
+    content: '\eb15';
+}
+:global .codicon-loading::before {
+    content: '\eb19';
+}
+:global .codicon-rocket::before {
+    content: '\eb44';
+}
+:global .codicon-settings::before {
+    content: '\eb52';
+}
+:global .codicon-stop-circle::before {
+    content: '\eba5';
+}
+:global .codicon-symbol-folder::before {
+    content: '\ea83';
+}
+:global .codicon-terminal::before {
+    content: '\ea85';
+}
+:global .codicon-thumbsdown::before {
+    content: '\eb6b';
+}
+:global .codicon-thumbsup::before {
+    content: '\eb6c';
+}
+:global .codicon-trash::before {
+    content: '\ea81';
+}
+:global .codicon-info::before {
+    content: '\ea74';
+}
+:global .codicon-database::before {
+    content: '\eace';
+}
+:global .codicon-sparkle::before {
+    content: '\ec10';
+}
+:global .codicon-symbol-structure::before {
+    content: '\ea91';
+}
+:global .codicon-symbol-method::before {
+    content: '\ea8c';
+}

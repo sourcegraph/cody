@@ -42,6 +42,8 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm run test:unit --run
+        env:
+          CODY_NODE_VERSION: ${{ matrix.node }}
 
   test-integration:
     strategy:
@@ -72,11 +74,8 @@ jobs:
         if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows' || matrix.runner == 'macos')
 
   test-e2e:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu, macos]
-    runs-on: ${{ matrix.runner }}-latest
+    runs-on: ubuntu-latest
+    name: 'test-e2e (ubuntu)' # required to match the GitHub PR status check requirement
     timeout-minutes: 15
     permissions:
       id-token: write
@@ -104,9 +103,49 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
-        if: matrix.runner == 'ubuntu'
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: playwright-recordings ${{ matrix.runner }}
+          path: playwright/**/*.webm
+
+  # Use a single large mac for e2e tests as it runs in 4m instead of 6m (as of
+  # 2023-12-06)
+  #
+  # fixme(toolmantim): We should dedupe this Mac job with the above job using a
+  # matrix after Cody 1.0.0. It wasn't done beforehand because it requires
+  # updating the required status checks for merging PRs. Ideally it would just
+  # be https://github.com/sourcegraph/cody/blob/21a40be7297da70f310350e2557a069ea06326ce/.github/workflows/ci.yml#L76
+  test-e2e-macos:
+    runs-on: macos-latest-large
+    name: 'test-e2e (macos)'
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@v2
+      - id: auth
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v0
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+      - run: pnpm install
       - run: pnpm -C vscode run test:e2e
-        if: matrix.runner == 'windows' || matrix.runner == 'macos'
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:

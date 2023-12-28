@@ -3,11 +3,9 @@ import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 import { isError } from '../../utils'
 import { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
 
-type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2+'
-
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
- * framework: https://docs.sourcegraph.com/dev/background-information/telemetry
+ * framework: https://sourcegraph.com/docs/dev/background-information/telemetry
  *
  * If configured to do so, it will also attempt to send events to the old
  * event-logging mutations if the instance is older than 5.2.0.
@@ -50,11 +48,18 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
 
             const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
             if (insiderBuild) {
-                this.exportMode = '5.2.2+' // use full export, set to 'legacy' to test backcompat mode
+                this.exportMode = '5.2.5+' // use full export, set to 'legacy' to test backcompat mode
             } else if (siteVersion === '5.2.0' || siteVersion === '5.2.1') {
-                this.exportMode = '5.2.0-5.2.1' // special handling required for https://github.com/sourcegraph/sourcegraph/pull/57719
-            } else if (siteVersion > '5.2.2') {
-                this.exportMode = '5.2.2+'
+                // special handling required before https://github.com/sourcegraph/sourcegraph/pull/57719
+                this.exportMode = '5.2.0-5.2.1'
+            } else if (siteVersion === '5.2.2' || siteVersion === '5.2.3') {
+                // special handling required before https://github.com/sourcegraph/sourcegraph/pull/58643 and https://github.com/sourcegraph/sourcegraph/pull/58539
+                this.exportMode = '5.2.2-5.2.3'
+            } else if (siteVersion === '5.2.4') {
+                // special handling required before https://github.com/sourcegraph/sourcegraph/pull/58944
+                this.exportMode = '5.2.4'
+            } else if (siteVersion >= '5.2.5') {
+                this.exportMode = '5.2.5+'
             } else {
                 this.exportMode = 'legacy'
             }
@@ -120,14 +125,10 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         }
 
         /**
-         * In early releases, the privateMetadata field is broken. Circumvent
-         * this by filtering out the privateMetadata field for now.
-         * https://github.com/sourcegraph/sourcegraph/pull/57719
+         * Manipulate events as needed based on version of target instance
          */
-        if (this.exportMode === '5.2.0-5.2.1') {
-            events.forEach(event => {
-                event.parameters.privateMetadata = undefined
-            })
+        if (this.exportMode) {
+            handleExportModeTransforms(this.exportMode, events)
         }
 
         /**
@@ -137,5 +138,60 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (isError(resultOrError)) {
             console.error('Error exporting telemetry events:', resultOrError)
         }
+    }
+}
+
+type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2-5.2.3' | '5.2.4' | '5.2.5+'
+
+/**
+ * handleExportModeTransforms mutates events in-place based on any workarounds
+ * required for exportMode.
+ */
+export function handleExportModeTransforms(exportMode: ExportMode, events: TelemetryEventInput[]): void {
+    if (exportMode === 'legacy') {
+        throw new Error('legacy export mode should not publish new telemetry events')
+    }
+
+    /**
+     * In early releases, the privateMetadata field is broken. Circumvent
+     * this by filtering out the privateMetadata field for now.
+     * https://github.com/sourcegraph/sourcegraph/pull/57719
+     */
+    if (exportMode === '5.2.0-5.2.1') {
+        events.forEach(event => {
+            if (event.parameters) {
+                event.parameters.privateMetadata = undefined
+            }
+        })
+    }
+
+    /**
+     * In early releases, we don't correctly accept float metadata values
+     * that may be provided as number. Circumvent this by rounding all
+     * metadata values by default.
+     * https://github.com/sourcegraph/sourcegraph/pull/58643
+     *
+     * We also don't support a interaction ID as a first-class citizen, as it
+     * was only added in 5.2.4: https://github.com/sourcegraph/sourcegraph/pull/58539
+     */
+    if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3') {
+        events.forEach(event => {
+            if (event.parameters) {
+                event.parameters.metadata?.forEach(entry => {
+                    entry.value = Math.round(entry.value)
+                })
+                event.parameters.interactionID = undefined
+            }
+        })
+    }
+
+    /**
+     * timestamp was only added in 5.2.5 and later:
+     * https://github.com/sourcegraph/sourcegraph/pull/58944
+     */
+    if (exportMode === '5.2.0-5.2.1' || exportMode === '5.2.2-5.2.3' || exportMode === '5.2.4') {
+        events.forEach(event => {
+            event.timestamp = undefined
+        })
     }
 }

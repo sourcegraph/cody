@@ -3,10 +3,13 @@ import { ConfigurationWithAccessToken } from '../../configuration'
 import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
 export interface CompletionLogger {
-    startCompletion(params: CompletionParameters | {}):
+    startCompletion(
+        params: CompletionParameters | {},
+        endpoint: string
+    ):
         | undefined
         | {
-              onError: (error: string) => void
+              onError: (error: string, rawError?: unknown) => void
               onComplete: (response: string | CompletionResponse | string[] | CompletionResponse[]) => void
               onEvents: (events: Event[]) => void
           }
@@ -44,7 +47,7 @@ export abstract class SourcegraphCompletionsClient {
                     break
                 case 'error':
                     this.errorEncountered = true
-                    cb.onError(event.error)
+                    cb.onError(new Error(event.error))
                     break
                 case 'done':
                     if (!this.errorEncountered) {
@@ -77,8 +80,8 @@ export function bufferStream(
             onComplete() {
                 resolve(buffer)
             },
-            onError(message: string, code?: number) {
-                reject(new Error(code ? `${message} (code ${code})` : message))
+            onError(error: Error, code?: number) {
+                reject(code ? new Error(`${error} (code ${code})`) : error)
             },
         }
         client.stream(params, callbacks)

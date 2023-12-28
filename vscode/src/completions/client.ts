@@ -9,11 +9,13 @@ import type {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import {
     isAbortError,
+    isRateLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -59,7 +61,8 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
         signal?: AbortSignal
     ): Promise<CompletionResponse> {
-        const log = logger?.startCompletion(params)
+        const url = getCodeCompletionsEndpoint()
+        const log = logger?.startCompletion(params, url)
 
         const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
 
@@ -67,11 +70,14 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         // Force HTTP connection reuse to reduce latency.
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')
+        headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.accessToken) {
             headers.set('Authorization', `token ${config.accessToken}`)
         }
         if (tracingFlagEnabled) {
-            headers.set('X-Sourcegraph-Should-Trace', 'true')
+            headers.set('X-Sourcegraph-Should-Trace', '1')
+
+            addTraceparent(headers)
         }
 
         // We enable streaming only for Node environments right now because it's hard to make
@@ -82,7 +88,12 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         const isNode = typeof process !== 'undefined'
         const enableStreaming = !!isNode
 
-        const url = getCodeCompletionsEndpoint()
+        // Disable gzip compression since the sg instance will start to batch
+        // responses afterwards.
+        if (enableStreaming) {
+            headers.set('Accept-Encoding', 'gzip;q=0')
+        }
+
         const response: Response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -93,16 +104,23 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             signal,
         })
 
-        const traceId = response.headers.get('x-trace') ?? undefined
+        const traceId = getActiveTraceAndSpanId()?.traceId
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
+            // Check for explicit false, because if the header is not set, there
+            // is no upgrade available.
+            const upgradeIsAvailable =
+                response.headers.get('x-is-cody-pro-user') === 'false' &&
+                typeof response.headers.get('x-is-cody-pro-user') !== undefined
             const retryAfter = response.headers.get('retry-after')
             const limit = response.headers.get('x-ratelimit-limit')
             throw new RateLimitError(
+                'autocompletions',
                 await response.text(),
+                upgradeIsAvailable,
                 limit ? parseInt(limit, 10) : undefined,
-                retryAfter ? new Date(retryAfter) : undefined
+                retryAfter
             )
         }
 
@@ -130,6 +148,10 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
 
                 for await (const chunk of iterator) {
+                    if (chunk.event === 'error') {
+                        throw new Error(chunk.data)
+                    }
+
                     if (chunk.event === 'completion') {
                         if (signal?.aborted) {
                             break // Stop processing the already received chunks.
@@ -147,12 +169,15 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
 
                 return lastResponse
             } catch (error) {
+                if (isRateLimitError(error as Error)) {
+                    throw error
+                }
                 if (isAbortError(error as Error) && lastResponse) {
                     log?.onComplete(lastResponse)
                 }
 
                 const message = `error parsing streaming CodeCompletionResponse: ${error}`
-                log?.onError(message)
+                log?.onError(message, error)
                 throw new TracedError(message, traceId)
             }
         } else {
@@ -170,7 +195,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 }
             } catch (error) {
                 const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-                log?.onError(message)
+                log?.onError(message, error)
                 throw new TracedError(message, traceId)
             }
         }

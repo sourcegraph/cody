@@ -19,6 +19,9 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (trace) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }
+        // Disable gzip compression since the sg instance will start to batch
+        // responses afterwards.
+        headersInstance.set('Accept-Encoding', 'gzip;q=0')
         fetchEventSource(this.completionsEndpoint, {
             method: 'POST',
             headers: Object.fromEntries(headersInstance.entries()),
@@ -34,12 +37,12 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                         // We show the generic error message in this case
                         console.error(error)
                     }
-                    cb.onError(
+                    const error = new Error(
                         errorMessage === null || errorMessage.length === 0
                             ? `Request failed with status code ${response.status}`
-                            : errorMessage,
-                        response.status
+                            : errorMessage
                     )
+                    cb.onError(error, response.status)
                     abort.abort()
                     return
                 }

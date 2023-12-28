@@ -1,6 +1,7 @@
 import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
+import { ContextFile } from '../codebase-context/messages'
 
 export interface ActiveTextEditor {
     content: string
@@ -60,17 +61,11 @@ export interface TextDocumentContent {
     revision?: string
 }
 
-export interface VsCodeInlineController {
-    selection: ActiveTextEditorSelection | null
-    selectionRange: ActiveTextEditorSelectionRange | null
-    error(): Promise<void>
-}
-
 /**
  * The intent classification for the fixup.
  * Manually determined depending on how the fixup is triggered.
  */
-export type FixupIntent = 'add' | 'edit' | 'fix'
+export type FixupIntent = 'add' | 'edit' | 'fix' | 'doc'
 
 export interface VsCodeFixupTaskRecipeData {
     instruction: string
@@ -87,27 +82,24 @@ export interface VsCodeFixupController {
 }
 
 export interface VsCodeCommandsController {
-    addCommand(key: string, input?: string): Promise<string>
+    addCommand(key: string, input?: string, contextFiles?: ContextFile[], addEnhancedContext?: boolean): Promise<string>
     getCommand(commandRunnerId: string): CodyPrompt | null
     menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
 export interface ActiveTextEditorViewControllers<
-    I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
     C extends VsCodeCommandsController = VsCodeCommandsController,
 > {
-    readonly inline?: I
     readonly fixups?: F
     readonly command?: C
 }
 
 export interface Editor<
-    I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
     P extends VsCodeCommandsController = VsCodeCommandsController,
 > {
-    controllers?: ActiveTextEditorViewControllers<I, F, P>
+    controllers?: ActiveTextEditorViewControllers<F, P>
 
     /**
      * The path of the workspace root if on the file system, otherwise `null`.
@@ -121,8 +113,6 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
     getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
-    getActiveInlineChatTextEditor(): ActiveTextEditor | null
-    getActiveInlineChatSelection(): ActiveTextEditorSelection | null
 
     /**
      * Gets the active text editor's selection, or the entire file if the selected range is empty.
@@ -152,9 +142,7 @@ export interface Editor<
 }
 
 export class NoopEditor implements Editor {
-    public controllers?:
-        | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeCommandsController>
-        | undefined
+    public controllers?: ActiveTextEditorViewControllers<VsCodeFixupController, VsCodeCommandsController> | undefined
 
     public getWorkspaceRootPath(): string | null {
         return null
@@ -174,14 +162,6 @@ export class NoopEditor implements Editor {
 
     public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
         return Promise.resolve(null)
-    }
-
-    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
-        return null
-    }
-
-    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
-        return null
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {

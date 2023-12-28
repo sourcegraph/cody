@@ -6,48 +6,22 @@ import {
     EmbeddingsEnabledPopup,
     EmbeddingsNotFoundEnterprisePopup,
     EmbeddingsNotFoundPopup,
-    InstallCodyAppPopup,
 } from './OnboardingExperimentPopups'
 
 import styles from './Popup.module.css'
 
-const meta: Meta<typeof InstallCodyAppPopup> = {
-    title: 'cody/App-less Onboarding',
-    component: InstallCodyAppPopup,
+const meta: Meta<typeof EmbeddingsEnabledPopup> = {
+    title: 'cody/Old Context Status',
+    component: EmbeddingsEnabledPopup,
     decorators: [VSCodeStoryDecorator],
 }
-
 export default meta
-
-export const InstallCodyApp: StoryObj<typeof InstallCodyAppPopup> = {
-    render: () => (
-        <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
-            <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
-                <InstallCodyAppPopup
-                    isOpen={true}
-                    installApp={() => {}}
-                    onDismiss={() => {}}
-                    openApp={() => {}}
-                    reloadStatus={() => {}}
-                    repoName="host.example/alice/portscan"
-                />
-                <span className="codicon codicon-rocket" />
-            </button>
-        </div>
-    ),
-}
 
 export const EmbeddingsNotFound: StoryObj<typeof EmbeddingsNotFoundPopup> = {
     render: () => (
         <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
             <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
-                <EmbeddingsNotFoundPopup
-                    isOpen={true}
-                    installApp={() => {}}
-                    onDismiss={() => {}}
-                    openApp={() => {}}
-                    reloadStatus={() => {}}
-                />
+                <EmbeddingsNotFoundPopup isOpen={true} onDismiss={() => {}} reloadStatus={() => {}} />
                 <span className="codicon codicon-rocket" />
             </button>
         </div>
@@ -58,29 +32,7 @@ export const EmbeddingsNotFoundEnterprise: StoryObj<typeof EmbeddingsNotFoundEnt
     render: () => (
         <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
             <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
-                <EmbeddingsNotFoundEnterprisePopup
-                    isOpen={true}
-                    installApp={() => {}}
-                    onDismiss={() => {}}
-                    openApp={() => {}}
-                    reloadStatus={() => {}}
-                />
-                <span className="codicon codicon-rocket" />
-            </button>
-        </div>
-    ),
-}
-
-export const EmbeddingsEnabledWithApp: StoryObj<typeof EmbeddingsEnabledPopup> = {
-    render: () => (
-        <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
-            <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
-                <EmbeddingsEnabledPopup
-                    isOpen={true}
-                    onDismiss={() => {}}
-                    indexSource="Cody App"
-                    repoName="host.example/alice/portscan"
-                />
+                <EmbeddingsNotFoundEnterprisePopup isOpen={true} onDismiss={() => {}} reloadStatus={() => {}} />
                 <span className="codicon codicon-rocket" />
             </button>
         </div>

@@ -1,16 +1,17 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
+import { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
+import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -24,7 +25,7 @@ import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
 import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
 import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
-import { CodyTaskState, getEditorInsertSpaces, getEditorTabSize } from './utils'
+import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -59,31 +60,47 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.accept-all', () => this.acceptFixups()),
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'cancel')
                 return this.cancel(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'diff')
                 return this.diff(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', {
+                    op: 'regenerate',
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'retry')
                 return this.retry(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'undo')
                 return this.undo(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept', hasV2Event: true })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
                 return this.accept(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'show_error' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', {
+                    op: 'show_error',
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'showError')
                 return this.showError(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.skip-formatting', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'skip_formatting' })
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', {
+                    op: 'skip_formatting',
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'skipFormatting')
                 return this.skipFormatting(id)
             })
         )
@@ -144,20 +161,24 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    public async promptUserForTask(): Promise<FixupTask | null> {
-        const task = await this.typingUI.show()
+    public async promptUserForTask(args: ExecuteEditArguments, source: ChatEventSource): Promise<FixupTask | null> {
+        const task = await this.typingUI.show(args, source)
         return task
     }
 
-    public createTask(
+    public async createTask(
         documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
         intent?: FixupIntent,
         insertMode?: boolean,
         source?: ChatEventSource
-    ): FixupTask {
+    ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(documentUri)
+        // Support expanding the selection range for intents where it is useful
+        if (intent !== 'add') {
+            selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
+        }
         const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
@@ -215,8 +236,11 @@ export class FixupController
     private scheduleRespin(task: FixupTask): void {
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
-            telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
-            return this.error(task.id, `Cody tried ${task.spinCount} times but failed to edit the file`)
+            telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount, hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.respin', 'scheduled', {
+                metadata: { spinCount: task.spinCount },
+            })
+            return this.error(task.id, new Error(`Cody tried ${task.spinCount} times but failed to edit the file`))
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
@@ -235,10 +259,10 @@ export class FixupController
      * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      */
-    private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
-        const fileName = task.fixupFile.uri.fsPath
-        const documentUri = vscode.Uri.file(fileName)
-
+    private async getFixupTaskSmartSelection(
+        documentUri: vscode.Uri,
+        selectionRange: vscode.Range
+    ): Promise<vscode.Range> {
         // Use selectionRange when it's available
         if (selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
             return selectionRange
@@ -266,6 +290,141 @@ export class FixupController
             newSelectionEndingPosition.line,
             newSelectionEndingPosition.character
         )
+    }
+
+    private logTaskCompletion(task: FixupTask, editOk: boolean): void {
+        if (!editOk) {
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+
+            // TODO: Try to recover, for example by respinning
+            void vscode.window.showWarningMessage('edit did not apply')
+            return
+        }
+
+        if (!task.replacement) {
+            return
+        }
+
+        const codeCount = countCode(task.replacement.trim())
+        const source = task.source
+
+        telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source }, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+            metadata: {
+                lineCount: codeCount.lineCount,
+                charCount: codeCount.charCount,
+            },
+            privateMetadata: {
+                // TODO: generate numeric ID representing source so that it
+                // can be included in metadata for default export.
+                source,
+            },
+        })
+    }
+
+    private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {
+        if (task.state !== CodyTaskState.inserting) {
+            return
+        }
+
+        let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
+        let document: vscode.TextDocument
+
+        const visibleEditor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri === task.fixupFile.uri
+        )
+
+        if (visibleEditor) {
+            document = visibleEditor.document
+            edit = visibleEditor.edit.bind(this)
+        } else {
+            // Perform the edit in the background
+            document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+            edit = new vscode.WorkspaceEdit()
+        }
+
+        if (state === 'complete') {
+            const replacement = task.replacement
+            if (replacement === undefined) {
+                throw new Error('Task applied with no replacement text')
+            }
+
+            // We will format this code once applied, so we do not place an undo stop after this edit to avoid cluttering the undo stack.
+            const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+
+            let editOk: boolean
+            if (edit instanceof vscode.WorkspaceEdit) {
+                edit.replace(document.uri, task.selectionRange, replacement)
+                editOk = await vscode.workspace.applyEdit(edit)
+            } else {
+                editOk = await edit(editBuilder => {
+                    editBuilder.replace(task.selectionRange, replacement)
+                }, applyEditOptions)
+            }
+
+            this.logTaskCompletion(task, editOk)
+
+            // Add the missing undo stop after this change.
+            // Now when the user hits 'undo', the entire format and edit will be undone at once
+            const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+            this.setTaskState(task, CodyTaskState.formatting)
+            await new Promise((resolve, reject) => {
+                task.formattingResolver = resolve
+                this.formatEdit(
+                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                    document,
+                    task,
+                    formatEditOptions
+                )
+                    .then(resolve)
+                    .catch(reject)
+                    .finally(() => (task.formattingResolver = null))
+            })
+
+            // TODO: See if we can discard a FixupFile now.
+            this.setTaskState(task, CodyTaskState.applied)
+
+            // Inform the user about the change if it happened in the background
+            // TODO: This will show a new notification for each unique file name.
+            // Consider only ever showing 1 notification that opens a UI to display all fixups.
+            if (!visibleEditor) {
+                await this.notifyTaskComplete(task)
+            }
+            return
+        }
+
+        // In progress insertion, apply the partial replacement and adjust the range
+        const replacement = task.inProgressReplacement
+        if (replacement === undefined) {
+            throw new Error('Task applied with no replacement text')
+        }
+
+        // Avoid adding any undo stops when streaming. We want the completed edit to be undone as a single unit, once finished.
+        const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
+
+        // Insert updated text at selection range
+        let editOk: boolean
+        if (edit instanceof vscode.WorkspaceEdit) {
+            edit.replace(document.uri, task.selectionRange, replacement)
+            editOk = await vscode.workspace.applyEdit(edit)
+        } else {
+            editOk = await edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, replacement)
+            }, applyEditOptions)
+        }
+
+        if (editOk) {
+            const insertedLines = replacement.split(/\r\n|\r|\n/m).length - 1
+            // Expand the selection range to accompany the edit
+            task.selectionRange = task.selectionRange.with(
+                task.selectionRange.start,
+                task.selectionRange.end.translate({
+                    lineDelta: task.selectionRange.start.line - task.selectionRange.end.line + insertedLines,
+                    characterDelta: insertedLines < 1 ? replacement.length : 0,
+                })
+            )
+        }
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
@@ -297,66 +456,30 @@ export class FixupController
             return
         }
 
-        visibleEditor?.revealRange(task.selectionRange)
-
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
         const editOk = task.insertMode
             ? await this.insertEdit(edit, document, task, applyEditOptions)
             : await this.replaceEdit(edit, diff, task, applyEditOptions)
 
-        if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+        this.logTaskCompletion(task, editOk)
 
-            // TODO: Try to recover, for example by respinning
-            void vscode.window.showWarningMessage('edit did not apply')
-            return
-        }
-
-        const replacementText = task.replacement
-        if (replacementText) {
-            const codeCount = countCode(replacementText.trim())
-            const source = task.source
-
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source }, { hasV2Event: true })
-            telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
-                metadata: {
-                    lineCount: codeCount.lineCount,
-                    charCount: codeCount.charCount,
-                },
-                privateMetadata: {
-                    // TODO: generate numeric ID representing source so that it
-                    // can be included in metadata for default export.
-                    source,
-                },
-            })
-
-            task.editedRange = new vscode.Range(
-                new vscode.Position(task.selectionRange.start.line, 0),
-                new vscode.Position(
-                    task.selectionRange.start.line + codeCount.lineCount,
-                    task.selectionRange.end.character
-                )
+        // Add the missing undo stop after this change.
+        // Now when the user hits 'undo', the entire format and edit will be undone at once
+        const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
+        this.setTaskState(task, CodyTaskState.formatting)
+        await new Promise((resolve, reject) => {
+            task.formattingResolver = resolve
+            this.formatEdit(
+                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                document,
+                task,
+                formatEditOptions
             )
-
-            // Add the missing undo stop after this change.
-            // Now when the user hits 'undo', the entire format and edit will be undone at once
-            const formatEditOptions = { undoStopBefore: false, undoStopAfter: true }
-            this.setTaskState(task, CodyTaskState.formatting)
-            await new Promise((resolve, reject) => {
-                task.formattingResolver = resolve
-                this.formatEdit(
-                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                    document,
-                    task,
-                    formatEditOptions
-                )
-                    .then(resolve)
-                    .catch(reject)
-                    .finally(() => (task.formattingResolver = null))
-            })
-        }
+                .then(resolve)
+                .catch(reject)
+                .finally(() => (task.formattingResolver = null))
+        })
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.applied)
@@ -365,15 +488,7 @@ export class FixupController
         // TODO: This will show a new notification for each unique file name.
         // Consider only ever showing 1 notification that opens a UI to display all fixups.
         if (!visibleEditor) {
-            const showChangesButton = 'Show Changes'
-            const result = await vscode.window.showInformationMessage(
-                `Edit applied to ${task.fixupFile.fileName}`,
-                showChangesButton
-            )
-            if (result === showChangesButton) {
-                const editor = await vscode.window.showTextDocument(task.fixupFile.uri)
-                editor.revealRange(task.selectionRange)
-            }
+            await this.notifyTaskComplete(task)
         }
     }
 
@@ -451,7 +566,7 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.editedRange
+        const rangeToFormat = task.selectionRange
 
         if (!rangeToFormat) {
             return false
@@ -489,6 +604,18 @@ export class FixupController
         }, options)
     }
 
+    private async notifyTaskComplete(task: FixupTask): Promise<void> {
+        const showChangesButton = 'Show Changes'
+        const result = await vscode.window.showInformationMessage(
+            `Edit applied to ${task.fixupFile.fileName}`,
+            showChangesButton
+        )
+        if (result === showChangesButton) {
+            const editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+            editor.revealRange(task.selectionRange)
+        }
+    }
+
     // Accepting fixups from tree item click
     private acceptFixups(treeItem?: FixupTaskTreeItem): void {
         // Accepting all fixup tasks
@@ -522,6 +649,10 @@ export class FixupController
         if (!task) {
             return
         }
+        return this.cancelTask(task)
+    }
+
+    public cancelTask(task: FixupTask): void {
         this.setTaskState(task, task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.finished)
         this.discard(task)
     }
@@ -564,31 +695,33 @@ export class FixupController
             return
         }
 
-        const revertRange = task.editedRange || task.selectionRange
-
-        editor.revealRange(revertRange)
+        editor.revealRange(task.selectionRange)
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(revertRange, task.original)
+            editBuilder.replace(task.selectionRange, task.original)
         })
 
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed')
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.fixup.revert', 'failed')
             return
         }
 
         const tokenCount = countCode(replacementText)
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
+        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
+            metadata: tokenCount,
+        })
 
         this.setTaskState(task, CodyTaskState.finished)
     }
 
-    public error(id: taskID, message: string): void {
+    public error(id: taskID, error: Error): void {
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
 
-        task.error = message
+        task.error = error
         this.setTaskState(task, CodyTaskState.error)
     }
 
@@ -598,7 +731,7 @@ export class FixupController
             return
         }
 
-        void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
+        void vscode.window.showErrorMessage('Applying Edits Failed', { modal: true, detail: task.error.message })
     }
 
     private skipFormatting(id: taskID): void {
@@ -634,13 +767,6 @@ export class FixupController
             return undefined
         }
 
-        // Expand the selection range for edits and fixes
-        const getSmartSelection = task.intent === 'edit' || task.intent === 'fix'
-        if (getSmartSelection && task.selectionRange) {
-            const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
-            task.selectionRange = newRange
-        }
-
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         const precedingText = document.getText(
             new vscode.Range(
@@ -660,18 +786,57 @@ export class FixupController
             new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
         )
 
-        // If there's no text determined to be selected then we will override the intent, as we can only add new code.
-        const intent: FixupIntent = selectedText.trim().length === 0 ? 'add' : task.intent
-
         return {
             instruction: task.instruction,
-            intent,
+            intent: task.intent,
             fileName: task.fixupFile.uri.fsPath,
             precedingText,
             selectedText,
             followingText,
             selectionRange: task.selectionRange,
         }
+    }
+
+    public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        if (task.state !== CodyTaskState.inserting) {
+            this.setTaskState(task, CodyTaskState.inserting)
+        }
+
+        const trimmedReplacement = state === 'complete' ? text : text.replace(/\n[^\n]*$/, '')
+        const replacementText = trimmedReplacement
+            .split('\n')
+            .map((line, index) => (index === 0 ? line : ' '.repeat(task.selectionRange.start.character) + line))
+            .join('\n')
+
+        if (state === 'complete') {
+            task.inProgressReplacement = undefined
+            task.replacement = replacementText
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+                ...countCode(replacementText),
+                source: task.source,
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                metadata: countCode(replacementText),
+                privateMetadata: {
+                    source: task.source,
+                },
+            })
+            return this.streamTask(task, state)
+        }
+
+        if (replacementText === task.inProgressReplacement) {
+            // Incoming text has already been applied, do nothing
+            return
+        }
+
+        task.inProgressReplacement = replacementText
+        return this.streamTask(task, state)
     }
 
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
@@ -697,6 +862,13 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
                     ...countCode(text),
                     source: task.source,
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                    metadata: countCode(text),
+                    privateMetadata: {
+                        source: task.source,
+                    },
                 })
                 break
         }
@@ -845,8 +1017,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.editedRange || task.selectionRange
-        edit.replace(tempDocUri, range, diff.originalText)
+        edit.replace(tempDocUri, task.selectionRange, diff.originalText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
@@ -855,13 +1026,13 @@ export class FixupController
             'vscode.diff',
             tempDocUri,
             task.fixupFile.uri,
-            'Cody Fixup Diff View - ' + task.id,
+            'Cody Edit Diff View - ' + task.id,
             {
                 preview: true,
                 preserveFocus: false,
-                selection: range,
-                label: 'Cody Fixup Diff View',
-                description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
+                selection: task.selectionRange,
+                label: 'Cody Edit Diff View',
+                description: 'Cody Edit Diff View: ' + task.fixupFile.uri.fsPath,
             }
         )
     }
@@ -872,7 +1043,7 @@ export class FixupController
         if (!task) {
             return
         }
-        const previousRange = task.selectionRange
+        const previousRange = task.originalRange
         const previousInstruction = task.instruction
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
@@ -884,7 +1055,7 @@ export class FixupController
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document, intent: task.intent },
+            { range: previousRange, instruction, document, intent: task.intent, insertMode: task.insertMode },
             'code-lens'
         )
     }
@@ -918,6 +1089,7 @@ export class FixupController
         // currently do not always show the correct positions for edits.
         // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.applied) {
+            this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didCompleteTask(task)
         }
     }

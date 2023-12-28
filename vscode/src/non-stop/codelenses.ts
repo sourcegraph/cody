@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+
 import { getSingleLineRange } from '../services/InlineAssist'
 
 import { FixupTask } from './FixupTask'
@@ -13,6 +15,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const title = getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
+        }
+        case CodyTaskState.inserting: {
+            const title = getInsertingLens(codeLensRange)
+            return [title]
         }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
@@ -31,7 +37,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, retry, undo, accept]
         }
         case CodyTaskState.error: {
-            const title = getErrorLens(codeLensRange, task.id)
+            const title = getErrorLens(codeLensRange, task)
             const discard = getDiscardLens(codeLensRange, task.id)
             return [title, discard]
         }
@@ -41,12 +47,28 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 }
 
 // List of lenses
-function getErrorLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getErrorLens(codeLensRange: vscode.Range, task: FixupTask): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(warning) Applying edits failed',
-        command: 'cody.fixup.codelens.error',
-        arguments: [id],
+    if (isRateLimitError(task.error)) {
+        if (task.error.upgradeIsAvailable) {
+            lens.command = {
+                title: '⚡️ Upgrade to Cody Pro',
+                command: 'cody.show-rate-limit-modal',
+                arguments: [task.error.userMessage, task.error.retryMessage, task.error.upgradeIsAvailable],
+            }
+        } else {
+            lens.command = {
+                title: '$(warning) Rate Limit Exceeded',
+                command: 'cody.show-rate-limit-modal',
+                arguments: [task.error.userMessage, task.error.retryMessage, task.error.upgradeIsAvailable],
+            }
+        }
+    } else {
+        lens.command = {
+            title: '$(warning) Applying Edits Failed',
+            command: 'cody.fixup.codelens.error',
+            arguments: [task.id],
+        }
     }
     return lens
 }
@@ -55,6 +77,15 @@ function getWorkingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Cody is working...',
+        command: 'cody.focus',
+    }
+    return lens
+}
+
+function getInsertingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(sync~spin) Inserting...',
         command: 'cody.focus',
     }
     return lens

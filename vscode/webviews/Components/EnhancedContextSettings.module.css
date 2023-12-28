@@ -1,0 +1,183 @@
+.popup {
+    max-width: 300px;
+    cursor: default;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.popup label {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.popup label h1 {
+    text-transform: none;
+    font-weight: 600;
+    display: inline;
+    cursor: pointer;
+    user-select: none;
+}
+
+.popup > p {
+    display: block;
+}
+
+.folders-list {
+    margin: 1rem 0 0.25rem;
+}
+
+.folders-list > dt {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.folders-list > dd {
+    margin-left: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 1px solid var(--vscode-checkbox-border);
+}
+
+.folders-list > dd + dt {
+    margin-top: 1rem;
+}
+
+.providers-list, .provider-item {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.providers-list {
+    margin-top: 0.4rem;
+    padding: 0.25rem 0 0.5rem;
+    font-size: 12px;
+}
+
+.providers-list p {
+    margin-top: 0.2rem;
+    margin-left: 1.25rem;
+}
+
+.providers-list p + p {
+    margin-top: 0.5rem;
+}
+
+.provider-label {
+    font-weight: 600;
+}
+
+.provider-icon-and-name {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.provider-explanatory-text, .provider-inline-state {
+    opacity: 0.8;
+}
+
+.line-break-all {
+    word-break: break-all;
+}
+
+.provider-item:not(:has(p)) {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.provider-item + .provider-item {
+    margin-top: 0.75rem;
+}
+
+.provider-inline-state {
+    font-weight: normal;
+}
+
+.popup i {
+    opacity: 0.8;
+}
+
+.popup vscode-checkbox {
+    margin-top: 0;
+}
+
+/*
+    vscode-checkbox and vscode-button is missing the borders and focus styles that built-in VS
+    controls have (perhaps out of date?) so we need to add them in ourselves
+*/
+.popup vscode-checkbox::part(control) {
+    background-color: var(--vscode-checkbox-background);
+    border: 1px solid var(--vscode-checkbox-border);
+}
+
+.popup vscode-checkbox:focus::part(control),
+.popup vscode-checkbox:focus-visible::part(control),
+.popup vscode-checkbox:focus-within::part(control) {
+    border-color: var(--vscode-focusBorder);
+}
+
+.popup vscode-button:focus::part(control),
+.popup vscode-button:focus-visible::part(control),
+.popup vscode-button:focus-within::part(control) {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+.settings-btn {
+    color: var(--vscode-editor-foreground);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    position: relative;
+}
+
+.settings-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.settings-btn-active {
+    color: var(--vscode-inputOption-activeForeground);
+    border-color: var(--vscode-inputOption-activeBorder);
+    background-color: var(--vscode-inputOption-activeBackground);
+}
+
+.glowy-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 100%;
+    background-color: var(--vscode-inputOption-activeBorder);
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    z-index: 2;
+}
+
+.glowy-dot::after {
+    content: '';
+    box-sizing: border-box;
+    width: 6px;
+    height: 6px;
+    border-radius: 100%;
+    border: 0.75px solid var(--vscode-inputOption-activeForeground);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    animation: 2.5s linear infinite glowy;
+}
+
+@keyframes glowy {
+    50% {
+        transform: scale(300%);
+        opacity: 0;
+    }
+    to {
+        transform: scale(300%);
+        opacity: 0;
+    }
+}

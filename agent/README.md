@@ -66,6 +66,56 @@ The following commands assume you are in the `agent` directory:
 - The Sourcegraph Neovim plugin is defined in the
   [`sourcegraph/sg.nvim`](https://github.com/sourcegraph/sg.nvim) repository.
 
+## Testing with the agent
+
+The agent includes a testing mode where it can either record HTTP requests or
+replay from a directory of recorded HTTP request/response pairs. When running
+in replay mode, the agent should be suitable to use within tests because the results
+should be determinic and work.
+
+To run the agent in testing mode, define the following environment variables:
+
+- `CODY_RECORDING_DIRECTORY=PATH_TO_DIRECTORY`: a directory where the HTTP
+  recordings should be stored. This directory should be committed to git so that
+  other people who clone the repository can replay from the same recording.
+- `CODY_RECORDING_MODE=record|replay|passthrough`: when set to `record`, will record HTTP
+  requests and persist the results in the recording directory. When set to
+  `replay`, will replay from the recording directory. When set to `passthrough`,
+  will pass through all HTTP requests to the real Sourcegraph instance without
+  recording the responses.
+- (optional) `CODY_RECORDING_MODE=TEST_NAME`: if you are running multiple
+  instances of the agent to test different features, then you should provide a
+  unique recording name for each test. Each unique name will get a unique
+  directory avoiding the risk of contaminating recordings between different
+  tests.
+
+Run `pnpm run agent jsonrpc --help` to get more information about all available
+`--recording-*` options.
+
+## Updating the Polly HTTP Recordings
+
+If agent tests are failing in CI for non-agent related PRs (e.g. `PollyError:
+[Polly] [adapter:node-http] Recording for the following request is not found and
+recordIfMissing is false` errors) then you may need to update the HAR HTTP
+recordings. For example, this can happen when we make changes to the prompt the
+agent test to not be able to replay the autocomplete requests from old
+recordings.
+
+To fix this problem, update the HTTP recordings with the following command:
+
+```sh
+export SRC_ACCESS_TOKEN=sgp_YOUR_ACCESS_TOKEN # redacted in the recordings
+export SRC_ENDPOINT=https://sourcegraph.com   # tests run against dotcom
+src login                                     # confirm you are authenticated to sourcegraph.com
+CODY_RECORDING_MODE=record pnpm run test      # run tests to update recordings
+pnpm run test                                 # confirm that tests are passing when replaying HTTP traffic
+```
+
+Please post in #wg-cody-agent if you have problems getting the agent tests to
+pass after recording. Worst case, feel free to disable the agent tests by
+uncommenting the block of code in `index.test.ts`. See comment in the code for
+more details about how to disable agent tests.
+
 ## Miscellaneous notes
 
 - By the nature of using JSON-RPC via stdin/stdout, both the agent server and

@@ -1,7 +1,7 @@
 import type { init as browserInit } from '@sentry/browser'
 import type { init as nodeInit } from '@sentry/node'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     isAbortError,
@@ -10,7 +10,7 @@ import {
     NetworkError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { extensionDetails } from '../telemetry'
+import { version } from '../../version'
 
 export * from '@sentry/core'
 export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
@@ -18,11 +18,13 @@ export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.inges
 export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof browserInit>[0]>
 
 export abstract class SentryService {
-    constructor(protected config: Pick<Configuration, 'serverEndpoint' | 'isRunningInsideAgent'>) {
+    constructor(
+        protected config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'>
+    ) {
         this.prepareReconfigure()
     }
 
-    public onConfigurationChange(newConfig: Pick<Configuration, 'serverEndpoint'>): void {
+    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>): void {
         this.config = newConfig
         this.prepareReconfigure()
     }
@@ -39,7 +41,7 @@ export abstract class SentryService {
 
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
-                release: extensionDetails.version,
+                release: version,
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'

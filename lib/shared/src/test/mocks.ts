@@ -13,10 +13,11 @@ import {
 } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentClassificationOption, IntentDetector } from '../intent-detector'
-import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
+    public readonly repoId = 'test-repo-id'
+
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
     public get endpoint(): string {
@@ -32,6 +33,15 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
             this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
             Promise.resolve({ codeResults: [], textResults: [] })
         )
+    }
+
+    public onDidChangeStatus(): { dispose: () => void } {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        return { dispose() {} }
+    }
+
+    public get status(): never[] {
+        return []
     }
 }
 
@@ -52,18 +62,6 @@ export class MockIntentDetector implements IntentDetector {
         fallback: Intent
     ): Promise<Intent> {
         return Promise.resolve(fallback)
-    }
-}
-
-export class MockKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
-
-    public getContext(query: string, numResults: number): Promise<ContextResult[]> {
-        return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
-    }
-
-    public getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
-        return this.mocks.getSearchContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
 
@@ -106,14 +104,6 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditor?.() ?? null
     }
 
-    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
-        return this.mocks.getActiveTextEditor?.() ?? null
-    }
-
-    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
-    }
-
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
@@ -150,8 +140,6 @@ export const defaultEmbeddingsClient = new MockEmbeddingsClient()
 
 export const defaultIntentDetector = new MockIntentDetector()
 
-export const defaultKeywordContextFetcher = new MockKeywordContextFetcher()
-
 export const defaultEditor = new MockEditor()
 
 export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
@@ -162,10 +150,11 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         codebaseContext:
             args.codebaseContext ||
             new CodebaseContext(
-                { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+                { useContext: 'none', experimentalLocalSymbols: false },
                 'dummy-codebase',
+                () => 'https://example.com',
                 defaultEmbeddingsClient,
-                defaultKeywordContextFetcher,
+                null,
                 null,
                 null
             ),

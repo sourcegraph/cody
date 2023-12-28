@@ -4,7 +4,7 @@ import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
 
 import { Interaction, InteractionJSON } from './interaction'
-import { ChatMessage } from './messages'
+import { ChatMessage, errorToChatError } from './messages'
 
 export interface TranscriptJSONScope {
     includeInferredRepository: boolean
@@ -16,6 +16,7 @@ export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
     chatModel?: string
+    chatTitle?: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
     scope?: TranscriptJSONScope
@@ -65,7 +66,8 @@ export class Transcript {
                 }
             ),
             json.id,
-            json.chatModel
+            json.chatModel,
+            json.chatTitle
         )
     }
 
@@ -75,13 +77,16 @@ export class Transcript {
 
     public chatModel: string | undefined = undefined
 
-    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string) {
+    public chatTitle: string | undefined = undefined
+
+    constructor(interactions: Interaction[] = [], id?: string, chatModel?: string, title?: string) {
         this.interactions = interactions
         this.internalID =
             id ||
             this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
             new Date().toISOString()
         this.chatModel = chatModel
+        this.chatTitle = title || this.getLastInteraction()?.getHumanMessage()?.displayText
     }
 
     public get id(): string {
@@ -94,6 +99,10 @@ export class Transcript {
             return
         }
         this.chatModel = chatModel
+    }
+
+    public setChatTitle(title: string): void {
+        this.chatTitle = title
     }
 
     public get isEmpty(): boolean {
@@ -143,22 +152,22 @@ export class Transcript {
     }
 
     /**
-     * Adds a error div to the assistant response. If the assistant has collected
+     * Adds an error div to the assistant response. If the assistant has collected
      * some response before, we will add the error message after it.
-     * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
+     * @param error The error to be displayed.
      */
-    public addErrorAsAssistantResponse(errorText: string): void {
+    public addErrorAsAssistantResponse(error: Error): void {
         const lastInteraction = this.getLastInteraction()
         if (!lastInteraction) {
             return
         }
-        // If assistant has responsed before, we will add the error message after it
-        const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
+
         lastInteraction.setAssistantMessage({
-            speaker: 'assistant',
+            ...lastInteraction.getAssistantMessage(),
             text: 'Failed to generate a response due to server error.',
-            displayText:
-                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
+            // Serializing normal errors will lose name/message so
+            // just read them off manually and attach the rest of the fields.
+            error: errorToChatError(error),
         })
     }
 
@@ -235,6 +244,7 @@ export class Transcript {
         return {
             id: this.id,
             chatModel: this.chatModel,
+            chatTitle: this.chatTitle,
             interactions,
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
@@ -251,6 +261,7 @@ export class Transcript {
         return {
             id: this.id,
             chatModel: this.chatModel,
+            chatTitle: this.chatTitle,
             interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
