@@ -7,7 +7,7 @@ import { test } from './helpers'
 
 // Creating new chats is slow, and setup is slow, so we collapse all these into one test
 
-test('@-file empty state', async ({ page, sidebar }) => {
+test('@-file empty state', async ({ page, sidebar, workspaceDirectory }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -30,10 +30,10 @@ test('@-file empty state', async ({ page, sidebar }) => {
 
     // We should only match the relative visible path, not parts of the full path outside of the workspace.
     // Eg. searching for "source" should not find all files if the project is inside `C:\Source`.
-    // TODO(dantup): After https://github.com/sourcegraph/cody/pull/2235 lands, add workspacedirectory to the test
-    //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
-    //   longer matches.
-    await chatInput.fill('@fixtures') // fixture is in the test project folder name, but in the relative paths.
+    //
+    // For the test, fixtures is a segment of the workspace dir, but not the relative path.
+    expect(workspaceDirectory.split(path.sep)).toContainEqual('fixtures')
+    await chatInput.fill('@fixtures')
     await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
 
     // Includes dotfiles after just "."
@@ -99,6 +99,15 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('@Main.java', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java ')
+
+    // Verify that we can open a file from the context list.
+    // The first search above was for Main.java and the context had only a single file.
+    // Expand that group and click the filename and ensure it opens a new editor.
+    await chatPanelFrame.getByText('Context: 1 file').click()
+    const mainJavaFullPath = path.join(workspaceDirectory, 'Main.java')
+    await chatPanelFrame.getByText(`@${mainJavaFullPath}`).click()
+    // Expect an editor tab for Main.java
+    await expect(page.locator('div[role="tab"][data-resource-name="Main.java"]')).toBeVisible()
 })
 
 function withPlatformSlashes(input: string) {
