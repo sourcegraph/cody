@@ -70,6 +70,7 @@ import { Config, IChatPanelProvider } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
+import { ResultAggregator } from './ResultAggregator'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
 import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
@@ -1057,6 +1058,7 @@ class ContextProvider implements IContextProvider {
                 text: selection.selectedText,
                 uri: selection.fileUri || vscode.Uri.file(selection.fileName),
                 range,
+                source: 'editor',
             },
         ]
     }
@@ -1070,76 +1072,45 @@ class ContextProvider implements IContextProvider {
             {
                 text: visible.content,
                 uri: vscode.Uri.file(visible.fileName),
+                source: 'editor',
             },
         ]
     }
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
-        const searchContext: ContextItem[] = []
-        let localEmbeddingsError
-        let remoteEmbeddingsError
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        let hasEmbeddingsContext = false
-        const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
-        const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
-        try {
-            const r = await localEmbeddingsResults
-            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-            searchContext.push(...r)
-        } catch (error) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
-            localEmbeddingsError = error
-        }
-        try {
-            const r = await remoteEmbeddingsResults
-            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-            searchContext.push(...r)
-        } catch (error) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
-            remoteEmbeddingsError = error
-        }
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
-        if (localEmbeddingsError && remoteEmbeddingsError) {
-            throw new Error(
-                `local and remote embeddings search failed (local: ${getErrorMessage(
-                    localEmbeddingsError
-                )}) (remote: ${getErrorMessage(remoteEmbeddingsError)})`
-            )
-        }
+        const symfContextPromise = this.searchSymf(text)
 
-        if (!hasEmbeddingsContext && this.symf) {
-            try {
-                // Fallback to symf if embeddings provided no results
-                searchContext.push(...(await this.searchSymf(text)))
-            } catch (error) {
-                // TODO(beyang): handle this error better
-                logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
-            }
-        }
+        const secondarySearchResultsTimeoutMs = 1000
+        const localEmbeddingsPromise = withCatchErrorAndTimeout(
+            this.searchEmbeddingsLocal(text),
+            'getEnhancedContext',
+            'searchEmbeddingsLocal',
+            secondarySearchResultsTimeoutMs
+        )
+        const remoteEmbeddingsPromise = withCatchErrorAndTimeout(
+            this.searchEmbeddingsRemote(text),
+            'getEnhancedContext',
+            'searchEmbeddingsRemote',
+            secondarySearchResultsTimeoutMs
+        )
 
-        const priorityContext: ContextItem[] = []
+        const context = new ResultAggregator()
+
         const selectionContext = this.getCurrentSelectionContext()
         if (selectionContext.length > 0) {
-            priorityContext.push(...selectionContext)
+            context.addResults(selectionContext)
         } else if (this.needsUserAttentionContext(text)) {
             // Query refers to current editor
-            priorityContext.push(...this.getUserAttentionContext())
+            context.addResults(this.getUserAttentionContext())
         } else if (this.needsReadmeContext(text)) {
             // Query refers to project, so include the README
-            let containsREADME = false
-            for (const contextItem of searchContext) {
-                const basename = path.basename(contextItem.uri.fsPath)
-                if (basename.toLocaleLowerCase() === 'readme' || basename.toLocaleLowerCase().startsWith('readme.')) {
-                    containsREADME = true
-                    break
-                }
-            }
-            if (!containsREADME) {
-                priorityContext.push(...(await this.getReadmeContext()))
-            }
+            context.addResults(await this.getReadmeContext())
         }
 
-        return priorityContext.concat(searchContext)
+        context.addResults(await symfContextPromise)
+        context.addResults(await localEmbeddingsPromise)
+        context.addResults(await remoteEmbeddingsPromise)
+        return context.getResults()
     }
 
     /**
@@ -1192,6 +1163,7 @@ class ContextProvider implements IContextProvider {
                     uri: displayUri,
                     range,
                     text,
+                    source: 'sparse vector search',
                 }
             })
             return (await Promise.all(items)).flat()
@@ -1220,7 +1192,7 @@ class ContextProvider implements IContextProvider {
                     uri,
                     range,
                     text: result.content,
-                    source: 'embeddings',
+                    source: 'embeddings (local)',
                 })
             }
         }
@@ -1260,7 +1232,7 @@ class ContextProvider implements IContextProvider {
                     uri,
                     range,
                     text: codeResult.content,
-                    source: 'embeddings',
+                    source: 'embeddings (remote)',
                 })
             }
         }
@@ -1276,7 +1248,7 @@ class ContextProvider implements IContextProvider {
                     uri,
                     range,
                     text: textResult.content,
-                    source: 'embeddings',
+                    source: 'embeddings (remote)',
                 })
             }
         }
@@ -1372,6 +1344,7 @@ class ContextProvider implements IContextProvider {
                 uri: readmeDisplayUri,
                 text: truncatedReadmeText,
                 range: viewRangeToRange(range),
+                source: 'filename',
             },
         ]
     }
@@ -1402,6 +1375,7 @@ function contextFilesToContextItems(
                 uri,
                 range,
                 text: text || '',
+                source: file.source || 'unknown',
             }
         })
     )
@@ -1490,13 +1464,6 @@ function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
 }
 
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message
-    }
-    return String(error)
-}
-
 function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
     // overwrite it locally (for debugging purposes).
@@ -1528,4 +1495,20 @@ function getContextWindowForModel(authStatus: AuthStatus, modelID: string): numb
         return 28000 // 7000 tokens * 4 bytes per token
     }
     return 28000 // assume default to Claude-2-like model
+}
+
+// Note: doesn't do cancellation
+async function withCatchErrorAndTimeout(
+    resultsPromise: Promise<ContextItem[]>,
+    errorLabel: string,
+    errorText: string,
+    timeoutMs: number
+): Promise<ContextItem[]> {
+    return Promise.race([
+        resultsPromise.catch(error => {
+            logError(errorLabel, errorText, error)
+            return []
+        }),
+        new Promise<ContextItem[]>(resolve => setTimeout(() => resolve([]), timeoutMs)),
+    ])
 }

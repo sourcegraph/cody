@@ -456,7 +456,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.saveTranscriptToChatHistory()
 
                 contextFiles.map(file => {
-                    if (file.source === 'embeddings') {
+                    if (file.source === 'embeddings (local)' || file.source === 'embeddings (remote)') {
                         contextSummary.embeddings++
                     } else if (file.source === 'user') {
                         contextSummary.user++
