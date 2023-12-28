@@ -3,10 +3,10 @@ import { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
+import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
+import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
-import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
-import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
 import { dropParserFields, ParsedCompletion } from './parse-completion'

@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import { range } from '../testutils/textDocument'
 
+import { getContextRange } from './doc-context-getters'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { documentAndPosition } from './test-helpers'
 
@@ -26,7 +27,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'function myFunction() {\n  ',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: '  ',
             currentLineSuffix: '',
             prevNonEmptyLine: 'function myFunction() {',
@@ -43,7 +43,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'const x = 1\nif (true) {\n  ',
             suffix: '\n}',
-            contextRange: expect.any(Object),
             currentLinePrefix: '  ',
             currentLineSuffix: '',
             prevNonEmptyLine: 'if (true) {',
@@ -60,7 +59,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'const arr = [',
             suffix: '\n];',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'const arr = [',
             currentLineSuffix: '',
             prevNonEmptyLine: '',
@@ -77,7 +75,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'console.log(1337);\nconst arr = [',
             suffix: '\n];',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'const arr = [',
             currentLineSuffix: '',
             prevNonEmptyLine: 'console.log(1337);',
@@ -105,7 +102,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'console.assert',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'console.assert',
             currentLineSuffix: '',
             prevNonEmptyLine: '',
@@ -134,7 +130,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: '// some line before\nconsole.log',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'console.log',
             currentLineSuffix: '',
             prevNonEmptyLine: '// some line before',
@@ -162,7 +157,6 @@ describe('getCurrentDocContext', () => {
         expect(result).toEqual({
             prefix: 'console',
             suffix: '',
-            contextRange: expect.any(Object),
             currentLinePrefix: 'console',
             currentLineSuffix: '',
             prevNonEmptyLine: '',
@@ -198,7 +192,9 @@ describe('getCurrentDocContext', () => {
             maxPrefixLength: 140,
             maxSuffixLength: 60,
         })
-        expect(docContext.contextRange).toMatchInlineSnapshot(`
+        const contextRange = getContextRange(document, docContext)
+
+        expect(contextRange).toMatchInlineSnapshot(`
           Range {
             "end": Position {
               "character": 32,

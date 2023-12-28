@@ -37,6 +37,7 @@ describe('IgnoreHelper', () => {
 
     beforeEach(() => {
         ignore = new IgnoreHelper()
+        ignore.setActiveState(true)
     })
 
     it('returns false for an undefined workspace', () => {

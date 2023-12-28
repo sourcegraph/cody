@@ -1,5 +1,5 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
-import { isCodyIgnoredFile } from '../context-filter'
+import { isCodyIgnoredFile, isCodyIgnoredFilePath } from '../context-filter'
 
 import { ChatMessage, ChatMetadata, InteractionMessage } from './messages'
 
@@ -39,15 +39,20 @@ export class Interaction {
         const newMessages = []
         for (let i = 0; i < contextMessages.length; i++) {
             const message = contextMessages[i]
-            if (message.speaker === 'human' && message.file?.uri) {
-                // Skip embeddings results as they should be filtered when it was indexed
-                if (message.file.source === 'embeddings') {
-                    continue
-                }
-                // Skips the assistant message if the human message is ignored
-                if (isCodyIgnoredFile(message.file?.uri)) {
+            // Skips the assistant message if the human message is ignored
+            if (message.speaker === 'human' && message.file) {
+                const { uri, repoName, fileName, source } = message.file
+                if (uri && isCodyIgnoredFile(uri)) {
                     i++
                     continue
+                }
+                // Filter embedding results from the current workspace
+                if (source === 'embeddings') {
+                    console.log(fileName, repoName)
+                    if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
+                        i++
+                        continue
+                    }
                 }
             }
             newMessages.push(message)
@@ -95,12 +100,12 @@ export class Interaction {
      */
     public toChat(): ChatMessage[] {
         return [
-            this.humanMessage,
             {
-                ...this.assistantMessage,
+                ...this.humanMessage,
                 contextFiles: this.usedContextFiles,
                 preciseContext: this.usedPreciseContext,
             },
+            this.assistantMessage,
         ]
     }
 

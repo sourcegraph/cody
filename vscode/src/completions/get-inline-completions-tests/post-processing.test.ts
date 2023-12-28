@@ -3,8 +3,8 @@ import { pick } from 'lodash'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { range } from '../../testutils/textDocument'
+import { resetParsersCache } from '../../tree-sitter/parser'
 import { completion, initTreeSitterParser } from '../test-helpers'
-import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletions, getInlineCompletionsInsertText, params, T } from './helpers'
 

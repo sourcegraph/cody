@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection, VsCodeInlineController } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
@@ -67,9 +67,11 @@ export class InlineController implements VsCodeInlineController {
         this.userIcon = getIconPath('user', this.extensionPath)
 
         const config = vscode.workspace.getConfiguration('cody')
-        const enableInlineChat = config.get('inlineChat.enabled') as boolean
 
-        if (enableInlineChat) {
+        // NOTE: Do not enable inline-chat when experimental.chatPanel is enabled
+        const isNewChatUiEnabled = config.get('experimental.chatPanel') as boolean
+        const enableInlineChat = config.get('inlineChat.enabled') as boolean
+        if (!isNewChatUiEnabled && enableInlineChat) {
             this.commentController = this.init()
         }
 
@@ -77,9 +79,9 @@ export class InlineController implements VsCodeInlineController {
         vscode.workspace.onDidChangeConfiguration(e => {
             const config = vscode.workspace.getConfiguration('cody')
             if (e.affectsConfiguration('cody')) {
-                // Inline Chat
+                const isNewChatUiEnabled = config.get('experimental.chatPanel') as boolean
                 const enableInlineChat = config.get('inlineChat.enabled') as boolean
-                if (enableInlineChat) {
+                if (!isNewChatUiEnabled && enableInlineChat) {
                     this.commentController = this.init()
                     return
                 }
@@ -195,7 +197,7 @@ export class InlineController implements VsCodeInlineController {
         if (!this.commentController) {
             return null
         }
-        const editor = getActiveEditor()
+        const editor = getEditor().active
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null
         }

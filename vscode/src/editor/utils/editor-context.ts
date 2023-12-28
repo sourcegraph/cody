@@ -3,6 +3,7 @@ import { basename, dirname } from 'path'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
@@ -24,7 +25,7 @@ export async function getFileContextFile(query: string, maxResults = 15): Promis
         return []
     }
     // sort by having less '/' in path to prioritize top-level matches
-    return matches?.map(uri => createContextFileFromUri(uri))
+    return matches?.filter(uri => !isCodyIgnoredFile(uri)).map(uri => createContextFileFromUri(uri))
 }
 
 export async function getSymbolContextFile(query: string, maxResults = 10): Promise<ContextFile[]> {
@@ -51,24 +52,28 @@ export async function getSymbolContextFile(query: string, maxResults = 10): Prom
 
     const matches = []
     for (const symbol of symbols) {
-        const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
-        const source: ContextFileSource = 'user'
-        const contextFile: ContextFile = createContextFileFromUri(
-            symbol.location.uri,
-            source,
-            'symbol',
-            symbol.location.range,
-            kind
-        )
-        contextFile.fileName = symbol.name
-        matches.push(contextFile)
+        if (!isCodyIgnoredFile(symbol?.location.uri)) {
+            const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
+            const source: ContextFileSource = 'user'
+            const contextFile: ContextFile = createContextFileFromUri(
+                symbol.location.uri,
+                source,
+                'symbol',
+                symbol.location.range,
+                kind
+            )
+            contextFile.fileName = symbol.name
+            matches.push(contextFile)
+        }
     }
 
     return matches
 }
 
 export function getOpenTabsContextFile(): ContextFile[] {
-    return getOpenTabsUris()?.map(uri => createContextFileFromUri(uri))
+    return getOpenTabsUris()
+        ?.filter(uri => !isCodyIgnoredFile(uri))
+        .map(uri => createContextFileFromUri(uri))
 }
 
 function createContextFileFromUri(

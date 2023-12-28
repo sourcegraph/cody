@@ -3,6 +3,9 @@ import * as vscode from 'vscode'
 import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CODY_IGNORE_FILENAME_POSIX_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
 
+import { logDebug } from '../log'
+import { getAllCodebasesInWorkspace, getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
+
 const utf8 = new TextDecoder('utf-8')
 
 /**
@@ -11,6 +14,8 @@ const utf8 = new TextDecoder('utf-8')
  * @returns A Disposable that should be disposed when the extension unloads.
  */
 export function setUpCodyIgnore(): vscode.Disposable {
+    onConfigChange()
+
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_POSIX_GLOB)
     watcher.onDidChange(refresh)
@@ -26,12 +31,31 @@ export function setUpCodyIgnore(): vscode.Disposable {
     // Handle existing workspace folders.
     vscode.workspace.workspaceFolders?.map(wf => refresh(wf.uri))
 
+    const onDidChangeConfig = vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('cody')) {
+            onConfigChange()
+        }
+    })
+
+    getAllCodebasesInWorkspace().map(result => updateCodyIgnoreCodespaceMap(result.codebase, result.ws))
+
     return {
         dispose() {
             watcher.dispose()
             didChangeSubscription.dispose()
+            onDidChangeConfig.dispose()
         },
     }
+}
+
+export function updateCodyIgnoreCodespaceMap(codebaseName: string, workspaceFsPath: string): void {
+    ignores.updateCodebaseWorkspaceMap(codebaseName, workspaceFsPath)
+    logDebug('CodyIgnore:updateCodyIgnoreCodespaceMap:codebase', codebaseName)
+}
+
+function onConfigChange(): void {
+    const config = vscode.workspace.getConfiguration('cody')
+    ignores.setActiveState(config.get('internal.unstable') as boolean)
 }
 
 /**
@@ -51,17 +75,43 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         return
     }
 
+    // Get the codebase name from the git clone URL on each refresh
+    // NOTE: This is needed because the ignore rules are mapped to workspace addreses at creation time, we will need to map the name of the codebase to each workspace for us to map the embedding results returned for a specific codebase by the search API to the correct workspace later.
+    const codebaseName = getCodebaseFromWorkspaceUri(wf.uri)
+
     const ignoreFiles = await vscode.workspace.findFiles(
         new vscode.RelativePattern(wf.uri, CODY_IGNORE_FILENAME_POSIX_GLOB)
     )
+    const codebases = new Map<string, string>()
     const filesWithContent = await Promise.all(
-        ignoreFiles.map(async fileUri => ({
-            filePath: fileUri.fsPath,
-            content: await tryReadFile(fileUri),
-        }))
+        ignoreFiles.map(async fileUri => {
+            const codebase = codebaseName || getCodebaseFromWorkspaceUri(fileUri)
+            if (codebase) {
+                // file root is two level above the fileUri location
+                const fileRoot = fileUri.fsPath.replace(/(?:\/[^/]+){2}$/, '')
+                const storedRoot = codebases.get(codebase)
+                if (!storedRoot || storedRoot?.split('/').length > fileRoot.split('/').length) {
+                    codebases.set(codebase, fileRoot)
+                }
+            }
+            return {
+                filePath: fileUri.fsPath,
+                content: await tryReadFile(fileUri),
+                codebase,
+            }
+        })
     )
 
-    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent)
+    if (codebaseName) {
+        ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
+        logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
+        return
+    }
+
+    for (const cb of codebases) {
+        ignores.setIgnoreFiles(cb[1], filesWithContent, cb[0])
+    }
+    logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 }
 
 /**
@@ -75,6 +125,7 @@ function clear(wf: vscode.WorkspaceFolder): void {
     }
 
     ignores.clearIgnoreFiles(wf.uri.fsPath)
+    logDebug('CodyIgnore:clearIgnoreFiles:workspace', wf.uri.fsPath)
 }
 
 /**

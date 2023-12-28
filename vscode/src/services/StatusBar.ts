@@ -101,13 +101,6 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.editorTitleCommandIcon
                 ),
                 createFeatureToggle(
-                    'Inline Chat',
-                    undefined,
-                    'Enable chatting and editing with Cody, directly in your code',
-                    'cody.inlineChat.enabled',
-                    c => c.inlineChat
-                ),
-                createFeatureToggle(
                     'Code Actions',
                     undefined,
                     'Enable Cody fix and explain options in the Quick Fix menu',
@@ -142,6 +135,13 @@ export function createStatusBar(): CodyStatusBar {
                     'Enable Code Lenses in documents for quick access to Cody commands',
                     'cody.experimental.commandLenses',
                     c => c.experimentalCommandLenses
+                ),
+                createFeatureToggle(
+                    'Unstable Experimental Features',
+                    'Internal Experimental',
+                    'Enable experimental features for internal testing purpose',
+                    'cody.internal.unstable',
+                    c => c.internalUnstable
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

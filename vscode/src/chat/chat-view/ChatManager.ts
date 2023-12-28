@@ -1,3 +1,4 @@
+import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -41,7 +42,9 @@ export class ChatManager implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearHistory()),
-            vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item))
+            vscode.commands.registerCommand('cody.chat.history.delete', async item => this.clearHistory(item)),
+            vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createNewWebviewPanel()),
+            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) => this.restorePanel(id, chat))
         )
 
         // Register config change listener
@@ -225,6 +228,27 @@ export class ChatManager implements vscode.Disposable {
         this.options.authProvider.webview = this.sidebarChat.webview
         this.chatPanelsManager?.dispose()
         this.chatPanelsManager = undefined
+    }
+
+    // For registering the commands for chat panels in advance
+    private async createNewWebviewPanel(): Promise<void> {
+        const debounceCreatePanel = debounce(async () => {
+            await this.chatPanelsManager?.createWebviewPanel()
+        }, 1000)
+
+        if (this.chatPanelsManager) {
+            await debounceCreatePanel()
+        }
+    }
+
+    private async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
+        const debounceRestore = debounce(async (chatID: string, chatQuestion?: string) => {
+            await this.chatPanelsManager?.restorePanel(chatID, chatQuestion)
+        }, 1000)
+
+        if (this.chatPanelsManager) {
+            await debounceRestore(chatID, chatQuestion)
+        }
     }
 
     public dispose(): void {

@@ -12,6 +12,44 @@ import { truncateText } from '../../../prompt/truncation'
 import { createSelectionDisplayText, isValidTestFileName } from '../utils'
 
 /**
+ * Gets the currently active text editor instance from the list of visible editors.
+ * Returns undefined if there are no visible editors.
+ *
+ * Checks if selection is empty to handle case where webview panel is focused,
+ * since that will make activeTextEditor API return undefined.
+ */
+export function getActiveEditorFromVisibleEditors(): vscode.TextEditor | undefined {
+    const visibleTextEditors = vscode.window.visibleTextEditors
+    if (visibleTextEditors.length === 0) {
+        return undefined
+    }
+    // Because webview panel will return undefine so we cannot use
+    // vscode.window.activeTextEditor to get the current active editor
+    // when a user has moved to their webview panel for chat
+    // We will use the first visible editor that is not a
+    const activeEditor = vscode.window.activeTextEditor
+    const editorWithSelection = visibleTextEditors.find(editor => !editor.selection.isEmpty)
+    return activeEditor || editorWithSelection
+}
+
+/**
+ * Gets the currently active VS Code text document instance if one exists.
+ * @returns The active VS Code text document, or undefined if none.
+ */
+export function getCurrentVSCodeDoc(): vscode.TextDocument | undefined {
+    return getActiveEditorFromVisibleEditors()?.document
+}
+
+/**
+ * Gets the full text content of the currently active VS Code text document.
+ * @param range - Optional VS Code range to get only a subset of the document text.
+ * @returns The text content of the active document, or empty string if none.
+ */
+export function getCurrentVSCodeDocText(range?: vscode.Range): string {
+    return getCurrentVSCodeDoc()?.getText(range) || ''
+}
+
+/**
  * Checks if a file URI is part of the current workspace.
  * @param fileToCheck - The file URI to check
  * @returns True if the file URI belongs to a workspace folder, false otherwise
@@ -120,19 +158,6 @@ export async function decodeVSCodeTextDoc(fileUri: URI): Promise<string> {
  */
 export function createVSCodeRelativePath(filePath: string | URI): string {
     return vscode.workspace.asRelativePath(filePath)
-}
-
-/**
- * Gets the full text content of the currently active VS Code text document.
- * @param range - Optional VS Code range to get only a subset of the document text.
- * @returns The text content of the active document, or empty string if none.
- */
-export function getCurrentVSCodeDocText(range?: vscode.Range): string {
-    const doc = vscode.window.activeTextEditor?.document
-    if (!doc) {
-        return ''
-    }
-    return doc?.getText(range) || ''
 }
 
 /**

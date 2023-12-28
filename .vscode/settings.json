@@ -4,8 +4,7 @@
     "**/dist": true,
     "**/.eslintcache": true,
     "**/.vscode-test": true,
-    "**/.vscode-test-web": true,
-    "completions-review-tool/data/*": true
+    "**/.vscode-test-web": true
   },
   "files.exclude": {
     "**/.eslintcache": true,
@@ -24,7 +23,7 @@
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },

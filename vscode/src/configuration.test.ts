@@ -29,7 +29,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             experimentalSearchPanel: false,
-            inlineChat: true,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
@@ -45,6 +45,8 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: null,
+            internalUnstable: false,
+            autocompleteTimeouts: {},
         })
     })
 
@@ -109,6 +111,10 @@ describe('getConfiguration', () => {
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
+                    case 'cody.autocomplete.advanced.timeout.multiline':
+                        return undefined
+                    case 'cody.autocomplete.advanced.timeout.singleline':
+                        return undefined
                     case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
@@ -119,6 +125,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.agent.ide':
                         return undefined
+                    case 'cody.internal.unstable':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -146,10 +154,11 @@ describe('getConfiguration', () => {
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
-            inlineChat: true,
+            inlineChat: false,
             codeActions: true,
             isRunningInsideAgent: false,
-            agentIde: undefined,
+            agentIDE: undefined,
+            internalUnstable: false,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
@@ -162,6 +171,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteTimeouts: {},
         })
     })
 })

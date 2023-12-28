@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
+import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
 import { DocumentContext } from './get-current-doc-context'
@@ -23,6 +24,7 @@ export interface InlineCompletionsParams {
     triggerKind: TriggerKind
     selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
     docContext: DocumentContext
+    completionIntent?: CompletionIntent
 
     // Prompt parameters
     providerConfig: ProviderConfig
@@ -39,6 +41,7 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+    artificialDelay?: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -153,7 +156,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix, completionIntent },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         contextMixer,
         requestManager,
@@ -164,6 +167,8 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         tracer,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
+        artificialDelay,
+        completionIntent,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -221,10 +226,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerModel: providerConfig.model,
         languageId: document.languageId,
         completionIntent,
+        artificialDelay,
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    const interval = multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine
+    const interval =
+        ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
     if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
         await new Promise<void>(resolve => setTimeout(resolve, interval))
     }
@@ -258,7 +265,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         providerConfig,
         docContext,
     })
-    tracer?.({ completers: completionProviders.map(({ options }) => options) })
+    tracer?.({
+        completers: completionProviders.map(({ options }) => ({
+            ...options,
+            completionIntent,
+        })),
+    })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 

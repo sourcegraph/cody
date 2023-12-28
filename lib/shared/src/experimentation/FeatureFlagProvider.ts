@@ -8,25 +8,21 @@ export enum FeatureFlag {
     TestFlagDoNotUse = 'test-flag-do-not-use',
 
     CodyAutocompleteTracing = 'cody-autocomplete-tracing',
-    CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
     CodyAutocompleteAnthropicCyan = 'cody-autocomplete-anthropic-cyan',
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // This flag is only used when `CodyAutocompleteStarCoderHybrid` is also true
-    CodyAutocompleteStarCoderHybridSourcegraph = 'cody-autocomplete-default-starcoder-hybrid-sourcegraph',
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
-    CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
-    CodyAutocompleteGraphContextBfg = 'cody-autocomplete-graph-context-bfg',
-    CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
+    CodyAutocompleteContextLspLight = 'cody-autocomplete-context-lsp-light',
+    CodyAutocompleteContextBfg = 'cody-autocomplete-context-bfg',
+    CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
+    CodyAutocompleteContextLocalMixed = 'cody-autocomplete-context-local-mixed',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    CodyAutocompleteProviderLatency = 'cody-autocomplete-provider-latency',
     CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
     CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
-    CodyAutocompleteLowPerformanceDebounce = 'cody-autocomplete-low-performance-debounce',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

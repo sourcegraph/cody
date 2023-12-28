@@ -1,9 +1,9 @@
 import dedent from 'dedent'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { SupportedLanguage } from '../../tree-sitter/grammars'
+import { resetParsersCache } from '../../tree-sitter/parser'
 import { completion, initTreeSitterParser } from '../test-helpers'
-import { SupportedLanguage } from '../tree-sitter/grammars'
-import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletionsInsertText, params, T } from './helpers'
 

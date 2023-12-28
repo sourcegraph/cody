@@ -41,9 +41,16 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null
+    internalUnstable: boolean
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    autocompleteTimeouts: AutocompleteTimeouts
+}
+
+export interface AutocompleteTimeouts {
+    multiline?: number
+    singleline?: number
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {
