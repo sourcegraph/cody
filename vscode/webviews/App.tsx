@@ -28,35 +28,15 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 const guardrails = {
-    searchAttribution: (text: string): Promise<Attribution | Error> => {
-        // Hash to return pseudo-random results
-        let hash = 0
-        for (let i = 0, len = text.length; i < len; i++) {
-            const chr = text.charCodeAt(i)
-            hash = (hash << 5) - hash + chr
-            hash |= 0 // Convert to 32bit integer
-        }
-        // Fake implementation: wait 1s and return pseudo-random result.
+    searchAttribution: (txt: string): Promise<Attribution | Error> => {
+        // No-op implementation: wait 1s and pretend guardrails is not available.
         return new Promise<Attribution | Error>(resolve => {
             setTimeout(() => {
-                switch (Math.floor(Math.abs(hash)) % 3) {
-                    case 0: // attribution found
-                        resolve({
-                            limitHit: false,
-                            repositories: [{ name: 'foo' }, { name: 'bar' }],
-                        })
-                        return
-                    case 1: // unavailable
-                        resolve({
-                            limitHit: true,
-                            repositories: [],
-                        })
-                        return
-                }
                 resolve({
-                    limitHit: false,
+                    limitHit: true,
                     repositories: [],
                 })
+                return
             }, 1000)
         })
     },

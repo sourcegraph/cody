@@ -19,7 +19,6 @@ import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/vie
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
@@ -70,7 +69,6 @@ interface SimpleChatPanelProviderOptions {
     config: Config
     extensionUri: vscode.Uri
     authProvider: AuthProvider
-    guardrails: Guardrails
     chatClient: ChatClient
     embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
@@ -100,7 +98,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private config: Config
     private readonly authProvider: AuthProvider
-    private readonly guardrails: Guardrails
     private readonly chatClient: ChatClient
     private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
@@ -128,7 +125,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         extensionUri,
         featureFlagProvider,
         authProvider,
-        guardrails,
         chatClient,
         embeddingsClient,
         localEmbeddings,
@@ -148,7 +144,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.symf = symf
         this.editor = editor
         this.treeView = treeView
-        this.guardrails = guardrails
         this.recipeAdapter = recipeAdapter
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
@@ -682,7 +677,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     )
                 },
                 close: content => {
-                    this.addBotMessageWithGuardrails(requestID, content)
+                    this.addBotMessage(requestID, content)
                 },
                 error: (partialResponse, error) => {
                     if (isAbortError(error)) {
@@ -843,61 +838,29 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Finalizes adding a bot message to the chat model, with guardrails, and triggers an
-     * update to the view.
+     * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
-    private addBotMessageWithGuardrails(requestID: string, rawResponse: string): void {
-        this.guardrailsAnnotateAttributions(reformatBotMessageForChat(rawResponse, ''))
-            .then(displayText => {
-                this.chatModel.addBotMessage({ text: rawResponse }, displayText)
-                void this.saveSession()
-                this.postViewTranscript()
+    private addBotMessage(requestID: string, rawResponse: string): void {
+        const displayText = reformatBotMessageForChat(rawResponse, '')
+        this.chatModel.addBotMessage({ text: rawResponse }, displayText)
+        void this.saveSession()
+        this.postViewTranscript()
 
-                // Count code generated from response
-                const codeCount = countGeneratedCode(rawResponse)
-                if (codeCount?.charCount) {
-                    // const metadata = lastInteraction?.getHumanMessage().metadata
-                    telemetryService.log(
-                        'CodyVSCodeExtension:chatResponse:hasCode',
-                        { ...codeCount, requestID },
-                        { hasV2Event: true }
-                    )
-                    telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
-                        metadata: {
-                            ...codeCount,
-                        },
-                    })
-                }
-            })
-            .catch(error => {
-                throw error
-            })
-    }
-
-    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
-        if (!this.config.experimentalGuardrails) {
-            return text
-        }
-
-        const result = await annotateAttribution(this.guardrails, text)
-
-        // Only log telemetry if we did work (ie had to annotate something).
-        if (result.codeBlocks > 0) {
+        // Count code generated from response
+        const codeCount = countGeneratedCode(rawResponse)
+        if (codeCount?.charCount) {
+            // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
-                'CodyVSCodeExtension:guardrails:annotate',
-                {
-                    codeBlocks: result.codeBlocks,
-                    duration: result.duration,
-                },
+                'CodyVSCodeExtension:chatResponse:hasCode',
+                { ...codeCount, requestID },
                 { hasV2Event: true }
             )
-            telemetryRecorder.recordEvent('cody.guardrails.annotate', 'executed', {
-                // Convert nanoseconds to milliseconds to match other telemetry.
-                metadata: { codeBlocks: result.codeBlocks, durationMs: result.duration / 1000000 },
+            telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
+                metadata: {
+                    ...codeCount,
+                },
             })
         }
-
-        return result.text
     }
 
     public setConfiguration(newConfig: Config): void {
@@ -953,7 +916,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     )
                 },
                 close: (responseText: string) => {
-                    this.addBotMessageWithGuardrails(requestID, responseText)
+                    this.addBotMessage(requestID, responseText)
                 },
                 error: (partialResponse: string, error: Error) => {
                     if (isAbortError(error)) {
