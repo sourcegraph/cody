@@ -17,7 +17,7 @@ import { SymfRunner } from '../../local-context/symf'
 import { repositoryRemoteUrl } from '../../repository/repositoryHelpers'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
-interface CodebaseIdentifiers {
+export interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string
