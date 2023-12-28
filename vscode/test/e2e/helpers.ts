@@ -103,7 +103,6 @@ export const test = base
             await waitUntil(() => app.windows().length > 0)
 
             const page = await app.firstWindow()
-            page.setDefaultTimeout(90000)
 
             // Bring the cody sidebar to the foreground
             await page.click('[aria-label="Cody"]')

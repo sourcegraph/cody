@@ -4,9 +4,6 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('submit command from command palette', async ({ page, sidebar }) => {
-    // This test is a bit slow on ubuntu
-    test.setTimeout(60000)
-
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -14,6 +11,8 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
+    // Wait for index.html to fully open
+    await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
     await page.click('[aria-label="Cody"]')
