@@ -48,6 +48,16 @@ export function setUpCodyIgnore(): vscode.Disposable {
     }
 }
 
+// TODO (bee) merge it with setUpCodyIgnore()
+let init = false
+export async function codyIgnoreInit(): Promise<void> {
+    const visibleTextEditors = vscode.window.visibleTextEditors[0]
+    if (visibleTextEditors?.document?.uri && !init) {
+        await refresh(visibleTextEditors.document.uri)
+        init = true
+    }
+}
+
 export function updateCodyIgnoreCodespaceMap(codebaseName: string, workspaceFsPath: string): void {
     ignores.updateCodebaseWorkspaceMap(codebaseName, workspaceFsPath)
     logDebug('CodyIgnore:updateCodyIgnoreCodespaceMap:codebase', codebaseName)
