@@ -196,6 +196,7 @@ export class ChatPanelProvider extends MessageProvider {
             ...localProcess,
             debugEnable: this.contextProvider.config.debugEnable,
             serverEndpoint: this.contextProvider.config.serverEndpoint,
+            experimentalGuardrails: this.contextProvider.config.experimentalGuardrails,
         }
         void this.webview?.postMessage({
             type: 'config',

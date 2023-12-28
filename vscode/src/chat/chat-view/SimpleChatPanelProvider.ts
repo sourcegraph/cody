@@ -607,6 +607,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ...localProcess,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
+            experimentalGuardrails: config.experimentalGuardrails,
         }
         await this.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
