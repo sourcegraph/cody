@@ -89,26 +89,17 @@ export async function openUri(
             break
         }
         case relativeFileUrlScheme: {
-            let containerDir = uri.authority || ''
+            const containerDir = uri.authority || ''
             const relPath = uri.path.startsWith('/') ? uri.path.slice(1) : uri.path
 
-            if (containerDir === '') {
-                for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
-                    const absPath = path.join(workspaceFolder.uri.fsPath, relPath)
-                    try {
-                        await vscode.workspace.fs.stat(vscode.Uri.file(absPath))
-                        containerDir = workspaceFolder.uri.fsPath
-                        break
-                    } catch {
-                        continue
-                    }
-                }
-            }
+            const absPath = containerDir
+                ? path.join(containerDir, relPath)
+                : (await legacyFilenameToAbsPath(relPath)) || relPath
+
             if (!range) {
                 range = uri.fragment ? fragmentToRange(uri.fragment) : undefined
             }
 
-            const absPath = path.join(containerDir, relPath)
             await openFile(absPath, range, currentViewColumn)
             break
         }
@@ -118,6 +109,25 @@ export async function openUri(
         default:
             throw new Error(`Failed to open uri ${uri}: unsupported scheme "${uri.scheme}"`)
     }
+}
+
+async function legacyFilenameToAbsPath(fileName: string): Promise<string | null> {
+    for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
+        try {
+            const maybeAbsPath = path.join(workspaceFolder.uri.fsPath, fileName)
+            await vscode.workspace.fs.stat(vscode.Uri.file(maybeAbsPath))
+            return maybeAbsPath
+        } catch {
+            try {
+                const maybeAbsPath = path.join(path.dirname(workspaceFolder.uri.fsPath), fileName)
+                await vscode.workspace.fs.stat(vscode.Uri.file(maybeAbsPath))
+                return maybeAbsPath
+            } catch {
+                continue
+            }
+        }
+    }
+    return null
 }
 
 export async function openFile(
