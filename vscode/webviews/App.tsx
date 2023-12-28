@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import { Attribution, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { AttributionStatus } from '@sourcegraph/cody-shared/src/guardrails'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
@@ -28,13 +27,18 @@ import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-const findAttribution = (text: string): Promise<AttributionStatus> => {
-    // Fake implementation: wait 1s and return 'found'
-    return new Promise<AttributionStatus>(resolve => {
-        setTimeout(() => {
-            resolve('found')
-        }, 1000)
-    })
+const guardrails = {
+    searchAttribution: (text: string): Promise<Attribution | Error> => {
+        // Fake implementation: wait 1s and return 'found'
+        return new Promise<Attribution | Error>(resolve => {
+            setTimeout(() => {
+                resolve({
+                    limitHit: false,
+                    repositories: [{ name: 'foo' }],
+                })
+            }, 1000)
+        })
+    },
 }
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -288,7 +292,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
-                                        findAttribution={findAttribution}
+                                        guardrails={guardrails}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

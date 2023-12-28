@@ -2,8 +2,7 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
-import { AttributionStatus } from '@sourcegraph/cody-shared/src/guardrails'
+import { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 
 import {
     ApiPostMessage,
@@ -64,7 +63,7 @@ export const TranscriptItem: React.FunctionComponent<
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo?: UserAccountInfo
         postMessage?: ApiPostMessage
-        findAttribution: (text: string) => Promise<AttributionStatus>
+        guardrails: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -93,7 +92,7 @@ export const TranscriptItem: React.FunctionComponent<
     ChatButtonComponent,
     userInfo,
     postMessage,
-    findAttribution,
+    guardrails,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const EditTextArea =
@@ -188,7 +187,7 @@ export const TranscriptItem: React.FunctionComponent<
                                 insertButtonOnSubmit={insertButtonOnSubmit}
                                 metadata={message.metadata}
                                 inProgress={inProgress}
-                                findAttribution={findAttribution}
+                                guardrails={guardrails}
                             />
                         )
                     ) : (

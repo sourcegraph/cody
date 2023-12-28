@@ -9,9 +9,9 @@ import {
     ChatModelProvider,
     CodyPrompt,
     ContextFile,
+    Guardrails,
     isDefined,
 } from '@sourcegraph/cody-shared'
-import { AttributionStatus } from '@sourcegraph/cody-shared/src/guardrails'
 
 import { CodeBlockMeta } from './chat/CodeBlocks'
 import { FileLinkProps } from './chat/components/ContextFiles'
@@ -73,7 +73,7 @@ interface ChatProps extends ChatClassNames {
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage
-    findAttribution: (text: string) => Promise<AttributionStatus>
+    guardrails: Guardrails
 }
 
 export interface UserAccountInfo {
@@ -229,7 +229,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onCurrentChatModelChange,
     userInfo,
     postMessage,
-    findAttribution,
+    guardrails,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -569,7 +569,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
                     postMessage={postMessage}
-                    findAttribution={findAttribution}
+                    guardrails={guardrails}
                 />
             )}
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { AttributionStatus, renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import { Guardrails, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import { CodeBlockActionsProps } from '../Chat'
 import {
@@ -28,7 +28,7 @@ interface CodeBlocksProps {
 
     metadata?: CodeBlockMeta
 
-    findAttribution: (text: string) => Promise<AttributionStatus>
+    guardrails: Guardrails
 }
 
 export interface CodeBlockMeta {
@@ -162,7 +162,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonOnSubmit,
     metadata,
     inProgress,
-    findAttribution,
+    guardrails,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -200,19 +200,18 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 attributionContainer.style.padding = '3px'
                 buttons.append(attributionContainer)
 
-                findAttribution(preText)
-                    .then(status => {
-                        switch (status) {
-                            case 'found':
-                                attributionContainer.style.color = 'var(--hl-dark-red)'
-                                break
-                            case 'not-found':
-                                attributionContainer.style.color = 'var(--hl-dark-green)'
-                                break
-                            case 'unavailable':
-                                attributionContainer.style.color = 'var(--hl-dark-yellow)'
-                                break
+                guardrails
+                    .searchAttribution(preText)
+                    .then(attribution => {
+                        if (attribution instanceof Error || attribution.limitHit) {
+                            attributionContainer.style.color = 'var(--hl-dark-yellow)'
+                            return
                         }
+                        if (attribution.repositories.length > 0) {
+                            attributionContainer.style.color = 'var(--hl-dark-red)'
+                            return
+                        }
+                        attributionContainer.style.color = 'var(--hl-dark-green)'
                     })
                     .catch(error => {
                         console.error('promise failed', error)
@@ -239,7 +238,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         metadata?.requestID,
         metadata?.source,
         inProgress,
-        findAttribution,
+        guardrails,
     ])
 
     return useMemo(

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile, Guardrails } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -36,7 +36,6 @@ import { UserContextSelectorComponent } from './UserContextSelector'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
-import { AttributionStatus } from '@sourcegraph/cody-shared/src/guardrails'
 
 interface ChatboxProps {
     welcomeMessage?: string
@@ -65,7 +64,7 @@ interface ChatboxProps {
     chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
-    findAttribution: (text: string) => Promise<AttributionStatus>
+    guardrails: Guardrails
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -90,7 +89,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatModels,
     enableNewChatUI,
     userInfo,
-    findAttribution,
+    guardrails,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -250,7 +249,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
-            findAttribution={findAttribution}
+            guardrails={guardrails}
         />
     )
 }
