@@ -23,6 +23,7 @@ interface AnnotatedText {
 
 /**
  * Returns markdown text with attribution information added in.
+ *
  * @param guardrails client to use to lookup if a snippet of codes attributions
  * @param text markdown text
  */

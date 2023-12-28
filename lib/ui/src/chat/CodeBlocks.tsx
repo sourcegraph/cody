@@ -191,27 +191,25 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     eventMetadata
                 )
                 const flexFiller = document.createElement('div')
-                flexFiller.style.display = 'flex'
-                flexFiller.style.flexGrow = '1'
+                flexFiller.classList.add(styles.flexFiller)
                 buttons.append(flexFiller)
                 const attributionContainer = document.createElement('div')
                 attributionContainer.innerHTML = ShieldIcon
-                attributionContainer.style.height = '16px'
-                attributionContainer.style.padding = '3px'
+                attributionContainer.classList.add(styles.attributionIcon)
                 buttons.append(attributionContainer)
 
                 guardrails
                     .searchAttribution(preText)
                     .then(attribution => {
                         if (attribution instanceof Error || attribution.limitHit) {
-                            attributionContainer.style.color = 'var(--hl-dark-yellow)'
+                            attributionContainer.classList.add(styles.attributionIconUnavailable)
                             return
                         }
                         if (attribution.repositories.length > 0) {
-                            attributionContainer.style.color = 'var(--hl-dark-red)'
+                            attributionContainer.classList.add(styles.attributionIconFound)
                             return
                         }
-                        attributionContainer.style.color = 'var(--hl-dark-green)'
+                        attributionContainer.classList.add(styles.attributionIconNotFound)
                     })
                     .catch(error => {
                         console.error('promise failed', error)
