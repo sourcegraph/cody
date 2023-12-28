@@ -28,7 +28,7 @@ interface CodeBlocksProps {
 
     metadata?: CodeBlockMeta
 
-    guardrails: Guardrails
+    guardrails?: Guardrails
 }
 
 export interface CodeBlockMeta {
@@ -181,7 +181,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
                 const eventMetadata = { requestID: metadata?.requestID, source: metadata?.source }
-
                 const buttons = createButtons(
                     preText,
                     copyButtonClassName,
@@ -190,30 +189,42 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     insertButtonOnSubmit,
                     eventMetadata
                 )
-                const flexFiller = document.createElement('div')
-                flexFiller.classList.add(styles.flexFiller)
-                buttons.append(flexFiller)
-                const attributionContainer = document.createElement('div')
-                attributionContainer.innerHTML = ShieldIcon
-                attributionContainer.classList.add(styles.attributionIcon)
-                buttons.append(attributionContainer)
+                if (guardrails) {
+                    const flexFiller = document.createElement('div')
+                    flexFiller.classList.add(styles.flexFiller)
+                    buttons.append(flexFiller)
+                    const attributionContainer = document.createElement('div')
+                    attributionContainer.innerHTML = ShieldIcon
+                    attributionContainer.classList.add(styles.attributionIcon)
+                    attributionContainer.title = 'Attribution search running...'
+                    buttons.append(attributionContainer)
 
-                guardrails
-                    .searchAttribution(preText)
-                    .then(attribution => {
-                        if (attribution instanceof Error || attribution.limitHit) {
-                            attributionContainer.classList.add(styles.attributionIconUnavailable)
-                            return
-                        }
-                        if (attribution.repositories.length > 0) {
-                            attributionContainer.classList.add(styles.attributionIconFound)
-                            return
-                        }
-                        attributionContainer.classList.add(styles.attributionIconNotFound)
-                    })
-                    .catch(error => {
-                        console.error('promise failed', error)
-                    })
+                    guardrails
+                        .searchAttribution(preText)
+                        .then(attribution => {
+                            if (attribution instanceof Error || attribution.limitHit) {
+                                attributionContainer.classList.add(styles.attributionIconUnavailable)
+                                attributionContainer.title = 'Attribution search unavailable.'
+                                return
+                            }
+                            if (attribution.repositories.length > 0) {
+                                attributionContainer.classList.add(styles.attributionIconFound)
+                                let tooltip = `Attribution found in ${attribution.repositories[0].name}`
+                                if (attribution.repositories.length > 1) {
+                                    tooltip = `${tooltip} and ${attribution.repositories.length - 1} more.`
+                                } else {
+                                    tooltip = `${tooltip}.`
+                                }
+                                attributionContainer.title = tooltip
+                                return
+                            }
+                            attributionContainer.classList.add(styles.attributionIconNotFound)
+                            attributionContainer.title = 'Attribution not found.'
+                        })
+                        .catch(error => {
+                            console.error('promise failed', error)
+                        })
+                }
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)

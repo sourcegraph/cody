@@ -63,7 +63,7 @@ export const TranscriptItem: React.FunctionComponent<
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo?: UserAccountInfo
         postMessage?: ApiPostMessage
-        guardrails: Guardrails
+        guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,

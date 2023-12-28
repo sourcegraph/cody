@@ -64,7 +64,7 @@ interface ChatboxProps {
     chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
-    guardrails: Guardrails
+    guardrails?: Guardrails
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,

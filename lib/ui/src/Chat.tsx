@@ -73,7 +73,7 @@ interface ChatProps extends ChatClassNames {
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo?: UserAccountInfo
     postMessage?: ApiPostMessage
-    guardrails: Guardrails
+    guardrails?: Guardrails
 }
 
 export interface UserAccountInfo {

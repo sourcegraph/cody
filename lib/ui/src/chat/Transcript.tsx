@@ -46,7 +46,7 @@ export const Transcript: React.FunctionComponent<
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
         userInfo?: UserAccountInfo
         postMessage?: ApiPostMessage
-        guardrails: Guardrails
+        guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -227,7 +227,6 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
-                        guardrails={guardrails}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
