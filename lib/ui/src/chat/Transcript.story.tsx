@@ -10,6 +10,10 @@ const meta: Meta<typeof Transcript> = {
     title: 'ui/Transcript',
     component: Transcript,
 
+
+
+
+
     argTypes: {
         transcript: {
             name: 'Transcript fixture',
@@ -26,6 +30,10 @@ const meta: Meta<typeof Transcript> = {
         story => <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>{story()}</div>,
     ],
 }
+
+
+// implement createButtons functions
+
 
 export default meta
 
