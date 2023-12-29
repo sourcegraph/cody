@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../log'
-import { setUpCodyIgnore } from '../services/context-filter'
+import { setUpCodyIgnore, updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 
 import { API, GitExtension, Repository } from './builtinGitExtension'
 
@@ -54,34 +54,34 @@ export function gitAPI(): API | undefined {
 let vscodeGitAPI: API | undefined
 export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
-    try {
-        function init(): void {
-            if (!vscodeGitAPI && extension?.isActive) {
-                // This throws error if the git extension is disabled
-                vscodeGitAPI = extension.exports?.getAPI(1)
-                setUpCodyIgnore()
-            }
+    // Initializes the Git API by activating the Git extension and getting the API instance.
+    // Sets up the .codyignore handler.
+    function init(): void {
+        if (!vscodeGitAPI && extension?.isActive) {
+            setUpCodyIgnore()
+            // This throws error if the git extension is disabled
+            vscodeGitAPI = extension.exports?.getAPI(1)
+            getAllCodebasesInWorkspace().map(result => updateCodyIgnoreCodespaceMap(result.codebase, result.ws))
         }
+    }
+    // Initialize the git extension if it is available
+    try {
         await extension?.activate().then(() => init())
-        // Update vscodeGitAPI when the extension becomes enabled/disabled
-        return extension?.exports?.onDidChangeEnablement(enabled => {
-            if (enabled) {
-                init()
-            } else {
-                vscodeGitAPI = undefined
-            }
-        })
     } catch (error) {
+        vscodeGitAPI = undefined
         // Display error message if git extension is disabled
         const errorMessage = `${error}`
         if (extension?.isActive && errorMessage.includes('Git model not found')) {
-            void vscode.window.showErrorMessage(
-                'Git extension is not available. Please ensure it is enabled for Cody to work properly.'
-            )
+            console.warn('Git extension is not available. Please ensure it is enabled for Cody to work properly.')
+        }
+    }
+    // Update vscodeGitAPI when the extension becomes enabled/disabled
+    return extension?.exports?.onDidChangeEnablement(enabled => {
+        if (enabled) {
+            return init()
         }
         vscodeGitAPI = undefined
-        return undefined
-    }
+    })
 }
 
 /**

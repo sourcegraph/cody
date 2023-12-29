@@ -6,7 +6,7 @@ import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CODY_IGNORE_FILENAME_POSIX_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
 
 import { logDebug } from '../log'
-import { getAllCodebasesInWorkspace, getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -40,8 +40,6 @@ export function setUpCodyIgnore(): vscode.Disposable {
             onConfigChange()
         }
     })
-
-    getAllCodebasesInWorkspace().map(result => updateCodyIgnoreCodespaceMap(result.codebase, result.ws))
 
     return {
         dispose() {
