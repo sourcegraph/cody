@@ -23,7 +23,7 @@ export const CodyChatPanelViewType = 'cody.chatPanel'
  * Manages chat view providers and panels.
  */
 export class ChatManager implements vscode.Disposable {
-    // SidebarViwq is used for auth view and running tasks that do not require a chat view
+    // SidebarView is used for auth view and running tasks that do not require a chat view
     // We will always keep an instance of this around (even when not visible) to handle states when no panels are open
     public sidebarView: SidebarViewProvider
     private chatPanelsManager: ChatPanelsManager
