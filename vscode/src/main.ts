@@ -231,7 +231,7 @@ const register = async (
     // Register tree views
     disposables.push(
         chatManager,
-        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarChat, {
+        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarView, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider

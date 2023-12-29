@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { View } from '../../../webviews/NavBar'
@@ -100,53 +98,31 @@ export class SidebarViewProvider extends MessageProvider implements vscode.Webvi
         await this.contextProvider.forceUpdateCodebaseContext()
     }
 
-    /**
-     * Send transcript to webview
-     */
-    protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
-        void this.webview?.postMessage({
-            type: 'transcript',
-            messages: transcript,
-            isMessageInProgress,
-            chatID: this.sessionID,
-        })
+    protected handleTranscript(): void {
+        // not required for non-chat view
     }
 
-    protected handleSuggestions(suggestions: string[]): void {
-        void this.webview?.postMessage({
-            type: 'suggestions',
-            suggestions,
-        })
+    protected handleSuggestions(): void {
+        // not required for non-chat view
+    }
+
+    protected handleHistory(): void {
+        // not required for non-chat view
     }
 
     /**
-     * Sends chat history to webview
-     */
-    protected handleHistory(history: UserLocalHistory): void {
-        void this.webview?.postMessage({
-            type: 'history',
-            messages: history,
-        })
-    }
-
-    /**
-     * Display error message in webview, either as part of the transcript or as a banner alongside the chat.
+     * Display error message in webview as a banner alongside the chat.
      */
     public handleError(error: Error, type: MessageErrorType): void {
         if (type === 'transcript') {
-            this.transcript.addErrorAsAssistantResponse(error)
-            void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: true })
+            // not required for non-chat view
             return
         }
-
         void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
     }
 
-    protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
-        void this.webview?.postMessage({
-            type: 'custom-prompts',
-            prompts,
-        })
+    protected handleCodyCommands(): void {
+        // not required for non-chat view
     }
 
     /**
