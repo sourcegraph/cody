@@ -80,7 +80,7 @@ Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives
 
 ## Feedback
 
-- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+- [Issue tracker](https://github.com/sourcegraph/cody/issues)
 - [Discord chat](https://discord.gg/s2qDtYGnAE)
 - [Twitter (@sourcegraph)](https://twitter.com/sourcegraph)
 
@@ -207,7 +207,7 @@ You can configure JetBrains to set custom keymaps for Sourcegraph actions:
 
 ## Questions & Feedback
 
-If you have any questions, feedback, or bug report, we appreciate if you [open an issue on GitHub](https://github.com/sourcegraph/sourcegraph/issues/new?title=JetBrains:+&labels=jetbrains-ide).
+If you have any questions, feedback, or bug report, we appreciate if you [open an issue on GitHub](https://github.com/sourcegraph/cody/issues/new?labels=question).
 
 ## Uninstallation
 

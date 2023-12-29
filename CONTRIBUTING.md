@@ -7,8 +7,7 @@ Sourcegraph JetBrains Plugin.
 ## Issues / Bugs
 
 New issues and feature requests can be filed through
-our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+)
-using the `jetbrains-ide` & `team/integrations` labels.
+our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 ## Development
 

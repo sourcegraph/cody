@@ -457,7 +457,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
             ChatMessage(
                 Speaker.ASSISTANT,
                 "Cody is not able to reply at the moment. " +
-                    "This is a bug, please report an issue to https://github.com/sourcegraph/sourcegraph/issues/new?template=jetbrains.md " +
+                    "This is a bug, please report an issue to https://github.com/sourcegraph/cody/issues/new?template=bug_report.yml " +
                     "and include as many details as possible to help troubleshoot the problem."))
         finishMessageProcessing()
       }
