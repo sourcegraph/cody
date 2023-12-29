@@ -48,21 +48,29 @@ export function gitAPI(): API | undefined {
 /**
  * NOTE: This is for Chat and Commands where we use the git extension to get the codebase name.
  *
- * Initializes the Git API by activating the Git extension and setting up the gitAPI global.
- *
- * Activates the Git extension, sets up a listener for when the extension becomes enabled/disabled,
- * and initializes the global gitAPI instance. Also sets up the .codyignore file on startup.
+ * Initializes the Git API by activating the Git extension and getting the API instance.
+ * Also sets up the .codyignore handler.
  */
 let vscodeGitAPI: API | undefined
 export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
-    await extension?.activate().then(() => setUpCodyIgnore())
 
-    vscodeGitAPI = extension?.exports?.getAPI(1) || undefined
+    function init(): void {
+        if (!vscodeGitAPI && extension) {
+            vscodeGitAPI = extension.exports.getAPI(1)
+            setUpCodyIgnore()
+        }
+    }
+
+    await extension?.activate().then(() => init())
 
     // Update vscodeGitAPI when the extension becomes enabled/disabled
     return extension?.exports?.onDidChangeEnablement(enabled => {
-        vscodeGitAPI = !vscodeGitAPI && enabled ? extension.exports.getAPI(1) : undefined
+        if (enabled) {
+            init()
+        } else {
+            vscodeGitAPI = undefined
+        }
     })
 }
 
