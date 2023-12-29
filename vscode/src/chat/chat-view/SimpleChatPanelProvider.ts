@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
     createDisplayTextWithFileLinks,
     createDisplayTextWithFileSelection,
@@ -1062,7 +1063,7 @@ class ContextProvider implements IContextProvider {
 
     private getVisibleEditorContext(): ContextItem[] {
         const visible = this.editor.getActiveTextEditorVisibleContent()
-        if (!visible) {
+        if (!visible || isCodyIgnoredFile(vscode.Uri.file(visible.fileName))) {
             return []
         }
         return [
@@ -1162,6 +1163,9 @@ class ContextProvider implements IContextProvider {
         const r0 = (await this.symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(async (result: Result): Promise<ContextItem[] | ContextItem> => {
                 const uri = vscode.Uri.file(result.file)
+                if (isCodyIgnoredFile(uri)) {
+                    return []
+                }
                 const range = new vscode.Range(
                     result.range.startPoint.row,
                     result.range.startPoint.col,
@@ -1209,12 +1213,16 @@ class ContextProvider implements IContextProvider {
                 new vscode.Position(result.endLine, 0)
             )
             const uri = relativeFileUri('', result.fileName, range)
-            contextItems.push({
-                uri,
-                range,
-                text: result.content,
-                source: 'embeddings',
-            })
+
+            // Filter out ignored files
+            if (!isCodyIgnoredFile(vscode.Uri.file(result.fileName))) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: result.content,
+                    source: 'embeddings',
+                })
+            }
         }
         return contextItems
     }
@@ -1247,12 +1255,14 @@ class ContextProvider implements IContextProvider {
                 new vscode.Position(codeResult.startLine, 0),
                 new vscode.Position(codeResult.endLine, 0)
             )
-            contextItems.push({
-                uri,
-                range,
-                text: codeResult.content,
-                source: 'embeddings',
-            })
+            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, codeResult.fileName)))) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: codeResult.content,
+                    source: 'embeddings',
+                })
+            }
         }
 
         for (const textResult of embeddings.textResults) {
@@ -1261,12 +1271,14 @@ class ContextProvider implements IContextProvider {
                 new vscode.Position(textResult.startLine, 0),
                 new vscode.Position(textResult.endLine, 0)
             )
-            contextItems.push({
-                uri,
-                range,
-                text: textResult.content,
-                source: 'embeddings',
-            })
+            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, textResult.fileName)))) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: textResult.content,
+                    source: 'embeddings',
+                })
+            }
         }
 
         return contextItems
@@ -1336,7 +1348,7 @@ class ContextProvider implements IContextProvider {
         // global pattern for readme file
         const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
         const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
-        if (!readmeUri) {
+        if (!readmeUri || isCodyIgnoredFile(readmeUri)) {
             return []
         }
         const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)

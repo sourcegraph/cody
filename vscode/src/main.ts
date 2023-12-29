@@ -25,13 +25,14 @@ import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { ExecuteEditArguments } from './edit/execute'
-import { getActiveEditor } from './editor/active-editor'
+import { getEditor } from './editor/active-editor'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
+import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -92,6 +93,13 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
 }> => {
     const disposables: vscode.Disposable[] = []
+
+    // Set codyignore list on git extension startup
+    const gitAPI = await gitAPIinit()
+    if (gitAPI) {
+        disposables.push(gitAPI)
+    }
+
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -286,13 +294,18 @@ const register = async (
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
-        const document = args.document || getActiveEditor()?.document
+        const editor = getEditor()
+        if (editor.ignored) {
+            console.error('File was ignored by Cody.')
+            return
+        }
+        const document = args.document || editor.active?.document
         if (!document) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
         }
 
-        const range = args.range || getActiveEditor()?.selection
+        const range = args.range || editor.active?.selection
         if (!range) {
             return
         }

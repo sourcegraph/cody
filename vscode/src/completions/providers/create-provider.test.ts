@@ -37,6 +37,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: null,
+    internalUnstable: false,
     autocompleteTimeouts: {},
     testingLocalEmbeddingsEndpoint: undefined,
     testingLocalEmbeddingsIndexLibraryPath: undefined,
