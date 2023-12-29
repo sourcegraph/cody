@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -47,6 +49,7 @@ export type WebviewMessage =
           command: 'openFile'
           filePath: string
           range?: ActiveTextEditorSelectionRange
+          uri?: URI
       }
     | {
           command: 'openLocalFileWithRange'

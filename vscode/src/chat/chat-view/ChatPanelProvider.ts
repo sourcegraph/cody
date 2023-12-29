@@ -123,7 +123,7 @@ export class ChatPanelProvider extends MessageProvider {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, this.webviewPanel?.viewColumn, message.range)
+                await openFilePath(message.filePath, undefined, this.webviewPanel?.viewColumn, message.range)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
@@ -288,7 +288,10 @@ export class ChatPanelProvider extends MessageProvider {
             return
         }
 
-        void this.webview?.postMessage({ type: 'errors', errors: error.message })
+        const errorMessage = this.contextProvider.config.debugVerbose
+            ? `${error.message}\n${error.stack}`
+            : error.message
+        void this.webview?.postMessage({ type: 'errors', errors: errorMessage })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {

@@ -11,7 +11,9 @@ import * as vscode from '../../testutils/mocks'
 import {
     contextItemsToContextFiles,
     contextMessageToContextItem,
+    fragmentToRange,
     getChatPanelTitle,
+    rangeToFragment,
     stripContextWrapper,
 } from './chat-helpers'
 import { ContextItem } from './SimpleChatModel'
@@ -126,5 +128,27 @@ describe('getChatPanelTitle', () => {
         const title = 'Explain the relationship...'
         const result = getChatPanelTitle(title)
         expect(result).toEqual('Explain the relationship....')
+    })
+})
+
+describe('range-fragment conversion', () => {
+    test('converts a valid range to a string fragment', () => {
+        const range = { start: { line: 10, character: 5 }, end: { line: 20, character: 15 } }
+        const result = rangeToFragment(range)
+        expect(result).toEqual('L10-20')
+    })
+    test('converts a valid fragment to a range', () => {
+        const fragment = 'L10-20'
+        const expectedRange = {
+            start: {
+                line: 10,
+                character: 0,
+            },
+            end: {
+                line: 20,
+                character: 0,
+            },
+        }
+        expect(fragmentToRange(fragment)).toEqual(expectedRange)
     })
 })
