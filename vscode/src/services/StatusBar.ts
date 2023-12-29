@@ -131,13 +131,6 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalSymfContext,
                     false
                 ),
-                createFeatureToggle(
-                    'Unstable Experimental Features',
-                    'Internal Experimental',
-                    'Enable experimental features for internal testing purpose',
-                    'cody.internal.unstable',
-                    c => c.internalUnstable
-                ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
                     label: '$(gear) Cody Extension Settings',
