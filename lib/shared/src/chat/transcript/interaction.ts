@@ -48,7 +48,6 @@ export class Interaction {
                 }
                 // Filter embedding results from the current workspace
                 if (source === 'embeddings') {
-                    console.log(fileName, repoName)
                     if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
                         i++
                         continue

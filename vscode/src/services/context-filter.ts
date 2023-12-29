@@ -1,3 +1,5 @@
+import { dirname } from 'path'
+
 import * as vscode from 'vscode'
 
 import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
@@ -11,7 +13,8 @@ const utf8 = new TextDecoder('utf-8')
 /**
  * Parses `.code/.ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
- * @returns A Disposable that should be disposed when the extension unloads.
+ *
+ * This is called once the git extension has started up
  */
 export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()
@@ -31,6 +34,7 @@ export function setUpCodyIgnore(): vscode.Disposable {
     // Handle existing workspace folders.
     vscode.workspace.workspaceFolders?.map(wf => refresh(wf.uri))
 
+    // NOTE This can be removed once cody ignore is stable.
     const onDidChangeConfig = vscode.workspace.onDidChangeConfiguration(e => {
         if (e.affectsConfiguration('cody')) {
             onConfigChange()
@@ -48,24 +52,13 @@ export function setUpCodyIgnore(): vscode.Disposable {
     }
 }
 
-// TODO (bee) merge it with setUpCodyIgnore()
-let init = false
-export async function codyIgnoreInit(): Promise<void> {
-    const visibleTextEditors = vscode.window.visibleTextEditors[0]
-    if (visibleTextEditors?.document?.uri && !init) {
-        await refresh(visibleTextEditors.document.uri)
-        init = true
-    }
-}
-
+/**
+ * Updates the mapping of codebase name to workspace file system path
+ * in the ignores context filter.
+ */
 export function updateCodyIgnoreCodespaceMap(codebaseName: string, workspaceFsPath: string): void {
     ignores.updateCodebaseWorkspaceMap(codebaseName, workspaceFsPath)
     logDebug('CodyIgnore:updateCodyIgnoreCodespaceMap:codebase', codebaseName)
-}
-
-function onConfigChange(): void {
-    const config = vscode.workspace.getConfiguration('cody')
-    ignores.setActiveState(config.get('internal.unstable') as boolean)
 }
 
 /**
@@ -96,7 +89,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
             const codebase = codebaseName || getCodebaseFromWorkspaceUri(fileUri)
             if (codebase) {
                 // file root is two level above the fileUri location
-                const fileRoot = fileUri.fsPath.replace(/(?:\/[^/]+){2}$/, '')
+                const fileRoot = dirname(dirname(fileUri.fsPath))
                 const storedRoot = codebases.get(codebase)
                 if (!storedRoot || storedRoot?.split('/').length > fileRoot.split('/').length) {
                     codebases.set(codebase, fileRoot)
@@ -149,4 +142,14 @@ async function tryReadFile(fileUri: vscode.Uri): Promise<string> {
             return ''
         }
     )
+}
+
+/**
+ * Check if the config for enabling cody ignore is changed.
+ *
+ * NOTE This can be removed once cody ignore is stable.
+ */
+function onConfigChange(): void {
+    const config = vscode.workspace.getConfiguration('cody')
+    ignores.setActiveState(config.get('internal.unstable') as boolean)
 }

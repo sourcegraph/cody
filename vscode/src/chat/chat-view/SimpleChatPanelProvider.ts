@@ -39,7 +39,6 @@ import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
-import { codyIgnoreInit } from '../../services/context-filter'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
@@ -435,7 +434,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         await this.saveSession()
         await this.postCodyCommands()
         this.initDoer.signalInitialized()
-        await codyIgnoreInit()
     }
 
     public dispose(): void {

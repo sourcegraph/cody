@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 
+import { setUpCodyIgnore } from '../services/context-filter'
+
 import { API, GitExtension, Repository } from './builtinGitExtension'
 
 export function repositoryRemoteUrl(uri: vscode.Uri): string | undefined {
@@ -42,24 +44,21 @@ export function gitAPI(): API | undefined {
     return extension.exports.getAPI(1)
 }
 
-// Git Remote URL <> Codebase name
 let vscodeGitAPI: API | undefined
-
-export function gitAPIinit(): void {
+export async function gitAPIinit(): Promise<void> {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
     extension?.exports.onDidChangeEnablement(enabled => {
-        console.log('Git extension enabled state changed to ' + enabled)
-        if (enabled) {
-            vscodeGitAPI = extension.exports.getAPI(1)
-        }
+        vscodeGitAPI = enabled ? extension.exports.getAPI(1) : undefined
     })
-
-    vscodeGitAPI = extension?.exports.getAPI(1)
+    // Set codyignore list on git extension startup
+    await extension?.activate().then(() => setUpCodyIgnore())
+    vscodeGitAPI = extension?.exports?.getAPI(1)
 }
 
+// Git Remote URL <> Codebase name
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
     if (!vscodeGitAPI) {
-        gitAPIinit()
+        gitAPIinit().catch(error => console.error(error))
     }
     try {
         const repository = vscodeGitAPI?.getRepository(uri)
@@ -73,6 +72,9 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
 }
 
 export function getAllCodebasesInWorkspace(): { ws: string; codebase: string }[] {
+    if (!vscodeGitAPI) {
+        gitAPIinit().catch(error => console.error(error))
+    }
     const matches = []
     try {
         const repositories = vscodeGitAPI?.repositories || []

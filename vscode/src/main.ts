@@ -34,7 +34,6 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
-import { setUpCodyIgnore } from './services/context-filter'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { localStorage } from './services/LocalStorageProvider'
@@ -97,9 +96,6 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
-
-    // Set codyignore list on startup
-    disposables.push(setUpCodyIgnore())
 
     // Controller for Non-Stop Cody
     const fixup = new FixupController()
