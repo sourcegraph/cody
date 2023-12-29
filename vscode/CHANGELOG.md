@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- [Internal] New `cody.internal.unstable` setting for enabling unstable experimental features for internal use only. Included .cody/.ignore for internal testing. [issues/1382](https://github.com/sourcegraph/cody/pull/1382)
+
 ### Fixed
 
 - @-mentioning files on Windows no longer sometimes renders visible markdown for the links in the chat [issues/2388](https://github.com/sourcegraph/cody/issues/2388)/[pull/2398](https://github.com/sourcegraph/cody/pull/2398)
