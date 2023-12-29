@@ -126,7 +126,7 @@ function clear(wf: vscode.WorkspaceFolder): void {
     }
 
     ignores.clearIgnoreFiles(wf.uri.fsPath)
-    logDebug('CodyIgnore:clearIgnoreFiles:workspace', wf.uri.fsPath)
+    logDebug('CodyIgnore:clearIgnoreFiles:workspace', 'removed', { verbose: wf.uri.fsPath })
 }
 
 /**
@@ -138,7 +138,9 @@ async function tryReadFile(fileUri: vscode.Uri): Promise<string> {
     return vscode.workspace.fs.readFile(fileUri).then(
         content => utf8.decode(content),
         error => {
-            console.error(`Skipping unreadable ignore file ${fileUri}: ${error}`)
+            logDebug('CodyIgnore:clearIgnoreFiles:tryReadFile', 'failed', {
+                verbose: `Skipping unreadable ignore file ${fileUri}: ${error}`,
+            })
             return ''
         }
     )

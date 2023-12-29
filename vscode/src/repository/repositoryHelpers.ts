@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 
+import { logDebug } from '../log'
 import { setUpCodyIgnore } from '../services/context-filter'
 
 import { API, GitExtension, Repository } from './builtinGitExtension'
@@ -65,8 +66,8 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
         if (repository) {
             return getCodebaseFromRepo(repository)
         }
-    } catch {
-        // no-ops
+    } catch (error) {
+        logDebug('repositoryHelper:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
     }
     return undefined
 }
@@ -87,8 +88,8 @@ export function getAllCodebasesInWorkspace(): { ws: string; codebase: string }[]
                 }
             }
         }
-    } catch {
-        // no-ops
+    } catch (error) {
+        logDebug('repositoryHelper:getAllCodebasesInWorkspace', 'error', { verbose: error })
     }
     return matches
 }
