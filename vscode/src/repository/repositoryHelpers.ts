@@ -54,14 +54,16 @@ export function gitAPI(): API | undefined {
  * and initializes the global gitAPI instance. Also sets up the .codyignore file on startup.
  */
 let vscodeGitAPI: API | undefined
-export async function gitAPIinit(): Promise<void> {
+export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
-    extension?.exports.onDidChangeEnablement(enabled => {
-        vscodeGitAPI = enabled ? extension.exports.getAPI(1) : undefined
-    })
-    // Set codyignore list on git extension startup
     await extension?.activate().then(() => setUpCodyIgnore())
-    vscodeGitAPI = extension?.exports?.getAPI(1)
+
+    vscodeGitAPI = extension?.exports?.getAPI(1) || undefined
+
+    // Update vscodeGitAPI when the extension becomes enabled/disabled
+    return extension?.exports?.onDidChangeEnablement(enabled => {
+        vscodeGitAPI = !vscodeGitAPI && enabled ? extension.exports.getAPI(1) : undefined
+    })
 }
 
 /**
@@ -73,9 +75,6 @@ export async function gitAPIinit(): Promise<void> {
  * Returns the codebase name, or undefined if not found.
  */
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
-    if (!vscodeGitAPI) {
-        gitAPIinit().catch(error => console.error(error))
-    }
     try {
         const repository = vscodeGitAPI?.getRepository(uri)
         if (repository) {
@@ -101,9 +100,6 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
  * codebase name for each repository.
  */
 export function getAllCodebasesInWorkspace(): { ws: string; codebase: string }[] {
-    if (!vscodeGitAPI) {
-        gitAPIinit().catch(error => console.error(error))
-    }
     const matches = []
     try {
         const repositories = vscodeGitAPI?.repositories || []
