@@ -26,7 +26,7 @@ function gitRepositoryRemoteUrl(uri: vscode.Uri): string | undefined {
 
         return repository.state.remotes[0]?.fetchUrl
     } catch (error) {
-        console.error(error)
+        logDebug('repositoryHelper:gitRepositoryRemoteUrl', 'error', { verbose: error })
         return undefined
     }
 }
@@ -45,6 +45,14 @@ export function gitAPI(): API | undefined {
     return extension.exports.getAPI(1)
 }
 
+/**
+ * NOTE: This is for Chat and Commands where we use the git extension to get the codebase name.
+ *
+ * Initializes the Git API by activating the Git extension and setting up the gitAPI global.
+ *
+ * Activates the Git extension, sets up a listener for when the extension becomes enabled/disabled,
+ * and initializes the global gitAPI instance. Also sets up the .codyignore file on startup.
+ */
 let vscodeGitAPI: API | undefined
 export async function gitAPIinit(): Promise<void> {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
@@ -56,7 +64,14 @@ export async function gitAPIinit(): Promise<void> {
     vscodeGitAPI = extension?.exports?.getAPI(1)
 }
 
-// Git Remote URL <> Codebase name
+/**
+ * Gets the codebase name from a workspace / file URI.
+ *
+ * Checks if the Git API is initialized, initializes it if not.
+ * Gets the Git repository for the given URI.
+ * If found, gets the codebase name from the repository.
+ * Returns the codebase name, or undefined if not found.
+ */
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
     if (!vscodeGitAPI) {
         gitAPIinit().catch(error => console.error(error))
@@ -64,7 +79,7 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
     try {
         const repository = vscodeGitAPI?.getRepository(uri)
         if (repository) {
-            return getCodebaseFromRepo(repository)
+            return getCodebaseNameFromGitRepo(repository)
         }
     } catch (error) {
         logDebug('repositoryHelper:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
@@ -72,6 +87,19 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
     return undefined
 }
 
+/**
+ * Gets a list of all codebases in the current workspace by iterating through
+ * the Git repositories and extracting the codebase name from each one.
+ *
+ * Checks if the Git API is initialized and initializes it if needed.
+ * Gets a list of all Git repositories in the workspace.
+ * For each repository, extracts the workspace root path and codebase name.
+ * If both are present, adds them to the result array.
+ * Catches and logs any errors.
+ *
+ * Returns an array of objects containing the workspace root path and
+ * codebase name for each repository.
+ */
 export function getAllCodebasesInWorkspace(): { ws: string; codebase: string }[] {
     if (!vscodeGitAPI) {
         gitAPIinit().catch(error => console.error(error))
@@ -81,7 +109,7 @@ export function getAllCodebasesInWorkspace(): { ws: string; codebase: string }[]
         const repositories = vscodeGitAPI?.repositories || []
         for (const repository of repositories) {
             const workspaceRoot = repository.rootUri.fsPath
-            const codebaseName = getCodebaseFromRepo(repository)
+            const codebaseName = getCodebaseNameFromGitRepo(repository)
             if (workspaceRoot && codebaseName) {
                 if (codebaseName) {
                     matches.push({ ws: workspaceRoot, codebase: codebaseName })
@@ -94,14 +122,11 @@ export function getAllCodebasesInWorkspace(): { ws: string; codebase: string }[]
     return matches
 }
 
-function getCodebaseFromRepo(repository: Repository): string | undefined {
+// HELPER FUNCTIONS
+function getCodebaseNameFromGitRepo(repository: Repository): string | undefined {
     const remoteUrl = repository.state.remotes[0]?.pushUrl || repository.state.remotes[0]?.fetchUrl
     if (!remoteUrl) {
         return undefined
     }
     return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
-}
-
-export function getGitRepository(uri: vscode.Uri): Repository | undefined {
-    return vscodeGitAPI?.getRepository(uri) || undefined
 }
