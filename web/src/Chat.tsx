@@ -10,8 +10,8 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import styles from './Chat.module.css'
 
-export const Chat: React.FunctionComponent<
-    Omit<
+interface ChatProps
+    extends Omit<
         React.ComponentPropsWithoutRef<typeof ChatUI>,
         | 'textAreaComponent'
         | 'submitButtonComponent'
@@ -19,8 +19,9 @@ export const Chat: React.FunctionComponent<
         | 'symbolLinkComponent'
         | 'messageBeingEdited'
         | 'setMessageBeingEdited'
-    >
-> = ({
+    > {}
+
+export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     transcript,
     contextStatus,
@@ -29,6 +30,9 @@ export const Chat: React.FunctionComponent<
     inputHistory,
     setInputHistory,
     onSubmit,
+    userInfo,
+    isCodyEnabled,
+    ...rest
 }) => (
     <ChatUI
         messageBeingEdited={false}
@@ -52,11 +56,9 @@ export const Chat: React.FunctionComponent<
         transcriptActionClassName={styles.transcriptAction}
         inputRowClassName={styles.inputRow}
         chatInputClassName={styles.chatInput}
-        isCodyEnabled={true}
-        userInfo={{
-            isDotComUser: true,
-            isCodyProUser: false,
-        }}
+        isCodyEnabled={isCodyEnabled}
+        userInfo={userInfo}
+        {...rest}
     />
 )
 
