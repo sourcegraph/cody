@@ -15,6 +15,9 @@ export type ContextFileSource =
     | 'user'
     | 'editor'
     | 'filename'
+    | 'directory'
+    | 'packageJson'
+    | 'imports'
     | 'unified'
     | 'unknown'
 

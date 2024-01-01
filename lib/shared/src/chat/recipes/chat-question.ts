@@ -105,7 +105,7 @@ export class ChatQuestion implements Recipe {
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
-            visibleContent
+            { source: 'editor', ...visibleContent }
         )
     }
 
@@ -113,7 +113,7 @@ export class ChatQuestion implements Recipe {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
-            selection
+            { source: 'editor', ...selection }
         )
     }
 

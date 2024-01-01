@@ -1,5 +1,7 @@
 import { Meta, StoryObj } from '@storybook/react'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
+
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { UserContextSelectorComponent } from './UserContextSelector'
 
@@ -47,6 +49,7 @@ export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = 
             fileName: `file-${i}.py`,
             path: { relative: `${i ? 'sub-dir/'.repeat(i * 5) + '/' : ''}file-${i}.py` },
             type: 'file',
+            source: 'unknown',
         })),
         selected: 0,
         formInput: '@file',
@@ -102,7 +105,7 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
                 kind: 'method',
                 path: { relative: `${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx` },
             },
-        ],
+        ].map(f => ({ ...f, source: 'unknown' }) as ContextFile),
         selected: 0,
         formInput: '@#login',
     },

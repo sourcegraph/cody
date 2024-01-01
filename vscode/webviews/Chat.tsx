@@ -150,7 +150,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const eventData = {
                 value: text,
                 lastChatUsedEmbeddings: Boolean(
-                    transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
+                    transcript
+                        .at(-1)
+                        ?.contextFiles?.some(
+                            file => file.source === 'embeddings (local)' || file.source === 'embeddings (remote)'
+                        )
                 ),
                 transcript: '',
             }

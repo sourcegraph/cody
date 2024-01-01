@@ -97,6 +97,7 @@ export class VSCodeEditorContext {
                     populateCurrentEditorContextTemplate(truncatedText, fileName),
                     {
                         fileName,
+                        source: 'editor',
                     }
                 )
 
@@ -170,6 +171,7 @@ export class VSCodeEditorContext {
             return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
                 content: decoded,
+                source: 'filename',
             })
         } catch (error) {
             console.error(error)
@@ -188,7 +190,7 @@ export class VSCodeEditorContext {
 
         return getContextMessageWithResponse(
             populateCurrentFileFromEditorSelectionContextTemplate(this.selection, this.selection.fileName),
-            this.selection,
+            { source: 'editor', ...this.selection },
             answers.file
         )
     }
@@ -300,7 +302,7 @@ export class VSCodeEditorContext {
 
             return getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName },
+                { source: 'packageJson', fileName },
                 answers.packageJson
             )
         } catch {
@@ -335,6 +337,7 @@ export class VSCodeEditorContext {
 
             return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileName), {
                 fileName,
+                source: 'imports',
             })
         } catch {
             return []
