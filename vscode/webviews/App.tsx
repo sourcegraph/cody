@@ -9,7 +9,6 @@ import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
@@ -91,7 +90,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
                             isCodyProUser: !message.authStatus.userCanUpgrade,
-                            isDotComUser: isDotCom(message.authStatus.endpoint || ''),
+                            // Receive this value from the extension backend to make it work
+                            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
+                            isDotComUser: message.authStatus.isDotCom,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         // Get chat models
