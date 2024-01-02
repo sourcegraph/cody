@@ -390,14 +390,22 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     ApplicationManager.getApplication().invokeLater {
       stopGeneratingButton.isVisible = true
       sendButton.isEnabled = false
+      recipesPanel.components.filterIsInstance<JButton>().forEach {
+        it.isEnabled = false
+        it.toolTipText = "Message generation in progress..."
+      }
     }
   }
 
   override fun finishMessageProcessing() {
     ApplicationManager.getApplication().invokeLater {
-      stopGeneratingButton.isVisible = false
       ensureBlinkingCursorIsNotDisplayed()
+      stopGeneratingButton.isVisible = false
       sendButton.isEnabled = promptPanel.textArea.text.isNotBlank()
+      recipesPanel.components.filterIsInstance<JButton>().forEach {
+        it.isEnabled = true
+        it.toolTipText = null
+      }
     }
   }
 

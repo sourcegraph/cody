@@ -3,6 +3,7 @@ package com.sourcegraph.cody
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.ui.dsl.builder.panel
+import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.config.ConfigUtil
 
 fun createSubscriptionTab(isCurrentUserPro: Boolean) = panel {
@@ -17,6 +18,6 @@ fun createSubscriptionTab(isCurrentUserPro: Boolean) = panel {
     button("Check Usage") { BrowserUtil.browse(ConfigUtil.DOTCOM_URL + "cody/manage") }
   }
   if (!isCurrentUserPro) {
-    row { label("(Already upgraded to Pro? Restart your IDE for changes to take effect)") }
+    row { text(CodyBundle.getString("tab.subscription.already-pro")) }
   }
 }
