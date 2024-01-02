@@ -10,7 +10,7 @@ const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="
 const expectedEvents = [
     'CodyVSCodeExtension:command:edit:executed',
     'CodyVSCodeExtension:keywordContext:searchDuration',
-    'CodyVSCodeExtension:recipe:fixup:executed',
+    'CodyVSCodeExtension:fixup:recipe-used',
     'CodyVSCodeExtension:fixupResponse:hasCode',
 ]
 
