@@ -582,7 +582,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'used', {
+            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
                 metadata: { ...contextSummary },
             })
         })
