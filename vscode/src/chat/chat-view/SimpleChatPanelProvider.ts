@@ -65,8 +65,7 @@ import {
 } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
-import { ChatViewProviderWebview } from './ChatPanelProvider'
-import { Config, IChatPanelProvider } from './ChatPanelsManager'
+import { ChatViewProviderWebview, Config, IChatPanelProvider } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
@@ -488,11 +487,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.postViewTranscript()
     }
 
-    public clearChatHistory(): Promise<void> {
-        // HACK: this is a no-op now. This exists only to satisfy the IChatPanelProvider interface
-        // and can be removed once we retire the old ChatPanelProvider
-        return Promise.resolve()
-    }
     public handleChatTitle(title: string): void {
         this.chatModel.setChatTitle(title)
         if (this.webviewPanel) {

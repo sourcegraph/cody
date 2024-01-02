@@ -26,7 +26,7 @@ import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
+import { SidebarChatWebview } from './chat-view/SidebarViewController'
 import { GraphContextProvider } from './GraphContextProvider'
 import { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
