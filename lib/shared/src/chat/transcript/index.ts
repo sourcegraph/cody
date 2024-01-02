@@ -45,15 +45,15 @@ export class Transcript {
                     return new Interaction(
                         humanMessage,
                         assistantMessage,
-                        Promise.resolve(
-                            fullContext.map(message => {
+                        Promise.resolve<ContextMessage[]>(
+                            fullContext.map((message: ContextMessage) => {
                                 if (message.file) {
                                     return message
                                 }
 
                                 const { fileName } = message as any as OldContextMessage
                                 if (fileName) {
-                                    return { ...message, file: { fileName } }
+                                    return { ...message, file: { fileName, source: 'unknown' } }
                                 }
 
                                 return message

@@ -286,6 +286,36 @@ export class Position implements VSCodePosition {
     public compareTo(other: VSCodePosition): number {
         return this.isBefore(other) ? -1 : this.isAfter(other) ? 1 : 0
     }
+
+    // Copied from https://sourcegraph.com/github.com/microsoft/vscode@860d67064a9c1ef8ce0c8de35a78bea01033f76c/-/blob/src/vs/workbench/api/common/extHostTypes.ts?L112-124
+    static Max(...positions: Position[]): Position {
+        if (positions.length === 0) {
+            throw new TypeError()
+        }
+        let result = positions[0]
+        for (let i = 1; i < positions.length; i++) {
+            const p = positions[i]
+            if (p.isAfter(result)) {
+                result = p
+            }
+        }
+        return result
+    }
+
+    // Copied from https://sourcegraph.com/github.com/microsoft/vscode@860d67064a9c1ef8ce0c8de35a78bea01033f76c/-/blob/src/vs/workbench/api/common/extHostTypes.ts?L98-110
+    static Min(...positions: Position[]): Position {
+        if (positions.length === 0) {
+            throw new TypeError()
+        }
+        let result = positions[0]
+        for (let i = 1; i < positions.length; i++) {
+            const p = positions[i]
+            if (p.isBefore(result)) {
+                result = p
+            }
+        }
+        return result
+    }
 }
 
 export class Location implements VSCodeLocation {
@@ -372,8 +402,18 @@ export class Range implements VSCodeRange {
 
         throw new Error('not implemented')
     }
-    public intersection(): VSCodeRange | undefined {
-        throw new Error('not implemented')
+
+    // Adapted from https://sourcegraph.com/github.com/microsoft/vscode@860d67064a9c1ef8ce0c8de35a78bea01033f76c/-/blob/src/vs/workbench/api/common/extHostTypes.ts?L360-370
+    public intersection(other: VSCodeRange): VSCodeRange | undefined {
+        const start = Position.Max(other.start, this.start)
+        const end = Position.Min(other.end, this.end)
+        if (start.isAfter(end)) {
+            // this happens when there is no overlap:
+            // |-----|
+            //          |----|
+            return undefined
+        }
+        return new Range(start, end)
     }
     public union(): VSCodeRange {
         throw new Error('not implemented')

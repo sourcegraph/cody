@@ -1,4 +1,4 @@
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { FixupIntent, VsCodeFixupTaskRecipeData } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
@@ -91,6 +91,7 @@ export class Fixup implements Recipe {
     ): Promise<ContextMessage[]> {
         const truncatedPrecedingText = truncateTextStart(task.precedingText, MAX_CURRENT_FILE_TOKENS)
         const truncatedFollowingText = truncateText(task.followingText, MAX_CURRENT_FILE_TOKENS)
+        const contextFile: ContextFile = { ...task, source: 'editor' }
 
         // Disable no case declarations because we get better type checking with a switch case
         /* eslint-disable no-case-declarations */
@@ -110,7 +111,7 @@ export class Fixup implements Recipe {
                             task.fileName,
                             PROMPT_TOPICS.OUTPUT
                         ),
-                        task
+                        contextFile
                     ),
                 ]
             }
@@ -129,7 +130,7 @@ export class Fixup implements Recipe {
                     contextMessages.push(
                         ...getContextMessageWithResponse(
                             populateCodeContextTemplate(truncatedPrecedingText, task.fileName),
-                            task
+                            contextFile
                         )
                     )
                 }
@@ -137,7 +138,7 @@ export class Fixup implements Recipe {
                     contextMessages.push(
                         ...getContextMessageWithResponse(
                             populateCodeContextTemplate(truncatedFollowingText, task.fileName),
-                            task
+                            contextFile
                         )
                     )
                 }
@@ -164,7 +165,7 @@ export class Fixup implements Recipe {
                     ...errorsAndWarnings.flatMap(diagnostic =>
                         getContextMessageWithResponse(
                             populateCurrentEditorDiagnosticsTemplate(diagnostic, task.fileName),
-                            task
+                            contextFile
                         )
                     ),
                 ]

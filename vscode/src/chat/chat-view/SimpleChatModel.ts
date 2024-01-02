@@ -168,7 +168,7 @@ export interface ContextItem {
     uri: vscode.Uri
     range?: vscode.Range
     text: string
-    source?: ContextFileSource
+    source: ContextFileSource
 }
 
 export function contextItemId(contextItem: ContextItem): string {

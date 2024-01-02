@@ -30,6 +30,7 @@ describe('unwrap context snippets', () => {
                     uri: vscode.Uri.file('test.ts'),
                     range: new vscode.Range(0, 1, 2, 3),
                     text: '// This is code context',
+                    source: 'editor',
                 },
             },
             {
@@ -37,6 +38,7 @@ describe('unwrap context snippets', () => {
                     uri: vscode.Uri.file('doc.md'),
                     range: new vscode.Range(0, 1, 2, 3),
                     text: 'This is markdown context',
+                    source: 'editor',
                 },
             },
         ]

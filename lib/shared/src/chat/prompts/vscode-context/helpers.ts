@@ -63,6 +63,7 @@ function createFileContextResponseMessage(context: string, filePath: string): Co
     const truncatedContent = truncateText(context, MAX_CURRENT_FILE_TOKENS)
     return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
         fileName,
+        source: 'unknown',
     })
 }
 
@@ -278,7 +279,7 @@ export async function getCurrentDirFilteredContext(
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName }
+                { fileName, source: 'filename' }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -358,7 +359,7 @@ export async function getDirContextMessages(
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName }
+                { source: 'directory', fileName }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
