@@ -7,6 +7,7 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
+import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.GraphQlLogger
 
@@ -42,14 +43,17 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
             }
 
+            val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
             // Refresh onboarding panels
             if (ConfigUtil.isCodyEnabled()) {
-              val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
               codyToolWindowContent.refreshPanelsVisibility()
               codyToolWindowContent.embeddingStatusView.updateEmbeddingStatus()
             }
 
+            UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+            UpgradeToCodyProNotification.chatRateLimitError.set(null)
             CodyAutocompleteStatusService.resetApplication(project)
+            codyToolWindowContent.refreshSubscriptionTab()
 
             // Log install events
             if (context.serverUrlChanged) {
