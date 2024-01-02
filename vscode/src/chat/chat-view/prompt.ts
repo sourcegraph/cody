@@ -21,8 +21,6 @@ export interface IContextProvider {
     getEnhancedContext(query: string): Promise<ContextItem[]>
 
     getCommandContext(promptText: string, contextConfig: CodyPromptContext): Promise<ContextItem[]>
-
-    getCurrentSelectionContext(): ContextItem[]
 }
 
 export interface IPrompter {
