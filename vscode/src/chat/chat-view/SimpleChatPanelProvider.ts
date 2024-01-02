@@ -1070,8 +1070,6 @@ class ContextProvider implements IContextProvider {
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
         const searchContext: ContextItem[] = []
-        let localEmbeddingsError
-        let remoteEmbeddingsError
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         let hasEmbeddingsContext = false
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
@@ -1082,7 +1080,6 @@ class ContextProvider implements IContextProvider {
             searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
-            localEmbeddingsError = error
         }
         try {
             const r = await remoteEmbeddingsResults
@@ -1090,16 +1087,8 @@ class ContextProvider implements IContextProvider {
             searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
-            remoteEmbeddingsError = error
         }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
-        if (localEmbeddingsError && remoteEmbeddingsError) {
-            throw new Error(
-                `local and remote embeddings search failed (local: ${getErrorMessage(
-                    localEmbeddingsError
-                )}) (remote: ${getErrorMessage(remoteEmbeddingsError)})`
-            )
-        }
 
         if (!hasEmbeddingsContext && this.symf) {
             try {
@@ -1482,13 +1471,6 @@ function extractQuestion(input: string): string | undefined {
 
 function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
-}
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message
-    }
-    return String(error)
 }
 
 function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {
