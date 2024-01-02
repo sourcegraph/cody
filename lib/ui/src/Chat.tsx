@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import {
     ChatButton,
     ChatContextStatus,
+    ChatInputHistory,
     ChatMessage,
     ChatModelProvider,
     CodyPrompt,
@@ -29,8 +30,8 @@ interface ChatProps extends ChatClassNames {
     contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
-    inputHistory: string[]
-    setInputHistory: (history: string[]) => void
+    inputHistory: ChatInputHistory[]
+    setInputHistory: (history: ChatInputHistory[]) => void
     onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
@@ -317,7 +318,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
             setInputRows(rowsCount > 25 ? 25 : rowsCount)
             setFormInput(inputValue)
-            if (inputValue !== inputHistory[historyIndex]) {
+
+            if (inputValue !== inputHistory[historyIndex]?.inputText) {
                 setHistoryIndex(inputHistory.length)
             }
         },
@@ -334,7 +336,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setChatContextFiles(new Map())
             setSelectedChatContext(0)
             setHistoryIndex(inputHistory.length + 1)
-            setInputHistory([...inputHistory, input])
+            setInputHistory([...inputHistory, { inputText: input }])
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
@@ -477,16 +479,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
-            if (formInput === inputHistory[historyIndex] || !formInput) {
+            if (formInput === inputHistory[historyIndex]?.inputText || !formInput) {
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
                     const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
                     setHistoryIndex(newIndex)
-                    setFormInput(inputHistory[newIndex])
+                    setFormInput(inputHistory[newIndex]?.inputText)
                 } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
                     if (historyIndex + 1 < inputHistory.length) {
                         const newIndex = historyIndex + 1
                         setHistoryIndex(newIndex)
-                        setFormInput(inputHistory[newIndex])
+                        setFormInput(inputHistory[newIndex]?.inputText)
                     }
                 }
             }

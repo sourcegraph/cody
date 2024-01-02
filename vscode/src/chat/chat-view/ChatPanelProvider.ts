@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatInputHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
 
@@ -70,7 +70,7 @@ export class ChatPanelProvider extends MessageProvider {
                 break
             case 'submit':
                 return this.onHumanMessageSubmitted(
-                    message.text,
+                    message.input,
                     message.submitType,
                     message.contextFiles,
                     message.addEnhancedContext
@@ -140,21 +140,23 @@ export class ChatPanelProvider extends MessageProvider {
     }
 
     private async onHumanMessageSubmitted(
-        text: string,
+        input: ChatInputHistory,
         submitType: ChatSubmitType,
         contextFiles?: ContextFile[],
         addEnhancedContext = true
     ): Promise<void> {
-        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', { verbose: { text, submitType } })
+        logDebug('ChatPanelProvider:onHumanMessageSubmitted', 'chat', {
+            verbose: { text: input.inputText, submitType },
+        })
 
-        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), text)
+        await chatHistory.saveHumanInputHistory(this.authProvider.getAuthStatus(), input)
 
         if (submitType === 'suggestion') {
             const args = { requestID: this.currentRequestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
 
-        return this.executeRecipe('chat-question', text, 'chat', contextFiles, addEnhancedContext)
+        return this.executeRecipe('chat-question', input.inputText, 'chat', contextFiles, addEnhancedContext)
     }
 
     /**

@@ -6,7 +6,7 @@ import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatHistory, ChatInputHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
@@ -41,7 +41,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     })
 
     const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [inputHistory, setInputHistory] = useState<ChatInputHistory[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
 
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { ChatInputHistory, ChatMessage } from '@sourcegraph/cody-shared'
 import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -70,7 +70,7 @@ export const App: React.FunctionComponent = () => {
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [inputHistory, setInputHistory] = useState<ChatInputHistory[] | []>([])
 
     const [client, setClient] = useState<Client | null | ErrorLike>()
     useEffect(() => {
