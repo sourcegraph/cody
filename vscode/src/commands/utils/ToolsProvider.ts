@@ -22,7 +22,7 @@ export class ToolsProvider {
     private user: UserWorkspaceInfo
     private shell = vscode.env.shell
 
-    constructor(public context: vscode.ExtensionContext) {
+    constructor() {
         this.user = this.getUserInfo()
     }
 

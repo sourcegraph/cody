@@ -3,14 +3,17 @@ import * as path from 'path'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
+import { ActiveTextEditorSelectionRange, ChatMessage, CodyPrompt, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { CodyPromptContext, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import {
     createDisplayTextWithFileLinks,
     createDisplayTextWithFileSelection,
 } from '@sourcegraph/cody-shared/src/chat/prompts/display-text'
+import { extractTestType } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
+import { VSCodeEditorContext } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/VSCodeEditorContext'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -30,6 +33,7 @@ import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-sha
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
+import { CommandsController } from '../../commands/CommandsController'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
@@ -65,7 +69,7 @@ import {
 } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
-import { ChatViewProviderWebview, Config, IChatPanelProvider } from './ChatPanelsManager'
+import { ChatViewProviderWebview, Config } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
@@ -88,7 +92,7 @@ interface SimpleChatPanelProviderOptions {
     models: ChatModelProvider[]
 }
 
-export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelProvider {
+export class SimpleChatPanelProvider implements vscode.Disposable {
     private _webviewPanel?: vscode.WebviewPanel
     public get webviewPanel(): vscode.WebviewPanel | undefined {
         return this._webviewPanel
@@ -129,6 +133,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private recipeAdapter: SimpleChatRecipeAdapter
 
+    private commandController
+
     constructor({
         config,
         extensionUri,
@@ -158,6 +164,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.recipeAdapter = recipeAdapter
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
+        this.commandController = new CommandsController(extensionUri.fsPath)
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
@@ -524,6 +531,54 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         })
     }
 
+    public async executeCommand(
+        requestID: string,
+        command: CodyPrompt,
+        source: ChatEventSource,
+        text: string
+    ): Promise<void> {
+        const promptText = command.prompt + command.additionalInput
+
+        if (command.mode !== 'ask') {
+            return executeEdit({ instruction: promptText }, source)
+        }
+
+        const displayText = createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
+        this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        await this.saveSession(text)
+        // trigger the context progress indicator
+        this.postViewTranscript({ speaker: 'assistant' })
+        await this.generateAssistantResponse(
+            requestID,
+            [],
+            false,
+            contextSummary => {
+                const authStatus = this.authProvider.getAuthStatus()
+
+                const properties = {
+                    requestID,
+                    chatModel: this.chatModel.modelID,
+                    // 🚨 SECURITY: included only for DotCom users.
+                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
+                    contextSummary,
+                }
+                telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+                    metadata: { ...contextSummary },
+                })
+            },
+            command
+        )
+        // Set the title of the webview panel to the current text
+        if (this.webviewPanel) {
+            this.webviewPanel.title =
+                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+                getChatPanelTitle(text)
+        }
+    }
+
     private async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
@@ -535,27 +590,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             const args = { requestID }
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used', args, { hasV2Event: true })
         }
-
         // If this is a slash command, run it with custom prompt recipe instead
         if (text.startsWith('/')) {
             if (text.match(/^\/r(eset)?$/)) {
-                await this.clearAndRestartSession()
-                return
+                return this.clearAndRestartSession()
             }
             if (text.match(/^\/edit(\s)?/)) {
-                await executeEdit({ instruction: text.replace(/^\/(edit)/, '').trim() }, 'chat')
-                return
+                return executeEdit({ instruction: text.replace(/^\/(edit)/, '').trim() }, 'chat')
             }
             if (text.match(/^\/doc(\s)?/)) {
-                await vscode.commands.executeCommand('cody.command.document-code')
-                return
+                return vscode.commands.executeCommand('cody.command.document-code')
             }
             if (text === '/commands-settings') {
                 // User has clicked the settings button for commands
-                await vscode.commands.executeCommand('cody.settings.commands')
-                return
+                return vscode.commands.executeCommand('cody.settings.commands')
             }
-            return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, addEnhancedContext)
+            const command = (await this.commandController.findCommand(text)) || undefined
+            if (command) {
+                return this.executeCommand(requestID, command, 'chat', text)
+            }
         }
 
         const displayText = userContextFiles?.length
@@ -617,7 +670,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         requestID: string,
         userContextFiles?: ContextFile[],
         addEnhancedContext = true,
-        sendTelemetry?: (contextSummary: {}) => void
+        sendTelemetry?: (contextSummary: {}) => void,
+        command?: CodyPrompt
     ): Promise<void> {
         try {
             const contextWindowBytes = getContextWindowForModel(
@@ -638,7 +692,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 this.chatModel,
                 contextProvider,
                 addEnhancedContext,
-                contextWindowBytes
+                contextWindowBytes,
+                command
             )
 
             this.chatModel.setNewContextUsed(newContextUsed)
@@ -969,8 +1024,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         }
     }
 
-    public async executeCustomCommand(title: string): Promise<void> {
-        await this.executeRecipe('custom-prompt', title)
+    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
+        const customPromptActions = ['add', 'get', 'menu']
+        if (customPromptActions.includes(title)) {
+            title = title.trim()
+            switch (title) {
+                case 'menu':
+                    await this.editor.controllers.command?.menu('custom')
+                    break
+                case 'add':
+                    if (!type) {
+                        break
+                    }
+                    await this.editor.controllers.command?.configFileAction('add', type)
+                    telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked', undefined, {
+                        hasV2Event: true,
+                    })
+                    telemetryRecorder.recordEvent('cody.addCommandButton', 'clicked')
+                    break
+            }
+            await this.postCodyCommands()
+            return
+        }
+
+        await vscode.commands.executeCommand('cody.action.commands.exec', title)
     }
 
     /**
@@ -1031,9 +1108,11 @@ class ContextProvider implements IContextProvider {
         return this.getVisibleEditorContext()
     }
 
-    private getCurrentSelectionContext(): ContextItem[] {
-        const selection = this.editor.getActiveTextEditorSelection()
-        if (!selection) {
+    public async getSmartSelectionContext(): Promise<ContextItem[]> {
+        const selection =
+            (await this.editor.getActiveTextEditorSmartSelection()) ||
+            this.editor.getActiveTextEditorSelectionOrVisibleContent()
+        if (!selection || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1049,8 +1128,34 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: selection.selectedText,
-                uri: selection.fileUri || vscode.Uri.file(selection.fileName),
+                uri: vscode.Uri.file(selection.fileName),
                 range,
+                source: 'selection',
+            },
+        ]
+    }
+
+    public getCurrentSelectionContext(): ContextItem[] {
+        const selection = this.editor.getActiveTextEditorSelection()
+        if (!selection || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+            return []
+        }
+        let range: vscode.Range | undefined
+        if (selection.selectionRange) {
+            range = new vscode.Range(
+                selection.selectionRange.start.line,
+                selection.selectionRange.start.character,
+                selection.selectionRange.end.line,
+                selection.selectionRange.end.character
+            )
+        }
+
+        return [
+            {
+                text: selection.selectedText,
+                uri: vscode.Uri.file(selection.fileName),
+                range,
+                source: 'selection',
             },
         ]
     }
@@ -1064,6 +1169,7 @@ class ContextProvider implements IContextProvider {
             {
                 text: visible.content,
                 uri: vscode.Uri.file(visible.fileName),
+                source: 'selection',
             },
         ]
     }
@@ -1134,6 +1240,119 @@ class ContextProvider implements IContextProvider {
         }
 
         return priorityContext.concat(searchContext)
+    }
+
+    public async getCommandContext(promptText: string, contextConfig: CodyPromptContext): Promise<ContextItem[]> {
+        logDebug('SimpleChatPanelProvider.getCommandContext', promptText)
+        const selection = contextConfig?.selection
+            ? await this.editor.getActiveTextEditorSmartSelection()
+            : this.editor.getActiveTextEditorSelectionOrVisibleContent()
+        const editorContext = new VSCodeEditorContext(this.editor, selection)
+
+        const contextMessages: ContextItem[] = []
+
+        const workspaceRootUri = this.editor.getWorkspaceRootUri()
+        const isUnitTestRequest = extractTestType(promptText) === 'unit'
+
+        if (contextConfig.none) {
+            return []
+        }
+
+        if (contextConfig.codebase) {
+            const codebaseMessages = await this.getEnhancedContext(promptText)
+            contextMessages.push(...codebaseMessages)
+        }
+
+        if (contextConfig.openTabs) {
+            for (const msg of await editorContext.getEditorOpenTabsContext()) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextMessages.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                    })
+                }
+            }
+        }
+
+        if (contextConfig.currentDir) {
+            const dir = await editorContext.getCurrentDirContext(isUnitTestRequest)
+            for (const msg of dir) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextMessages.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                    })
+                }
+            }
+        }
+
+        if (contextConfig.directoryPath) {
+            const dir = await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName)
+            for (const msg of dir) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextMessages.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                    })
+                }
+            }
+        }
+
+        if (contextConfig.filePath) {
+            for (const msg of await editorContext.getFilePathContext(contextConfig.filePath)) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextMessages.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                    })
+                }
+            }
+        }
+
+        // Context for unit tests requests
+        if (isUnitTestRequest && contextMessages.length === 0) {
+            if (selection?.fileName) {
+                const importsContext = await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)
+                for (const msg of importsContext) {
+                    if (msg.file?.uri && msg.file?.content) {
+                        contextMessages.push({
+                            uri: msg.file?.uri,
+                            text: msg.file?.content,
+                            range: viewRangeToRange(msg.file?.range),
+                        })
+                    }
+                }
+            }
+        }
+
+        if (contextConfig.currentFile || contextConfig.selection !== false) {
+            const selectionContext = contextConfig.currentFile
+                ? this.getVisibleEditorContext()
+                : await this.getSmartSelectionContext()
+            if (selectionContext.length > 0) {
+                contextMessages.push(...selectionContext)
+            }
+        }
+
+        if (contextConfig.command && contextConfig.output) {
+            const outputMessages = editorContext.getTerminalOutputContext(contextConfig.output)
+            const importsContext = outputMessages
+            for (const msg of importsContext) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextMessages.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                    })
+                }
+            }
+        }
+
+        return contextMessages
     }
 
     /**

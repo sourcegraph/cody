@@ -39,11 +39,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor(context: vscode.ExtensionContext) {
-        this.tools = new ToolsProvider(context)
+    constructor(extensionPath: string) {
+        this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
-        this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
+        this.custom = new CustomPromptsStore(this.isEnabled, extensionPath, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
@@ -74,6 +74,43 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const commandKey = commandSplit.shift() || text
 
         return !!this.default.get(commandKey)
+    }
+
+    public async findCommand(
+        text: string,
+        requestID?: string,
+        contextFiles?: ContextFile[]
+    ): Promise<CodyPrompt | null> {
+        const commandSplit = text.split(' ')
+        // The unique key for the command. e.g. /test
+        const commandKey = commandSplit.shift() || text
+        // Additional instruction that will be added to end of prompt in the custom-prompt recipe
+        const commandInput = commandKey === text ? '' : commandSplit.join(' ')
+
+        const command = this.default.get(commandKey)
+        if (!command) {
+            return null
+        }
+
+        if (command.slashCommand === '/ask') {
+            command.prompt = text
+        }
+
+        command.additionalInput = commandInput
+        command.requestID = requestID
+        command.contextFiles = contextFiles
+        const runnerID = await this.createCodyCommandRunner(command, commandInput)
+        this.runCommand(runnerID)
+        return command
+    }
+
+    private runCommand(commandRunnerId: string): CodyPrompt | null {
+        const commandRunner = this.commandRunners.get(commandRunnerId)
+        if (!commandRunner) {
+            return null
+        }
+        this.commandRunners.delete(commandRunnerId)
+        return commandRunner?.codyCommand
     }
 
     /**

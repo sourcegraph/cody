@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -11,7 +10,6 @@ import {
     featureFlagProvider,
 } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
@@ -41,28 +39,10 @@ export interface ChatPanelProviderOptions extends MessageProviderOptions {
     featureFlagProvider: FeatureFlagProvider
 }
 
-/**
- * An interface to swap out SimpleChatPanelProvider for ChatPanelProvider
- */
-export interface IChatPanelProvider extends vscode.Disposable {
-    executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
-    executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
-    clearAndRestartSession(): Promise<void>
-    handleChatTitle(title: string): void
-    triggerNotice(notice: { key: string }): void
-    webviewPanel?: vscode.WebviewPanel
-    webview?: ChatViewProviderWebview
-    sessionID: string
-    setWebviewView(view: View): Promise<void>
-    restoreSession(chatID: string): Promise<void>
-    setConfiguration?: (config: Config) => void
-    revive: (panel: vscode.WebviewPanel, chatID: string) => Promise<void>
-}
-
 export class ChatPanelsManager implements vscode.Disposable {
     // Chat views in editor panels
-    private activePanelProvider: IChatPanelProvider | undefined = undefined
-    private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
+    private activePanelProvider: SimpleChatPanelProvider | undefined = undefined
+    private panelProvidersMap: Map<ChatID, SimpleChatPanelProvider> = new Map()
 
     private options: ChatPanelProviderOptions
 
@@ -124,7 +104,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         await this.updateTreeViewHistory()
     }
 
-    public async getChatPanel(): Promise<IChatPanelProvider> {
+    public async getChatPanel(): Promise<SimpleChatPanelProvider> {
         const provider = await this.createWebviewPanel()
         // Check if any existing panel is available
         return this.activePanelProvider || provider
@@ -137,7 +117,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         chatID?: string,
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
-    ): Promise<IChatPanelProvider> {
+    ): Promise<SimpleChatPanelProvider> {
         if (chatID && this.panelProvidersMap.has(chatID)) {
             const provider = this.panelProvidersMap.get(chatID)
             if (provider?.webviewPanel) {
@@ -251,18 +231,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Only applies when commands are run outside of chat input box
         const chatProvider = await this.getChatPanel()
         await chatProvider.executeRecipe(recipeId, humanChatInput, source)
-    }
-
-    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
-        logDebug('ChatPanelsManager:executeCustomCommand', title)
-        const customPromptActions = ['add', 'get', 'menu']
-        if (!customPromptActions.includes(title)) {
-            await this.executeRecipe('custom-prompt', title, 'custom-commands')
-            return
-        }
-
-        const chatProvider = await this.getChatPanel()
-        await chatProvider.executeCustomCommand(title, type)
     }
 
     private async updateTreeViewHistory(): Promise<void> {

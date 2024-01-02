@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { CodyPrompt, CodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
@@ -18,6 +19,10 @@ export interface IContextProvider {
 
     // Relevant context pulled from the editor state and broader repository
     getEnhancedContext(query: string): Promise<ContextItem[]>
+
+    getCommandContext(promptText: string, contextConfig: CodyPromptContext): Promise<ContextItem[]>
+
+    getCurrentSelectionContext(): ContextItem[]
 }
 
 export interface IPrompter {
@@ -25,7 +30,8 @@ export interface IPrompter {
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
         useEnhancedContext: boolean,
-        byteLimit: number
+        byteLimit: number,
+        command?: CodyPrompt
     ): Promise<{
         prompt: Message[]
         contextLimitWarnings: string[]
@@ -43,7 +49,8 @@ export class DefaultPrompter implements IPrompter {
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
         useEnhancedContext: boolean,
-        byteLimit: number
+        byteLimit: number,
+        command?: CodyPrompt
     ): Promise<{
         prompt: Message[]
         contextLimitWarnings: string[]
@@ -109,9 +116,14 @@ export class DefaultPrompter implements IPrompter {
         if (lastMessage.message.speaker === 'assistant') {
             throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
         }
-        if (useEnhancedContext) {
+        if (useEnhancedContext || command) {
             // Add additional context from current editor or broader search
-            const additionalContextItems = await contextProvider.getEnhancedContext(lastMessage.message.text)
+            const additionalContextItems = command
+                ? await contextProvider.getCommandContext(
+                      command.prompt + command.additionalInput,
+                      command.context || { codebase: false }
+                  )
+                : await contextProvider.getEnhancedContext(lastMessage.message.text)
             const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                 additionalContextItems,
                 (item: ContextItem) => this.renderContextItem(item)

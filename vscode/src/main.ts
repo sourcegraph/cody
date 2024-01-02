@@ -112,9 +112,11 @@ const register = async (
         TestSupport.instance.fixupController.set(fixup)
     }
 
+    const commandsController = platform.createCommandsController?.(context.extensionPath)
+
     const editor = new VSCodeEditor({
         fixups: fixup,
-        command: platform.createCommandsController?.(context),
+        command: commandsController,
     })
 
     // Could we use the `initialConfig` instead?
@@ -288,6 +290,13 @@ const register = async (
         await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
     }
 
+    const executeCommand = async (commandKey: string, source: ChatEventSource = 'editor'): Promise<void> => {
+        const command = await commandsController?.findCommand(commandKey)
+        if (command) {
+            await chatManager.executeCommand(command, source)
+        }
+    }
+
     const executeFixup = async (
         args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
@@ -378,21 +387,11 @@ const register = async (
             () => editor.controllers.command?.menu('custom')
         ),
         vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
-        vscode.commands.registerCommand('cody.action.commands.exec', async title => {
-            await chatManager.executeCustomCommand(title)
-        }),
-        vscode.commands.registerCommand('cody.command.explain-code', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/explain')
-        }),
-        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/test')
-        }),
-        vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInChatView('custom-prompt', false, '/doc')
-        }),
-        vscode.commands.registerCommand('cody.command.smell-code', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/smell')
-        }),
+        vscode.commands.registerCommand('cody.action.commands.exec', async title => executeCommand(title)),
+        vscode.commands.registerCommand('cody.command.explain-code', async () => executeCommand('/explain')),
+        vscode.commands.registerCommand('cody.command.generate-tests', async () => executeCommand('/test')),
+        vscode.commands.registerCommand('cody.command.document-code', async () => executeCommand('/doc')),
+        vscode.commands.registerCommand('cody.command.smell-code', async () => executeCommand('/smell')),
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
         ),

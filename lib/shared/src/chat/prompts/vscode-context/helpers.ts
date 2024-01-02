@@ -60,9 +60,12 @@ export function isInWorkspace(fileToCheck: URI): boolean {
 
 function createFileContextResponseMessage(context: string, filePath: string): ContextMessage[] {
     const fileName = createVSCodeRelativePath(filePath)
+    const uri = vscode.Uri.file(filePath)
     const truncatedContent = truncateText(context, MAX_CURRENT_FILE_TOKENS)
     return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
         fileName,
+        uri,
+        content: truncatedContent,
     })
 }
 
@@ -278,7 +281,7 @@ export async function getCurrentDirFilteredContext(
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName }
+                { fileName, uri: fileUri, content: truncatedContent }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -358,7 +361,7 @@ export async function getDirContextMessages(
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName }
+                { fileName, uri: fileUri, content: truncatedContent }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
