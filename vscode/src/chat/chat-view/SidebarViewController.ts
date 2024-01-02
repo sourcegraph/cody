@@ -21,7 +21,7 @@ export interface SidebarViewOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
 }
 
-export class SidebarViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
+export class SidebarViewController extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
     public webview?: SidebarChatWebview
     public webviewPanel: vscode.WebviewPanel | undefined = undefined
@@ -37,7 +37,7 @@ export class SidebarViewProvider extends MessageProvider implements vscode.Webvi
                 await this.contextProvider.syncAuthStatus()
                 break
             case 'initialized':
-                logDebug('SidebarViewProvider:onDidReceiveMessage', 'initialized')
+                logDebug('SidebarViewController:onDidReceiveMessage', 'initialized')
                 await this.setWebviewView('chat')
                 await this.init()
                 break

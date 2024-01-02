@@ -23,7 +23,7 @@ import { AuthStatus, ExtensionMessage } from '../protocol'
 
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
-import { SidebarViewOptions } from './SidebarViewProvider'
+import { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 

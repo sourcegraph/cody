@@ -16,7 +16,7 @@ import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
 import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
-import { SidebarViewOptions, SidebarViewProvider } from './SidebarViewProvider'
+import { SidebarViewController, SidebarViewOptions } from './SidebarViewController'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -25,7 +25,7 @@ export const CodyChatPanelViewType = 'cody.chatPanel'
 export class ChatManager implements vscode.Disposable {
     // SidebarView is used for auth view and running tasks that do not require a chat view
     // We will always keep an instance of this around (even when not visible) to handle states when no panels are open
-    public sidebarView: SidebarViewProvider
+    public sidebarViewController: SidebarViewController
     private chatPanelsManager: ChatPanelsManager
 
     private options: SidebarViewOptions
@@ -46,7 +46,7 @@ export class ChatManager implements vscode.Disposable {
         )
         this.options = { extensionUri, ...options }
 
-        this.sidebarView = new SidebarViewProvider(this.options)
+        this.sidebarViewController = new SidebarViewController(this.options)
 
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
@@ -103,7 +103,7 @@ export class ChatManager implements vscode.Disposable {
         // If chat view is not needed, run the recipe via sidebar view without creating a new panel
         const isDefaultEditCommands = ['/doc', '/edit'].includes(humanChatInput)
         if (!openChatView || isDefaultEditCommands) {
-            await this.sidebarView.executeRecipe(recipeId, humanChatInput, source)
+            await this.sidebarViewController.executeRecipe(recipeId, humanChatInput, source)
             return
         }
 
@@ -173,11 +173,11 @@ export class ChatManager implements vscode.Disposable {
      */
     public async exportHistory(): Promise<void> {
         // Use sidebar chat view for non-chat-session specfic actions
-        await this.sidebarView.exportHistory()
+        await this.sidebarViewController.exportHistory()
     }
 
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
-        await this.sidebarView.simplifiedOnboardingReloadEmbeddingsState()
+        await this.sidebarViewController.simplifiedOnboardingReloadEmbeddingsState()
     }
 
     /**
@@ -228,7 +228,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private disposeChatPanelsManager(): void {
-        this.options.contextProvider.webview = this.sidebarView.webview
+        this.options.contextProvider.webview = this.sidebarViewController.webview
         this.chatPanelsManager.dispose()
     }
 
