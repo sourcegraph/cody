@@ -555,7 +555,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await vscode.commands.executeCommand('cody.settings.commands')
                 return
             }
-            return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, addEnhancedContext)
+            return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, false)
         }
 
         const displayText = userContextFiles?.length
