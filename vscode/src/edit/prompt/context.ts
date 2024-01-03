@@ -1,0 +1,118 @@
+import * as vscode from 'vscode'
+
+import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
+import {
+    populateCodeContextTemplate,
+    populateCodeGenerationContextTemplate,
+    populateCurrentEditorDiagnosticsTemplate,
+} from '@sourcegraph/cody-shared/src/prompt/templates'
+import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
+
+import { VSCodeEditor } from '../../editor/vscode-editor'
+
+import { PROMPT_TOPICS } from './constants'
+
+export interface GetContextFromIntentOptions {
+    intent: FixupIntent
+    selectedText: string
+    precedingText: string
+    followingText: string
+    fileName: string
+    selectionRange: vscode.Range
+    editor: VSCodeEditor
+    context: CodebaseContext
+}
+
+export const getContextFromIntent = async ({
+    intent,
+    selectedText,
+    precedingText,
+    followingText,
+    fileName,
+    selectionRange,
+    context,
+    editor,
+}: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
+    const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedFollowingText = truncateText(followingText, MAX_CURRENT_FILE_TOKENS)
+
+    // Disable no case declarations because we get better type checking with a switch case
+    /* eslint-disable no-case-declarations */
+    switch (intent) {
+        /**
+         * Very broad set of possible instructions.
+         * Fetch context from the users' instructions and use context from current file.
+         * Include the following code from the current file.
+         * The preceding code is already included as part of the response to better guide the output.
+         */
+        case 'add': {
+            return [
+                ...getContextMessageWithResponse(
+                    populateCodeGenerationContextTemplate(
+                        `<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
+                        `<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
+                        fileName,
+                        PROMPT_TOPICS.OUTPUT
+                    ),
+                    { fileName }
+                ),
+            ]
+        }
+        /**
+         * Specific case where a user is explciitly trying to "fix" a problem in their code.
+         * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
+         */
+        case 'fix':
+        /**
+         * Very narrow set of possible instructions.
+         * Fetching context is unlikely to be very helpful or optimal.
+         */
+        case 'doc': {
+            const contextMessages = []
+            if (truncatedPrecedingText.trim().length > 0) {
+                contextMessages.push(
+                    ...getContextMessageWithResponse(populateCodeContextTemplate(truncatedPrecedingText, fileName), {
+                        fileName,
+                    })
+                )
+            }
+            if (truncatedFollowingText.trim().length > 0) {
+                contextMessages.push(
+                    ...getContextMessageWithResponse(populateCodeContextTemplate(truncatedFollowingText, fileName), {
+                        fileName,
+                    })
+                )
+            }
+            return contextMessages
+        }
+        /**
+         * Broad set of possible instructions.
+         * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
+         * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
+         */
+        case 'edit':
+            const range = selectionRange
+            const diagnostics = range ? editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
+            const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
+            const selectionContext = await getContextMessagesFromSelection(
+                selectedText,
+                truncatedPrecedingText,
+                truncatedFollowingText,
+                { fileName },
+                context
+            )
+            return [
+                ...selectionContext,
+                ...errorsAndWarnings.flatMap(diagnostic =>
+                    getContextMessageWithResponse(populateCurrentEditorDiagnosticsTemplate(diagnostic, fileName), {
+                        fileName,
+                    })
+                ),
+            ]
+    }
+    /* eslint-enable no-case-declarations */
+}
