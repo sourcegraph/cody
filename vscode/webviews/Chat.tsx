@@ -270,6 +270,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (@ to include code, / for commands)'
+    const disabledPlaceHolder = 'SiteAdmin has disabled chat and commands for Cody'
 
     useEffect(() => {
         if (autoFocus) {
@@ -298,11 +299,14 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         },
         [inputRef, onKeyDown]
     )
+    const isChatDisabled = true
+    const actualPlaceholder = isChatDisabled ? disabledPlaceHolder : placeholder;
+    const isDisabled = isChatDisabled ? true : false;
 
     return (
         <div
             className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
-            data-value={value || placeholder}
+            data-value={value || actualPlaceholder}
         >
             <textarea
                 className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
@@ -313,9 +317,15 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
                 onFocus={onFocus}
-                placeholder={placeholder}
+                placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
+                disabled={isDisabled} // Disable the textarea if the chat is disabled
+                style={{
+                    backgroundColor: isDisabled ? 'var(--vscode-input-background)' : '',
+                    color: isDisabled ? 'var(--vscode-input-foreground)' : '',
+                    opacity: isDisabled ? '0.5' : '' // Adjust opacity to make it look more disabled
+                }} // Change the background color to grey if disabled
             />
         </div>
     )
