@@ -1,4 +1,4 @@
-name: Semgrep
+name: Semgrep - SAST Scan
 
 on: [push]
 
@@ -9,7 +9,15 @@ jobs:
       image: returntocorp/semgrep
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Run Semgrep
-      run: |
-        semgrep --version
+      - uses: actions/checkout@v3
+
+      - name: Checkout semgrep-rules repo
+        uses: actions/checkout@v3
+        with:
+          repository: sourcegraph/about
+          path: semgrep-rules
+
+      - name: Run Semgrep
+        run: |
+          semgrep --version
+          ls semgrep-rules
