@@ -3,6 +3,7 @@ import path from 'path'
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import { createVSCodeRelativePath } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/helpers'
 import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -210,8 +211,8 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
         }
         contextFiles.push({
             uri: item.uri,
-            fileName: relFsPath,
-            source: 'embeddings',
+            fileName: createVSCodeRelativePath(item.uri),
+            source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
         })

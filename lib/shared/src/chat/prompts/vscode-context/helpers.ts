@@ -66,6 +66,7 @@ function createFileContextResponseMessage(context: string, filePath: string): Co
         fileName,
         uri,
         content: truncatedContent,
+        source: 'editor',
     })
 }
 

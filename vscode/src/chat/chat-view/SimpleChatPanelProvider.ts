@@ -1274,6 +1274,7 @@ class ContextProvider implements IContextProvider {
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
+                        source: 'editor',
                     })
                 }
             }
@@ -1287,6 +1288,7 @@ class ContextProvider implements IContextProvider {
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
+                        source: 'editor',
                     })
                 }
             }
@@ -1300,6 +1302,7 @@ class ContextProvider implements IContextProvider {
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
+                        source: 'editor',
                     })
                 }
             }
@@ -1312,6 +1315,7 @@ class ContextProvider implements IContextProvider {
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
+                        source: 'editor',
                     })
                 }
             }
@@ -1327,6 +1331,7 @@ class ContextProvider implements IContextProvider {
                             uri: msg.file?.uri,
                             text: msg.file?.content,
                             range: viewRangeToRange(msg.file?.range),
+                            source: 'editor',
                         })
                     }
                 }
@@ -1354,6 +1359,7 @@ class ContextProvider implements IContextProvider {
                     contextItems.push({
                         uri: msg.file?.uri,
                         text: msg.file?.content,
+                        source: 'editor',
                     })
                 }
             }
@@ -1592,6 +1598,7 @@ class ContextProvider implements IContextProvider {
                 uri: readmeDisplayUri,
                 text: truncatedReadmeText,
                 range: viewRangeToRange(range),
+                source: 'editor',
             },
         ]
     }
@@ -1622,6 +1629,7 @@ function contextFilesToContextItems(
                 uri,
                 range,
                 text: text || '',
+                source: file.source,
             }
         })
     )

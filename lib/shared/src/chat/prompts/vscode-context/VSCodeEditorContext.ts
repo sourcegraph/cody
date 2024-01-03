@@ -198,7 +198,7 @@ export class VSCodeEditorContext {
 
         return getContextMessageWithResponse(
             populateCurrentFileFromEditorSelectionContextTemplate(this.selection, this.selection.fileName),
-            this.selection,
+            { ...this.selection, source: 'editor' },
             answers.file
         )
     }
