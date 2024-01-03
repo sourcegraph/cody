@@ -6,7 +6,10 @@ import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import {
+    FeatureFlagProvider,
+    featureFlagProvider,
+} from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -15,18 +18,28 @@ import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { AuthStatus } from '../protocol'
+import { MessageProviderOptions } from '../MessageProvider'
+import { AuthStatus, ExtensionMessage } from '../protocol'
 
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
-import { ChatPanelProvider, ChatPanelProviderOptions, ChatViewProviderWebview } from './ChatPanelProvider'
-import { SidebarChatOptions } from './SidebarChatProvider'
+import { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 type ChatID = string
 
 export type Config = Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'experimentalSymfContext'>
+
+export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+    postMessage(message: ExtensionMessage): Thenable<boolean>
+}
+
+export interface ChatPanelProviderOptions extends MessageProviderOptions {
+    extensionUri: vscode.Uri
+    treeView: TreeViewProvider
+    featureFlagProvider: FeatureFlagProvider
+}
 
 /**
  * An interface to swap out SimpleChatPanelProvider for ChatPanelProvider
@@ -35,7 +48,6 @@ export interface IChatPanelProvider extends vscode.Disposable {
     executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
     executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
     clearAndRestartSession(): Promise<void>
-    clearChatHistory(chatID: ChatID): Promise<void>
     handleChatTitle(title: string): void
     triggerNotice(notice: { key: string }): void
     webviewPanel?: vscode.WebviewPanel
@@ -60,10 +72,13 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
+    // We keep track of the currently authenticated account and dispose open chats when it changes
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string }
+
     protected disposables: vscode.Disposable[] = []
 
     constructor(
-        { extensionUri, ...options }: SidebarChatOptions,
+        { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
         private readonly embeddingsClient: CachedRemoteEmbeddingsClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
@@ -92,6 +107,17 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
         if (!authStatus.isLoggedIn) {
             this.disposePanels()
+        } else if (
+            this.currentAuthAccount &&
+            (this.currentAuthAccount.endpoint !== authStatus.endpoint ||
+                this.currentAuthAccount.primaryEmail !== authStatus.primaryEmail)
+        ) {
+            this.disposePanels()
+        }
+
+        this.currentAuthAccount = {
+            endpoint: authStatus.endpoint ?? '',
+            primaryEmail: authStatus.primaryEmail,
         }
 
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
@@ -140,13 +166,13 @@ export class ChatPanelsManager implements vscode.Disposable {
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
         const provider = this.createProvider()
-        if (chatID && this.options.contextProvider.config.experimentalSimpleChatContext) {
+        if (chatID) {
             await provider.restoreSession(chatID)
         }
         // Revives a chat panel provider for a given webview panel and session ID.
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
-        if (chatID && panel) {
-            await provider.revive(panel, chatID)
+        if (panel) {
+            await provider.revive(panel)
         } else {
             await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
         }
@@ -175,39 +201,30 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     /**
      * Creates a provider for the chat panel.
-     *
-     * Returns either SimpleChatPanelProvider or ChatPanelProvider based on config.
-     * NOTE: This can be removed once we have migrated ChatPanelProvider to SimpleChatPanelProvider
      */
-    private createProvider(): SimpleChatPanelProvider | ChatPanelProvider {
+    private createProvider(): SimpleChatPanelProvider {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
             ChatModelProvider.add(new ChatModelProvider(authStatus.configOverwrites.chatModel))
         }
         const models = ChatModelProvider.get(authStatus.endpoint)
-        const defaultModel = models.find(m => m.default) || models[0]
-        if (!defaultModel) {
-            throw new Error('No chat model found in server-provided config')
-        }
 
-        return this.options.contextProvider.config.experimentalSimpleChatContext
-            ? new SimpleChatPanelProvider({
-                  ...this.options,
-                  config: this.options.contextProvider.config,
-                  chatClient: this.chatClient,
-                  embeddingsClient: this.embeddingsClient,
-                  localEmbeddings: this.localEmbeddings,
-                  symf: this.symf,
-                  recipeAdapter: new SimpleChatRecipeAdapter(
-                      this.options.editor,
-                      this.options.intentDetector,
-                      this.options.contextProvider,
-                      this.options.platform
-                  ),
-                  defaultModelID: defaultModel.model,
-              })
-            : new ChatPanelProvider(this.options)
+        return new SimpleChatPanelProvider({
+            ...this.options,
+            config: this.options.contextProvider.config,
+            chatClient: this.chatClient,
+            embeddingsClient: this.embeddingsClient,
+            localEmbeddings: this.localEmbeddings,
+            symf: this.symf,
+            recipeAdapter: new SimpleChatRecipeAdapter(
+                this.options.editor,
+                this.options.intentDetector,
+                this.options.contextProvider,
+                this.options.platform
+            ),
+            models,
+        })
     }
 
     private selectTreeItem(chatID: ChatID): void {
@@ -249,7 +266,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree(createCodyChatTreeItems())
+        await this.treeViewProvider.updateTree(createCodyChatTreeItems(this.options.authProvider.getAuthStatus()))
     }
 
     public async editChatHistory(chatID: string, label: string): Promise<void> {
@@ -259,10 +276,13 @@ export class ChatPanelsManager implements vscode.Disposable {
                 value: label,
             })
             .then(async title => {
-                const history = chatHistory.getChat(chatID)
+                const authProvider = this.options.authProvider
+                const authStatus = authProvider.getAuthStatus()
+
+                const history = chatHistory.getChat(authStatus, chatID)
                 if (title && history) {
                     history.chatTitle = title
-                    await chatHistory.saveChat(history)
+                    await chatHistory.saveChat(authStatus, history)
                     await this.updateTreeViewHistory()
                     const chatIDUTC = new Date(chatID).toUTCString()
                     const provider = this.panelProvidersMap.get(chatID) || this.panelProvidersMap.get(chatIDUTC)
@@ -272,14 +292,17 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async clearHistory(chatID?: string): Promise<void> {
+        const authProvider = this.options.authProvider
+        const authStatus = authProvider.getAuthStatus()
+        // delete single chat
         if (chatID) {
+            await chatHistory.deleteChat(authStatus, chatID)
             this.disposeProvider(chatID)
-
-            await this.activePanelProvider?.clearChatHistory(chatID)
             await this.updateTreeViewHistory()
             return
         }
-
+        // delete all chats
+        await chatHistory.clear(authStatus)
         this.disposePanels()
         this.treeViewProvider.reset()
     }

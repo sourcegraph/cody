@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import type { DocumentContext } from './get-current-doc-context'
 
@@ -26,10 +27,12 @@ export interface InlineCompletionItem {
  */
 export interface FileContextSnippet {
     fileName: string
+    fileUri?: URI
     content: string
 }
 export interface SymbolContextSnippet {
     fileName: string
+    fileUri?: URI
     symbol: string
     content: string
 }

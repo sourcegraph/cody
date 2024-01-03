@@ -25,9 +25,10 @@ test.skip('decorations from un-applied Cody changes appear', async ({ page, side
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
-
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
+    // Wait for index.html to fully open
+    await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Count the existing decorations in the file; there should be none.
     // TODO: When communication from the background process to the test runner

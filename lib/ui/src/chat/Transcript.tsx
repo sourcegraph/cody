@@ -44,7 +44,7 @@ export const Transcript: React.FunctionComponent<
         chatModels?: ChatModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
-        userInfo?: UserAccountInfo
+        userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
@@ -188,14 +188,18 @@ export const Transcript: React.FunctionComponent<
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length && ChatModelDropdownMenu && onCurrentChatModelChange && userInfo && (
-                    <ChatModelDropdownMenu
-                        models={chatModels}
-                        disabled={transcript.length > 1}
-                        onCurrentChatModelChange={onCurrentChatModelChange}
-                        userInfo={userInfo}
-                    />
-                )}
+                {!!chatModels?.length &&
+                    ChatModelDropdownMenu &&
+                    onCurrentChatModelChange &&
+                    userInfo &&
+                    userInfo.isDotComUser && (
+                        <ChatModelDropdownMenu
+                            models={chatModels}
+                            disabled={transcript.length > 1}
+                            onCurrentChatModelChange={onCurrentChatModelChange}
+                            userInfo={userInfo}
+                        />
+                    )}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
@@ -220,6 +224,7 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
+                        userInfo={userInfo}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (

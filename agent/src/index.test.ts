@@ -1,15 +1,17 @@
 import assert from 'assert'
 import { execSync, spawn } from 'child_process'
+import fspromises from 'fs/promises'
+import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
 
+import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler } from './jsonrpc-alias'
-import { ClientInfo } from './protocol-alias'
+import { ClientInfo, ServerInfo } from './protocol-alias'
 
 export class TestClient extends MessageHandler {
     constructor() {
@@ -18,20 +20,27 @@ export class TestClient extends MessageHandler {
             console.log(`${message.channel}: ${message.message}`)
         })
     }
-    public async handshake(clientInfo: ClientInfo) {
-        const info = await this.request('initialize', clientInfo)
-        this.notify('initialized', null)
-        return info
-    }
 
-    public listRecipes() {
-        return this.request('recipes/list', null)
-    }
-
-    public async executeRecipe(id: RecipeID, humanChatInput: string) {
-        return this.request('recipes/execute', {
-            id,
-            humanChatInput,
+    public async handshake(clientInfo: ClientInfo): Promise<ServerInfo> {
+        return new Promise((resolve, reject) => {
+            setTimeout(
+                () =>
+                    reject(
+                        new Error(
+                            "Agent didn't initialize within 10 seconds, something is most likely wrong." +
+                                " If you think it's normal for the agent to use more than 10 seconds to initialize," +
+                                ' increase this timeout.'
+                        )
+                    ),
+                10_000
+            )
+            this.request('initialize', clientInfo).then(
+                info => {
+                    this.notify('initialized', null)
+                    resolve(info)
+                },
+                error => reject(error)
+            )
         })
     }
 
@@ -42,28 +51,11 @@ export class TestClient extends MessageHandler {
 }
 
 const dotcom = 'https://sourcegraph.com'
-const clientInfo: ClientInfo = {
-    name: 'test-client',
-    version: 'v1',
-    workspaceRootUri: 'file:///path/to/foo',
-    workspaceRootPath: '/path/to/foo',
-    extensionConfiguration: {
-        anonymousUserID: 'abcde1234',
-        accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-        serverEndpoint: dotcom,
-        customHeaders: {},
-        autocompleteAdvancedProvider: 'anthropic',
-        autocompleteAdvancedAccessToken: '',
-        autocompleteAdvancedServerEndpoint: '',
-        debug: false,
-        verboseDebug: false,
-    },
+if (process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true') {
+    console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
+    execSync('src login', { stdio: 'inherit' })
+    assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
 }
-
-const cwd = process.cwd()
-const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
-const recordingDirectory = path.join(agentDir, 'recordings')
-const agentScript = path.join(agentDir, 'dist', 'index.js')
 
 describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
@@ -81,19 +73,35 @@ describe('Agent', () => {
     }
     const client = new TestClient()
 
+    const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
+    const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+    const workspaceRootPath = workspaceRootUri.fsPath
+    const clientInfo: ClientInfo = {
+        name: 'test-client',
+        version: 'v1',
+        workspaceRootUri: workspaceRootUri.toString(),
+        workspaceRootPath,
+        extensionConfiguration: {
+            anonymousUserID: 'abcde1234',
+            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
+            serverEndpoint: dotcom,
+            customHeaders: {},
+            autocompleteAdvancedProvider: 'anthropic',
+            debug: false,
+            verboseDebug: false,
+            codebase: 'github.com/sourcegraph/cody',
+        },
+    }
+
+    const cwd = process.cwd()
+    const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
+    const agentScript = path.join(agentDir, 'dist', 'index.js')
+
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build', { cwd: agentDir, stdio: 'inherit' })
 
-    if (process.env.CODY_RECORDING_MODE === 'record') {
-        console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
-        execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(
-            process.env.SRC_ENDPOINT,
-            clientInfo.extensionConfiguration?.serverEndpoint,
-            'SRC_ENDPOINT must match clientInfo.extensionConfiguration.serverEndpoint'
-        )
-    }
-    const agentProcess = spawn('node', ['--enable-source-maps', agentScript, 'jsonrpc'], {
+    const recordingDirectory = path.join(agentDir, 'recordings')
+    const agentProcess = spawn('node', ['--inspect', '--enable-source-maps', agentScript, 'jsonrpc'], {
         stdio: 'pipe',
         cwd: agentDir,
         env: {
@@ -104,14 +112,28 @@ describe('Agent', () => {
             ...process.env,
         },
     })
-
-    client.connectProcess(agentProcess)
+    client.connectProcess(agentProcess, error => {
+        console.log({ error })
+        process.exit(1)
+    })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        const serverInfo = await client.handshake(clientInfo)
-        assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
-    })
+        await fspromises.mkdir(workspaceRootPath, { recursive: true })
+        await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
+        try {
+            const serverInfo = await client.handshake(clientInfo)
+            assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
+        } catch (error) {
+            if (error === undefined) {
+                throw new Error('Agent failed to initialize, error is undefined')
+            } else if (error instanceof Error) {
+                throw error
+            } else {
+                throw new TypeError(`Agent failed to initialize, error is ${JSON.stringify(error)}`, { cause: error })
+            }
+        }
+    }, 1000000)
 
     it('handles config changes correctly', () => {
         // Send two config change notifications because this is what the
@@ -119,12 +141,14 @@ describe('Agent', () => {
         // fine as long as we didn't send the second unauthenticated config
         // change.
         client.notify('extensionConfiguration/didChange', {
+            ...clientInfo.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: '',
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
         client.notify('extensionConfiguration/didChange', {
+            ...clientInfo.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: clientInfo.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: clientInfo.extensionConfiguration?.serverEndpoint ?? dotcom,
@@ -133,21 +157,47 @@ describe('Agent', () => {
     })
 
     it('lists recipes correctly', async () => {
-        const recipes = await client.listRecipes()
+        const recipes = await client.request('recipes/list', null)
         assert.equal(9, recipes.length, JSON.stringify(recipes))
     })
 
-    it('returns non-empty autocomplete', async () => {
-        const filePath = '/path/to/foo/file.ts'
-        const uri = Uri.file(filePath)
-        const content = 'function sum(a: number, b: number) {\n    \n}'
+    const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
+    const sumUri = Uri.file(sumPath)
+    const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
+    const animalUri = Uri.file(animalPath)
+    async function openFile(uri: Uri) {
+        let content = await fspromises.readFile(uri.fsPath, 'utf8')
+        const selectionStart = content.indexOf('/* SELECTION_START */')
+        const selectionEnd = content.indexOf('/* SELECTION_END */')
+        const cursor = content.indexOf('/* CURSOR */')
+
+        content = content
+            .replace('/* CURSOR */', '')
+            .replace('/* SELECTION_START */', '')
+            .replace('/* SELECTION_END */', '')
+
+        const document = AgentTextDocument.from(uri, content)
+        const start =
+            cursor >= 0
+                ? document.positionAt(cursor)
+                : selectionStart >= 0
+                ? document.positionAt(selectionEnd)
+                : undefined
+        const end = cursor >= 0 ? start : selectionStart >= 0 ? document.positionAt(selectionStart) : undefined
         client.notify('textDocument/didOpen', {
             uri: uri.toString(),
             content,
-            selection: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+            selection: start && end ? { start, end } : undefined,
         })
+    }
+
+    it('accepts textDocument/didOpen notifications', async () => {
+        await openFile(sumUri)
+    })
+
+    it('returns non-empty autocomplete', async () => {
         const completions = await client.request('autocomplete/execute', {
-            uri: uri.toString(),
+            uri: sumUri.toString(),
             position: { line: 1, character: 3 },
             triggerKind: 'Invoke',
         })
@@ -161,80 +211,46 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    const messages: ChatMessage[] = []
-    const streamingChatMessages = new Promise<void>((resolve, reject) => {
-        let isResolved = false
-        client.registerNotification('chat/updateMessageInProgress', msg => {
-            if (msg === null) {
-                if (isResolved) {
-                    return
-                }
-                isResolved = true
-                if (messages.length > 0) {
-                    resolve()
-                } else {
-                    reject(new Error('Received null message before non-null message'))
-                }
-            } else {
-                messages.push(msg)
-            }
-        })
+    const messages: ExtensionMessage[] = []
+    client.registerNotification('webview/postMessage', ({ message }) => {
+        messages.push(message)
     })
 
-    it('allows us to execute recipes properly', async () => {
-        await client.executeRecipe('chat-question', 'How do I implement sum in JavaScript?')
-    }, 20_000)
-
-    // Timeout is 100ms because we await on `recipes/execute` in the previous test
-    it('executing a recipe sends chat/updateMessageInProgress notifications', async () => {
-        await streamingChatMessages
-        const actual = messages.at(-1)
-        if (actual?.text) {
-            // trim trailing whitespace from the autocomplete result that Prettier removes causing the inline snapshot assertion to fail.
-            actual.text = actual.text
-                .split('\n')
-                .map(line => line.trimEnd())
-                .join('\n')
-        }
-        expect(actual).toMatchInlineSnapshot(`
+    it('allows us to send a chat message', async () => {
+        await openFile(animalUri)
+        const id = await client.request('chat/new', null)
+        const reply = await client.request('chat/submitMessage', {
+            id,
+            message: {
+                command: 'submit',
+                text: 'Hello!',
+                submitType: 'user',
+                addEnhancedContext: true,
+                contextFiles: [],
+            },
+        })
+        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1) : reply
+        expect(lastMessage).toMatchInlineSnapshot(
+            `
           {
             "contextFiles": [],
-            "preciseContext": [],
+            "displayText": " Hello!",
             "speaker": "assistant",
-            "text": " Here is how to implement a sum function in JavaScript:
-
-          \`\`\`js
-          function sum(arr) {
-            let total = 0;
-            for (let i = 0; i < arr.length; i++) {
-              total += arr[i];
-            }
-            return total;
+            "text": " Hello!",
           }
-          \`\`\`
-
-          To use:
-
-          \`\`\`js
-          const numbers = [1, 2, 3, 4, 5];
-
-          const result = sum(numbers);
-          // result = 15
-          \`\`\`
-
-          This implements a simple sum function that takes an array of numbers, iterates through the array, and returns the total sum of the numbers.",
-          }
-        `)
-    }, 100)
+        `
+        )
+    }, 20_000)
 
     // TODO Fix test - fails intermittently on macOS on Github Actions
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
     it.skip('allows us to cancel chat', async () => {
         setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.executeRecipe('chat-question', 'How do I implement sum?')
+        await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
     }, 600)
 
     afterAll(async () => {
+        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 20_000)

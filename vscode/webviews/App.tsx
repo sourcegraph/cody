@@ -9,7 +9,6 @@ import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
@@ -28,9 +27,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -93,7 +90,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
                             isCodyProUser: !message.authStatus.userCanUpgrade,
-                            isDotComUser: isDotCom(message.authStatus.endpoint || ''),
+                            // Receive this value from the extension backend to make it work
+                            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
+                            isDotComUser: message.authStatus.isDotCom,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         // Get chat models

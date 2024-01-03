@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     ContextGroup,
@@ -9,16 +10,20 @@ import {
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { getConfiguration } from '../../configuration'
+import { getEditor } from '../../editor/active-editor'
 import { SymfRunner } from '../../local-context/symf'
-import { repositoryRemoteUrl } from '../../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
+import { updateCodyIgnoreCodespaceMap } from '../../services/context-filter'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
-interface CodebaseIdentifiers {
+export interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string
+    setting?: string
 }
 
 /**
@@ -43,6 +48,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(() => this.updateStatus()),
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.updateStatus()),
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('cody.codebase')) {
+                    return this.updateStatus()
+                }
+                return Promise.resolve()
+            }),
             this.eventEmitter
         )
 
@@ -157,9 +168,11 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
     private async _updateCodebase_NoFire(): Promise<boolean> {
         const workspaceRoot = this.editor.getWorkspaceRootUri()
+        const config = getConfiguration()
         if (
             this._currentCodebase !== undefined &&
             workspaceRoot?.fsPath === this._currentCodebase?.local &&
+            config.codebase === this._currentCodebase?.setting &&
             this._currentCodebase?.remoteRepoId
         ) {
             // do nothing if local codebase identifier is unchanged and we have a remote repo ID
@@ -168,15 +181,16 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
         let newCodebase: CodebaseIdentifiers | null = null
         if (workspaceRoot) {
-            newCodebase = { local: workspaceRoot.fsPath }
-            const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-            if (remoteUrl) {
-                newCodebase.remote = convertGitCloneURLToCodebaseName(remoteUrl) || undefined
-                if (newCodebase.remote) {
-                    const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
-                    if (!isError(repoId)) {
-                        newCodebase.remoteRepoId = repoId ?? undefined
-                    }
+            newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
+            const currentFile = getEditor()?.active?.document?.uri
+            // Get codebase from config or fallback to getting codebase name from current file URL
+            // Always use the codebase from config as this is manually set by the user
+            newCodebase.remote =
+                config.codebase || (currentFile ? detectCodebaseName(currentFile, workspaceRoot) : config.codebase)
+            if (newCodebase.remote) {
+                const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
+                if (!isError(repoId)) {
+                    newCodebase.remoteRepoId = repoId ?? undefined
                 }
             }
         }
@@ -197,4 +211,14 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         this.symfIndexStatus = newSymfStatus
         return didSymfStatusChange
     }
+}
+
+function detectCodebaseName(currentFileUri: URI, workspaceUri: URI): string | undefined {
+    const codebase = getCodebaseFromWorkspaceUri(currentFileUri)
+    if (codebase) {
+        // Map the ignore rules for the workspace with the codebase name
+        updateCodyIgnoreCodespaceMap(codebase, workspaceUri.fsPath)
+        return codebase
+    }
+    return undefined
 }

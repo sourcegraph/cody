@@ -19,8 +19,7 @@ export interface ChatMessage extends Message {
     buttons?: ChatButton[]
     data?: any
     metadata?: ChatMetadata
-    // TODO(dantup): Is anyone using string?
-    error?: string | ChatError
+    error?: ChatError
 }
 
 export interface InteractionMessage extends ChatMessage {
@@ -31,6 +30,16 @@ export interface ChatError {
     kind?: string
     name: string
     message: string
+
+    // Rate-limit properties
+    retryAfter?: string | null
+    limit?: number
+    userMessage?: string
+    retryAfterDate?: Date
+    retryAfterDateString?: string // same as retry after Date but JSON serializable
+    retryMessage?: string
+    feature?: string
+    upgradeIsAvailable?: boolean
 
     // Prevent Error from being passed as ChatError.
     // Errors should be converted using errorToChatError.

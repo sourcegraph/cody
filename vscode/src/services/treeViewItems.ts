@@ -1,7 +1,9 @@
+import { findLast } from 'lodash'
+
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
-import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { AuthStatus, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
 import { releaseNotesURL, releaseType } from '../release'
 import { version } from '../version'
 
@@ -39,16 +41,19 @@ export function getCodyTreeItems(type: CodyTreeItemType): CodySidebarTreeItem[] 
 }
 
 // functon to create chat tree items from user chat history
-export function createCodyChatTreeItems(): CodySidebarTreeItem[] {
-    const userHistory = localStorage.getChatHistory()?.chat
+export function createCodyChatTreeItems(authStatus: AuthStatus): CodySidebarTreeItem[] {
+    const userHistory = localStorage.getChatHistory(authStatus)?.chat
     if (!userHistory) {
         return []
     }
     const chatTreeItems: CodySidebarTreeItem[] = []
     const chatHistoryEntries = [...Object.entries(userHistory)]
     chatHistoryEntries.forEach(([id, entry]) => {
-        const lastHumanMessage = entry?.interactions?.findLast(interaction => interaction?.humanMessage)
-        if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
+        const lastHumanMessage = findLast(
+            entry?.interactions,
+            message => message.humanMessage.displayText !== undefined
+        )
+        if (lastHumanMessage?.humanMessage?.displayText) {
             const lastDisplayText = lastHumanMessage.humanMessage.displayText.split('\n')[0]
             chatTreeItems.push({
                 id,

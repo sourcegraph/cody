@@ -68,9 +68,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
     }
 
     return {
-        // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
-        // to use as fallback for users who do not have access to local storage
-        serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -87,17 +84,14 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
-        autocompleteAdvancedServerEndpoint: config.get<string | null>(
-            CONFIG_KEY.autocompleteAdvancedServerEndpoint,
-            null
-        ),
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
-        autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
+
+        internalUnstable: config.get<boolean>(CONFIG_KEY.internalUnstable, false),
 
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
@@ -156,27 +150,12 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-function sanitizeServerEndpoint(serverEndpoint: string): string {
-    if (!serverEndpoint) {
-        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
-        // tests.
-        const isTesting = process.env.CODY_TESTING === 'true'
-        if (isTesting) {
-            return 'http://localhost:49300/'
-        }
-
-        return DOTCOM_URL.href
-    }
-    const trailingSlashRegexp = /\/$/
-    return serverEndpoint.trim().replace(trailingSlashRegexp, '')
-}
-
 export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration()
-    // Migrate endpoints to local storage
-    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+    const isTesting = process.env.CODY_TESTING === 'true'
+    const serverEndpoint = localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
     const accessToken = (await getAccessToken()) || null
-    return { ...config, accessToken }
+    return { ...config, accessToken, serverEndpoint }
 }
 
 function checkValidEnumValues(configName: string, value: string | null): void {

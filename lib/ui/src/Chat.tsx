@@ -70,7 +70,7 @@ interface ChatProps extends ChatClassNames {
     EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
 }
 

@@ -12,14 +12,15 @@ import styles from './ErrorItem.module.css'
 export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
                 error={error as RateLimitError}
                 ChatButtonComponent={ChatButtonComponent}
+                userInfo={userInfo}
                 postMessage={postMessage}
             />
         )
@@ -68,12 +69,12 @@ export const ContextWindowLimitErrorItem: React.FunctionComponent<{
             </div>
             <div className={styles.body}>
                 <header>
-                    <h1>Context limit reached</h1>
+                    <h1>Context Limit Reached</h1>
                     <p>{error.message}</p>
                 </header>
                 {ChatButtonComponent && (
                     <div className={styles.actions}>
-                        <ChatButtonComponent label="Start new chat" action="" appearance="primary" onClick={onClick} />
+                        <ChatButtonComponent label="Start New Chat" action="" appearance="primary" onClick={onClick} />
                     </div>
                 )}
             </div>
@@ -87,12 +88,12 @@ export const ContextWindowLimitErrorItem: React.FunctionComponent<{
 export const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage: ApiPostMessage
 }> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
-    const isEnterpriseUser = userInfo?.isDotComUser !== true
+    const isEnterpriseUser = userInfo.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 

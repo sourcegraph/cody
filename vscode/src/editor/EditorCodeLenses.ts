@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getActiveEditor } from './active-editor'
+import { getEditor } from './active-editor'
 
 interface EditorCodeLens {
     name: string
@@ -53,7 +53,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        this.isEnabled = config.get('experimental.commandLenses') as boolean
+        this.isEnabled = config.get('commandCodeLenses') as boolean
 
         if (this.isEnabled && !this._disposables.length) {
             this.init()
@@ -66,7 +66,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private async onCodeLensClick(lens: EditorCodeLens): Promise<void> {
         // Update selection in active editor to the selection of the clicked code lens
-        const activeEditor = getActiveEditor()
+        const activeEditor = getEditor().active
         if (activeEditor) {
             activeEditor.selection = lens.selection
         }
@@ -83,7 +83,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
             return []
         }
         token.onCancellationRequested(() => [])
-        const editor = getActiveEditor()
+        const editor = getEditor().active
         if (!editor || editor.document !== document || document.languageId === 'json') {
             return []
         }

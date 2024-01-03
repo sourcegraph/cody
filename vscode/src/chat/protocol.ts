@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -5,7 +7,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
@@ -47,6 +49,7 @@ export type WebviewMessage =
           command: 'openFile'
           filePath: string
           range?: ActiveTextEditorSelectionRange
+          uri?: URI
       }
     | {
           command: 'openLocalFileWithRange'
@@ -116,7 +119,8 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -141,6 +145,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 export interface AuthStatus {
     username?: string
     endpoint: string | null
+    isDotCom: boolean
     isLoggedIn: boolean
     showInvalidAccessTokenError: boolean
     authenticated: boolean
@@ -166,6 +171,7 @@ export interface AuthStatus {
 
 export const defaultAuthStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -177,10 +183,11 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const unauthenticatedStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,
@@ -192,9 +199,10 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
+    isDotCom: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
     isLoggedIn: false,
@@ -207,7 +215,7 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {
