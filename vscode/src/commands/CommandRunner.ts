@@ -161,7 +161,7 @@ export class CommandRunner implements vscode.Disposable {
         const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
         const intent: FixupIntent = this.kind === 'doc' ? 'doc' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        const source = this.kind as ChatEventSource
+        const source = this.kind === 'custom' ? 'custom-commands' : this.kind
         await executeEdit(
             {
                 range,
@@ -170,7 +170,7 @@ export class CommandRunner implements vscode.Disposable {
                 intent,
                 insertMode,
             } satisfies ExecuteEditArguments,
-            source
+            source as ChatEventSource
         )
     }
 
