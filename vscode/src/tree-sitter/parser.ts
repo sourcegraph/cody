@@ -1,6 +1,6 @@
-import fspromises from 'fs/promises'
 import path from 'path'
 
+import * as vscode from 'vscode'
 import Parser from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
@@ -37,10 +37,10 @@ export function resetParsersCache(): void {
     }
 }
 
-async function isRegularFile(filePath: string): Promise<boolean> {
+async function isRegularFile(uri: vscode.Uri): Promise<boolean> {
     try {
-        const stat = await fspromises.stat(filePath)
-        return stat.isFile()
+        const stat = await vscode.workspace.fs.stat(uri)
+        return stat.type === vscode.FileType.File
     } catch {
         return false
     }
@@ -56,7 +56,7 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     }
 
     const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
-    if (!(await isRegularFile(wasmPath))) {
+    if (!(await isRegularFile(vscode.Uri.file(wasmPath)))) {
         return undefined
     }
 
