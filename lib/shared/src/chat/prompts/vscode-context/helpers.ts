@@ -277,11 +277,13 @@ export async function getCurrentDirFilteredContext(
         try {
             const decoded = await decodeVSCodeTextDoc(fileUri)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+            // From line 0 to the end of truncatedContent
+            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
 
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName, uri: fileUri, content: truncatedContent }
+                { fileName, uri: fileUri, content: truncatedContent, source: 'editor', range }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -357,11 +359,12 @@ export async function getDirContextMessages(
         try {
             const decoded = await decodeVSCodeTextDoc(fileUri)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
 
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName, uri: fileUri, content: truncatedContent }
+                { fileName, uri: fileUri, content: truncatedContent, source: 'editor', range }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {

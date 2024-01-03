@@ -531,54 +531,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         })
     }
 
-    public async executeCommand(
-        requestID: string,
-        command: CodyPrompt,
-        source: ChatEventSource,
-        text: string
-    ): Promise<void> {
-        const promptText = command.prompt + command.additionalInput
-
-        if (command.mode !== 'ask') {
-            return executeEdit({ instruction: promptText }, source)
-        }
-
-        const displayText = createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
-        this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(text)
-        // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
-        await this.generateAssistantResponse(
-            requestID,
-            [],
-            false,
-            contextSummary => {
-                const authStatus = this.authProvider.getAuthStatus()
-
-                const properties = {
-                    requestID,
-                    chatModel: this.chatModel.modelID,
-                    // 🚨 SECURITY: included only for DotCom users.
-                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
-                    contextSummary,
-                }
-                telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
-                    metadata: { ...contextSummary },
-                })
-            },
-            command
-        )
-        // Set the title of the webview panel to the current text
-        if (this.webviewPanel) {
-            this.webviewPanel.title =
-                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
-                getChatPanelTitle(text)
-        }
-    }
-
     private async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
@@ -639,6 +591,54 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 metadata: { ...contextSummary },
             })
         })
+        // Set the title of the webview panel to the current text
+        if (this.webviewPanel) {
+            this.webviewPanel.title =
+                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+                getChatPanelTitle(text)
+        }
+    }
+
+    public async executeCommand(
+        requestID: string,
+        command: CodyPrompt,
+        source: ChatEventSource,
+        text: string
+    ): Promise<void> {
+        const promptText = command.prompt + command.additionalInput
+
+        if (command.mode !== 'ask') {
+            return executeEdit({ instruction: promptText }, source)
+        }
+
+        const displayText = createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
+        this.chatModel.addHumanMessage({ text: promptText }, displayText)
+        await this.saveSession(text)
+        // trigger the context progress indicator
+        this.postViewTranscript({ speaker: 'assistant' })
+        await this.generateAssistantResponse(
+            requestID,
+            [],
+            false,
+            contextSummary => {
+                const authStatus = this.authProvider.getAuthStatus()
+
+                const properties = {
+                    requestID,
+                    chatModel: this.chatModel.modelID,
+                    // 🚨 SECURITY: included only for DotCom users.
+                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
+                    contextSummary,
+                }
+                telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+                    metadata: { ...contextSummary },
+                })
+            },
+            command
+        )
         // Set the title of the webview panel to the current text
         if (this.webviewPanel) {
             this.webviewPanel.title =
@@ -1128,7 +1128,7 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: selection.selectedText,
-                uri: vscode.Uri.file(selection.fileName),
+                uri: vscode.Uri.file(selection.fileUri?.fsPath || selection.fileName),
                 range,
                 source: 'selection',
             },
@@ -1162,14 +1162,18 @@ class ContextProvider implements IContextProvider {
 
     private getVisibleEditorContext(): ContextItem[] {
         const visible = this.editor.getActiveTextEditorVisibleContent()
-        if (!visible || isCodyIgnoredFile(vscode.Uri.file(visible.fileName))) {
+        const fileUri = visible?.fileUri
+        if (!visible || !fileUri) {
+            return []
+        }
+        if (isCodyIgnoredFile(fileUri)) {
             return []
         }
         return [
             {
                 text: visible.content,
-                uri: vscode.Uri.file(visible.fileName),
-                source: 'selection',
+                uri: fileUri,
+                source: 'editor',
             },
         ]
     }
@@ -1249,7 +1253,7 @@ class ContextProvider implements IContextProvider {
             : this.editor.getActiveTextEditorSelectionOrVisibleContent()
         const editorContext = new VSCodeEditorContext(this.editor, selection)
 
-        const contextMessages: ContextItem[] = []
+        const contextItems: ContextItem[] = []
 
         const workspaceRootUri = this.editor.getWorkspaceRootUri()
         const isUnitTestRequest = extractTestType(promptText) === 'unit'
@@ -1260,13 +1264,13 @@ class ContextProvider implements IContextProvider {
 
         if (contextConfig.codebase) {
             const codebaseMessages = await this.getEnhancedContext(promptText)
-            contextMessages.push(...codebaseMessages)
+            contextItems.push(...codebaseMessages)
         }
 
         if (contextConfig.openTabs) {
             for (const msg of await editorContext.getEditorOpenTabsContext()) {
                 if (msg.file?.uri && msg.file?.content) {
-                    contextMessages.push({
+                    contextItems.push({
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
@@ -1279,7 +1283,7 @@ class ContextProvider implements IContextProvider {
             const dir = await editorContext.getCurrentDirContext(isUnitTestRequest)
             for (const msg of dir) {
                 if (msg.file?.uri && msg.file?.content) {
-                    contextMessages.push({
+                    contextItems.push({
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
@@ -1292,7 +1296,7 @@ class ContextProvider implements IContextProvider {
             const dir = await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName)
             for (const msg of dir) {
                 if (msg.file?.uri && msg.file?.content) {
-                    contextMessages.push({
+                    contextItems.push({
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
@@ -1304,7 +1308,7 @@ class ContextProvider implements IContextProvider {
         if (contextConfig.filePath) {
             for (const msg of await editorContext.getFilePathContext(contextConfig.filePath)) {
                 if (msg.file?.uri && msg.file?.content) {
-                    contextMessages.push({
+                    contextItems.push({
                         uri: msg.file?.uri,
                         text: msg.file?.content,
                         range: viewRangeToRange(msg.file?.range),
@@ -1314,12 +1318,12 @@ class ContextProvider implements IContextProvider {
         }
 
         // Context for unit tests requests
-        if (isUnitTestRequest && contextMessages.length === 0) {
+        if (isUnitTestRequest && contextItems.length === 0) {
             if (selection?.fileName) {
                 const importsContext = await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)
                 for (const msg of importsContext) {
                     if (msg.file?.uri && msg.file?.content) {
-                        contextMessages.push({
+                        contextItems.push({
                             uri: msg.file?.uri,
                             text: msg.file?.content,
                             range: viewRangeToRange(msg.file?.range),
@@ -1329,30 +1333,33 @@ class ContextProvider implements IContextProvider {
             }
         }
 
-        if (contextConfig.currentFile || contextConfig.selection !== false) {
-            const selectionContext = contextConfig.currentFile
-                ? this.getVisibleEditorContext()
-                : await this.getSmartSelectionContext()
+        if (contextConfig.currentFile) {
+            const selectionContext = this.getVisibleEditorContext()
             if (selectionContext.length > 0) {
-                contextMessages.push(...selectionContext)
+                contextItems.push(...selectionContext)
+            }
+        }
+
+        if (contextConfig.selection !== false) {
+            const selectionContext = await this.getSmartSelectionContext()
+            if (selectionContext.length > 0) {
+                contextItems.push(...selectionContext)
             }
         }
 
         if (contextConfig.command && contextConfig.output) {
             const outputMessages = editorContext.getTerminalOutputContext(contextConfig.output)
-            const importsContext = outputMessages
-            for (const msg of importsContext) {
+            for (const msg of outputMessages) {
                 if (msg.file?.uri && msg.file?.content) {
-                    contextMessages.push({
+                    contextItems.push({
                         uri: msg.file?.uri,
                         text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
                     })
                 }
             }
         }
 
-        return contextMessages
+        return contextItems
     }
 
     /**

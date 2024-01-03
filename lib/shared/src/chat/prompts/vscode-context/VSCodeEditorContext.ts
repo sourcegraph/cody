@@ -91,12 +91,17 @@ export class VSCodeEditorContext {
                 const fileName = createVSCodeRelativePath(fileUri.fsPath)
                 const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
                 const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
+                const range = new vscode.Range(0, 0, truncatedText.split('\n').length, 0)
 
                 // Create context message
                 const message = getContextMessageWithResponse(
                     populateCurrentEditorContextTemplate(truncatedText, fileName),
                     {
                         fileName,
+                        uri: fileUri,
+                        content: truncatedText,
+                        source: 'editor',
+                        range,
                     }
                 )
 
@@ -163,13 +168,18 @@ export class VSCodeEditorContext {
      */
     public async getFilePathContext(filePath: string): Promise<ContextMessage[]> {
         const fileName = createVSCodeRelativePath(filePath)
+        const uri = vscode.Uri.file(filePath)
         try {
-            const decoded = await getCurrentVSCodeDocTextByURI(vscode.Uri.file(filePath))
+            const decoded = await getCurrentVSCodeDocTextByURI(uri)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
             // Make sure the truncatedContent is in JSON format
             return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
                 content: decoded,
+                uri,
+                source: 'editor',
+                range,
             })
         } catch (error) {
             console.error(error)
@@ -203,7 +213,16 @@ export class VSCodeEditorContext {
         const truncatedTerminalOutput = truncateText(commandOutput, MAX_CURRENT_FILE_TOKENS)
 
         return [
-            { speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedTerminalOutput) },
+            {
+                speaker: 'human',
+                text: populateTerminalOutputContextTemplate(truncatedTerminalOutput),
+                file: {
+                    content: commandOutput,
+                    fileName: 'Terminal Output',
+                    uri: vscode.Uri.file('terminal://output'),
+                    source: 'terminal',
+                },
+            },
             {
                 speaker: 'assistant',
                 text: answers.terminal,
@@ -262,6 +281,12 @@ export class VSCodeEditorContext {
                 {
                     speaker: 'human',
                     text: populateListOfFilesContextTemplate(truncatedFileNames, fsPath),
+                    file: {
+                        uri: fileUri,
+                        content: truncatedFileNames,
+                        fileName: createVSCodeRelativePath(fsPath),
+                        source: 'editor',
+                    },
                 },
                 {
                     speaker: 'assistant',
@@ -300,7 +325,7 @@ export class VSCodeEditorContext {
 
             return getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName },
+                { fileName, uri: packageJsonUri, content: truncatedContent, source: 'editor' },
                 answers.packageJson
             )
         } catch {
@@ -335,6 +360,10 @@ export class VSCodeEditorContext {
 
             return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileName), {
                 fileName,
+                uri: fileUri,
+                content: truncatedContent,
+                range: importsRange,
+                source: 'editor',
             })
         } catch {
             return []
