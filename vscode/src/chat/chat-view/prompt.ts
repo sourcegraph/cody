@@ -5,6 +5,8 @@ import { CodyPrompt, CodyPromptContext } from '@sourcegraph/cody-shared/src/chat
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
+    populateContextTemplateFromText,
+    populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -144,7 +146,14 @@ export class DefaultPrompter implements IPrompter {
 
     private renderContextItem(contextItem: ContextItem): Message[] {
         let messageText: string
-        if (isMarkdownFile(contextItem.uri.fsPath)) {
+        if (contextItem.source === 'selection') {
+            messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
+        } else if (contextItem.source === 'editor') {
+            // This template text works well with prompts in our commands
+            // Using populateCodeContextTemplate here will cause confusion to Cody
+            const templateText = 'Codebase context from file path {fileName}: '
+            messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri.fsPath)
+        } else if (isMarkdownFile(contextItem.uri.fsPath)) {
             messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri.fsPath)
         } else {
             messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)

@@ -1261,14 +1261,32 @@ class ContextProvider implements IContextProvider {
         if (contextConfig.none) {
             return []
         }
-
-        if (contextConfig.codebase) {
-            const codebaseMessages = await this.getEnhancedContext(promptText)
-            contextItems.push(...codebaseMessages)
+        if (contextConfig.command && contextConfig.output) {
+            const outputMessages = editorContext.getTerminalOutputContext(contextConfig.output)
+            for (const msg of outputMessages) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextItems.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        source: 'editor',
+                    })
+                }
+            }
         }
-
-        if (contextConfig.openTabs) {
-            for (const msg of await editorContext.getEditorOpenTabsContext()) {
+        if (contextConfig.selection !== false) {
+            const selectionContext = await this.getSmartSelectionContext()
+            if (selectionContext.length > 0) {
+                contextItems.push(...selectionContext)
+            }
+        }
+        if (contextConfig.currentFile) {
+            const selectionContext = this.getVisibleEditorContext()
+            if (selectionContext.length > 0) {
+                contextItems.push(...selectionContext)
+            }
+        }
+        if (contextConfig.filePath) {
+            for (const msg of await editorContext.getFilePathContext(contextConfig.filePath)) {
                 if (msg.file?.uri && msg.file?.content) {
                     contextItems.push({
                         uri: msg.file?.uri,
@@ -1279,21 +1297,6 @@ class ContextProvider implements IContextProvider {
                 }
             }
         }
-
-        if (contextConfig.currentDir) {
-            const dir = await editorContext.getCurrentDirContext(isUnitTestRequest)
-            for (const msg of dir) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
-                        source: 'editor',
-                    })
-                }
-            }
-        }
-
         if (contextConfig.directoryPath) {
             const dir = await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName)
             for (const msg of dir) {
@@ -1307,9 +1310,9 @@ class ContextProvider implements IContextProvider {
                 }
             }
         }
-
-        if (contextConfig.filePath) {
-            for (const msg of await editorContext.getFilePathContext(contextConfig.filePath)) {
+        if (contextConfig.currentDir) {
+            const dir = await editorContext.getCurrentDirContext(isUnitTestRequest)
+            for (const msg of dir) {
                 if (msg.file?.uri && msg.file?.content) {
                     contextItems.push({
                         uri: msg.file?.uri,
@@ -1320,7 +1323,22 @@ class ContextProvider implements IContextProvider {
                 }
             }
         }
-
+        if (contextConfig.openTabs) {
+            for (const msg of await editorContext.getEditorOpenTabsContext()) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextItems.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                        source: 'editor',
+                    })
+                }
+            }
+        }
+        if (contextConfig.codebase) {
+            const codebaseMessages = await this.getEnhancedContext(promptText)
+            contextItems.push(...codebaseMessages)
+        }
         // Context for unit tests requests
         if (isUnitTestRequest && contextItems.length === 0) {
             if (selection?.fileName) {
@@ -1337,34 +1355,6 @@ class ContextProvider implements IContextProvider {
                 }
             }
         }
-
-        if (contextConfig.currentFile) {
-            const selectionContext = this.getVisibleEditorContext()
-            if (selectionContext.length > 0) {
-                contextItems.push(...selectionContext)
-            }
-        }
-
-        if (contextConfig.selection !== false) {
-            const selectionContext = await this.getSmartSelectionContext()
-            if (selectionContext.length > 0) {
-                contextItems.push(...selectionContext)
-            }
-        }
-
-        if (contextConfig.command && contextConfig.output) {
-            const outputMessages = editorContext.getTerminalOutputContext(contextConfig.output)
-            for (const msg of outputMessages) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        source: 'editor',
-                    })
-                }
-            }
-        }
-
         return contextItems
     }
 
