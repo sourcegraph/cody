@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { Attribution, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { GuardrailsPost } from '@sourcegraph/cody-shared/src/guardrails'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
@@ -25,21 +26,6 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
-
-const guardrails = {
-    searchAttribution: (txt: string): Promise<Attribution | Error> => {
-        // No-op implementation: wait 1s and pretend guardrails is not available.
-        return new Promise<Attribution | Error>(resolve => {
-            setTimeout(() => {
-                resolve({
-                    limitHit: true,
-                    repositories: [],
-                })
-                return
-            }, 1000)
-        })
-    },
-}
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<
@@ -82,6 +68,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [vscodeAPI])
     const onShouldBuildSymfIndex = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'symf/index' })
+    }, [vscodeAPI])
+
+    const guardrails = useMemo(() => {
+        return new GuardrailsPost((snippet: string) => {
+            vscodeAPI.postMessage({
+                command: 'attribution-search',
+                snippet,
+            })
+        })
     }, [vscodeAPI])
 
     useEffect(
@@ -170,9 +165,23 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'chatModels':
                         setChatModels(message.models)
                         break
+                    case 'attribution':
+                        if (message.attribution) {
+                            guardrails.notifyAttributionSuccess(message.snippet, {
+                                repositories: message.attribution.repositoryNames.map(name => {
+                                    return { name }
+                                }),
+                                limitHit: message.attribution.limitHit,
+                                totalCount: message.attribution.totalCount,
+                            })
+                        }
+                        if (message.error) {
+                            guardrails.notifyAttributionFailure(message.snippet, new Error(message.error))
+                        }
+                        break
                 }
             }),
-        [errorMessages, view, vscodeAPI]
+        [errorMessages, view, vscodeAPI, guardrails]
     )
 
     useEffect(() => {
