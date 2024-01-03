@@ -54,14 +54,15 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     if (cachedParser) {
         return cachedParser
     }
-    if (!(await isRegularFile(path.resolve(grammarDirectory, 'tree-sitter.wasm')))) {
+
+    const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
+    if (!(await isRegularFile(wasmPath))) {
         return undefined
     }
 
     await ParserImpl.init({ grammarDirectory })
     const parser = new ParserImpl()
 
-    const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
     const languageGrammar = await ParserImpl.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)
