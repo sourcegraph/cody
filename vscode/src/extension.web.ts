@@ -6,7 +6,6 @@ import { CustomPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/custom-p
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
-import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
@@ -28,7 +27,6 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new ExplainCodeDetailed(),
     new ExplainCodeHighLevel(),
     new FindCodeSmells(),
-    new Fixup(),
     new GenerateDocstring(),
     new GenerateTest(),
     new ImproveVariableNames(),

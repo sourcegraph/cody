@@ -1,5 +1,4 @@
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { contentSanitizer } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
@@ -8,6 +7,7 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
+import { contentSanitizer } from './utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
