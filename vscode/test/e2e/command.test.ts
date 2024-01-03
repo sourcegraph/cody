@@ -24,7 +24,7 @@ test('submit command from command palette', async ({ page, sidebar }) => {
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
     // Check if the command shows up with the current file name
-    await chatPanelFrame.getByText('✨ Context: 1 file').click()
+    await chatPanelFrame.getByText('✨ Context: 13 lines from 1 file').click()
 
     // Check if assistant responsed
     await expect(chatPanelFrame.getByText('hello from the assistant')).toBeVisible()

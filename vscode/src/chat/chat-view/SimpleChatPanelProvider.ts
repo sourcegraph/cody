@@ -611,7 +611,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             return executeEdit({ instruction: promptText }, source)
         }
 
-        const displayText = createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
+        const currentFile =
+            (await this.editor.getActiveTextEditorSmartSelection()) ||
+            this.editor.getActiveTextEditorSelectionOrVisibleContent()
+        const displayText = createDisplayTextWithFileSelection(text, currentFile)
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
         await this.saveSession(text)
         // trigger the context progress indicator
