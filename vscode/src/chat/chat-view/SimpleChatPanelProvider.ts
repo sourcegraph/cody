@@ -574,10 +574,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
                 contextSummary,
             }
-            telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+            telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
                 metadata: { ...contextSummary },
             })
         })
