@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../../webviews/NavBar'
@@ -86,33 +85,6 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    /**
-     * Executes a recipe in a view provider.
-     */
-    public async executeRecipe(
-        recipeId: RecipeID,
-        humanChatInput: string,
-        openChatView = true,
-        source?: ChatEventSource
-    ): Promise<void> {
-        logDebug('ChatManager:executeRecipe:called', recipeId)
-        if (!vscode.window.visibleTextEditors.length) {
-            void vscode.window.showErrorMessage('Please open a file before running a command.')
-            return
-        }
-
-        // If chat view is not needed, run the recipe via sidebar view without creating a new panel
-        const isDefaultEditCommands = ['/doc', '/edit'].includes(humanChatInput)
-        if (!openChatView || isDefaultEditCommands) {
-            await this.sidebarViewController.executeRecipe(recipeId, humanChatInput, source)
-            return
-        }
-
-        // Else, open a new chanel panel and run the command in the new panel
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
-    }
-
     public async executeCommand(command: CodyPrompt, source: ChatEventSource): Promise<void> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
@@ -128,7 +100,7 @@ export class ChatManager implements vscode.Disposable {
 
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
-        await chatProvider.executeCommand('custom-prompt', command, source, command.slashCommand)
+        await chatProvider.executeCommand(command, source)
     }
 
     public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

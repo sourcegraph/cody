@@ -119,10 +119,7 @@ export class DefaultPrompter implements IPrompter {
         if (useEnhancedContext || command) {
             // Add additional context from current editor or broader search
             const additionalContextItems = command
-                ? await contextProvider.getCommandContext(
-                      command.prompt + command.additionalInput,
-                      command.context || { codebase: false }
-                  )
+                ? await contextProvider.getCommandContext(command.prompt, command.context || { codebase: false })
                 : await contextProvider.getEnhancedContext(lastMessage.message.text)
             const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                 additionalContextItems,

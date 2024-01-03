@@ -2,8 +2,6 @@ import * as vscode from 'vscode'
 
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
     FeatureFlagProvider,
@@ -23,7 +21,6 @@ import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 type ChatID = string
 
@@ -197,12 +194,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             embeddingsClient: this.embeddingsClient,
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
-            recipeAdapter: new SimpleChatRecipeAdapter(
-                this.options.editor,
-                this.options.intentDetector,
-                this.options.contextProvider,
-                this.options.platform
-            ),
             models,
         })
     }
@@ -219,18 +210,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         if (chat) {
             void this.treeView?.reveal(chat, { select: true, focus: false })
         }
-    }
-
-    /**
-     * Executes a recipe in the chat view.
-     */
-    public async executeRecipe(recipeId: RecipeID, humanChatInput: string, source?: ChatEventSource): Promise<void> {
-        logDebug('ChatPanelsManager:executeRecipe', recipeId)
-
-        // Run command in a new webview to avoid conflicts with context from exisiting chat
-        // Only applies when commands are run outside of chat input box
-        const chatProvider = await this.getChatPanel()
-        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
     }
 
     private async updateTreeViewHistory(): Promise<void> {

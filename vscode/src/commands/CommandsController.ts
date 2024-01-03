@@ -52,6 +52,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     }
 
     /**
+     * TODO bee can be removed once we have moved away from recipe
+     *
      * Gets a CodyPrompt object for the given command runner ID.
      * @param commandRunnerId - The ID of the command runner to get the prompt for.
      * @returns The CodyPrompt object for the command runner, or null if not found.
@@ -92,10 +94,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return null
         }
 
-        if (command.slashCommand === '/ask') {
-            command.prompt = text
-        }
-
+        command.prompt = command.prompt.replace('/ask', '')
         command.additionalInput = commandInput
         command.requestID = requestID
         command.contextFiles = contextFiles
@@ -114,6 +113,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     }
 
     /**
+     * TODO bee can be removed once we have moved away from recipe
      * Adds a new command to the commands map.
      *
      * Looks up the command prompt using the given key in the default prompts map.

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
@@ -281,15 +280,6 @@ const register = async (
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
-    const executeRecipeInChatView = async (
-        recipe: RecipeID,
-        openChatView = true,
-        humanInput = '',
-        source: ChatEventSource = 'editor'
-    ): Promise<void> => {
-        await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
-    }
-
     const executeCommand = async (commandKey: string, source: ChatEventSource = 'editor'): Promise<void> => {
         const command = await commandsController?.findCommand(commandKey)
         if (command) {
@@ -376,9 +366,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
-            await executeRecipeInChatView('chat-question', true, input, source)
-        }),
+        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) =>
+            executeCommand(`/ask ${input}`, source)
+        ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
         }),
@@ -392,9 +382,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-tests', async () => executeCommand('/test')),
         vscode.commands.registerCommand('cody.command.document-code', async () => executeCommand('/doc')),
         vscode.commands.registerCommand('cody.command.smell-code', async () => executeCommand('/smell')),
-        vscode.commands.registerCommand('cody.command.context-search', () =>
-            executeRecipeInChatView('context-search', true)
-        ),
 
         // Account links
         vscode.commands.registerCommand('cody.show-page', (page: string) => {

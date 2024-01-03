@@ -14,7 +14,6 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/prompts/display-text'
 import { extractTestType } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { VSCodeEditorContext } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/VSCodeEditorContext'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -33,7 +32,6 @@ import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-sha
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
-import { CommandsController } from '../../commands/CommandsController'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
@@ -74,7 +72,6 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
 import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
-import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 interface SimpleChatPanelProviderOptions {
     config: Config
@@ -88,7 +85,6 @@ interface SimpleChatPanelProviderOptions {
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    recipeAdapter: SimpleChatRecipeAdapter
     models: ChatModelProvider[]
 }
 
@@ -131,10 +127,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
     // as it is necessary to satisfy the IChatPanelProvider interface.
     public sessionID: string
 
-    private recipeAdapter: SimpleChatRecipeAdapter
-
-    private commandController
-
     constructor({
         config,
         extensionUri,
@@ -148,7 +140,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         editor,
         treeView,
         models,
-        recipeAdapter,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
@@ -161,10 +152,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         this.editor = editor
         this.treeView = treeView
         this.guardrails = guardrails
-        this.recipeAdapter = recipeAdapter
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
-        this.commandController = new CommandsController(extensionUri.fsPath)
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
@@ -374,9 +363,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             case 'get-chat-models':
                 await this.postChatModels()
                 break
-            case 'executeRecipe':
-                void this.executeRecipe(message.recipe)
-                break
             case 'getUserContext':
                 await this.handleContextFiles(message.query)
                 break
@@ -557,9 +543,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
-            const command = (await this.commandController.findCommand(text)) || undefined
+            const command = await this.editor.controllers.command?.findCommand(text)
             if (command) {
-                return this.executeCommand(requestID, command, 'chat', text)
+                return this.executeCommand(command, 'chat', requestID)
             }
         }
 
@@ -599,21 +585,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         }
     }
 
-    public async executeCommand(
-        requestID: string,
-        command: CodyPrompt,
-        source: ChatEventSource,
-        text: string
-    ): Promise<void> {
+    public async executeCommand(command: CodyPrompt, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
         const promptText = command.prompt + command.additionalInput
-
+        // Check for edit commands
         if (command.mode !== 'ask') {
             return executeEdit({ instruction: promptText }, source)
         }
-
-        const currentFile =
-            (await this.editor.getActiveTextEditorSmartSelection()) ||
-            this.editor.getActiveTextEditorSelectionOrVisibleContent()
+        const text = [command.slashCommand, command.additionalInput].join(' ')
+        const currentFile = this.editor.getActiveTextEditorSelectionOrVisibleContent()
         const displayText = createDisplayTextWithFileSelection(text, currentFile)
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
         await this.saveSession(text)
@@ -960,71 +939,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
 
     public setConfiguration(newConfig: Config): void {
         this.config = newConfig
-    }
-
-    public async executeRecipe(
-        recipeID: RecipeID,
-        humanChatInput = '',
-        _source?: ChatEventSource,
-        userInputContextFiles?: ContextFile[],
-        addEnhancedContext = true
-    ): Promise<void> {
-        try {
-            const requestID = uuid.v4()
-            const recipeMessages = await this.recipeAdapter.computeRecipeMessages(
-                requestID,
-                recipeID,
-                humanChatInput,
-                userInputContextFiles,
-                addEnhancedContext
-            )
-            if (!recipeMessages) {
-                return
-            }
-            const displayText = this.editor.getActiveTextEditorSelection()
-                ? createDisplayTextWithFileSelection(humanChatInput, this.editor.getActiveTextEditorSelection())
-                : humanChatInput
-            const { humanMessage, prompt, error } = recipeMessages
-            this.chatModel.addHumanMessage(humanMessage.message, displayText)
-            if (humanMessage.newContextUsed) {
-                this.chatModel.setNewContextUsed(humanMessage.newContextUsed)
-            }
-            await this.saveSession()
-            this.postViewTranscript({ speaker: 'assistant' })
-
-            if (error) {
-                this.chatModel.addBotMessage({ text: typeof error === 'string' ? error : error.message })
-                this.postViewTranscript()
-                return
-            }
-
-            this.sendLLMRequest(prompt, {
-                update: (responseText: string) => {
-                    this.postViewTranscript(
-                        toViewMessage({
-                            message: {
-                                speaker: 'assistant',
-                                text: responseText,
-                            },
-                            newContextUsed: humanMessage.newContextUsed,
-                        })
-                    )
-                },
-                close: (responseText: string) => {
-                    this.addBotMessageWithGuardrails(requestID, responseText)
-                },
-                error: (partialResponse: string, error: Error) => {
-                    if (isAbortError(error)) {
-                        this.chatModel.addBotMessage({ text: partialResponse })
-                    } else {
-                        this.postError(error, 'transcript')
-                    }
-                    this.postViewTranscript()
-                },
-            })
-        } catch (error) {
-            this.postError(new Error(`command ${recipeID} failed: ${error}`))
-        }
     }
 
     public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
