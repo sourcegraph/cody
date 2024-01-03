@@ -27,7 +27,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
-import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -42,7 +41,6 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
-import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -102,17 +100,7 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    // Controller for Non-Stop Cody
-    const fixup = new FixupController()
-    disposables.push(fixup)
-    if (TestSupport.instance) {
-        TestSupport.instance.fixupController.set(fixup)
-    }
-
-    const editor = new VSCodeEditor({
-        fixups: fixup,
-        command: platform.createCommandsController?.(context),
-    })
+    const editor = new VSCodeEditor({ command: platform.createCommandsController?.(context) })
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()

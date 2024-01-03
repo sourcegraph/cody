@@ -4,7 +4,6 @@ import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { MessageProvider } from './chat/MessageProvider'
 import { FixupController } from './non-stop/FixupController'
-import { FixupTask } from './non-stop/FixupTask'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -56,9 +55,5 @@ export class TestSupport {
 
     public async chatTranscript(): Promise<ChatMessage[]> {
         return (await this.messageProvider.get()).transcriptForTesting(this)
-    }
-
-    public async fixupTasks(): Promise<FixupTask[]> {
-        return (await this.messageProvider.get()).fixupTasksForTesting(this)
     }
 }

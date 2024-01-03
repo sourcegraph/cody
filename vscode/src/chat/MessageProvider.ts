@@ -23,7 +23,6 @@ import { showAskQuestionQuickPick } from '../commands/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
-import { FixupTask } from '../non-stop/FixupTask'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { telemetryService } from '../services/telemetry'
@@ -801,17 +800,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return []
         }
         return this.transcript.toChat()
-    }
-
-    public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
-        if (!testing) {
-            console.error('used ForTesting method without test support object')
-            return []
-        }
-        if (!this.editor.controllers.fixups) {
-            throw new Error('no fixup controller')
-        }
-        return this.editor.controllers.fixups.getTasks()
     }
 
     public dispose(): void {

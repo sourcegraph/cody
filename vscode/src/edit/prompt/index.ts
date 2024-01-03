@@ -3,13 +3,13 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { FixupTask } from '../../non-stop/FixupTask'
+import { EditIntent } from '../types'
 
 import { claude } from './claude'
 import { getContextFromIntent } from './context'
@@ -23,7 +23,7 @@ export const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
 } as const
 
 const getInteractionArgsFromIntent = (
-    intent: FixupIntent,
+    intent: EditIntent,
     model: keyof typeof INTERACTION_MODELS,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {

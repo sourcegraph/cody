@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     populateCodeContextTemplate,
@@ -13,11 +12,12 @@ import {
 import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
 import { VSCodeEditor } from '../../editor/vscode-editor'
+import { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
 
 export interface GetContextFromIntentOptions {
-    intent: FixupIntent
+    intent: EditIntent
     selectedText: string
     precedingText: string
     followingText: string

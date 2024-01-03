@@ -2,6 +2,7 @@ import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-re
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
+import { FixupController } from '../non-stop/FixupController'
 import { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
@@ -11,6 +12,7 @@ import { contentSanitizer } from './utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
+    controller: FixupController
 }
 
 export class EditProvider {
@@ -20,7 +22,7 @@ export class EditProvider {
     private insertionInProgress = false
     private insertionPromise: Promise<void> | null = null
 
-    constructor(public options: EditProviderOptions) {}
+    constructor(public config: EditProviderOptions) {}
 
     public async startEdit(): Promise<void> {
         // const requestID = uuid.v4()
@@ -30,9 +32,9 @@ export class EditProvider {
         const model = 'anthropic/claude-2.0'
         const { interaction, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
             model,
-            task: this.options.task,
-            editor: this.options.editor,
-            context: this.options.contextProvider.context,
+            task: this.config.task,
+            editor: this.config.editor,
+            context: this.config.contextProvider.context,
         })
 
         const multiplexer = new BotResponseMultiplexer()
@@ -49,7 +51,7 @@ export class EditProvider {
         })
 
         let textConsumed = 0
-        this.cancelCompletionCallback = this.options.chat.chat(
+        this.cancelCompletionCallback = this.config.chat.chat(
             interaction.toChat(),
             {
                 onChange: text => {
@@ -98,7 +100,7 @@ export class EditProvider {
             return
         }
 
-        return this.options.task.intent === 'add'
+        return this.config.task.intent === 'add'
             ? this.handleFixupInsert(response, isMessageInProgress)
             : this.handleFixupEdit(response, isMessageInProgress)
     }
@@ -108,27 +110,18 @@ export class EditProvider {
      * Will allow the user to view the error in more detail if needed.
      */
     protected handleError(error: Error): void {
-        this.options.editor.controllers.fixups?.error(this.options.task.id, error)
+        this.config.controller.error(this.config.task.id, error)
     }
 
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
-        const controller = this.options.editor.controllers.fixups
-        if (!controller) {
-            return
-        }
-        return controller.didReceiveFixupText(
-            this.options.task.id,
+        return this.config.controller.didReceiveFixupText(
+            this.config.task.id,
             contentSanitizer(response),
             isMessageInProgress ? 'streaming' : 'complete'
         )
     }
 
     private async handleFixupInsert(response: string, isMessageInProgress: boolean): Promise<void> {
-        const controller = this.options.editor.controllers.fixups
-        if (!controller) {
-            return
-        }
-
         this.insertionResponse = response
         this.insertionInProgress = isMessageInProgress
 
@@ -145,13 +138,8 @@ export class EditProvider {
             const responseToSend = this.insertionResponse
             this.insertionResponse = null
 
-            const controller = this.options.editor.controllers.fixups
-            if (!controller) {
-                return
-            }
-
-            this.insertionPromise = controller.didReceiveFixupInsertion(
-                this.options.task.id,
+            this.insertionPromise = this.config.controller.didReceiveFixupInsertion(
+                this.config.task.id,
                 contentSanitizer(responseToSend),
                 this.insertionInProgress ? 'streaming' : 'complete'
             )

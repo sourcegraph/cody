@@ -21,10 +21,6 @@ export class AgentEditor implements Editor {
 
     constructor(private agent: Agent) {}
 
-    public didReceiveFixupText(): Promise<void> {
-        throw new Error('Method not implemented.')
-    }
-
     /** @deprecated Use {@link AgentEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
         const uri = this.getWorkspaceRootUri()

@@ -2,17 +2,18 @@ import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { ContextProvider } from '../chat/ContextProvider'
 import { getEditor } from '../editor/active-editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
+import { FixupController } from '../non-stop/FixupController'
 import { FixupTask } from '../non-stop/FixupTask'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
+import { EditIntent } from './types'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -21,18 +22,21 @@ export interface EditManagerOptions {
 }
 
 export class EditManager implements vscode.Disposable {
+    private controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new Map<FixupTask, EditProvider>()
 
     constructor(public options: EditManagerOptions) {
+        this.controller = new FixupController()
         this.disposables.push(
+            this.controller,
             vscode.commands.registerCommand(
                 'cody.command.edit-code',
                 (
                     args: {
                         range?: vscode.Range
                         instruction?: string
-                        intent?: FixupIntent
+                        intent?: EditIntent
                         document?: vscode.TextDocument
                         insertMode?: boolean
                     },
@@ -43,11 +47,6 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
-        const controller = this.options.editor.controllers.fixups
-        if (!controller) {
-            return
-        }
-
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
 
@@ -69,8 +68,15 @@ export class EditManager implements vscode.Disposable {
         }
 
         const task = args.instruction?.trim()
-            ? await controller.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
-            : await controller.promptUserForTask(args, source)
+            ? await this.controller.createTask(
+                  document.uri,
+                  args.instruction,
+                  range,
+                  args.intent,
+                  args.insertMode,
+                  source
+              )
+            : await this.controller.promptUserForTask(args, source)
         if (!task) {
             return
         }
@@ -83,7 +89,7 @@ export class EditManager implements vscode.Disposable {
         let provider = this.editProviders.get(task)
 
         if (!provider) {
-            provider = new EditProvider({ task, ...this.options })
+            provider = new EditProvider({ task, controller: this.controller, ...this.options })
             this.editProviders.set(task, provider)
         }
 
