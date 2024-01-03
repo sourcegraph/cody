@@ -332,7 +332,8 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         contextResult?.context ?? [],
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
-
+    const asyncRequestResult = await mockAsyncRequest()
+    console.log('asyncRequestResult', asyncRequestResult)
     CompletionLogger.loaded(logId, reqContext, completions, source, isDotComUser)
 
     return {
@@ -340,6 +341,15 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         items: completions,
         source,
     }
+}
+
+// Simulates an async request that takes 2 seconds to respond with true
+async function mockAsyncRequest(): Promise<boolean> {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(true)
+        }, 2000)
+    })
 }
 
 interface GetCompletionProvidersParams
