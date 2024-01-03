@@ -1,6 +1,6 @@
-import { exec } from 'child_process'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import os from 'os'
-import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
