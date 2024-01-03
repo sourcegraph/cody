@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage, ChatModelProvider } from '@sourcegraph/cody-shared'
+import { ChatMessage, ChatModelProvider, Guardrails } from '@sourcegraph/cody-shared'
 
 import {
     ApiPostMessage,
@@ -46,6 +46,7 @@ export const Transcript: React.FunctionComponent<
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
+        guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -77,6 +78,7 @@ export const Transcript: React.FunctionComponent<
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    guardrails,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -181,6 +183,7 @@ export const Transcript: React.FunctionComponent<
                     ChatButtonComponent={ChatButtonComponent}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    guardrails={guardrails}
                 />
             )
         }
