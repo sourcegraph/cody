@@ -1,0 +1,15 @@
+name: Semgrep
+
+on: [push]
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run Semgrep
+      run: |
+        semgrep --version
