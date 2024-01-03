@@ -57,6 +57,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatModels, setChatModels] = useState<ChatModelProvider[]>()
 
+    const [chatEnabled, setChatEnabled] = useState<boolean>(true)
+
     const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
@@ -109,6 +111,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         if (message.authStatus.isLoggedIn) {
                             vscodeAPI.postMessage({ command: 'get-chat-models' })
                         }
+                        break
+                    case 'setChatEnabledConfigFeature':
+                        setChatEnabled(message.data)
                         break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
@@ -266,6 +271,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
                                 <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
                                     <Chat
+                                        chatEnabled={chatEnabled}
                                         userInfo={userAccountInfo}
                                         messageInProgress={messageInProgress}
                                         messageBeingEdited={messageBeingEdited}
