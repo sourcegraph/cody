@@ -14,9 +14,11 @@ export interface GetLLMInteractionOptions {
     fileName: string
 }
 
+type LLMInteractionBuilder = (options: GetLLMInteractionOptions) => LLMInteraction
+
 export interface EditLLMInteraction {
-    getEdit(options: GetLLMInteractionOptions): LLMInteraction
-    getDoc(options: GetLLMInteractionOptions): LLMInteraction
-    getFix(options: GetLLMInteractionOptions): LLMInteraction
-    getAdd(options: GetLLMInteractionOptions): LLMInteraction
+    getEdit: LLMInteractionBuilder
+    getDoc: LLMInteractionBuilder
+    getFix: LLMInteractionBuilder
+    getAdd: LLMInteractionBuilder
 }
