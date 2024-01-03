@@ -9,6 +9,7 @@ import {
     ChatModelProvider,
     CodyPrompt,
     ContextFile,
+    Guardrails,
     isDefined,
 } from '@sourcegraph/cody-shared'
 
@@ -72,6 +73,7 @@ interface ChatProps extends ChatClassNames {
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
     userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
+    guardrails?: Guardrails
 }
 
 export interface UserAccountInfo {
@@ -227,6 +229,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    guardrails,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -566,6 +569,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    guardrails={guardrails}
                 />
             )}
 

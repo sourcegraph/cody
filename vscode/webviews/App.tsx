@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import { Attribution, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
@@ -26,8 +26,25 @@ import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+const guardrails = {
+    searchAttribution: (txt: string): Promise<Attribution | Error> => {
+        // No-op implementation: wait 1s and pretend guardrails is not available.
+        return new Promise<Attribution | Error>(resolve => {
+            setTimeout(() => {
+                resolve({
+                    limitHit: true,
+                    repositories: [],
+                })
+                return
+            }, 1000)
+        })
+    },
+}
+
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -279,6 +296,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        guardrails={config.experimentalGuardrails ? guardrails : undefined}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
