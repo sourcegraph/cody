@@ -70,6 +70,7 @@ export type ChatEventSource =
     | 'editor'
     | 'menu'
     | 'code-action'
+    | 'commands'
     | 'custom-commands'
     | 'test'
     | 'code-lens'
