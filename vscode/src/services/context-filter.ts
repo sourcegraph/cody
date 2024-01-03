@@ -11,7 +11,7 @@ import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 const utf8 = new TextDecoder('utf-8')
 
 /**
- * Parses `.code/.ignore` files from the workspace and sets up a watcher to refresh
+ * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
  *
  * This is called once the git extension has started up
