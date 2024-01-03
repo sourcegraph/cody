@@ -10,21 +10,23 @@ import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/Embe
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
+import { getEditor } from '../editor/active-editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
 import { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
-import { gitDirectoryUri, repositoryRemoteUrl } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri, gitDirectoryUri } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
+import { SidebarChatWebview } from './chat-view/SidebarViewController'
 import { GraphContextProvider } from './GraphContextProvider'
 import { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
@@ -46,6 +48,7 @@ export type Config = Pick<
     | 'experimentalSymfContext'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
+    | 'internalUnstable'
 >
 
 export enum ContextEvent {
@@ -223,7 +226,10 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
      */
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
-            const editorContext = this.editor.getActiveTextEditor()
+            const editor = getEditor()
+            const activeEditor = editor.active
+            const fileName = vscode.workspace.asRelativePath(activeEditor?.document?.uri.fsPath || '')
+
             // TODO(dpc): Remove this when enhanced context status encapsulates this information.
             await this.webview?.postMessage({
                 type: 'contextStatus',
@@ -233,8 +239,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
-                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selectionRange: editorContext?.selectionRange,
+                    filePath: editor.ignored ? 'ignored' : fileName,
+                    selectionRange: editor.ignored ? undefined : activeEditor?.selection,
                     supportsKeyword: true,
                 },
             })
@@ -305,9 +311,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
 /**
  * Gets codebase context for the current workspace.
- * @param config Cody configuration
- * @param rgPath Path to rg (ripgrep) executable
- * @param editor Editor instance
  * @returns CodebaseContext if a codebase can be determined, else null
  */
 async function getCodebaseContext(
@@ -325,12 +328,16 @@ async function getCodebaseContext(
     if (!workspaceRoot) {
         return null
     }
-    const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
+    const currentFile = getEditor()?.active?.document?.uri
+    // Get codebase from config or fallback to getting codebase name from current file URL
+    // Always use the codebase from config as this is manually set by the user
+    const codebase = config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
     if (!codebase) {
         return null
     }
+
+    // Map the ignore rules for the workspace with the codebase name
+    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot.fsPath)
 
     // TODO: When we remove this class (ContextProvider), SimpleChatContextProvider
     // should be updated to invoke localEmbeddings.load when the codebase changes

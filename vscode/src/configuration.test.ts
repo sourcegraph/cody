@@ -42,6 +42,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: null,
+            internalUnstable: false,
             autocompleteTimeouts: {},
             testingLocalEmbeddingsEndpoint: undefined,
             testingLocalEmbeddingsIndexLibraryPath: undefined,
@@ -122,6 +123,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.agent.ide':
                         return undefined
+                    case 'cody.internal.unstable':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -150,6 +153,7 @@ describe('getConfiguration', () => {
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
+            internalUnstable: false,
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,

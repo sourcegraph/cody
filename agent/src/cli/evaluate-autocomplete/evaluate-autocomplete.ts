@@ -2,12 +2,12 @@ import * as fspromises from 'fs/promises'
 import * as path from 'path'
 
 import * as commander from 'commander'
-import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
+import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
@@ -246,15 +246,4 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     }
     await client.request('shutdown', null)
     client.notify('exit', null)
-}
-
-export function matchesGlobPatterns(includeGlobs: string[], excludeGlobs: string[], value: string): boolean {
-    const matchingIncludePattern =
-        includeGlobs.length > 0 ? !!includeGlobs.find(includePattern => minimatch(value, includePattern)) : true
-    if (!matchingIncludePattern) {
-        return false
-    }
-
-    const matchingExcludePatttern = excludeGlobs.find(excludePattern => minimatch(value, excludePattern))
-    return !matchingExcludePatttern
 }

@@ -61,7 +61,7 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        userInfo?: UserAccountInfo
+        userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
     } & TranscriptItemClassNames
