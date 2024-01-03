@@ -70,7 +70,12 @@ describe('RequestManager', () => {
         const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider, suffix?: string) =>
-            requestManager.request(docState(prefix, suffix), [provider], [])
+            requestManager.request({
+                requestParams: docState(prefix, suffix),
+                providers: [provider],
+                context: [],
+                isCacheEnabled: true,
+            })
     })
 
     it('resolves a single request', async () => {
