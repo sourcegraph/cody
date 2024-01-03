@@ -280,11 +280,20 @@ const register = async (
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
+    // Execute Cody Commands and Cody Custom Commands
     const executeCommand = async (commandKey: string, source: ChatEventSource = 'editor'): Promise<void> => {
         const command = await commandsController?.findCommand(commandKey)
-        if (command) {
-            await chatManager.executeCommand(command, source)
+        if (!command) {
+            return
         }
+        // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
+        // This is because findCommand will start the CommandRunner,
+        // which would send all fixup requests to the FixupController
+        if (command.mode !== 'ask') {
+            return
+        }
+
+        return chatManager.executeCommand(command, source)
     }
 
     const executeFixup = async (

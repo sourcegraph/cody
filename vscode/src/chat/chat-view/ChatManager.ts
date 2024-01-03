@@ -92,12 +92,6 @@ export class ChatManager implements vscode.Disposable {
             return
         }
 
-        // If it's a fixup command, run the recipe via sidebar view without creating a new panel
-        if (command.mode === 'edit' || command.mode === 'insert') {
-            await this.sidebarViewController.executeRecipe('custom-prompt', command.prompt, source)
-            return
-        }
-
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
         await chatProvider.executeCommand(command, source)

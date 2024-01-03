@@ -581,16 +581,22 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
     }
 
     public async executeCommand(command: CodyPrompt, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
-        const promptText = command.prompt + command.additionalInput
+        const promptText = [command.prompt, command.additionalInput].join(' ')
         // Check for edit commands
         if (command.mode !== 'ask') {
             return executeEdit({ instruction: promptText }, source)
         }
-        const text = [command.slashCommand, command.additionalInput].join(' ')
+        const inputText = [command.slashCommand, command.additionalInput].join(' ')
         const currentFile = this.editor.getActiveTextEditorSelectionOrVisibleContent()
-        const displayText = createDisplayTextWithFileSelection(text, currentFile)
+        if (!currentFile) {
+            if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
+                this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
+                return
+            }
+        }
+        const displayText = createDisplayTextWithFileSelection(inputText, currentFile)
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
-        await this.saveSession(text)
+        await this.saveSession(inputText)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(
@@ -604,7 +610,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     requestID,
                     chatModel: this.chatModel.modelID,
                     // 🚨 SECURITY: included only for DotCom users.
-                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
+                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
                 telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
@@ -620,7 +626,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         if (this.webviewPanel) {
             this.webviewPanel.title =
                 this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
-                getChatPanelTitle(text)
+                getChatPanelTitle(inputText)
         }
     }
 
