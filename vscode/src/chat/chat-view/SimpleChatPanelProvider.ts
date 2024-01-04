@@ -517,6 +517,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         })
     }
 
+    /**
+     * Handles a message submitted by the user.
+     *
+     * Validates the message, checks for slash commands, edit commands,
+     * and sends the message to be handled like a regular chat request.
+     */
     public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
@@ -536,9 +542,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             if (text.match(/^\/edit(\s)?/)) {
                 return executeEdit({ instruction: text.replace(/^\/(edit)/, '').trim() }, 'chat')
             }
-            if (text.match(/^\/doc(\s)?/)) {
-                return vscode.commands.executeCommand('cody.command.document-code')
-            }
             if (text === '/commands-settings') {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
@@ -549,62 +552,65 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             }
         }
 
-        const displayText = userContextFiles?.length
-            ? createDisplayTextWithFileLinks(userContextFiles, text)
-            : createDisplayTextWithFileSelection(text, this.editor.getActiveTextEditorSelection())
-        this.chatModel.addHumanMessage({ text }, displayText)
-        await this.saveSession(text)
-        // trigger the context progress indicator
-        this.postViewTranscript({ speaker: 'assistant' })
-        await this.generateAssistantResponse(requestID, userContextFiles, addEnhancedContext, contextSummary => {
-            if (submitType !== 'user') {
-                return
-            }
-
-            const authStatus = this.authProvider.getAuthStatus()
-
-            const properties = {
-                requestID,
-                chatModel: this.chatModel.modelID,
-                // 🚨 SECURITY: included only for DotCom users.
-                promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
-                contextSummary,
-            }
-            telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
-                hasV2Event: true,
-            })
-            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
-                metadata: { ...contextSummary },
-            })
-        })
-        // Set the title of the webview panel to the current text
-        this.updateWebviewPanelTitle(text)
+        await this.handleChatRequest(requestID, text, submitType, userContextFiles, addEnhancedContext)
     }
 
+    /**
+     * Handles executing a chat command from the user.
+     *
+     * Validates the command, checks for edit commands,
+     * generates a chat request from the command,
+     * and sends it to be handled like a regular chat request.
+     */
     public async handleCommands(command: CodyPrompt, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
-        const promptText = [command.prompt, command.additionalInput].join(' ')
+        if (command && !this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
+            if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
+                return this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
+            }
+        }
+        const promptText = [command.prompt, command.additionalInput].join(' ')?.trim()
         // Check for edit commands
         if (command.mode !== 'ask') {
             return executeEdit({ instruction: promptText }, source)
         }
-        const inputText = [command.slashCommand, command.additionalInput].join(' ')
-        const currentFile = this.editor.getActiveTextEditorSelectionOrVisibleContent()
-        if (!currentFile) {
-            if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
-                this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
-                return
-            }
-        }
-        const displayText = createDisplayTextWithFileSelection(inputText, currentFile)
+        const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
+
+        await this.handleChatRequest(requestID, inputText, 'user', [], false, command)
+    }
+
+    /**
+     * Handles a chat request from chat input or a command.
+     *
+     * Saves the chat session, posts a transcript update, generates the
+     * assistant's response, logs telemetry, and updates the panel title.
+     */
+    private async handleChatRequest(
+        requestID: string,
+        inputText: string,
+        submitType: 'user' | 'suggestion' | 'example',
+        userContextFiles: ContextFile[],
+        addEnhancedContext: boolean,
+        command?: CodyPrompt
+    ): Promise<void> {
+        // The text we will show to the user in UI
+        const displayText = userContextFiles?.length
+            ? createDisplayTextWithFileLinks(userContextFiles, inputText)
+            : createDisplayTextWithFileSelection(inputText, await this.editor.getActiveTextEditorSmartSelection())
+        // The text we will use to send to LLM
+        const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
         await this.saveSession(inputText)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })
         await this.generateAssistantResponse(
             requestID,
-            [],
-            false,
+            userContextFiles,
+            addEnhancedContext,
             contextSummary => {
+                if (submitType !== 'user') {
+                    return
+                }
+
                 const authStatus = this.authProvider.getAuthStatus()
 
                 const properties = {
@@ -614,10 +620,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
-                telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+                telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
                     hasV2Event: true,
                 })
-                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
                     metadata: { ...contextSummary },
                 })
             },
@@ -1169,10 +1175,16 @@ class ContextProvider implements IContextProvider {
                 contextItems.push(...selectionContext)
             }
         }
-        if (contextConfig.currentFile) {
-            const selectionContext = this.getVisibleEditorContext()
-            if (selectionContext.length > 0) {
-                contextItems.push(...selectionContext)
+        if (contextConfig.currentFile && selection?.fileUri) {
+            for (const msg of await editorContext.getFilePathContext(selection?.fileUri?.fsPath)) {
+                if (msg.file?.uri && msg.file?.content) {
+                    contextItems.push({
+                        uri: msg.file?.uri,
+                        text: msg.file?.content,
+                        range: viewRangeToRange(msg.file?.range),
+                        source: 'editor',
+                    })
+                }
             }
         }
         if (contextConfig.filePath) {
