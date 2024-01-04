@@ -24,7 +24,7 @@ export function wrapInActiveSpan<R>(name: string, fn: () => R): R {
             return response
         }
 
-        const catchError = (error: unknown): void => {
+        const catchError = (error: unknown): never => {
             span.recordException(error as Exception)
             span.setStatus({ code: SpanStatusCode.ERROR })
             throw error
@@ -39,8 +39,7 @@ export function wrapInActiveSpan<R>(name: string, fn: () => R): R {
 
             return handleSuccess(response)
         } catch (error) {
-            catchError(error)
-            throw error
+            return catchError(error)
         } finally {
             span.end()
         }

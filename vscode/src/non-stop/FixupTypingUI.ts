@@ -4,7 +4,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
 import { ExecuteEditArguments } from '../edit/execute'
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
@@ -54,7 +54,10 @@ export class FixupTypingUI {
     }
 
     public async show(args: ExecuteEditArguments, source: ChatEventSource): Promise<FixupTask | null> {
-        const editor = getActiveEditor()
+        const editor = getEditor().active
+        if (!editor) {
+            return null
+        }
         const document = args.document || editor?.document
         const range = args.range || editor?.selection
         if (!document || !range) {

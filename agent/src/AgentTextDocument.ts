@@ -37,6 +37,9 @@ export class AgentTextDocument implements vscode.TextDocument {
     public version = 0
     public readonly isDirty: boolean = false
     public readonly isClosed: boolean = false
+    public static from(uri: vscode.Uri, content: string): AgentTextDocument {
+        return new AgentTextDocument(TextDocumentWithUri.from(uri, { content }))
+    }
 
     public save(): Thenable<boolean> {
         throw new Error('Method not implemented.')

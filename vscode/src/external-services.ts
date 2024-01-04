@@ -37,6 +37,7 @@ type ExternalServicesConfiguration = Pick<
     | 'accessToken'
     | 'debugEnable'
     | 'experimentalLocalSymbols'
+    | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig
 

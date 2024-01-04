@@ -4,49 +4,14 @@ import type * as vscode from 'vscode'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from './configuration'
+import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
 
 describe('getConfiguration', () => {
     it('returns default values when no config set', () => {
         const config: Pick<vscode.WorkspaceConfiguration, 'get'> = {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
-        expect(getConfiguration(config)).toEqual({
-            proxy: null,
-            codebase: '',
-            customHeaders: {},
-            chatPreInstruction: '',
-            useContext: 'embeddings',
-            autocomplete: true,
-            autocompleteLanguages: {
-                '*': true,
-            },
-            commandCodeLenses: false,
-            editorTitleCommandIcon: true,
-            experimentalChatPredictions: false,
-            experimentalGuardrails: false,
-            experimentalLocalSymbols: false,
-            experimentalSimpleChatContext: true,
-            experimentalSymfContext: false,
-            codeActions: true,
-            isRunningInsideAgent: false,
-            agentIDE: undefined,
-            debugEnable: false,
-            debugVerbose: false,
-            debugFilter: null,
-            telemetryLevel: 'all',
-            autocompleteAdvancedProvider: null,
-            autocompleteAdvancedModel: null,
-            autocompleteCompleteSuggestWidgetSelection: true,
-            autocompleteFormatOnAccept: true,
-            autocompleteExperimentalSyntacticPostProcessing: true,
-            autocompleteExperimentalDynamicMultilineCompletions: false,
-            autocompleteExperimentalHotStreak: false,
-            autocompleteExperimentalGraphContext: null,
-            autocompleteTimeouts: {},
-            testingLocalEmbeddingsEndpoint: undefined,
-            testingLocalEmbeddingsIndexLibraryPath: undefined,
-            testingLocalEmbeddingsModel: undefined,
-        } satisfies Configuration)
+        expect(getConfiguration(config)).toEqual(DEFAULT_VSCODE_SETTINGS)
     })
 
     it('reads values from config', () => {
@@ -88,6 +53,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.symfContext':
                         return false
+                    case 'cody.experimental.tracing':
+                        return true
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -122,6 +89,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.agent.ide':
                         return undefined
+                    case 'cody.internal.unstable':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -144,12 +113,14 @@ describe('getConfiguration', () => {
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
             experimentalSymfContext: false,
+            experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
             codeActions: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
+            internalUnstable: false,
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,

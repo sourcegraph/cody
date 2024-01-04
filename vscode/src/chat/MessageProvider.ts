@@ -13,7 +13,7 @@ import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/intera
 import { ChatEventSource, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -228,9 +228,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         recipe.type === RecipeType.Edit
                             ? reformatBotMessageForEdit(text, responsePrefix)
                             : reformatBotMessageForChat(text, responsePrefix)
-                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    const annotatedText = await this.guardrailsAnnotateAttributions(displayText)
-                    this.transcript.addAssistantResponse(text, annotatedText)
+                    this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response
@@ -469,8 +467,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
         const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
-        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
+        telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, properties, { hasV2Event: true })
+        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'recipe-used', { metadata: { ...contextSummary } })
     }
 
     protected async runRecipeForSuggestion(
@@ -506,7 +504,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
         const args = { requestID: this.currentRequestID, source }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, args, { hasV2Event: true })
+        telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, args, { hasV2Event: true })
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -539,32 +537,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 console.error(error, statusCode)
             },
         })
-    }
-
-    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
-        if (!this.contextProvider.config.experimentalGuardrails) {
-            return text
-        }
-
-        const result = await annotateAttribution(this.guardrails, text)
-
-        // Only log telemetry if we did work (ie had to annotate something).
-        if (result.codeBlocks > 0) {
-            telemetryService.log(
-                'CodyVSCodeExtension:guardrails:annotate',
-                {
-                    codeBlocks: result.codeBlocks,
-                    duration: result.duration,
-                },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.guardrails.annotate', 'executed', {
-                // Convert nanoseconds to milliseconds to match other telemetry.
-                metadata: { codeBlocks: result.codeBlocks, durationMs: result.duration / 1000000 },
-            })
-        }
-
-        return result.text
     }
 
     /**

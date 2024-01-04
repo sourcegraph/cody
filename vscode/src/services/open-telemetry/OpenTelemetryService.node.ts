@@ -1,3 +1,4 @@
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
@@ -12,6 +13,8 @@ import { version } from '../../version'
 
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
+type OpenTelemetryServiceConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
+
 export class OpenTelemetryService {
     private sdk: NodeSDK | undefined
     private lastTraceUrl: string | undefined
@@ -19,17 +22,21 @@ export class OpenTelemetryService {
     // be run in parallel
     private reconfigurePromiseMutex: Promise<void> = Promise.resolve()
 
-    constructor(protected config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) {
+    constructor(protected config: OpenTelemetryServiceConfig) {
         this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(() => this.reconfigure())
     }
 
-    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>): void {
+    public onConfigurationChange(newConfig: OpenTelemetryServiceConfig): void {
         this.config = newConfig
         this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(() => this.reconfigure())
     }
 
     private async reconfigure(): Promise<void> {
-        if (!(await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))) {
+        const isEnabled =
+            this.config.experimentalTracing ||
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))
+
+        if (!isEnabled) {
             return
         }
 
@@ -38,6 +45,7 @@ export class OpenTelemetryService {
             return
         }
         this.lastTraceUrl = traceUrl
+        diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR)
 
         await this.sdk?.shutdown()
         this.sdk = undefined

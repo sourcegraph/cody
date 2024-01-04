@@ -61,7 +61,11 @@ export async function newInteractionWithError(errorMsg: string, displayText = ''
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', displayText },
-            { speaker: 'assistant', displayText: errorMsg, error: errorMsg },
+            {
+                speaker: 'assistant',
+                displayText: errorMsg,
+                error: { isChatErrorGuard: 'isChatErrorGuard', name: 'newInteractionWithError', message: errorMsg },
+            },
             Promise.resolve([]),
             []
         )
