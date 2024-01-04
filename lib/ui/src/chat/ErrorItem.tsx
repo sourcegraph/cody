@@ -46,8 +46,8 @@ export const RequestErrorItem: React.FunctionComponent<{
     error: string
 }> = React.memo(function ErrorItemContent({ error }) {
     return (
-        <div className="cody-chat-error">
-            <span>Request failed: </span>
+        <div className={styles.requestError}>
+            <span className={styles.requestErrorTitle}>Request Failed: </span>
             {error}
         </div>
     )

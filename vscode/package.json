@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.0.4",
+  "version": "1.0.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -884,6 +884,12 @@
           "markdownDescription": "Path to symf binary",
           "default": ""
         },
+        "cody.experimental.tracing": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable OpenTelemetry tracing",
+          "default": false
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -922,7 +928,15 @@
             "fireworks",
             "unstable-openai"
           ],
-          "markdownDescription": "The provider used for code autocomplete. Check the Cody output channel for error messages if autocomplete is not working as expected."
+          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
+        },
+        "cody.autocomplete.advanced.serverEndpoint": {
+          "type": "string",
+          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
+        },
+        "cody.autocomplete.advanced.accessToken": {
+          "type": "string",
+          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.model": {
           "type": "string",
@@ -1011,6 +1025,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.45.1",
     "@opentelemetry/resources": "^1.18.1",
