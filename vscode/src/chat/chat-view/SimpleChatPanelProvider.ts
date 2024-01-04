@@ -517,7 +517,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         })
     }
 
-    private async handleHumanMessageSubmitted(
+    public async handleHumanMessageSubmitted(
         requestID: string,
         text: string,
         submitType: 'user' | 'suggestion' | 'example',
