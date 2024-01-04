@@ -27,14 +27,16 @@ export function wrapInActiveSpan<R>(name: string, fn: () => R): R {
         const catchError = (error: unknown): void => {
             span.recordException(error as Exception)
             span.setStatus({ code: SpanStatusCode.ERROR })
-            throw error
         }
 
         try {
             const response = fn()
 
             if (response instanceof Promise) {
-                return response.then(handleSuccess, catchError) as R
+                return response.then(handleSuccess, error => {
+                    catchError(error)
+                    throw error
+                }) as R
             }
 
             return handleSuccess(response)
