@@ -5,9 +5,18 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
 import { ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
+import { getFileContextFiles } from '../editor/utils/editor-context'
 
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
+
+function removeAfterLastAt(str: string): string {
+    const lastIndex = str.lastIndexOf('@')
+    if (lastIndex === -1) {
+        return str
+    } // Return the original string if "@" is not found
+    return str.slice(0, lastIndex)
+}
 
 /**
  * The UI for creating non-stop fixup tasks by typing instructions.
@@ -37,6 +46,19 @@ export class FixupTypingUI {
             quickPick.hide()
         })
 
+        quickPick.onDidChangeValue(async value => {
+            const cancellation = new vscode.CancellationTokenSource()
+            const regex = /@(\w+)/
+            const match = value.match(regex)
+            if (match) {
+                const instruction = match[1]
+                const fileResults = await getFileContextFiles(instruction, 5, cancellation.token)
+                quickPick.items = fileResults.map(file => ({ alwaysShow: true, label: file.path?.relative || 'eee' }))
+            } else {
+                quickPick.items = []
+            }
+        })
+
         quickPick.show()
 
         return new Promise(resolve =>
@@ -44,6 +66,13 @@ export class FixupTypingUI {
                 const instruction = quickPick.value.trim()
                 if (!instruction) {
                     // noop
+                    return
+                }
+
+                if (quickPick.selectedItems.length > 0) {
+                    const cleanValue = removeAfterLastAt(instruction).trim()
+                    // Don't accept, update value to include item
+                    quickPick.value = `${cleanValue} ${quickPick.selectedItems[0].label}`
                     return
                 }
 
