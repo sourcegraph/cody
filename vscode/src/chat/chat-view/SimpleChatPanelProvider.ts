@@ -727,9 +727,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     this.addBotMessage(requestID, content)
                 },
                 error: (partialResponse, error) => {
-                    if (isAbortError(error)) {
-                        this.chatModel.addBotMessage({ text: partialResponse })
-                    } else {
+                    this.addBotMessage(requestID, partialResponse)
+                    if (!isAbortError(error)) {
                         this.postError(error, 'transcript')
                     }
                     this.postViewTranscript()
@@ -873,6 +872,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        logDebug('SimpleChatPanelProvider: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
@@ -1185,7 +1185,7 @@ class ContextProvider implements IContextProvider {
             contextMessages.push(...(await editorContext.getEditorOpenTabsContext()))
         }
         // Additional context for unit tests requests
-        if (isUnitTestRequest && contextItems.length === 0) {
+        if (isUnitTestRequest && contextItems.length < 2) {
             if (selection?.fileName) {
                 contextMessages.push(...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)))
             }

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import {
@@ -225,6 +226,10 @@ class PromptBuilder {
         const ignored: ContextItem[] = []
         const duplicate: ContextItem[] = []
         for (const contextItem of contextItems) {
+            if (isCodyIgnoredFile(contextItem.uri)) {
+                ignored.push(contextItem)
+                continue
+            }
             const id = contextItemId(contextItem)
             if (this.seenContext.has(id)) {
                 duplicate.push(contextItem)
