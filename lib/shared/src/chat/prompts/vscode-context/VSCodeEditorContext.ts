@@ -219,7 +219,7 @@ export class VSCodeEditorContext {
                 file: {
                     content: commandOutput,
                     fileName: 'Terminal Output',
-                    uri: vscode.Uri.file('terminal://output'),
+                    uri: vscode.Uri.file('terminal-output'),
                     source: 'terminal',
                 },
             },

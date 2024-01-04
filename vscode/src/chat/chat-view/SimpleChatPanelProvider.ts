@@ -1149,6 +1149,7 @@ class ContextProvider implements IContextProvider {
             : this.editor.getActiveTextEditorSelectionOrVisibleContent()
         const editorContext = new VSCodeEditorContext(this.editor, selection)
 
+        const contextMessages: ContextMessage[] = []
         const contextItems: ContextItem[] = []
 
         const workspaceRootUri = this.editor.getWorkspaceRootUri()
@@ -1158,16 +1159,7 @@ class ContextProvider implements IContextProvider {
             return []
         }
         if (contextConfig.command && contextConfig.output) {
-            const outputMessages = editorContext.getTerminalOutputContext(contextConfig.output)
-            for (const msg of outputMessages) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        source: 'editor',
-                    })
-                }
-            }
+            contextMessages.push(...editorContext.getTerminalOutputContext(contextConfig.output))
         }
         if (contextConfig.selection !== false) {
             const selectionContext = await this.getSmartSelectionContext()
@@ -1176,87 +1168,44 @@ class ContextProvider implements IContextProvider {
             }
         }
         if (contextConfig.currentFile && selection?.fileUri) {
-            for (const msg of await editorContext.getFilePathContext(selection?.fileUri?.fsPath)) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
-                        source: 'editor',
-                    })
-                }
-            }
+            contextMessages.push(...(await editorContext.getFilePathContext(selection?.fileUri?.fsPath)))
         }
         if (contextConfig.filePath) {
-            for (const msg of await editorContext.getFilePathContext(contextConfig.filePath)) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
-                        source: 'editor',
-                    })
-                }
-            }
+            contextMessages.push(...(await editorContext.getFilePathContext(contextConfig.filePath)))
         }
         if (contextConfig.directoryPath) {
-            const dir = await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName)
-            for (const msg of dir) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
-                        source: 'editor',
-                    })
-                }
-            }
+            contextMessages.push(
+                ...(await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName))
+            )
         }
         if (contextConfig.currentDir) {
-            const dir = await editorContext.getCurrentDirContext(isUnitTestRequest)
-            for (const msg of dir) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
-                        source: 'editor',
-                    })
-                }
-            }
+            contextMessages.push(...(await editorContext.getCurrentDirContext(isUnitTestRequest)))
         }
         if (contextConfig.openTabs) {
-            for (const msg of await editorContext.getEditorOpenTabsContext()) {
-                if (msg.file?.uri && msg.file?.content) {
-                    contextItems.push({
-                        uri: msg.file?.uri,
-                        text: msg.file?.content,
-                        range: viewRangeToRange(msg.file?.range),
-                        source: 'editor',
-                    })
-                }
-            }
+            contextMessages.push(...(await editorContext.getEditorOpenTabsContext()))
         }
-        if (contextConfig.codebase) {
-            const codebaseMessages = await this.getEnhancedContext(promptText)
-            contextItems.push(...codebaseMessages)
-        }
-        // Context for unit tests requests
+        // Additional context for unit tests requests
         if (isUnitTestRequest && contextItems.length === 0) {
             if (selection?.fileName) {
-                const importsContext = await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)
-                for (const msg of importsContext) {
-                    if (msg.file?.uri && msg.file?.content) {
-                        contextItems.push({
-                            uri: msg.file?.uri,
-                            text: msg.file?.content,
-                            range: viewRangeToRange(msg.file?.range),
-                            source: 'editor',
-                        })
-                    }
-                }
+                contextMessages.push(...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)))
             }
         }
+        // Turn ContextMessages to ContextItems
+        for (const msg of contextMessages) {
+            if (msg.file?.uri && msg.file?.content) {
+                contextItems.push({
+                    uri: msg.file?.uri,
+                    text: msg.file?.content,
+                    range: viewRangeToRange(msg.file?.range),
+                    source: msg.file?.source || 'editor',
+                })
+            }
+        }
+        // Add codebase ContextItems last
+        if (contextConfig.codebase) {
+            contextItems.push(...(await this.getEnhancedContext(promptText)))
+        }
+
         return contextItems
     }
 
