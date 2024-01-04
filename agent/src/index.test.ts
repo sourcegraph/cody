@@ -216,7 +216,7 @@ describe('Agent', () => {
         messages.push(message)
     })
 
-    it('allows us to send a chat message', async () => {
+    it('allows us to send a very short chat message', async () => {
         await openFile(animalUri)
         const id = await client.request('chat/new', null)
         const reply = await client.request('chat/submitMessage', {
@@ -240,6 +240,50 @@ describe('Agent', () => {
           }
         `
         )
+    }, 20_000)
+
+    it('allows us to send a longer chat message', async () => {
+        await openFile(animalUri)
+        const id = await client.request('chat/new', null)
+        const reply = await client.request('chat/submitMessage', {
+            id,
+            message: {
+                command: 'submit',
+                text: 'Generate simple hello world function in java!',
+                submitType: 'user',
+                addEnhancedContext: true,
+                contextFiles: [],
+            },
+        })
+        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1) : reply
+        expect(lastMessage).toMatchInlineSnapshot(`
+          {
+            "contextFiles": [],
+            "displayText": " Here is a simple hello world function in Java:
+
+          \`\`\`java
+          public class Main {
+
+            public static void main(String[] args) {
+              System.out.println(\\"Hello World!\\"); 
+            }
+
+          }
+          \`\`\`",
+            "speaker": "assistant",
+            "text": " Here is a simple hello world function in Java:
+
+          \`\`\`java
+          public class Main {
+
+            public static void main(String[] args) {
+              System.out.println(\\"Hello World!\\"); 
+            }
+
+          }
+          \`\`\`",
+          }
+        `)
     }, 20_000)
 
     // TODO Fix test - fails intermittently on macOS on Github Actions
