@@ -20,7 +20,7 @@ jobs:
 
       - name: Run Semgrep SAST Scan
         run: |
-          semgrep ci -f semgrep-rules/ $GITHUB_WORKSPACE --metrics=off --oss-only --suppress-errors --sarif -o results.sarif
+          semgrep ci -f semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules'
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
         with:
