@@ -106,6 +106,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
+        experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(
             'autocomplete.experimental.syntacticPostProcessing',
