@@ -1,0 +1,321 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": [
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/tree-sitter/query-tests/test-data/intents-partial.snap.ts:8:\n `function incomplete(value: number) {\n//                                   ^ function.body[1]\n//                                   \u2588\n\n// Nodes types:\n// function.body[1]: statement_block\n\n// ------------------------------------\n\n  const arrow = ()` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/tree-sitter/query-tests/test-data/singleline-triggers.ts:11:\n `.log` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/testutils/mocks.ts:46:\n `0 satisfies` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Fatal error"
+              },
+              "level": "error",
+              "message": {
+                "text": "Fatal error at line vscode/src/tree-sitter/query-tests/test-data/intents.snap.tsx:1:\n Parsing_error.Ast_builder_error (jsx_expression_some got a None expr, vscode/src/tree-sitter/query-tests/test-data/intents.snap.tsx:9:29 \"{\")\n====[ BEGIN error trace ]====\nParsing_error.Ast_builder_error (jsx_expression_some got a None expr, vscode/src/tree-sitter/query-tests/test-data/intents.snap.tsx:9:29 \"{\")\nRaised at Parse_typescript_tree_sitter.jsx_expression_some in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 622, characters 6-108\nCalled from Parse_typescript_tree_sitter.jsx_attribute_value in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 633, characters 20-45\nCalled from Parse_typescript_tree_sitter.jsx_attribute_ in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 607, characters 21-47\nCalled from Common.fast_map in file \"libs/commons/Common.ml\", line 193, characters 17-20\nCalled from Parse_typescript_tree_sitter.jsx_opening_element in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 542, characters 11-45\nCalled from Parse_typescript_tree_sitter.jsx_element_ in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 661, characters 36-62\nCalled from Parse_typescript_tree_sitter.expression in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 1620, characters 16-34\nCalled from Parse_typescript_tree_sitter.statement in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2220, characters 25-44\nCalled from Stdlib__List.concat_map.aux in file \"list.ml\", line 268, characters 16-19\nCalled from Parse_typescript_tree_sitter.statement_block in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2880, characters 11-45\nCalled from Parse_typescript_tree_sitter.function_declaration in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2895, characters 11-33\nCalled from Parse_typescript_tree_sitter.declaration in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2975, characters 26-52\nCalled from Parse_typescript_tree_sitter.statement in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2101, characters 17-34\nCalled from Stdlib__List.concat_map.aux in file \"list.ml\", line 268, characters 16-19\nCalled from Parse_typescript_tree_sitter.program in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 3181, characters 15-48\nCalled from Parse_typescript_tree_sitter.parse.(fun) in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 3220, characters 12-27\nCalled from Parse_tree_sitter_helpers.wrap_parser in file \"libs/lib_parsing_tree_sitter/Parse_tree_sitter_helpers.ml\", line 121, characters 13-29\nCalled from Pfff_or_tree_sitter.run_parser in file \"src/parsing/Pfff_or_tree_sitter.ml\", line 161, characters 18-24\nRe-raised at Exception.reraise in file \"libs/commons/Exception.ml\", line 19, characters 33-72\nCalled from Parse_target.parse_and_resolve_name in file \"src/parsing/Parse_target.ml\", line 105, characters 12-42\nCalled from Parse_with_caching.parse_and_resolve_name in file \"src/parsing/Parse_with_caching.ml\", line 137, characters 10-57\nCalled from CamlinternalLazy.force_lazy_block in file \"camlinternalLazy.ml\", line 31, characters 17-27\nRe-raised at CamlinternalLazy.force_lazy_block in file \"camlinternalLazy.ml\", line 36, characters 4-11\nCalled from Common.with_time in file \"libs/commons/Common.ml\", line 110, characters 12-16\nCalled from Match_tainting_mode.check_rule in file \"src/engine/Match_tainting_mode.ml\", line 818, characters 4-63\nCalled from Time_limit.set_timeout in file \"libs/process_limits/Time_limit.ml\", line 91, characters 12-16\nRe-raised at Exception.reraise in file \"libs/commons/Exception.ml\", line 19, characters 33-72\nCalled from Match_rules.timeout_function in file \"src/engine/Match_rules.ml\", line 47, characters 4-77\nCalled from Match_rules.per_rule_boilerplate_fn.(fun) in file \"src/engine/Match_rules.ml\", line 156, characters 6-193\nCalled from Common.fast_map in file \"libs/commons/Common.ml\", line 195, characters 16-19\nCalled from Stdlib__List.concat_map.aux in file \"list.ml\", line 268, characters 16-19\nCalled from Match_rules.check in file \"src/engine/Match_rules.ml\", line 203, characters 4-212\nCalled from Core_scan.scan.(fun) in file \"src/core_scan/Core_scan.ml\", line 884, characters 15-149\nCalled from Core_scan.iter_targets_and_get_matches_and_exn_to_errors.(fun) in file \"src/core_scan/Core_scan.ml\", line 508, characters 21-29\nCalled from Stdlib__Fun.protect in file \"fun.ml\", line 33, characters 8-15\nRe-raised at Stdlib__Fun.protect in file \"fun.ml\", line 38, characters 6-52\nCalled from Memory_limit.run_with_memory_limit in file \"libs/process_limits/Memory_limit.ml\", line 118, characters 6-62\nCalled from Core_scan.iter_targets_and_get_matches_and_exn_to_errors.(fun) in file \"src/core_scan/Core_scan.ml\", line 499, characters 17-1023\n=====[ END error trace ]=====\n"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/completions/inline-completion-item-provider.ts:763:\n `satisfies AutocompleteInlineAcceptedCommandArgs` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/code-actions/edit.ts:41:\n `satisfies ExecuteEditArguments` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/chat/protocol.ts:172:\n `{\n    endpoint: '',\n    isDotCom: true,\n    isLoggedIn: false,\n    showInvalidAccessTokenError: false,\n    authenticated: false,\n    hasVerifiedEmail: false,\n    requiresVerifiedEmail: false,\n    siteHasCodyEnabled: false,\n    siteVersion: '',\n    userCanUpgrade: false,\n    primaryEmail: '',\n    displayName: '',\n    avatarURL: '',\n} satisfies` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/completions/logger.ts:29:\n `unique` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Fatal error"
+              },
+              "level": "error",
+              "message": {
+                "text": "Fatal error at line vscode/src/tree-sitter/query-tests/test-data/intents.snap.jsx:1:\n Parsing_error.Ast_builder_error (jsx_expression_some got a None expr, vscode/src/tree-sitter/query-tests/test-data/intents.snap.jsx:9:29 \"{\")\n====[ BEGIN error trace ]====\nParsing_error.Ast_builder_error (jsx_expression_some got a None expr, vscode/src/tree-sitter/query-tests/test-data/intents.snap.jsx:9:29 \"{\")\nRaised at Parse_typescript_tree_sitter.jsx_expression_some in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 622, characters 6-108\nCalled from Parse_typescript_tree_sitter.jsx_attribute_value in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 633, characters 20-45\nCalled from Parse_typescript_tree_sitter.jsx_attribute_ in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 607, characters 21-47\nCalled from Common.fast_map in file \"libs/commons/Common.ml\", line 193, characters 17-20\nCalled from Parse_typescript_tree_sitter.jsx_opening_element in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 542, characters 11-45\nCalled from Parse_typescript_tree_sitter.jsx_element_ in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 661, characters 36-62\nCalled from Parse_typescript_tree_sitter.expression in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 1620, characters 16-34\nCalled from Parse_typescript_tree_sitter.statement in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2220, characters 25-44\nCalled from Stdlib__List.concat_map.aux in file \"list.ml\", line 268, characters 16-19\nCalled from Parse_typescript_tree_sitter.statement_block in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2880, characters 11-45\nCalled from Parse_typescript_tree_sitter.function_declaration in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2895, characters 11-33\nCalled from Parse_typescript_tree_sitter.declaration in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2975, characters 26-52\nCalled from Parse_typescript_tree_sitter.statement in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 2101, characters 17-34\nCalled from Stdlib__List.concat_map.aux in file \"list.ml\", line 268, characters 16-19\nCalled from Parse_typescript_tree_sitter.program in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 3181, characters 15-48\nCalled from Parse_typescript_tree_sitter.parse.(fun) in file \"languages/typescript/tree-sitter/Parse_typescript_tree_sitter.ml\", line 3220, characters 12-27\nCalled from Parse_tree_sitter_helpers.wrap_parser in file \"libs/lib_parsing_tree_sitter/Parse_tree_sitter_helpers.ml\", line 121, characters 13-29\nCalled from Pfff_or_tree_sitter.run_parser in file \"src/parsing/Pfff_or_tree_sitter.ml\", line 161, characters 18-24\nRe-raised at Exception.reraise in file \"libs/commons/Exception.ml\", line 19, characters 33-72\nCalled from Parse_target.parse_and_resolve_name in file \"src/parsing/Parse_target.ml\", line 105, characters 12-42\nCalled from Parse_with_caching.parse_and_resolve_name in file \"src/parsing/Parse_with_caching.ml\", line 137, characters 10-57\nCalled from CamlinternalLazy.force_lazy_block in file \"camlinternalLazy.ml\", line 31, characters 17-27\nRe-raised at CamlinternalLazy.force_lazy_block in file \"camlinternalLazy.ml\", line 36, characters 4-11\nCalled from Common.with_time in file \"libs/commons/Common.ml\", line 110, characters 12-16\nCalled from Match_tainting_mode.check_rule in file \"src/engine/Match_tainting_mode.ml\", line 818, characters 4-63\nCalled from Time_limit.set_timeout in file \"libs/process_limits/Time_limit.ml\", line 91, characters 12-16\nRe-raised at Exception.reraise in file \"libs/commons/Exception.ml\", line 19, characters 33-72\nCalled from Match_rules.timeout_function in file \"src/engine/Match_rules.ml\", line 47, characters 4-77\nCalled from Match_rules.per_rule_boilerplate_fn.(fun) in file \"src/engine/Match_rules.ml\", line 156, characters 6-193\nCalled from Common.fast_map in file \"libs/commons/Common.ml\", line 195, characters 16-19\nCalled from Stdlib__List.concat_map.aux in file \"list.ml\", line 268, characters 16-19\nCalled from Match_rules.check in file \"src/engine/Match_rules.ml\", line 203, characters 4-212\nCalled from Core_scan.scan.(fun) in file \"src/core_scan/Core_scan.ml\", line 884, characters 15-149\nCalled from Core_scan.iter_targets_and_get_matches_and_exn_to_errors.(fun) in file \"src/core_scan/Core_scan.ml\", line 508, characters 21-29\nCalled from Stdlib__Fun.protect in file \"fun.ml\", line 33, characters 8-15\nRe-raised at Stdlib__Fun.protect in file \"fun.ml\", line 38, characters 6-52\nCalled from Memory_limit.run_with_memory_limit in file \"libs/process_limits/Memory_limit.ml\", line 118, characters 6-62\nCalled from Core_scan.iter_targets_and_get_matches_and_exn_to_errors.(fun) in file \"src/core_scan/Core_scan.ml\", line 499, characters 17-1023\n=====[ END error trace ]=====\n"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/tree-sitter/query-tests/test-data/singleline-triggers.snap.ts:23:\n `.log` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/testutils/textDocument.ts:23:\n `1 satisfies` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/completions/inline-completion-item-provider.test.ts:85:\n `declare` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/services/LocalStorageProvider.ts:98:\n `{\n                ...{ [key]: history },\n                ...{\n                    chat: {},\n                    input: [],\n                },\n            } satisfies` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/code-actions/document.ts:44:\n `satisfies ExecuteEditArguments` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/tree-sitter/queries/javascript.ts:171:\n `export const javascriptQueries = {\n    [SupportedLanguage.JavaScript]: {\n        singlelineTriggers: '',\n        intents: JS_INTENTS_QUERY,\n        documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,\n    },\n    [SupportedLanguage.JSX]: {\n        singlelineTriggers: '',\n        intents: JSX_INTENTS_QUERY,\n        documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,\n    },\n    [SupportedLanguage.TypeScript]: {\n        singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,\n        intents: TS_INTENTS_QUERY,\n        documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,\n    },\n    [SupportedLanguage.TSX]: {\n        singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,\n        intents: TSX_INTENTS_QUERY,\n        documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,\n    },\n} satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/completions/logger.test.ts:22:\n `{\n    strategy: 'none',\n    duration: 0.1337,\n    totalChars: 3,\n    retrieverStats: {},\n} satisfies` was unexpected"
+              }
+            },
+            {
+              "descriptor": {
+                "id": "Syntax error"
+              },
+              "level": "warning",
+              "message": {
+                "text": "Syntax error at line vscode/src/tree-sitter/queries/python.ts:6:\n `export const pythonQueries = {\n    [SupportedLanguage.Python]: {\n        singlelineTriggers: '',\n        intents: dedent`\n            ; Cursor dependent intents\n            ;--------------------------------\n\n            (function_definition\n                name: (_) @function.name!\n                parameters: (_ (\"(\") @function.parameters.cursor) @function.parameters (\":\") @function.body.cursor\n                body: (block) @function.body)\n\n            (lambda\n                parameters: (_) @function.parameters (\":\") @function.body.cursor\n                body: (_) @function.body)\n\n            (class_definition\n                name: (_) @class.name (\":\") @class.body.cursor\n                body: (_) @class.body)\n\n            (argument_list (\"(\") @arguments.cursor) @arguments\n\n\n            ; Atomic intents\n            ;--------------------------------\n\n            (import_from_statement\n                module_name: (_) @import.source!\n                name: (_) @import.name!)\n\n            (comment) @comment!\n            (argument_list (_) @argument!)\n\n            (parameters) @parameters!\n            (lambda_parameters) @parameters!\n            (parameters (_) @parameter!)\n            (lambda_parameters (_)) @parameter!\n\n            (return_statement) @return_statement!\n            (return_statement (_) @return_statement.value!)\n        `,\n        documentableNodes: '',\n    },\n} satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>` was unexpected"
+              }
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "fingerprints": {
+            "matchBasedId/v1": "8f9f4fe70af5665a8ae55cf7b350359bbbe13326cbf47fb206618d368b9baf2c0ff37581c6d9ce9ef2350164fbdb6b8d10d7ee71bda69a313609c722f5d0c594_0"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "lib/shared/src/sourcegraph-api/graphql/client.ts",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 11,
+                  "endLine": 741,
+                  "snippet": {
+                    "text": "        return fetch(url, {\n            method: 'POST',\n            headers,\n            body: JSON.stringify(body),\n        })"
+                  },
+                  "startColumn": 16,
+                  "startLine": 737
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Unencrypted request over HTTP detected."
+          },
+          "properties": {},
+          "ruleId": "typescript.react.security.react-insecure-request.react-insecure-request"
+        },
+        {
+          "fingerprints": {
+            "matchBasedId/v1": "a2d3b19aed506c203ec8ceef0d650a8d1b8f237f51e6e0d20445b7304ed65969fa96b16cf8c70393f70c4f7d8e29d573263615d90ef6fd205f72f286b1ce04a0_0"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "lib/shared/src/sourcegraph-api/telemetry/MockServerTelemetryExporter.ts",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 11,
+                  "endLine": 31,
+                  "snippet": {
+                    "text": "        return fetch(`${MOCK_URL}${ENDPOINT}`, {\n            method: 'POST',\n            headers,\n            body: JSON.stringify(events),\n        })"
+                  },
+                  "startColumn": 16,
+                  "startLine": 27
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Unencrypted request over HTTP detected."
+          },
+          "properties": {},
+          "ruleId": "typescript.react.security.react-insecure-request.react-insecure-request"
+        },
+        {
+          "fingerprints": {
+            "matchBasedId/v1": "972a31243899e0e150c86aa7b4184f113f0a5473e0ae0de4ec0f706f446474876f776e8f8b7400ce8b0fdfe5439e194611c744fd7eb29ded8cf2a608da9d5277_0"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vscode/src/chat/chat-view/chat-helpers.ts",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 54,
+                  "endLine": 88,
+                  "snippet": {
+                    "text": "            await openFile(path.join(localCodebaseDir, relpath), range, currentViewColumn)"
+                  },
+                  "startColumn": 38,
+                  "startLine": 88
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Possible writing outside of the destination, make sure that the target path is nested in the intended destination"
+          },
+          "properties": {},
+          "ruleId": "javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "semgrep",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Unencrypted request over HTTP detected."
+              },
+              "help": {
+                "markdown": "Unencrypted request over HTTP detected.\n\n<b>References:</b>\n - [Semgrep Rule](https://semgrep.dev/r/typescript.react.security.react-insecure-request.react-insecure-request)\n - [https://www.npmjs.com/package/axios](https://www.npmjs.com/package/axios)\n",
+                "text": "Unencrypted request over HTTP detected."
+              },
+              "helpUri": "https://semgrep.dev/r/typescript.react.security.react-insecure-request.react-insecure-request",
+              "id": "typescript.react.security.react-insecure-request.react-insecure-request",
+              "name": "typescript.react.security.react-insecure-request.react-insecure-request",
+              "properties": {
+                "precision": "very-high",
+                "tags": [
+                  "CWE-319: Cleartext Transmission of Sensitive Information",
+                  "MEDIUM CONFIDENCE",
+                  "OWASP-A02:2021 - Cryptographic Failures",
+                  "OWASP-A03:2017 - Sensitive Data Exposure",
+                  "security"
+                ]
+              },
+              "shortDescription": {
+                "text": "Semgrep Finding: typescript.react.security.react-insecure-request.react-insecure-request"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "fullDescription": {
+                "text": "Possible writing outside of the destination, make sure that the target path is nested in the intended destination"
+              },
+              "help": {
+                "markdown": "Possible writing outside of the destination, make sure that the target path is nested in the intended destination\n\n<b>References:</b>\n - [Semgrep Rule](https://semgrep.dev/r/javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal)\n - [https://owasp.org/www-community/attacks/Path_Traversal](https://owasp.org/www-community/attacks/Path_Traversal)\n",
+                "text": "Possible writing outside of the destination, make sure that the target path is nested in the intended destination"
+              },
+              "helpUri": "https://semgrep.dev/r/javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal",
+              "id": "javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal",
+              "name": "javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal",
+              "properties": {
+                "precision": "very-high",
+                "tags": [
+                  "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+                  "MEDIUM CONFIDENCE",
+                  "OWASP-A01:2021 - Broken Access Control",
+                  "OWASP-A05:2017 - Broken Access Control",
+                  "security"
+                ]
+              },
+              "shortDescription": {
+                "text": "Semgrep Finding: javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal"
+              }
+            }
+          ],
+          "semanticVersion": "1.43.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
