@@ -387,7 +387,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Checks if the Ctrl key is pressed with a key not in the allow list
             // to avoid triggering default browser shortcuts and bubbling the event.
             const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
-            if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
+            if (event.ctrlKey && !ctrlKeysAllowList.has(event.key)) {
                 event.preventDefault()
                 return
             }
