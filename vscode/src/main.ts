@@ -292,6 +292,12 @@ const register = async (
         args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
+        const disabled = true
+        if (disabled) {
+            void vscode.window.showErrorMessage('This is disabled for now.')
+            return
+        }
+
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
         const editor = getEditor()
