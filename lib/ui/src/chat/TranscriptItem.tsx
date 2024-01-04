@@ -162,6 +162,26 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
+            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+                {message.displayText ? (
+                    EditTextArea ? (
+                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
+                    ) : (
+                        <CodeBlocks
+                            displayText={message.displayText}
+                            copyButtonClassName={codeBlocksCopyButtonClassName}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonClassName={codeBlocksInsertButtonClassName}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            metadata={message.metadata}
+                            inProgress={inProgress}
+                            guardrails={guardrails}
+                        />
+                    )
+                ) : (
+                    inProgress && <BlinkingCursor />
+                )}
+            </div>
             {message.error ? (
                 typeof message.error === 'string' ? (
                     <RequestErrorItem error={message.error} />
@@ -173,28 +193,7 @@ export const TranscriptItem: React.FunctionComponent<
                         postMessage={postMessage}
                     />
                 )
-            ) : (
-                <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
-                    {message.displayText && !message.error ? (
-                        EditTextArea ? (
-                            !inProgress && !message.displayText.startsWith('/') && EditTextArea
-                        ) : (
-                            <CodeBlocks
-                                displayText={message.displayText}
-                                copyButtonClassName={codeBlocksCopyButtonClassName}
-                                copyButtonOnSubmit={copyButtonOnSubmit}
-                                insertButtonClassName={codeBlocksInsertButtonClassName}
-                                insertButtonOnSubmit={insertButtonOnSubmit}
-                                metadata={message.metadata}
-                                inProgress={inProgress}
-                                guardrails={guardrails}
-                            />
-                        )
-                    ) : (
-                        inProgress && <BlinkingCursor />
-                    )}
-                </div>
-            )}
+            ) : null}
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
