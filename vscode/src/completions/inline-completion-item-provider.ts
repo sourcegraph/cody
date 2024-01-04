@@ -240,16 +240,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
-<<<<<<< HEAD
-        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
-=======
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
             return null
         }
 
-        return startAsyncSpan('autocomplete.provideInlineCompletionItems', async () => {
->>>>>>> main
+        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = { document, position, context }
