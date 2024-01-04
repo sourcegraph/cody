@@ -2,6 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
@@ -239,7 +240,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+<<<<<<< HEAD
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
+=======
+        // Do not create item for files that are on the cody ignore list
+        if (isCodyIgnoredFile(document.uri)) {
+            return null
+        }
+
+        return startAsyncSpan('autocomplete.provideInlineCompletionItems', async () => {
+>>>>>>> main
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = { document, position, context }

@@ -317,7 +317,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
-    const reqContext: RequestParams = {
+    const requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -326,14 +326,15 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Get the processed completions from providers
-    const { completions, source } = await requestManager.request(
-        reqContext,
-        completionProviders,
-        contextResult?.context ?? [],
-        tracer ? createCompletionProviderTracer(tracer) : undefined
-    )
+    const { completions, source } = await requestManager.request({
+        requestParams,
+        providers: completionProviders,
+        context: contextResult?.context ?? [],
+        isCacheEnabled: triggerKind !== TriggerKind.Manual,
+        tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
+    })
 
-    CompletionLogger.loaded(logId, reqContext, completions, source, isDotComUser)
+    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
 
     return {
         logId,

@@ -17,10 +17,12 @@ import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/te
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { newTextEditor } from './AgentTextEditor'
+import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
@@ -29,6 +31,15 @@ import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
+
+const globalStorage = new Map<string, any>()
+
+// Disable the feature that opens a webview when the user accepts their first
+// autocomplete request.  Removing this line should fail the agent integration
+// tests with the following error message "chat/new: command finished executing
+// without creating a webview" because we reuse the webview when sending
+// chat/new.
+globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
 
 export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
@@ -49,21 +60,26 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         // Placeholder string values for extension path/uri. These are only used
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
-        extensionPath: '__extensionPath_should_never_be_read_from',
-        extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
+        extensionPath: paths.config,
+        extensionUri: vscode.Uri.file(paths.config),
         globalState: {
-            keys: () => [],
-            get: () => undefined,
-            update: () => Promise.resolve(),
+            keys: () => [...globalStorage.keys()],
+            get: key => {
+                return globalStorage.get(key)
+            },
+            update: (key, value) => {
+                globalStorage.set(key, value)
+                return Promise.resolve()
+            },
             setKeysForSync: () => {},
         },
-        logUri: {} as any,
-        logPath: {} as any,
+        logUri: vscode.Uri.file(paths.log),
+        logPath: paths.log,
         secrets: {
             onDidChange: vscode_shim.emptyEvent(),
             get(key) {
-                if (key === 'cody.access-token' && vscode_shim.connectionConfig) {
-                    return Promise.resolve(vscode_shim.connectionConfig.accessToken)
+                if (key === 'cody.access-token' && vscode_shim.extensionConfiguration) {
+                    return Promise.resolve(vscode_shim.extensionConfiguration.accessToken)
                 }
                 return Promise.resolve(secretStorage.get(key))
             },
@@ -75,11 +91,11 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
                 return Promise.resolve()
             },
         },
-        storageUri: {} as any,
+        storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
         workspaceState: {} as any,
         globalStorageUri: vscode.Uri.file(paths.data),
-        storagePath: {} as any,
+        storagePath: paths.data,
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     })
 }
@@ -125,6 +141,7 @@ export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
+    public webPanels = new AgentWebPanels()
 
     private clientInfo: ClientInfo | null = null
 
@@ -146,11 +163,14 @@ export class Agent extends MessageHandler {
         },
     ])
 
+    private resolveChatPanelId: ((chatPanelId: string) => void) | null = null
+
     constructor(private readonly params?: { polly?: Polly | undefined }) {
         super()
-        vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
+            this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
+            vscode_shim.setWorkspaceDocuments(this.workspace)
             process.stderr.write(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
@@ -169,28 +189,38 @@ export class Agent extends MessageHandler {
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
-            await initializeVscodeExtension(this.workspace.workspaceRootUri)
+            try {
+                await initializeVscodeExtension(this.workspace.workspaceRootUri)
 
-            // must be done here, as the commands are not registered when calling setClientAndTelemetry above
-            // but setClientAndTelemetry must called before initializing the vscode extension.
-            await this.reloadAuth()
+                // must be done here, as the commands are not registered when calling setClientAndTelemetry above
+                // but setClientAndTelemetry must called before initializing the vscode extension.
+                await this.reloadAuth()
 
-            const codyClient = await this.client
-            if (!codyClient) {
+                const codyClient = await this.client
+                if (!codyClient) {
+                    return {
+                        name: 'cody-agent',
+                        authenticated: false,
+                        codyEnabled: false,
+                        codyVersion: null,
+                    }
+                }
+
+                this.registerWebviewHandlers()
+
+                const codyStatus = codyClient.codyStatus
                 return {
                     name: 'cody-agent',
-                    authenticated: false,
-                    codyEnabled: false,
-                    codyVersion: null,
+                    authenticated: codyClient.sourcegraphStatus.authenticated,
+                    codyEnabled:
+                        codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
+                    codyVersion: codyStatus.version,
                 }
-            }
-
-            const codyStatus = codyClient.codyStatus
-            return {
-                name: 'cody-agent',
-                authenticated: codyClient.sourcegraphStatus.authenticated,
-                codyEnabled: codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
-                codyVersion: codyStatus.version,
+            } catch (error) {
+                process.stderr.write(
+                    `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
+                )
+                process.exit(1)
             }
         })
 
@@ -259,6 +289,10 @@ export class Agent extends MessageHandler {
         this.registerNotification('transcript/reset', async () => {
             const client = await this.client
             client?.reset()
+        })
+
+        this.registerRequest('command/execute', async params => {
+            await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
         })
 
         this.registerRequest('recipes/execute', async (data, token) => {
@@ -472,9 +506,159 @@ export class Agent extends MessageHandler {
             provider.clearLastCandidate()
         })
 
+        this.registerRequest('webview/didDispose', ({ id }) => {
+            const panel = this.webPanels.panels.get(id)
+            if (!panel) {
+                console.log(`No panel with id ${id} found`)
+                return Promise.resolve(null)
+            }
+            panel.dispose()
+            return Promise.resolve(null)
+        })
+
+        this.registerRequest('chat/new', async () => {
+            const id = await new Promise<string>((resolve, reject) => {
+                console.log('STAAAAAAAAAAAAAAAAAART')
+                // HACK: when triggering this command, Cody creates a webview under the hood and there's
+                // no clean way for us (yet) to pair the webview with this command invocation.
+                // To work around this limitation, we hijack the `webview/create` handler to capture
+                // the webview that's created from executing this command.
+                this.resolveChatPanelId = resolve
+
+                vscode.commands.executeCommand('cody.chat.panel.new').then(
+                    () => reject(new Error('chat/new: command finished executing without creating a webview')),
+                    error => reject(error)
+                )
+
+                setTimeout(() => {
+                    reject(new Error('chat/new: timed out waiting for chat panel to be created'))
+                }, 1000)
+            })
+            console.log('END')
+
+            // Important: this request never responds if we await on the messages here.
+            this.receiveWebviewMessage(id, { command: 'ready' }).then(
+                () => {},
+                () => {}
+            )
+            this.receiveWebviewMessage(id, { command: 'initialized' }).then(
+                () => {},
+                () => {}
+            )
+            return id
+        })
+
+        this.registerRequest('chat/submitMessage', async ({ id, message }, token) => {
+            if (message.command !== 'submit') {
+                throw new Error('Invalid message, must have a command of "submit"')
+            }
+            const panel = this.webPanels.panels.get(id)
+            if (!panel) {
+                return Promise.resolve({ type: 'errors', errors: `No panel with id ${id} found` } as ExtensionMessage)
+            }
+            if (panel.isMessageInProgress) {
+                throw new Error('Message is already in progress')
+            }
+            const disposables: vscode.Disposable[] = []
+            const result = new Promise<ExtensionMessage>((resolve, reject) => {
+                disposables.push(
+                    panel.onMessageInProgressDidChange(message => {
+                        if (message.type === 'transcript' && !message.isMessageInProgress) {
+                            resolve(message)
+                        } else if (message.type !== 'transcript') {
+                            reject(new Error(`expected transcript message, received ${JSON.stringify(message)}`))
+                        }
+                    })
+                )
+                this.receiveWebviewMessage(id, message).then(
+                    () => {},
+                    error => reject(error)
+                )
+                disposables.push(
+                    token.onCancellationRequested(() => {
+                        this.receiveWebviewMessage(id, { command: 'abort' }).then(
+                            () => {},
+                            error => reject(error)
+                        )
+                    })
+                )
+            })
+
+            // TODO: capture a rate-limit error if submitting this message triggered the rate limit
+
+            return result.finally(() => {
+                vscode.Disposable.from(...disposables).dispose()
+            })
+        })
+
+        this.registerRequest('webview/receiveMessage', async ({ id, message }) => {
+            await this.receiveWebviewMessage(id, message)
+            return null
+        })
+
         this.registerRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(FeatureFlag[flagName as keyof typeof FeatureFlag])
         })
+    }
+
+    private registerWebviewHandlers(): void {
+        const webPanels = this.webPanels
+        vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
+            const panel = new AgentWebPanel(viewType, title, showOptions, options)
+            webPanels.add(panel)
+
+            panel.onDidPostMessage(message => {
+                if (message.type === 'transcript') {
+                    panel.chatID = message.chatID
+                    for (const chatMessage of message.messages) {
+                        if (chatMessage?.error?.retryAfterDate) {
+                            // HACK: for some reason, `JSON.stringify()` on the
+                            // date class introduced JSON-RPC parse errors in
+                            // the JetBrains plugin. This solution shouldn't be
+                            // necessary because `JSON.stringify()` does convert
+                            // dates into string literals, but it unblocked the
+                            // JetBrains plugin from updating to the new chat
+                            // UI. If changing this, at least manually confirm that
+                            // it works OK to get rate limit errors in JetBrains.
+                            chatMessage.error.retryAfterDateString = JSON.stringify(chatMessage.error.retryAfterDate)
+                            chatMessage.error.retryAfterDate = undefined
+                        }
+                    }
+                    if (panel.isMessageInProgress !== message.isMessageInProgress) {
+                        panel.isMessageInProgress = message.isMessageInProgress
+                        panel.messageInProgressChange.fire(message)
+                    }
+                }
+
+                this.notify('webview/postMessage', {
+                    id: panel.panelID,
+                    message,
+                })
+            })
+
+            if (this.resolveChatPanelId) {
+                this.resolveChatPanelId(panel.panelID)
+                this.resolveChatPanelId = null
+            } else {
+                this.request('webview/create', {
+                    id: panel.panelID,
+                    data: { viewType, title, showOptions, options },
+                }).then(
+                    () => {},
+                    () => {}
+                )
+            }
+            return panel
+        })
+    }
+
+    private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {
+        const panel = this.webPanels.panels.get(id)
+        if (!panel) {
+            console.log(`No panel with id ${id} found`)
+            return
+        }
+        await panel.receiveMessage.cody_fireAsync(message)
     }
 
     /**
@@ -504,7 +688,7 @@ export class Agent extends MessageHandler {
 
     private async createAgentClient(config: ExtensionConfiguration): Promise<Client | null> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
-        vscode_shim.setConnectionConfig(config)
+        vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange) {
@@ -534,13 +718,17 @@ export class Agent extends MessageHandler {
     }
 
     private async reloadAuth(): Promise<void> {
-        await vscode_shim.commands.executeCommand('agent.auth.reload')
+        await vscode_shim.commands.executeCommand('agent.auth.reload').then(() => {
+            // TODO(#56621): JetBrains: persistent chat history:
+            // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
+            this.webPanels.panels.clear()
+        })
     }
 
     /**
      * @deprecated use `this.telemetryRecorderProvider.getRecorder()` instead.
      */
-    private async logEvent(feature: string, action: string, mode: LogEventMode): Promise<null> {
+    public async logEvent(feature: string, action: string, mode: LogEventMode): Promise<null> {
         const client = await this.client
         if (!client) {
             return null

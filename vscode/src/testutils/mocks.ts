@@ -16,6 +16,7 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { Uri } from './uri'
@@ -61,6 +62,19 @@ export enum ConfigurationTarget {
 export enum StatusBarAlignment {
     Left = 1,
     Right = 2,
+}
+
+export enum LogLevel {
+    Off = 0,
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warning = 4,
+    Error = 5,
+}
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2,
 }
 
 export enum CommentThreadCollapsibleState {
@@ -453,6 +467,23 @@ export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
             invokeCallback(listener, data)
         }
     }
+
+    /**
+     * Custom extension of the VS Code API to make it possible to `await` on the
+     * result of `EventEmitter.fire()`.  Most event listeners return a
+     * meaningful `Promise` that is discarded in the signature of the `fire()`
+     * function.  Being able to await on returned promise makes it possible to
+     * write more robust tests because we don't need to rely on magic timeouts.
+     */
+    public async cody_fireAsync(data: T): Promise<void> {
+        const promises: Promise<void>[] = []
+        for (const listener of this.listeners) {
+            const value = invokeCallback(listener, data)
+            promises.push(Promise.resolve(value))
+        }
+        await Promise.all(promises)
+    }
+
     dispose(): void {
         this.listeners.clear()
     }
@@ -732,3 +763,43 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
+
+export const DEFAULT_VSCODE_SETTINGS = {
+    proxy: null,
+    codebase: '',
+    customHeaders: {},
+    chatPreInstruction: '',
+    useContext: 'embeddings',
+    autocomplete: true,
+    autocompleteLanguages: {
+        '*': true,
+    },
+    commandCodeLenses: false,
+    editorTitleCommandIcon: true,
+    experimentalChatPredictions: false,
+    experimentalGuardrails: false,
+    experimentalLocalSymbols: false,
+    experimentalSimpleChatContext: true,
+    experimentalSymfContext: false,
+    experimentalTracing: false,
+    codeActions: true,
+    isRunningInsideAgent: false,
+    agentIDE: undefined,
+    debugEnable: false,
+    debugVerbose: false,
+    debugFilter: null,
+    telemetryLevel: 'all',
+    internalUnstable: false,
+    autocompleteAdvancedProvider: null,
+    autocompleteAdvancedModel: null,
+    autocompleteCompleteSuggestWidgetSelection: true,
+    autocompleteFormatOnAccept: true,
+    autocompleteExperimentalSyntacticPostProcessing: true,
+    autocompleteExperimentalDynamicMultilineCompletions: false,
+    autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalGraphContext: null,
+    autocompleteTimeouts: {},
+    testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsIndexLibraryPath: undefined,
+    testingLocalEmbeddingsModel: undefined,
+} satisfies Configuration
