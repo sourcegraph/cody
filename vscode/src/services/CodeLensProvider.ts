@@ -106,7 +106,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         if (!range) {
             return []
         }
+        const disabled = true 
         const codeLensRange = getSingleLineRange(range.start.line)
+        if (disabled) {
+            getErrorLenses(this.id, codeLensRange)
+        }
         return this.status === CodyTaskState.error
             ? getErrorLenses(this.id, codeLensRange)
             : getLenses(this.id, codeLensRange, this.isPending())

@@ -100,6 +100,12 @@ export class ChatManager implements vscode.Disposable {
             return
         }
 
+        const disabled = true
+        if (disabled) {
+            void vscode.window.showErrorMessage('Dude this is disabled bro')
+            return
+        }
+
         // If chat view is not needed, run the recipe via sidebar view without creating a new panel
         const isDefaultEditCommands = ['/doc', '/edit'].includes(humanChatInput)
         if (!openChatView || isDefaultEditCommands) {
