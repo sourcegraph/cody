@@ -1,6 +1,6 @@
 name: Semgrep - SAST Scan
 
-on: [pull_request, push]
+on: [pull_request]
 
 jobs:
   semgrep:
@@ -18,7 +18,7 @@ jobs:
           token: ${{ secrets.GH_SEMGREP_SAST_TOKEN }}
           path: semgrep-rules
 
-      - name: Run Semgrep
+      - name: Run Semgrep SAST Scan
         run: |
-          semgrep --version
-          ls semgrep-rules
+          ls $GITHUB_WORKSPACE
+          semgrep -f semgrep-rules/ $GITHUB_WORKSPACE
