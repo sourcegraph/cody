@@ -94,7 +94,7 @@ export class ChatManager implements vscode.Disposable {
 
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
-        await chatProvider.executeCommand(command, source)
+        await chatProvider.handleCommands(command, source)
     }
 
     public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

@@ -52,6 +52,7 @@ import {
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { TestSupport } from '../../test-support'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { MessageErrorType } from '../MessageProvider'
 import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
@@ -149,6 +150,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
+
+        if (TestSupport.instance) {
+            TestSupport.instance.chatPanelProvider.set(this)
+        }
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
@@ -540,7 +545,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             }
             const command = await this.editor.controllers.command?.findCommand(text)
             if (command) {
-                return this.executeCommand(command, 'chat', requestID)
+                return this.handleCommands(command, 'chat', requestID)
             }
         }
 
@@ -573,14 +578,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             })
         })
         // Set the title of the webview panel to the current text
-        if (this.webviewPanel) {
-            this.webviewPanel.title =
-                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
-                getChatPanelTitle(text)
-        }
+        this.updateWebviewPanelTitle(text)
     }
 
-    public async executeCommand(command: CodyPrompt, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
+    public async handleCommands(command: CodyPrompt, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
         const promptText = [command.prompt, command.additionalInput].join(' ')
         // Check for edit commands
         if (command.mode !== 'ask') {
@@ -622,12 +623,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             },
             command
         )
-        // Set the title of the webview panel to the current text
-        if (this.webviewPanel) {
-            this.webviewPanel.title =
-                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
-                getChatPanelTitle(inputText)
-        }
+        // Set the title of the webview panel
+        this.updateWebviewPanelTitle(inputText)
     }
 
     private async handleEdit(requestID: string, text: string): Promise<void> {
@@ -974,6 +971,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
         return this.initDoer.do(() => this.webview?.postMessage(message))
+    }
+
+    private updateWebviewPanelTitle(title: string): void {
+        if (this.webviewPanel) {
+            this.webviewPanel.title =
+                this.history.getChat(this.authProvider.getAuthStatus(), this.sessionID)?.chatTitle ||
+                getChatPanelTitle(title)
+        }
+    }
+
+    public transcriptForTesting(testing: TestSupport): ChatMessage[] {
+        if (!testing) {
+            console.error('used ForTesting method without test support object')
+            return []
+        }
+        const messages: ChatMessage[] = this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
+        return messages
     }
 }
 

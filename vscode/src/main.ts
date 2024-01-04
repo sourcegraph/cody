@@ -44,7 +44,6 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
-import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -107,9 +106,6 @@ const register = async (
     // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
-    if (TestSupport.instance) {
-        TestSupport.instance.fixupController.set(fixup)
-    }
 
     const commandsController = platform.createCommandsController?.(context.extensionPath)
 

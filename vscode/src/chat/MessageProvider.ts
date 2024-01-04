@@ -105,10 +105,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     constructor(options: MessageProviderOptions) {
         super()
 
-        if (TestSupport.instance) {
-            TestSupport.instance.messageProvider.set(this)
-        }
-
         this.chat = options.chat
         this.intentDetector = options.intentDetector
         this.guardrails = options.guardrails
