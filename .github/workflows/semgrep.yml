@@ -21,4 +21,4 @@ jobs:
       - name: Run Semgrep SAST Scan
         run: |
           ls $GITHUB_WORKSPACE
-          semgrep -f semgrep-rules/ $GITHUB_WORKSPACE
+          semgrep -f semgrep-rules/ $GITHUB_WORKSPACE --metrics=off
