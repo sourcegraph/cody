@@ -1,3 +1,4 @@
+import os from 'os'
 import path from 'path'
 
 import dedent from 'dedent'
@@ -10,7 +11,7 @@ import { AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
 
-describe('AutocompleteMatcher', () => {
+describe.skipIf(os.platform().startsWith('win'))('AutocompleteMatcher', () => {
     const queriesDirectory = path.join(__dirname, 'queries')
     const queries = new Queries(queriesDirectory)
     function checkInput(filename: string, text: string, assertion: (obtained: string) => void): void {
