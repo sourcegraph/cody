@@ -91,6 +91,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
 
+        internalUnstable: config.get<boolean>(CONFIG_KEY.internalUnstable, false),
+
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**

@@ -17,6 +17,9 @@ importers:
 
   .:
     dependencies:
+      ignore:
+        specifier: ^5.2.4
+        version: 5.2.4
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -150,6 +153,9 @@ importers:
       pretty-ms:
         specifier: ^8.0.0
         version: 8.0.0
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.0
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -160,6 +166,9 @@ importers:
       '@types/minimatch':
         specifier: ^5.1.2
         version: 5.1.2
+      '@types/uuid':
+        specifier: ^9.0.2
+        version: 9.0.2
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
@@ -303,6 +312,9 @@ importers:
       classnames:
         specifier: ^2.3.2
         version: 2.3.2
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
 
   slack:
     dependencies:
@@ -326,7 +338,7 @@ importers:
         version: 1.4.2
       langchain:
         specifier: ^0.0.105
-        version: 0.0.105(axios@1.3.6)(hnswlib-node@1.4.2)
+        version: 0.0.105(axios@1.3.6)(hnswlib-node@1.4.2)(ignore@5.2.4)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -11874,7 +11886,7 @@ packages:
       - supports-color
     dev: true
 
-  /langchain@0.0.105(axios@1.3.6)(hnswlib-node@1.4.2):
+  /langchain@0.0.105(axios@1.3.6)(hnswlib-node@1.4.2)(ignore@5.2.4):
     resolution: {integrity: sha512-iytaHWDQw6U1KG47MTeZOlzQeWGjadBWXxkf1LkmZSPnbGsgFHea/fufKcaIrhsHJn7whf7UIhuBjqu+6TjDmg==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -12048,6 +12060,7 @@ packages:
       expr-eval: 2.0.2
       flat: 5.0.2
       hnswlib-node: 1.4.2
+      ignore: 5.2.4
       js-tiktoken: 1.0.7
       js-yaml: 4.1.0
       jsonpointer: 5.0.1
@@ -16123,6 +16136,7 @@ packages:
 
   /uuid@9.0.0:
     resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    hasBin: true
 
   /v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}

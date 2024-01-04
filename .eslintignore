@@ -4,3 +4,4 @@ build/
 **/test-data/
 vscode/src/testutils/vscode/
 agent/src/bfg/__tests__/
+agent/src/__tests__/

@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import { Attribution, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
@@ -27,8 +26,25 @@ import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+const guardrails = {
+    searchAttribution: (txt: string): Promise<Attribution | Error> => {
+        // No-op implementation: wait 1s and pretend guardrails is not available.
+        return new Promise<Attribution | Error>(resolve => {
+            setTimeout(() => {
+                resolve({
+                    limitHit: true,
+                    repositories: [],
+                })
+                return
+            }, 1000)
+        })
+    },
+}
+
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -91,7 +107,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
                             isCodyProUser: !message.authStatus.userCanUpgrade,
-                            isDotComUser: isDotCom(message.authStatus.endpoint || ''),
+                            // Receive this value from the extension backend to make it work
+                            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
+                            isDotComUser: message.authStatus.isDotCom,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         // Get chat models
@@ -278,6 +296,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        guardrails={config.experimentalGuardrails ? guardrails : undefined}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

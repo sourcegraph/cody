@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelectionRange, ChatMessage, ContextFile } from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
     createDisplayTextWithFileLinks,
     createDisplayTextWithFileSelection,
@@ -19,7 +20,6 @@ import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/vie
 import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
@@ -55,11 +55,16 @@ import { MessageErrorType } from '../MessageProvider'
 import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import { embeddingsUrlScheme, getChatPanelTitle, relativeFileUrl, stripContextWrapper } from './chat-helpers'
+import {
+    getChatPanelTitle,
+    legacyContextFileUri,
+    relativeFileUri,
+    remoteEmbeddingSnippetUri,
+    stripContextWrapper,
+} from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
-import { ChatViewProviderWebview } from './ChatPanelProvider'
-import { Config, IChatPanelProvider } from './ChatPanelsManager'
+import { ChatViewProviderWebview, Config, IChatPanelProvider } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
@@ -70,7 +75,6 @@ interface SimpleChatPanelProviderOptions {
     config: Config
     extensionUri: vscode.Uri
     authProvider: AuthProvider
-    guardrails: Guardrails
     chatClient: ChatClient
     embeddingsClient: CachedRemoteEmbeddingsClient
     localEmbeddings: LocalEmbeddingsController | null
@@ -100,7 +104,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
     private config: Config
     private readonly authProvider: AuthProvider
-    private readonly guardrails: Guardrails
     private readonly chatClient: ChatClient
     private readonly embeddingsClient: CachedRemoteEmbeddingsClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
@@ -128,7 +131,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         extensionUri,
         featureFlagProvider,
         authProvider,
-        guardrails,
         chatClient,
         embeddingsClient,
         localEmbeddings,
@@ -148,7 +150,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.symf = symf
         this.editor = editor
         this.treeView = treeView
-        this.guardrails = guardrails
         this.recipeAdapter = recipeAdapter
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
@@ -387,7 +388,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, this.webviewPanel?.viewColumn, message.range)
+                await openFilePath(message.filePath, message.uri, this.webviewPanel?.viewColumn, message.range)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
@@ -481,11 +482,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.postViewTranscript()
     }
 
-    public clearChatHistory(): Promise<void> {
-        // HACK: this is a no-op now. This exists only to satisfy the IChatPanelProvider interface
-        // and can be removed once we retire the old ChatPanelProvider
-        return Promise.resolve()
-    }
     public handleChatTitle(title: string): void {
         this.chatModel.setChatTitle(title)
         if (this.webviewPanel) {
@@ -554,7 +550,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 await vscode.commands.executeCommand('cody.settings.commands')
                 return
             }
-            return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, addEnhancedContext)
+            return this.executeRecipe('custom-prompt', text.trim(), 'chat', userContextFiles, false)
         }
 
         const displayText = userContextFiles?.length
@@ -578,10 +574,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? text : undefined,
                 contextSummary,
             }
-            telemetryService.log('CodyVSCodeExtension:recipe:chat-question:executed', properties, {
+            telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'executed', {
+            telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
                 metadata: { ...contextSummary },
             })
         })
@@ -607,6 +603,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             ...localProcess,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
+            experimentalGuardrails: config.experimentalGuardrails,
         }
         await this.postMessage({ type: 'config', config: configForWebview, authStatus })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
@@ -681,7 +678,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     )
                 },
                 close: content => {
-                    this.addBotMessageWithGuardrails(requestID, content)
+                    this.addBotMessage(requestID, content)
                 },
                 error: (partialResponse, error) => {
                     if (isAbortError(error)) {
@@ -739,7 +736,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 onError: error => {
                     this.cancelInProgressCompletion()
                     typewriter.close()
-                    typewriter.stop()
+                    typewriter.stop(error)
                     callbacks.error(lastContent, error)
                 },
             },
@@ -842,61 +839,29 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     }
 
     /**
-     * Finalizes adding a bot message to the chat model, with guardrails, and triggers an
-     * update to the view.
+     * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
-    private addBotMessageWithGuardrails(requestID: string, rawResponse: string): void {
-        this.guardrailsAnnotateAttributions(reformatBotMessageForChat(rawResponse, ''))
-            .then(displayText => {
-                this.chatModel.addBotMessage({ text: rawResponse }, displayText)
-                void this.saveSession()
-                this.postViewTranscript()
+    private addBotMessage(requestID: string, rawResponse: string): void {
+        const displayText = reformatBotMessageForChat(rawResponse, '')
+        this.chatModel.addBotMessage({ text: rawResponse }, displayText)
+        void this.saveSession()
+        this.postViewTranscript()
 
-                // Count code generated from response
-                const codeCount = countGeneratedCode(rawResponse)
-                if (codeCount?.charCount) {
-                    // const metadata = lastInteraction?.getHumanMessage().metadata
-                    telemetryService.log(
-                        'CodyVSCodeExtension:chatResponse:hasCode',
-                        { ...codeCount, requestID },
-                        { hasV2Event: true }
-                    )
-                    telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
-                        metadata: {
-                            ...codeCount,
-                        },
-                    })
-                }
-            })
-            .catch(error => {
-                throw error
-            })
-    }
-
-    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
-        if (!this.config.experimentalGuardrails) {
-            return text
-        }
-
-        const result = await annotateAttribution(this.guardrails, text)
-
-        // Only log telemetry if we did work (ie had to annotate something).
-        if (result.codeBlocks > 0) {
+        // Count code generated from response
+        const codeCount = countGeneratedCode(rawResponse)
+        if (codeCount?.charCount) {
+            // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
-                'CodyVSCodeExtension:guardrails:annotate',
-                {
-                    codeBlocks: result.codeBlocks,
-                    duration: result.duration,
-                },
+                'CodyVSCodeExtension:chatResponse:hasCode',
+                { ...codeCount, requestID },
                 { hasV2Event: true }
             )
-            telemetryRecorder.recordEvent('cody.guardrails.annotate', 'executed', {
-                // Convert nanoseconds to milliseconds to match other telemetry.
-                metadata: { codeBlocks: result.codeBlocks, durationMs: result.duration / 1000000 },
+            telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
+                metadata: {
+                    ...codeCount,
+                },
             })
         }
-
-        return result.text
     }
 
     public setConfiguration(newConfig: Config): void {
@@ -952,7 +917,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                     )
                 },
                 close: (responseText: string) => {
-                    this.addBotMessageWithGuardrails(requestID, responseText)
+                    this.addBotMessage(requestID, responseText)
                 },
                 error: (partialResponse: string, error: Error) => {
                     if (isAbortError(error)) {
@@ -1056,7 +1021,7 @@ class ContextProvider implements IContextProvider {
 
     private getVisibleEditorContext(): ContextItem[] {
         const visible = this.editor.getActiveTextEditorVisibleContent()
-        if (!visible) {
+        if (!visible || isCodyIgnoredFile(vscode.Uri.file(visible.fileName))) {
             return []
         }
         return [
@@ -1069,9 +1034,6 @@ class ContextProvider implements IContextProvider {
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
         const searchContext: ContextItem[] = []
-        let localEmbeddingsError
-        let remoteEmbeddingsError
-        searchContext.push(...(await this.getReadmeContext()))
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
         let hasEmbeddingsContext = false
         const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
@@ -1082,7 +1044,6 @@ class ContextProvider implements IContextProvider {
             searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
-            localEmbeddingsError = error
         }
         try {
             const r = await remoteEmbeddingsResults
@@ -1090,16 +1051,8 @@ class ContextProvider implements IContextProvider {
             searchContext.push(...r)
         } catch (error) {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
-            remoteEmbeddingsError = error
         }
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
-        if (localEmbeddingsError && remoteEmbeddingsError) {
-            throw new Error(
-                `local and remote embeddings search failed (local: ${getErrorMessage(
-                    localEmbeddingsError
-                )}) (remote: ${getErrorMessage(remoteEmbeddingsError)})`
-            )
-        }
 
         if (!hasEmbeddingsContext && this.symf) {
             try {
@@ -1157,18 +1110,21 @@ class ContextProvider implements IContextProvider {
         const r0 = (await this.symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(async (result: Result): Promise<ContextItem[] | ContextItem> => {
                 const uri = vscode.Uri.file(result.file)
-
-                // HACK: we should standardize URI schemes at some point. The way
-                // in which this is handed to the view and received back is a bit
-                // jank
-                const displayUri = relativeFileUrl(path.relative(workspaceRoot, result.file))
-
+                if (isCodyIgnoredFile(uri)) {
+                    return []
+                }
                 const range = new vscode.Range(
                     result.range.startPoint.row,
                     result.range.startPoint.col,
                     result.range.endPoint.row,
                     result.range.endPoint.col
                 )
+
+                // HACK: we should standardize URI schemes at some point. The way
+                // in which this is handed to the view and received back is a bit
+                // jank
+                const displayUri = relativeFileUri(workspaceRoot, path.relative(workspaceRoot, result.file), range)
+
                 let text
                 try {
                     text = await this.editor.getTextEditorContentForFile(uri, range)
@@ -1197,22 +1153,23 @@ class ContextProvider implements IContextProvider {
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
+
         for (const result of embeddingsResults) {
-            const uri = vscode.Uri.from({
-                scheme: 'file',
-                path: result.fileName,
-                fragment: `${result.startLine}:${result.endLine}`,
-            })
             const range = new vscode.Range(
                 new vscode.Position(result.startLine, 0),
                 new vscode.Position(result.endLine, 0)
             )
-            contextItems.push({
-                uri,
-                range,
-                text: result.content,
-                source: 'embeddings',
-            })
+            const uri = relativeFileUri('', result.fileName, range)
+
+            // Filter out ignored files
+            if (!isCodyIgnoredFile(vscode.Uri.file(result.fileName))) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: result.content,
+                    source: 'embeddings',
+                })
+            }
         }
         return contextItems
     }
@@ -1240,41 +1197,35 @@ class ContextProvider implements IContextProvider {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
         }
         for (const codeResult of embeddings.codeResults) {
-            const uri = vscode.Uri.from({
-                scheme: embeddingsUrlScheme,
-                authority: codebase.remote,
-                path: '/' + codeResult.fileName,
-                fragment: `L${codeResult.startLine}-${codeResult.endLine}`,
-            })
-
+            const uri = remoteEmbeddingSnippetUri(codebase, codeResult)
             const range = new vscode.Range(
                 new vscode.Position(codeResult.startLine, 0),
                 new vscode.Position(codeResult.endLine, 0)
             )
-            contextItems.push({
-                uri,
-                range,
-                text: codeResult.content,
-                source: 'embeddings',
-            })
+            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, codeResult.fileName)))) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: codeResult.content,
+                    source: 'embeddings',
+                })
+            }
         }
 
         for (const textResult of embeddings.textResults) {
-            const uri = vscode.Uri.from({
-                scheme: 'file',
-                path: textResult.fileName,
-                fragment: `${textResult.startLine}:${textResult.endLine}`,
-            })
+            const uri = remoteEmbeddingSnippetUri(codebase, textResult)
             const range = new vscode.Range(
                 new vscode.Position(textResult.startLine, 0),
                 new vscode.Position(textResult.endLine, 0)
             )
-            contextItems.push({
-                uri,
-                range,
-                text: textResult.content,
-                source: 'embeddings',
-            })
+            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, textResult.fileName)))) {
+                contextItems.push({
+                    uri,
+                    range,
+                    text: textResult.content,
+                    source: 'embeddings',
+                })
+            }
         }
 
         return contextItems
@@ -1344,8 +1295,7 @@ class ContextProvider implements IContextProvider {
         // global pattern for readme file
         const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
         const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
-        console.log('Searching for readme file...', readmeUri)
-        if (!readmeUri) {
+        if (!readmeUri || isCodyIgnoredFile(readmeUri)) {
             return []
         }
         const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)
@@ -1360,7 +1310,7 @@ class ContextProvider implements IContextProvider {
         if (wsFolder) {
             const readmeRelPath = path.relative(wsFolder.uri.fsPath, readmeUri.fsPath)
             if (readmeRelPath) {
-                readmeDisplayUri = relativeFileUrl(readmeRelPath)
+                readmeDisplayUri = relativeFileUri(wsFolder.uri.fsPath, readmeRelPath, range)
             }
         }
 
@@ -1439,7 +1389,7 @@ async function newChatModelfromTranscriptJSON(json: TranscriptJSON, modelID: str
     return new SimpleChatModel(json.chatModel || modelID, (await Promise.all(messages)).flat(), json.id, json.chatTitle)
 }
 
-export function deserializedContextFilesToContextItems(
+function deserializedContextFilesToContextItems(
     files: ContextFile[],
     contextMessages: ContextMessage[]
 ): ContextItem[] {
@@ -1453,7 +1403,7 @@ export function deserializedContextFilesToContextItems(
 
     return files.map((file: ContextFile): ContextItem => {
         const range = viewRangeToRange(file.range)
-        const fallbackURI = relativeFileUrl(file.fileName, range)
+        const fallbackURI = legacyContextFileUri(file.fileName, range)
         const uri = file.uri || fallbackURI
         let text = file.content
         if (!text) {
@@ -1485,13 +1435,6 @@ function extractQuestion(input: string): string | undefined {
 
 function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
-}
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message
-    }
-    return String(error)
 }
 
 function getContextWindowForModel(authStatus: AuthStatus, modelID: string): number {

@@ -16,6 +16,8 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
+    // Wait for index.html to fully open
+    await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
     await page.click('[aria-label="Cody"]')

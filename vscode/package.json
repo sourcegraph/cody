@@ -989,6 +989,12 @@
             "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.internal.unstable": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
+          "default": false
         }
       }
     },
