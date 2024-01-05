@@ -95,7 +95,7 @@ describe('Agent', () => {
 
     const recordingDirectory = path.join(agentDir, 'recordings')
 
-    function spawnAgentProcess(accessToken?: string) {
+    function spawnAgentProcess(testName: string, accessToken?: string) {
         return spawn('node', ['--inspect', '--enable-source-maps', agentScript, 'jsonrpc'], {
             stdio: 'pipe',
             cwd: agentDir,
@@ -103,7 +103,7 @@ describe('Agent', () => {
                 CODY_SHIM_TESTING: 'true',
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
-                CODY_RECORDING_NAME: 'FullConfig',
+                CODY_RECORDING_NAME: testName,
                 SRC_ACCESS_TOKEN: accessToken,
                 ...process.env,
             },
@@ -148,8 +148,8 @@ describe('Agent', () => {
         return lastMessage
     }
 
-    function createClient(accessToken?: string): [TestClient, ClientInfo] {
-        const agentProcess = spawnAgentProcess(accessToken)
+    function createClient(testName: string, accessToken?: string): [TestClient, ClientInfo] {
+        const agentProcess = spawnAgentProcess(testName, accessToken)
         const client = new TestClient()
         const clientInfo: ClientInfo = getClientInfo(accessToken)
 
@@ -166,8 +166,11 @@ describe('Agent', () => {
         return [client, clientInfo]
     }
 
-    const [client, clientInfo] = createClient(process.env.SRC_ACCESS_TOKEN)
-    const [rateLimitedClient, rateLimitedClientInfo] = createClient(process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
+    const [client, clientInfo] = createClient('Normal', process.env.SRC_ACCESS_TOKEN)
+    const [rateLimitedClient, rateLimitedClientInfo] = createClient(
+        'RateLimit',
+        process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT
+    )
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -277,9 +280,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! I don't have any selected code from /src/animal.ts to use. If you provide me with some selected code snippets from that file, I'd be happy to incorporate them into my responses.",
+            "displayText": " Hello! I don't have any selected code from /src/animal.ts to reference. If you provide me with some code snippets from that file, I'd be happy to discuss them with you.",
             "speaker": "assistant",
-            "text": " Hello! I don't have any selected code from /src/animal.ts to use. If you provide me with some selected code snippets from that file, I'd be happy to incorporate them into my responses.",
+            "text": " Hello! I don't have any selected code from /src/animal.ts to reference. If you provide me with some code snippets from that file, I'd be happy to discuss them with you.",
           }
         `,
             explainPollyError
@@ -293,33 +296,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Here is a simple Hello World function in Java:
-
-          \`\`\`java
-          public class Main {
-
-            public static void main(String[] args) {
-              System.out.println(\\"Hello World!\\");
-            }
-
-          }
-          \`\`\`
-
-          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program.",
+            "displayText": "",
             "speaker": "assistant",
-            "text": " Here is a simple Hello World function in Java:
-
-          \`\`\`java
-          public class Main {
-
-            public static void main(String[] args) {
-              System.out.println(\\"Hello World!\\");
-            }
-
-          }
-          \`\`\`
-
-          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program.",
+            "text": "",
           }
         `,
             explainPollyError
