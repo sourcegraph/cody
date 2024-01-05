@@ -37,6 +37,7 @@ import {
     AutocompleteInlineAcceptedCommandArgs,
     AutocompleteItem,
     suggestedAutocompleteItemsCache,
+    updateInsertRangeForVSCode,
 } from './suggested-autocomplete-items-cache'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 
@@ -336,16 +337,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     this.handleUnwantedCompletionItem(getRequestParamsFromLastCandidate(document, this.lastCandidate))
                 }
 
-                const items = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    result.items,
-                    context
-                )
-
-                const visibleItems = items.filter(item =>
+                const visibleItems = result.items.filter(item =>
                     isCompletionVisible(
                         item,
                         document,
@@ -380,27 +372,41 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     }
                 }
 
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    visibleItems,
+                    context
+                )
+
                 // Store the log ID for each completion item so that we can later map to the selected
                 // item from the ID alone
-                for (const item of visibleItems) {
+                for (const item of autocompleteItems) {
                     suggestedAutocompleteItemsCache.add(item)
-                }
-
-                if (!this.config.isRunningInsideAgent) {
-                    // Since VS Code has no callback as to when a completion is shown, we assume
-                    // that if we pass the above visibility tests, the completion is going to be
-                    // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
                 }
 
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: visibleItems,
+                    items: autocompleteItems,
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
-                return autocompleteResult
+                if (this.config.isRunningInsideAgent) {
+                    return autocompleteResult
+                }
+
+                // Since VS Code has no callback as to when a completion is shown, we assume
+                // that if we pass the above visibility tests, the completion is going to be
+                // rendered in the UI
+                this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
+
+                return {
+                    ...autocompleteResult,
+                    items: updateInsertRangeForVSCode(autocompleteItems),
+                }
             } catch (error) {
                 this.onError(error as Error)
                 throw error
