@@ -20,13 +20,13 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
     }
 
     // Add default commands
-    const commands = defaultPrompts.commands as Record<string, unknown>
-    for (const key in commands) {
-        if (Object.prototype.hasOwnProperty.call(commands, key)) {
-            const command = commands[key] as CodyPrompt
-            command.type = 'default'
-            command.slashCommand = toSlashCommand(key)
-            map.set(command.slashCommand, command)
+    const prompts = defaultPrompts.commands as Record<string, unknown>
+    for (const key in prompts) {
+        if (Object.prototype.hasOwnProperty.call(prompts, key)) {
+            const prompt = prompts[key] as CodyPrompt
+            prompt.type = 'default'
+            prompt.slashCommand = toSlashCommand(key)
+            map.set(prompt.slashCommand, prompt)
         }
     }
 

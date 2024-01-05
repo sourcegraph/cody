@@ -7,8 +7,7 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './FileLink.module.css'
 
 export const FileLink: React.FunctionComponent<FileLinkProps> = ({ uri, path, range, source }) => {
-    const fileName = path || uri?.fsPath
-    const pathWithRange = range?.end.line ? `${fileName}:${range?.start.line + 1}-${range?.end.line - 1}` : fileName
+    const pathWithRange = range?.end.line ? `${path}:${range?.start.line + 1}-${range?.end.line - 1}` : path
 
     return (
         <button
