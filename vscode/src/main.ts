@@ -290,10 +290,10 @@ const register = async (
 
     const executeFixup = async (
         args: ExecuteEditArguments = {},
-        source: ChatEventSource = 'editor' // where the command was triggered from
+        source: ChatEventSource = 'editor', // where the command was triggered from
+        enabled: boolean
     ): Promise<void> => {
-        const disabled = true
-        if (disabled) {
+        if (!enabled) {
             void vscode.window.showErrorMessage('This is disabled for now.')
             return
         }
@@ -329,6 +329,12 @@ const register = async (
 
     const statusBar = createStatusBar()
 
+    const configFeatures = await graphqlClient.getCodyConfigFeatures()
+    const isError = (value: unknown): value is Error => value instanceof Error
+    let command = true
+    if (!isError(configFeatures)) {
+        command = configFeatures.commands
+    }
     disposables.push(
         vscode.commands.registerCommand(
             'cody.command.edit-code',
@@ -341,7 +347,7 @@ const register = async (
                     insertMode?: boolean
                 },
                 source?: ChatEventSource
-            ) => executeFixup(args, source)
+            ) => executeFixup(args, source, command)
         ),
         // Tests
         // Access token - this is only used in configuration tests
