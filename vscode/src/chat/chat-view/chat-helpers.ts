@@ -3,6 +3,7 @@ import path from 'path'
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import { createVSCodeRelativePath } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/helpers'
 import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -57,8 +58,8 @@ export function rangeToFragment(range: ActiveTextEditorSelectionRange): string {
 }
 
 export function fragmentToRange(fragment: string): ActiveTextEditorSelectionRange | undefined {
-    const match = fragment.match(/^L(\d+)-(\d+)$/)
-    if (!match) {
+    const match = fragment?.match(/^L(\d+)-(\d+)$/)
+    if (!fragment || !match) {
         return undefined
     }
     return {
@@ -135,14 +136,18 @@ export async function openFile(
     range?: ActiveTextEditorSelectionRange,
     currentViewColumn?: vscode.ViewColumn
 ): Promise<void> {
-    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absPath))
+    try {
+        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absPath))
 
-    let viewColumn = vscode.ViewColumn.Beside
-    if (currentViewColumn) {
-        viewColumn = currentViewColumn - 1 || currentViewColumn + 1
+        let viewColumn = vscode.ViewColumn.Beside
+        if (currentViewColumn) {
+            viewColumn = currentViewColumn - 1 || currentViewColumn + 1
+        }
+        const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
+        await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
+    } catch (error) {
+        console.error(error)
     }
-    const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
-    await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
 }
 
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
@@ -206,8 +211,8 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
         }
         contextFiles.push({
             uri: item.uri,
-            fileName: relFsPath,
-            source: 'embeddings',
+            fileName: createVSCodeRelativePath(item.uri),
+            source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
         })

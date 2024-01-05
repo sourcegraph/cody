@@ -1,6 +1,6 @@
-import { exec } from 'child_process'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import os from 'os'
-import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
@@ -22,7 +22,7 @@ export class ToolsProvider {
     private user: UserWorkspaceInfo
     private shell = vscode.env.shell
 
-    constructor(public context: vscode.ExtensionContext) {
+    constructor() {
         this.user = this.getUserInfo()
     }
 

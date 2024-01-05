@@ -8,6 +8,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Display the source and range of enhanced context correctly in UI. [pull/2542](https://github.com/sourcegraph/cody/pull/2542)
+- Context from directory for commands and custom commands now shows up correctly under enhanced context. [issues/2548](https://github.com/sourcegraph/cody/issues/2548)/[pull/2542](https://github.com/sourcegraph/cody/pull/2542)
+
 ### Changed
 
 ## [1.0.5]
