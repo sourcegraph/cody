@@ -101,16 +101,14 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         })
     )
 
-    if (codebaseName) {
-        ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
-        logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
-        return
-    }
+    logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 
+    // Main workspace root
+    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
+    // Nested codebases
     for (const cb of codebases) {
         ignores.setIgnoreFiles(cb[1], filesWithContent, cb[0])
     }
-    logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 }
 
 /**
