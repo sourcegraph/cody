@@ -234,9 +234,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! I don't have any selected code from /src/animal.ts to use. If you provide me with some selected code snippets from that file, I'd be happy to incorporate them into my responses.",
+            "displayText": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
             "speaker": "assistant",
-            "text": " Hello! I don't have any selected code from /src/animal.ts to use. If you provide me with some selected code snippets from that file, I'd be happy to incorporate them into my responses.",
+            "text": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
           }
         `
         )
