@@ -14,9 +14,19 @@ import { FixupTaskFactory } from './roles'
 function removeAfterLastAt(str: string): string {
     const lastIndex = str.lastIndexOf('@')
     if (lastIndex === -1) {
+        // Return the original string if "@" is not found
         return str
-    } // Return the original string if "@" is not found
+    }
     return str.slice(0, lastIndex)
+}
+
+function getLabelForContextFile(file: ContextFile): string {
+    const isFileType = file.type === 'file'
+    const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
+    if (isFileType) {
+        return `${file.path?.relative}${rangeLabel}`
+    }
+    return `${file.path?.relative}${rangeLabel}#${file.fileName}`
 }
 
 /* Match strings that end with a '@' followed by any characters except a space */
@@ -24,6 +34,11 @@ const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
 
 /* Match strings that end with a '@#' followed by any characters except a space */
 const MATCHING_SYMBOL_REGEX = /@#(\S+)$/
+
+const MAX_FUZZY_RESULTS = 20
+const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols..'
+const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
+const NO_MATCHES_LABEL = 'No matches found'
 
 interface FixupMatchingContext {
     /* Unique identifier for the context, shown in the input value but not necessarily in the quick pick selector */
@@ -40,20 +55,6 @@ interface QuickPickParams {
     prefix?: string
     selectedContextFiles?: ContextFile[]
 }
-
-function getLabelForContextFile(file: ContextFile): string {
-    const isFileType = file.type === 'file'
-    const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
-    if (isFileType) {
-        return `${file.path?.relative}${rangeLabel}`
-    }
-    return `${file.path?.relative}${rangeLabel}#${file.fileName}`
-}
-
-const MAX_FUZZY_RESULTS = 20
-const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols..'
-const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
-const NO_MATCHES_LABEL = 'No matches found'
 
 /**
  * The UI for creating non-stop fixup tasks by typing instructions.

@@ -1017,7 +1017,6 @@ export class FixupController
         // Revert and remove the previous task
         await this.undoTask(task)
 
-        // TODO: Can we just use executeEdit?
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
             {
