@@ -26,8 +26,10 @@ const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
 const MATCHING_SYMBOL_REGEX = /@#(\S+)$/
 
 interface FixupMatchingContext {
-    /* Associated text label with the context */
-    label: string
+    /* Unique identifier for the context, shown in the input value but not necessarily in the quick pick selector */
+    key: string
+    /* If present, will override the key shown in the quick pick selector */
+    shortLabel?: string
     file: ContextFile
 }
 
@@ -39,33 +41,50 @@ interface QuickPickParams {
     selectedContextFiles?: ContextFile[]
 }
 
+function getLabelForContextFile(file: ContextFile): string {
+    const isFileType = file.type === 'file'
+    const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
+    if (isFileType) {
+        return `${file.path?.relative}${rangeLabel}`
+    }
+    return `${file.path?.relative}${rangeLabel}#${file.fileName}`
+}
+
+const MAX_FUZZY_RESULTS = 20
+const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols..'
+const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
+const NO_MATCHES_LABEL = 'No matches found'
+
 /**
  * The UI for creating non-stop fixup tasks by typing instructions.
  */
 export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
-    private async getMatchingContext(instruction: string): Promise<FixupMatchingContext[]> {
-        const cancellation = new vscode.CancellationTokenSource()
+    private async getMatchingContext(instruction: string): Promise<FixupMatchingContext[] | null> {
         const symbolMatch = instruction.match(MATCHING_SYMBOL_REGEX)
         if (symbolMatch) {
-            const symbolResults = await getSymbolContextFiles(symbolMatch[1], 5)
+            const symbolResults = await getSymbolContextFiles(symbolMatch[1], MAX_FUZZY_RESULTS)
             return symbolResults.map(result => ({
+                key: getLabelForContextFile(result),
                 file: result,
-                label: result.fileName,
+                shortLabel: `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
+                    result.fileName
+                }`,
             }))
         }
 
         const fileMatch = instruction.match(MATCHING_CONTEXT_FILE_REGEX)
         if (fileMatch) {
-            const fileResults = await getFileContextFiles(fileMatch[1], 5, cancellation.token)
+            const cancellation = new vscode.CancellationTokenSource()
+            const fileResults = await getFileContextFiles(fileMatch[1], MAX_FUZZY_RESULTS, cancellation.token)
             return fileResults.map(result => ({
+                key: getLabelForContextFile(result),
                 file: result,
-                label: result.path?.relative ?? result.fileName,
             }))
         }
 
-        return []
+        return null
     }
 
     public async getInputFromQuickPick({
@@ -91,12 +110,10 @@ export class FixupTypingUI {
         // Initialize the selectedContextItems with any previous items
         // This is primarily for edit retries, where a user may want to reuse their context
         selectedContextFiles.forEach(file => {
-            // TODO: Fix the label generation, either return with labels or have a single function to determine the label
-            selectedContextItems.set(file.fileName, file)
+            selectedContextItems.set(getLabelForContextFile(file), file)
         })
 
         // VS Code automatically sorts quick pick items by label.
-        // We want the 'edit' item to always be first, so we remove this.
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
         ;(quickPick as any).sortByLabel = false
 
@@ -106,20 +123,40 @@ export class FixupTypingUI {
         })
 
         quickPick.onDidChangeValue(async value => {
+            // If we have the beginning of a file or symbol match, show a helpful label
+            if (value.endsWith('@')) {
+                quickPick.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
+                return
+            }
+            if (value.endsWith('@#')) {
+                quickPick.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
+                return
+            }
+
             const matchingContext = await this.getMatchingContext(value)
-            if (matchingContext.length === 0) {
-                // Clear out any existing items
+            if (matchingContext === null) {
+                // Nothing to match, clear existing items
                 quickPick.items = []
                 return
             }
 
+            if (matchingContext.length === 0) {
+                // Attempted to match but found nothing
+                quickPick.items = [{ alwaysShow: true, label: NO_MATCHES_LABEL }]
+                return
+            }
+
             // Update stored context items so we can retrieve them later
-            for (const { label, file } of matchingContext) {
-                contextItems.set(label, file)
+            for (const { key, file } of matchingContext) {
+                contextItems.set(key, file)
             }
 
             // Add human-friendly labels to the quick pick so the user can select them
-            quickPick.items = matchingContext.map(({ label }) => ({ alwaysShow: true, label }))
+            quickPick.items = matchingContext.map(({ key, shortLabel }) => ({
+                alwaysShow: true,
+                label: shortLabel || key,
+                description: shortLabel ? key : undefined,
+            }))
             return
         })
 
@@ -136,10 +173,15 @@ export class FixupTypingUI {
 
                 // Selected item flow, update the input and store it for submission
                 const selectedItem = quickPick.selectedItems[0]
-                if (selectedItem && contextItems.has(selectedItem.label)) {
-                    // Replace fuzzy value with actual context in input
-                    quickPick.value = `${removeAfterLastAt(instruction).trim()} @${selectedItem.label} `
-                    selectedContextItems.set(selectedItem.label, contextItems.get(selectedItem.label)!)
+                // The `key` is provided as the `description` for symbol items, use this if available.
+                const key = selectedItem?.description || selectedItem?.label
+                if (selectedItem) {
+                    const contextItem = contextItems.get(key)
+                    if (contextItem) {
+                        // Replace fuzzy value with actual context in input
+                        quickPick.value = `${removeAfterLastAt(instruction)}@${key} `
+                        selectedContextItems.set(key, contextItem)
+                    }
                     return
                 }
 
