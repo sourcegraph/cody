@@ -89,8 +89,8 @@ test('@-file empty state', async ({ page, sidebar }) => {
         )
     ).toBeVisible()
 
-    // Also ensure explicitly @-included context is not showing up as enhanced context
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).not.toBeVisible()
+    // Also ensure we have the right number of files in the context.
+    await expect(chatPanelFrame.getByText('Context: 2 files')).toBeVisible()
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
@@ -99,6 +99,13 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('@Main.java', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java ')
+
+    // Check pressing tab after typing a partial filename but where that complete
+    // filename already exists earlier in the input.
+    // https://github.com/sourcegraph/cody/issues/2243
+    await chatInput.type('and @Main.ja', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 })
 
 function withPlatformSlashes(input: string) {

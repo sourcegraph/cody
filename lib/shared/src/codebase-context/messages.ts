@@ -8,17 +8,7 @@ import { Message } from '../sourcegraph-api'
 // user: context file provided by the user explicitly via chat input
 // keyword: the context file returned from local keyword search
 // editor: context file retrieved from the current editor
-// selection: selected code from the current editor
-// terminal: output from shell terminal
-export type ContextFileSource =
-    | 'embeddings'
-    | 'user'
-    | 'keyword'
-    | 'editor'
-    | 'filename'
-    | 'unified'
-    | 'selection'
-    | 'terminal'
+export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor' | 'filename' | 'unified'
 
 export type ContextFileType = 'file' | 'symbol'
 

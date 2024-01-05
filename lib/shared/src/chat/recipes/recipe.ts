@@ -28,6 +28,7 @@ export type RecipeID =
     | 'generate-unit-test'
     | 'git-history'
     | 'improve-variable-names'
+    | 'custom-prompt'
     | 'next-questions'
     | 'pr-description'
     | 'release-notes'
