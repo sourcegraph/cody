@@ -39,6 +39,7 @@ import styles from './Chat.module.css'
 
 interface ChatboxProps {
     welcomeMessage?: string
+    chatEnabled: boolean
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
@@ -87,6 +88,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setChatModels,
     chatModels,
     enableNewChatUI,
+    chatEnabled,
     userInfo,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
@@ -245,6 +247,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
+            chatEnabled={chatEnabled}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
         />
@@ -262,6 +265,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     autoFocus,
     value,
     setValue,
+    chatEnabled,
     required,
     onInput,
     onKeyDown,
@@ -299,9 +303,10 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         },
         [inputRef, onKeyDown]
     )
-    const isChatDisabled = true
-    const actualPlaceholder = isChatDisabled ? disabledPlaceHolder : placeholder;
-    const isDisabled = isChatDisabled ? true : false;
+    const isChatDisabled = !chatEnabled
+    const actualPlaceholder = isChatDisabled ? disabledPlaceHolder : placeholder
+    const isDisabled = !!isChatDisabled
+    console.log('my chat is disabled bro', chatEnabled)
 
     return (
         <div
@@ -324,7 +329,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 style={{
                     backgroundColor: isDisabled ? 'var(--vscode-input-background)' : '',
                     color: isDisabled ? 'var(--vscode-input-foreground)' : '',
-                    opacity: isDisabled ? '0.5' : '' // Adjust opacity to make it look more disabled
+                    opacity: isDisabled ? '0.5' : '', // Adjust opacity to make it look more disabled
                 }} // Change the background color to grey if disabled
             />
         </div>
