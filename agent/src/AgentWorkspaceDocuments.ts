@@ -85,6 +85,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         for (const document of this.allDocuments()) {
             vscode_shim.visibleTextEditors.push(newTextEditor(document))
         }
+        vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 
         vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 

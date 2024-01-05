@@ -35,6 +35,8 @@ import {
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
@@ -502,6 +504,9 @@ export class SourcegraphGraphQLAPIClient {
      * TelemetryRecorder from '@sourcegraph/telemetry' instead.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
+        for (const event of events) {
+            this.anonymizeTelemetryEventInput(event)
+        }
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
             events,
         })
@@ -568,12 +573,34 @@ export class SourcegraphGraphQLAPIClient {
         return {}
     }
 
+    private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
+        if (isAgentTesting) {
+            delete event.timestamp
+            event.parameters.interactionID = undefined
+            event.parameters.billingMetadata = undefined
+            event.parameters.metadata = undefined
+            event.parameters.metadata = undefined
+            event.parameters.privateMetadata = {}
+        }
+    }
+
+    private anonymizeEvent(event: event): void {
+        if (isAgentTesting) {
+            event.publicArgument = undefined
+            event.argument = undefined
+            event.userCookieID = 'ANONYMOUS_USER_COOKIE_ID'
+            event.hashedLicenseKey = undefined
+        }
+    }
+
     private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
+        this.anonymizeEvent(event)
         const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
         return extractDataOrError(response, data => data)
     }
 
     private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
+        this.anonymizeEvent(event)
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
         const initialDataOrError = extractDataOrError(initialResponse, data => data)
 

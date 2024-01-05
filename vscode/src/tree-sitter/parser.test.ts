@@ -6,6 +6,9 @@ describe('lexical analysis', () => {
     describe('experiment', () => {
         it('finds error nodes', async () => {
             const parser = await initTreeSitterParser()
+            if (parser === undefined) {
+                throw new Error('Tree-sitter parser is not initialized')
+            }
 
             const tree = parser.parse('console.log(1)\nfunction example(')
             const query = parser.getLanguage().query('(ERROR) @error')

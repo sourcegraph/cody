@@ -30,6 +30,7 @@
     "@sourcegraph/telemetry": "^0.16.0",
     "commander": "^11.1.0",
     "csv-writer": "^1.6.0",
+    "dedent": "^0.7.0",
     "env-paths": "^3.0.0",
     "fast-myers-diff": "^3.1.0",
     "minimatch": "^9.0.3",
@@ -38,6 +39,7 @@
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
+    "@types/dedent": "^0.7.0",
     "@types/google-protobuf": "^3.15.10",
     "@types/minimatch": "^5.1.2",
     "@types/uuid": "^9.0.2",

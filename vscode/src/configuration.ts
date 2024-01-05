@@ -108,10 +108,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(
-            'autocomplete.experimental.syntacticPostProcessing',
-            true
-        ),
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false
