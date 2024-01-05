@@ -1007,8 +1007,8 @@ export class FixupController
 
         // Prompt the user for a new instruction, and create a new fixup
         const input = await this.typingUI.getInputFromQuickPick({
-            value: previousInstruction,
-            selectedContextFiles: previousUserContextFiles,
+            initialValue: previousInstruction,
+            initialSelectedContextFiles: previousUserContextFiles,
         })
         if (!input) {
             return
