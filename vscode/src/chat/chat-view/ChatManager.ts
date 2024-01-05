@@ -92,7 +92,8 @@ export class ChatManager implements vscode.Disposable {
         recipeId: RecipeID,
         humanChatInput: string,
         openChatView = true,
-        source?: ChatEventSource
+        source?: ChatEventSource,
+        enabled?: boolean
     ): Promise<void> {
         logDebug('ChatManager:executeRecipe:called', recipeId)
         if (!vscode.window.visibleTextEditors.length) {
@@ -100,7 +101,7 @@ export class ChatManager implements vscode.Disposable {
             return
         }
 
-        const disabled = true
+        const disabled = !enabled
         if (disabled) {
             void vscode.window.showErrorMessage('Dude this is disabled bro')
             return

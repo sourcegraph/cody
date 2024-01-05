@@ -283,9 +283,10 @@ const register = async (
         recipe: RecipeID,
         openChatView = true,
         humanInput = '',
-        source: ChatEventSource = 'editor'
+        source: ChatEventSource = 'editor',
+        enabled?: boolean
     ): Promise<void> => {
-        await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
+        await chatManager.executeRecipe(recipe, humanInput, openChatView, source, enabled)
     }
 
     const executeFixup = async (
@@ -380,7 +381,7 @@ const register = async (
         ),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
-            await executeRecipeInChatView('chat-question', true, input, source)
+            await executeRecipeInChatView('chat-question', true, input, source, command)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
@@ -393,17 +394,17 @@ const register = async (
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
             await chatManager.executeCustomCommand(title)
         }),
-        vscode.commands.registerCommand('cody.command.explain-code', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/explain')
+        vscode.commands.registerCommand('cody.command.explain-code', async (source?: ChatEventSource) => {
+            await executeRecipeInChatView('custom-prompt', true, '/explain', source, command)
         }),
-        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/test')
+        vscode.commands.registerCommand('cody.command.generate-tests', async (source?: ChatEventSource) => {
+            await executeRecipeInChatView('custom-prompt', true, '/test', source, command)
         }),
-        vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInChatView('custom-prompt', false, '/doc')
+        vscode.commands.registerCommand('cody.command.document-code', async (source?: ChatEventSource) => {
+            await executeRecipeInChatView('custom-prompt', false, '/doc', source, command)
         }),
-        vscode.commands.registerCommand('cody.command.smell-code', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/smell')
+        vscode.commands.registerCommand('cody.command.smell-code', async (source?: ChatEventSource) => {
+            await executeRecipeInChatView('custom-prompt', true, '/smell', source, command)
         }),
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
