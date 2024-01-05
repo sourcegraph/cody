@@ -277,9 +277,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello!",
+            "displayText": " Hello! I don't have any selected code from /src/animal.ts to use. If you provide me with some selected code snippets from that file, I'd be happy to incorporate them into my responses.",
             "speaker": "assistant",
-            "text": " Hello!",
+            "text": " Hello! I don't have any selected code from /src/animal.ts to use. If you provide me with some selected code snippets from that file, I'd be happy to incorporate them into my responses.",
           }
         `,
             explainPollyError
