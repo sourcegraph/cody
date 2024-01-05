@@ -42,6 +42,7 @@ export interface Configuration {
     experimentalGuardrails: boolean
     experimentalLocalSymbols: boolean
     experimentalSymfContext: boolean
+    experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
     experimentalChatPredictions: boolean
 
@@ -49,6 +50,7 @@ export interface Configuration {
      * Experimental autocomplete
      */
     autocompleteExperimentalSyntacticPostProcessing?: boolean
+    internalUnstable: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null

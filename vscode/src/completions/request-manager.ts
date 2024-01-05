@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
@@ -37,6 +37,14 @@ export interface RequestManagerResult {
     source: InlineCompletionsResultSource
 }
 
+interface RequestsManagerParams {
+    requestParams: RequestParams
+    providers: Provider[]
+    context: ContextSnippet[]
+    isCacheEnabled: boolean
+    tracer?: CompletionProviderTracer
+}
+
 /**
  * This class can handle concurrent requests for code completions. The idea is
  * that requests are not cancelled even when the user continues typing in the
@@ -64,14 +72,12 @@ export class RequestManager {
         this.disableRecyclingOfPreviousRequests = disableRecyclingOfPreviousRequests
     }
 
-    public async request(
-        params: RequestParams,
-        providers: Provider[],
-        context: ContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<RequestManagerResult> {
-        const cachedCompletions = this.cache.get(params)
-        if (cachedCompletions) {
+    public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
+        const { requestParams, providers, context, isCacheEnabled, tracer } = params
+
+        const cachedCompletions = this.cache.get(requestParams)
+        if (isCacheEnabled && cachedCompletions) {
+            console.log('using cache', cachedCompletions)
             return cachedCompletions
         }
 
@@ -79,46 +85,52 @@ export class RequestManager {
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
         // complete and try to see if their results can be reused for other inflight requests.
         let abortController: AbortController = new AbortController()
-        if (this.disableRecyclingOfPreviousRequests && params.abortSignal) {
-            abortController = forkSignal(params.abortSignal)
+        if (this.disableRecyclingOfPreviousRequests && requestParams.abortSignal) {
+            abortController = forkSignal(requestParams.abortSignal)
         }
 
-        const request = new InflightRequest(params, abortController)
+        const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
 
         Promise.all(
             providers.map(provider => {
-                const completionReadyPromise = new Promise<InlineCompletionItemWithAnalytics[]>((resolve, reject) => {
-                    provider
-                        .generateCompletions(
-                            request.abortController.signal,
-                            context,
-                            resolve,
-                            (docContext, hotStreakCompletions) => {
-                                this.cache.set(
-                                    { docContext },
-                                    {
-                                        completions: [hotStreakCompletions],
-                                        source: InlineCompletionsResultSource.HotStreak,
-                                    }
+                return wrapInActiveSpan('autocomplete.generate', () => {
+                    const completionReadyPromise = new Promise<InlineCompletionItemWithAnalytics[]>(
+                        (resolve, reject) => {
+                            provider
+                                .generateCompletions(
+                                    request.abortController.signal,
+                                    context,
+                                    resolve,
+                                    (docContext, hotStreakCompletions) => {
+                                        this.cache.set(
+                                            { docContext },
+                                            {
+                                                completions: [hotStreakCompletions],
+                                                source: InlineCompletionsResultSource.HotStreak,
+                                            }
+                                        )
+                                    },
+                                    tracer
                                 )
-                            },
-                            tracer
-                        )
-                        .catch(error => reject(error))
-                })
+                                .catch(error => reject(error))
+                        }
+                    )
 
-                return startAsyncSpan('autocomplete.generate', () => completionReadyPromise)
+                    return completionReadyPromise
+                })
             })
         )
             .then(res => res.flat())
             .then(completions => {
                 // Shared post-processing logic
-                return startAsyncSpan('autocomplete.post-process', () => processInlineCompletions(completions, params))
+                return wrapInActiveSpan('autocomplete.post-process', () =>
+                    processInlineCompletions(completions, requestParams)
+                )
             })
             .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.
-                this.cache.set(params, {
+                this.cache.set(requestParams, {
                     completions: processedCompletions,
                     source: InlineCompletionsResultSource.Cache,
                 })

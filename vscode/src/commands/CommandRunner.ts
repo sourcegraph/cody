@@ -5,7 +5,7 @@ import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit, ExecuteEditArguments } from '../edit/execute'
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -35,8 +35,8 @@ export class CommandRunner implements vscode.Disposable {
         private isFixupRequest?: boolean
     ) {
         // use commandKey to identify default command in telemetry
-        // all user and workspace command type should be logged under 'custom'
         const commandKey = command.slashCommand
+        // all user and workspace custom command should be logged under 'custom'
         this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
 
         if (instruction?.startsWith('/edit ')) {
@@ -45,38 +45,43 @@ export class CommandRunner implements vscode.Disposable {
             command.mode = command.mode || 'ask'
         }
 
-        // Log commands usage
-        telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
-            mode: command.mode,
-            useCodebaseContex: !!command.context?.codebase,
-            useShellCommand: !!command.context?.command,
-            requestID: command.requestID,
-        })
-        telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
-            metadata: {
-                useCodebaseContex: command.context?.codebase ? 1 : 0,
-                useShellCommand: command.context?.command ? 1 : 0,
-            },
-            interactionID: command.requestID,
-            privateMetadata: {
+        // Log non-edit commands usage
+        if (command.mode === 'ask') {
+            telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
                 mode: command.mode,
+                useCodebaseContex: !!command.context?.codebase,
+                useShellCommand: !!command.context?.command,
                 requestID: command.requestID,
-            },
-        })
+            })
+            telemetryRecorder.recordEvent(`cody.command.${this.kind}`, 'executed', {
+                metadata: {
+                    useCodebaseContex: command.context?.codebase ? 1 : 0,
+                    useShellCommand: command.context?.command ? 1 : 0,
+                },
+                interactionID: command.requestID,
+                privateMetadata: {
+                    mode: command.mode,
+                    requestID: command.requestID,
+                },
+            })
+        }
 
         logDebug('CommandRunner:init', this.kind)
 
         // Commands only work in active editor / workspace unless context specifies otherwise
-        this.editor = getActiveEditor()
-        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
-            const errorMsg = 'Failed to create command: No active text editor found.'
+        const editor = getEditor()
+        if (editor.ignored && !editor.active) {
+            const errorMsg = 'Failed to create command: file was ignored by Cody.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
             return
         }
 
-        if (command.mode === 'inline') {
-            void this.handleInlineRequest()
+        this.editor = editor.active
+        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
+            const errorMsg = 'Failed to create command: No active text editor found.'
+            logDebug('CommandRunner:int:fail', errorMsg)
+            void vscode.window.showErrorMessage(errorMsg)
             return
         }
 
@@ -156,7 +161,7 @@ export class CommandRunner implements vscode.Disposable {
         const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
         const intent: FixupIntent = this.kind === 'doc' ? 'doc' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        const source = this.kind as ChatEventSource
+        const source = this.kind === 'custom' ? 'custom-commands' : this.kind
         await executeEdit(
             {
                 range,
@@ -165,37 +170,8 @@ export class CommandRunner implements vscode.Disposable {
                 intent,
                 insertMode,
             } satisfies ExecuteEditArguments,
-            source
+            source as ChatEventSource
         )
-    }
-
-    /**
-     * handleInlineRequest method handles executing inline request based on editor selection.
-     *
-     * Gets the current editor selection range and document.
-     * Returns early if no range or document.
-     * Gets the folding range if selection start equals end.
-     *
-     * Calls the vscode.commands.executeCommand with the 'cody.inline.add' command,
-     * passing the instruction prompt and range.
-     *
-     * This executes the inline request using the current selection range in the editor.
-     */
-    private async handleInlineRequest(): Promise<void> {
-        logDebug('CommandRunner:handleFixupRequest', 'inline chat request detected')
-
-        let range = this.editor?.selection
-        const doc = this.editor?.document
-        if (!range || !doc) {
-            return
-        }
-        // Get folding range if no selection is found
-        if (range?.start.isEqual(range.end)) {
-            range = await getSmartSelection(doc.uri, range.start.line)
-        }
-
-        const instruction = this.command.prompt
-        await vscode.commands.executeCommand('cody.inline.add', instruction, range)
     }
 
     /**
