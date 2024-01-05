@@ -234,9 +234,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello!",
+            "displayText": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
             "speaker": "assistant",
-            "text": " Hello!",
+            "text": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
           }
         `
         )

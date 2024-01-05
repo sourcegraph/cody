@@ -162,6 +162,18 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
+            {message.error ? (
+                typeof message.error === 'string' ? (
+                    <RequestErrorItem error={message.error} />
+                ) : (
+                    <ErrorItem
+                        error={message.error}
+                        ChatButtonComponent={ChatButtonComponent}
+                        userInfo={userInfo}
+                        postMessage={postMessage}
+                    />
+                )
+            ) : null}
             <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
                 {message.displayText ? (
                     EditTextArea ? (
@@ -182,18 +194,6 @@ export const TranscriptItem: React.FunctionComponent<
                     inProgress && <BlinkingCursor />
                 )}
             </div>
-            {message.error ? (
-                typeof message.error === 'string' ? (
-                    <RequestErrorItem error={message.error} />
-                ) : (
-                    <ErrorItem
-                        error={message.error}
-                        ChatButtonComponent={ChatButtonComponent}
-                        userInfo={userInfo}
-                        postMessage={postMessage}
-                    />
-                )
-            ) : null}
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}

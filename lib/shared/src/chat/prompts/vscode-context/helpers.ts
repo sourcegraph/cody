@@ -60,9 +60,13 @@ export function isInWorkspace(fileToCheck: URI): boolean {
 
 function createFileContextResponseMessage(context: string, filePath: string): ContextMessage[] {
     const fileName = createVSCodeRelativePath(filePath)
+    const uri = vscode.Uri.file(filePath)
     const truncatedContent = truncateText(context, MAX_CURRENT_FILE_TOKENS)
     return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
         fileName,
+        uri,
+        content: truncatedContent,
+        source: 'editor',
     })
 }
 
@@ -274,11 +278,13 @@ export async function getCurrentDirFilteredContext(
         try {
             const decoded = await decodeVSCodeTextDoc(fileUri)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+            // From line 0 to the end of truncatedContent
+            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
 
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName }
+                { fileName, uri: fileUri, content: truncatedContent, source: 'editor', range }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -354,11 +360,12 @@ export async function getDirContextMessages(
         try {
             const decoded = await decodeVSCodeTextDoc(fileUri)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
 
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName }
+                { fileName, uri: fileUri, content: truncatedContent, source: 'editor', range }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
