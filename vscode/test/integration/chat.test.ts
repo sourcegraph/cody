@@ -32,7 +32,7 @@ suite('Chat', function () {
         await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
     })
 
-    // display filename when there is a selection in active editor
+    // do not display filename even when there is a selection in active editor
     test('append current file link to display text on editor selection', async () => {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.panel.new')
@@ -40,7 +40,7 @@ suite('Chat', function () {
         await chatView.handleHumanMessageSubmitted('test', 'hello from the human', 'user', [], false)
 
         // Display text should include file link at the end of message
-        assert.match((await getTranscript(0)).displayText || '', /^hello from the human \[_@Main.java/)
+        assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
         await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
     })
 })
