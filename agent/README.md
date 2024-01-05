@@ -106,7 +106,7 @@ To fix this problem, update the HTTP recordings with the following command:
 export SRC_ACCESS_TOKEN=sgp_YOUR_ACCESS_TOKEN # redacted in the recordings
 export SRC_ENDPOINT=https://sourcegraph.com   # tests run against dotcom
 src login                                     # confirm you are authenticated to sourcegraph.com
-CODY_RECORDING_MODE=record pnpm run test      # run tests to update recordings
+pnpm update-agent-recordings                  # run tests to update recordings
 pnpm run test                                 # confirm that tests are passing when replaying HTTP traffic
 ```
 

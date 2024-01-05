@@ -78,6 +78,9 @@ class CodyPersister extends FSPersister {
             // and to remove any access tokens.
 
             // Update any headers
+            entry.request.bodySize = undefined
+            entry.request.headersSize = 0
+            entry._id = 'REDACTED_ID'
             const headers = [...entry.request.headers, ...entry.response.headers]
             for (const header of headers) {
                 switch (header.name) {
@@ -188,8 +191,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 expiresIn: options.expiresIn,
                 persisterOptions: {
                     keepUnusedRequests: true,
-                    // For cleaner diffs https://netflix.github.io/pollyjs/#/configuration?id=disablesortingharentries
-                    disableSortingHarEntries: true,
                     fs: {
                         recordingsDir: options.recordingDirectory,
                     },
