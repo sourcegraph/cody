@@ -8,6 +8,7 @@ import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
@@ -71,6 +72,15 @@ interface DotComCurrentUserInfoResponse {
             email: string
         }
     } | null
+}
+interface CodyConfigFeatures {
+    chat: boolean
+    autoComplete: boolean
+    commands: boolean
+}
+
+interface CodyConfigFeaturesResponse {
+    site: { codyConfigFeatures: CodyConfigFeatures | null } | null
 }
 
 interface EnterpriseCurrentUserInfoResponse {
@@ -392,6 +402,21 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(response, data =>
                 data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
+        )
+    }
+    public async getCodyConfigFeatures(): Promise<
+        | {
+              chat: boolean
+              autoComplete: boolean
+              commands: boolean
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
+            CURRENT_SITE_CODY_CONFIG_FEATURES,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
         )
     }
 
