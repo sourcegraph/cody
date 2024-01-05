@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { ExtensionApi } from '../../src/extension-api'
+import { FixupTask } from '../../src/non-stop/FixupTask'
 import * as mockServer from '../fixtures/mock-server'
 
 /**
@@ -67,19 +68,27 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
         if (!api.isActive || !api.exports.testing) {
             return false
         }
-        transcript = await getExtensionAPI().exports.testing?.chatMessages()
+        transcript = await getExtensionAPI().exports.testing?.chatTranscript()
         return transcript !== undefined && transcript.length > index && Boolean(transcript[index].text)
     })
     assert.ok(transcript)
     return transcript[index]
 }
 
-export async function getTextEditorWithSelection(): Promise<void> {
-    // Open Main.java
-    assert.ok(vscode.workspace.workspaceFolders)
-    const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
-    const textEditor = await vscode.window.showTextDocument(mainJavaUri)
+export async function getFixupTasks(): Promise<FixupTask[]> {
+    const api = getExtensionAPI()
+    const testSupport = api.exports.testing
+    assert.ok(testSupport)
 
-    // Select the "main" method
-    textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+    let fixups: FixupTask[] | undefined
+
+    await waitUntil(async () => {
+        if (!api.isActive || !api.exports.testing) {
+            return false
+        }
+        fixups = await getExtensionAPI().exports.testing?.fixupTasks()
+        return true
+    })
+    assert.ok(fixups)
+    return fixups || []
 }

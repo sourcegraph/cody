@@ -2,7 +2,9 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { MockReranker, Reranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
+import { MessageProvider } from './chat/MessageProvider'
+import { FixupController } from './non-stop/FixupController'
+import { FixupTask } from './non-stop/FixupTask'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -37,7 +39,9 @@ class Rendezvous<T> {
 // integration test.
 export class TestSupport {
     public static instance: TestSupport | undefined
-    public chatPanelProvider = new Rendezvous<SimpleChatPanelProvider>()
+
+    public messageProvider = new Rendezvous<MessageProvider>()
+    public fixupController = new Rendezvous<FixupController>()
 
     public reranker: Reranker | undefined
 
@@ -50,7 +54,11 @@ export class TestSupport {
         return this.reranker
     }
 
-    public async chatMessages(): Promise<ChatMessage[]> {
-        return (await this.chatPanelProvider.get()).transcriptForTesting(this)
+    public async chatTranscript(): Promise<ChatMessage[]> {
+        return (await this.messageProvider.get()).transcriptForTesting(this)
+    }
+
+    public async fixupTasks(): Promise<FixupTask[]> {
+        return (await this.messageProvider.get()).fixupTasksForTesting(this)
     }
 }

@@ -105,6 +105,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     constructor(options: MessageProviderOptions) {
         super()
 
+        if (TestSupport.instance) {
+            TestSupport.instance.messageProvider.set(this)
+        }
+
         this.chat = options.chat
         this.intentDetector = options.intentDetector
         this.guardrails = options.guardrails
@@ -363,7 +367,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
-        const command = await this.chatCommandsFilter(humanChatInput, recipeId, { source, requestID })
+        const command = await this.chatCommandsFilter(
+            humanChatInput,
+            recipeId,
+            { source, requestID },
+            userInputContextFiles
+        )
         if (!command) {
             return
         }
@@ -567,13 +576,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        return vscode.commands.executeCommand('cody.action.commands.exec', title)
+        return this.executeRecipe('custom-prompt', title, 'custom-commands')
     }
 
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
-        eventTrace?: { requestID?: string; source?: ChatEventSource }
+        eventTrace?: { requestID?: string; source?: ChatEventSource },
+        userContextFiles?: ContextFile[]
     ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
         const source = eventTrace?.source || undefined
         text = text.trim()
@@ -624,7 +634,23 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     const assistantResponse = 'Command failed. Please open a file and try again.'
                     return this.addCustomInteraction({ assistantResponse, text, source })
                 }
-                return vscode.commands.executeCommand('cody.action.commands.exec', text)
+                const commandRunnerID = await this.editor.controllers.command?.addCommand(
+                    text,
+                    eventTrace?.requestID,
+                    userContextFiles
+                )
+                // no op
+                if (!commandRunnerID) {
+                    return
+                }
+
+                if (commandRunnerID === 'invalid') {
+                    const assistantResponse = `__${text}__ is not a valid command`
+                    // If no command found, send error message to view
+                    return this.addCustomInteraction({ assistantResponse, text, source })
+                }
+
+                return { text: commandRunnerID, recipeId: 'custom-prompt', source }
             }
         }
     }
