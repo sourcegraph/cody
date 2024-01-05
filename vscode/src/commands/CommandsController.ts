@@ -12,6 +12,7 @@ import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
 import { PromptsProvider } from './PromptsProvider'
+import { commandLenses } from './utils/CoreCommandCodeLenses'
 import { constructFileUri, createFileWatchers, createQuickPickItem, openCustomCommandDocsLink } from './utils/helpers'
 import { menu_options, menu_separators, showAskQuestionQuickPick, showRemoveConfirmationInput } from './utils/menu'
 import { ToolsProvider } from './utils/ToolsProvider'
@@ -49,6 +50,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
+        commandLenses.init()
     }
 
     /**

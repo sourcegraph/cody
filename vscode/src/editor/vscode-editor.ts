@@ -116,6 +116,13 @@ export class VSCodeEditor implements Editor<FixupController, CommandsController>
         // Get selection for current folding range of cursor
         const activeCursorPosition = selection.start.line
         const foldingRange = await getSmartSelection(activeEditor.document.uri, activeCursorPosition)
+
+        // Open the document in the editor with selection highlighted
+        void vscode.window.showTextDocument(activeEditor.document, {
+            selection: foldingRange,
+            viewColumn: activeEditor.viewColumn,
+        })
+
         if (foldingRange) {
             return this.createActiveTextEditorSelection(activeEditor, foldingRange)
         }
