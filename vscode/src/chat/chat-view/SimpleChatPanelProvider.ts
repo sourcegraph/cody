@@ -1138,6 +1138,7 @@ class ContextProvider implements IContextProvider {
                 return {
                     uri: displayUri,
                     range,
+                    source: 'search',
                     text,
                 }
             })
@@ -1348,6 +1349,7 @@ function contextFilesToContextItems(
             return {
                 uri,
                 range,
+                source: file.source,
                 text: text || '',
             }
         })

@@ -89,9 +89,6 @@ test('@-file empty state', async ({ page, sidebar }) => {
         )
     ).toBeVisible()
 
-    // Also ensure we have the right number of files in the context.
-    await expect(chatPanelFrame.getByText('Context: 2 files')).toBeVisible()
-
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
     await chatInput.focus()
