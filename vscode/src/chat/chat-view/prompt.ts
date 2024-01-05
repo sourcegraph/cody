@@ -155,6 +155,8 @@ export class DefaultPrompter implements IPrompter {
             // Using populateCodeContextTemplate here will cause confusion to Cody
             const templateText = 'Codebase context from file path {fileName}: '
             messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri.fsPath)
+        } else if (contextItem.source === 'terminal') {
+            messageText = contextItem.text
         } else if (isMarkdownFile(contextItem.uri.fsPath)) {
             messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri.fsPath)
         } else {

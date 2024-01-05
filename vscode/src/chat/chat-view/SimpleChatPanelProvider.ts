@@ -1028,10 +1028,9 @@ class ContextProvider implements IContextProvider {
     }
 
     public async getSmartSelectionContext(): Promise<ContextItem[]> {
-        const selection =
-            (await this.editor.getActiveTextEditorSmartSelection()) ||
-            this.editor.getActiveTextEditorSelectionOrVisibleContent()
-        if (!selection || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+        const smartSelection = await this.editor.getActiveTextEditorSmartSelection()
+        const selection = smartSelection || this.editor.getActiveTextEditorSelectionOrVisibleContent()
+        if (!selection?.selectedText || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1056,7 +1055,7 @@ class ContextProvider implements IContextProvider {
 
     public getCurrentSelectionContext(): ContextItem[] {
         const selection = this.editor.getActiveTextEditorSelection()
-        if (!selection || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+        if (!selection?.selectedText || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1156,6 +1155,7 @@ class ContextProvider implements IContextProvider {
 
     public async getCommandContext(promptText: string, contextConfig: CodyPromptContext): Promise<ContextItem[]> {
         logDebug('SimpleChatPanelProvider.getCommandContext', promptText)
+        // Get smart selection if selection is required
         const selection = contextConfig?.selection
             ? await this.editor.getActiveTextEditorSmartSelection()
             : this.editor.getActiveTextEditorSelectionOrVisibleContent()
