@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
+import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
+
 import { testFilePath } from '../../testutils/textDocument'
 
 import { getFileContextFiles } from './editor-context'
@@ -17,7 +19,7 @@ describe('getFileContextFiles', () => {
     function setFiles(relativePaths: string[]) {
         vscode.workspace.findFiles = vi
             .fn()
-            .mockResolvedValueOnce(relativePaths.map(f => vscode.Uri.parse(testFilePath(f))))
+            .mockResolvedValueOnce(relativePaths.map(f => vscode.Uri.file(testFilePath(f))))
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
@@ -59,6 +61,21 @@ describe('getFileContextFiles', () => {
           [
             "main.dart",
             "abcdefghijbklmn.dart",
+          ]
+        `)
+
+        expect(vscode.workspace.findFiles).toBeCalledTimes(1)
+    })
+
+    it('filters out ignored files', async () => {
+        ignores.setActiveState(true)
+        ignores.setIgnoreFiles(testFilePath(''), [{ filePath: testFilePath('.cody/ignore'), content: '*.ignore' }])
+        setFiles(['foo.txt', 'foo.ignore'])
+
+        // Match the .txt but not the .ignore
+        expect(await runSearch('foo', 5)).toMatchInlineSnapshot(`
+          [
+            "foo.txt",
           ]
         `)
 
