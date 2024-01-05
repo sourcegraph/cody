@@ -51,9 +51,9 @@ interface FixupMatchingContext {
 interface QuickPickParams {
     title?: string
     placeholder?: string
-    value?: string
+    initialValue?: string
+    initialSelectedContextFiles?: ContextFile[]
     prefix?: string
-    selectedContextFiles?: ContextFile[]
 }
 
 /**
@@ -91,8 +91,8 @@ export class FixupTypingUI {
     public async getInputFromQuickPick({
         title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
         placeholder = 'Your instructions',
-        value = '',
-        selectedContextFiles = [],
+        initialValue = '',
+        initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
     }: QuickPickParams = {}): Promise<{
         instruction: string
@@ -102,7 +102,7 @@ export class FixupTypingUI {
         quickPick.title = title
         quickPick.placeholder = placeholder
         quickPick.buttons = [menu_buttons.back]
-        quickPick.value = value
+        quickPick.value = initialValue
 
         // ContextItems to store possible context
         const contextItems = new Map<string, ContextFile>()
@@ -110,7 +110,7 @@ export class FixupTypingUI {
 
         // Initialize the selectedContextItems with any previous items
         // This is primarily for edit retries, where a user may want to reuse their context
-        selectedContextFiles.forEach(file => {
+        initialSelectedContextFiles.forEach(file => {
             selectedContextItems.set(getLabelForContextFile(file), file)
         })
 
@@ -123,18 +123,23 @@ export class FixupTypingUI {
             quickPick.hide()
         })
 
-        quickPick.onDidChangeValue(async value => {
+        quickPick.onDidChangeValue(async newValue => {
+            if (newValue === initialValue) {
+                // Noop, this event is fired when an initial value is set
+                return
+            }
+
             // If we have the beginning of a file or symbol match, show a helpful label
-            if (value.endsWith('@')) {
+            if (newValue.endsWith('@')) {
                 quickPick.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
                 return
             }
-            if (value.endsWith('@#')) {
+            if (newValue.endsWith('@#')) {
                 quickPick.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
                 return
             }
 
-            const matchingContext = await this.getMatchingContext(value)
+            const matchingContext = await this.getMatchingContext(newValue)
             if (matchingContext === null) {
                 // Nothing to match, clear existing items
                 quickPick.items = []
