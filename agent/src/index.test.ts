@@ -51,11 +51,21 @@ export class TestClient extends MessageHandler {
 }
 
 const dotcom = 'https://sourcegraph.com'
-if (process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true') {
+const isRecordingEnabled = process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+if (isRecordingEnabled) {
     console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
     execSync('src login', { stdio: 'inherit' })
     assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
 }
+
+const explainPollyError = `
+
+===================================================[ NOTICE ]=======================================================
+If you get PollyError or unexpeced diff, you might need to update recordings to match your changes. 
+Please check https://github.com/sourcegraph/cody/tree/main/agent#updating-the-polly-http-recordings for the details.
+====================================================================================================================
+
+`
 
 describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
@@ -71,27 +81,10 @@ describe('Agent', () => {
         it('Agent tests are skipped due to VITEST_ONLY environment variable', () => {})
         return
     }
-    const client = new TestClient()
 
     const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
     const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
     const workspaceRootPath = workspaceRootUri.fsPath
-    const clientInfo: ClientInfo = {
-        name: 'test-client',
-        version: 'v1',
-        workspaceRootUri: workspaceRootUri.toString(),
-        workspaceRootPath,
-        extensionConfiguration: {
-            anonymousUserID: 'abcde1234',
-            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-            serverEndpoint: dotcom,
-            customHeaders: {},
-            autocompleteAdvancedProvider: 'anthropic',
-            debug: false,
-            verboseDebug: false,
-            codebase: 'github.com/sourcegraph/cody',
-        },
-    }
 
     const cwd = process.cwd()
     const agentDir = path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
@@ -101,21 +94,80 @@ describe('Agent', () => {
     execSync('pnpm run build', { cwd: agentDir, stdio: 'inherit' })
 
     const recordingDirectory = path.join(agentDir, 'recordings')
-    const agentProcess = spawn('node', ['--inspect', '--enable-source-maps', agentScript, 'jsonrpc'], {
-        stdio: 'pipe',
-        cwd: agentDir,
-        env: {
-            CODY_SHIM_TESTING: 'true',
-            CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
-            CODY_RECORDING_DIRECTORY: recordingDirectory,
-            CODY_RECORDING_NAME: 'FullConfig',
-            ...process.env,
-        },
-    })
-    client.connectProcess(agentProcess, error => {
-        console.log({ error })
-        process.exit(1)
-    })
+
+    function spawnAgentProcess(accessToken?: string) {
+        return spawn('node', ['--inspect', '--enable-source-maps', agentScript, 'jsonrpc'], {
+            stdio: 'pipe',
+            cwd: agentDir,
+            env: {
+                CODY_SHIM_TESTING: 'true',
+                CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
+                CODY_RECORDING_DIRECTORY: recordingDirectory,
+                CODY_RECORDING_NAME: 'FullConfig',
+                SRC_ACCESS_TOKEN: accessToken,
+                ...process.env,
+            },
+        })
+    }
+
+    function getClientInfo(accessToken?: string): ClientInfo {
+        return {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: workspaceRootUri.toString(),
+            workspaceRootPath,
+            extensionConfiguration: {
+                anonymousUserID: 'abcde1234',
+                accessToken: accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
+                serverEndpoint: dotcom,
+                customHeaders: {},
+                autocompleteAdvancedProvider: 'anthropic',
+                customConfiguration: {
+                    'cody.autocomplete.experimental.graphContext': null,
+                },
+                debug: false,
+                verboseDebug: false,
+                codebase: 'github.com/sourcegraph/cody',
+            },
+        }
+    }
+
+    async function sendSingleMessage(client: TestClient, text: string): Promise<any> {
+        const id = await client.request('chat/new', null)
+        const reply = await client.request('chat/submitMessage', {
+            id,
+            message: {
+                command: 'submit',
+                text: text,
+                submitType: 'user',
+                addEnhancedContext: true,
+                contextFiles: [],
+            },
+        })
+        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1) : reply
+        return lastMessage
+    }
+
+    function createClient(accessToken?: string): [TestClient, ClientInfo] {
+        const agentProcess = spawnAgentProcess(accessToken)
+        const client = new TestClient()
+        const clientInfo: ClientInfo = getClientInfo(accessToken)
+
+        client.connectProcess(agentProcess, error => {
+            console.log({ error })
+            process.exit(1)
+        })
+
+        const notifications: ExtensionMessage[] = []
+        client.registerNotification('webview/postMessage', ({ message }) => {
+            notifications.push(message)
+        })
+
+        return [client, clientInfo]
+    }
+
+    const [client, clientInfo] = createClient(process.env.SRC_ACCESS_TOKEN)
+    const [rateLimitedClient, rateLimitedClientInfo] = createClient(process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -124,6 +176,9 @@ describe('Agent', () => {
         try {
             const serverInfo = await client.handshake(clientInfo)
             assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
+
+            const rateLimitedServerInfo = await rateLimitedClient.handshake(rateLimitedClientInfo)
+            assert.deepStrictEqual(rateLimitedServerInfo.name, 'cody-agent', 'Agent should be cody-agent')
         } catch (error) {
             if (error === undefined) {
                 throw new Error('Agent failed to initialize, error is undefined')
@@ -165,6 +220,7 @@ describe('Agent', () => {
     const sumUri = Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
     const animalUri = Uri.file(animalPath)
+
     async function openFile(uri: Uri) {
         let content = await fspromises.readFile(uri.fsPath, 'utf8')
         const selectionStart = content.indexOf('/* SELECTION_START */')
@@ -203,33 +259,20 @@ describe('Agent', () => {
         })
         const texts = completions.items.map(item => item.insertText)
         expect(completions.items.length).toBeGreaterThan(0)
-        expect(texts).toMatchInlineSnapshot(`
+        expect(texts).toMatchInlineSnapshot(
+            `
           [
             "   return a + b;",
           ]
-        `)
+        `,
+            explainPollyError
+        )
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    const messages: ExtensionMessage[] = []
-    client.registerNotification('webview/postMessage', ({ message }) => {
-        messages.push(message)
-    })
-
     it('allows us to send a very short chat message', async () => {
         await openFile(animalUri)
-        const id = await client.request('chat/new', null)
-        const reply = await client.request('chat/submitMessage', {
-            id,
-            message: {
-                command: 'submit',
-                text: 'Hello!',
-                submitType: 'user',
-                addEnhancedContext: true,
-                contextFiles: [],
-            },
-        })
-        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1) : reply
+        const lastMessage: any = await sendSingleMessage(client, 'Hello!')
         expect(lastMessage).toMatchInlineSnapshot(
             `
           {
@@ -238,28 +281,19 @@ describe('Agent', () => {
             "speaker": "assistant",
             "text": " Hello!",
           }
-        `
+        `,
+            explainPollyError
         )
     }, 20_000)
 
     it('allows us to send a longer chat message', async () => {
         await openFile(animalUri)
-        const id = await client.request('chat/new', null)
-        const reply = await client.request('chat/submitMessage', {
-            id,
-            message: {
-                command: 'submit',
-                text: 'Generate simple hello world function in java!',
-                submitType: 'user',
-                addEnhancedContext: true,
-                contextFiles: [],
-            },
-        })
-        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1) : reply
-        expect(lastMessage).toMatchInlineSnapshot(`
+        const lastMessage: any = await sendSingleMessage(client, 'Generate simple hello world function in java!')
+        expect(lastMessage).toMatchInlineSnapshot(
+            `
           {
             "contextFiles": [],
-            "displayText": " Here is a simple hello world function in Java:
+            "displayText": " Here is a simple Hello World function in Java:
 
           \`\`\`java
           public class Main {
@@ -269,9 +303,11 @@ describe('Agent', () => {
             }
 
           }
-          \`\`\`",
+          \`\`\`
+
+          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program.",
             "speaker": "assistant",
-            "text": " Here is a simple hello world function in Java:
+            "text": " Here is a simple Hello World function in Java:
 
           \`\`\`java
           public class Main {
@@ -281,17 +317,40 @@ describe('Agent', () => {
             }
 
           }
-          \`\`\`",
+          \`\`\`
+
+          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program.",
           }
-        `)
+        `,
+            explainPollyError
+        )
     }, 20_000)
 
+    // TODO Improve test - this test currently works only when recording is enabled
+    // because Polly does not want to save request which results in error.
+    // To run correctly it requires SRC_ACCESS_TOKEN_WITH_RATE_LIMIT env var
+    // to be set to access token for account with exhaused rate limit.
+    it.skipIf(!isRecordingEnabled)(
+        'get rate limit error if exceeding usage on rate limited account',
+        async () => {
+            await openFile(animalUri)
+            const lastMessage: any = await sendSingleMessage(rateLimitedClient, 'sqrt(9)')
+            expect(lastMessage.error.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
+        },
+        20_000
+    )
+
+    const isMacOS = process.platform === 'darwin'
     // TODO Fix test - fails intermittently on macOS on Github Actions
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723
-    it.skip('allows us to cancel chat', async () => {
-        setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
-        await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
-    }, 600)
+    it.skipIf(isMacOS)(
+        'allows us to cancel chat',
+        async () => {
+            setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
+            await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
+        },
+        600
+    )
 
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
