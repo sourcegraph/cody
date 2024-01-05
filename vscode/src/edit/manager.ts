@@ -76,6 +76,7 @@ export class EditManager implements vscode.Disposable {
             ? await this.controller.createTask(
                   document.uri,
                   args.instruction,
+                  args.userContextFiles ?? [],
                   range,
                   args.intent,
                   args.insertMode,
