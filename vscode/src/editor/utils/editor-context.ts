@@ -72,19 +72,21 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Apply a penalty for segments that are in the low scoring list.
-    const adjustedResults = [...results].map(result => {
-        const segments = result.obj.uri.fsPath.split(path.sep)
-        for (const lowScoringPathSegment of lowScoringPathSegments) {
-            if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
-                return {
-                    ...result,
-                    score: result.score - 100000,
+    // Remove ignored files and apply a penalty for segments that are in the low scoring list.
+    const adjustedResults = [...results]
+        .filter(result => !isCodyIgnoredFile(result.obj.uri))
+        .map(result => {
+            const segments = result.obj.uri.fsPath.split(path.sep)
+            for (const lowScoringPathSegment of lowScoringPathSegments) {
+                if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
+                    return {
+                        ...result,
+                        score: result.score - 100000,
+                    }
                 }
             }
-        }
-        return result
-    })
+            return result
+        })
 
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
