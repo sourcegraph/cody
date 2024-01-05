@@ -4,6 +4,7 @@ import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/c
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { Chat } from './Chat'
@@ -117,6 +118,10 @@ export const App: React.FunctionComponent = () => {
                                 setInputHistory={setInputHistory}
                                 isCodyEnabled={true}
                                 onSubmit={onSubmit}
+                                userInfo={{
+                                    isDotComUser: isDotCom(config.serverEndpoint),
+                                    isCodyProUser: false,
+                                }}
                             />
                         </>
                     )

@@ -1,3 +1,4 @@
+import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
@@ -93,7 +94,7 @@ export class SimpleChatModel {
     }
 
     public getLastHumanMessage(): MessageWithContext | undefined {
-        return this.messagesWithContext.findLast(message => message.message.speaker === 'human')
+        return findLast(this.messagesWithContext, (message: any) => message.message.speaker === 'human')
     }
 
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>): void {

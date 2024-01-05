@@ -140,6 +140,11 @@ describe('LspLightRetriever', () => {
             {
               "content": "foo(): void",
               "fileName": "/document1.ts",
+              "fileUri": {
+                "$mid": 1,
+                "path": "/document1.ts",
+                "scheme": "file",
+              },
               "symbol": "foo",
             },
           ]
@@ -185,6 +190,11 @@ describe('LspLightRetriever', () => {
             {
               "content": "foo(): void",
               "fileName": "/document1.ts",
+              "fileUri": {
+                "$mid": 1,
+                "path": "/document1.ts",
+                "scheme": "file",
+              },
               "symbol": "foo",
             },
           ]

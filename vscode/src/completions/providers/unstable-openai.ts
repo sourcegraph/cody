@@ -128,7 +128,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
-            topK: 0.5,
+            topP: 0.5,
         }
 
         await generateCompletions({

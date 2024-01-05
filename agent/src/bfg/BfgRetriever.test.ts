@@ -77,7 +77,7 @@ describe('BfgRetriever', async () => {
     it('returns non-empty context', async () => {
         if (bfgCratePath) {
             const bfgBinary = path.join(bfgCratePath, '..', '..', 'target', 'debug', 'bfg')
-            vscode_shim.setConnectionConfig({
+            vscode_shim.setExtensionConfiguration({
                 accessToken: '',
                 serverEndpoint: '',
                 customHeaders: {},

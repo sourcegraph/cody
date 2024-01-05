@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, ContextFile, Guardrails } from '@sourcegraph/cody-shared'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -64,6 +64,7 @@ interface ChatboxProps {
     chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
+    guardrails?: Guardrails
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -88,14 +89,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatModels,
     enableNewChatUI,
     userInfo,
+    guardrails,
 }) => {
-    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
-
     const abortMessageInProgress = useCallback(() => {
-        abortMessageInProgressInternal()
         vscodeAPI.postMessage({ command: 'abort' })
-        setAbortMessageInProgress(() => () => undefined)
-    }, [abortMessageInProgressInternal, vscodeAPI])
+    }, [vscodeAPI])
 
     const addEnhancedContext = useEnhancedContextEnabled()
 
@@ -247,6 +245,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
+            guardrails={guardrails}
         />
     )
 }

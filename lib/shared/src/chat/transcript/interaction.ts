@@ -1,4 +1,5 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
+import { isCodyIgnoredFile, isCodyIgnoredFilePath } from '../context-filter'
 
 import { ChatMessage, ChatMetadata, InteractionMessage } from './messages'
 
@@ -24,6 +25,41 @@ export class Interaction {
         public readonly timestamp: string = new Date().toISOString()
     ) {}
 
+    /**
+     * Removes context messages for files that should be ignored.
+     *
+     * Loops through the context messages and builds a new array, omitting any
+     * messages for files that match the CODY_IGNORE files filter.
+     * Also omits the assistant message after any ignored human message.
+     *
+     * This ensures context from ignored files does not get used.
+     */
+    private async removeCodyIgnoredFiles(): Promise<ContextMessage[]> {
+        const contextMessages = await this.fullContext
+        const newMessages = []
+        for (let i = 0; i < contextMessages.length; i++) {
+            const message = contextMessages[i]
+            // Skips the assistant message if the human message is ignored
+            if (message.speaker === 'human' && message.file) {
+                const { uri, repoName, fileName, source } = message.file
+                if (uri && isCodyIgnoredFile(uri)) {
+                    i++
+                    continue
+                }
+                // Filter embedding results from the current workspace
+                if (source === 'embeddings') {
+                    if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
+                        i++
+                        continue
+                    }
+                }
+            }
+            newMessages.push(message)
+        }
+        this.fullContext = Promise.resolve(newMessages)
+        return newMessages
+    }
+
     private metadata?: ChatMetadata
     public setMetadata(metadata: ChatMetadata): void {
         this.metadata = metadata
@@ -44,12 +80,12 @@ export class Interaction {
     }
 
     public async getFullContext(): Promise<ContextMessage[]> {
-        const msgs = await this.fullContext
+        const msgs = await this.removeCodyIgnoredFiles()
         return msgs.map(msg => ({ ...msg }))
     }
 
     public async hasContext(): Promise<boolean> {
-        const contextMessages = await this.fullContext
+        const contextMessages = await this.removeCodyIgnoredFiles()
         return contextMessages.length > 0
     }
 

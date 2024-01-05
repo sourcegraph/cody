@@ -83,12 +83,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * If found, creates a new Cody command runner instance for that prompt and input.
      * Returns the ID of the created runner, or 'invalid' if not found.
      */
-    public async addCommand(
-        text: string,
-        requestID?: string,
-        contextFiles?: ContextFile[],
-        addEnhancedContext?: boolean
-    ): Promise<string> {
+    public async addCommand(text: string, requestID?: string, contextFiles?: ContextFile[]): Promise<string> {
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
@@ -102,10 +97,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         if (command.slashCommand === '/ask') {
             command.prompt = text
-        }
-
-        if (!command.context && addEnhancedContext) {
-            command.context = { codebase: addEnhancedContext }
         }
 
         command.additionalInput = commandInput

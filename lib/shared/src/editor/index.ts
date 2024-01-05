@@ -10,6 +10,8 @@ export interface ActiveTextEditor {
     repoName?: string
     revision?: string
     selectionRange?: ActiveTextEditorSelectionRange
+
+    ignored?: boolean
 }
 
 export interface ActiveTextEditorSelectionRange {

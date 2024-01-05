@@ -13,7 +13,7 @@ export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resource
 /**
  * Should be used in tests only.
  */
-export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser> {
+export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser | undefined> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,

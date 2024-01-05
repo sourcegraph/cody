@@ -91,6 +91,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         ),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
 
+        internalUnstable: config.get<boolean>(CONFIG_KEY.internalUnstable, false),
+
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
 
         /**
@@ -104,11 +106,8 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
+        experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        autocompleteExperimentalSyntacticPostProcessing: getHiddenSetting(
-            'autocomplete.experimental.syntacticPostProcessing',
-            true
-        ),
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
             'autocomplete.experimental.dynamicMultilineCompletions',
             false

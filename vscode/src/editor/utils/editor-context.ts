@@ -5,6 +5,7 @@ import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
@@ -110,7 +111,7 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    const symbols = results.map(result => result.obj)
+    const symbols = results.map(result => result.obj).filter(symbol => !isCodyIgnoredFile(symbol.location.uri))
 
     if (!symbols.length) {
         return []
@@ -118,18 +119,20 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 
     const matches = []
     for (const symbol of symbols) {
-        // TODO(toolmantim): Update the kinds to match above
-        const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
-        const source: ContextFileSource = 'user'
-        const contextFile: ContextFile = createContextFileFromUri(
-            symbol.location.uri,
-            source,
-            'symbol',
-            symbol.location.range,
-            kind
-        )
-        contextFile.fileName = symbol.name
-        matches.push(contextFile)
+        if (!isCodyIgnoredFile(symbol?.location.uri)) {
+            // TODO(toolmantim): Update the kinds to match above
+            const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
+            const source: ContextFileSource = 'user'
+            const contextFile: ContextFile = createContextFileFromUri(
+                symbol.location.uri,
+                source,
+                'symbol',
+                symbol.location.range,
+                kind
+            )
+            contextFile.fileName = symbol.name
+            matches.push(contextFile)
+        }
     }
 
     return matches
@@ -139,6 +142,7 @@ export function getOpenTabsContextFile(): ContextFile[] {
     // de-dupe by fspath in case if they have a file open in two tabs
     const fsPaths = new Set()
     return getOpenTabsUris()
+        ?.filter(uri => !isCodyIgnoredFile(uri))
         .filter(uri => {
             if (!fsPaths.has(uri.fsPath)) {
                 fsPaths.add(uri.fsPath)

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { getActiveTraceAndSpanId, startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logError } from '../log'
 import { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -267,7 +267,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    await startAsyncSpan('autocomplete.debounce', async () => {
+    await wrapInActiveSpan('autocomplete.debounce', async () => {
         const interval =
             ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
         if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
@@ -284,7 +284,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await startAsyncSpan('autocomplete.retrieve', async () => {
+    const contextResult = await wrapInActiveSpan('autocomplete.retrieve', async () => {
         return contextMixer.getContext({
             document,
             position,
@@ -317,7 +317,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
-    const reqContext: RequestParams = {
+    const requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -326,14 +326,15 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Get the processed completions from providers
-    const { completions, source } = await requestManager.request(
-        reqContext,
-        completionProviders,
-        contextResult?.context ?? [],
-        tracer ? createCompletionProviderTracer(tracer) : undefined
-    )
+    const { completions, source } = await requestManager.request({
+        requestParams,
+        providers: completionProviders,
+        context: contextResult?.context ?? [],
+        isCacheEnabled: triggerKind !== TriggerKind.Manual,
+        tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
+    })
 
-    CompletionLogger.loaded(logId, reqContext, completions, source, isDotComUser)
+    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
 
     return {
         logId,
