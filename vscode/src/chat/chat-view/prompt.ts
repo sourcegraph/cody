@@ -226,7 +226,7 @@ class PromptBuilder {
         const ignored: ContextItem[] = []
         const duplicate: ContextItem[] = []
         for (const contextItem of contextItems) {
-            if (isCodyIgnoredFile(contextItem.uri)) {
+            if (contextItem.uri.scheme === 'file' && isCodyIgnoredFile(contextItem.uri)) {
                 ignored.push(contextItem)
                 continue
             }

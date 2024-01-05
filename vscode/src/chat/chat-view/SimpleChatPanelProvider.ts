@@ -727,9 +727,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     this.addBotMessage(requestID, content)
                 },
                 error: (partialResponse, error) => {
-                    this.addBotMessage(requestID, partialResponse)
-                    if (!isAbortError(error)) {
-                        this.postError(error, 'transcript')
+                    try {
+                        // We should still add the partial response if there was an error
+                        // This'd throw an error if one has already been added
+                        this.addBotMessage(requestID, partialResponse)
+                    } finally {
+                        if (!isAbortError(error)) {
+                            this.postError(error, 'transcript')
+                        }
                     }
                     this.postViewTranscript()
                 },
