@@ -592,10 +592,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         addEnhancedContext: boolean,
         command?: CodyPrompt
     ): Promise<void> {
-        // The text we will show to the user in UI
+        // Display text is the text we will display to the user in the Chat UI
+        // - Append @-files to the display text if we have any
+        // - Append @-file selection for commands
+        // Otherwise, use the input text
         const displayText = userContextFiles?.length
             ? createDisplayTextWithFileLinks(userContextFiles, inputText)
-            : createDisplayTextWithFileSelection(inputText, await this.editor.getActiveTextEditorSmartSelection())
+            : command
+            ? createDisplayTextWithFileSelection(inputText, await this.editor.getActiveTextEditorSmartSelection())
+            : inputText
         // The text we will use to send to LLM
         const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
@@ -1078,7 +1083,7 @@ class ContextProvider implements IContextProvider {
         if (!visible || !fileUri) {
             return []
         }
-        if (isCodyIgnoredFile(fileUri)) {
+        if (isCodyIgnoredFile(fileUri) || !visible.content.trim()) {
             return []
         }
         return [

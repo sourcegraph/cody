@@ -143,6 +143,10 @@ export class DefaultPrompter implements IPrompter {
     }
 
     private renderContextItem(contextItem: ContextItem): Message[] {
+        // Do not create context item for empty file
+        if (!contextItem.text?.trim()?.length) {
+            return []
+        }
         let messageText: string
         if (contextItem.source === 'selection') {
             messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
