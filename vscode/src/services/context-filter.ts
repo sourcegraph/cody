@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
 import { ignores } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CODY_IGNORE_FILENAME_POSIX_GLOB } from '@sourcegraph/cody-shared/src/chat/ignore-helper'
 
-import { createFileWatchers } from '../commands/utils/helpers'
 import { logDebug } from '../log'
 import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 
@@ -20,10 +19,10 @@ const utf8 = new TextDecoder('utf-8')
 export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()
     // Refresh ignore rules when any ignore file in the workspace changes.
-    const watcher = createFileWatchers(CODY_IGNORE_FILENAME_POSIX_GLOB)
-    const onDidChange = watcher?.onDidChange(refresh)
-    const onDidCreate = watcher?.onDidCreate(refresh)
-    const onDidDelete = watcher?.onDidDelete(refresh)
+    const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_FILENAME_POSIX_GLOB)
+    watcher?.onDidChange(refresh)
+    watcher?.onDidCreate(refresh)
+    watcher?.onDidDelete(refresh)
 
     // Handle any added/removed workspace folders.
     const didChangeSubscription = vscode.workspace.onDidChangeWorkspaceFolders(e => {
@@ -43,9 +42,6 @@ export function setUpCodyIgnore(): vscode.Disposable {
 
     return {
         dispose() {
-            onDidChange?.dispose()
-            onDidCreate?.dispose()
-            onDidDelete?.dispose()
             watcher?.dispose()
             didChangeSubscription.dispose()
             onDidChangeConfig.dispose()
