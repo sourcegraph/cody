@@ -19,12 +19,11 @@ const utf8 = new TextDecoder('utf-8')
  */
 export function setUpCodyIgnore(): vscode.Disposable {
     onConfigChange()
-
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = createFileWatchers(CODY_IGNORE_FILENAME_POSIX_GLOB)
-    watcher?.onDidChange(refresh)
-    watcher?.onDidCreate(refresh)
-    watcher?.onDidDelete(refresh)
+    const onDidChange = watcher?.onDidChange(refresh)
+    const onDidCreate = watcher?.onDidCreate(refresh)
+    const onDidDelete = watcher?.onDidDelete(refresh)
 
     // Handle any added/removed workspace folders.
     const didChangeSubscription = vscode.workspace.onDidChangeWorkspaceFolders(e => {
@@ -44,6 +43,9 @@ export function setUpCodyIgnore(): vscode.Disposable {
 
     return {
         dispose() {
+            onDidChange?.dispose()
+            onDidCreate?.dispose()
+            onDidDelete?.dispose()
             watcher?.dispose()
             didChangeSubscription.dispose()
             onDidChangeConfig.dispose()

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
-import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, ConfigFileName, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
@@ -425,8 +425,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         const user = this.tools.getUserInfo()
-
-        this.wsFileWatcher = createFileWatchers(user?.workspaceRoot)
+        const configFile = ConfigFileName.vscode
+        this.wsFileWatcher = createFileWatchers(configFile, user?.workspaceRoot)
         if (this.wsFileWatcher) {
             this.fileWatcherDisposables.push(
                 this.wsFileWatcher,
@@ -435,7 +435,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             )
         }
 
-        this.userFileWatcher = createFileWatchers(user?.homeDir)
+        this.userFileWatcher = createFileWatchers(configFile, user?.homeDir)
         if (this.userFileWatcher) {
             this.fileWatcherDisposables.push(
                 this.userFileWatcher,

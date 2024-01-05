@@ -76,12 +76,19 @@ export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
         }
     }
     // Update vscodeGitAPI when the extension becomes enabled/disabled
-    return extension?.exports?.onDidChangeEnablement(enabled => {
+    const onDidChangeEnablement = extension?.exports?.onDidChangeEnablement(enabled => {
         if (enabled) {
             return init()
         }
         vscodeGitAPI = undefined
     })
+
+    return {
+        dispose() {
+            setUpCodyIgnore().dispose()
+            onDidChangeEnablement?.dispose()
+        },
+    }
 }
 
 /**
