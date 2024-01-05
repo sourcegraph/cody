@@ -10,6 +10,7 @@ const editorCommands: CodyPrompt[] = [
         description: ASK_QUESTION_COMMAND.description,
         prompt: ASK_QUESTION_COMMAND.slashCommand,
         slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+        context: { codebase: true },
     },
     {
         description: EDIT_COMMAND.description,
