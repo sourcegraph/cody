@@ -39,33 +39,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor(context: vscode.ExtensionContext) {
-        this.tools = new ToolsProvider(context)
+    constructor(extensionPath: string) {
+        this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
-        this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
+        this.custom = new CustomPromptsStore(this.isEnabled, extensionPath, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
-    }
-
-    /**
-     * Gets a CodyPrompt object for the given command runner ID.
-     * @param commandRunnerId - The ID of the command runner to get the prompt for.
-     * @returns The CodyPrompt object for the command runner, or null if not found.
-     *
-     * Looks up the command runner instance in the commandRunners map by the given ID.
-     * If found, returns the CodyPrompt associated with that runner. Otherwise returns null.
-     */
-    public getCommand(commandRunnerId: string): CodyPrompt | null {
-        const commandRunner = this.commandRunners.get(commandRunnerId)
-        if (!commandRunner) {
-            return null
-        }
-        this.commandRunners.delete(commandRunnerId)
-        return commandRunner?.codyCommand
     }
 
     public isCommand(text: string): boolean {
@@ -76,14 +59,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         return !!this.default.get(commandKey)
     }
 
-    /**
-     * Adds a new command to the commands map.
-     *
-     * Looks up the command prompt using the given key in the default prompts map.
-     * If found, creates a new Cody command runner instance for that prompt and input.
-     * Returns the ID of the created runner, or 'invalid' if not found.
-     */
-    public async addCommand(text: string, requestID?: string, contextFiles?: ContextFile[]): Promise<string> {
+    public async findCommand(
+        text: string,
+        requestID?: string,
+        contextFiles?: ContextFile[]
+    ): Promise<CodyPrompt | null> {
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
@@ -92,56 +72,47 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         const command = this.default.get(commandKey)
         if (!command) {
-            return 'invalid'
+            return null
         }
-
         if (command.slashCommand === '/ask') {
-            command.prompt = text
+            command.prompt = command.prompt.replace('/ask', '')
         }
-
         command.additionalInput = commandInput
+        command.mode = command.prompt.startsWith('/edit') ? 'edit' : command.mode || 'ask'
         command.requestID = requestID
         command.contextFiles = contextFiles
-        return this.createCodyCommandRunner(command, commandInput)
+        await this.createCodyCommandRunner(command, commandInput)
+        return command
     }
 
-    /**
-     * Creates a new Cody command runner instance and returns the ID.
-     *
-     * This creates a new CommandRunner instance with the given CodyPrompt, input text,
-     * and fixup request flag. It adds the runner to the commandRunners map, sets it
-     * as the current prompt in progress, and logs the command usage.
-     *
-     * If the prompt has a shell command in its context, it will execute that command.
-     *
-     * Finally, it returns the unique ID for the created CommandRunner instance.
-     */
-    private async createCodyCommandRunner(command: CodyPrompt, input = ''): Promise<string> {
+    private async createCodyCommandRunner(command: CodyPrompt, input = ''): Promise<CommandRunner | undefined> {
         const commandKey = command.slashCommand
-        const defaultEditCommands = new Set(['/edit', '/fix', '/doc'])
-        const isFixupRequest = defaultEditCommands.has(commandKey) || command.prompt.startsWith('/edit')
+        const defaultEditCommands = new Set(['/edit', '/doc'])
+        const isFixupRequest = defaultEditCommands.has(commandKey) || command.mode !== 'ask'
 
         logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
 
         // Start the command runner
-        const codyCommand = new CommandRunner(command, input, isFixupRequest)
-        this.commandRunners.set(codyCommand.id, codyCommand)
+        const runner = new CommandRunner(command, input, isFixupRequest)
+        this.commandRunners.set(runner.id, runner)
 
         // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner
-        if (isFixupRequest || command.mode !== 'ask') {
-            return ''
+        if (isFixupRequest) {
+            return undefined
         }
 
         // Run shell command if any
         const shellCommand = command.context?.command
         if (shellCommand) {
-            await codyCommand.runShell(this.tools.exeCommand(shellCommand))
+            await runner.runShell(this.tools.exeCommand(shellCommand))
         }
 
-        return codyCommand.id
+        this.commandRunners.delete(runner.id)
+
+        return runner
     }
 
     /**
