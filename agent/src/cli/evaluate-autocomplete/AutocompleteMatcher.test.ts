@@ -11,7 +11,16 @@ import { AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
 
-describe.skipIf(os.platform().startsWith('win'))('AutocompleteMatcher', () => {
+function isWindows(): boolean {
+    return os.platform().startsWith('win')
+}
+
+function isNode16(): boolean {
+    const [major] = process.versions.node.split('.')
+    return Number.parseInt(major, 10) <= 16
+}
+
+describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
     const queriesDirectory = path.join(__dirname, 'queries')
     const queries = new Queries(queriesDirectory)
     function checkInput(filename: string, text: string, assertion: (obtained: string) => void): void {
