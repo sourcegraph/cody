@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { EditIntent } from '../edit/types'
@@ -45,6 +46,7 @@ export class FixupTask {
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
+        public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent = 'edit',
         public selectionRange: vscode.Range,

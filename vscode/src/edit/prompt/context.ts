@@ -2,7 +2,12 @@ import * as vscode from 'vscode'
 
 import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import {
+    ContextFile,
+    ContextMessage,
+    createContextMessageByFile,
+    getContextMessageWithResponse,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     populateCodeContextTemplate,
@@ -27,7 +32,7 @@ export interface GetContextFromIntentOptions {
     context: CodebaseContext
 }
 
-export const getContextFromIntent = async ({
+const getContextFromIntent = async ({
     intent,
     selectedText,
     precedingText,
@@ -115,4 +120,30 @@ export const getContextFromIntent = async ({
             ]
     }
     /* eslint-enable no-case-declarations */
+}
+
+interface GetContextOptions extends GetContextFromIntentOptions {
+    userContextFiles: ContextFile[]
+    editor: VSCodeEditor
+}
+
+export const getContext = async ({
+    userContextFiles,
+    editor,
+    ...options
+}: GetContextOptions): Promise<ContextMessage[]> => {
+    const derivedContextMessages = await getContextFromIntent({ editor, ...options })
+
+    const userProvidedContextMessages: ContextMessage[] = []
+    for (const file of userContextFiles) {
+        if (file?.uri) {
+            const content = await editor.getTextEditorContentForFile(file.uri, file.range)
+            if (content) {
+                const message = createContextMessageByFile(file, content)
+                userProvidedContextMessages.push(...message)
+            }
+        }
+    }
+
+    return [...derivedContextMessages, ...userProvidedContextMessages]
 }
