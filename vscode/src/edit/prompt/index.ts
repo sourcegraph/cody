@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { CompletionParameters, Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { FixupTask } from '../../non-stop/FixupTask'
@@ -47,7 +48,7 @@ interface BuildInteractionOptions {
 }
 
 interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
-    interaction: Interaction
+    messages: Message[]
     responseTopic: string
     responsePrefix?: string
 }
@@ -87,26 +88,28 @@ export const buildInteraction = async ({
             instruction: task.instruction,
         }
     )
+
+    const transcript = new Transcript()
     const interaction = new Interaction(
         { speaker: 'human', text: prompt, displayText: prompt },
         { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
-        Promise.resolve(
-            getContextFromIntent({
-                intent: task.intent,
-                fileName: task.fixupFile.uri.fsPath,
-                selectionRange: task.selectionRange,
-                context,
-                editor,
-                followingText,
-                precedingText,
-                selectedText,
-            })
-        ),
+        getContextFromIntent({
+            intent: task.intent,
+            fileName: task.fixupFile.uri.fsPath,
+            selectionRange: task.selectionRange,
+            context,
+            editor,
+            followingText,
+            precedingText,
+            selectedText,
+        }),
         []
     )
+    transcript.addInteraction(interaction)
+    const completePrompt = await transcript.getPromptForLastInteraction()
 
     return {
-        interaction,
+        messages: completePrompt.prompt,
         stopSequences,
         responseTopic: responseTopic || BotResponseMultiplexer.DEFAULT_TOPIC,
         responsePrefix: assistantPrefix,

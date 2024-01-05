@@ -30,7 +30,7 @@ export class EditProvider {
 
         // TODO: Allow users to change edit model
         const model = 'anthropic/claude-2.0'
-        const { interaction, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
+        const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
             model,
             task: this.config.task,
             editor: this.config.editor,
@@ -52,7 +52,7 @@ export class EditProvider {
 
         let textConsumed = 0
         this.cancelCompletionCallback = this.config.chat.chat(
-            interaction.toChat(),
+            messages,
             {
                 onChange: text => {
                     if (textConsumed === 0 && responsePrefix) {
