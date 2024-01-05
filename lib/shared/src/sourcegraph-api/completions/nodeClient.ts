@@ -14,9 +14,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const log = this.logger?.startCompletion(params, this.completionsEndpoint)
 
-        const abortController = new AbortController()
-        const abortSignal = abortController.signal
-
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
 
         // Keep track if we have send any message to the completion callbacks
@@ -164,10 +161,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
         request.write(JSON.stringify(params))
         request.end()
-
-        abortSignal.addEventListener('abort', () => {
-            request.destroy()
-        })
 
         return () => request.destroy()
     }

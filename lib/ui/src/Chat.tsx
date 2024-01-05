@@ -9,6 +9,7 @@ import {
     ChatModelProvider,
     CodyPrompt,
     ContextFile,
+    Guardrails,
     isDefined,
 } from '@sourcegraph/cody-shared'
 
@@ -70,8 +71,9 @@ interface ChatProps extends ChatClassNames {
     EnhancedContextSettings?: React.FunctionComponent<{ isOpen: boolean; setOpen: (open: boolean) => void }>
     ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
     onCurrentChatModelChange?: (model: ChatModelProvider) => void
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
+    guardrails?: Guardrails
 }
 
 export interface UserAccountInfo {
@@ -227,6 +229,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    guardrails,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
@@ -259,12 +262,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 const isFileType = selected.type === 'file'
                 const range = selected.range ? `:${selected.range?.start.line}-${selected.range?.end.line}` : ''
                 const symbolName = isFileType ? '' : `#${selected.fileName}`
-                // Add empty space at the end to end the file matching process
                 const fileDisplayText = `@${selected.path?.relative}${range}${symbolName}`
-                const inputSuffix = input.includes(fileDisplayText)
-                    ? input.slice(input.lastIndexOf(fileDisplayText) + fileDisplayText.length, -1)
-                    : ''
-                const newInput = `${inputPrefix}${fileDisplayText}${inputSuffix} `
+                // Add empty space at the end to end the file matching process
+                const newInput = `${inputPrefix}${fileDisplayText} `
 
                 // we will use the newInput as key to check if the file still exists in formInput on submit
                 setChatContextFiles(new Map(chatContextFiles).set(fileDisplayText, selected))
@@ -384,7 +384,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Checks if the Ctrl key is pressed with a key not in the allow list
             // to avoid triggering default browser shortcuts and bubbling the event.
             const ctrlKeysAllowList = new Set(['a', 'c', 'v', 'x', 'y', 'z'])
-            if ((event.ctrlKey || event.getModifierState('AltGraph')) && !ctrlKeysAllowList.has(event.key)) {
+            if (event.ctrlKey && !ctrlKeysAllowList.has(event.key)) {
                 event.preventDefault()
                 return
             }
@@ -566,6 +566,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    guardrails={guardrails}
                 />
             )}
 

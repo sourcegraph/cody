@@ -96,6 +96,13 @@ test('@-file empty state', async ({ page, sidebar }) => {
     await chatInput.type('@Main.java', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue('@Main.java ')
+
+    // Check pressing tab after typing a partial filename but where that complete
+    // filename already exists earlier in the input.
+    // https://github.com/sourcegraph/cody/issues/2243
+    await chatInput.type('and @Main.ja', { delay: 50 })
+    await chatInput.press('Tab')
+    await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
 })
 
 function withPlatformSlashes(input: string) {

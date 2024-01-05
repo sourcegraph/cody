@@ -114,7 +114,7 @@ describe('Agent', () => {
     })
     client.connectProcess(agentProcess, error => {
         console.log({ error })
-        process.exit(1)
+        // process.exit(1)
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.

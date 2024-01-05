@@ -124,7 +124,6 @@ export async function evaluateGitLogStrategy(
                             client,
                             document,
                             options,
-                            emptyMatchContent: '',
                         })
 
                         await snapshots.writeDocument(document)

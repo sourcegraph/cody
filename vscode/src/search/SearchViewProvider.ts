@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 import { Result, SearchPanelFile, SearchPanelSnippet } from '@sourcegraph/cody-shared/src/local-context'
 
 import { WebviewMessage } from '../chat/protocol'
-import { getActiveEditor } from '../editor/active-editor'
+import { getEditor } from '../editor/active-editor'
 import { IndexStartEvent, SymfRunner } from '../local-context/symf'
 
 const searchDecorationType = vscode.window.createTextEditorDecorationType({
@@ -323,7 +323,7 @@ function getScopeDirs(): string[] {
     if (!folders) {
         return []
     }
-    const uri = getActiveEditor()?.document.uri
+    const uri = getEditor().active?.document.uri
     if (!uri) {
         return folders.map(f => f.uri.fsPath)
     }

@@ -120,7 +120,7 @@ export type ExtensionMessage =
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'serverEndpoint'> {}
+    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -145,6 +145,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 export interface AuthStatus {
     username?: string
     endpoint: string | null
+    isDotCom: boolean
     isLoggedIn: boolean
     showInvalidAccessTokenError: boolean
     authenticated: boolean
@@ -170,6 +171,7 @@ export interface AuthStatus {
 
 export const defaultAuthStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -181,10 +183,11 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const unauthenticatedStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,
@@ -196,9 +199,10 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
+    isDotCom: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
     isLoggedIn: false,
@@ -211,7 +215,7 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {
