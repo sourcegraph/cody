@@ -7,6 +7,7 @@ import { DocumentContext } from '../get-current-doc-context'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 import { ContextSnippet } from '../types'
 
+//
 export interface ProviderConfig {
     /**
      * A factory to create instances of the provider. This pattern allows us to

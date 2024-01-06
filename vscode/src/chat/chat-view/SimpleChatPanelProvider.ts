@@ -27,7 +27,7 @@ import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/tru
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -129,7 +129,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     public sessionID: string
 
     private recipeAdapter: SimpleChatRecipeAdapter
-    public chatEnabled: boolean
 
     constructor({
         config,
@@ -160,7 +159,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.recipeAdapter = recipeAdapter
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
-        this.chatEnabled = true
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
@@ -290,15 +288,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
-        const configFeatures = await graphqlClient.getCodyConfigFeatures()
-        const isError = (value: unknown): value is Error => value instanceof Error
-        if (!isError(configFeatures)) {
-            this.chatEnabled = configFeatures.chat
+
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        if (configFeatures) {
+            // If configFeatures exist then we send a message that sets the value of the chatconfig in the chat UI
+            void this.postMessage({
+                type: 'setChatEnabledConfigFeature',
+                data: configFeatures.chat,
+            })
         }
-        void this.postMessage({
-            type: 'setChatEnabledConfigFeature',
-            data: this.chatEnabled,
-        })
+
         return panel
     }
 

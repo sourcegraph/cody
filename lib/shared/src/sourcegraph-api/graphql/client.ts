@@ -780,6 +780,69 @@ export class SourcegraphGraphQLAPIClient {
  */
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
+/**
+ * ConfigFeaturesSingleton is a singleton class that fetches and caches
+ * configuration features from a remote source. It provides methods to
+ * retrieve the cached config features.
+ *
+ * The constructor is private to enforce the singleton pattern.
+ *
+ * getInstance() provides access to the singleton instance.
+ *
+ * getConfigFeatures() fetches the config if not already cached, and returns
+ * the cached value. It ensures the config is only fetched once.
+ *
+ * fetchConfigFeatures() makes the actual remote request to get the config,
+ * handles errors, and caches the result.
+ */
+export class ConfigFeaturesSingleton {
+    private static instance: ConfigFeaturesSingleton
+    private configFeatures: {
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    } | null = null
+    private isFetching = false
+
+    private constructor() {
+        // Private constructor to prevent direct instantiation
+    }
+
+    public static getInstance(): ConfigFeaturesSingleton {
+        if (!ConfigFeaturesSingleton.instance) {
+            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+        }
+        return ConfigFeaturesSingleton.instance
+    }
+
+    public async getConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    } | null> {
+        // Make sure to fetch only once
+        if (!this.configFeatures && !this.isFetching) {
+            this.isFetching = true
+            await this.fetchConfigFeatures()
+            this.isFetching = false
+        }
+        return this.configFeatures
+    }
+
+    private async fetchConfigFeatures(): Promise<void> {
+        // Perform your GQL query here and return the result
+        const features = await graphqlClient.getCodyConfigFeatures()
+        if (features instanceof Error) {
+            // Handle the error case by setting null so as not to disrupt the flow
+            console.error(features.message)
+            this.configFeatures = null // Set the value of Config Features as null incase it doesn't exist or incase of errors
+        } else {
+            // Store the fetched config features
+            this.configFeatures = features
+        }
+    }
+}
+
 async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {
         const body = await response.text()
