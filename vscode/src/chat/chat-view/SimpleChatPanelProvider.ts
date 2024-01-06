@@ -129,7 +129,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
     public sessionID: string
 
     private recipeAdapter: SimpleChatRecipeAdapter
-    public command: boolean
+    public chatEnabled: boolean
 
     constructor({
         config,
@@ -160,7 +160,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         this.recipeAdapter = recipeAdapter
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
-        this.command = true
+        this.chatEnabled = true
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
@@ -293,11 +293,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
         const configFeatures = await graphqlClient.getCodyConfigFeatures()
         const isError = (value: unknown): value is Error => value instanceof Error
         if (!isError(configFeatures)) {
-            this.command = configFeatures.commands
+            this.chatEnabled = configFeatures.chat
         }
         void this.postMessage({
-            type: 'setGqlResult',
-            data: this.command,
+            type: 'setChatEnabledConfigFeature',
+            data: this.chatEnabled,
         })
         return panel
     }
@@ -326,11 +326,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
             type: 'view',
             messages: view,
         })
-
-        // await this.postMessage({
-        //     type: 'setGqlResult',
-        //     data: command,
-        // })
     }
 
     /**

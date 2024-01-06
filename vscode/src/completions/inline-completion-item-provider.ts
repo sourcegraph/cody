@@ -766,8 +766,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     shown = true
                 },
             })
-
-            // Handle this error specifically
         }
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //

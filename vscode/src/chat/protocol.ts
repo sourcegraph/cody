@@ -115,7 +115,7 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
-    | { type: 'setGqlResult'; data: boolean }
+    | { type: 'setChatEnabledConfigFeature'; data: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.

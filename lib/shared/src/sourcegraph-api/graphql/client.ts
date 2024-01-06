@@ -404,6 +404,10 @@ export class SourcegraphGraphQLAPIClient {
             )
         )
     }
+
+    /**
+     * Fetches the Site Admin enabled/disable Cody config features for the current instance.
+     */
     public async getCodyConfigFeatures(): Promise<
         | {
               chat: boolean
