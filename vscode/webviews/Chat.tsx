@@ -325,8 +325,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
-                disabled={isDisabled} // Disable the textarea if the chat is disabled
-                // Change the background color to grey if disabled
+                disabled={isDisabled} // Disable the textarea if the chat is disabled and change the background color to grey
             />
         </div>
     )

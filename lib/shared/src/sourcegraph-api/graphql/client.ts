@@ -790,10 +790,10 @@ export const graphqlClient = new SourcegraphGraphQLAPIClient()
  * getInstance() provides access to the singleton instance.
  *
  * getConfigFeatures() fetches the config if not already cached, and returns
- * the cached value. It ensures the config is only fetched once.
+ * the cached value. It ensures the config is only fetched once from the caller's perspective.
  *
  * fetchConfigFeatures() makes the actual remote request to get the config,
- * handles errors, and caches the result.
+ * handles errors, and caches the result. It runs every 30 seconds
  */
 export class ConfigFeaturesSingleton {
     private static instance: ConfigFeaturesSingleton
@@ -805,12 +805,12 @@ export class ConfigFeaturesSingleton {
     private isFetching = false
 
     private constructor() {
-                // Private constructor to prevent direct instantiation
-        // Start the interval to fetch config features every 2 seconds
+        // Private constructor to prevent direct instantiation
+        // Start the interval to fetch config features every 30 seconds
         setInterval(() => {
             // Call the async function without awaiting it
-            this.fetchConfigFeatures().catch(console.error);
-        }, 20000);
+            this.fetchConfigFeatures().catch(console.error)
+        }, 2000)
     }
 
     public static getInstance(): ConfigFeaturesSingleton {

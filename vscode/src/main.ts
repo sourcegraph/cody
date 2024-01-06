@@ -291,7 +291,7 @@ const register = async (
             // If configFeatures exist then we set the commandsEnabled based on its value
             commandsEnabled = configFeatures.commands
         }
-        await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
+        await chatManager.executeRecipe(recipe, humanInput, openChatView, source, commandsEnabled)
     }
 
     const executeFixup = async (
@@ -398,17 +398,17 @@ const register = async (
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
             await chatManager.executeCustomCommand(title)
         }),
-        vscode.commands.registerCommand('cody.command.explain-code', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', true, '/explain', source)
+        vscode.commands.registerCommand('cody.command.explain-code', async () => {
+            await executeRecipeInChatView('custom-prompt', true, '/explain')
         }),
-        vscode.commands.registerCommand('cody.command.generate-tests', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', true, '/test', source)
+        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
+            await executeRecipeInChatView('custom-prompt', true, '/test')
         }),
-        vscode.commands.registerCommand('cody.command.document-code', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', false, '/doc', source)
+        vscode.commands.registerCommand('cody.command.document-code', async () => {
+            await executeRecipeInChatView('custom-prompt', false, '/doc')
         }),
-        vscode.commands.registerCommand('cody.command.smell-code', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', true, '/smell', source)
+        vscode.commands.registerCommand('cody.command.smell-code', async () => {
+            await executeRecipeInChatView('custom-prompt', true, '/smell')
         }),
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
