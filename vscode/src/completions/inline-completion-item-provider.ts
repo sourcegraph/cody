@@ -241,6 +241,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
             return null
@@ -251,8 +252,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = { document, position, context }
             this.lastCompletionRequest = completionRequest
-
-            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
             try {
                 if (configFeatures && !configFeatures?.autoComplete) {

@@ -837,7 +837,7 @@ export class ConfigFeaturesSingleton {
         setInterval(() => {
             // Call the async function without awaiting it
             this.fetchConfigFeatures().catch(console.error)
-        }, 2000)
+        }, 30000)
     }
 
     public static getInstance(): ConfigFeaturesSingleton {
