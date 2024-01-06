@@ -101,9 +101,8 @@ export class ChatManager implements vscode.Disposable {
             return
         }
 
-        const disabled = !enabled
-        if (disabled) {
-            void vscode.window.showErrorMessage('Dude this is disabled bro')
+        if (!enabled) {
+            void vscode.window.showErrorMessage('This is feature has been disabled on Cody by site admin.')
             return
         }
 

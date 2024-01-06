@@ -305,7 +305,6 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     )
     const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
     const isDisabled = !chatEnabled
-    console.log('Text area is disabled:', isDisabled)
 
     return (
         <div

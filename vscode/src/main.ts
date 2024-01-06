@@ -7,7 +7,7 @@ import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { ConfigFeaturesSingleton, graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -295,7 +295,7 @@ const register = async (
         enabled: boolean
     ): Promise<void> => {
         if (!enabled) {
-            void vscode.window.showErrorMessage('This is disabled for now.')
+            void vscode.window.showErrorMessage('This is feature has been disabled on Cody by site admin.')
             return
         }
 
@@ -330,12 +330,13 @@ const register = async (
 
     const statusBar = createStatusBar()
 
-    const configFeatures = await graphqlClient.getCodyConfigFeatures()
-    const isError = (value: unknown): value is Error => value instanceof Error
-    let command = true
-    if (!isError(configFeatures)) {
-        command = configFeatures.commands
+    const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+    let commandsEnabled = true
+    if (configFeatures) {
+        // If configFeatures exist then we set the commandsEnabled based on its value
+        commandsEnabled = configFeatures.commands
     }
+
     disposables.push(
         vscode.commands.registerCommand(
             'cody.command.edit-code',
@@ -348,7 +349,7 @@ const register = async (
                     insertMode?: boolean
                 },
                 source?: ChatEventSource
-            ) => executeFixup(args, source, command)
+            ) => executeFixup(args, source, commandsEnabled)
         ),
         // Tests
         // Access token - this is only used in configuration tests
@@ -381,7 +382,7 @@ const register = async (
         ),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
-            await executeRecipeInChatView('chat-question', true, input, source, command)
+            await executeRecipeInChatView('chat-question', true, input, source, commandsEnabled)
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
@@ -395,16 +396,16 @@ const register = async (
             await chatManager.executeCustomCommand(title)
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', true, '/explain', source, command)
+            await executeRecipeInChatView('custom-prompt', true, '/explain', source, commandsEnabled)
         }),
         vscode.commands.registerCommand('cody.command.generate-tests', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', true, '/test', source, command)
+            await executeRecipeInChatView('custom-prompt', true, '/test', source, commandsEnabled)
         }),
         vscode.commands.registerCommand('cody.command.document-code', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', false, '/doc', source, command)
+            await executeRecipeInChatView('custom-prompt', false, '/doc', source, commandsEnabled)
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async (source?: ChatEventSource) => {
-            await executeRecipeInChatView('custom-prompt', true, '/smell', source, command)
+            await executeRecipeInChatView('custom-prompt', true, '/smell', source, commandsEnabled)
         }),
         vscode.commands.registerCommand('cody.command.context-search', () =>
             executeRecipeInChatView('context-search', true)
