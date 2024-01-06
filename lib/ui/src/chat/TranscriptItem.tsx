@@ -121,6 +121,7 @@ export const TranscriptItem: React.FunctionComponent<
                             editButtonOnSubmit(formInput)
                         }
                     }}
+                    chatEnabled={true}
                 />
                 <SubmitButton
                     className={styles.submitButton}
