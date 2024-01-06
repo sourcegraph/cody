@@ -137,8 +137,6 @@ interface CompletionRequest {
     context: vscode.InlineCompletionContext
 }
 
-
-
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private lastCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
@@ -693,6 +691,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         if (error.message === 'AutocompleteConfigTurnedOff') {
             const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
+            // If there's already an existing error, don't add another one.
+            const hasAutocompleteDisabledBanner = this.config.statusBar.hasError('AutoCompleteDisabledByAdmin')
+            if (hasAutocompleteDisabledBanner) {
+                return
+            }
             let shown = false
             this.config.statusBar.addError({
                 title: errorTitle,

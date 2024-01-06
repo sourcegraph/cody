@@ -805,7 +805,12 @@ export class ConfigFeaturesSingleton {
     private isFetching = false
 
     private constructor() {
-        // Private constructor to prevent direct instantiation
+                // Private constructor to prevent direct instantiation
+        // Start the interval to fetch config features every 2 seconds
+        setInterval(() => {
+            // Call the async function without awaiting it
+            this.fetchConfigFeatures().catch(console.error);
+        }, 20000);
     }
 
     public static getInstance(): ConfigFeaturesSingleton {
@@ -820,7 +825,7 @@ export class ConfigFeaturesSingleton {
         autoComplete: boolean
         commands: boolean
     } | null> {
-        // Make sure to fetch only once
+        // Make sure to fetch only once when get method is used from external sources
         if (!this.configFeatures && !this.isFetching) {
             this.isFetching = true
             await this.fetchConfigFeatures()
