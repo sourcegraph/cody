@@ -137,6 +137,69 @@ interface CompletionRequest {
     context: vscode.InlineCompletionContext
 }
 
+/**
+ * ConfigFeaturesSingleton is a singleton class that fetches and caches
+ * configuration features from a remote source. It provides methods to
+ * retrieve the cached config features.
+ *
+ * The constructor is private to enforce the singleton pattern.
+ *
+ * getInstance() provides access to the singleton instance.
+ *
+ * getConfigFeatures() fetches the config if not already cached, and returns
+ * the cached value. It ensures the config is only fetched once.
+ *
+ * fetchConfigFeatures() makes the actual remote request to get the config,
+ * handles errors, and caches the result.
+ */
+class ConfigFeaturesSingleton {
+    private static instance: ConfigFeaturesSingleton
+    private configFeatures: {
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    } | null = null
+    private isFetching = false
+
+    private constructor() {
+        // Private constructor to prevent direct instantiation
+    }
+
+    public static getInstance(): ConfigFeaturesSingleton {
+        if (!ConfigFeaturesSingleton.instance) {
+            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+        }
+        return ConfigFeaturesSingleton.instance
+    }
+
+    public async getConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    } | null> {
+        // Make sure to fetch only once
+        if (!this.configFeatures && !this.isFetching) {
+            this.isFetching = true
+            await this.fetchConfigFeatures()
+            this.isFetching = false
+        }
+        return this.configFeatures
+    }
+
+    private async fetchConfigFeatures(): Promise<void> {
+        // Perform your GQL query here and return the result
+        const features = await graphqlClient.getCodyConfigFeatures()
+        if (features instanceof Error) {
+            // Handle the error case by setting null so as not to disrupt the flow
+            console.error(features.message)
+            this.configFeatures = null // Set the value of Config Features as null incase it doesn't exist or incase of errors
+        } else {
+            // Store the fetched config features
+            this.configFeatures = features
+        }
+    }
+}
+
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private lastCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
@@ -241,13 +304,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
-        const configFeatures = await graphqlClient.getCodyConfigFeatures()
-        const isError = (value: unknown): value is Error => value instanceof Error
-        let command = true
-        if (!isError(configFeatures)) {
-            command = configFeatures.commands
-        }
-        console.log(command)
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
             return null
@@ -260,7 +318,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.lastCompletionRequest = completionRequest
 
             try {
-                if (command) {
+                if (!configFeatures?.autoComplete) {
                     // If true, throw a new error
                     throw new Error('AutocompleteConfigTurnedOff')
                 }
@@ -695,14 +753,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         if (error.message === 'AutocompleteConfigTurnedOff') {
-            console.log('see we are fucked now')
-            const errorTitle = 'Cody Autocomplete Disabled Due to Rate Limit'
-            // const pageName = 'rate-limits'
+            const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
             let shown = false
             this.config.statusBar.addError({
                 title: errorTitle,
-                description: 'error error errror bro',
-                errorType: 'RateLimitError',
+                description: 'Contact Sourcegraph Site Admin to enable autocomplete',
+                errorType: 'AutoCompleteDisabledByAdmin',
                 onShow: () => {
                     if (shown) {
                         return
