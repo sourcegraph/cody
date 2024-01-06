@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { AuthStatus } from '../chat/protocol'
@@ -240,6 +241,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        const configFeatures = await graphqlClient.getCodyConfigFeatures()
+        const isError = (value: unknown): value is Error => value instanceof Error
+        let command = true
+        if (!isError(configFeatures)) {
+            command = configFeatures.commands
+        }
+        console.log(command)
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
             return null
@@ -251,6 +259,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const completionRequest: CompletionRequest = { document, position, context }
             this.lastCompletionRequest = completionRequest
 
+            try {
+                if (command) {
+                    // If true, throw a new error
+                    throw new Error('AutocompleteConfigTurnedOff')
+                }
+                // Rest of your method...
+            } catch (error) {
+                this.onError(error as Error)
+                throw error
+            }
             const start = performance.now()
 
             if (!this.lastCompletionRequestTimestamp) {
@@ -676,6 +694,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
+        if (error.message === 'AutocompleteConfigTurnedOff') {
+            console.log('see we are fucked now')
+            const errorTitle = 'Cody Autocomplete Disabled Due to Rate Limit'
+            // const pageName = 'rate-limits'
+            let shown = false
+            this.config.statusBar.addError({
+                title: errorTitle,
+                description: 'error error errror bro',
+                errorType: 'RateLimitError',
+                onShow: () => {
+                    if (shown) {
+                        return
+                    }
+                    shown = true
+                },
+            })
+
+            // Handle this error specifically
+        }
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
