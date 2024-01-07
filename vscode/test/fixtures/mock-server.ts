@@ -53,10 +53,15 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     app.use(express.json())
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
+    let testRunMessageSent = false
     app.post('/.api/testLogging', (req, res) => {
         void logTestingData('legacy', req.body)
         storeLoggedEvents(req.body)
         res.status(200)
+        if (!testRunMessageSent) {
+            console.log(`TestName: ${currentTestName} | TestRunId: ${currentTestRunID}`)
+            testRunMessageSent = true
+        }
     })
 
     // matches @sourcegraph/cody-shared/src/sourcegraph-api/telemetry/MockServerTelemetryExporter
@@ -248,7 +253,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     return result
 }
-
 export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     if (process.env.CI === undefined) {
         return
@@ -267,10 +271,7 @@ export async function logTestingData(type: 'legacy' | 'new', data: string): Prom
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
-        console.error('Error publishing message:', error)
-    })
-    console.log(`Message published - Type: ${type}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
+    await topicPublisher.publishMessage({ data: dataBuffer })
 }
 
 let currentTestName: string
