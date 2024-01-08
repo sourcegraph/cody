@@ -7,42 +7,10 @@ import {
     graphqlClient,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig } from './create-provider'
-
-const DEFAULT_VSCODE_SETTINGS: Configuration = {
-    proxy: null,
-    codebase: '',
-    customHeaders: {},
-    chatPreInstruction: 'My name is John Doe.',
-    useContext: 'embeddings',
-    autocomplete: true,
-    autocompleteLanguages: { '*': true },
-    commandCodeLenses: false,
-    editorTitleCommandIcon: true,
-    experimentalChatPredictions: false,
-    experimentalGuardrails: false,
-    experimentalLocalSymbols: false,
-    experimentalSimpleChatContext: true,
-    experimentalSymfContext: false,
-    codeActions: true,
-    isRunningInsideAgent: false,
-    debugEnable: false,
-    debugVerbose: false,
-    debugFilter: null,
-    telemetryLevel: 'all',
-    autocompleteAdvancedProvider: null,
-    autocompleteAdvancedModel: null,
-    autocompleteCompleteSuggestWidgetSelection: false,
-    autocompleteExperimentalSyntacticPostProcessing: false,
-    autocompleteExperimentalGraphContext: null,
-    internalUnstable: false,
-    autocompleteTimeouts: {},
-    testingLocalEmbeddingsEndpoint: undefined,
-    testingLocalEmbeddingsIndexLibraryPath: undefined,
-    testingLocalEmbeddingsModel: undefined,
-}
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({
     ...DEFAULT_VSCODE_SETTINGS,

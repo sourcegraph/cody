@@ -67,9 +67,19 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
         if (!api.isActive || !api.exports.testing) {
             return false
         }
-        transcript = await getExtensionAPI().exports.testing?.chatTranscript()
+        transcript = await getExtensionAPI().exports.testing?.chatMessages()
         return transcript !== undefined && transcript.length > index && Boolean(transcript[index].text)
     })
     assert.ok(transcript)
     return transcript[index]
+}
+
+export async function getTextEditorWithSelection(): Promise<void> {
+    // Open Main.java
+    assert.ok(vscode.workspace.workspaceFolders)
+    const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
+    const textEditor = await vscode.window.showTextDocument(mainJavaUri)
+
+    // Select the "main" method
+    textEditor.selection = new vscode.Selection(5, 0, 7, 0)
 }

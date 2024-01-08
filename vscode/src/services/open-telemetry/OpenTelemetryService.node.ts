@@ -1,13 +1,19 @@
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { version } from '../version'
+import { version } from '../../version'
+
+import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
+
+type OpenTelemetryServiceConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
 
 export class OpenTelemetryService {
     private sdk: NodeSDK | undefined
@@ -16,17 +22,21 @@ export class OpenTelemetryService {
     // be run in parallel
     private reconfigurePromiseMutex: Promise<void> = Promise.resolve()
 
-    constructor(protected config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) {
+    constructor(protected config: OpenTelemetryServiceConfig) {
         this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(() => this.reconfigure())
     }
 
-    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>): void {
+    public onConfigurationChange(newConfig: OpenTelemetryServiceConfig): void {
         this.config = newConfig
         this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(() => this.reconfigure())
     }
 
     private async reconfigure(): Promise<void> {
-        if (!(await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))) {
+        const isEnabled =
+            this.config.experimentalTracing ||
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))
+
+        if (!isEnabled) {
             return
         }
 
@@ -35,6 +45,7 @@ export class OpenTelemetryService {
             return
         }
         this.lastTraceUrl = traceUrl
+        diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR)
 
         await this.sdk?.shutdown()
         this.sdk = undefined
@@ -47,6 +58,10 @@ export class OpenTelemetryService {
             instrumentations: [new HttpInstrumentation()],
             traceExporter: new OTLPTraceExporter({
                 url: traceUrl,
+            }),
+
+            ...(process.env.NODE_ENV === 'development' && {
+                spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
             }),
         })
         this.sdk.start()

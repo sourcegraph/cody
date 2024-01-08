@@ -6,8 +6,7 @@ non-ECMAScript clients such as the JetBrains and NeoVim plugins.
 
 ## Protocol
 
-The protocol is defined in the file [`protocol.ts`](../vscode/src/jsonrpc/agent-protocol.ts). The
-TypeScript code is the single source of truth of what JSON-RPC methods are
+The protocol is defined in the file [`protocol.ts`](../vscode/src/jsonrpc/agent-protocol.ts). The TypeScript code is the single source of truth of what JSON-RPC methods are
 supported in the protocol.
 
 ## Updating the protocol
@@ -124,3 +123,5 @@ more details about how to disable agent tests.
   example, the `extensionConfiguration/didChange` notification is sent from the
   client to the server to notify that subsequent requests should use the new
   connection configuration.
+- Run the command `git diff -- ':!*.har'` to review local changes without the noisy
+  diff in `agent/recordings`.

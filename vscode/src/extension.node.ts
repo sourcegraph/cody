@@ -17,7 +17,7 @@ import { FilenameContextFetcher } from './local-context/filename-context-fetcher
 import { createLocalEmbeddingsController } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
-import { OpenTelemetryService } from './services/OpenTelemetryService.node'
+import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 /**

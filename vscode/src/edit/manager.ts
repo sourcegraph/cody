@@ -47,8 +47,13 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}, source: ChatEventSource = 'editor'): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
-        telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
+        const commandEventName = source === 'doc' ? 'doc' : 'edit'
+        telemetryService.log(
+            `CodyVSCodeExtension:command:${commandEventName}:executed`,
+            { source },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', { privateMetadata: { source } })
 
         const editor = getEditor()
         if (editor.ignored) {

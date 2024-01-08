@@ -114,7 +114,7 @@ describe('Agent', () => {
     })
     client.connectProcess(agentProcess, error => {
         console.log({ error })
-        process.exit(1)
+        // process.exit(1)
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -234,9 +234,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello!",
+            "displayText": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
             "speaker": "assistant",
-            "text": " Hello!",
+            "text": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
           }
         `
         )

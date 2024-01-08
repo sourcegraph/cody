@@ -22,6 +22,7 @@ describe('DefaultPrompter', () => {
             {
                 getExplicitContext: () => [],
                 getEnhancedContext: () => Promise.resolve([]),
+                getCommandContext: () => Promise.resolve([]),
             },
             true,
             100000
@@ -68,6 +69,7 @@ describe('DefaultPrompter', () => {
             {
                 getExplicitContext: () => [],
                 getEnhancedContext: () => Promise.resolve([]),
+                getCommandContext: () => Promise.resolve([]),
             },
             true,
             100000

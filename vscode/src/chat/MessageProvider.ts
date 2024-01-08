@@ -13,7 +13,7 @@ import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/intera
 import { ChatEventSource, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -103,10 +103,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     constructor(options: MessageProviderOptions) {
         super()
-
-        if (TestSupport.instance) {
-            TestSupport.instance.messageProvider.set(this)
-        }
 
         this.chat = options.chat
         this.intentDetector = options.intentDetector
@@ -227,9 +223,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         recipe.type === RecipeType.Edit
                             ? reformatBotMessageForEdit(text, responsePrefix)
                             : reformatBotMessageForChat(text, responsePrefix)
-                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    const annotatedText = await this.guardrailsAnnotateAttributions(displayText)
-                    this.transcript.addAssistantResponse(text, annotatedText)
+                    this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response
@@ -368,12 +362,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
-        const command = await this.chatCommandsFilter(
-            humanChatInput,
-            recipeId,
-            { source, requestID },
-            userInputContextFiles
-        )
+        const command = await this.chatCommandsFilter(humanChatInput, recipeId, { source, requestID })
         if (!command) {
             return
         }
@@ -468,8 +457,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
         const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
-        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
+        telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, properties, { hasV2Event: true })
+        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'recipe-used', { metadata: { ...contextSummary } })
     }
 
     protected async runRecipeForSuggestion(
@@ -505,7 +494,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
         const args = { requestID: this.currentRequestID, source }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, args, { hasV2Event: true })
+        telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, args, { hasV2Event: true })
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -538,32 +527,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 console.error(error, statusCode)
             },
         })
-    }
-
-    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
-        if (!this.contextProvider.config.experimentalGuardrails) {
-            return text
-        }
-
-        const result = await annotateAttribution(this.guardrails, text)
-
-        // Only log telemetry if we did work (ie had to annotate something).
-        if (result.codeBlocks > 0) {
-            telemetryService.log(
-                'CodyVSCodeExtension:guardrails:annotate',
-                {
-                    codeBlocks: result.codeBlocks,
-                    duration: result.duration,
-                },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.guardrails.annotate', 'executed', {
-                // Convert nanoseconds to milliseconds to match other telemetry.
-                metadata: { codeBlocks: result.codeBlocks, durationMs: result.duration / 1000000 },
-            })
-        }
-
-        return result.text
     }
 
     /**
@@ -603,14 +566,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        return this.executeRecipe('custom-prompt', title, 'custom-commands')
+        return vscode.commands.executeCommand('cody.action.commands.exec', title)
     }
 
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
-        eventTrace?: { requestID?: string; source?: ChatEventSource },
-        userContextFiles?: ContextFile[]
+        eventTrace?: { requestID?: string; source?: ChatEventSource }
     ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
         const source = eventTrace?.source || undefined
         text = text.trim()
@@ -661,23 +623,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     const assistantResponse = 'Command failed. Please open a file and try again.'
                     return this.addCustomInteraction({ assistantResponse, text, source })
                 }
-                const commandRunnerID = await this.editor.controllers.command?.addCommand(
-                    text,
-                    eventTrace?.requestID,
-                    userContextFiles
-                )
-                // no op
-                if (!commandRunnerID) {
-                    return
-                }
-
-                if (commandRunnerID === 'invalid') {
-                    const assistantResponse = `__${text}__ is not a valid command`
-                    // If no command found, send error message to view
-                    return this.addCustomInteraction({ assistantResponse, text, source })
-                }
-
-                return { text: commandRunnerID, recipeId: 'custom-prompt', source }
+                return vscode.commands.executeCommand('cody.action.commands.exec', text)
             }
         }
     }

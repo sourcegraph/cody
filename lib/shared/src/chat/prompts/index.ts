@@ -20,13 +20,13 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
     }
 
     // Add default commands
-    const prompts = defaultPrompts.commands as Record<string, unknown>
-    for (const key in prompts) {
-        if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-            const prompt = prompts[key] as CodyPrompt
-            prompt.type = 'default'
-            prompt.slashCommand = toSlashCommand(key)
-            map.set(prompt.slashCommand, prompt)
+    const commands = defaultPrompts.commands as Record<string, unknown>
+    for (const key in commands) {
+        if (Object.prototype.hasOwnProperty.call(commands, key)) {
+            const command = commands[key] as CodyPrompt
+            command.type = 'default'
+            command.slashCommand = toSlashCommand(key)
+            map.set(command.slashCommand, command)
         }
     }
 
@@ -73,12 +73,11 @@ export interface CodyPrompt {
 
 /**
  * - ask mode is the default mode, run prompt in sidebar
- * - inline mode will run prompt in inline chat
  * - edit mode will run prompt with fixup
  * - insert mode is the same as edit, but instead of replacing selection with cody's response,
  * it adds to the top of the selection instead
  */
-export type CodyPromptMode = 'ask' | 'inline' | 'edit' | 'insert'
+export type CodyPromptMode = 'ask' | 'edit' | 'insert'
 
 // Type of context available for prompt building
 export interface CodyPromptContext {
