@@ -29,7 +29,8 @@ export class TestClient extends MessageHandler {
         this.info = this.getClientInfo()
 
         this.registerNotification('debug/message', message => {
-            console.log(`${message.channel}: ${message.message}`)
+            // Uncomment below to see `logDebug` messages.
+            // console.log(`${message.channel}: ${message.message}`)
         })
     }
 
