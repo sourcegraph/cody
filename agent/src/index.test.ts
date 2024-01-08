@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { execSync, spawn } from 'child_process'
+import { ChildProcessWithoutNullStreams, execSync, spawn } from 'child_process'
 import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
@@ -19,6 +19,7 @@ export class TestClient extends MessageHandler {
     public name: string
     public accessToken?: string
     public info: ClientInfo
+    public agentProcess?: ChildProcessWithoutNullStreams
 
     constructor(name: string, accessToken?: string) {
         super()
@@ -33,9 +34,9 @@ export class TestClient extends MessageHandler {
     }
 
     public async initialize() {
-        const agentProcess = this.spawnAgentProcess()
+        this.agentProcess = this.spawnAgentProcess()
 
-        this.connectProcess(agentProcess, error => {
+        this.connectProcess(this.agentProcess, error => {
             console.error(error)
         })
 
