@@ -65,34 +65,34 @@ describe('TreeViewProvider', () => {
         return nextUpdate
     }
 
-    function findTreeItem(label: string) {
-        const items = tree.getChildren()
-        return items.find(item => (item.resourceUri as any)?.label === label)
+    async function findTreeItem(label: string) {
+        const items = await tree.getChildren()
+        return items.find(item => item.resourceUri?.label === label)
     }
 
     describe('Cody Pro Upgrade', () => {
         it('is shown when GA + user can upgrade', async () => {
             tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
-            expect(findTreeItem('Upgrade')).not.toBeUndefined()
+            expect(await findTreeItem('Upgrade')).not.toBeUndefined()
         })
 
         it('is not shown when user cannot upgrade', async () => {
             tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: false, endpoint: DOTCOM_URL })
-            expect(findTreeItem('Upgrade')).toBeUndefined()
+            expect(await findTreeItem('Upgrade')).toBeUndefined()
         })
 
         it('is not shown when not GA', async () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
-            expect(findTreeItem('Upgrade')).toBeUndefined()
+            expect(await findTreeItem('Upgrade')).toBeUndefined()
         })
 
         it('is not shown when not dotCom regardless of GA or upgrade flags', async () => {
             tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: new URL('https://example.org') })
-            expect(findTreeItem('Upgrade')).toBeUndefined()
+            expect(await findTreeItem('Upgrade')).toBeUndefined()
         })
     })
 
@@ -100,19 +100,19 @@ describe('TreeViewProvider', () => {
         it('is shown when GA', async () => {
             tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
-            expect(findTreeItem('Usage')).not.toBeUndefined()
+            expect(await findTreeItem('Usage')).not.toBeUndefined()
         })
 
         it('is not shown when not GA', async () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
-            expect(findTreeItem('Usage')).toBeUndefined()
+            expect(await findTreeItem('Usage')).toBeUndefined()
         })
 
         it('is not shown when not dotCom regardless of GA or upgrade flags', async () => {
             tree = new TreeViewProvider('support', decGaMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: new URL('https://example.org') })
-            expect(findTreeItem('Usage')).toBeUndefined()
+            expect(await findTreeItem('Usage')).toBeUndefined()
         })
     })
 })
