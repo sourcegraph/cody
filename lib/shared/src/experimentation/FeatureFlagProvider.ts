@@ -19,7 +19,6 @@ export enum FeatureFlag {
     CodyAutocompleteContextLocalMixed = 'cody-autocomplete-context-local-mixed',
     CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
     CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
 

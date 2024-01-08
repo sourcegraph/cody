@@ -57,7 +57,6 @@ export async function createInlineCompletionItemProvider({
         bfgContextFlag,
         bfgMixedContextFlag,
         localMixedContextFlag,
-        disableRecyclingOfPreviousRequests,
         dynamicMultilineCompletionsFlag,
         hotStreakFlag,
     ] = await Promise.all([
@@ -66,7 +65,6 @@ export async function createInlineCompletionItemProvider({
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfg),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
@@ -103,7 +101,6 @@ export async function createInlineCompletionItemProvider({
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,
-            disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,
