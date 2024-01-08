@@ -93,7 +93,9 @@ export class ChatManager implements vscode.Disposable {
         }
 
         if (!enabled) {
-            void vscode.window.showErrorMessage('This feature has been disabled by your Enterprise instance site administrator.')
+            void vscode.window.showErrorMessage(
+                'This feature has been disabled by your Enterprise instance site administrator.'
+            )
             return
         }
         // Else, open a new chanel panel and run the command in the new panel
