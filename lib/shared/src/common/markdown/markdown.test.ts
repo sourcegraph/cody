@@ -1,6 +1,12 @@
 import { describe, expect, it, test } from 'vitest'
 
-import { escapeMarkdown, registerHighlightContributions, renderMarkdown } from '.'
+import {
+    escapeMarkdown,
+    extractHtmlTagName,
+    registerHighlightContributions,
+    renderMarkdown,
+    shouldEscapeTagWithElementName,
+} from '.'
 
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.
 
@@ -126,6 +132,10 @@ describe('renderMarkdown', () => {
         const input = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
         expect(renderMarkdown(input)).toBe('<p><a download="">D</a>\n<a>D2</a></p>')
     })
+    it('renders paragraphs containing regular expressions correctly', () => {
+        const input = '/^(?<myLabel>[A-Za-z]+).(?<myOtherLabel>[A-Za-z]+)/'
+        expect(renderMarkdown(input)).toBe('<p>/^(?&lt;myLabel&gt;[A-Za-z]+).(?&lt;myOtherLabel&gt;[A-Za-z]+)/</p>')
+    })
 })
 
 describe('escapeMarkdown', () => {
@@ -164,5 +174,36 @@ const someTypeScriptCode \\= funcCall\\(\\)
 &lt;b&gt;inline html&lt;\\/b&gt;
 
 Escaped \\\\\\* markdown and escaped html code \\\\\\&gt\\\\\\;`)
+    })
+})
+
+describe('extractHTMLTagName', () => {
+    it('extracts the tag name of a opening token', () => {
+        expect(extractHtmlTagName('<a someAttribute="1">')).toBe('a')
+    })
+
+    it('extracts the tag name of a closing token', () => {
+        expect(extractHtmlTagName('</a someAttribute="1">')).toBe('a')
+    })
+
+    it('correctly extracts custom html tags', () => {
+        expect(extractHtmlTagName('<my-custom-tag someAttribute="1">')).toBe('my-custom-tag')
+        expect(extractHtmlTagName('</my-custom-tag someAttribute="1">')).toBe('my-custom-tag')
+    })
+})
+
+describe('shouldEscapeTagWithElementName', () => {
+    it('treats svg as valid', () => {
+        expect(shouldEscapeTagWithElementName('svg')).toBe(false)
+    })
+
+    it('is not case sensitive', () => {
+        expect(shouldEscapeTagWithElementName('li')).toBe(false)
+        expect(shouldEscapeTagWithElementName('LI')).toBe(false)
+        expect(shouldEscapeTagWithElementName('Li')).toBe(false)
+    })
+
+    it('treats custom element names as invalid', () => {
+        expect(shouldEscapeTagWithElementName('myTag')).toBe(true)
     })
 })
