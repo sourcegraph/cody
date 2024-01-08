@@ -5,6 +5,7 @@ import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shar
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
+import { getEditor } from '../editor/active-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
@@ -64,6 +65,15 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         requestID?: string,
         contextFiles?: ContextFile[]
     ): Promise<CodyPrompt | null> {
+        const editor = getEditor()
+        if (!editor.active || editor.ignored) {
+            const message = editor.ignored
+                ? 'The active editor is ignored.'
+                : 'No editor is active. Please open a file and try again.'
+            void vscode.window.showErrorMessage(message)
+            return null
+        }
+
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
