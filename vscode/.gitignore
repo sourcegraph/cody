@@ -4,3 +4,4 @@ out/
 dist/
 .vscode-test-web/
 resources/wasm/
+GITHUB_CHANGELOG.md

@@ -46,6 +46,7 @@ jobs:
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
           VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
+      - run: pnpm -C vscode run github-changelog
       - name: create release
         id: create_release
         uses: actions/create-release@v1
@@ -55,6 +56,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Cody for VS Code ${{ env.EXT_VERSION }}
           draft: false
+          body_path: vscode/GITHUB_CHANGELOG.md
       - name: upload release asset
         uses: actions/upload-release-asset@v1
         env:

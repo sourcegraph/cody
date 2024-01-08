@@ -3,6 +3,9 @@ name: vscode-insiders-release
 on:
   schedule:
     - cron: '0 15 * * *' # daily at 1500 UTC
+  push:
+    tags:
+      - vscode-v* # automatically create a new insider build with a release
   workflow_dispatch:
 
 jobs:
