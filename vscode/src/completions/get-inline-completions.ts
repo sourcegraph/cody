@@ -9,12 +9,12 @@ import { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { ContextMixer } from './context/context-mixer'
 import { DocumentContext, insertIntoDocContext } from './get-current-doc-context'
-import { AutocompleteItem } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { CompletionLogID } from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 

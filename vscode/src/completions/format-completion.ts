@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-import { AutocompleteItem } from './inline-completion-item-provider'
 import { logCompletionFormatEvent, logError } from './logger'
+import { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import { lines } from './text-processing'
 
 export async function formatCompletion(autocompleteItem: AutocompleteItem): Promise<void> {
