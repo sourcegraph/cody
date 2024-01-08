@@ -293,9 +293,7 @@ export class MessageHandler {
             this.exit()
         })
         child.on('exit', code => {
-            if (code !== 0) {
-                reject?.(new Error(`exit: ${code}`))
-            }
+            reject?.(new Error(`exit: ${code}`))
             this.exit()
         })
         child.stderr.on('data', data => {
