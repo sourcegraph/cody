@@ -273,7 +273,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (@ to include code, / for commands)'
-    const disabledPlaceHolder = 'SiteAdmin has disabled chat and commands for Cody'
+    const disabledPlaceHolder = 'Chat and commands have been disabled by your Enterprise instance site administrator'
 
     useEffect(() => {
         if (autoFocus) {
