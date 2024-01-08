@@ -19,7 +19,10 @@ export class TestClient extends MessageHandler {
     public info: ClientInfo
     public agentProcess?: ChildProcessWithoutNullStreams
 
-    constructor(public readonly name: string, public readonly accessToken?: string) {
+    constructor(
+        public readonly name: string,
+        public readonly accessToken?: string
+    ) {
         super()
 
         this.name = name
