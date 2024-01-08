@@ -123,6 +123,7 @@ export class TestClient extends MessageHandler {
             cwd: agentDir,
             env: {
                 CODY_SHIM_TESTING: 'true',
+                CODY_LOCAL_EMBEDDINGS_DISABLED: 'true',
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: this.name,
@@ -315,7 +316,7 @@ describe('Agent', () => {
           public class Main {
 
             public static void main(String[] args) {
-              System.out.println(\\"Hello World!\\"); 
+              System.out.println(\\"Hello World!\\");
             }
 
           }
@@ -329,7 +330,7 @@ describe('Agent', () => {
           public class Main {
 
             public static void main(String[] args) {
-              System.out.println(\\"Hello World!\\"); 
+              System.out.println(\\"Hello World!\\");
             }
 
           }
