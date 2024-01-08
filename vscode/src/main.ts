@@ -102,7 +102,7 @@ const register = async (
             activeGhostDecoration = { range: selection }
             editor.setDecorations(editHintDecoration, [activeGhostDecoration])
         },
-        200,
+        250,
         { leading: false, trailing: true }
     )
     vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
