@@ -19,10 +19,7 @@ export class TestClient extends MessageHandler {
     public info: ClientInfo
     public agentProcess?: ChildProcessWithoutNullStreams
 
-    constructor(
-        public readonly name: string,
-        public readonly accessToken?: string
-    ) {
+    constructor(public readonly name: string, public readonly accessToken?: string) {
         super()
 
         this.name = name
@@ -80,12 +77,8 @@ export class TestClient extends MessageHandler {
     }
 
     public async shutdownAndExit() {
-        if (this.isAlive()) {
-            await this.request('shutdown', null)
-            this.notify('exit', null)
-        } else {
-            console.error('Agent has already exited')
-        }
+        await this.request('shutdown', null)
+        this.notify('exit', null)
     }
 
     public getAgentDir(): string {

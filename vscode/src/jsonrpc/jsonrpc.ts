@@ -370,12 +370,12 @@ export class MessageHandler {
             // Responses have ids
             const handler = this.responseHandlers.get(msg.id)
             if (handler) {
+                this.responseHandlers.delete(msg.id)
                 if (msg?.error) {
                     handler.reject(new JsonrpcError(msg.error))
                 } else {
                     handler.resolve(msg.result)
                 }
-                this.responseHandlers.delete(msg.id)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
             }
