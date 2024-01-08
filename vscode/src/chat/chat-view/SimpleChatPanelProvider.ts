@@ -625,12 +625,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
-                telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
-                    metadata: { ...contextSummary },
-                })
+
+                // Only log chat-question event if it is not a command to avoid double logging for commands
+                if (!command) {
+                    telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
+                        hasV2Event: true,
+                    })
+                    telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
+                        metadata: { ...contextSummary },
+                    })
+                }
             },
             command
         )
