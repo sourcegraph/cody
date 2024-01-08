@@ -353,9 +353,9 @@ describe('Agent', () => {
     }, 600)
 
     afterAll(async () => {
+        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
         await rateLimitedClient.shutdownAndExit()
-        await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 20_000)
 })
