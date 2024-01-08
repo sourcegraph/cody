@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+
+import { EditIntent } from '../edit/types'
 
 import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
@@ -45,7 +46,7 @@ export class FixupTask {
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
         /* The intent of the edit, derived from the source of the command. */
-        public readonly intent: FixupIntent = 'edit',
+        public readonly intent: EditIntent = 'edit',
         public selectionRange: vscode.Range,
         /* insert mode means insert replacement at selection, otherwise replace selection contents with replacement */
         public insertMode?: boolean,

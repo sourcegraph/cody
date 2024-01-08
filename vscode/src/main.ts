@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -11,7 +10,6 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
-import { FixupManager } from './chat/FixupViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -23,13 +21,11 @@ import {
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
-import { ExecuteEditArguments } from './edit/execute'
-import { getEditor } from './editor/active-editor'
+import { EditManager } from './edit/manager'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
-import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -103,16 +99,8 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    // Controller for Non-Stop Cody
-    const fixup = new FixupController()
-    disposables.push(fixup)
-
     const commandsController = platform.createCommandsController?.(context.extensionPath)
-
-    const editor = new VSCodeEditor({
-        fixups: fixup,
-        command: commandsController,
-    })
+    const editor = new VSCodeEditor({ command: commandsController })
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -188,8 +176,6 @@ const register = async (
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
-    const fixupManager = new FixupManager(messageProviderOptions)
-
     const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
     const chatManager = new ChatManager(
         {
@@ -202,6 +188,7 @@ const register = async (
         symfRunner || null
     )
 
+    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
     disposables.push(new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
@@ -290,60 +277,9 @@ const register = async (
         return chatManager.executeCommand(command, source)
     }
 
-    const executeFixup = async (
-        args: ExecuteEditArguments = {},
-        source: ChatEventSource = 'editor' // where the command was triggered from
-    ): Promise<void> => {
-        const commandEventName = source === 'doc' ? 'doc' : 'edit'
-        telemetryService.log(
-            `CodyVSCodeExtension:command:${commandEventName}:executed`,
-            { source },
-            { hasV2Event: true }
-        )
-        telemetryRecorder.recordEvent(`cody.command.${commandEventName}`, 'executed', { privateMetadata: { source } })
-        const editor = getEditor()
-        if (editor.ignored) {
-            console.error('File was ignored by Cody.')
-            return
-        }
-        const document = args.document || editor.active?.document
-        if (!document) {
-            void vscode.window.showErrorMessage('Please open a file before running a command.')
-            return
-        }
-
-        const range = args.range || editor.active?.selection
-        if (!range) {
-            return
-        }
-
-        const task = args.instruction?.trim()
-            ? await fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
-            : await fixup.promptUserForTask(args, source)
-        if (!task) {
-            return
-        }
-
-        const provider = fixupManager.getProviderForTask(task)
-        return provider.startFix()
-    }
-
     const statusBar = createStatusBar()
 
     disposables.push(
-        vscode.commands.registerCommand(
-            'cody.command.edit-code',
-            (
-                args: {
-                    range?: vscode.Range
-                    instruction?: string
-                    intent?: FixupIntent
-                    document?: vscode.TextDocument
-                    insertMode?: boolean
-                },
-                source?: ChatEventSource
-            ) => executeFixup(args, source)
-        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (url, token) => authProvider.auth(url, token)),

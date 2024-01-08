@@ -124,10 +124,6 @@ export class MockEditor implements Editor {
         return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
     }
 
-    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
-        return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
-    }
-
     public async getTextEditorContentForFile(
         uri: URI,
         range?: ActiveTextEditorSelectionRange

@@ -1,11 +1,9 @@
 import * as vscode from 'vscode'
 
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
 import { ExecuteEditArguments } from '../edit/execute'
+import { EditIntent } from '../edit/types'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -29,13 +27,7 @@ import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
-    implements
-        VsCodeFixupController,
-        FixupFileCollection,
-        FixupIdleTaskRunner,
-        FixupTaskFactory,
-        FixupTextChanged,
-        vscode.Disposable
+    implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, vscode.Disposable
 {
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
@@ -170,7 +162,7 @@ export class FixupController
         documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
-        intent?: FixupIntent,
+        intent?: EditIntent,
         insertMode?: boolean,
         source?: ChatEventSource
     ): Promise<FixupTask> {
@@ -758,43 +750,6 @@ export class FixupController
 
     public getTasks(): FixupTask[] {
         return Array.from(this.tasks.values())
-    }
-
-    // Called by the non-stop recipe to gather current state for the task.
-    public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
-        const task = this.tasks.get(id)
-        if (!task) {
-            return undefined
-        }
-
-        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        const precedingText = document.getText(
-            new vscode.Range(
-                task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),
-                task.selectionRange.start
-            )
-        )
-        const selectedText = document.getText(task.selectionRange)
-        if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
-            throw new Error("The amount of text selected exceeds Cody's current capacity.")
-        }
-
-        // TODO: original text should be a property of the diff so that we
-        // can apply diffs even while re-spinning
-        task.original = selectedText
-        const followingText = document.getText(
-            new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
-        )
-
-        return {
-            instruction: task.instruction,
-            intent: task.intent,
-            fileName: task.fixupFile.uri.fsPath,
-            precedingText,
-            selectedText,
-            followingText,
-            selectionRange: task.selectionRange,
-        }
     }
 
     public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {

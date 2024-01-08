@@ -1,12 +1,13 @@
 import * as vscode from 'vscode'
 
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+
+import { EditIntent } from './types'
 
 export interface ExecuteEditArguments {
     document?: vscode.TextDocument
     instruction?: string
-    intent?: FixupIntent
+    intent?: EditIntent
     range?: vscode.Range
     insertMode?: boolean
 }
