@@ -599,7 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         const displayText = userContextFiles?.length
             ? createDisplayTextWithFileLinks(userContextFiles, inputText)
             : command
-            ? createDisplayTextWithFileSelection(inputText, await this.editor.getActiveTextEditorSmartSelection())
+            ? createDisplayTextWithFileSelection(inputText, this.editor.getActiveTextEditorSelectionOrEntireFile())
             : inputText
         // The text we will use to send to LLM
         const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText

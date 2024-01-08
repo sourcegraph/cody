@@ -212,7 +212,7 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
         }
         contextFiles.push({
             uri: item.uri,
-            fileName: relFsPath || createVSCodeRelativePath(item.uri),
+            fileName: createVSCodeRelativePath(item.uri) || relFsPath,
             source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
