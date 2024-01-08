@@ -568,10 +568,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 return this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
             }
         }
-        const promptText = [command.prompt, command.additionalInput].join(' ')?.trim()
-        // Check for edit commands
+        // Returns early if it's an edit command as edit command is redirected to edits in findCommand
         if (command.mode !== 'ask') {
-            return executeEdit({ instruction: promptText }, source)
+            return
         }
         const inputText = [command.slashCommand, command.additionalInput].join(' ')?.trim()
 
