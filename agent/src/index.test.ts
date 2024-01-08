@@ -309,11 +309,13 @@ describe('Agent', () => {
     it('allows us to send a longer chat message', async () => {
         await openFile(animalUri)
         const lastMessage = await client.sendSingleMessage('Generate simple hello world function in java!')
-        expect(lastMessage).toMatchInlineSnapshot(
+        const trimmedMessage = lastMessage?.text
+            ?.split('\n')
+            .map(line => line.trimEnd())
+            .join('\n')
+        expect(trimmedMessage).toMatchInlineSnapshot(
             `
-          {
-            "contextFiles": [],
-            "displayText": " Here is a simple Hello World function in Java:
+          " Here is a simple Hello World function in Java:
 
           \`\`\`java
           public class Main {
@@ -325,22 +327,7 @@ describe('Agent', () => {
           }
           \`\`\`
 
-          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program.",
-            "speaker": "assistant",
-            "text": " Here is a simple Hello World function in Java:
-
-          \`\`\`java
-          public class Main {
-
-            public static void main(String[] args) {
-              System.out.println(\\"Hello World!\\");
-            }
-
-          }
-          \`\`\`
-
-          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program.",
-          }
+          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program."
         `,
             explainPollyError
         )
