@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { addDebugEventToActiveSpan } from '../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
 import { detectMultiline } from './detect-multiline'
 import { getFirstLine, getLastLine, getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
@@ -130,7 +130,7 @@ export function getDerivedDocContext(params: GetDerivedDocContextParams): Docume
         position,
     })
 
-    addDebugEventToActiveSpan('getDerivedDocContext', {
+    addAutocompleteDebugEvent('getDerivedDocContext', {
         multilineTrigger,
         multilineTriggerPosition,
     })

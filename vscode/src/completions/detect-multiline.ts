@@ -1,6 +1,6 @@
 import { Position } from 'vscode'
 
-import { addDebugEventToActiveSpan } from '../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 import { getLanguageConfig } from '../tree-sitter/language'
 
 import { DocumentDependentContext, LinesContext } from './get-current-doc-context'
@@ -41,7 +41,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
     if (!dynamicMultilineCompletions && isMethodOrFunctionInvocation) {
-        addDebugEventToActiveSpan('detectMultiline', { dynamicMultilineCompletions, isMethodOrFunctionInvocation })
+        addAutocompleteDebugEvent('detectMultiline', { dynamicMultilineCompletions, isMethodOrFunctionInvocation })
 
         return {
             multilineTrigger: null,
@@ -69,7 +69,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
     if ((dynamicMultilineCompletions && isNewLineOpeningBracketMatch) || isSameLineOpeningBracketMatch) {
-        addDebugEventToActiveSpan('detectMultiline', {
+        addAutocompleteDebugEvent('detectMultiline', {
             dynamicMultilineCompletions,
             isNewLineOpeningBracketMatch,
             isSameLineOpeningBracketMatch,
@@ -98,7 +98,7 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
     if ((dynamicMultilineCompletions && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
-        addDebugEventToActiveSpan('detectMultiline', {
+        addAutocompleteDebugEvent('detectMultiline', {
             dynamicMultilineCompletions,
             nonEmptyLineEndsWithBlockStart,
             isEmptyLineAfterBlockStart,

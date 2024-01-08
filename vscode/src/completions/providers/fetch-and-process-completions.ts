@@ -1,6 +1,6 @@
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { addDebugEventToActiveSpan } from '../../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { DocumentContext } from '../get-current-doc-context'
@@ -64,7 +64,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                 (incompleteResponse: CompletionResponse) => {
                     const rawCompletion = providerSpecificPostProcess(incompleteResponse.completion)
 
-                    addDebugEventToActiveSpan('incomplete_response', {
+                    addAutocompleteDebugEvent('incomplete_response', {
                         multiline,
                         currentLinePrefix: docContext.currentLinePrefix,
                         text: rawCompletion,
@@ -79,7 +79,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                      * Process it as the usual multline completion: continue streaming until it's truncated.
                      */
                     if (multiline) {
-                        addDebugEventToActiveSpan('multline_branch')
+                        addAutocompleteDebugEvent('multline_branch')
                         const completion = canUsePartialCompletion(rawCompletion, {
                             document: providerOptions.document,
                             docContext,
@@ -111,7 +111,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                             })
 
                             if (completion) {
-                                addDebugEventToActiveSpan('isMultilineBasedOnFirstLine_resolve', {
+                                addAutocompleteDebugEvent('isMultilineBasedOnFirstLine_resolve', {
                                     currentLinePrefix: updatedDocContext.currentLinePrefix,
                                     text: completion.insertText,
                                 })
@@ -141,7 +141,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                             if (completion) {
                                 const firstLine = getFirstLine(completion.insertText)
 
-                                addDebugEventToActiveSpan('singleline resolve', {
+                                addAutocompleteDebugEvent('singleline resolve', {
                                     currentLinePrefix: docContext.currentLinePrefix,
                                     text: firstLine,
                                 })
@@ -173,7 +173,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
             const rawCompletion = providerSpecificPostProcess(result.completion)
 
             if (!completedCompletion) {
-                addDebugEventToActiveSpan('full_response', {
+                addAutocompleteDebugEvent('full_response', {
                     currentLinePrefix: docContext.currentLinePrefix,
                     text: rawCompletion,
                 })
@@ -188,7 +188,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                     docContext: updatedDocContext,
                 })
 
-                addDebugEventToActiveSpan('full_response_resolve', {
+                addAutocompleteDebugEvent('full_response_resolve', {
                     currentLinePrefix: updatedDocContext.currentLinePrefix,
                     text: completion.insertText,
                 })

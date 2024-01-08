@@ -1,4 +1,4 @@
-import { addDebugEventToActiveSpan } from '../../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { DocumentContext, getDerivedDocContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { getMatchingSuffixLength } from '../text-processing/process-inline-completions'
@@ -27,7 +27,7 @@ export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): D
     const matchingSuffixLength = getMatchingSuffixLength(firstLine, currentLineSuffix)
     const updatedPosition = position.translate(0, Math.max(firstLine.length - 1, 0))
 
-    addDebugEventToActiveSpan('getDerivedDocContext', {
+    addAutocompleteDebugEvent('getDerivedDocContext', {
         currentLinePrefix: docContext.currentLinePrefix,
         text: initialCompletion,
     })
@@ -48,7 +48,7 @@ export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): D
     const isMultilineBasedOnFirstLine = Boolean(updatedDocContext.multilineTrigger)
 
     if (isMultilineBasedOnFirstLine) {
-        addDebugEventToActiveSpan('isMultilineBasedOnFirstLine', {
+        addAutocompleteDebugEvent('isMultilineBasedOnFirstLine', {
             currentLinePrefix: docContext.currentLinePrefix,
             text: initialCompletion,
         })

@@ -1,7 +1,7 @@
 import { TextDocument } from 'vscode'
 import { SyntaxNode } from 'web-tree-sitter'
 
-import { addDebugEventToActiveSpan } from '../../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { DocumentContext } from '../get-current-doc-context'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
@@ -36,7 +36,7 @@ export function parseAndTruncateCompletion(
         docContext,
     })
 
-    addDebugEventToActiveSpan('parsed', {
+    addAutocompleteDebugEvent('parsed', {
         currentLinePrefix: docContext.currentLinePrefix,
         text: parsed.insertText,
     })
@@ -64,7 +64,7 @@ export function parseAndTruncateCompletion(
         const truncatedLineCount = truncationResult.insertText.split('\n').length
 
         parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
-        addDebugEventToActiveSpan('lineTruncatedCount', {
+        addAutocompleteDebugEvent('lineTruncatedCount', {
             lineTruncatedCount: parsed.lineTruncatedCount,
         })
 

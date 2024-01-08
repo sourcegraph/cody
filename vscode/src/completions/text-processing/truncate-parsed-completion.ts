@@ -1,7 +1,7 @@
 import { TextDocument } from 'vscode'
 import { Point, SyntaxNode } from 'web-tree-sitter'
 
-import { addDebugEventToActiveSpan } from '../../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
 
@@ -62,7 +62,7 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     }
 
     const { insertText, points } = completion
-    addDebugEventToActiveSpan('truncate', {
+    addAutocompleteDebugEvent('truncate', {
         currentLinePrefix: docContext.currentLinePrefix,
         text: insertText,
     })
@@ -98,14 +98,14 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
         textToInsert = 'till the end of the document'
     }
 
-    addDebugEventToActiveSpan('truncate node', {
+    addAutocompleteDebugEvent('truncate node', {
         nodeToInsertType: nodeToInsert?.type,
         text: textToInsert,
     })
 
     if (nodeToInsert) {
         const overlap = findLargestSuffixPrefixOverlap(nodeToInsert.text, insertText)
-        addDebugEventToActiveSpan('truncate overlap', {
+        addAutocompleteDebugEvent('truncate overlap', {
             currentLinePrefix: docContext.currentLinePrefix,
             text: overlap ?? undefined,
         })

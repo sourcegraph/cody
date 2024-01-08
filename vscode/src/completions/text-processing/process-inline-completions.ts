@@ -3,7 +3,7 @@ import { Tree } from 'web-tree-sitter'
 
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
-import { addDebugEventToActiveSpan } from '../../services/open-telemetry/debug-utils'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
@@ -32,7 +32,7 @@ export function processInlineCompletions(
     items: ParsedCompletion[],
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItemWithAnalytics[] {
-    addDebugEventToActiveSpan('enter', {
+    addAutocompleteDebugEvent('enter', {
         currentLinePrefix: params.docContext.currentLinePrefix,
         text: items[0]?.insertText,
     })
@@ -46,7 +46,7 @@ export function processInlineCompletions(
     // Rank results
     const rankedResults = rankCompletions(uniqueResults)
 
-    addDebugEventToActiveSpan('exit', {
+    addAutocompleteDebugEvent('exit', {
         currentLinePrefix: params.docContext.currentLinePrefix,
         text: rankedResults[0]?.insertText,
     })
