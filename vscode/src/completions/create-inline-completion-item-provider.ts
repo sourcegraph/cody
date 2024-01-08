@@ -98,6 +98,7 @@ export async function createInlineCompletionItemProvider({
 
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
+            authStatus: authProvider.getAuthStatus(),
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,

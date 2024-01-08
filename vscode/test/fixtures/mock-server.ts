@@ -300,17 +300,5 @@ export function storeLoggedEvents(event: string): void {
     }
     const parsedEvent = JSON.parse(JSON.stringify(event)) as ParsedEvent
     const name = parsedEvent.event
-    if (
-        ![
-            'CodyInstalled',
-            'CodyVSCodeExtension:Auth:failed',
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            'CodyVSCodeExtension:login:clicked',
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            'CodyVSCodeExtension:auth:fromToken',
-            'CodyVSCodeExtension:Auth:connected',
-        ].includes(name)
-    ) {
-        loggedEvents.push(name)
-    }
+    loggedEvents.push(name)
 }

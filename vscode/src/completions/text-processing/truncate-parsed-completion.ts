@@ -1,9 +1,9 @@
 import { TextDocument } from 'vscode'
 import { Point, SyntaxNode } from 'web-tree-sitter'
 
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
 import { BRACKET_PAIR, getFirstLine, OpeningBracket } from './utils'
@@ -55,7 +55,6 @@ interface TruncateParsedCompletionResult {
  */
 export function truncateParsedCompletion(context: CompletionContext): TruncateParsedCompletionResult {
     const { completion, document, docContext } = context
-    const { completionPostProcessId } = docContext
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
     if (!completion.tree || !completion.points || !parseTreeCache) {
@@ -63,7 +62,10 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     }
 
     const { insertText, points } = completion
-    completionPostProcessLogger.info({ completionPostProcessId, stage: 'truncate', text: insertText })
+    addAutocompleteDebugEvent('truncate', {
+        currentLinePrefix: docContext.currentLinePrefix,
+        text: insertText,
+    })
 
     let fixedCompletion = completion
     let updatedText = insertMissingBracketIfNeeded({
@@ -91,18 +93,22 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
 
     const nodeToInsert = findLastAncestorOnTheSameRow(fixedCompletion.tree!.rootNode, points.trigger || points.start)
 
-    completionPostProcessLogger.info({
-        completionPostProcessId,
-        stage: 'truncate node',
-        text: nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text,
-        obj: {
-            nodeToInsertType: nodeToInsert?.type,
-        },
+    let textToInsert = nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text
+    if (textToInsert && document.getText().endsWith(textToInsert.slice(-100))) {
+        textToInsert = 'till the end of the document'
+    }
+
+    addAutocompleteDebugEvent('truncate node', {
+        nodeToInsertType: nodeToInsert?.type,
+        text: textToInsert,
     })
 
     if (nodeToInsert) {
         const overlap = findLargestSuffixPrefixOverlap(nodeToInsert.text, insertText)
-        completionPostProcessLogger.info({ completionPostProcessId, stage: 'truncate overlap', text: String(overlap) })
+        addAutocompleteDebugEvent('truncate overlap', {
+            currentLinePrefix: docContext.currentLinePrefix,
+            text: overlap ?? undefined,
+        })
 
         if (overlap) {
             return {

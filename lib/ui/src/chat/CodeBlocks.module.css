@@ -18,12 +18,32 @@
     display: flex;
 }
 
+.flex-filler {
+    display: flex;
+    flex-grow: 1;
+}
+
 .copy-button,
-.insert-button {
+.insert-button,
+.attribution-icon {
     all: unset;
     padding: 3px;
     width: 16px;
     height: 16px;
-    cursor: pointer;
     background-color: transparent;
+}
+
+.copy-button,
+.insert-button {
+    cursor: pointer;
+}
+
+.attribution-icon-unavailable {
+    color: var(--hl-dark-yellow);
+}
+.attribution-icon-found {
+    color: var(--hl-dark-red);
+}
+.attribution-icon-not-found {
+    color: var(--hl-dark-green);
 }

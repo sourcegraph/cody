@@ -46,6 +46,7 @@ export function newAuthStatus(
     const isLoggedIn = authStatus.siteHasCodyEnabled && authStatus.authenticated
     const isAllowed = authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true
     authStatus.isLoggedIn = isLoggedIn && isAllowed
+    authStatus.isDotCom = isDotComOrApp
     return authStatus
 }
 

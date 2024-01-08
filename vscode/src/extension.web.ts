@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-question'
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
-import { CustomPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/custom-prompt'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
@@ -32,7 +31,6 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new GenerateDocstring(),
     new GenerateTest(),
     new ImproveVariableNames(),
-    new CustomPrompt(),
     new NextQuestions(),
     new TranslateToLanguage(),
     new ContextSearch(),

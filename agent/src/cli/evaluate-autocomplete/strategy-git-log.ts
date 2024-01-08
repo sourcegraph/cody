@@ -8,8 +8,9 @@ import * as vscode from 'vscode'
 import { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import { EvaluateAutocompleteOptions, matchesGlobPatterns } from './evaluate-autocomplete'
+import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
+import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { SnapshotWriter } from './SnapshotWriter'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
@@ -123,7 +124,6 @@ export async function evaluateGitLogStrategy(
                             client,
                             document,
                             options,
-                            emptyMatchContent: '',
                         })
 
                         await snapshots.writeDocument(document)

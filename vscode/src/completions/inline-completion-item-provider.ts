@@ -2,10 +2,12 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
+import { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -112,6 +114,7 @@ export interface CodyCompletionItemProviderConfig {
     triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
+    authStatus: AuthStatus
     isDotComUser?: boolean
 
     contextStrategy: ContextStrategy
@@ -204,7 +207,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
         )
 
-        const chatHistory = localStorage.getChatHistory()?.chat
+        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
@@ -237,7 +240,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
-        return startAsyncSpan('autocomplete.provideInlineCompletionItems', async () => {
+        // Do not create item for files that are on the cody ignore list
+        if (isCodyIgnoredFile(document.uri)) {
+            return null
+        }
+
+        return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async () => {
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = { document, position, context }
@@ -358,6 +366,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     dynamicMultilineCompletions: this.config.dynamicMultilineCompletions,
                     hotStreak: this.config.hotStreak,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
+                    isDotComUser: this.config.isDotComUser,
                 })
 
                 // Avoid any further work if the completion is invalidated already.
@@ -500,7 +509,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completion.logId,
             completion.requestParams.document,
             completion.analyticsItem,
-            completion.trackedRange
+            completion.trackedRange,
+            this.config.isDotComUser
         )
     }
 
@@ -546,7 +556,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         if (!completion) {
             return
         }
-        CompletionLogger.suggested(completion.logId, completion.analyticsItem)
+        CompletionLogger.suggested(completion.logId)
     }
 
     /**
@@ -558,7 +568,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
-        CompletionLogger.partiallyAccept(completion.logId, completion.analyticsItem, acceptedLength)
+        CompletionLogger.partiallyAccept(
+            completion.logId,
+            completion.analyticsItem,
+            acceptedLength,
+            this.config.isDotComUser
+        )
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {

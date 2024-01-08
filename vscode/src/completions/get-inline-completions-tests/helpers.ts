@@ -7,6 +7,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { testFilePath } from '../../testutils/textDocument'
 import { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
@@ -29,7 +30,7 @@ import { documentAndPosition } from '../test-helpers'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const URI_FIXTURE = URI.parse('file:///test.ts')
+const URI_FIXTURE = URI.file(testFilePath('test.ts'))
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
@@ -54,6 +55,7 @@ export function params(
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
+        isDotComUser = false,
         ...params
     }: Params = {}
 ): InlineCompletionsParams {
@@ -107,6 +109,7 @@ export function params(
             position,
             prefix: docContext.prefix,
         }),
+        isDotComUser,
         ...params,
     }
 }

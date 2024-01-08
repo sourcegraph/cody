@@ -2,7 +2,6 @@ import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration
 
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
 import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 
 import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
@@ -153,7 +152,6 @@ export function generateCompletions(params: GenerateCompletionsParams): Promise<
     const onCompletionReadyImpl = (completion: InlineCompletionItemWithAnalytics): void => {
         completions.push(completion)
         if (completions.length === completionCount) {
-            completionPostProcessLogger.flush()
             tracer?.result({ completions })
             onCompletionReady(completions)
         }

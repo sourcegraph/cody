@@ -37,6 +37,7 @@ type ExternalServicesConfiguration = Pick<
     | 'accessToken'
     | 'debugEnable'
     | 'experimentalLocalSymbols'
+    | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig
 
@@ -78,6 +79,7 @@ export async function configureExternalServices(
     const codebaseContext = new CodebaseContext(
         initialConfig,
         initialConfig.codebase,
+        () => initialConfig.serverEndpoint,
         embeddingsSearch,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,

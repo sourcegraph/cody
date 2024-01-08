@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
@@ -14,7 +14,7 @@ import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-c
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
-import { OpenTelemetryService } from './services/OpenTelemetryService.node'
+import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, SentryService } from './services/sentry/sentry'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,8 +32,10 @@ export interface PlatformContext {
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
-    createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
-    createOpenTelemetryService?: (config: Pick<Configuration, 'serverEndpoint'>) => OpenTelemetryService
+    createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
+    createOpenTelemetryService?: (
+        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
+    ) => OpenTelemetryService
     recipes: Recipe[]
     onConfigurationChange?: (configuration: Configuration) => void
 }

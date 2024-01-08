@@ -58,7 +58,6 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                       docContext: getUpdatedDocContext({
                           ...params,
                           initialCompletion: unprocessedCompletion,
-                          completionPostProcessId: '',
                       }),
                   }
                 : updatedProviderOptions

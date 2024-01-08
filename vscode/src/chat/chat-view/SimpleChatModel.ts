@@ -1,3 +1,4 @@
+import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
@@ -63,11 +64,19 @@ export class SimpleChatModel {
     }
 
     public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        if (this.messagesWithContext.at(-1)?.message.speaker === 'assistant') {
-            throw new Error('Cannot add a bot message after a bot message')
+        const lastMessage = this.messagesWithContext.at(-1)?.message
+        let error
+        // If there is no text, it could be a placeholder message for an error
+        if (lastMessage?.speaker === 'assistant') {
+            if (lastMessage?.text) {
+                throw new Error('Cannot add a bot message after a bot message')
+            } else {
+                error = this.messagesWithContext.pop()?.error
+            }
         }
         this.messagesWithContext.push({
             displayText,
+            error,
             message: {
                 ...message,
                 speaker: 'assistant',
@@ -77,23 +86,21 @@ export class SimpleChatModel {
 
     public addErrorAsBotMessage(error: Error): void {
         const lastMessage = this.messagesWithContext.at(-1)?.message
-        const lastAssistantMessage = lastMessage?.speaker === 'assistant' ? lastMessage : undefined
-        // Remove the last assistant message
-        if (lastAssistantMessage) {
-            this.messagesWithContext.pop()
-        }
+        // Remove the last assistant message if any
+        const lastAssistantMessage = lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
+        const assistantMessage = lastAssistantMessage || { speaker: 'assistant' }
         // Then add a new assistant message with error added
         this.messagesWithContext.push({
             error: errorToChatError(error),
             message: {
-                ...lastAssistantMessage,
+                ...assistantMessage,
                 speaker: 'assistant',
             },
         })
     }
 
     public getLastHumanMessage(): MessageWithContext | undefined {
-        return this.messagesWithContext.findLast(message => message.message.speaker === 'human')
+        return findLast(this.messagesWithContext, (message: any) => message.message.speaker === 'human')
     }
 
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>): void {

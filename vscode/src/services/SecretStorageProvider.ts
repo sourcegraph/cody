@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { logDebug, logError } from '../log'
+import { TestSupport } from '../test-support'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
@@ -15,8 +16,12 @@ export async function getAccessToken(): Promise<string | null> {
         logError('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
         // Remove corrupted token from secret storage
         await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        // Display system notification because the error was caused by system storage
-        console.error(`Failed to retrieve access token for Cody from secret storage: ${error}`)
+
+        if (!TestSupport.instance) {
+            // Display system notification because the error was caused by system storage
+            console.error(`Failed to retrieve access token for Cody from secret storage: ${error}`)
+        }
+
         return null
     }
 }

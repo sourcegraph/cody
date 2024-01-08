@@ -15,7 +15,7 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
+import { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -146,20 +146,26 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
                 // Since we directly require from `isomporphic-fetch` and gate this branch out from
                 // non Node environments, the response.body will always be a Node Stream instead
                 const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
+                let chunkIndex = 0
 
-                for await (const chunk of iterator) {
-                    if (chunk.event === 'error') {
-                        throw new Error(chunk.data)
+                for await (const { event, data } of iterator) {
+                    if (event === 'error') {
+                        throw new Error(data)
                     }
 
-                    if (chunk.event === 'completion') {
+                    if (event === 'completion') {
                         if (signal?.aborted) {
                             break // Stop processing the already received chunks.
                         }
 
-                        lastResponse = JSON.parse(chunk.data) as CompletionResponse
-                        onPartialResponse?.(lastResponse)
+                        lastResponse = JSON.parse(data) as CompletionResponse
+                        wrapInActiveSpan(
+                            `autocomplete.onPartialResponse.${chunkIndex}`,
+                            () => onPartialResponse?.(lastResponse!)
+                        )
                     }
+
+                    chunkIndex += 1
                 }
 
                 if (lastResponse === undefined) {

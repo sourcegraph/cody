@@ -60,7 +60,13 @@ export function replaceFileNameWithMarkdownLink(
 ): string {
     // Create markdown link to the file
     const fileLink = `${fsPath}:range:${startLine}`
-    const markdownText = `[_${fileName.trim()}_](command:cody.chat.open.file?"${fileLink}")`
+
+    // Encode the filename to go on the command: link in a way that preserves all characters
+    // including backslashes from Windows paths:
+    // https://github.com/microsoft/vscode/issues/200965
+    const encodedFileLink = encodeURIComponent(JSON.stringify(fileLink))
+    // Then encode the complete link to go into Markdown.
+    const markdownText = `[_${fileName.trim()}_](command:cody.chat.open.file?${encodedFileLink})`
 
     // Use regex to makes sure the file name is surrounded by spaces and not a substring of another file name
     const textToBeReplaced = new RegExp(`\\s*${fileName.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')}(?!\\S)`, 'g')

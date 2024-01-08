@@ -187,13 +187,17 @@ class MessageDecoder extends Writable {
                         }
                         this.callback(null, data)
                     } catch (error: any) {
-                        console.log(
-                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}'. Error:\n${error}`
-                        )
                         if (tracePath) {
                             appendFileSync(tracePath, '<- ' + JSON.stringify({ error }, null, 4) + '\n')
                         }
-                        this.callback(error, null)
+                        process.stderr.write(
+                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}', contentLengthRemaining=${this.contentLengthRemaining}. Error:\n${error}\n`
+                        )
+                        // Kill the process to surface the error as early as
+                        // possible. Before, we did `this.callback(error, null)`
+                        // and it regularly got the agent into an infinite loop
+                        // that was difficult to debug.
+                        process.exit(1)
                     }
 
                     continue
@@ -295,7 +299,6 @@ export class MessageHandler {
         child.stderr.on('data', data => {
             console.error(`----stderr----\n${data}--------------`)
         })
-        // child.stderr.pipe(process.stderr)
         child.stdout.pipe(this.messageDecoder)
         this.messageEncoder.pipe(child.stdin)
     }
@@ -343,7 +346,13 @@ export class MessageHandler {
                                 id: msg.id,
                                 error: {
                                     code,
-                                    message,
+                                    // Include the stack in the message because
+                                    // some JSON-RPC bindings like lsp4j don't
+                                    // expose access to the `data` property,
+                                    // only `message`. The stack is super
+                                    // helpful to track down unexpected
+                                    // exceptions.
+                                    message: `${message}\n${stack}`,
                                     data: JSON.stringify({ error, stack }),
                                 },
                             }
