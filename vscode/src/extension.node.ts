@@ -33,8 +33,8 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
 
     const isLocalEmbeddingsDisabled = process.env.CODY_LOCAL_EMBEDDINGS_DISABLED === 'true'
     const maybeCreateLocalEmbeddingsController = isLocalEmbeddingsDisabled
-        ? (config: LocalEmbeddingsConfig): LocalEmbeddingsController => createLocalEmbeddingsController(context, config)
-        : undefined
+        ? undefined
+        : (config: LocalEmbeddingsConfig): LocalEmbeddingsController => createLocalEmbeddingsController(context, config)
     return activateCommon(context, {
         getRgPath,
         createLocalEmbeddingsController: maybeCreateLocalEmbeddingsController,
