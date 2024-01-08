@@ -4,11 +4,10 @@ import { Har } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
-import pako from 'pako'
 
 import { Agent } from '../agent'
 
-import { decodeBase64 } from './base64'
+import { decodeCompressedBase64 } from './base64'
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
 import { PollyYamlWriter } from './pollyapi'
 
@@ -19,11 +18,6 @@ interface JsonrpcCommandOptions {
     recordIfMissing?: boolean
     recordingExpiryStrategy?: EXPIRY_STRATEGY
     recordingName?: string
-}
-
-export function encodeBase64(textData: any): string {
-    const deflated = Buffer.from(pako.deflate(JSON.stringify(textData))).toString('base64')
-    return JSON.stringify([deflated])
 }
 
 function recordingModeOption(value: string): MODE {
@@ -167,11 +161,13 @@ class CodyPersister extends FSPersister {
                 responseContent?.mimeType === 'application/json' &&
                 responseContent.text
             ) {
-                // base64 decode the response body
+                // The GraphQL responses are base64+gzip encoded. We decode them
+                // in a sibling `textDecoded` property so we can more easily review
+                // in in pull requests.
                 try {
                     const text = JSON.parse(responseContent.text)[0]
                     console.log({ text })
-                    const decodedBase64 = decodeBase64(text)
+                    const decodedBase64 = decodeCompressedBase64(text)
                     ;(responseContent as any).textDecoded = decodedBase64
                 } catch (error) {
                     console.error('base64 decode error', error)
