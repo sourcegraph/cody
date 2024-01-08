@@ -3,8 +3,7 @@ import * as vscode from 'vscode'
 
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../../webviews/NavBar'
@@ -15,8 +14,9 @@ import { logDebug } from '../../log'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { AuthStatus } from '../protocol'
 
-import { ChatPanelsManager, IChatPanelProvider } from './ChatPanelsManager'
+import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, SidebarViewOptions } from './SidebarViewController'
+import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -68,7 +68,7 @@ export class ChatManager implements vscode.Disposable {
         )
     }
 
-    private async getChatProvider(): Promise<IChatPanelProvider> {
+    private async getChatProvider(): Promise<SimpleChatPanelProvider> {
         const provider = await this.chatPanelsManager.getChatPanel()
         return provider
     }
@@ -85,43 +85,16 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    /**
-     * Executes a recipe in a view provider.
-     */
-    public async executeRecipe(
-        recipeId: RecipeID,
-        humanChatInput: string,
-        openChatView = true,
-        source?: ChatEventSource
-    ): Promise<void> {
-        logDebug('ChatManager:executeRecipe:called', recipeId)
+    public async executeCommand(command: CodyPrompt, source: ChatEventSource): Promise<void> {
+        logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
         }
 
-        // If chat view is not needed, run the recipe via sidebar view without creating a new panel
-        const isDefaultEditCommands = ['/doc', '/edit'].includes(humanChatInput)
-        if (!openChatView || isDefaultEditCommands) {
-            await this.sidebarViewController.executeRecipe(recipeId, humanChatInput, source)
-            return
-        }
-
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
-        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
-    }
-
-    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
-        logDebug('ChatManager:executeCustomCommand:called', title)
-        const customPromptActions = ['add', 'get', 'menu']
-        if (!customPromptActions.includes(title)) {
-            await this.executeRecipe('custom-prompt', title, true)
-            return
-        }
-
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.executeCustomCommand(title, type)
+        await chatProvider.handleCommands(command, source)
     }
 
     public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
@@ -183,7 +156,10 @@ export class ChatManager implements vscode.Disposable {
     /**
      * Creates a new webview panel for chat.
      */
-    public async createWebviewPanel(chatID?: string, chatQuestion?: string): Promise<IChatPanelProvider | undefined> {
+    public async createWebviewPanel(
+        chatID?: string,
+        chatQuestion?: string
+    ): Promise<SimpleChatPanelProvider | undefined> {
         logDebug('ChatManager:createWebviewPanel', 'creating')
         return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
     }

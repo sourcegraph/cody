@@ -3,12 +3,15 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { version } from '../../version'
+
+import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 type OpenTelemetryServiceConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
 
@@ -55,6 +58,10 @@ export class OpenTelemetryService {
             instrumentations: [new HttpInstrumentation()],
             traceExporter: new OTLPTraceExporter({
                 url: traceUrl,
+            }),
+
+            ...(process.env.NODE_ENV === 'development' && {
+                spanProcessor: new BatchSpanProcessor(new ConsoleBatchSpanExporter()),
             }),
         })
         this.sdk.start()

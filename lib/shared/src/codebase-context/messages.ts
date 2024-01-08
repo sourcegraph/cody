@@ -9,7 +9,18 @@ import { Message } from '../sourcegraph-api'
 // keyword: the context file returned from local keyword search
 // editor: context file retrieved from the current editor
 // search: context file returned by symf search
-export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor' | 'filename' | 'unified' | 'search'
+// selection: selected code from the current editor
+// terminal: output from shell terminal
+export type ContextFileSource =
+    | 'embeddings'
+    | 'user'
+    | 'keyword'
+    | 'editor'
+    | 'filename'
+    | 'search'
+    | 'unified'
+    | 'selection'
+    | 'terminal'
 
 export type ContextFileType = 'file' | 'symbol'
 

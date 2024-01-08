@@ -89,6 +89,7 @@ export function reuseLastCandidate({
             const lastCompletion = lastTriggerCurrentLinePrefixInDocument + item.insertText
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
+
             if (isTypingAsSuggested) {
                 const remaining = lastCompletion.slice(currentLinePrefix.length)
                 const alreadyInsertedText = item.insertText.slice(0, -remaining.length)
@@ -136,10 +137,36 @@ export function reuseLastCandidate({
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
             if (isIndentationChange) {
+                if (isIndentation) {
+                    const leadingWhitespace = item.insertText.match(/^\s*/)?.[0] ?? ''
+
+                    /**
+                     * Consider the following completion:
+                     *
+                     * lastTriggerCurrentLinePrefixInDocument = '\t'
+                     * insertText = '\t\tconst foo = 1'
+                     * currentLinePrefix = '\t\t\t\t'
+                     *
+                     *
+                     * The user types on a new line `\t`, the completion is generated in the background
+                     * `\t\tconst foo = 1`, while user adds `\t\t\t` to the current line.
+                     * As a result all `\t` should be removed from the completion as user typed them forward
+                     * as suggested. The resuling completion `const foo = 1`.
+                     */
+                    const whiteSpaceToRemove = Math.min(
+                        currentLinePrefix.length - lastTriggerCurrentLinePrefixInDocument.length,
+                        leadingWhitespace.length
+                    )
+
+                    return {
+                        ...item,
+                        insertText: item.insertText.slice(whiteSpaceToRemove),
+                    }
+                }
+
                 return {
                     ...item,
-                    insertText:
-                        lastTriggerCurrentLinePrefixInDocument.slice(currentLinePrefix.length) + item.insertText,
+                    insertText: item.insertText,
                 }
             }
 
