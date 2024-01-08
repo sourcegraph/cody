@@ -698,7 +698,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             let shown = false
             this.config.statusBar.addError({
                 title: errorTitle,
-                description: 'Contact Sourcegraph Site Admin to enable autocomplete',
+                description: 'Contact your Enterprise instance site administrator to enable autocomplete',
                 errorType: 'AutoCompleteDisabledByAdmin',
                 onShow: () => {
                     if (shown) {
