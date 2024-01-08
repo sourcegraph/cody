@@ -341,7 +341,6 @@ describe('Agent', () => {
     }, 20_000)
 
     it('get rate limit error if exceeding usage on rate limited account', async () => {
-        await openFile(animalUri)
         const lastMessage = await rateLimitedClient.sendSingleMessage('sqrt(9)')
         expect(lastMessage?.error?.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
     }, 20_000)
