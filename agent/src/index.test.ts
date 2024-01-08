@@ -298,9 +298,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello there!",
+            "displayText": " Hello! Nice to meet you.",
             "speaker": "assistant",
-            "text": " Hello there!",
+            "text": " Hello! Nice to meet you.",
           }
         `,
             explainPollyError
@@ -316,7 +316,7 @@ describe('Agent', () => {
             .join('\n')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-          " Here is a simple Hello World function in Java:
+          " Here is a simple Hello World program in Java:
 
           \`\`\`java
           public class Main {
@@ -326,17 +326,19 @@ describe('Agent', () => {
           }
           \`\`\`
 
-          This defines a Main class with a main method, which is the entry point for a Java program.
+          To break this down:
 
-          Inside the main method, it uses System.out.println to print \\"Hello World!\\" to the console.
+          - The code is wrapped in a class called Main. In Java, code must be inside a class.
 
-          To run this:
+          - The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.
 
-          1. Save the code in a file called Main.java
-          2. Compile it with \`javac Main.java\`
-          3. Run it with \`java Main\`
+          - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
 
-          And you should see \\"Hello World!\\" printed to the console."
+          - Inside the main method, we call System.out.println(\\"Hello World\\"); to print the text \\"Hello World!\\" to the console.
+
+          - The println method prints the text and a newline character.
+
+          So in summary, this program defines a Main class with a static main method that prints \\"Hello World!\\" when executed. This is the simplest Hello World program in Java."
         `,
             explainPollyError
         )
