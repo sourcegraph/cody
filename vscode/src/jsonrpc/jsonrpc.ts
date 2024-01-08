@@ -370,12 +370,13 @@ export class MessageHandler {
             // Responses have ids
             const handler = this.responseHandlers.get(msg.id)
             if (handler) {
-                this.responseHandlers.delete(msg.id)
                 if (msg?.error) {
                     handler.reject(new JsonrpcError(msg.error))
                 } else {
                     handler.resolve(msg.result)
                 }
+                this.responseHandlers.delete(msg.id)
+                console.log(`### Removing ID ${this.id}`)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
             }
@@ -424,6 +425,7 @@ export class MessageHandler {
         this.messageEncoder.send(data)
 
         return new Promise((resolve, reject) => {
+            console.log(`### Adding ID ${this.id}`)
             this.responseHandlers.set(id, { resolve, reject })
         })
     }
