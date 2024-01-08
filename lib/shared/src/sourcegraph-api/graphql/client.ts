@@ -8,6 +8,7 @@ import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
@@ -73,6 +74,15 @@ interface DotComCurrentUserInfoResponse {
             email: string
         }
     } | null
+}
+interface CodyConfigFeatures {
+    chat: boolean
+    autoComplete: boolean
+    commands: boolean
+}
+
+interface CodyConfigFeaturesResponse {
+    site: { codyConfigFeatures: CodyConfigFeatures | null } | null
 }
 
 interface EnterpriseCurrentUserInfoResponse {
@@ -394,6 +404,25 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(response, data =>
                 data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
+        )
+    }
+
+    /**
+     * Fetches the Site Admin enabled/disable Cody config features for the current instance.
+     */
+    public async getCodyConfigFeatures(): Promise<
+        | {
+              chat: boolean
+              autoComplete: boolean
+              commands: boolean
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
+            CURRENT_SITE_CODY_CONFIG_FEATURES,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => data.site?.codyConfigFeatures ?? new Error('cody config not found'))
         )
     }
 
@@ -777,6 +806,74 @@ export class SourcegraphGraphQLAPIClient {
  * Should be configured on the extension activation via `graphqlClient.onConfigurationChange(config)`.
  */
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
+
+/**
+ * ConfigFeaturesSingleton is a singleton class that fetches and caches
+ * configuration features from a remote source. It provides methods to
+ * retrieve the cached config features.
+ *
+ * The constructor is private to enforce the singleton pattern.
+ *
+ * getInstance() provides access to the singleton instance.
+ *
+ * getConfigFeatures() fetches the config if not already cached, and returns
+ * the cached value. It ensures the config is only fetched once from the caller's perspective.
+ *
+ * fetchConfigFeatures() makes the actual remote request to get the config,
+ * handles errors, and caches the result. It runs every 30 seconds
+ */
+export class ConfigFeaturesSingleton {
+    private static instance: ConfigFeaturesSingleton
+    private configFeatures: {
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    } | null = null
+    private isFetching = false
+
+    private constructor() {
+        // Private constructor to prevent direct instantiation
+        // Start the interval to fetch config features every 30 seconds
+        setInterval(() => {
+            // Call the async function without awaiting it
+            this.fetchConfigFeatures().catch(console.error)
+        }, 30000)
+    }
+
+    public static getInstance(): ConfigFeaturesSingleton {
+        if (!ConfigFeaturesSingleton.instance) {
+            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+        }
+        return ConfigFeaturesSingleton.instance
+    }
+
+    public async getConfigFeatures(): Promise<{
+        chat: boolean
+        autoComplete: boolean
+        commands: boolean
+    } | null> {
+        // Make sure to fetch only once when get method is used from external sources
+        if (!this.configFeatures && !this.isFetching) {
+            this.isFetching = true
+            await this.fetchConfigFeatures()
+            this.isFetching = false
+        }
+        return this.configFeatures
+    }
+
+    private async fetchConfigFeatures(): Promise<void> {
+        // Perform your GQL query here and return the result
+        const features = await graphqlClient.getCodyConfigFeatures()
+        if (features instanceof Error) {
+            // Handle the error case by setting null so as not to disrupt the flow
+            console.error(features.message)
+            this.configFeatures = null // Set the value of Config Features as null incase it doesn't exist or incase of errors
+        } else {
+            // Store the fetched config features
+            this.configFeatures = features
+        }
+    }
+}
 
 async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {

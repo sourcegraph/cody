@@ -6,7 +6,7 @@ import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { ConfigFeaturesSingleton, graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -286,14 +286,32 @@ const register = async (
         if (command.mode !== 'ask') {
             return
         }
-
-        return chatManager.executeCommand(command, source)
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        let commandsEnabled = true
+        if (configFeatures) {
+            // If configFeatures exist then we set the commandsEnabled based on its value
+            commandsEnabled = configFeatures.commands
+        }
+        return chatManager.executeCommand(command, source, commandsEnabled)
     }
 
     const executeFixup = async (
         args: ExecuteEditArguments = {},
         source: ChatEventSource = 'editor' // where the command was triggered from
     ): Promise<void> => {
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        let commandsEnabled = true
+        if (configFeatures) {
+            // If configFeatures exist then we set the commandsEnabled based on its value
+            commandsEnabled = configFeatures.commands
+        }
+        if (!commandsEnabled) {
+            void vscode.window.showErrorMessage(
+                'This feature has been disabled by your Enterprise instance site administrator.'
+            )
+            return
+        }
+
         const commandEventName = source === 'doc' ? 'doc' : 'edit'
         telemetryService.log(
             `CodyVSCodeExtension:command:${commandEventName}:executed`,

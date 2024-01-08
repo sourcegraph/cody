@@ -28,6 +28,7 @@ import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/tru
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { ConfigFeaturesSingleton } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../../webviews/NavBar'
@@ -283,6 +284,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        if (configFeatures) {
+            // If configFeatures exist then we send a message that sets the value of the chatconfig in the chat UI
+            void this.postMessage({
+                type: 'setChatEnabledConfigFeature',
+                data: configFeatures.chat,
+            })
+        }
 
         return panel
     }

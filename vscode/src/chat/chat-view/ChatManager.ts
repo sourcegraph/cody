@@ -85,13 +85,19 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyPrompt, source: ChatEventSource): Promise<void> {
+    public async executeCommand(command: CodyPrompt, source: ChatEventSource, enabled?: boolean): Promise<void> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
             return
         }
 
+        if (!enabled) {
+            void vscode.window.showErrorMessage(
+                'This feature has been disabled by your Enterprise instance site administrator.'
+            )
+            return
+        }
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
         await chatProvider.handleCommands(command, source)

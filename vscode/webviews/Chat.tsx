@@ -39,6 +39,7 @@ import styles from './Chat.module.css'
 
 interface ChatboxProps {
     welcomeMessage?: string
+    chatEnabled: boolean
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
@@ -88,6 +89,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setChatModels,
     chatModels,
     enableNewChatUI,
+    chatEnabled,
     userInfo,
     guardrails,
 }) => {
@@ -243,6 +245,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onCurrentChatModelChange={onCurrentChatModelChange}
             ChatModelDropdownMenu={ChatModelDropdownMenu}
             userInfo={userInfo}
+            chatEnabled={chatEnabled}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
             guardrails={guardrails}
@@ -261,6 +264,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     autoFocus,
     value,
     setValue,
+    chatEnabled,
     required,
     onInput,
     onKeyDown,
@@ -269,6 +273,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const placeholder = 'Message (@ to include code, / for commands)'
+    const disabledPlaceHolder = 'Chat and commands have been disabled by your Enterprise instance site administrator'
 
     useEffect(() => {
         if (autoFocus) {
@@ -297,14 +302,18 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         },
         [inputRef, onKeyDown]
     )
+    const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
+    const isDisabled = !chatEnabled
 
     return (
         <div
             className={classNames(styles.chatInputContainer, chatModels && styles.newChatInputContainer)}
-            data-value={value || placeholder}
+            data-value={value || actualPlaceholder}
         >
             <textarea
-                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput)}
+                className={classNames(styles.chatInput, className, chatModels && styles.newChatInput, {
+                    'textarea-disabled': isDisabled,
+                })}
                 rows={1}
                 ref={inputRef}
                 value={value}
@@ -312,9 +321,10 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
                 onFocus={onFocus}
-                placeholder={placeholder}
+                placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
+                disabled={isDisabled} // Disable the textarea if the chat is disabled and change the background color to grey
             />
         </div>
     )
