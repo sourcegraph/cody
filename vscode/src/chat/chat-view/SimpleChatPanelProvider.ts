@@ -1109,10 +1109,9 @@ class ContextProvider implements IContextProvider {
             return searchContext
         }
 
-        // NOTE: Do not use embeddings if useContext is not set to 'embeddings' specifically
         let hasEmbeddingsContext = false
-        // Get embeddings context if useContext Config is set to 'embeddings'
-        if (useContextConfig === 'embeddings') {
+        // Get embeddings context if useContext Config is not set to 'keyword' only
+        if (useContextConfig !== 'keyword') {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
             const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
             const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
