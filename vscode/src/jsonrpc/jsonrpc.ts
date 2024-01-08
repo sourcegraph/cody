@@ -293,7 +293,9 @@ export class MessageHandler {
             this.exit()
         })
         child.on('exit', code => {
-            reject?.(new Error(`exit: ${code}`))
+            if (code !== 0) {
+                reject?.(new Error(`exit: ${code}`))
+            }
             this.exit()
         })
         child.stderr.on('data', data => {
@@ -376,7 +378,6 @@ export class MessageHandler {
                     handler.resolve(msg.result)
                 }
                 this.responseHandlers.delete(msg.id)
-                console.log(`### Removing ID ${this.id}`)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
             }
@@ -425,7 +426,6 @@ export class MessageHandler {
         this.messageEncoder.send(data)
 
         return new Promise((resolve, reject) => {
-            console.log(`### Adding ID ${this.id}`)
             this.responseHandlers.set(id, { resolve, reject })
         })
     }

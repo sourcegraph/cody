@@ -29,7 +29,8 @@ export class TestClient extends MessageHandler {
         this.info = this.getClientInfo()
 
         this.registerNotification('debug/message', message => {
-            console.log(`${message.channel}: ${message.message}`)
+            // Uncomment below to see `logDebug` messages.
+            // console.log(`${message.channel}: ${message.message}`)
         })
     }
 
@@ -67,7 +68,7 @@ export class TestClient extends MessageHandler {
                 command: 'submit',
                 text,
                 submitType: 'user',
-                addEnhancedContext: true,
+                addEnhancedContext: false,
                 contextFiles: [],
             },
         })
@@ -297,9 +298,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! I'm ready to help provide code snippets, walkthrough text, and other content from the Sourcegraph codebase when you ask.",
+            "displayText": " Hello there!",
             "speaker": "assistant",
-            "text": " Hello! I'm ready to help provide code snippets, walkthrough text, and other content from the Sourcegraph codebase when you ask.",
+            "text": " Hello there!",
           }
         `,
             explainPollyError
@@ -319,15 +320,23 @@ describe('Agent', () => {
 
           \`\`\`java
           public class Main {
-
             public static void main(String[] args) {
               System.out.println(\\"Hello World!\\");
             }
-
           }
           \`\`\`
 
-          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program."
+          This defines a Main class with a main method, which is the entry point for a Java program.
+
+          Inside the main method, it uses System.out.println to print \\"Hello World!\\" to the console.
+
+          To run this:
+
+          1. Save the code in a file called Main.java
+          2. Compile it with \`javac Main.java\`
+          3. Run it with \`java Main\`
+
+          And you should see \\"Hello World!\\" printed to the console."
         `,
             explainPollyError
         )
