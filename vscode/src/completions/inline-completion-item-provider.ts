@@ -125,7 +125,6 @@ export interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    disableRecyclingOfPreviousRequests?: boolean
     dynamicMultilineCompletions?: boolean
     hotStreak?: boolean
 }
@@ -166,7 +165,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
-        disableRecyclingOfPreviousRequests = false,
         dynamicMultilineCompletions = false,
         hotStreak = false,
         tracer = null,
@@ -177,7 +175,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
-            disableRecyclingOfPreviousRequests,
             dynamicMultilineCompletions,
             hotStreak,
             tracer,
@@ -200,9 +197,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 .update('editor.inlineSuggest.suppressSuggestions', true, vscode.ConfigurationTarget.Global)
         }
 
-        this.requestManager = new RequestManager({
-            disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
-        })
+        this.requestManager = new RequestManager()
         this.contextMixer = new ContextMixer(
             new DefaultContextStrategyFactory(config.contextStrategy, createBfgRetriever)
         )
