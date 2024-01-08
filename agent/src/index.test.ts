@@ -17,7 +17,8 @@ export class TestClient extends MessageHandler {
     constructor() {
         super()
         this.registerNotification('debug/message', message => {
-            console.log(`${message.channel}: ${message.message}`)
+            // Uncomment below to see `logDebug` messages.
+            // console.log(`${message.channel}: ${message.message}`)
         })
     }
 
@@ -234,9 +235,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
+            "displayText": " Hello! I'm ready to help provide code snippets, walkthrough text, and other content from the Sourcegraph codebase when you ask.",
             "speaker": "assistant",
-            "text": " Hello! I'm Cody, an AI assistant created by Anthropic to be helpful, harmless, and honest.",
+            "text": " Hello! I'm ready to help provide code snippets, walkthrough text, and other content from the Sourcegraph codebase when you ask.",
           }
         `
         )
