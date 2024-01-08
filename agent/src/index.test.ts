@@ -7,6 +7,8 @@ import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
+import { ChatMessage } from '@sourcegraph/cody-shared'
+
 import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
@@ -61,8 +63,15 @@ if (isRecordingEnabled) {
 const explainPollyError = `
 
 ===================================================[ NOTICE ]=======================================================
-If you get PollyError or unexpeced diff, you might need to update recordings to match your changes.
-Please check https://github.com/sourcegraph/cody/tree/main/agent#updating-the-polly-http-recordings for the details.
+If you get PollyError or unexpeced diff, you might need to update the HTTP recordings to match your changes.
+To fix this problem, run the command:
+
+    export SRC_ACCESS_TOKEN=YOUR_TOKEN
+    export SRC_ENDPOINT=https://sourcegraph.com
+    export SRC_ACCESS_TOKEN_WITH_RATE_LIMIT=RATE_LIMITED_TOKEN
+    pnpm update-agent-recordings
+
+Please check https://github.com/sourcegraph/cody/tree/main/agent#updating-the-polly-http-recordings for more details.
 ====================================================================================================================
 
 `
@@ -132,7 +141,7 @@ describe('Agent', () => {
         }
     }
 
-    async function sendSingleMessage(client: TestClient, text: string): Promise<any> {
+    async function sendChatMessage(client: TestClient, text: string): Promise<ExtensionMessage> {
         const id = await client.request('chat/new', null)
         const reply = await client.request('chat/submitMessage', {
             id,
@@ -144,8 +153,20 @@ describe('Agent', () => {
                 contextFiles: [],
             },
         })
-        const lastMessage: any = reply.type === 'transcript' ? reply.messages.at(-1) : reply
-        return lastMessage
+        return reply
+    }
+
+    async function sendSimpleChatMessage(client: TestClient, text: string): Promise<ChatMessage> {
+        const reply = await sendChatMessage(client, text)
+        if (reply.type === 'transcript') {
+            const lastReply = reply.messages.at(-1)
+            if (!lastReply) {
+                throw new Error(`expected transcript to have at least one message, obtained ${JSON.stringify(reply)}`)
+            }
+            return lastReply
+        }
+
+        throw new Error(`expected type "transcript", obtained ${JSON.stringify(reply)}`)
     }
 
     function createClient(testName: string, accessToken?: string): [TestClient, ClientInfo] {
@@ -154,8 +175,7 @@ describe('Agent', () => {
         const clientInfo: ClientInfo = getClientInfo(accessToken)
 
         client.connectProcess(agentProcess, error => {
-            console.log({ error })
-            process.exit(1)
+            process.stderr.write(`Agent process errored message: ${error}\n`)
         })
 
         const notifications: ExtensionMessage[] = []
@@ -275,14 +295,14 @@ describe('Agent', () => {
 
     it('allows us to send a very short chat message', async () => {
         await openFile(animalUri)
-        const lastMessage: any = await sendSingleMessage(client, 'Hello!')
+        const lastMessage = await sendSimpleChatMessage(client, 'Hello! Reply back with only "Hello" and nothing else')
         expect(lastMessage).toMatchInlineSnapshot(
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! I don't have any selected code from /src/animal.ts to reference. If you provide me with some code snippets from that file, I'd be happy to discuss them with you.",
+            "displayText": " Hello",
             "speaker": "assistant",
-            "text": " Hello! I don't have any selected code from /src/animal.ts to reference. If you provide me with some code snippets from that file, I'd be happy to discuss them with you.",
+            "text": " Hello",
           }
         `,
             explainPollyError
@@ -291,15 +311,20 @@ describe('Agent', () => {
 
     it('allows us to send a longer chat message', async () => {
         await openFile(animalUri)
-        const lastMessage: any = await sendSingleMessage(client, 'Generate simple hello world function in java!')
-        expect(lastMessage).toMatchInlineSnapshot(
+        const lastMessage = await sendSimpleChatMessage(client, 'Generate simple hello world function in java!')
+        expect(lastMessage?.text).toMatchInlineSnapshot(
             `
-          {
-            "contextFiles": [],
-            "displayText": "",
-            "speaker": "assistant",
-            "text": "",
+          " Here is a simple hello world function in Java:
+
+          <output>
+          public class Main {
+
+            public static void main(String[] args) {
+              System.out.println(\\"Hello World!\\");
+            }
+
           }
+          </output>"
         `,
             explainPollyError
         )
@@ -309,15 +334,11 @@ describe('Agent', () => {
     // because Polly does not want to save request which results in error.
     // To run correctly it requires SRC_ACCESS_TOKEN_WITH_RATE_LIMIT env var
     // to be set to access token for account with exhaused rate limit.
-    it.skipIf(!isRecordingEnabled)(
-        'get rate limit error if exceeding usage on rate limited account',
-        async () => {
-            await openFile(animalUri)
-            const lastMessage: any = await sendSingleMessage(rateLimitedClient, 'sqrt(9)')
-            expect(lastMessage.error.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
-        },
-        20_000
-    )
+    it('get rate limit error if exceeding usage on rate limited account', async () => {
+        await openFile(animalUri)
+        const reply = await sendChatMessage(rateLimitedClient, 'sqrt(9)')
+        expect(reply).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
+    }, 20_000)
 
     const isMacOS = process.platform === 'darwin'
     // TODO Fix test - fails intermittently on macOS on Github Actions
@@ -334,6 +355,7 @@ describe('Agent', () => {
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
+        await rateLimitedClient.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 20_000)
 })

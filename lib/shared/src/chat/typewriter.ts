@@ -120,6 +120,7 @@ export class Typewriter implements IncrementalTextConsumer {
         if (this.upstreamClosed) {
             if (error) {
                 console.error('Typewriter stopped', error)
+                console.error('this.consumer.error', this.consumer.error)
                 if (this.consumer.error) {
                     this.consumer.error(error)
                 } else {
