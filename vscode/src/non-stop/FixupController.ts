@@ -1,3 +1,4 @@
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -127,6 +128,50 @@ export class FixupController
                 })
             )
         }
+
+        /** GHOST TEXT TEMP AREA */
+        const editHintDecoration = vscode.window.createTextEditorDecorationType({
+            isWholeLine: true,
+            after: {
+                contentText: '\u00A0⌘K to Edit, ⌘L to Chat',
+                color: new vscode.ThemeColor('editorGhostText.foreground'),
+            },
+        })
+        let activeGhostDecoration: vscode.DecorationOptions | null = null
+
+        const addGhostText = throttle(
+            (selection: vscode.Range, editor: vscode.TextEditor) => {
+                activeGhostDecoration = { range: selection }
+                editor.setDecorations(editHintDecoration, [activeGhostDecoration])
+            },
+            250,
+            { leading: false, trailing: true }
+        )
+        vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
+            const editor = event.textEditor
+            const firstSelection = event.selections[0]
+
+            if (firstSelection.isEmpty) {
+                // Nothing selected, clear existing
+                activeGhostDecoration = null
+                return editor.setDecorations(editHintDecoration, [])
+            }
+
+            // Shift the text up to the primary selection line
+            const targetSelection: vscode.Range =
+                firstSelection.end.character === 0
+                    ? firstSelection.with(firstSelection.start, firstSelection.end.translate({ lineDelta: -1 }))
+                    : firstSelection
+
+            if (activeGhostDecoration && activeGhostDecoration.range.end.line !== targetSelection.end.line) {
+                // Selection changed, remove existing decoration
+                activeGhostDecoration = null
+                editor.setDecorations(editHintDecoration, [])
+            }
+
+            return addGhostText(targetSelection, editor)
+        })
+        /** END GHOST TEXT */
     }
 
     /**
