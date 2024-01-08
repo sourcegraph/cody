@@ -77,8 +77,12 @@ export class TestClient extends MessageHandler {
     }
 
     public async shutdownAndExit() {
-        await this.request('shutdown', null)
-        this.notify('exit', null)
+        if (this.isAlive()) {
+            await this.request('shutdown', null)
+            this.notify('exit', null)
+        } else {
+            console.log('Agent has already exited')
+        }
     }
 
     public getAgentDir(): string {
