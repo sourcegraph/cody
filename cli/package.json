@@ -26,7 +26,7 @@
     "vscode-languageserver-textdocument": "^1.0.8"
   },
   "devDependencies": {
-    "@types/prompts": "^2.4.4"
+    "@types/prompts": "2.4.4"
   },
   "main": "dist/program.js",
   "files": [

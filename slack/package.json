@@ -28,6 +28,6 @@
     "slackify-markdown": "^4.3.1"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.195"
+    "@types/lodash": "4.14.195"
   }
 }
