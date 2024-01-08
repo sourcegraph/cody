@@ -1,8 +1,8 @@
 import { TextDocument } from 'vscode'
 import { SyntaxNode } from 'web-tree-sitter'
 
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
 
 import { parseCompletion, ParsedCompletion } from './parse-completion'
 import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
@@ -23,7 +23,7 @@ export function parseAndTruncateCompletion(
     const {
         document,
         docContext,
-        docContext: { multilineTrigger, completionPostProcessId, prefix },
+        docContext: { multilineTrigger, prefix },
         isDynamicMultilineCompletion,
     } = params
 
@@ -36,7 +36,10 @@ export function parseAndTruncateCompletion(
         docContext,
     })
 
-    completionPostProcessLogger.info({ completionPostProcessId, stage: 'parsed', text: parsed.insertText })
+    addAutocompleteDebugEvent('parsed', {
+        currentLinePrefix: docContext.currentLinePrefix,
+        text: parsed.insertText,
+    })
 
     if (parsed.insertText === '') {
         return parsed
@@ -61,10 +64,8 @@ export function parseAndTruncateCompletion(
         const truncatedLineCount = truncationResult.insertText.split('\n').length
 
         parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
-        completionPostProcessLogger.info({
-            completionPostProcessId,
-            stage: 'lineTruncatedCount',
-            text: String(parsed.lineTruncatedCount),
+        addAutocompleteDebugEvent('lineTruncatedCount', {
+            lineTruncatedCount: parsed.lineTruncatedCount,
         })
 
         parsed.insertText = truncationResult.insertText

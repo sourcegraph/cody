@@ -1,11 +1,9 @@
-import * as uuid from 'uuid'
-
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { DocumentContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import { InlineCompletionItemWithAnalytics, processCompletion } from '../text-processing/process-inline-completions'
@@ -61,28 +59,15 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                 }
             }
 
-            const completionPostProcessId = uuid.v4()
-            let responseChunkNumber = 0
-
             const result = await client.complete(
                 requestParams,
                 (incompleteResponse: CompletionResponse) => {
-                    completionPostProcessLogger.flush()
-                    responseChunkNumber += 1
-                    completionPostProcessLogger.info({
-                        completionPostProcessId,
-                        stage: `start ${responseChunkNumber}`,
-                    })
-
                     const rawCompletion = providerSpecificPostProcess(incompleteResponse.completion)
 
-                    completionPostProcessLogger.info({
-                        completionPostProcessId,
-                        stage: 'incomplete response',
+                    addAutocompleteDebugEvent('incomplete_response', {
+                        multiline,
+                        currentLinePrefix: docContext.currentLinePrefix,
                         text: rawCompletion,
-                        obj: {
-                            multiline,
-                        },
                     })
 
                     if (completedCompletion) {
@@ -94,13 +79,10 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                      * Process it as the usual multline completion: continue streaming until it's truncated.
                      */
                     if (multiline) {
-                        completionPostProcessLogger.info({ completionPostProcessId, stage: 'multiline', text: '' })
+                        addAutocompleteDebugEvent('multline_branch')
                         const completion = canUsePartialCompletion(rawCompletion, {
                             document: providerOptions.document,
-                            docContext: {
-                                completionPostProcessId,
-                                ...docContext,
-                            },
+                            docContext,
                         })
 
                         if (completion) {
@@ -119,7 +101,6 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                         const updatedDocContext = getUpdatedDocContext({
                             ...params,
                             initialCompletion: rawCompletion,
-                            completionPostProcessId,
                         })
 
                         if (updatedDocContext.multilineTrigger) {
@@ -130,9 +111,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                             })
 
                             if (completion) {
-                                completionPostProcessLogger.info({
-                                    completionPostProcessId,
-                                    stage: 'isMultilineBasedOnFirstLine resolve',
+                                addAutocompleteDebugEvent('isMultilineBasedOnFirstLine_resolve', {
+                                    currentLinePrefix: updatedDocContext.currentLinePrefix,
                                     text: completion.insertText,
                                 })
 
@@ -161,9 +141,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                             if (completion) {
                                 const firstLine = getFirstLine(completion.insertText)
 
-                                completionPostProcessLogger.info({
-                                    completionPostProcessId,
-                                    stage: 'singleline resolve',
+                                addAutocompleteDebugEvent('singleline resolve', {
+                                    currentLinePrefix: docContext.currentLinePrefix,
                                     text: firstLine,
                                 })
 
@@ -174,6 +153,7 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                                     },
                                     providerOptions
                                 )
+
                                 stopStreamingAndUsePartialResponse(processedCompletion)
                             }
                         }
@@ -193,15 +173,13 @@ export async function fetchAndProcessDynamicMultilineCompletions(
             const rawCompletion = providerSpecificPostProcess(result.completion)
 
             if (!completedCompletion) {
-                completionPostProcessLogger.info({
-                    completionPostProcessId,
-                    stage: 'full response',
+                addAutocompleteDebugEvent('full_response', {
+                    currentLinePrefix: docContext.currentLinePrefix,
                     text: rawCompletion,
                 })
 
                 const updatedDocContext = getUpdatedDocContext({
                     ...params,
-                    completionPostProcessId,
                     initialCompletion: rawCompletion,
                 })
 
@@ -210,9 +188,8 @@ export async function fetchAndProcessDynamicMultilineCompletions(
                     docContext: updatedDocContext,
                 })
 
-                completionPostProcessLogger.info({
-                    completionPostProcessId,
-                    stage: 'full response resolve',
+                addAutocompleteDebugEvent('full_response_resolve', {
+                    currentLinePrefix: updatedDocContext.currentLinePrefix,
                     text: completion.insertText,
                 })
 
