@@ -77,7 +77,6 @@ export class RequestManager {
 
         const cachedCompletions = this.cache.get(requestParams)
         if (isCacheEnabled && cachedCompletions) {
-            console.log('using cache', cachedCompletions)
             return cachedCompletions
         }
 
