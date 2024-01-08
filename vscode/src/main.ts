@@ -306,7 +306,7 @@ const register = async (
             commandsEnabled = configFeatures.commands
         }
         if (!commandsEnabled) {
-            void vscode.window.showErrorMessage('This is feature has been disabled on Cody by site admin.')
+            void vscode.window.showErrorMessage('This feature has been disabled by your Enterprise instance site administrator.')
             return
         }
 
