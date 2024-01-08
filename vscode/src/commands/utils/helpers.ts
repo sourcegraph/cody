@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-import { ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
-
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
         return undefined
@@ -35,8 +33,8 @@ export async function saveJSONFile(data: unknown, filePath: vscode.Uri): Promise
 }
 
 // Create a file watcher for each .vscode/cody.json file
-export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | null {
-    const fileUri = constructFileUri(ConfigFileName.vscode, fsPath)
+export function createFileWatchers(fileName: string, basePath?: string): vscode.FileSystemWatcher | null {
+    const fileUri = constructFileUri(fileName, basePath)
     if (!fileUri) {
         return null
     }
