@@ -1,4 +1,5 @@
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
+import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
@@ -25,11 +26,8 @@ export class EditProvider {
     constructor(public config: EditProviderOptions) {}
 
     public async startEdit(): Promise<void> {
-        // const requestID = uuid.v4()
-        // this.currentRequestID = requestID
-
         // TODO: Allow users to change edit model
-        const model = 'anthropic/claude-2.0'
+        const model = 'anthropic/claude-2.1'
         const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
             model,
             task: this.config.task,
@@ -39,14 +37,25 @@ export class EditProvider {
 
         const multiplexer = new BotResponseMultiplexer()
 
+        const typewriter = new Typewriter({
+            update: content => {
+                void this.handleResponse(content, true)
+            },
+            close: () => {},
+        })
+
         let text = ''
         multiplexer.sub(responseTopic, {
             onResponse: async (content: string) => {
                 text += content
-                return this.handleResponse(text, true)
+                typewriter.update(responsePrefix + text)
+                return Promise.resolve()
             },
             onTurnComplete: async () => {
-                return this.handleResponse(text, false)
+                typewriter.close()
+                typewriter.stop()
+                void this.handleResponse(text, false)
+                return Promise.resolve()
             },
         })
 
@@ -86,7 +95,7 @@ export class EditProvider {
         )
     }
 
-    public abortFix(): void {
+    public abortEdit(): void {
         this.cancelCompletionCallback?.()
     }
 
