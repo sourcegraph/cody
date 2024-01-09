@@ -7,7 +7,9 @@ import { Command, Option } from 'commander'
 
 import { Agent } from '../agent'
 
+import { decodeCompressedBase64 } from './base64'
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
+import { PollyYamlWriter } from './pollyapi'
 
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
@@ -68,16 +70,58 @@ class CodyNodeHttpAdapter extends NodeHttpAdapter {
  *   - Sets dates/timing information stored by Polly to static values
  */
 class CodyPersister extends FSPersister {
+    // HACK: `FSPersister` has a private `api` property that writes the
+    // recording.har file using JSON format. We override the `api` property here
+    // with a custom implementation that uses YAML format instead. This property
+    // is intentionally marked as public even if it's not used anywhere.
+    public api: PollyYamlWriter
+
+    constructor(polly: any) {
+        super(polly)
+        if (!this.options.recordingsDir) {
+            throw new Error('No recording directory provided')
+        }
+        this.api = new PollyYamlWriter(this.options.recordingsDir)
+    }
     public static get id(): string {
         return 'cody-fs'
     }
+
+    public async onFindRecording(recordingId: string): Promise<Har | null> {
+        const har = await super.onFindRecording(recordingId)
+        if (har === null) {
+            return har
+        }
+        for (const entry of har.log.entries) {
+            const postData = entry?.request?.postData
+            if (postData !== undefined && postData?.text === undefined && (postData as any)?.textJSON !== undefined) {
+                // Format `postData.textJSON` back into the escaped string for the `.text` format.
+                postData.text = JSON.stringify((postData as any).textJSON)
+                ;(postData as any).textJSON = undefined
+            }
+        }
+        return har
+    }
+
     public onSaveRecording(recordingId: string, recording: Har): Promise<void> {
         const entries = recording.log.entries
+        recording.log.entries.sort((a, b) => a.request.url.localeCompare(b.request.url))
         for (const entry of entries) {
+            if (entry.request?.postData?.text?.startsWith('{')) {
+                // Format `postData.text` as a JSON object instead of escaped string.
+                // This makes it much easier to review the har file locally.
+                const postData: any = entry.request.postData
+                postData.textJSON = JSON.parse(entry.request.postData.text)
+                postData.text = undefined
+            }
             // Clean up the entries to reduce the size of the diff when re-recording
             // and to remove any access tokens.
 
             // Update any headers
+            entry.request.bodySize = undefined
+            entry.request.headersSize = 0
+            entry.response.bodySize = undefined
+            entry.response.headersSize = 0
             const headers = [...entry.request.headers, ...entry.response.headers]
             for (const header of headers) {
                 switch (header.name) {
@@ -86,6 +130,9 @@ class CodyPersister extends FSPersister {
                         break
                     case 'date':
                         header.value = 'Fri, 05 Jan 2024 11:11:11 GMT'
+                        break
+                    case 'retry-after':
+                        header.value = '0'
                         break
                 }
             }
@@ -107,6 +154,24 @@ class CodyPersister extends FSPersister {
                 send: 0,
                 ssl: -1,
                 wait: 0,
+            }
+            const responseContent = entry.response.content
+            if (
+                responseContent?.encoding === 'base64' &&
+                responseContent?.mimeType === 'application/json' &&
+                responseContent.text
+            ) {
+                // The GraphQL responses are base64+gzip encoded. We decode them
+                // in a sibling `textDecoded` property so we can more easily review
+                // in in pull requests.
+                try {
+                    const text = JSON.parse(responseContent.text)[0]
+                    console.log({ text })
+                    const decodedBase64 = decodeCompressedBase64(text)
+                    ;(responseContent as any).textDecoded = decodedBase64
+                } catch (error) {
+                    console.error('base64 decode error', error)
+                }
             }
         }
         return super.onSaveRecording(recordingId, recording)
@@ -188,8 +253,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 expiresIn: options.expiresIn,
                 persisterOptions: {
                     keepUnusedRequests: true,
-                    // For cleaner diffs https://netflix.github.io/pollyjs/#/configuration?id=disablesortingharentries
-                    disableSortingHarEntries: true,
                     fs: {
                         recordingsDir: options.recordingDirectory,
                     },

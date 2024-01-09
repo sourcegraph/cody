@@ -29,7 +29,8 @@ export class TestClient extends MessageHandler {
         this.info = this.getClientInfo()
 
         this.registerNotification('debug/message', message => {
-            console.log(`${message.channel}: ${message.message}`)
+            // Uncomment below to see `logDebug` messages.
+            // console.log(`${message.channel}: ${message.message}`)
         })
     }
 
@@ -67,7 +68,7 @@ export class TestClient extends MessageHandler {
                 command: 'submit',
                 text,
                 submitType: 'user',
-                addEnhancedContext: true,
+                addEnhancedContext: false,
                 contextFiles: [],
             },
         })
@@ -297,9 +298,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! I'm ready to help provide code snippets, walkthrough text, and other content from the Sourcegraph codebase when you ask.",
+            "displayText": " Hello! Nice to meet you.",
             "speaker": "assistant",
-            "text": " Hello! I'm ready to help provide code snippets, walkthrough text, and other content from the Sourcegraph codebase when you ask.",
+            "text": " Hello! Nice to meet you.",
           }
         `,
             explainPollyError
@@ -315,19 +316,29 @@ describe('Agent', () => {
             .join('\n')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-          " Here is a simple Hello World function in Java:
+          " Here is a simple Hello World program in Java:
 
           \`\`\`java
           public class Main {
-
             public static void main(String[] args) {
               System.out.println(\\"Hello World!\\");
             }
-
           }
           \`\`\`
 
-          This defines a Main class with a main method that prints \\"Hello World!\\" when executed. The main method is the entry point for a Java program."
+          To break this down:
+
+          - The code is wrapped in a class called Main. In Java, code must be inside a class.
+
+          - The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.
+
+          - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
+
+          - Inside the main method, we call System.out.println(\\"Hello World\\"); to print the text \\"Hello World!\\" to the console.
+
+          - The println method prints the text and a newline character.
+
+          So in summary, this program defines a Main class with a static main method that prints \\"Hello World!\\" when executed. This is the simplest Hello World program in Java."
         `,
             explainPollyError
         )
