@@ -21,4 +21,5 @@ export interface EditLLMInteraction {
     getDoc: LLMInteractionBuilder
     getFix: LLMInteractionBuilder
     getAdd: LLMInteractionBuilder
+    getNew: LLMInteractionBuilder
 }

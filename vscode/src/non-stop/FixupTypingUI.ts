@@ -255,8 +255,9 @@ export class FixupTypingUI {
             input.userContextFiles,
             range,
             args.intent,
-            args.insertMode,
-            source
+            args.mode,
+            source,
+            args.command
         )
 
         // Return focus to the editor

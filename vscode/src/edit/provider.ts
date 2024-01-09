@@ -109,7 +109,8 @@ export class EditProvider {
             return
         }
 
-        return this.config.task.intent === 'add'
+        const intentsForInsert = ['add', 'new']
+        return intentsForInsert.includes(this.config.task.intent)
             ? this.handleFixupInsert(response, isMessageInProgress)
             : this.handleFixupEdit(response, isMessageInProgress)
     }

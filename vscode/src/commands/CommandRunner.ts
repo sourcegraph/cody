@@ -4,7 +4,7 @@ import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
-import { type EditIntent } from '../edit/types'
+import { type EditIntent, type EditMode } from '../edit/types'
 import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
@@ -78,7 +78,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         this.editor = editor.active
-        if (!this.editor && command.context?.none && command.slashCommand !== '/ask') {
+        if (!this.editor && !command.context?.none && command.slashCommand !== '/ask') {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
@@ -86,12 +86,9 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // Run fixup if this is a edit command
-        const insertMode = command.mode === 'insert'
-        const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
-        this.isFixupRequest = isFixupRequest || fixupMode || insertMode
+        this.isFixupRequest = isFixupCommand(command, instruction)
         if (this.isFixupRequest) {
-            void this.handleFixupRequest(insertMode)
-            return
+            void this.handleFixupRequest(command.mode === 'insert')
         }
     }
 
@@ -159,7 +156,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
-        const intent: EditIntent = this.kind === 'doc' ? 'doc' : 'edit'
+        const intent: EditIntent = this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         const source = this.kind === 'custom' ? 'custom-commands' : this.kind
         await executeEdit(
@@ -168,7 +165,8 @@ export class CommandRunner implements vscode.Disposable {
                 instruction,
                 document: doc,
                 intent,
-                insertMode,
+                mode: this.command.mode as EditMode,
+                command: this.command,
             } satisfies ExecuteEditArguments,
             source as ChatEventSource
         )
@@ -220,4 +218,9 @@ function getDocCommandRange(
     }
 
     return new vscode.Selection(adjustedStartPosition, selection.end)
+}
+
+function isFixupCommand(command: CodyCommand, instruction?: string): boolean {
+    const fixupMode = command.mode !== 'ask' || instruction?.startsWith('/edit ')
+    return fixupMode || false
 }

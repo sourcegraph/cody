@@ -88,20 +88,18 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     private async createCodyCommandRunner(command: CodyCommand, input = ''): Promise<CommandRunner | undefined> {
         const commandKey = command.slashCommand
-        const defaultEditCommands = new Set(['/edit', '/doc'])
-        const isFixupRequest = defaultEditCommands.has(commandKey) || command.mode !== 'ask'
 
         logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
 
         // Start the command runner
-        const runner = new CommandRunner(command, input, isFixupRequest)
+        const runner = new CommandRunner(command, input)
         this.commandRunners.set(runner.id, runner)
 
         // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner
-        if (isFixupRequest) {
+        if (runner.codyCommand?.mode !== 'ask') {
             return undefined
         }
 

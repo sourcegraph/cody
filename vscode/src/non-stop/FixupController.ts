@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type CodyCommand, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { type ExecuteEditArguments } from '../edit/execute'
-import { type EditIntent } from '../edit/types'
+import { type EditIntent, type EditMode } from '../edit/types'
 import { getSmartSelection } from '../editor/utils'
+import { getImportsRange } from '../editor/utils/editor-context'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -17,7 +18,7 @@ import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
-import { type FixupFile } from './FixupFile'
+import { NewFixupFileMap, type FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
@@ -170,15 +171,25 @@ export class FixupController
         userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
         intent?: EditIntent,
-        insertMode?: boolean,
-        source?: ChatEventSource
+        mode: EditMode = 'edit',
+        source?: ChatEventSource,
+        command?: CodyCommand
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(documentUri)
         // Support expanding the selection range for intents where it is useful
         if (intent !== 'add') {
             selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
         }
-        const task = new FixupTask(fixupFile, instruction, userContextFiles, intent, selectionRange, insertMode, source)
+        const task = new FixupTask(
+            fixupFile,
+            instruction,
+            userContextFiles,
+            intent,
+            selectionRange,
+            mode,
+            source,
+            command
+        )
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -457,9 +468,10 @@ export class FixupController
 
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-        const editOk = task.insertMode
-            ? await this.insertEdit(edit, document, task, applyEditOptions)
-            : await this.replaceEdit(edit, diff, task, applyEditOptions)
+        const editOk =
+            task.mode === 'edit'
+                ? await this.replaceEdit(edit, diff, task, applyEditOptions)
+                : await this.insertEdit(edit, document, task, applyEditOptions)
 
         this.logTaskCompletion(task, editOk)
 
@@ -765,6 +777,32 @@ export class FixupController
             return
         }
 
+        /**
+         * If the task mode is "file", get the new fixup file uri from the map,
+         * then update the task's fixup file and selection range with the new info,
+         * and then task mode to "insert".
+         *
+         * At the end, delete the file from the map as the task has been updated.
+         *
+         * NOTE: Currently used for /test command only.
+         */
+        if (task.mode === 'file') {
+            const newFile = NewFixupFileMap.get(task.id)
+            if (newFile?.fsPath) {
+                task.fixupFile = this.files.forUri(newFile)
+                const doc = await vscode.workspace.openTextDocument(newFile)
+                // If the file is not empty, insert text after the imports
+                const importRange = await getImportsRange(newFile)
+                const lastLineOfImports = importRange.end.line
+                task.selectionRange = new vscode.Range(lastLineOfImports, 0, lastLineOfImports, 0)
+                // insert text to the new file
+                task.mode = 'insert'
+                // Show the new document before streaming start
+                await vscode.window.showTextDocument(doc)
+            }
+            NewFixupFileMap.delete(task.id)
+        }
+
         if (task.state !== CodyTaskState.inserting) {
             this.setTaskState(task, CodyTaskState.inserting)
         }
@@ -926,7 +964,7 @@ export class FixupController
             const bufferText = editor.document.getText(task.selectionRange)
 
             // Add new line at the end of bot text when running insert mode
-            const newLine = task.insertMode ? '\n' : ''
+            const newLine = task.mode === 'edit' ? '' : '\n'
             task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
@@ -1033,7 +1071,8 @@ export class FixupController
                 userContextFiles: input.userContextFiles,
                 document,
                 intent: task.intent,
-                insertMode: task.insertMode,
+                mode: task.mode,
+                command: task.command,
             } satisfies ExecuteEditArguments,
             'code-lens'
         )

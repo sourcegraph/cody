@@ -11,11 +11,10 @@ import {
 import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
-    populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentEditorContextTemplate,
-    populateCurrentEditorSelectedContextTemplate,
     populateCurrentFileFromEditorSelectionContextTemplate,
+    populateCurrentSelectedCodeContextTemplate,
     populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
@@ -74,7 +73,7 @@ export class VSCodeEditorContext {
         const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
         // Create context message
         const contextMessage = getContextMessageWithResponse(
-            populateCurrentEditorSelectedContextTemplate(truncatedText, fileName),
+            populateCurrentSelectedCodeContextTemplate(truncatedText, fileName),
             {
                 fileName,
                 uri: fileUri,
@@ -203,13 +202,20 @@ export class VSCodeEditorContext {
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
             // Make sure the truncatedContent is in JSON format
-            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
-                fileName,
-                content: decoded,
-                uri,
-                source: 'editor',
-                range,
-            })
+            return getContextMessageWithResponse(
+                populateContextTemplateFromText(
+                    'Codebase context from file path {fileName}: ',
+                    truncatedContent,
+                    fileName
+                ),
+                {
+                    fileName,
+                    content: decoded,
+                    uri,
+                    source: 'editor',
+                    range,
+                }
+            )
         } catch (error) {
             console.error(error)
             return []

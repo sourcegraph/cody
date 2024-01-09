@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
@@ -16,6 +17,7 @@ import {
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
+import { getContextForCommand } from '../../commands/utils/get-context'
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { type EditIntent } from '../types'
 
@@ -54,6 +56,7 @@ const getContextFromIntent = async ({
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
+        case 'new':
         case 'add': {
             return [
                 ...getContextMessageWithResponse(
@@ -125,14 +128,18 @@ const getContextFromIntent = async ({
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextFile[]
     editor: VSCodeEditor
+    command?: CodyCommand
 }
 
 export const getContext = async ({
     userContextFiles,
     editor,
+    command,
     ...options
 }: GetContextOptions): Promise<ContextMessage[]> => {
-    const derivedContextMessages = await getContextFromIntent({ editor, ...options })
+    const derivedContextMessages = command?.context
+        ? await getContextForCommand(editor, command)
+        : await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []
     for (const file of userContextFiles) {

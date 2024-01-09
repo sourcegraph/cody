@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
@@ -13,7 +14,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 
 import { type ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { type EditIntent } from './types'
+import { type EditIntent, type EditMode } from './types'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -38,7 +39,8 @@ export class EditManager implements vscode.Disposable {
                         instruction?: string
                         intent?: EditIntent
                         document?: vscode.TextDocument
-                        insertMode?: boolean
+                        mode?: EditMode
+                        command?: CodyCommand
                     },
                     source?: ChatEventSource
                 ) => this.executeEdit(args, source)
@@ -79,8 +81,9 @@ export class EditManager implements vscode.Disposable {
                   args.userContextFiles ?? [],
                   range,
                   args.intent,
-                  args.insertMode,
-                  source
+                  args.mode,
+                  source,
+                  args.command
               )
             : await this.controller.promptUserForTask(args, source)
         if (!task) {

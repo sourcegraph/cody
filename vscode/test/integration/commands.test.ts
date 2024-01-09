@@ -54,12 +54,8 @@ suite('Commands', function () {
 
         // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /\/test \[_@Main.java/)
-
-        // Has one or more context
-        const contextFileSize = humanMessage?.contextFiles?.length || 0
-        assert.ok(contextFileSize > 1)
-
-        await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
+        // The result should match the display text from the last command instead
+        // as the test command is now and edit command and does not update chat transcript
+        assert.match(humanMessage.displayText || '', /\/smell \[_@Main.java/)
     })
 })

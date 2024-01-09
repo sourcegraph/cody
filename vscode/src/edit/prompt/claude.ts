@@ -111,4 +111,13 @@ export const claude: EditLLMInteraction = {
             assistantText: `${assistantPreamble}${RESPONSE_PREFIX}`,
         }
     },
+    getNew({ instruction, selectedText, fileName }) {
+        // NOTE: Works better with the prompt for "Edit" than "Add"
+        return {
+            ...SHARED_PARAMETERS,
+            prompt: EDIT_PROMPT.replace('{instruction}', instruction)
+                .replace('{selectedText}', selectedText)
+                .replace('{fileName}', fileName),
+        }
+    },
 }

@@ -482,3 +482,16 @@ export async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<C
     }
     return contextMessages
 }
+
+/**
+ * Checks if a file URI exists in workspace.
+ * @param uri - The file URI to check.
+ */
+export async function doesFileExist(uri: vscode.Uri): Promise<boolean> {
+    try {
+        await vscode.workspace.fs.stat(uri)
+        return true
+    } catch {
+        return false
+    }
+}

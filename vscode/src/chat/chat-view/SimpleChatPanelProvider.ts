@@ -18,7 +18,7 @@ import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcri
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type CodyCommandContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { type Result } from '@sourcegraph/cody-shared/src/local-context'
@@ -1178,16 +1178,13 @@ class ContextProvider implements IContextProvider {
         return priorityContext.concat(searchContext)
     }
 
-    public async getCommandContext(promptText: string, contextConfig: CodyCommandContext): Promise<ContextItem[]> {
-        logDebug('SimpleChatPanelProvider.getCommandContext', promptText)
+    public async getCommandContext(command: CodyCommand): Promise<ContextItem[]> {
+        logDebug('SimpleChatPanelProvider.getCommandContext', command.slashCommand)
 
         const contextMessages: ContextMessage[] = []
         const contextItems: ContextItem[] = []
 
-        if (contextConfig.none) {
-            return []
-        }
-        contextMessages.push(...(await getContextForCommand(this.editor, promptText, contextConfig)))
+        contextMessages.push(...(await getContextForCommand(this.editor, command)))
         // Turn ContextMessages to ContextItems
         for (const msg of contextMessages) {
             if (msg.file?.uri && msg.file?.content) {
@@ -1200,8 +1197,8 @@ class ContextProvider implements IContextProvider {
             }
         }
         // Add codebase ContextItems last
-        if (contextConfig.codebase) {
-            contextItems.push(...(await this.getEnhancedContext(promptText)))
+        if (command.context?.codebase) {
+            contextItems.push(...(await this.getEnhancedContext(command.prompt)))
         }
 
         return contextItems
