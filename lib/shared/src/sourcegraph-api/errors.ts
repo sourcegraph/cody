@@ -34,7 +34,7 @@ export class RateLimitError extends Error {
     ) {
         super(message)
         if (upgradeIsAvailable) {
-            this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for the month.`
+            this.userMessage = `You've used all ${feature} for the month.`
         } else {
             // Don't display Pro & Enterprise’s fair use limit numbers, as they're for abuse protection only
             this.userMessage = `You've used all ${feature} for today.`
