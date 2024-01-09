@@ -1,6 +1,5 @@
 // @ts-check
 
-/** @type {import('eslint').Linter.Config} */
 const config = {
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
