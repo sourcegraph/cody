@@ -6,9 +6,9 @@ export interface LatencyFeatureFlags {
 }
 
 const defaultLatencies = {
-    user: 200,
+    user: 50,
     lowPerformance: 1000,
-    max: 2000,
+    max: 1400,
 }
 
 // Languages with lower performance get additional latency to avoid spamming users with unhelpful

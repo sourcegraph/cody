@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { contentSanitizer } from './helpers'
+import { contentSanitizer } from './utils'
 
 const correctResponse = `export function getRerankWithLog(
     chatClient: ChatClient

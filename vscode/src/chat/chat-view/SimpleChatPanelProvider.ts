@@ -599,7 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         const displayText = userContextFiles?.length
             ? createDisplayTextWithFileLinks(userContextFiles, inputText)
             : command
-            ? createDisplayTextWithFileSelection(inputText, await this.editor.getActiveTextEditorSmartSelection())
+            ? createDisplayTextWithFileSelection(inputText, this.editor.getActiveTextEditorSelectionOrEntireFile())
             : inputText
         // The text we will use to send to LLM
         const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
@@ -625,12 +625,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
-                telemetryService.log('CodyVSCodeExtension:chat-question:recipe-used', properties, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.recipe.chat-question', 'recipe-used', {
-                    metadata: { ...contextSummary },
-                })
+
+                // Only log chat-question event if it is not a command to avoid double logging for commands
+                if (!command) {
+                    telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
+                        hasV2Event: true,
+                    })
+                    telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
+                        metadata: { ...contextSummary },
+                    })
+                }
             },
             command
         )
@@ -1097,30 +1101,45 @@ class ContextProvider implements IContextProvider {
     }
 
     public async getEnhancedContext(text: string): Promise<ContextItem[]> {
-        const searchContext: ContextItem[] = []
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-        let hasEmbeddingsContext = false
-        const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
-        const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
-        try {
-            const r = await localEmbeddingsResults
-            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-            searchContext.push(...r)
-        } catch (error) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
-        }
-        try {
-            const r = await remoteEmbeddingsResults
-            hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-            searchContext.push(...r)
-        } catch (error) {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
-        }
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+        const config = vscode.workspace.getConfiguration('cody')
+        const useContextConfig = config.get('useContext')
 
-        if (!hasEmbeddingsContext && this.symf) {
+        const searchContext: ContextItem[] = []
+
+        // use user attention context only if config is set to none
+        if (useContextConfig === 'none') {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+            searchContext.push(...this.getUserAttentionContext())
+            return searchContext
+        }
+
+        let hasEmbeddingsContext = false
+        // Get embeddings context if useContext Config is not set to 'keyword' only
+        if (useContextConfig !== 'keyword') {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
+            const localEmbeddingsResults = this.searchEmbeddingsLocal(text)
+            const remoteEmbeddingsResults = this.searchEmbeddingsRemote(text)
             try {
-                // Fallback to symf if embeddings provided no results
+                const r = await localEmbeddingsResults
+                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+                searchContext.push(...r)
+            } catch (error) {
+                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
+            }
+            try {
+                const r = await remoteEmbeddingsResults
+                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
+                searchContext.push(...r)
+            } catch (error) {
+                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > remote embeddings', error)
+            }
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
+        }
+
+        // Fallback to symf if embeddings provided no results or if useContext is set to 'keyword' specifically
+        if (!hasEmbeddingsContext && this.symf) {
+            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
+            try {
                 searchContext.push(...(await this.searchSymf(text)))
             } catch (error) {
                 // TODO(beyang): handle this error better
@@ -1270,6 +1289,7 @@ class ContextProvider implements IContextProvider {
                 return {
                     uri: displayUri,
                     range,
+                    source: 'search',
                     text,
                 }
             })
