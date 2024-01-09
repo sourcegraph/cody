@@ -102,9 +102,9 @@ class CodyAgent(private val project: Project) : Disposable {
     }
   }
 
-  fun shutdown() {
-    val server = getServer(project) ?: return
-    executorService.submit<CompletableFuture<Void>> {
+  fun shutdown(): Future<out CompletableFuture<Void>?>? {
+    val server = getServer(project) ?: return null
+    return executorService.submit<CompletableFuture<Void>> {
       server.shutdown().thenAccept {
         server.exit()
         agentNotRunningExplanation = "Cody Agent shut down"
@@ -117,7 +117,16 @@ class CodyAgent(private val project: Project) : Disposable {
   private fun startListeningToAgent() {
     val binary = agentBinary()
     logger.info("starting Cody agent " + binary.absolutePath)
-    val processBuilder = ProcessBuilder(binary.absolutePath)
+    val command: List<String> =
+        if (System.getenv("CODY_DIR") != null) {
+          val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
+          logger.info("using Cody agent script " + script.absolutePath)
+          listOf("node", "--enable-source-maps", script.absolutePath)
+        } else {
+          listOf(binary.absolutePath)
+        }
+
+    val processBuilder = ProcessBuilder(command)
     if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
         ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
       processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"

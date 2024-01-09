@@ -72,4 +72,18 @@ interface CodyAgentServer {
   fun completionAccepted(logID: CompletionItemParams)
 
   @JsonNotification("$/cancelRequest") fun cancelRequest(cancelParams: CancelParams)
+
+  // Webviews
+  @JsonRequest("webview/didDispose") fun webviewDidDispose(): CompletableFuture<Void?>
+
+  @JsonNotification("webview/receiveMessage")
+  fun webviewReceiveMessage(params: WebviewReceiveMessageParams)
+
+  @JsonRequest("command/execute")
+  fun commandExecute(params: CommandExecuteParams): CompletableFuture<Any?>
+
+  @JsonRequest("chat/new") fun chatNew(): CompletableFuture<String>
+
+  @JsonRequest("chat/submitMessage")
+  fun chatSubmitMessage(params: ChatSubmitMessageParams): CompletableFuture<ExtensionMessage>
 }

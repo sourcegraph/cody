@@ -198,7 +198,7 @@ tasks {
     return destinationDir
   }
 
-  val codyCommit = "a7123c2fbaa94c2209c98a593f92812edfd9ccf9"
+  val codyCommit = "ae3572af8f9d6f93687a1b6737fd2a85856b1edb"
   fun downloadCody(): File {
     val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
     val destination = githubArchiveCache.resolve("$codyCommit.zip")
@@ -381,6 +381,7 @@ tasks {
     // Specify pre-release label to publish the plugin in a custom Release Channel automatically.
     // Read more:
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+
     channels.set(
         listOf(
             properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.').first()))

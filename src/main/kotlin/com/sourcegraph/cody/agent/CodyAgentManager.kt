@@ -2,6 +2,8 @@ package com.sourcegraph.cody.agent
 
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 object CodyAgentManager {
@@ -34,17 +36,17 @@ object CodyAgentManager {
   }
 
   @JvmStatic
-  fun stopAgent(project: Project) {
+  fun stopAgent(project: Project): Future<out CompletableFuture<Void>?>? {
     if (project.isDisposed) {
-      return
+      return null
     }
-    val service = project.getService(CodyAgent::class.java) ?: return
-    service.shutdown()
+    val service = project.getService(CodyAgent::class.java) ?: return null
+    return service.shutdown()
   }
 
   @JvmStatic
   fun restartAgent(project: Project) {
-    stopAgent(project)
+    stopAgent(project)?.get()?.get()
     startAgent(project)
   }
 }

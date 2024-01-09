@@ -23,11 +23,7 @@ import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.CodyAgentServer
-import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.ContextMessage
-import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
-import com.sourcegraph.cody.agent.protocol.RecipeInfo
-import com.sourcegraph.cody.agent.protocol.Speaker
+import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener
 import com.sourcegraph.cody.chat.*
 import com.sourcegraph.cody.config.CodyAccount
@@ -59,6 +55,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   private val recipesPanel: JBPanelWithEmptyText
   val embeddingStatusView: EmbeddingStatusView
   override var isChatVisible = false
+  override var id: String? = null
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
   private val chatMessageHistory = CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY)
 
@@ -91,6 +88,8 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     stopGeneratingButton.addActionListener {
       inProgressChat.abort()
       stopGeneratingButton.isVisible = false
+      sendButton.isEnabled = promptPanel.textArea.text.isNotBlank()
+      ensureBlinkingCursorIsNotDisplayed()
     }
     stopGeneratingButton.isVisible = false
     stopGeneratingButtonPanel.add(stopGeneratingButton)
@@ -113,6 +112,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
 
     addWelcomeMessage()
     refreshSubscriptionTab()
+    loadNewChatId()
   }
 
   fun refreshSubscriptionTab() {
@@ -125,6 +125,26 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
           tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
           addNewSubscriptionTab(server)
         }
+      }
+    }
+  }
+
+  override fun loadNewChatId(callback: () -> Unit) {
+    id = null
+
+    ApplicationManager.getApplication().invokeLater {
+      promptPanel.textArea.isEnabled = false
+      promptPanel.textArea.emptyText.text = "Connecting to agent..."
+    }
+
+    ApplicationManager.getApplication().executeOnPooledThread {
+      getInitializedServer(project).thenAccept { server ->
+        id = server.chatNew().get()
+        ApplicationManager.getApplication().invokeLater {
+          promptPanel.textArea.isEnabled = true
+          promptPanel.textArea.emptyText.text = "Ask a question about this code..."
+        }
+        callback.invoke()
       }
     }
   }
@@ -417,9 +437,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       messagesPanel.revalidate()
       messagesPanel.repaint()
       chatMessageHistory.clearHistory()
-      ApplicationManager.getApplication().executeOnPooledThread {
-        getInitializedServer(project).thenAccept { it?.transcriptReset() }
-      }
+      // todo (#260): call agent to reset the transcript instead of unsetting the chat id
+      inProgressChat.abort()
+      loadNewChatId()
       ensureBlinkingCursorIsNotDisplayed()
     }
   }

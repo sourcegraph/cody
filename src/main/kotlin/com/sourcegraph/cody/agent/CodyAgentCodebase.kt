@@ -9,7 +9,7 @@ import com.sourcegraph.common.ProjectFileUtils
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.vcs.RepoUtil
 
-class CodyAgentCodebase(private val underlying: CodyAgentServer, private val project: Project) {
+class CodyAgentCodebase(private val underlying: CodyAgentServer, val project: Project) {
 
   // TODO: Support list of repository names instead of just one.
   private val application = ApplicationManager.getApplication()

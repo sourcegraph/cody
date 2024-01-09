@@ -6,35 +6,9 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import java.lang.reflect.Type
-import java.time.Duration
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import org.apache.commons.lang3.time.DurationFormatUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
-data class RateLimitError(
-    val upgradeIsAvailable: Boolean,
-    val limit: Int?,
-    val retryAfterDate: OffsetDateTime?,
-    val userMessage: String,
-    val retryMessage: String?
-) {
-  fun quotaString() = limit?.let { " $limit" } ?: ""
-
-  fun resetString() =
-      retryMessage?.prependIndent(" ")
-          ?: retryAfterDate
-              ?.let { Duration.between(OffsetDateTime.now(), it) }
-              ?.let { duration ->
-                if (duration.isNegative) {
-                  " Usage will reset in less than a minute."
-                } else {
-                  val time =
-                      DurationFormatUtils.formatDurationWords(duration.toMillis(), true, true)
-                  " Retry after $time."
-                }
-              }
-              ?: ""
+data class RateLimitError(val upgradeIsAvailable: Boolean, val limit: Int?) {
 
   companion object {
     fun ResponseErrorException.toRateLimitError(): RateLimitError {
@@ -54,17 +28,9 @@ data class RateLimitError(
         val jsonObject = json.asJsonObject
         val errorObject = jsonObject["error"].asJsonObject
         val limit = errorObject["limit"]?.asInt
-        val retryAfterDate = errorObject["retryAfterDate"]?.asString?.let(::parseOffsetDateTime)
         val upgradeIsAvailable = errorObject["upgradeIsAvailable"]?.asBoolean
-        val userMessage = errorObject["userMessage"]?.asString
-        val retryMessage = errorObject["retryMessage"]?.asString
 
-        return RateLimitError(
-            upgradeIsAvailable!!, limit, retryAfterDate, userMessage!!, retryMessage)
-      }
-
-      private fun parseOffsetDateTime(dateTimeString: String): OffsetDateTime {
-        return OffsetDateTime.parse(dateTimeString, DateTimeFormatter.ISO_DATE_TIME)
+        return RateLimitError(upgradeIsAvailable!!, limit)
       }
     }
   }

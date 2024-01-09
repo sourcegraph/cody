@@ -210,8 +210,12 @@ public class FindPopupDialog extends DialogWrapper {
 
     Point location = windowStateService.getLocation(SERVICE_KEY);
     Dimension size = windowStateService.getSize(SERVICE_KEY);
-    setLocation(location);
-    setSize(size.width, size.height);
+    if (location != null) {
+      setLocation(location);
+    }
+    if (size != null) {
+      setSize(size.width, size.height);
+    }
   }
 
   @Override
