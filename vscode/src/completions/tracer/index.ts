@@ -41,4 +41,6 @@ export interface ProvideInlineCompletionsItemTraceData {
     context?: GetContextResult | null
     result?: InlineCompletionsResult | null
     error?: string
+    startTime?: number
+    modTime?: number
 }

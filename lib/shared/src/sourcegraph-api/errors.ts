@@ -97,7 +97,7 @@ export class AbortError extends Error {
     public readonly isAbortError = true
 }
 
-export function isAbortError(error: any): error is AbortError {
+export function isAbortError(error: unknown): error is AbortError {
     return (
         isError(error) &&
         // custom abort error

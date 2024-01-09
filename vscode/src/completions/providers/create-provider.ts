@@ -8,6 +8,7 @@ import { CodeCompletionsClient } from '../client'
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { createProviderConfig as createFireworksProviderConfig, FireworksOptions } from './fireworks'
 import { ProviderConfig } from './provider'
+import { createProviderConfig as createUnstableOllamaProviderConfig } from './unstable-ollama'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
@@ -39,6 +40,9 @@ export async function createProviderConfig(
             }
             case 'anthropic': {
                 return createAnthropicProviderConfig({ client })
+            }
+            case 'unstable-ollama': {
+                return createUnstableOllamaProviderConfig(config.autocompleteExperimentalOllamaOptions)
             }
             default:
                 logError(
