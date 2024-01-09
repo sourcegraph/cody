@@ -169,6 +169,9 @@ class CodyPersister extends FSPersister {
                     const decodedBase64 = decodeCompressedBase64(text)
                     ;(responseContent as any).textDecoded = decodedBase64
                 } catch {
+                    // Ignored: uncomment below to debug. It's fine to ignore this error because we only
+                    // make a best-effort to decode the gzip+base64 encoded JSON payload. It's not needed
+                    // for the HTTP replay to work correctly because we leave the `.text` property unchanged.
                     // console.error('base64 decode error', error)
                 }
             }

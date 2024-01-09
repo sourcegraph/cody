@@ -816,7 +816,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
-    experimentalSymfContext: false,
+    experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
     isRunningInsideAgent: false,

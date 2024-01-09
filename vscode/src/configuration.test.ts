@@ -52,7 +52,7 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.simpleChatContext':
                         return true
                     case 'cody.experimental.symfContext':
-                        return false
+                        return true
                     case 'cody.experimental.tracing':
                         return true
                     case 'cody.debug.enable':
@@ -112,7 +112,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: true,
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
-            experimentalSymfContext: false,
+            experimentalSymfContext: true,
             experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
