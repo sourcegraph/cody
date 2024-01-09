@@ -1,9 +1,9 @@
 import fetch from 'isomorphic-fetch'
 import type { Response as NodeResponse } from 'node-fetch'
 
-import { TelemetryEventInput } from '@sourcegraph/telemetry'
+import { type TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { ConfigurationWithAccessToken } from '../../configuration'
+import { type ConfigurationWithAccessToken } from '../../configuration'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'

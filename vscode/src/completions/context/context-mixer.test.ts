@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
-import { ContextRetriever, ContextSnippet } from '../types'
+import { type ContextRetriever, type ContextSnippet } from '../types'
 
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'

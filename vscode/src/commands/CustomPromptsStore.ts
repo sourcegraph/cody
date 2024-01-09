@@ -2,11 +2,11 @@ import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
-    CodyPrompt,
     ConfigFileName,
-    CustomCommandType,
-    MyPrompts,
-    MyPromptsJSON,
+    type CodyPrompt,
+    type CustomCommandType,
+    type MyPrompts,
+    type MyPromptsJSON,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 

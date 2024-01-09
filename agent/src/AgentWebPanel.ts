@@ -1,7 +1,7 @@
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 

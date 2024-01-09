@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
-import { ExecuteEditArguments } from '../edit/execute'
+import { type ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
 import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/editor-context'
 
-import { FixupTask } from './FixupTask'
-import { FixupTaskFactory } from './roles'
+import { type FixupTask } from './FixupTask'
+import { type FixupTaskFactory } from './roles'
 
 function removeAfterLastAt(str: string): string {
     const lastIndex = str.lastIndexOf('@')

@@ -1,4 +1,4 @@
-import { expect, Frame, Locator, Page } from '@playwright/test'
+import { expect, type Frame, type Locator, type Page } from '@playwright/test'
 
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 

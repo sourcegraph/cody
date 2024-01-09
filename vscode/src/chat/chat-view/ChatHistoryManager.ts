@@ -1,8 +1,8 @@
-import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { localStorage } from '../../services/LocalStorageProvider'
-import { AuthStatus } from '../protocol'
+import { type AuthStatus } from '../protocol'
 
 export class ChatHistoryManager {
     public getLocalHistory(authStatus: AuthStatus): UserLocalHistory | null {

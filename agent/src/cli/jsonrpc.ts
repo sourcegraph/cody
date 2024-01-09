@@ -1,6 +1,6 @@
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
-import { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
-import { Har } from '@pollyjs/persister'
+import { Polly, type EXPIRY_STRATEGY, type MODE, type Request } from '@pollyjs/core'
+import { type Har } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'

@@ -3,8 +3,8 @@ import React, { useEffect, useRef } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type CodyPrompt } from '@sourcegraph/cody-shared'
+import { type ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './ChatCommands.module.css'
 

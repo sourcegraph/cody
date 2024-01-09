@@ -1,25 +1,25 @@
 import * as vscode from 'vscode'
 
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    FeatureFlagProvider,
     featureFlagProvider,
+    type FeatureFlagProvider,
 } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { SymfRunner } from '../../local-context/symf'
+import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { MessageProviderOptions } from '../MessageProvider'
-import { AuthStatus, ExtensionMessage } from '../protocol'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type MessageProviderOptions } from '../MessageProvider'
+import { type AuthStatus, type ExtensionMessage } from '../protocol'
 
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
-import { SidebarViewOptions } from './SidebarViewController'
+import { type SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string

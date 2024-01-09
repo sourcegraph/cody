@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { Range, TextDocument } from './agent-protocol'
+import { type Range, type TextDocument } from './agent-protocol'
 
 /**
  * Wrapper around `TextDocument` that also contains a parsed vscode.Uri.

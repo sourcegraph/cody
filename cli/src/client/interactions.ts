@@ -1,10 +1,10 @@
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 async function getContextMessages(
     text: string,

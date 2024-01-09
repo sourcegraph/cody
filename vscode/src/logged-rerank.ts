@@ -1,6 +1,6 @@
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { LLMReranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
-import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
+import { type ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logDebug } from './log'
 import { TestSupport } from './test-support'

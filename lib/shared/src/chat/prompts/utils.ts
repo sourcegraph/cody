@@ -1,14 +1,14 @@
 import path from 'path'
 
-import { ContextMessage } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection } from '../../editor'
+import { type ContextMessage } from '../../codebase-context/messages'
+import { type ActiveTextEditorSelection } from '../../editor'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { getFileExtension, getNormalizedLanguageName } from '../recipes/helpers'
 import { Interaction } from '../transcript/interaction'
-import { ChatEventSource } from '../transcript/messages'
+import { type ChatEventSource } from '../transcript/messages'
 
-import { CodyPromptContext } from '.'
+import { type CodyPromptContext } from '.'
 import { prompts } from './templates'
 
 /**

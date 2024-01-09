@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionLogger from '../logger'
-import { CompletionBookkeepingEvent } from '../logger'
+import { type CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
 import { getInlineCompletions, params } from './helpers'

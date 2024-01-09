@@ -4,11 +4,11 @@ import * as vscode from 'vscode'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
-import { CompletionLogID } from '../logger'
+import { InlineCompletionsResultSource, type LastInlineCompletionCandidate } from '../get-inline-completions'
+import { type CompletionLogID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
-import { getInlineCompletions, getInlineCompletionsInsertText, params, V } from './helpers'
+import { getInlineCompletions, getInlineCompletionsInsertText, params, type V } from './helpers'
 
 describe('[getInlineCompletions] reuseLastCandidate', () => {
     function lastCandidate(

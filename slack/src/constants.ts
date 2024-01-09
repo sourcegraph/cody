@@ -1,7 +1,7 @@
 import { cleanEnv, num, str } from 'envalid'
-import { HNSWLib } from 'langchain/vectorstores/hnswlib'
+import { type HNSWLib } from 'langchain/vectorstores/hnswlib'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 export const ENVIRONMENT_CONFIG = cleanEnv(process.env, {
     PORT: num({ default: 3000 }),

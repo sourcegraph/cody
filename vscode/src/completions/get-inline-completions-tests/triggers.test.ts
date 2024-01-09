@@ -1,13 +1,13 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { range } from '../../testutils/textDocument'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
-import { getInlineCompletions, params, V } from './helpers'
+import { getInlineCompletions, params, type V } from './helpers'
 
 describe('[getInlineCompletions] triggers', () => {
     describe('singleline', () => {

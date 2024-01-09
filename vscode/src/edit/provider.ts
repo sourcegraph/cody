@@ -3,11 +3,11 @@ import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logError } from '../log'
-import { FixupController } from '../non-stop/FixupController'
-import { FixupTask } from '../non-stop/FixupTask'
+import { type FixupController } from '../non-stop/FixupController'
+import { type FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
-import { EditManagerOptions } from './manager'
+import { type EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
 import { contentSanitizer } from './utils'
 

@@ -1,4 +1,4 @@
-import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { getDefaultCommandsMap, type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { logDebug } from '../log'
 

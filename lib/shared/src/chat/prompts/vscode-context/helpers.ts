@@ -2,10 +2,10 @@ import { basename, extname } from 'path'
 
 import { findLast } from 'lodash'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ContextMessage, getContextMessageWithResponse } from '../../../codebase-context/messages'
-import { ActiveTextEditorSelection } from '../../../editor'
+import { getContextMessageWithResponse, type ContextMessage } from '../../../codebase-context/messages'
+import { type ActiveTextEditorSelection } from '../../../editor'
 import { MAX_CURRENT_FILE_TOKENS } from '../../../prompt/constants'
 import { populateCodeContextTemplate, populateContextTemplateFromText } from '../../../prompt/templates'
 import { truncateText } from '../../../prompt/truncation'

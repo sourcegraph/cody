@@ -8,8 +8,8 @@ import isomorphicFetch from 'isomorphic-fetch'
 
 import {
     addCustomUserAgent,
-    BrowserOrNodeResponse,
     customUserAgent,
+    type BrowserOrNodeResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 /**

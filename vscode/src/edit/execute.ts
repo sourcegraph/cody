@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { EditIntent } from './types'
+import { type EditIntent } from './types'
 
 export interface ExecuteEditArguments {
     document?: vscode.TextDocument

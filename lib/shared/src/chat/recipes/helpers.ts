@@ -1,7 +1,7 @@
 import path from 'path'
 
-import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { type CodebaseContext } from '../../codebase-context'
+import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
 

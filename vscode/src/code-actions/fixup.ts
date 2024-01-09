@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ExecuteEditArguments } from '../edit/execute'
+import { type ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 
 export const FIX_PROMPT_TOPICS = {

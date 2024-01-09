@@ -1,7 +1,7 @@
-import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
+import { type TelemetryEventInput, type TelemetryExporter } from '@sourcegraph/telemetry'
 
 import { isError } from '../../utils'
-import { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
+import { type LogEventMode, type SourcegraphGraphQLAPIClient } from '../graphql/client'
 
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry

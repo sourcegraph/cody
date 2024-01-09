@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -10,20 +10,20 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
-import { MessageProviderOptions } from './chat/MessageProvider'
+import { type MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
     ACCOUNT_USAGE_URL,
-    AuthStatus,
     CODY_FEEDBACK_URL,
+    type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { PlatformContext } from './extension.common'
+import { type PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
 import { showSetupNotification } from './notifications/setup-notification'

@@ -1,16 +1,16 @@
 import { calcPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import Parser, { Tree } from 'web-tree-sitter'
+import { type default as Parser, type Tree } from 'web-tree-sitter'
 
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
-import { MessageHandler } from '../../jsonrpc-alias'
-import { AutocompleteResult } from '../../protocol-alias'
+import { type MessageHandler } from '../../jsonrpc-alias'
+import { type AutocompleteResult } from '../../protocol-alias'
 
-import { AutocompleteMatchKind } from './AutocompleteMatcher'
-import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
-import { EvaluationDocument } from './EvaluationDocument'
-import { TestParameters } from './TestParameters'
+import { type AutocompleteMatchKind } from './AutocompleteMatcher'
+import { type EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { type EvaluationDocument } from './EvaluationDocument'
+import { type TestParameters } from './TestParameters'
 import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 

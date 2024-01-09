@@ -3,15 +3,15 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { getCurrentLinePrefixWithoutInjectedPrefix } from './doc-context-getters'
-import { DocumentContext } from './get-current-doc-context'
+import { type DocumentContext } from './get-current-doc-context'
 import {
-    InlineCompletionsParams,
-    InlineCompletionsResult,
     InlineCompletionsResultSource,
-    LastInlineCompletionCandidate,
+    type InlineCompletionsParams,
+    type InlineCompletionsResult,
+    type LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { RequestParams } from './request-manager'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type RequestParams } from './request-manager'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 type ReuseLastCandidateArgument =
     // required fields from InlineCompletionsParams

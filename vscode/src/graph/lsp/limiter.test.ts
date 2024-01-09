@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AbortError, TimeoutError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { createLimiter, Limiter } from './limiter'
+import { createLimiter, type Limiter } from './limiter'
 
 describe('limiter', () => {
     it('should limit the execution of promises', async () => {

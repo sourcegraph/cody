@@ -1,11 +1,11 @@
-import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
+import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 
-import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext } from '../get-current-doc-context'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
+import { type DocumentContext } from '../get-current-doc-context'
+import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 
 import { fetchAndProcessCompletions, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
-import { CompletionProviderTracer, ProviderOptions } from './provider'
+import { type CompletionProviderTracer, type ProviderOptions } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256
 

@@ -1,10 +1,13 @@
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { DocumentContext, insertIntoDocContext } from '../get-current-doc-context'
+import { insertIntoDocContext, type DocumentContext } from '../get-current-doc-context'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
-import { InlineCompletionItemWithAnalytics, processCompletion } from '../text-processing/process-inline-completions'
+import {
+    processCompletion,
+    type InlineCompletionItemWithAnalytics,
+} from '../text-processing/process-inline-completions'
 
 import { getUpdatedDocContext } from './dynamic-multiline'
-import { FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
+import { type FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
 
 interface HotStreakExtractorParams extends FetchAndProcessCompletionsParams {
     completedCompletion: InlineCompletionItemWithAnalytics

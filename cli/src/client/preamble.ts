@@ -1,4 +1,4 @@
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 const actions = `You are Cody, an AI-powered coding assistant created by Sourcegraph. You work inside a Unix command line. You perform the following actions:
 - Answer general programming questions.

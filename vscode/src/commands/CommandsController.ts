@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type CodyPrompt, type CustomCommandType, type MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
 import { logDebug, logError } from '../log'

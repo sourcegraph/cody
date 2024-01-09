@@ -1,13 +1,13 @@
 import { findLast } from 'lodash'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { ChatError, ChatMessage } from '@sourcegraph/cody-shared'
-import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { errorToChatError, InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatError, type ChatMessage } from '@sourcegraph/cody-shared'
+import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { type InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { errorToChatError, type InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type ContextFileSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { contextItemsToContextFiles } from './chat-helpers'
 

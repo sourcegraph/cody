@@ -1,14 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
 
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
-import { ContextSummary } from './context/context-mixer'
+import { type ContextSummary } from './context/context-mixer'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import * as CompletionLogger from './logger'
-import { RequestParams } from './request-manager'
+import { type RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 
 const defaultArgs = {

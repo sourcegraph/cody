@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type CodyPrompt } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { executeEdit, ExecuteEditArguments } from '../edit/execute'
-import { EditIntent } from '../edit/types'
+import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
+import { type EditIntent } from '../edit/types'
 import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'

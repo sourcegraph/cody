@@ -1,4 +1,4 @@
-import fs, { copyFileSync, existsSync, mkdirSync, readdirSync, WriteStream } from 'fs'
+import fs, { copyFileSync, existsSync, mkdirSync, readdirSync, type WriteStream } from 'fs'
 import http from 'https'
 import path from 'path'
 

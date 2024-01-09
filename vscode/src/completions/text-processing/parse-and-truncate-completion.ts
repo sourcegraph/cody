@@ -1,11 +1,11 @@
-import { TextDocument } from 'vscode'
-import { SyntaxNode } from 'web-tree-sitter'
+import { type TextDocument } from 'vscode'
+import { type SyntaxNode } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { DocumentContext } from '../get-current-doc-context'
+import { type DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, ParsedCompletion } from './parse-completion'
-import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import { type InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
 import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { getFirstLine } from './utils'

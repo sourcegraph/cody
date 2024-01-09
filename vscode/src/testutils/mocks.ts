@@ -16,7 +16,7 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { Uri } from './uri'

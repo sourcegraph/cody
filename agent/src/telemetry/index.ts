@@ -1,15 +1,15 @@
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { type SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { GraphQLTelemetryExporter } from '@sourcegraph/cody-shared/src/sourcegraph-api/telemetry/GraphQLTelemetryExporter'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import {
     defaultEventRecordingOptions,
-    MarketingTrackingProvider,
     MarketingTrackingTelemetryProcessor,
     TelemetryRecorderProvider,
     TimestampTelemetryProcessor,
+    type MarketingTrackingProvider,
 } from '@sourcegraph/telemetry'
 
-import { ClientInfo } from '../protocol-alias'
+import { type ClientInfo } from '../protocol-alias'
 
 /**
  * Default implementation of a TelemetryRecorderProvider for use in the Agent

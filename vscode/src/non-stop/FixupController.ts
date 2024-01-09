@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ExecuteEditArguments } from '../edit/execute'
-import { EditIntent } from '../edit/types'
+import { type ExecuteEditArguments } from '../edit/execute'
+import { type EditIntent } from '../edit/types'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -12,18 +12,23 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-import { computeDiff, Diff } from './diff'
+import { computeDiff, type Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
-import { FixupFile } from './FixupFile'
+import { type FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
-import { FixupTask, taskID } from './FixupTask'
+import { FixupTask, type taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
-import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
+import {
+    type FixupFileCollection,
+    type FixupIdleTaskRunner,
+    type FixupTaskFactory,
+    type FixupTextChanged,
+} from './roles'
+import { TaskViewProvider, type FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor

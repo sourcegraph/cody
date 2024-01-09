@@ -1,5 +1,5 @@
 import { PROMPT_TOPICS } from './constants'
-import { EditLLMInteraction } from './type'
+import { type EditLLMInteraction } from './type'
 
 const EDIT_PROMPT = `
 - You are an AI programming assistant who is an expert in updating code to meet given instructions.
