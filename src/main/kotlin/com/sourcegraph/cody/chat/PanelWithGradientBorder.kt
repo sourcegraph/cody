@@ -1,5 +1,7 @@
 package com.sourcegraph.cody.chat
 
+import com.intellij.ide.ui.LafManagerListener
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.JBUI
@@ -17,7 +19,16 @@ open class PanelWithGradientBorder(private val gradientWidth: Int, speaker: Spea
 
   private val isHuman: Boolean = speaker == Speaker.HUMAN
 
-  private fun recomputeLayout() {
+  init {
+    computeLayout()
+
+    ApplicationManager.getApplication()
+        .messageBus
+        .connect()
+        .subscribe(LafManagerListener.TOPIC, LafManagerListener { computeLayout() })
+  }
+
+  private fun computeLayout() {
     val panelBackground = UIUtil.getPanelBackground()
     val separatorForeground = JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground()
     val topBorder: Border = BorderFactory.createMatteBorder(1, 0, 0, 0, separatorForeground)
@@ -32,7 +43,6 @@ open class PanelWithGradientBorder(private val gradientWidth: Int, speaker: Spea
   }
 
   override fun paintComponent(g: Graphics) {
-    recomputeLayout()
     super.paintComponent(g)
     paintLeftBorderGradient(g)
   }
