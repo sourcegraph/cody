@@ -143,6 +143,7 @@ export class DefaultPrompter implements IPrompter {
     }
 
     private renderContextItem(contextItem: ContextItem): Message[] {
+        console.log(new Error(JSON.stringify(contextItem)))
         // Do not create context item for empty file
         if (!contextItem.text?.trim()?.length) {
             return []
