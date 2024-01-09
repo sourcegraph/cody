@@ -1,15 +1,15 @@
-import { OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
+import type { OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { DocumentContext } from '../get-current-doc-context'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import type { DocumentContext } from '../get-current-doc-context'
+import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import type { ContextSnippet } from '../types'
 
 import { fetchAndProcessCompletions } from './fetch-and-process-completions'
 import { generateCompletions } from './generate-completions'
-import { createOllamaClient, OllamaClientParams } from './ollama-client'
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
+import { createOllamaClient, type OllamaClientParams } from './ollama-client'
+import { Provider, type CompletionProviderTracer, type ProviderConfig, type ProviderOptions } from './provider'
 
 interface LlamaCodePrompt {
     snippets: { fileName: string; content: string }[]

@@ -1,13 +1,13 @@
 import { isDefined } from '@sourcegraph/cody-shared'
-import { OllamaGenerateParameters, OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
-import { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import type { OllamaGenerateParameters, OllamaOptions } from '@sourcegraph/cody-shared/src/configuration'
+import type { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import type { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { BrowserOrNodeResponse, isNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { isNodeResponse, type BrowserOrNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../../log'
-import { CodeCompletionsClient, createTimeout } from '../client'
+import { createTimeout, type CodeCompletionsClient } from '../client'
 import { forkSignal } from '../utils'
 
 /**
