@@ -130,11 +130,6 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
-    const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
-    if (symfRunner) {
-        disposables.push(symfRunner)
-    }
-
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
 
@@ -146,7 +141,12 @@ const register = async (
         guardrails,
         localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
+        symfRunner,
+    } = await configureExternalServices(context, initialConfig, rgPath, editor, platform)
+
+    if (symfRunner) {
+        disposables.push(symfRunner)
+    }
 
     const contextProvider = new ContextProvider(
         initialConfig,

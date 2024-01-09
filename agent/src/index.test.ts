@@ -313,9 +313,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello!",
+            "displayText": " Hello! Nice to meet you.",
             "speaker": "assistant",
-            "text": " Hello!",
+            "text": " Hello! Nice to meet you.",
           }
         `,
             explainPollyError
@@ -342,17 +342,21 @@ describe('Agent', () => {
 
           To break this down:
 
-          - The code is wrapped in a class called Main. In Java, code must be inside a class.
+          - The code is wrapped in a class called Main. In Java, code must be inside classes.
 
-          - The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.
+          - The main method is the entry point of the program. It is always public, static, and void.
 
-          - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
+          - System.out.println prints the text \\"Hello World!\\" to the console.
 
-          - Inside main, we call System.out.println(\\"Hello World!\\"); to print the text \\"Hello World!\\" to the console.
+          - Semicolons ; are used to end statements in Java.
 
-          - The println method handles printing the text and moving to a new line after.
+          So this program simply prints \\"Hello World!\\" to the console when run. To run it, you would need to:
 
-          So this simple program prints \\"Hello World!\\" when run. To run it from the command line you would compile with \`javac Main.java\` and then run \`java Main\`."
+          1. Save the code in a file called Main.java
+          2. Compile it with \`javac Main.java\`
+          3. Run it with \`java Main\`
+
+          And you will see the output \\"Hello World!\\""
         `,
             explainPollyError
         )
@@ -363,7 +367,7 @@ describe('Agent', () => {
     // able to return stable results in replay mode. Also, we don't have an
     // access token in ci so this test can only pass when running locally (for
     // now).
-    it.skip('allows us to send a chat message with enhanced context enabled', async () => {
+    it('allows us to send a chat message with enhanced context enabled', async () => {
         await openFile(animalUri)
         await client.request('command/execute', { command: 'cody.search.index-update' })
         const lastMessage = await client.sendSingleMessage(
@@ -384,7 +388,7 @@ describe('Agent', () => {
 
             @Override
             public void makeSound() {
-              System.out.println(\\"Woof!\\");
+              System.out.println(\\"Woof!\\"); 
             }
 
             @Override

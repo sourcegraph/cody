@@ -57,21 +57,21 @@ log:
             value: "0"
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: retry-after
-            value: "0"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 8021f57f24a9cc23d041b6fbcf88a00d
+            value: 386cb15277caebfe17d7245fe470de8b
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -268,13 +268,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 128
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: sourcegraph
+          size: 131
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV","Pj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -684,6 +679,8 @@ log:
             value: "37"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -778,6 +775,8 @@ log:
             value: "38"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -872,6 +871,8 @@ log:
             value: "38"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -957,40 +958,40 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 444
-          text: '["H4sIAAAAAAAAA6xRW24bMQy8i77DC/gAuUTRD640KzHRShuSsndh+O6BjQKFW9hBgHxzXpw5h8TO4XAOOHId7EivYB+K18rZwuHXOTReEA4h9rRTLOy09PhODvPwEq4shMPM1XB5uQfz8B77slY4KPbm2JymOdMiG9Jj8lT7RCtnkJ3EYyFWsJGVrh6H22OmSW5jJRt6xE5oPNVnRreUq/a/CNdxpwfWWKjhRO/YT12fiCk7qMoiboQtAgmJ5q63pqTlhyaOigWuO2Fbu/pD4P+lJrHri6SIe6zSMvWZVsVR+jBSfAzYs76uoyib001RuDnZ3pw3KpJLlVzuk389syvHb1ISZh7VyZw19gSlsk8qiawPjcjKa/l6Q3qDT8rS7Dv97Y0XibSM6lKlgf6cpDf7iR/+yfL7cvkEAAD//wMASs0t4XIDAAA="]'
+          size: 448
+          text: '["H4sIAAAAAAAAA6ySUU4rMQxF95JvvIEugE0gPjzJncSPTDLYTjujqnt/onp6AgFFlfjOja/Pkc8hsXM4nAOOXAc70iPYh+KxcrZweDqHxgvCIRhYY6GGE71gP3VN4SG8fUI4zFwNl4f/2djTTrGw09LjCznMfwjz8B77slY4KPbm2JymOdMiG240TbVPtHIG2Uk8FmIFG1np6nG43VObMPOoTuassScolX1SSWR9aERWXsv38xwVC1x3wrZ2fQfsOj4Vr9pvBJorm9N1M+HmZHtz3qhILlVycWn5LrK98SKRllFdqjTQvyfp7YYik9zGSjb0iJ3QeKpIv2H0W3RlB1VZxI2wRSAh0dz1ekIfoL+S+qHbleO9msTeEEkR91ilZeozrYqj9GGkeB2wH09q1U5/4JOyvHd73ff5cvkLAAD//wMAVMMKtXIDAAA="]'
           textDecoded:
             data:
               evaluatedFeatureFlags:
+                - name: search-new-keyword
+                  value: false
                 - name: cody-chat-mock-test
                   value: false
                 - name: cody-autocomplete-context-bfg-mixed
                   value: false
                 - name: blob-page-switch-areas-shortcuts
                   value: false
-                - name: signup-survey-enabled
-                  value: false
-                - name: cody-pro
-                  value: true
-                - name: search-new-keyword
-                  value: false
-                - name: rate-limits-exceeded-for-testing
-                  value: true
-                - name: telemetry-export
-                  value: true
-                - name: cody-autocomplete-disable-recycling-of-previous-requests
-                  value: false
-                - name: contrast-compliant-syntax-highlighting
-                  value: false
-                - name: cody-autocomplete-tracing
-                  value: false
                 - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
                   value: false
-                - name: cody-pro-jetbrains
+                - name: telemetry-export
                   value: true
+                - name: cody-pro
+                  value: true
+                - name: contrast-compliant-syntax-highlighting
+                  value: false
                 - name: cody-autocomplete-dynamic-multiline-completions
                   value: false
+                - name: signup-survey-enabled
+                  value: false
                 - name: cody-autocomplete-default-starcoder-hybrid
+                  value: true
+                - name: rate-limits-exceeded-for-testing
+                  value: true
+                - name: cody-autocomplete-tracing
+                  value: false
+                - name: cody-autocomplete-disable-recycling-of-previous-requests
+                  value: false
+                - name: cody-pro-jetbrains
                   value: true
         cookies: []
         headers:
@@ -1115,6 +1116,8 @@ log:
             value: "26"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1210,13 +1213,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 119
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1227,6 +1225,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1431,13 +1431,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 148
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
-          textDecoded:
-            data:
-              repository:
-                embeddingExists: true
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 158
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8=","AwD/h5WCVAAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1638,15 +1633,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 212
-          text: '["H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIlaA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cfsONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFqgAAAA"]'
-          textDecoded:
-            data:
-              site:
-                productSubscription:
-                  license:
-                    hashedKey: bd8965b2eef3a61b4e05647a401026066c88116c8594a0c10b09cfb38b9e1669
-                siteID: SourcegraphWeb
+          size: 215
+          text: '["H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaR","wfnuekgTA6QtgyG+u8HEf/mn74BIlaA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cfsONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFqgAAAA"]'
         cookies: []
         headers:
           - name: date
