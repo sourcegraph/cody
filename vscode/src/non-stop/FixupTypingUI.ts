@@ -34,10 +34,17 @@ function getLabelForContextFile(file: ContextFile): string {
  * If startLine and endLine are the same, returns just the line number.
  */
 function getTitleRange(range: vscode.Range): string {
-    const endLine = range.end.character === 0 ? range.end.line - 1 : range.end.line
-    if (range.start.line === endLine) {
+    if (range.isEmpty) {
+        // No selected range, return just active line
         return `${range.start.line + 1}`
     }
+
+    const endLine = range.end.character === 0 ? range.end.line - 1 : range.end.line
+    if (range.start.line === endLine) {
+        // Range only encompasses a single line
+        return `${range.start.line + 1}`
+    }
+
     return `${range.start.line + 1}:${endLine + 1}`
 }
 
