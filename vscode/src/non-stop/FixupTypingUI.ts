@@ -140,11 +140,14 @@ export class FixupTypingUI {
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
         ;(quickPick as any).sortByLabel = false
 
+        quickPick.buttons = [menu_buttons.cody]
         if (source === 'menu') {
-            quickPick.buttons = [menu_buttons.back]
-            quickPick.onDidTriggerButton(() => {
-                void vscode.commands.executeCommand('cody.action.commands.menu')
-                quickPick.hide()
+            quickPick.buttons = [menu_buttons.cody, menu_buttons.back]
+            quickPick.onDidTriggerButton((target: vscode.QuickInputButton) => {
+                if (target === menu_buttons.back) {
+                    void vscode.commands.executeCommand('cody.action.commands.menu')
+                    quickPick.hide()
+                }
             })
         }
 
