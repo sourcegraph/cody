@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { ExecuteEditArguments } from '../edit/execute'
@@ -161,6 +162,7 @@ export class FixupController
     public async createTask(
         documentUri: vscode.Uri,
         instruction: string,
+        userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
         intent?: EditIntent,
         insertMode?: boolean,
@@ -171,7 +173,7 @@ export class FixupController
         if (intent !== 'add') {
             selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
         }
-        const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
+        const task = new FixupTask(fixupFile, instruction, userContextFiles, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -1000,17 +1002,31 @@ export class FixupController
         }
         const previousRange = task.originalRange
         const previousInstruction = task.instruction
+        const previousUserContextFiles = task.userContextFiles
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
         // Prompt the user for a new instruction, and create a new fixup
-        const instruction = await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })
+        const input = await this.typingUI.getInputFromQuickPick({
+            initialValue: previousInstruction,
+            initialSelectedContextFiles: previousUserContextFiles,
+        })
+        if (!input) {
+            return
+        }
 
         // Revert and remove the previous task
         await this.undoTask(task)
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document, intent: task.intent, insertMode: task.insertMode },
+            {
+                range: previousRange,
+                instruction: input.instruction,
+                userContextFiles: input.userContextFiles,
+                document,
+                intent: task.intent,
+                insertMode: task.insertMode,
+            } satisfies ExecuteEditArguments,
             'code-lens'
         )
     }

@@ -13,7 +13,7 @@ import { FixupTask } from '../../non-stop/FixupTask'
 import { EditIntent } from '../types'
 
 import { claude } from './claude'
-import { getContextFromIntent } from './context'
+import { getContext } from './context'
 import { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
@@ -93,10 +93,11 @@ export const buildInteraction = async ({
     const interaction = new Interaction(
         { speaker: 'human', text: prompt, displayText: prompt },
         { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
-        getContextFromIntent({
+        getContext({
             intent: task.intent,
             fileName: task.fixupFile.uri.fsPath,
             selectionRange: task.selectionRange,
+            userContextFiles: task.userContextFiles,
             context,
             editor,
             followingText,

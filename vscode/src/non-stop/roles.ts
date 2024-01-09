@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ContextFile } from '@sourcegraph/cody-shared'
 import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { EditIntent } from '../edit/types'
@@ -39,6 +40,7 @@ export interface FixupTaskFactory {
     createTask(
         documentUri: vscode.Uri,
         instruction: string,
+        userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
         intent?: EditIntent,
         insertMode?: boolean,
