@@ -51,6 +51,7 @@ interface FixupMatchingContext {
 interface QuickPickParams {
     filePath: string
     range: vscode.Range
+    source: ChatEventSource
     placeholder?: string
     initialValue?: string
     initialSelectedContextFiles?: ContextFile[]
@@ -92,6 +93,7 @@ export class FixupTypingUI {
     public async getInputFromQuickPick({
         filePath,
         range,
+        source,
         placeholder = 'Edit instructions (@ to include code)',
         initialValue = '',
         initialSelectedContextFiles = [],
@@ -105,7 +107,6 @@ export class FixupTypingUI {
             range.start.line === range.end.line ? `${range.start.line}` : `${range.start.line}-${range.end.line}`
         }`
         quickPick.placeholder = placeholder
-        quickPick.buttons = [menu_buttons.back]
         quickPick.value = initialValue
 
         // ContextItems to store possible context
@@ -122,10 +123,13 @@ export class FixupTypingUI {
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
         ;(quickPick as any).sortByLabel = false
 
-        quickPick.onDidTriggerButton(() => {
-            void vscode.commands.executeCommand('cody.action.commands.menu')
-            quickPick.hide()
-        })
+        if (source === 'menu') {
+            quickPick.buttons = [menu_buttons.back]
+            quickPick.onDidTriggerButton(() => {
+                void vscode.commands.executeCommand('cody.action.commands.menu')
+                quickPick.hide()
+            })
+        }
 
         quickPick.onDidChangeValue(async newValue => {
             if (newValue === initialValue) {
@@ -220,6 +224,7 @@ export class FixupTypingUI {
         const input = await this.getInputFromQuickPick({
             filePath: document.uri.fsPath,
             range,
+            source,
         })
         if (!input) {
             return null

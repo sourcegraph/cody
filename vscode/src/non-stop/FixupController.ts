@@ -1011,6 +1011,7 @@ export class FixupController
             range: previousRange,
             initialValue: previousInstruction,
             initialSelectedContextFiles: previousUserContextFiles,
+            source: 'code-lens',
         })
         if (!input) {
             return
