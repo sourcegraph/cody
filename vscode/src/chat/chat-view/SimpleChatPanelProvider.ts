@@ -45,7 +45,7 @@ import { getProcessInfo } from '../../services/LocalAppDetector'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { type TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
@@ -470,11 +470,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 messages: allHistory,
             })
         }
-<<<<<<< HEAD
         await this.treeView.updateTree()
-=======
-        await this.treeView.updateTree(createCodyChatTreeItems(this.authProvider.getAuthStatus()))
->>>>>>> 726733bf992a31d3006ced17a4cc297086f015ff
     }
 
     public async clearAndRestartSession(): Promise<void> {
