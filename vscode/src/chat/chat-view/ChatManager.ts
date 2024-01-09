@@ -1,9 +1,8 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
+import { ChatModelProvider, type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { type View } from '../../../webviews/NavBar'
@@ -85,7 +84,7 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyPrompt, source: ChatEventSource): Promise<void> {
+    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<void> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')

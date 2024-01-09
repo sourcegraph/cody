@@ -5,8 +5,7 @@ import { type ContextFile } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { type CodyPrompt, type CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeType, type Recipe, type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { type Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -17,6 +16,7 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 import { type Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -66,7 +66,7 @@ abstract class MessageHandler {
     protected abstract handleTranscript(transcript: ChatMessage[], messageInProgress: boolean): void
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleSuggestions(suggestions: string[]): void
-    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
+    protected abstract handleCodyCommands(prompts: [string, CodyCommand][]): void
     protected abstract handleError(error: Error, type: MessageErrorType): void
 }
 

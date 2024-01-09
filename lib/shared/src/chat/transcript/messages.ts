@@ -1,6 +1,6 @@
 import { type ContextFile, type PreciseContext } from '../../codebase-context/messages'
+import { type CodyDefaultCommands } from '../../commands'
 import { type Message } from '../../sourcegraph-api'
-import { type CodyDefaultCommands } from '../prompts'
 import { type RecipeID } from '../recipes/recipe'
 
 import { type TranscriptJSON } from '.'

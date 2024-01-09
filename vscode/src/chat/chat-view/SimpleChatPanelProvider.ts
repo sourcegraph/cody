@@ -6,25 +6,19 @@ import * as vscode from 'vscode'
 import {
     type ActiveTextEditorSelectionRange,
     type ChatMessage,
-    type CodyPrompt,
+    type CodyCommand,
     type ContextFile,
 } from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { type CodyPromptContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import {
-    createDisplayTextWithFileLinks,
-    createDisplayTextWithFileSelection,
-} from '@sourcegraph/cody-shared/src/chat/prompts/display-text'
-import { extractTestType } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { VSCodeEditorContext } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/VSCodeEditorContext'
 import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { type InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type CodyCommandContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { type Result } from '@sourcegraph/cody-shared/src/local-context'
@@ -36,6 +30,8 @@ import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-sha
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type View } from '../../../webviews/NavBar'
+import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../../commands/prompt/display-text'
+import { getContextForCommand } from '../../commands/utils/get-context'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
@@ -573,7 +569,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
      * generates a chat request from the command,
      * and sends it to be handled like a regular chat request.
      */
-    public async handleCommands(command: CodyPrompt, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
+    public async handleCommands(command: CodyCommand, source: ChatEventSource, requestID = uuid.v4()): Promise<void> {
         if (command && !this.editor.getActiveTextEditorSelectionOrVisibleContent()) {
             if (command.context?.selection || command.context?.currentFile || command.context?.currentDir) {
                 return this.postError(new Error('Command failed. Please open a file and try again.'), 'transcript')
@@ -600,7 +596,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         submitType: 'user' | 'suggestion' | 'example',
         userContextFiles: ContextFile[],
         addEnhancedContext: boolean,
-        command?: CodyPrompt
+        command?: CodyCommand
     ): Promise<void> {
         // Display text is the text we will display to the user in the Chat UI
         // - Append @-files to the display text if we have any
@@ -677,7 +673,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         userContextFiles?: ContextFile[],
         addEnhancedContext = true,
         sendTelemetry?: (contextSummary: {}) => void,
-        command?: CodyPrompt
+        command?: CodyCommand
     ): Promise<void> {
         try {
             const contextWindowBytes = getContextWindowForModel(
@@ -1026,7 +1022,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
 class ContextProvider implements IContextProvider {
     constructor(
         private userContext: ContextItem[],
-        private editor: Editor,
+        private editor: VSCodeEditor,
         private embeddingsClient: CachedRemoteEmbeddingsClient | null,
         private localEmbeddings: LocalEmbeddingsController | null,
         private symf: SymfRunner | null,
@@ -1182,55 +1178,16 @@ class ContextProvider implements IContextProvider {
         return priorityContext.concat(searchContext)
     }
 
-    public async getCommandContext(promptText: string, contextConfig: CodyPromptContext): Promise<ContextItem[]> {
+    public async getCommandContext(promptText: string, contextConfig: CodyCommandContext): Promise<ContextItem[]> {
         logDebug('SimpleChatPanelProvider.getCommandContext', promptText)
-        // Get smart selection if selection is required
-        const selection = contextConfig?.selection
-            ? await this.editor.getActiveTextEditorSmartSelection()
-            : this.editor.getActiveTextEditorSelectionOrVisibleContent()
-        const editorContext = new VSCodeEditorContext(this.editor, selection)
 
         const contextMessages: ContextMessage[] = []
         const contextItems: ContextItem[] = []
 
-        const workspaceRootUri = this.editor.getWorkspaceRootUri()
-        const isUnitTestRequest = extractTestType(promptText) === 'unit'
-
         if (contextConfig.none) {
             return []
         }
-        if (contextConfig.command && contextConfig.output) {
-            contextMessages.push(...editorContext.getTerminalOutputContext(contextConfig.output))
-        }
-        if (contextConfig.selection !== false) {
-            const selectionContext = await this.getSmartSelectionContext()
-            if (selectionContext.length > 0) {
-                contextItems.push(...selectionContext)
-            }
-        }
-        if (contextConfig.currentFile && selection?.fileUri) {
-            contextMessages.push(...(await editorContext.getFilePathContext(selection?.fileUri?.fsPath)))
-        }
-        if (contextConfig.filePath) {
-            contextMessages.push(...(await editorContext.getFilePathContext(contextConfig.filePath)))
-        }
-        if (contextConfig.directoryPath) {
-            contextMessages.push(
-                ...(await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName))
-            )
-        }
-        if (contextConfig.currentDir) {
-            contextMessages.push(...(await editorContext.getCurrentDirContext(isUnitTestRequest)))
-        }
-        if (contextConfig.openTabs) {
-            contextMessages.push(...(await editorContext.getEditorOpenTabsContext()))
-        }
-        // Additional context for unit tests requests
-        if (isUnitTestRequest && contextItems.length < 2) {
-            if (selection?.fileName) {
-                contextMessages.push(...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)))
-            }
-        }
+        contextMessages.push(...(await getContextForCommand(this.editor, promptText, contextConfig)))
         // Turn ContextMessages to ContextItems
         for (const msg of contextMessages) {
             if (msg.file?.uri && msg.file?.content) {

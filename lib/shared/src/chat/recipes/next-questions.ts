@@ -5,10 +5,9 @@ import { type IntentDetector } from '../../intent-detector'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { newInteraction } from '../prompts/utils'
 import { type Interaction } from '../transcript/interaction'
 
-import { numResults } from './helpers'
+import { newInteraction, numResults } from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class NextQuestions implements Recipe {

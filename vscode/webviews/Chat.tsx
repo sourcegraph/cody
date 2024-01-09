@@ -5,8 +5,8 @@ import classNames from 'classnames'
 
 import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
 import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
@@ -52,7 +52,7 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
-    chatCommands?: [string, CodyPrompt][]
+    chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     applessOnboarding: {
         endpoint: string | null
@@ -440,7 +440,7 @@ function normalize(input: string): string {
     return input.trim().toLowerCase()
 }
 
-function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string): [string, CodyPrompt][] {
+function filterChatCommands(chatCommands: [string, CodyCommand][], query: string): [string, CodyCommand][] {
     const normalizedQuery = normalize(query)
 
     if (!isSlashCommand(normalizedQuery)) {
@@ -448,7 +448,7 @@ function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string)
     }
 
     const [slashCommand] = normalizedQuery.split(' ')
-    const matchingCommands: [string, CodyPrompt][] = chatCommands.filter(
+    const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
         ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
     )
     return matchingCommands.sort()

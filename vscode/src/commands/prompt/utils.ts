@@ -1,55 +1,17 @@
 import path from 'path'
 
-import { type ContextMessage } from '../../codebase-context/messages'
-import { type ActiveTextEditorSelection } from '../../editor'
-import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
-import { truncateText } from '../../prompt/truncation'
-import { getFileExtension, getNormalizedLanguageName } from '../recipes/helpers'
-import { Interaction } from '../transcript/interaction'
-import { type ChatEventSource } from '../transcript/messages'
+import { getFileExtension, getNormalizedLanguageName } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
+import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import {
+    CHARS_PER_TOKEN,
+    MAX_AVAILABLE_PROMPT_LENGTH,
+    MAX_RECIPE_INPUT_TOKENS,
+} from '@sourcegraph/cody-shared/src/prompt/constants'
+import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { type CodyPromptContext } from '.'
 import { prompts } from './templates'
-
-/**
- * Creates a new Interaction object with the given parameters.
- */
-export async function newInteraction(args: {
-    text?: string
-    displayText?: string
-    contextMessages?: Promise<ContextMessage[]>
-    assistantText?: string
-    assistantDisplayText?: string
-    assistantPrefix?: string
-    source?: ChatEventSource
-    requestID?: string
-}): Promise<Interaction> {
-    const {
-        text,
-        displayText,
-        contextMessages,
-        assistantText,
-        assistantDisplayText,
-        assistantPrefix,
-        source,
-        requestID,
-    } = args
-    const metadata = { source, requestID }
-    return Promise.resolve(
-        new Interaction(
-            { speaker: 'human', text, displayText, metadata },
-            {
-                speaker: 'assistant',
-                text: assistantText,
-                displayText: assistantDisplayText,
-                prefix: assistantPrefix,
-                metadata,
-            },
-            Promise.resolve(contextMessages || []),
-            []
-        )
-    )
-}
 
 /**
  * Returns a Promise resolving to an Interaction object representing an error response from the assistant.
@@ -107,7 +69,7 @@ export function promptTextWithCodeSelection(
  * This checks if the contextConfig only contains the "selection" property, or if it contains no properties.
  * In those cases, only the selection context is needed.
  */
-export function isOnlySelectionRequired(contextConfig: CodyPromptContext): boolean {
+export function isOnlySelectionRequired(contextConfig: CodyCommandContext): boolean {
     const contextConfigLength = Object.entries(contextConfig).length
     return !contextConfig.none && ((contextConfig.selection && contextConfigLength === 1) || !contextConfigLength)
 }

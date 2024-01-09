@@ -9,6 +9,7 @@
   },
   "include": [
     "src",
+    "src/commands/prompt/cody.json",
     "test/fixtures",
     "playwright.config.ts",
     "test/e2e",

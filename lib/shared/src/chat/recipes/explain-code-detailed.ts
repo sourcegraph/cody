@@ -1,9 +1,13 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
-import { newInteraction } from '../prompts/utils'
 import { type Interaction } from '../transcript/interaction'
 
-import { getContextMessagesFromSelection, getNormalizedLanguageName, MARKDOWN_FORMAT_PROMPT } from './helpers'
+import {
+    getContextMessagesFromSelection,
+    getNormalizedLanguageName,
+    MARKDOWN_FORMAT_PROMPT,
+    newInteraction,
+} from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class ExplainCodeDetailed implements Recipe {

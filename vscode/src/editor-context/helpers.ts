@@ -4,12 +4,19 @@ import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
-import { getContextMessageWithResponse, type ContextMessage } from '../../../codebase-context/messages'
-import { type ActiveTextEditorSelection } from '../../../editor'
-import { MAX_CURRENT_FILE_TOKENS } from '../../../prompt/constants'
-import { populateCodeContextTemplate, populateContextTemplateFromText } from '../../../prompt/templates'
-import { truncateText } from '../../../prompt/truncation'
-import { createSelectionDisplayText, isValidTestFileName } from '../utils'
+import {
+    getContextMessageWithResponse,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
+import {
+    populateCodeContextTemplate,
+    populateContextTemplateFromText,
+} from '@sourcegraph/cody-shared/src/prompt/templates'
+import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
+
+import { createSelectionDisplayText, isValidTestFileName } from '../commands/prompt/utils'
 
 /**
  * Gets the currently active text editor instance from the list of visible editors.
