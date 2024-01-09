@@ -92,13 +92,16 @@ export function isAuthError(error: unknown): boolean {
     return error instanceof NetworkError && (error.status === 401 || error.status === 403)
 }
 
-export class AbortError extends Error {}
+export class AbortError extends Error {
+    // Added to make Typescript understand that AbortError is not the same as Error.
+    public readonly isAbortError = true
+}
 
-export function isAbortError(error: unknown): error is AbortError {
+export function isAbortError(error: any): error is AbortError {
     return (
         isError(error) &&
         // custom abort error
-        (error instanceof AbortError ||
+        ((error instanceof AbortError && error.isAbortError) ||
             // http module
             error.message === 'aborted' ||
             // fetch
