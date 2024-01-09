@@ -201,7 +201,7 @@ describe('Agent', () => {
     const rateLimitedClient = new TestClient('rateLimitedClient', process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    execSync('pnpm run build', { cwd: client.getAgentDir(), stdio: 'inherit' })
+    execSync('pnpm run build:agent', { cwd: client.getAgentDir(), stdio: 'inherit' })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
