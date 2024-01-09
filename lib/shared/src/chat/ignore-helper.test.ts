@@ -40,6 +40,16 @@ describe('IgnoreHelper', () => {
         ignore.setActiveState(true)
     })
 
+    it('returns true for non-file schemed URLs', () => {
+        const nonFileWorkspaceRoot = workspace1Root.with({ scheme: 'non-file' })
+        expect(ignore.isIgnored(Utils.joinPath(nonFileWorkspaceRoot, 'foo.txt'))).toBe(true)
+    })
+
+    it('returns true for non-file schemed URLs - vscode user settings', () => {
+        const nonFileWorkspaceRoot = workspace1Root.with({ scheme: 'vscode-userdata' })
+        expect(ignore.isIgnored(Utils.joinPath(nonFileWorkspaceRoot, 'settings.json'))).toBe(true)
+    })
+
     it('returns false for an undefined workspace', () => {
         expect(ignore.isIgnored(Utils.joinPath(workspace1Root, 'foo.txt'))).toBe(false)
     })
