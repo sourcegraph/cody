@@ -63,7 +63,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
             } else {
                 this.exportMode = 'legacy'
             }
-            console.log('telemetry: evaluated export mode:', this.exportMode)
+            // console.log('telemetry: evaluated export mode:', this.exportMode)
         }
         if (this.exportMode === 'legacy' && this.legacySiteIdentification === undefined) {
             const siteIdentification = await this.client.getSiteIdentification()

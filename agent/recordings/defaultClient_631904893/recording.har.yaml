@@ -144,8 +144,6 @@ log:
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -219,50 +217,18 @@ log:
       response:
         content:
           mimeType: text/event-stream
-          size: 641
-          text: >+
+          size: 232
+          text: |+
             event: completion
-
             data: {"completion":" Hello","stopReason":""}
 
-
             event: completion
-
             data: {"completion":" Hello!","stopReason":""}
 
-
             event: completion
-
-            data: {"completion":" Hello! Nice","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Hello! Nice to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Hello! Nice to meet","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Hello! Nice to meet you","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Hello! Nice to meet you.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Hello! Nice to meet you.","stopReason":"stop_sequence"}
-
+            data: {"completion":" Hello!","stopReason":"stop_sequence"}
 
             event: done
-
             data: {}
 
         cookies: []
@@ -275,8 +241,6 @@ log:
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -350,7 +314,7 @@ log:
       response:
         content:
           mimeType: text/event-stream
-          size: 102558
+          size: 107784
           text: >+
             event: completion
 
@@ -974,382 +938,412 @@ log:
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method,","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\");","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\");","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. ","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n-","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The print","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The print","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary,","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `jav","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello World program","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello World program in","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello World program in Java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java`","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello World program in Java.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside the main method, we call System.out.println(\"Hello World\"); to print the text \"Hello World!\" to the console. \n\n- The println method prints the text and a newline character.\n\nSo in summary, this program defines a Main class with a static main method that prints \"Hello World!\" when executed. This is the simplest Hello World program in Java.","stopReason":"stop_sequence"}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then run","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then run `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then run `java","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then run `java Main","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then run `java Main`.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nTo break this down:\n\n- The code is wrapped in a class called Main. In Java, code must be inside a class.\n\n- The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.\n\n- The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.\n\n- Inside main, we call System.out.println(\"Hello World!\"); to print the text \"Hello World!\" to the console. \n\n- The println method handles printing the text and moving to a new line after.\n\nSo this simple program prints \"Hello World!\" when run. To run it from the command line you would compile with `javac Main.java` and then run `java Main`.","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1366,8 +1360,441 @@ log:
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7e7da1e2728766fa5abd6b1665484997
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: Write a class Dog that implements the Animal interface in my workspace.
+                  Only show the code, no explanation needed.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 15726
+          text: >+
+            event: completion
+
+            data: {"completion":" Here","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void make","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Wo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\");","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }\n\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }\n\n}\n```","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }\n\n}\n```","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1459,8 +1886,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 219
-          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//w==","AwCpmMLNBAEAAA=="]'
+          size: 222
+          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UF","jiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//w==","AwCpmMLNBAEAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1471,8 +1898,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1561,8 +1986,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 131
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//","AwAfFAXARQAAAA=="]'
+          size: 134
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV","Pj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//","AwAfFAXARQAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1573,8 +1998,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1690,8 +2113,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1788,8 +2209,6 @@ log:
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1884,8 +2303,6 @@ log:
             value: "37"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1980,8 +2397,6 @@ log:
             value: "37"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2076,104 +2491,6 @@ log:
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 50b031b05a8f064cbb7c320d4adb6bdc
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "208"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-disable-recycling-of-previous-requests
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        content:
-          mimeType: application/json
-          size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "38"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2268,8 +2585,6 @@ log:
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2364,8 +2679,6 @@ log:
             value: "37"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2451,87 +2764,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 760
-          text: '["H4sIAAAAAAAA/5RVUW7rOAy8i7/LC+QAvcRiP2hpYnMjSy5JJfEWvfuD3OKh7Xu2m78AHg2HQ3Ly2kV27k6vHa6cKjviM9ir4jnxYN3pn9cu84Tu1IUSF+LqJZRpTnBQXDJPEmiqySVJBn18kpKte+oaI7rTmZPh7WmHKJTsuDv154EmuSM+8jjizDU5mbOGEqE0Lr3KJw7X+pnCwBrG96LZqWdDpMR5oAhHaOoP6t/Qk0lEz7pZZQXOWvYBuM9QmZCd0z7yS8+uHCQPD9kkxn0CKcISkuSByplmxVVKNVK8VJjvTI3jJJk4c1pcghFyozt0OaKvRzqbnZwO+m8gRPGirQWZYcf4MLIfDoj+g/fKkg8IGxlNJVzIYdu0H31n3OiC5VZ0Z5k/sMr58mWaf6eUPFcnG8uNRjEvujywMW2/Kw/thyOH7afKDS2TuBHuAYiIdC66dr27c30qPc2tht3Ew0isYGuC1UP1A3t/dNNkpWrAoDyP20JeqoTL+tbJS9VVPlcfkV1CyziqBn1g2QOH8fcJHQ/0IIBmLbEGJ6u9BZV5zUsy6FUCiEMoNfuOuJ6uYuslrN3dxEfKxdGXctl3+UFJCm7e/1xZCDCTFjNnSS2mgO2tliHXmazqFcufcfKd25EwwXXNzKLbBzjoHI5Oqdwy1EaZN4HveshcwVNLy0Gc+tQ+bhucXdn8/V9QODvZkp3vNMowJhnG/ftpwun/gsv33v59e/sVAAD//+dsoHqoBwAA"]'
-          textDecoded:
-            data:
-              evaluatedFeatureFlags:
-                - name: cody-autocomplete-dynamic-multiline-completions
-                  value: false
-                - name: cody-autocomplete-context-bfg-mixed
-                  value: false
-                - name: cody-autocomplete-default-starcoder-hybrid
-                  value: true
-                - name: search-content-based-lang-detection
-                  value: false
-                - name: cody-web-sidebar
-                  value: true
-                - name: cody-pro
-                  value: true
-                - name: cody-experimental
-                  value: true
-                - name: cody-autocomplete-tracing
-                  value: false
-                - name: cody-autocomplete-disable-recycling-of-previous-requests
-                  value: false
-                - name: admin-analytics-enabled
-                  value: true
-                - name: search-debug
-                  value: false
-                - name: cody-web-all
-                  value: true
-                - name: cody-web-editor-recipes
-                  value: true
-                - name: cody-web-chat
-                  value: true
-                - name: cody-pro-jetbrains
-                  value: true
-                - name: cody-chat-mock-test
-                  value: true
-                - name: search-new-keyword
-                  value: false
-                - name: search-ranking
-                  value: true
-                - name: search-input-show-history
-                  value: true
-                - name: cody-autocomplete-language-latency
-                  value: true
-                - name: rate-limits-exceeded-for-testing
-                  value: false
-                - name: blob-page-switch-areas-shortcuts
-                  value: true
-                - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
-                  value: false
-                - name: quick-start-tour-for-authenticated-users
-                  value: false
-                - name: admin-analytics-cache-disabled
-                  value: false
-                - name: search-hybrid
-                  value: true
-                - name: product-subscriptions-service-account
-                  value: false
-                - name: ab-visitor-tour-with-notebooks
-                  value: true
-                - name: cody
-                  value: true
-                - name: product-subscriptions-reader-service-account
-                  value: false
-                - name: accessible-file-tree
-                  value: true
-                - name: signup-survey-enabled
-                  value: false
-                - name: telemetry-export
-                  value: true
-                - name: grpc
-                  value: true
-                - name: search-ownership
-                  value: true
-                - name: enable-streaming-git-blame
-                  value: true
-                - name: contrast-compliant-syntax-highlighting
-                  value: false
-                - name: grpc-zoekt
-                  value: true
+          size: 807
+          text: '["H4sIAAAAAAAA/5RVUZLrOAi8i7+HC+QAc4mt/UA=","iNhsZMkDKI53au6+JU+q9iXv2Z78qUqAmoZufXYRHbvTZ8dXTBWd4zujV+X3hL11p78+u4wjd6eOSlxg0gL/sAdFyda9dS2Ju5Nr5a+3h9Ddy1ZnPwCrFyrjlNgZIp+xJgdzVCqRFYYlqESwUpW4V5yG/8udMdmv9XqdaPMxzhgSg7kyjpJ76MUhpHa5lYJxlAyYMS0uZPBdIm7GG6PScIe8HSV9rhNY1Ssvv9d8buoZBCENDFHsIG8ld+YAHMWLgjLJxNujnLTESg5Wg5HK5FKygTK2KRjrVYgBiUrNvv3qnQLJU3WwocwwiHnRgy2hAR3GQhdwNt+PbT21+Bc7ebWFyKH2P6DXJHJAPVqKzDNceJmL7s4su6I5rIIQzA62ZMcbDNIPSfrBJR+BehTUknEUgrEmlySZ4X7VOHmlUMLcV+zbwTnTwTwfUl2RdmGXiXNT+5O8/0xkmTOrDTJty5aIzaSp/Sypvc/bGldszckobsA3Yo4c4Vx0XcRd1M1t4N/Cl+1NvENWzJeHUoeUtUXgm0M49zDK7VDnPzLRHWuMUI0VSg4FNe5hxQBXsdVRvFSFWXyAXJxDKZf9jwL4NrHKyNkxbUY6Jx7ZdQ0vuk3uRxW6rE36N5Q2Naw+cHah9sGtTb205XdbbWa5UGq/RDnDpHyVUpsZflQ236l4H/g6vuwQ0Diu0oHIztRUt50cUgkwNY3ZLE4DoDJac1F1qn5AbvMiTM+8/v319V8AAAD//8psKTL6BwAA"]'
         cookies: []
         headers:
           - name: date
@@ -2542,8 +2776,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2552,119 +2784,6 @@ log:
             value: no-cache, max-age=0
           - name: content-encoding
             value: gzip
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: d7720d62932d2de21ea1f187e1bf5135
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "734"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:Auth:connected
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        content:
-          mimeType: application/json
-          size: 26
-          text: '{"data":{"logEvent":null}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "0"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -2770,8 +2889,117 @@ log:
             value: "26"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d7720d62932d2de21ea1f187e1bf5135
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "734"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >-
+              
+              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+                  logEvent(
+              		event: $event
+              		userCookieID: $userCookieID
+              		url: $url
+              		source: $source
+              		argument: $argument
+              		publicArgument: $publicArgument
+              		client: $client
+              		connectedSiteID: $connectedSiteID
+              		hashedLicenseKey: $hashedLicenseKey
+                  ) {
+              		alwaysNil
+              	}
+              }
+            variables:
+              client: VSCODE_CODY_EXTENSION
+              connectedSiteID: SourcegraphWeb
+              event: CodyVSCodeExtension:Auth:connected
+              source: IDEEXTENSION
+              url: ""
+              userCookieID: ANONYMOUS_USER_COOKIE_ID
+        queryString:
+          - name: LogEventMutation
+            value: null
+        url: https://sourcegraph.com/.api/graphql?LogEventMutation
+      response:
+        content:
+          mimeType: application/json
+          size: 26
+          text: '{"data":{"logEvent":null}}'
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "26"
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2883,8 +3111,6 @@ log:
             value: "26"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2996,8 +3222,6 @@ log:
             value: "26"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3015,117 +3239,6 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: c63cf23de38703e896ef70b35a6908a4
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "342"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: connected
-                  feature: cody.auth
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.0.5
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 119
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "0"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 0
         httpVersion: HTTP/1.1
         redirectURL: ""
@@ -3221,8 +3334,115 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c63cf23de38703e896ef70b35a6908a4
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "342"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: connected
+                  feature: cody.auth
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.0.5
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3337,8 +3557,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3453,8 +3671,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3489,7 +3705,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1a71934de7e17499fc6950eb40367602
+    - _id: 8b1d3e6611c711a5af2e145069c311ac
       _order: 0
       cache: {}
       request:
@@ -3509,7 +3725,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "360"
+            value: "350"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -3536,8 +3752,8 @@ log:
               }
             variables:
               events:
-                - action: recipe-used
-                  feature: cody.recipe.chat-question
+                - action: executed
+                  feature: cody.chat-question
                   parameters:
                     privateMetadata: {}
                     version: 0
@@ -3552,8 +3768,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 119
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -3564,8 +3780,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3663,13 +3877,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -3680,8 +3889,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3770,13 +3977,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 148
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
-          textDecoded:
-            data:
-              repository:
-                embeddingExists: true
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 151
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
         cookies: []
         headers:
           - name: date
@@ -3787,8 +3989,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3892,8 +4092,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -4004,8 +4202,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -4093,11 +4289,11 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkamZhaGFvFGBkYmugaGugZm8aZ6RrqWiSZppkbJKSZGhilKtbW1AAAAAP//AwCkSWFZSQAAAA=="]'
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5gbmFvFGBkYmugaGugaW8aZ6RrppKcZGxmYWqYaWpklKtbW1AAAAAP//AwCEdlSPSQAAAA=="]'
           textDecoded:
             data:
               site:
-                productVersion: 256818_2024-01-06_5.2-9a4f52cd421d
+                productVersion: 257078_2024-01-09_5.2-fd32368e195b
         cookies: []
         headers:
           - name: date
@@ -4108,8 +4304,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
