@@ -29,6 +29,18 @@ function getLabelForContextFile(file: ContextFile): string {
     return `${file.path?.relative}${rangeLabel}#${file.fileName}`
 }
 
+/**
+ * Returns a string representation of the given range, formatted as "{startLine}:{endLine}".
+ * If startLine and endLine are the same, returns just the line number.
+ */
+function getTitleRange(range: vscode.Range): string {
+    const endLine = range.end.character === 0 ? range.end.line - 1 : range.end.line
+    if (range.start.line === endLine) {
+        return `${range.start.line + 1}`
+    }
+    return `${range.start.line + 1}:${endLine + 1}`
+}
+
 /* Match strings that end with a '@' followed by any characters except a space */
 const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
 
@@ -103,9 +115,7 @@ export class FixupTypingUI {
         userContextFiles: ContextFile[]
     } | null> {
         const quickPick = vscode.window.createQuickPick()
-        quickPick.title = `${vscode.workspace.asRelativePath(filePath)}:${
-            range.start.line === range.end.line ? `${range.start.line}` : `${range.start.line}-${range.end.line}`
-        }`
+        quickPick.title = `${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)}`
         quickPick.placeholder = placeholder
         quickPick.value = initialValue
 
