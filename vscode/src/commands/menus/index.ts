@@ -15,7 +15,7 @@ import {
     type QuickPickItemWithSlashCommand,
 } from '../utils/menu'
 
-import { CustomCommandsBuilderMenu, type CodyCommand } from './CustomCommandBuilderMenu'
+import { CustomCommandsBuilderMenu, type CustomCommandsBuilder } from './CustomCommandBuilderMenu'
 
 interface CommandMenuResponse {
     selectedItem: QuickPickItem | QuickPickItemWithSlashCommand
@@ -202,7 +202,9 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
 /**
  * Show Menu for creating a new prompt via UI using the input box and quick pick without having to manually edit the cody.json file
  */
-export async function showNewCustomCommandMenu(commands: Map<string, CodyCommand>): Promise<CodyCommand | null> {
+export async function showNewCustomCommandMenu(
+    commands: Map<string, CodyCommand>
+): Promise<CustomCommandsBuilder | null> {
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
 }

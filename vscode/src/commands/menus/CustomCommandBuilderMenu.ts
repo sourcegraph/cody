@@ -6,13 +6,14 @@ import { defaultCodyCommandContext, type CustomCommandType } from '@sourcegraph/
 import { toSlashCommand } from '../prompt/utils'
 import { customPromptsContextOptions } from '../utils/menu'
 
-export interface CodyCommand {
+export interface CustomCommandsBuilder {
     slashCommand: string
     prompt: CodyCommand
     type: CustomCommandType
 }
+
 export class CustomCommandsBuilderMenu {
-    public async start(commands: Map<string, CodyCommand>): Promise<CodyCommand | null> {
+    public async start(commands: Map<string, CodyCommand>): Promise<CustomCommandsBuilder | null> {
         const slashCommand = await this.makeSlashCommand(commands)
         if (!slashCommand) {
             return null
