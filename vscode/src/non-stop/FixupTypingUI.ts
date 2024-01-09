@@ -49,7 +49,8 @@ interface FixupMatchingContext {
 }
 
 interface QuickPickParams {
-    title?: string
+    filePath: string
+    range: vscode.Range
     placeholder?: string
     initialValue?: string
     initialSelectedContextFiles?: ContextFile[]
@@ -89,17 +90,20 @@ export class FixupTypingUI {
     }
 
     public async getInputFromQuickPick({
-        title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
-        placeholder = 'Your instructions',
+        filePath,
+        range,
+        placeholder = 'Edit instructions (@ to include code)',
         initialValue = '',
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
-    }: QuickPickParams = {}): Promise<{
+    }: QuickPickParams): Promise<{
         instruction: string
         userContextFiles: ContextFile[]
     } | null> {
         const quickPick = vscode.window.createQuickPick()
-        quickPick.title = title
+        quickPick.title = `${vscode.workspace.asRelativePath(filePath)}:${
+            range.start.line === range.end.line ? `${range.start.line}` : `${range.start.line}-${range.end.line}`
+        }`
         quickPick.placeholder = placeholder
         quickPick.buttons = [menu_buttons.back]
         quickPick.value = initialValue
@@ -213,7 +217,10 @@ export class FixupTypingUI {
         if (!document || !range) {
             return null
         }
-        const input = await this.getInputFromQuickPick()
+        const input = await this.getInputFromQuickPick({
+            filePath: document.uri.fsPath,
+            range,
+        })
         if (!input) {
             return null
         }
