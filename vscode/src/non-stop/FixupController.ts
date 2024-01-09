@@ -140,8 +140,8 @@ export class FixupController
         let activeGhostDecoration: vscode.DecorationOptions | null = null
 
         const addGhostText = throttle(
-            (selection: vscode.Range, editor: vscode.TextEditor) => {
-                activeGhostDecoration = { range: selection }
+            (position: vscode.Position, editor: vscode.TextEditor) => {
+                activeGhostDecoration = { range: new vscode.Range(position, position) }
                 editor.setDecorations(editHintDecoration, [activeGhostDecoration])
             },
             250,
@@ -157,19 +157,21 @@ export class FixupController
                 return editor.setDecorations(editHintDecoration, [])
             }
 
-            // Shift the text up to the primary selection line
-            const targetSelection: vscode.Range =
-                firstSelection.end.character === 0
-                    ? firstSelection.with(firstSelection.start, firstSelection.end.translate({ lineDelta: -1 }))
-                    : firstSelection
+            /**
+             * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
+             * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
+             */
+            const targetPosition = firstSelection.isReversed
+                ? firstSelection.active
+                : firstSelection.active.translate(firstSelection.end.character === 0 ? -1 : 0)
 
-            if (activeGhostDecoration && activeGhostDecoration.range.end.line !== targetSelection.end.line) {
+            if (activeGhostDecoration && activeGhostDecoration.range.start.line !== targetPosition.line) {
                 // Selection changed, remove existing decoration
                 activeGhostDecoration = null
                 editor.setDecorations(editHintDecoration, [])
             }
 
-            return addGhostText(targetSelection, editor)
+            return addGhostText(targetPosition, editor)
         })
         /** END GHOST TEXT */
     }
