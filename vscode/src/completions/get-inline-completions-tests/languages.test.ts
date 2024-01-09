@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { completion } from '../test-helpers'
 import { MULTILINE_STOP_SEQUENCE } from '../text-processing'

@@ -1,5 +1,5 @@
-import { ContextFile } from '../../codebase-context/messages'
-import { ChatEventSource } from '../transcript/messages'
+import { type ContextFile } from '../../codebase-context/messages'
+import { type ChatEventSource } from '../transcript/messages'
 
 import * as defaultPrompts from './cody.json'
 import { toSlashCommand } from './utils'

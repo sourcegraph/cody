@@ -3,49 +3,54 @@ import * as path from 'path'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelectionRange, ChatMessage, CodyPrompt, ContextFile } from '@sourcegraph/cody-shared'
+import {
+    type ActiveTextEditorSelectionRange,
+    type ChatMessage,
+    type CodyPrompt,
+    type ContextFile,
+} from '@sourcegraph/cody-shared'
 import { ChatModelProvider } from '@sourcegraph/cody-shared/src/chat-models'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { CodyPromptContext, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type CodyPromptContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import {
     createDisplayTextWithFileLinks,
     createDisplayTextWithFileSelection,
 } from '@sourcegraph/cody-shared/src/chat/prompts/display-text'
 import { extractTestType } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { VSCodeEditorContext } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/VSCodeEditorContext'
-import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { type InteractionJSON } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { Result } from '@sourcegraph/cody-shared/src/local-context'
+import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
+import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { type Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_BYTES_PER_FILE, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateTextNearestLine } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { View } from '../../../webviews/NavBar'
+import { type View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { executeEdit } from '../../edit/execute'
 import { getFileContextFiles, getOpenTabsContextFile, getSymbolContextFiles } from '../../editor/utils/editor-context'
-import { VSCodeEditor } from '../../editor/vscode-editor'
+import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
-import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { SymfRunner } from '../../local-context/symf'
+import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { type SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { AuthProvider } from '../../services/AuthProvider'
+import { type AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
-import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { type TreeViewProvider } from '../../services/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
@@ -53,9 +58,15 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { MessageErrorType } from '../MessageProvider'
-import { AuthStatus, ConfigurationSubsetForWebview, ExtensionMessage, LocalEnv, WebviewMessage } from '../protocol'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type MessageErrorType } from '../MessageProvider'
+import {
+    type AuthStatus,
+    type ConfigurationSubsetForWebview,
+    type ExtensionMessage,
+    type LocalEnv,
+    type WebviewMessage,
+} from '../protocol'
 import { countGeneratedCode } from '../utils'
 
 import {
@@ -67,11 +78,11 @@ import {
 } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
-import { ChatViewProviderWebview, Config } from './ChatPanelsManager'
+import { type ChatViewProviderWebview, type Config } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
-import { DefaultPrompter, IContextProvider, IPrompter } from './prompt'
-import { ContextItem, MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
+import { DefaultPrompter, type IContextProvider, type IPrompter } from './prompt'
+import { SimpleChatModel, toViewMessage, type ContextItem, type MessageWithContext } from './SimpleChatModel'
 
 interface SimpleChatPanelProviderOptions {
     config: Config

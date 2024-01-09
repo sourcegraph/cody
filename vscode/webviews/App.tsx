@@ -2,16 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { Attribution, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type Attribution, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
+import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
-import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
+import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import {
@@ -20,7 +20,7 @@ import {
     EnhancedContextEventHandlers,
 } from './Components/EnhancedContextSettings'
 import { LoadingPage } from './LoadingPage'
-import { View } from './NavBar'
+import { type View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'

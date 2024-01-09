@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { claude } from './claude'
-import { GetLLMInteractionOptions } from './type'
+import { type GetLLMInteractionOptions } from './type'
 
 describe('Edit Prompts', () => {
     const fixupTask: GetLLMInteractionOptions = {

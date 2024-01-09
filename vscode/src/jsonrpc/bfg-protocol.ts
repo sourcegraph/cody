@@ -2,9 +2,9 @@
  * This file declares the protocol for communicating between Cody and BFG (Blazingly Fast Graph), a Rust implementation
  * of the "Graph Context" feature flag.
  */
-import { FileContextSnippet, SymbolContextSnippet } from '../completions/types'
+import { type FileContextSnippet, type SymbolContextSnippet } from '../completions/types'
 
-import { Position, Range } from './agent-protocol'
+import { type Position, type Range } from './agent-protocol'
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Requests = {

@@ -1,18 +1,18 @@
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-import { DocumentContext } from './get-current-doc-context'
-import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { CompletionLogID, logCompletionBookkeepingEvent } from './logger'
-import { CompletionProviderTracer, Provider } from './providers/provider'
+import { type DocumentContext } from './get-current-doc-context'
+import { InlineCompletionsResultSource, type LastInlineCompletionCandidate } from './get-inline-completions'
+import { logCompletionBookkeepingEvent, type CompletionLogID } from './logger'
+import { type CompletionProviderTracer, type Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
-    InlineCompletionItemWithAnalytics,
     processInlineCompletions,
+    type InlineCompletionItemWithAnalytics,
 } from './text-processing/process-inline-completions'
-import { ContextSnippet } from './types'
+import { type ContextSnippet } from './types'
 
 export interface RequestParams {
     /** The request's document */

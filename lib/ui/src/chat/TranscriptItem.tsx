@@ -2,25 +2,25 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails } from '@sourcegraph/cody-shared'
 
 import {
-    ApiPostMessage,
-    ChatButtonProps,
-    ChatUISubmitButtonProps,
-    ChatUITextAreaProps,
-    CodeBlockActionsProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
+    type ApiPostMessage,
+    type ChatButtonProps,
+    type ChatUISubmitButtonProps,
+    type ChatUITextAreaProps,
+    type CodeBlockActionsProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
+    type UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
-import { FileLinkProps } from './components/ContextFiles'
+import { type FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
+import { PreciseContexts, type SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
 

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
 import { PrDescription } from '@sourcegraph/cody-shared/src/chat/recipes/generate-pr-description'
@@ -9,15 +9,15 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { LocalIndexedKeywordSearch } from './chat/local-code-search'
 import { CommandsController } from './commands/CommandsController'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
-import { ExtensionApi } from './extension-api'
+import { type ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
 import { VSCODE_WEB_RECIPES } from './extension.web'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import {
     createLocalEmbeddingsController,
-    LocalEmbeddingsConfig,
-    LocalEmbeddingsController,
+    type LocalEmbeddingsConfig,
+    type LocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'

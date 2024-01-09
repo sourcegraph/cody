@@ -2,7 +2,7 @@ import React from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { Popup, PopupOpenProps } from './Popup'
+import { Popup, type PopupOpenProps } from './Popup'
 
 export interface OnboardingPopupProps {
     reloadStatus: () => void

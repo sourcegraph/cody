@@ -1,12 +1,12 @@
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { AuthStatus } from '../chat/protocol'
+import { type AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
@@ -14,10 +14,10 @@ import { withPosixPaths } from '../testutils/textDocument'
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
-import { CompletionLogID } from './logger'
+import { type CompletionLogID } from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './test-helpers'
-import { InlineCompletionItem } from './types'
+import { type InlineCompletionItem } from './types'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,

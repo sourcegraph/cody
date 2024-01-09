@@ -1,10 +1,10 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { newInteraction } from '../prompts/utils'
-import { Interaction } from '../transcript/interaction'
+import { type Interaction } from '../transcript/interaction'
 
 import { getNormalizedLanguageName } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class FindCodeSmells implements Recipe {
     public id: RecipeID = 'find-code-smells'

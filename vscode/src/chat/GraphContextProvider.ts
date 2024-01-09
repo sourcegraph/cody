@@ -1,11 +1,11 @@
 import {
-    ContextGroup,
-    ContextStatusProvider,
-    Disposable,
+    type ContextGroup,
+    type ContextStatusProvider,
+    type Disposable,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
+import { type PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
+import { type GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
 import { getGraphContextFromEditor } from '../graph/lsp/graph'
 

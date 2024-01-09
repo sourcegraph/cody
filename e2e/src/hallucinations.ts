@@ -1,4 +1,4 @@
-import { DetectedEntity } from './entity-detection'
+import { type DetectedEntity } from './entity-detection'
 import { search } from './sourcegraph-api'
 
 export async function detectHallucinations(codebase: string, entities: DetectedEntity[]): Promise<DetectedEntity[]> {

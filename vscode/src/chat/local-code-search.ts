@@ -3,9 +3,9 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 
 import { getFileExtension } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
-import { Recipe, RecipeContext, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
+import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
 import { MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 

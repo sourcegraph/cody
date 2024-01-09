@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiFileDocumentOutline, mdiMagnify } from '@mdi/js'
 
-import { ContextFile, pluralize } from '@sourcegraph/cody-shared'
+import { pluralize, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 

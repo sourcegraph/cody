@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
 
-import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
+import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext } from '../get-current-doc-context'
+import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
+import { type DocumentContext } from '../get-current-doc-context'
 import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type ContextSnippet } from '../types'
 
 import {
     generateCompletions,
@@ -16,11 +16,11 @@ import {
     getLineNumberDependentCompletionParams,
 } from './generate-completions'
 import {
-    CompletionProviderTracer,
     Provider,
-    ProviderConfig,
-    ProviderOptions,
     standardContextSizeHints,
+    type CompletionProviderTracer,
+    type ProviderConfig,
+    type ProviderOptions,
 } from './provider'
 
 export interface FireworksOptions {

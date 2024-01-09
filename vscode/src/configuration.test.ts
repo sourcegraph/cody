@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'

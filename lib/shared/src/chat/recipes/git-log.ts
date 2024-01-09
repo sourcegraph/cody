@@ -6,7 +6,7 @@ import { truncateText } from '../../prompt/truncation'
 import { newInteraction } from '../prompts/utils'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class GitHistory implements Recipe {
     public id: RecipeID = 'git-history'

@@ -1,6 +1,11 @@
 import { spawn } from 'child_process'
 
-import { ConsoleReporter, downloadAndUnzipVSCode, ProgressReport, ProgressReportStage } from '@vscode/test-electron'
+import {
+    ConsoleReporter,
+    downloadAndUnzipVSCode,
+    ProgressReportStage,
+    type ProgressReport,
+} from '@vscode/test-electron'
 
 export const vscodeVersion = '1.81.1'
 

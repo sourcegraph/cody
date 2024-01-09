@@ -3,8 +3,8 @@ import { dirname } from 'path'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { ContextMessage, getContextMessageWithResponse } from '../../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../../editor'
+import { getContextMessageWithResponse, type ContextMessage } from '../../../codebase-context/messages'
+import { type ActiveTextEditorSelection, type Editor } from '../../../editor'
 import { MAX_CURRENT_FILE_TOKENS } from '../../../prompt/constants'
 import {
     populateCodeContextTemplate,

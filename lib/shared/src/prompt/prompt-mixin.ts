@@ -1,4 +1,4 @@
-import { InteractionMessage } from '../chat/transcript/messages'
+import { type InteractionMessage } from '../chat/transcript/messages'
 
 const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
 const hallucinate =

@@ -3,22 +3,22 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
-    ChatButton,
-    ChatContextStatus,
-    ChatMessage,
-    ChatModelProvider,
-    CodyPrompt,
-    ContextFile,
-    Guardrails,
     isDefined,
+    type ChatButton,
+    type ChatContextStatus,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyPrompt,
+    type ContextFile,
+    type Guardrails,
 } from '@sourcegraph/cody-shared'
 
-import { CodeBlockMeta } from './chat/CodeBlocks'
-import { FileLinkProps } from './chat/components/ContextFiles'
+import { type CodeBlockMeta } from './chat/CodeBlocks'
+import { type FileLinkProps } from './chat/components/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
-import { SymbolLinkProps } from './chat/PreciseContext'
+import { type SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
-import { TranscriptItemClassNames } from './chat/TranscriptItem'
+import { type TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 

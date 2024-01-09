@@ -1,6 +1,6 @@
-import { Meta, StoryObj } from '@storybook/react'
+import { type Meta, type StoryObj } from '@storybook/react'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared'
 
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'

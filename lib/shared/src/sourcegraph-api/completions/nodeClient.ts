@@ -8,7 +8,7 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionCallbacks, CompletionParameters } from './types'
+import { type CompletionCallbacks, type CompletionParameters } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {

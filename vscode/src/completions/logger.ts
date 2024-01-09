@@ -3,23 +3,23 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { type KnownString, type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
-import { CompletionIntent } from '../tree-sitter/query-sdk'
+import { type CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { ContextSummary } from './context/context-mixer'
-import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import { type ContextSummary } from './context/context-mixer'
+import { type InlineCompletionsResultSource, type TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
-import { RequestParams } from './request-manager'
+import { type RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
-import { InlineCompletionItem } from './types'
+import { type InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.

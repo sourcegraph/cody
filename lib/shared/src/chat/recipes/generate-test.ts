@@ -1,7 +1,7 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { newInteraction } from '../prompts/utils'
-import { Interaction } from '../transcript/interaction'
+import { type Interaction } from '../transcript/interaction'
 
 import {
     getContextMessagesFromSelection,
@@ -9,7 +9,7 @@ import {
     getNormalizedLanguageName,
     MARKDOWN_FORMAT_PROMPT,
 } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class GenerateTest implements Recipe {
     public id: RecipeID = 'generate-unit-test'

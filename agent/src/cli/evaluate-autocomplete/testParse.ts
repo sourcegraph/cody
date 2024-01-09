@@ -1,4 +1,4 @@
-import Parser from 'web-tree-sitter'
+import type Parser from 'web-tree-sitter'
 
 /** Returns true if the new text parses successfully. */
 export function testParses(newText: string, parser: Parser): boolean | undefined {

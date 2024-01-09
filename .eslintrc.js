@@ -33,6 +33,19 @@ const config = {
     'unicorn/prefer-top-level-await': 'off',
     'unicorn/prefer-dom-node-remove': 'off',
     'ban/ban': 'off',
+    '@typescript-eslint/consistent-type-exports': [
+      'error',
+      {
+        fixMixedExportsWithInlineTypeSpecifier: true,
+      },
+    ],
+    '@typescript-eslint/consistent-type-imports': [
+      'error',
+      {
+        fixStyle: 'inline-type-imports',
+        disallowTypeAnnotations: false,
+      },
+    ],
   },
   overrides: [
     {

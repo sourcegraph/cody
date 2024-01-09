@@ -1,4 +1,4 @@
-import { ActiveTextEditorSelectionRange } from '../editor'
+import { type ActiveTextEditorSelectionRange } from '../editor'
 
 import { CHARS_PER_TOKEN } from './constants'
 

@@ -1,4 +1,4 @@
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import { IgnoreHelper } from './ignore-helper'
 

@@ -1,12 +1,12 @@
-import { URI, Utils } from 'vscode-uri'
+import { Utils, type URI } from 'vscode-uri'
 
-import { CodebaseContext } from '../../codebase-context'
+import { type CodebaseContext } from '../../codebase-context'
 import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getFileExtension, numResults } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 /*
 This class implements the context-search recipe.

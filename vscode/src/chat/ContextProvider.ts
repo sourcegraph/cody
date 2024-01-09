@@ -1,34 +1,37 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import {
+    type ContextGroup,
+    type ContextStatusProvider,
+} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
-import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { type IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
 import { getEditor } from '../editor/active-editor'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { PlatformContext } from '../extension.common'
+import { type VSCodeEditor } from '../editor/vscode-editor'
+import { type PlatformContext } from '../extension.common'
 import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
-import { LocalEmbeddingsController } from '../local-context/local-embeddings'
+import { type LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
 import { getCodebaseFromWorkspaceUri, gitDirectoryUri } from '../repository/repositoryHelpers'
-import { AuthProvider } from '../services/AuthProvider'
+import { type AuthProvider } from '../services/AuthProvider'
 import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { SidebarChatWebview } from './chat-view/SidebarViewController'
+import { type SidebarChatWebview } from './chat-view/SidebarViewController'
 import { GraphContextProvider } from './GraphContextProvider'
-import { AuthStatus, ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { type AuthStatus, type ConfigurationSubsetForWebview, type LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,

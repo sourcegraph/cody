@@ -1,19 +1,19 @@
-import { GetFieldType } from 'lodash'
+import { type GetFieldType } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
-    ContextGroup,
-    ContextStatusProvider,
-    LocalEmbeddingsProvider,
+    type ContextGroup,
+    type ContextStatusProvider,
+    type LocalEmbeddingsProvider,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type LocalEmbeddingsFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { spawnBfg } from '../graph/bfg/spawn-bfg'
-import { IndexHealthResultFound, IndexRequest, QueryResultSet } from '../jsonrpc/embeddings-protocol'
-import { MessageHandler } from '../jsonrpc/jsonrpc'
+import { type IndexHealthResultFound, type IndexRequest, type QueryResultSet } from '../jsonrpc/embeddings-protocol'
+import { type MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 

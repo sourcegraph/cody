@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
-import { ChildProcessWithoutNullStreams } from 'child_process'
+import { type ChildProcessWithoutNullStreams } from 'child_process'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { dirname } from 'path'
 import { Readable, Writable } from 'stream'
@@ -9,9 +9,9 @@ import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
 
-import * as agent from './agent-protocol'
-import * as bfg from './bfg-protocol'
-import * as embeddings from './embeddings-protocol'
+import type * as agent from './agent-protocol'
+import type * as bfg from './bfg-protocol'
+import type * as embeddings from './embeddings-protocol'
 
 type Requests = bfg.Requests & agent.Requests & embeddings.Requests
 type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications

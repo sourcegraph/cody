@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { RequestParams } from './request-manager'
+import { type RequestParams } from './request-manager'
 
 /**
  * Handles showing an in-editor decoration when a first completion is accepted.

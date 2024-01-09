@@ -1,5 +1,5 @@
-import { ContextFile } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection } from '../../editor'
+import { type ContextFile } from '../../codebase-context/messages'
+import { type ActiveTextEditorSelection } from '../../editor'
 
 import { trailingNonAlphaNumericRegex } from './utils'
 

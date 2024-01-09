@@ -9,7 +9,7 @@ import { Mutex } from 'async-mutex'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
-import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
+import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../log'

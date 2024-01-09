@@ -1,5 +1,5 @@
 /* eslint-disable no-void */
-import { graphqlClient, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { graphqlClient, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 export enum FeatureFlag {

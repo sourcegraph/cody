@@ -8,11 +8,11 @@ import {
     SectionHistoryRetriever,
 } from '../context/retrievers/section-history/section-history-retriever'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
-import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
+import { type InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
-import { InlineCompletionItem } from '../types'
+import { type InlineCompletionItem } from '../types'
 
-import { ProvideInlineCompletionsItemTraceData } from '.'
+import { type ProvideInlineCompletionsItemTraceData } from '.'
 
 /**
  * Registers a command `Cody: Open Autocomplete Trace View` that shows the context and prompt used

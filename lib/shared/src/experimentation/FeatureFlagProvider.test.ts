@@ -1,6 +1,6 @@
 import { describe, expect, it, vitest } from 'vitest'
 
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
 

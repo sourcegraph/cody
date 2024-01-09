@@ -1,7 +1,7 @@
-import { QuickPickItem, window } from 'vscode'
+import { window, type QuickPickItem } from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { CustomCommandType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type CodyPrompt } from '@sourcegraph/cody-shared'
+import { defaultCodyPromptContext, type CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { customPromptsContextOptions } from '../utils/menu'

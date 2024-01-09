@@ -1,19 +1,19 @@
 import * as vscode from 'vscode'
 
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ContextProvider } from '../chat/ContextProvider'
+import { type ContextProvider } from '../chat/ContextProvider'
 import { getEditor } from '../editor/active-editor'
-import { VSCodeEditor } from '../editor/vscode-editor'
+import { type VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
-import { FixupTask } from '../non-stop/FixupTask'
+import { type FixupTask } from '../non-stop/FixupTask'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { ExecuteEditArguments } from './execute'
+import { type ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { EditIntent } from './types'
+import { type EditIntent } from './types'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
