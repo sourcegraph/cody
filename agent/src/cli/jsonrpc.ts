@@ -166,11 +166,13 @@ class CodyPersister extends FSPersister {
                 // in in pull requests.
                 try {
                     const text = JSON.parse(responseContent.text)[0]
-                    console.log({ text })
                     const decodedBase64 = decodeCompressedBase64(text)
                     ;(responseContent as any).textDecoded = decodedBase64
-                } catch (error) {
-                    console.error('base64 decode error', error)
+                } catch {
+                    // Ignored: uncomment below to debug. It's fine to ignore this error because we only
+                    // make a best-effort to decode the gzip+base64 encoded JSON payload. It's not needed
+                    // for the HTTP replay to work correctly because we leave the `.text` property unchanged.
+                    // console.error('base64 decode error', error)
                 }
             }
         }
@@ -266,12 +268,15 @@ export const jsonrpcCommand = new Command('jsonrpc')
             // because we don't want to record the binary downloads for
             // macOS/Windows/Linux
             polly.server.get('https://github.com/sourcegraph/bfg/*path').passthrough()
+            polly.server.get('https://github.com/sourcegraph/symf/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)
         }
 
-        process.stderr.write('Starting Cody Agent...\n')
+        if (process.env.CODY_DEBUG === 'true') {
+            process.stderr.write('Starting Cody Agent...\n')
+        }
 
         const agent = new Agent({ polly })
 

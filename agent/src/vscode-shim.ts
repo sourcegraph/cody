@@ -218,6 +218,7 @@ const _workspace: typeof vscode.workspace = {
                         await loop(folder.uri, folder.uri)
                     }
                 } catch (error) {
+                    console.log(new Error().stack)
                     console.error(`workspace.workspace.finFiles: failed to stat workspace folder ${folder.uri}`, error)
                     // ignore invalid workspace folders
                 }
@@ -442,7 +443,15 @@ const _window: Partial<typeof vscode.window> = {
     registerWebviewViewProvider: () => emptyDisposable,
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
-    withProgress: (_, handler) => handler({ report: () => {} }, new CancellationTokenSource().token),
+    withProgress: async (_, handler) => {
+        try {
+            const result = await handler({ report: () => {} }, new CancellationTokenSource().token)
+            return result
+        } catch (error) {
+            console.error('window.withProgress: uncaught error', error)
+            throw error
+        }
+    },
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
@@ -529,11 +538,11 @@ const gitExports: GitExtension = {
             getRepository(uri) {
                 try {
                     const cwd = uri.fsPath
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' }).toString().trim()
                     if (toplevel !== uri.fsPath) {
                         return null
                     }
-                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd }).toString().trim()
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' }).toString().trim()
                     return gitRepository(Uri.file(toplevel), commit)
                 } catch {
                     return null
