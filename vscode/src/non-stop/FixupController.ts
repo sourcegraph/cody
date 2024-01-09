@@ -1007,8 +1007,11 @@ export class FixupController
 
         // Prompt the user for a new instruction, and create a new fixup
         const input = await this.typingUI.getInputFromQuickPick({
+            filePath: task.fixupFile.filePath,
+            range: previousRange,
             initialValue: previousInstruction,
             initialSelectedContextFiles: previousUserContextFiles,
+            source: 'code-lens',
         })
         if (!input) {
             return
