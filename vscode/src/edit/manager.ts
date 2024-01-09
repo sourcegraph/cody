@@ -57,7 +57,7 @@ export class EditManager implements vscode.Disposable {
 
         const editor = getEditor()
         if (editor.ignored) {
-            console.error('File was ignored by Cody.')
+            void vscode.window.showInformationMessage('Cannot edit Cody ignored file.')
             return
         }
 
