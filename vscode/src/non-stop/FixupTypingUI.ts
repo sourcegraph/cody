@@ -113,7 +113,7 @@ export class FixupTypingUI {
         filePath,
         range,
         source,
-        placeholder = 'Edit instructions (@ to include code)',
+        placeholder = 'Instructions (@ to include code)',
         initialValue = '',
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
@@ -122,7 +122,7 @@ export class FixupTypingUI {
         userContextFiles: ContextFile[]
     } | null> {
         const quickPick = vscode.window.createQuickPick()
-        quickPick.title = `${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)}`
+        quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)} with Cody`
         quickPick.placeholder = placeholder
         quickPick.value = initialValue
 
@@ -140,9 +140,8 @@ export class FixupTypingUI {
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
         ;(quickPick as any).sortByLabel = false
 
-        quickPick.buttons = [menu_buttons.cody]
         if (source === 'menu') {
-            quickPick.buttons = [menu_buttons.cody, menu_buttons.back]
+            quickPick.buttons = [menu_buttons.back]
             quickPick.onDidTriggerButton((target: vscode.QuickInputButton) => {
                 if (target === menu_buttons.back) {
                     void vscode.commands.executeCommand('cody.action.commands.menu')

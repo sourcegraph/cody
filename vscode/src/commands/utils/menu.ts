@@ -82,14 +82,12 @@ const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'Open o
 const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'Delete Settings File', id: 'delete' }
 const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
 const backIconButton = QuickInputButtons.Back
-const codyIconButton = { iconPath: new ThemeIcon('cody-logo'), tooltip: 'Cody Edit' }
 
 export const menu_buttons = {
     open: openIconButton,
     trash: trashIconButton,
     back: backIconButton,
     gear: gearIconButton,
-    cody: codyIconButton,
 }
 
 export const CustomCommandTypes = {
