@@ -182,7 +182,7 @@ describe('Agent', () => {
     const explainPollyError = `
 
     ===================================================[ NOTICE ]=======================================================
-    If you get PollyError or unexpeced diff, you might need to update recordings to match your changes.
+    If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
     Please check https://github.com/sourcegraph/cody/tree/main/agent#updating-the-polly-http-recordings for the details.
     ====================================================================================================================
 
@@ -201,7 +201,12 @@ describe('Agent', () => {
     const rateLimitedClient = new TestClient('rateLimitedClient', process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    execSync('pnpm run build', { cwd: client.getAgentDir(), stdio: 'inherit' })
+    //
+    // ⚠️ If this line fails when running unit tests, chances are that the error is being swallowed.
+    // To see the full error, run this file in isolation:
+    //
+    //   pnpm test agent/src/index.test.ts
+    execSync('pnpm run build:agent', { cwd: client.getAgentDir(), stdio: 'inherit' })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
