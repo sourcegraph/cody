@@ -1,12 +1,12 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { getContextMessagesFromSelection } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
-    ContextFile,
-    ContextMessage,
     createContextMessageByFile,
     getContextMessageWithResponse,
+    type ContextFile,
+    type ContextMessage,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
@@ -16,8 +16,8 @@ import {
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { VSCodeEditor } from '../../editor/vscode-editor'
-import { EditIntent } from '../types'
+import { type VSCodeEditor } from '../../editor/vscode-editor'
+import { type EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
 

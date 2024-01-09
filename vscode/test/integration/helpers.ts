@@ -2,9 +2,9 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ExtensionApi } from '../../src/extension-api'
+import { type ExtensionApi } from '../../src/extension-api'
 import * as mockServer from '../fixtures/mock-server'
 
 /**

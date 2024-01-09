@@ -1,15 +1,15 @@
-import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
+import { type CodebaseContext } from '../../codebase-context'
+import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
+import { type Editor } from '../../editor'
+import { type IntentDetector } from '../../intent-detector'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { newInteraction } from '../prompts/utils'
-import { Interaction } from '../transcript/interaction'
+import { type Interaction } from '../transcript/interaction'
 
 import { numResults } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class NextQuestions implements Recipe {
     public id: RecipeID = 'next-questions'

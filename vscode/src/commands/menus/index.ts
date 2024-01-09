@@ -1,21 +1,21 @@
 import { platform } from 'os'
 
 import { debounce } from 'lodash'
-import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
+import { commands, window, type QuickPickItem, type QuickPickOptions } from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
+import { type CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { CustomCommandsItem } from '../utils'
+import { type CustomCommandsItem } from '../utils'
 import {
     ASK_QUESTION_COMMAND,
     CustomCommandConfigMenuItems,
     EDIT_COMMAND,
     menu_buttons,
     menu_options,
-    QuickPickItemWithSlashCommand,
+    type QuickPickItemWithSlashCommand,
 } from '../utils/menu'
 
-import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
+import { CustomCommandsBuilderMenu, type CodyCommand } from './CustomCommandBuilderMenu'
 
 interface CommandMenuResponse {
     selectedItem: QuickPickItem | QuickPickItemWithSlashCommand

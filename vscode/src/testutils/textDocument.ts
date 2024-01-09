@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDocument } from 'vscode'
-import { TextDocument } from 'vscode-languageserver-textdocument'
+import { type TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
 import { vsCodeMocks } from './mocks'

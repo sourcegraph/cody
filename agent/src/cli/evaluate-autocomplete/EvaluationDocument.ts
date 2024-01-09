@@ -1,14 +1,14 @@
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
-import * as vscode from 'vscode'
+import { type ObjectHeaderItem } from 'csv-writer/src/lib/record'
+import type * as vscode from 'vscode'
 
-import { CompletionBookkeepingEvent, CompletionItemInfo } from '../../../../vscode/src/completions/logger'
+import { type CompletionBookkeepingEvent, type CompletionItemInfo } from '../../../../vscode/src/completions/logger'
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
-import { AutocompleteMatchKind } from './AutocompleteMatcher'
+import { type AutocompleteMatchKind } from './AutocompleteMatcher'
 
 export type EvaluationDocumentParams = Pick<
     EvaluationItem,

@@ -9,7 +9,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 
 import packageJson from '../package.json'
 
-import { CONFIG_KEY, ConfigKeys, ConfigurationKeysMap, getConfigEnumValues } from './configuration-keys'
+import { CONFIG_KEY, getConfigEnumValues, type ConfigKeys, type ConfigurationKeysMap } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 

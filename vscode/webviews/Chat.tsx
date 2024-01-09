@@ -3,24 +3,24 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatModelProvider, ContextFile, Guardrails } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
-    ChatButtonProps,
-    ChatSubmitType,
     Chat as ChatUI,
-    ChatUISubmitButtonProps,
-    ChatUISuggestionButtonProps,
-    ChatUITextAreaProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
+    type ChatButtonProps,
+    type ChatSubmitType,
+    type ChatUISubmitButtonProps,
+    type ChatUISuggestionButtonProps,
+    type ChatUITextAreaProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
+    type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
@@ -30,10 +30,10 @@ import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
-import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
+import { type OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import { VSCodeWrapper } from './utils/VSCodeApi'
+import { type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 

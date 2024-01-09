@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPrompt, CodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type CodyPrompt, type CodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
@@ -10,11 +10,11 @@ import {
     populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared/src/prompt/templates'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { logDebug } from '../../log'
 
-import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
+import { contextItemId, type ContextItem, type MessageWithContext, type SimpleChatModel } from './SimpleChatModel'
 
 export interface IContextProvider {
     // Context explicitly specified by user

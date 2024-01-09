@@ -1,7 +1,7 @@
 import path from 'path'
 
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
-import { ActiveTextEditorDiagnostic, ActiveTextEditorSelection } from '../editor'
+import { type ActiveTextEditorDiagnostic, type ActiveTextEditorSelection } from '../editor'
 
 import { MAX_RECIPE_INPUT_TOKENS } from './constants'
 import { truncateText, truncateTextStart } from './truncation'

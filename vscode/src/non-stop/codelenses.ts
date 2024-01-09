@@ -4,7 +4,7 @@ import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/
 
 import { getSingleLineRange } from '../services/InlineAssist'
 
-import { FixupTask } from './FixupTask'
+import { type FixupTask } from './FixupTask'
 import { CodyTaskState } from './utils'
 
 // Create Lenses based on state

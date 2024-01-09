@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
-import Parser, { Tree } from 'web-tree-sitter'
+import { type default as Parser, type Tree } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 
-import { EvaluationDocument, EvaluationDocumentParams } from './EvaluationDocument'
-import { Queries } from './Queries'
+import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationDocument'
+import { type Queries } from './Queries'
 
 export type AutocompleteMatchKind = 'if_statement' | 'call_expression' | 'assignment_statement' | 'function_declaration'
 export interface AutocompleteMatch {

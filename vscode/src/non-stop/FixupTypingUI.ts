@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
-import { ExecuteEditArguments } from '../edit/execute'
+import { type ExecuteEditArguments } from '../edit/execute'
 import { getEditor } from '../editor/active-editor'
 import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/editor-context'
 
-import { FixupTask } from './FixupTask'
-import { FixupTaskFactory } from './roles'
+import { type FixupTask } from './FixupTask'
+import { type FixupTaskFactory } from './roles'
 
 function removeAfterLastAt(str: string): string {
     const lastIndex = str.lastIndexOf('@')
@@ -27,6 +27,25 @@ function getLabelForContextFile(file: ContextFile): string {
         return `${file.path?.relative}${rangeLabel}`
     }
     return `${file.path?.relative}${rangeLabel}#${file.fileName}`
+}
+
+/**
+ * Returns a string representation of the given range, formatted as "{startLine}:{endLine}".
+ * If startLine and endLine are the same, returns just the line number.
+ */
+function getTitleRange(range: vscode.Range): string {
+    if (range.isEmpty) {
+        // No selected range, return just active line
+        return `${range.start.line + 1}`
+    }
+
+    const endLine = range.end.character === 0 ? range.end.line - 1 : range.end.line
+    if (range.start.line === endLine) {
+        // Range only encompasses a single line
+        return `${range.start.line + 1}`
+    }
+
+    return `${range.start.line + 1}:${endLine + 1}`
 }
 
 /* Match strings that end with a '@' followed by any characters except a space */
@@ -49,7 +68,9 @@ interface FixupMatchingContext {
 }
 
 interface QuickPickParams {
-    title?: string
+    filePath: string
+    range: vscode.Range
+    source: ChatEventSource
     placeholder?: string
     initialValue?: string
     initialSelectedContextFiles?: ContextFile[]
@@ -89,19 +110,20 @@ export class FixupTypingUI {
     }
 
     public async getInputFromQuickPick({
-        title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
-        placeholder = 'Your instructions',
+        filePath,
+        range,
+        source,
+        placeholder = 'Instructions (@ to include code)',
         initialValue = '',
         initialSelectedContextFiles = [],
         prefix = EDIT_COMMAND.slashCommand,
-    }: QuickPickParams = {}): Promise<{
+    }: QuickPickParams): Promise<{
         instruction: string
         userContextFiles: ContextFile[]
     } | null> {
         const quickPick = vscode.window.createQuickPick()
-        quickPick.title = title
+        quickPick.title = `Edit ${vscode.workspace.asRelativePath(filePath)}:${getTitleRange(range)} with Cody`
         quickPick.placeholder = placeholder
-        quickPick.buttons = [menu_buttons.back]
         quickPick.value = initialValue
 
         // ContextItems to store possible context
@@ -118,10 +140,15 @@ export class FixupTypingUI {
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
         ;(quickPick as any).sortByLabel = false
 
-        quickPick.onDidTriggerButton(() => {
-            void vscode.commands.executeCommand('cody.action.commands.menu')
-            quickPick.hide()
-        })
+        if (source === 'menu') {
+            quickPick.buttons = [menu_buttons.back]
+            quickPick.onDidTriggerButton((target: vscode.QuickInputButton) => {
+                if (target === menu_buttons.back) {
+                    void vscode.commands.executeCommand('cody.action.commands.menu')
+                    quickPick.hide()
+                }
+            })
+        }
 
         quickPick.onDidChangeValue(async newValue => {
             if (newValue === initialValue) {
@@ -213,7 +240,11 @@ export class FixupTypingUI {
         if (!document || !range) {
             return null
         }
-        const input = await this.getInputFromQuickPick()
+        const input = await this.getInputFromQuickPick({
+            filePath: document.uri.fsPath,
+            range,
+            source,
+        })
         if (!input) {
             return null
         }

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { SymbolLinkProps } from '@sourcegraph/cody-ui/src/chat/PreciseContext'
+import { type SymbolLinkProps } from '@sourcegraph/cody-ui/src/chat/PreciseContext'
 
 import { getVSCodeAPI } from './utils/VSCodeApi'
 

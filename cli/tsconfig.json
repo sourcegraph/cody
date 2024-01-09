@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.base.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
     "rootDir": "src",
@@ -7,7 +7,7 @@
     "baseUrl": "./src",
   },
   "include": ["src"],
-  "exclude": ["dist"],
+  "exclude": ["dist", "vitest.config.ts"],
   "references": [
     {
       "path": "../lib/shared",

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-question'
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
@@ -9,11 +9,11 @@ import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/gen
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
-import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { type Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 
-import { ExtensionApi } from './extension-api'
+import { type ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
 import { logDebug } from './log'
 import { WebSentryService } from './services/sentry/sentry.web'

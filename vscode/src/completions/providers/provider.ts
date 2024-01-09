@@ -1,11 +1,11 @@
-import { Position, TextDocument } from 'vscode'
+import { type Position, type TextDocument } from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { DocumentContext } from '../get-current-doc-context'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import { type DocumentContext } from '../get-current-doc-context'
+import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type ContextSnippet } from '../types'
 
 export interface ProviderConfig {
     /**

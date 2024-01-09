@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { taskID } from './FixupTask'
+import { type taskID } from './FixupTask'
 
 type fileName = string
 type fileContent = string

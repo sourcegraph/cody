@@ -1,8 +1,8 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { ContextRetriever } from '../types'
+import { type ContextRetriever } from '../types'
 
-import { BfgRetriever } from './retrievers/bfg/bfg-retriever'
+import { type BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'

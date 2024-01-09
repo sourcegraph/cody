@@ -1,12 +1,12 @@
-import { Configuration } from '../configuration'
-import { ActiveTextEditorSelectionRange } from '../editor'
-import { EmbeddingsSearch } from '../embeddings'
-import { GraphContextFetcher } from '../graph-context'
+import { type Configuration } from '../configuration'
+import { type ActiveTextEditorSelectionRange } from '../editor'
+import { type EmbeddingsSearch } from '../embeddings'
+import { type GraphContextFetcher } from '../graph-context'
 import {
-    ContextResult,
-    FilenameContextFetcher,
-    IndexedKeywordContextFetcher,
-    LocalEmbeddingsFetcher,
+    type ContextResult,
+    type FilenameContextFetcher,
+    type IndexedKeywordContextFetcher,
+    type LocalEmbeddingsFetcher,
 } from '../local-context'
 import {
     isMarkdownFile,
@@ -14,13 +14,18 @@ import {
     populateMarkdownContextTemplate,
     populatePreciseCodeContextTemplate,
 } from '../prompt/templates'
-import { Message } from '../sourcegraph-api'
+import { type Message } from '../sourcegraph-api'
 import { isDotCom } from '../sourcegraph-api/environments'
-import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
-import { UnifiedContextFetcher } from '../unified-context'
+import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { type UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
-import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithResponse } from './messages'
+import {
+    getContextMessageWithResponse,
+    type ContextFile,
+    type ContextFileSource,
+    type ContextMessage,
+} from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number

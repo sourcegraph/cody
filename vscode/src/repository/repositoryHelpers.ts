@@ -5,7 +5,7 @@ import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/u
 import { logDebug } from '../log'
 import { setUpCodyIgnore, updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 
-import { API, GitExtension, Repository } from './builtinGitExtension'
+import { type API, type GitExtension, type Repository } from './builtinGitExtension'
 
 export function repositoryRemoteUrl(uri: vscode.Uri): string | undefined {
     return gitRepositoryRemoteUrl(uri) ?? undefined

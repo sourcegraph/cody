@@ -2,7 +2,7 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 
 import { isError } from '../utils'
 
-import { BrowserOrNodeResponse } from './graphql/client'
+import { type BrowserOrNodeResponse } from './graphql/client'
 
 function formatRetryAfterDate(retryAfterDate: Date): string {
     const now = new Date()

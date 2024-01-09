@@ -1,11 +1,11 @@
-import { Position, Range, TextDocument } from 'vscode'
-import Parser, { Point, Tree } from 'web-tree-sitter'
+import { Position, Range, type TextDocument } from 'vscode'
+import { type default as Parser, type Point, type Tree } from 'web-tree-sitter'
 
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { DocumentContext } from '../get-current-doc-context'
-import { InlineCompletionItem } from '../types'
+import { type DocumentContext } from '../get-current-doc-context'
+import { type InlineCompletionItem } from '../types'
 
-import { getMatchingSuffixLength, InlineCompletionItemWithAnalytics } from './process-inline-completions'
+import { getMatchingSuffixLength, type InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { getLastLine, lines } from './utils'
 
 export interface CompletionContext {

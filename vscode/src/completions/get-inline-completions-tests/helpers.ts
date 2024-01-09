@@ -3,23 +3,23 @@ import { expect } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import {
-    CompletionParameters,
-    CompletionResponse,
+    type CompletionParameters,
+    type CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { testFilePath } from '../../testutils/textDocument'
-import { SupportedLanguage } from '../../tree-sitter/grammars'
+import { type SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import { CodeCompletionsClient } from '../client'
+import { type CodeCompletionsClient } from '../client'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
     getInlineCompletions as _getInlineCompletions,
-    InlineCompletionsParams,
     TriggerKind,
+    type InlineCompletionsParams,
 } from '../get-inline-completions'
 import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'

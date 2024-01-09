@@ -1,4 +1,4 @@
-import DOMPurify, { Config as DOMPurifyConfig } from 'dompurify'
+import DOMPurify, { type Config as DOMPurifyConfig } from 'dompurify'
 import { highlight, highlightAuto } from 'highlight.js/lib/core'
 import { marked } from 'marked'
 

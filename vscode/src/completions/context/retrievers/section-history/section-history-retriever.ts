@@ -2,14 +2,17 @@ import path from 'path'
 
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
-import { getGraphDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../../../graph/lsp/sections'
+import {
+    getGraphDocumentSections as defaultGetDocumentSections,
+    type DocumentSection,
+} from '../../../../graph/lsp/sections'
 import { getContextRange } from '../../../doc-context-getters'
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
 import { createSubscriber } from '../../../utils'
 import { baseLanguageId } from '../../utils'
 

@@ -1,6 +1,6 @@
 import { isError } from '../../utils'
 
-import { Event } from './types'
+import { type Event } from './types'
 
 const EVENT_LINE_PREFIX = 'event: '
 const DATA_LINE_PREFIX = 'data: '

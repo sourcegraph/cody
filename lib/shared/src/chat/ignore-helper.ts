@@ -1,7 +1,7 @@
 import path from 'path'
 
-import ignore, { Ignore } from 'ignore'
-import { URI } from 'vscode-uri'
+import ignore, { type Ignore } from 'ignore'
+import { type URI } from 'vscode-uri'
 
 /**
  * The Cody ignore file path in the native platform style (backslashes on Windows).

@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { ChildProcessWithoutNullStreams, execSync, spawn } from 'child_process'
+import { execSync, spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import fspromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
@@ -7,13 +7,13 @@ import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { type ChatMessage } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler } from './jsonrpc-alias'
-import { ClientInfo, ServerInfo } from './protocol-alias'
+import { type ClientInfo, type ServerInfo } from './protocol-alias'
 
 export class TestClient extends MessageHandler {
     public info: ClientInfo

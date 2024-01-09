@@ -1,7 +1,7 @@
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange } from '../editor'
-import { Message } from '../sourcegraph-api'
+import { type ActiveTextEditorSelectionRange } from '../editor'
+import { type Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context file.
 // embeddings: context file returned by the embeddings client

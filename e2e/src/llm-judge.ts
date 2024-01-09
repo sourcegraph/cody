@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { AzureKeyCredential, OpenAIClient } from '@azure/openai'
 
-import { CLIOptions } from '.'
+import { type CLIOptions } from '.'
 
 export interface LLMJudgement {
     answerMatchesSummary: 'yes' | 'no' | 'partial' | 'unknown'
