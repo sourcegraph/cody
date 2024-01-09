@@ -1,12 +1,12 @@
-import { IncomingMessage } from 'http'
+import { type IncomingMessage } from 'http'
 
 import { Configuration, OpenAIApi } from 'openai'
 
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
-    CompletionCallbacks,
-    CompletionParameters,
-    Message,
+    type CompletionCallbacks,
+    type CompletionParameters,
+    type Message,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClient, 'stream'> {

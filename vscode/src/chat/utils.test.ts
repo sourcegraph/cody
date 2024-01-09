@@ -99,6 +99,7 @@ describe('validateAuthStatus', () => {
             authenticated: true,
             siteHasCodyEnabled: true,
             isLoggedIn: true,
+            isDotCom: false,
             endpoint,
             avatarURL,
             primaryEmail,
@@ -147,6 +148,7 @@ describe('validateAuthStatus', () => {
             avatarURL,
             primaryEmail,
             displayName,
+            isDotCom: false,
         }
         expect(
             newAuthStatus(

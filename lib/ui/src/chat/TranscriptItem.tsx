@@ -2,25 +2,25 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails } from '@sourcegraph/cody-shared'
 
 import {
-    ApiPostMessage,
-    ChatButtonProps,
-    ChatUISubmitButtonProps,
-    ChatUITextAreaProps,
-    CodeBlockActionsProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
+    type ApiPostMessage,
+    type ChatButtonProps,
+    type ChatUISubmitButtonProps,
+    type ChatUITextAreaProps,
+    type CodeBlockActionsProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
+    type UserAccountInfo,
 } from '../Chat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
-import { FileLinkProps } from './components/ContextFiles'
+import { type FileLinkProps } from './components/ContextFiles'
 import { EnhancedContext } from './components/EnhancedContext'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
+import { PreciseContexts, type SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
 
@@ -61,8 +61,9 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        userInfo?: UserAccountInfo
+        userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
+        guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -91,6 +92,7 @@ export const TranscriptItem: React.FunctionComponent<
     ChatButtonComponent,
     userInfo,
     postMessage,
+    guardrails,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const EditTextArea =
@@ -171,27 +173,27 @@ export const TranscriptItem: React.FunctionComponent<
                         postMessage={postMessage}
                     />
                 )
-            ) : (
-                <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
-                    {message.displayText && !message.error ? (
-                        EditTextArea ? (
-                            !inProgress && !message.displayText.startsWith('/') && EditTextArea
-                        ) : (
-                            <CodeBlocks
-                                displayText={message.displayText}
-                                copyButtonClassName={codeBlocksCopyButtonClassName}
-                                copyButtonOnSubmit={copyButtonOnSubmit}
-                                insertButtonClassName={codeBlocksInsertButtonClassName}
-                                insertButtonOnSubmit={insertButtonOnSubmit}
-                                metadata={message.metadata}
-                                inProgress={inProgress}
-                            />
-                        )
+            ) : null}
+            <div className={classNames(styles.contentPadding, EditTextArea ? undefined : styles.content)}>
+                {message.displayText ? (
+                    EditTextArea ? (
+                        !inProgress && !message.displayText.startsWith('/') && EditTextArea
                     ) : (
-                        inProgress && <BlinkingCursor />
-                    )}
-                </div>
-            )}
+                        <CodeBlocks
+                            displayText={message.displayText}
+                            copyButtonClassName={codeBlocksCopyButtonClassName}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonClassName={codeBlocksInsertButtonClassName}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            metadata={message.metadata}
+                            inProgress={inProgress}
+                            guardrails={guardrails}
+                        />
+                    )
+                ) : (
+                    inProgress && <BlinkingCursor />
+                )}
+            </div>
             {message.buttons?.length && ChatButtonComponent && (
                 <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}

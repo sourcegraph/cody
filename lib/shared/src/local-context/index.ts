@@ -1,5 +1,5 @@
-import { ContextFile } from '../codebase-context/messages'
-import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { type ContextFile } from '../codebase-context/messages'
+import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 export interface ContextResult extends ContextFile {
     repoName?: string

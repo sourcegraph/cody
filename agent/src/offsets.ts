@@ -1,4 +1,4 @@
-import { Position, TextDocument } from './protocol-alias'
+import { type Position, type TextDocument } from './protocol-alias'
 
 /**
  * Utility class to convert line/character positions into offsets.

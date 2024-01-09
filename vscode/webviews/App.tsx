@@ -2,17 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
+import { type Attribution, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
-import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
+import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
+import { trailingNonAlphaNumericRegex } from '../src/commands/prompt/utils'
 
 import { Chat } from './Chat'
 import {
@@ -21,16 +20,31 @@ import {
     EnhancedContextEventHandlers,
 } from './Components/EnhancedContextSettings'
 import { LoadingPage } from './LoadingPage'
-import { View } from './NavBar'
+import { type View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+const guardrails = {
+    searchAttribution: (txt: string): Promise<Attribution | Error> => {
+        // No-op implementation: wait 1s and pretend guardrails is not available.
+        return new Promise<Attribution | Error>(resolve => {
+            setTimeout(() => {
+                resolve({
+                    limitHit: true,
+                    repositories: [],
+                })
+                return
+            }, 1000)
+        })
+    },
+}
+
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -53,7 +67,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [myPrompts, setMyPrompts] = useState<
-        [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
+        [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
@@ -93,7 +107,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
                             isCodyProUser: !message.authStatus.userCanUpgrade,
-                            isDotComUser: isDotCom(message.authStatus.endpoint || ''),
+                            // Receive this value from the extension backend to make it work
+                            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
+                            isDotComUser: message.authStatus.isDotCom,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         // Get chat models
@@ -124,7 +140,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setSuggestions(message.suggestions)
                         break
                     case 'custom-prompts': {
-                        let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
+                        let prompts: [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] =
                             message.prompts
 
                         if (!prompts) {
@@ -280,6 +296,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
                                         welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        guardrails={config.experimentalGuardrails ? guardrails : undefined}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
@@ -311,11 +328,11 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
  * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
  */
 function groupPrompts(
-    acc: [string, CodyPrompt & { isLastInGroup?: boolean }][],
-    [key, command]: [string, CodyPrompt],
+    acc: [string, CodyCommand & { isLastInGroup?: boolean }][],
+    [key, command]: [string, CodyCommand],
     index: number,
-    array: [string, CodyPrompt][]
-): [string, CodyPrompt & { isLastInGroup?: boolean }][] {
+    array: [string, CodyCommand][]
+): [string, CodyCommand & { isLastInGroup?: boolean }][] {
     if (key === 'separator') {
         return acc
     }
@@ -338,7 +355,7 @@ const instructionLabels: Record<string, string> = {
 /**
  * Adds `instruction` field to a prompt if it requires additional instruction.
  */
-function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
+function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [string, T & { instruction?: string }] {
     const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
 }

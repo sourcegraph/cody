@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+
+import { openUri } from '../../chat/chat-view/chat-helpers'
 
 let workspaceRootUri = vscode.workspace.workspaceFolders?.[0]?.uri
 let serverEndpoint = ''
@@ -19,12 +22,17 @@ export function workspaceActionsOnConfigChange(workspaceUri: vscode.Uri | null, 
  */
 export async function openFilePath(
     filePath: string,
+    uri?: URI,
     currentViewColumn?: vscode.ViewColumn,
     range?: ActiveTextEditorSelectionRange
 ): Promise<void> {
-    void vscode.commands.executeCommand('vscode.open', filePath)
     if (!workspaceRootUri) {
         throw new Error('Failed to open file: missing workspace')
+    }
+
+    if (uri) {
+        await openUri(uri, range, currentViewColumn)
+        return
     }
 
     try {

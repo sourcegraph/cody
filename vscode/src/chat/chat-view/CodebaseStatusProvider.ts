@@ -1,23 +1,25 @@
 import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import {
-    ContextGroup,
-    ContextProvider,
-    ContextStatusProvider,
-    Disposable,
+    type ContextGroup,
+    type ContextProvider,
+    type ContextStatusProvider,
+    type Disposable,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getConfiguration } from '../../configuration'
-import { SymfRunner } from '../../local-context/symf'
-import { repositoryRemoteUrl } from '../../repository/repositoryHelpers'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { getEditor } from '../../editor/active-editor'
+import { type SymfRunner } from '../../local-context/symf'
+import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
+import { updateCodyIgnoreCodespaceMap } from '../../services/context-filter'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
-interface CodebaseIdentifiers {
+export interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string
@@ -180,7 +182,11 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         let newCodebase: CodebaseIdentifiers | null = null
         if (workspaceRoot) {
             newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
-            newCodebase.remote = config.codebase || detectCodebaseName(workspaceRoot)
+            const currentFile = getEditor()?.active?.document?.uri
+            // Get codebase from config or fallback to getting codebase name from current file URL
+            // Always use the codebase from config as this is manually set by the user
+            newCodebase.remote =
+                config.codebase || (currentFile ? detectCodebaseName(currentFile, workspaceRoot) : config.codebase)
             if (newCodebase.remote) {
                 const repoId = await this.embeddingsClient.getRepoIdIfEmbeddingExists(newCodebase.remote)
                 if (!isError(repoId)) {
@@ -207,10 +213,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     }
 }
 
-function detectCodebaseName(uri: URI): string | undefined {
-    const remoteUrl = repositoryRemoteUrl(uri)
-    if (remoteUrl) {
-        return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
+function detectCodebaseName(currentFileUri: URI, workspaceUri: URI): string | undefined {
+    const codebase = getCodebaseFromWorkspaceUri(currentFileUri)
+    if (codebase) {
+        // Map the ignore rules for the workspace with the codebase name
+        updateCodyIgnoreCodespaceMap(codebase, workspaceUri.fsPath)
+        return codebase
     }
     return undefined
 }

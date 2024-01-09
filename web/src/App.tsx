@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
+import { createClient, type Client, type Transcript } from '@sourcegraph/cody-shared/src/chat/client'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isErrorLike, type ErrorLike } from '@sourcegraph/cody-shared/src/common'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { Chat } from './Chat'
@@ -57,9 +58,6 @@ const editor: Editor = {
     async showInputBox(prompt?: string) {
         // TODO: Use a proper UI element
         return window.prompt(prompt || 'Enter here...') || undefined
-    },
-    didReceiveFixupText(_id: string, _text: string, _state: 'streaming' | 'complete'): Promise<void> {
-        return Promise.resolve()
     },
 }
 /* eslint-enable @typescript-eslint/require-await */
@@ -117,6 +115,10 @@ export const App: React.FunctionComponent = () => {
                                 setInputHistory={setInputHistory}
                                 isCodyEnabled={true}
                                 onSubmit={onSubmit}
+                                userInfo={{
+                                    isDotComUser: isDotCom(config.serverEndpoint),
+                                    isCodyProUser: false,
+                                }}
                             />
                         </>
                     )

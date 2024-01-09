@@ -1,13 +1,13 @@
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { logError } from '../../log'
-import { CodeCompletionsClient } from '../client'
+import { type CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
-import { createProviderConfig as createFireworksProviderConfig, FireworksOptions } from './fireworks'
-import { ProviderConfig } from './provider'
+import { createProviderConfig as createFireworksProviderConfig, type FireworksOptions } from './fireworks'
+import { type ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
@@ -106,25 +106,13 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredPr
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+    const [starCoderHybrid, starCoder16B] = await Promise.all([
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
     ])
 
-    if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
-        const model = starCoder7b
-            ? 'starcoder-7b'
-            : starCoder16b
-            ? 'starcoder-16b'
-            : starCoderHybrid
-            ? 'starcoder-hybrid'
-            : llamaCode7b
-            ? 'llama-code-7b'
-            : 'llama-code-13b'
-        return { provider: 'fireworks', model }
+    if (starCoderHybrid) {
+        return { provider: 'fireworks', model: starCoder16B ? 'starcoder-16b' : 'starcoder-hybrid' }
     }
 
     return null

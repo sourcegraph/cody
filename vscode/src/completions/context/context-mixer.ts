@@ -1,11 +1,11 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-import { DocumentContext } from '../get-current-doc-context'
-import { ContextSnippet } from '../types'
+import { type DocumentContext } from '../get-current-doc-context'
+import { type ContextSnippet } from '../types'
 
-import { ContextStrategy, ContextStrategyFactory } from './context-strategy'
+import { type ContextStrategy, type ContextStrategyFactory } from './context-strategy'
 
 export interface GetContextOptions {
     document: vscode.TextDocument
@@ -84,7 +84,7 @@ export class ContextMixer implements vscode.Disposable {
         const results = await Promise.all(
             retrievers.map(async retriever => {
                 const retrieverStart = performance.now()
-                const snippets = await startAsyncSpan(`autocomplete.retrieve.${retriever.identifier}`, () =>
+                const snippets = await wrapInActiveSpan(`autocomplete.retrieve.${retriever.identifier}`, () =>
                     retriever.retrieve({
                         ...options,
                         hints: {

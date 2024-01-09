@@ -1,7 +1,7 @@
-import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
+import { type CodebaseContext } from '../../codebase-context'
+import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
+import { type ActiveTextEditorSelection, type Editor } from '../../editor'
+import { type IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
     populateCurrentEditorContextTemplate,
@@ -11,7 +11,7 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getFileExtension, isSingleWord, numResults } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class CodeQuestion implements Recipe {
     public id: RecipeID = 'code-question'

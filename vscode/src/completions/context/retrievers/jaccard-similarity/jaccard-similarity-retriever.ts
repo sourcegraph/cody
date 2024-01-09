@@ -1,12 +1,15 @@
 import path from 'path'
 
 import * as vscode from 'vscode'
+import { type URI } from 'vscode-uri'
 
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+
+import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
-import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
-import { DocumentHistory, VSCodeDocumentHistory } from './history'
+import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
+import { VSCodeDocumentHistory, type DocumentHistory } from './history'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many
@@ -32,7 +35,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
         const matches: JaccardMatchWithFilename[] = []
         for (const { uri, contents } of files) {
             const match = bestJaccardMatch(targetText, contents, SNIPPET_WINDOW_SIZE)
-            if (!match || abortSignal?.aborted) {
+            if (!match || abortSignal?.aborted || isCodyIgnoredFile(uri)) {
                 continue
             }
 
@@ -41,6 +44,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
                 // keep in sync with embeddings search results which use relative to repo root paths
                 fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
                 ...match,
+                uri,
             })
         }
 
@@ -60,6 +64,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
+    uri: URI
 }
 
 interface FileContents {
@@ -95,6 +100,11 @@ async function getRelevantFiles(
 
         // Only add files and VSCode user settings.
         if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
+            return
+        }
+
+        // Do not add files that are on the codyignore list
+        if (isCodyIgnoredFile(document.uri)) {
             return
         }
 

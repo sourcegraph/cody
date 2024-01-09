@@ -1,4 +1,8 @@
-export const DOTCOM_URL = new URL(process.env.TESTING_DOTCOM_URL || 'https://sourcegraph.com')
+// `TESTING_DOTCOM_URL` is not set in webviews. If `isDotCom` helper it called from the webview it will use
+// the default ('https://sourcegraph.com') value.
+export const DOTCOM_URL = new URL(
+    (typeof process === 'undefined' ? null : process.env.TESTING_DOTCOM_URL) ?? 'https://sourcegraph.com'
+)
 export const INTERNAL_S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
 

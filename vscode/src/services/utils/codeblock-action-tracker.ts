@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
-import { getActiveEditor } from '../../editor/active-editor'
+import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'
 import { telemetryRecorder } from '../telemetry-v2'
 
@@ -64,15 +64,16 @@ export async function setLastTextFromClipboard(clipboardText?: string): Promise<
  * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
  */
 export async function handleCodeFromInsertAtCursor(text: string, meta?: CodeBlockMeta): Promise<void> {
-    const selectionRange = getActiveEditor()?.selection
-    const editor = getActiveEditor()
-    if (!editor || !selectionRange) {
+    const editor = getEditor()
+    const activeEditor = editor.active
+    const selectionRange = activeEditor?.selection
+    if (!activeEditor || !selectionRange) {
         throw new Error('No editor or selection found to insert text')
     }
 
     const edit = new vscode.WorkspaceEdit()
     // trimEnd() to remove new line added by Cody
-    edit.insert(editor.document.uri, selectionRange.start, text + '\n')
+    edit.insert(activeEditor.document.uri, selectionRange.start, text + '\n')
     await vscode.workspace.applyEdit(edit)
 
     // Log insert event

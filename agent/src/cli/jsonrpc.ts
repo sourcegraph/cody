@@ -1,12 +1,15 @@
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
-import { EXPIRY_STRATEGY, MODE, Polly } from '@pollyjs/core'
+import { Polly, type EXPIRY_STRATEGY, type MODE, type Request } from '@pollyjs/core'
+import { type Har } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
 import { Agent } from '../agent'
 
+import { decodeCompressedBase64 } from './base64'
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
+import { PollyYamlWriter } from './pollyapi'
 
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
@@ -44,27 +47,144 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
     }
 }
 
+class CodyNodeHttpAdapter extends NodeHttpAdapter {
+    public async onRequest(request: Request): Promise<void> {
+        if (request.body) {
+            request.body = request.body
+                .replaceAll(/`([^`]*)(cody-vscode-shim-test[^`]*)`/g, '`$2`')
+                .replaceAll(/(\\\\)(\w)/g, '/$2')
+        }
+
+        return super.onRequest(request)
+    }
+}
+
 /**
  * The default file system persister with the following customizations
  *
  * - Replaces Cody access tokens with the string "REDACTED" because we don't
  *   want to commit the access token into git.
+ * - To avoid diff churn/conflicts:
+ *   - Sets date headers to a known static date
+ *   - Removes cookies
+ *   - Sets dates/timing information stored by Polly to static values
  */
 class CodyPersister extends FSPersister {
+    // HACK: `FSPersister` has a private `api` property that writes the
+    // recording.har file using JSON format. We override the `api` property here
+    // with a custom implementation that uses YAML format instead. This property
+    // is intentionally marked as public even if it's not used anywhere.
+    public api: PollyYamlWriter
+
+    constructor(polly: any) {
+        super(polly)
+        if (!this.options.recordingsDir) {
+            throw new Error('No recording directory provided')
+        }
+        this.api = new PollyYamlWriter(this.options.recordingsDir)
+    }
     public static get id(): string {
         return 'cody-fs'
     }
-    public onSaveRecording(recordingId: string, recording: any): Promise<void> {
-        const entries: any[] = recording?.log?.entries ?? []
+
+    public async onFindRecording(recordingId: string): Promise<Har | null> {
+        const har = await super.onFindRecording(recordingId)
+        if (har === null) {
+            return har
+        }
+        for (const entry of har.log.entries) {
+            const postData = entry?.request?.postData
+            if (postData !== undefined && postData?.text === undefined && (postData as any)?.textJSON !== undefined) {
+                // Format `postData.textJSON` back into the escaped string for the `.text` format.
+                postData.text = JSON.stringify((postData as any).textJSON)
+                ;(postData as any).textJSON = undefined
+            }
+        }
+        return har
+    }
+
+    public onSaveRecording(recordingId: string, recording: Har): Promise<void> {
+        const entries = recording.log.entries
+        recording.log.entries.sort((a, b) => a.request.url.localeCompare(b.request.url))
         for (const entry of entries) {
-            const headers: { name: string; value: string }[] = entry?.request?.headers
+            if (entry.request?.postData?.text?.startsWith('{')) {
+                // Format `postData.text` as a JSON object instead of escaped string.
+                // This makes it much easier to review the har file locally.
+                const postData: any = entry.request.postData
+                postData.textJSON = JSON.parse(entry.request.postData.text)
+                postData.text = undefined
+            }
+            // Clean up the entries to reduce the size of the diff when re-recording
+            // and to remove any access tokens.
+
+            // Update any headers
+            entry.request.bodySize = undefined
+            entry.request.headersSize = 0
+            entry.response.bodySize = undefined
+            entry.response.headersSize = 0
+            const headers = [...entry.request.headers, ...entry.response.headers]
             for (const header of headers) {
-                if (header.name === 'authorization') {
-                    header.value = 'token REDACTED'
+                switch (header.name) {
+                    case 'authorization':
+                        header.value = 'token REDACTED'
+                        break
+                    case 'date':
+                        header.value = 'Fri, 05 Jan 2024 11:11:11 GMT'
+                        break
+                    case 'retry-after':
+                        header.value = '0'
+                        break
+                }
+            }
+
+            // Remove any headers and cookies we don't need at all.
+            entry.request.headers = this.filterHeaders(entry.request.headers)
+            entry.response.headers = this.filterHeaders(entry.response.headers)
+            entry.request.cookies.length = 0
+            entry.response.cookies.length = 0
+
+            // And other misc fields.
+            entry.startedDateTime = 'Fri, 05 Jan 2024 00:00:00 GMT'
+            entry.time = 0
+            entry.timings = {
+                blocked: -1,
+                connect: -1,
+                dns: -1,
+                receive: 0,
+                send: 0,
+                ssl: -1,
+                wait: 0,
+            }
+            const responseContent = entry.response.content
+            if (
+                responseContent?.encoding === 'base64' &&
+                responseContent?.mimeType === 'application/json' &&
+                responseContent.text
+            ) {
+                // The GraphQL responses are base64+gzip encoded. We decode them
+                // in a sibling `textDecoded` property so we can more easily review
+                // in in pull requests.
+                try {
+                    const text = JSON.parse(responseContent.text)[0]
+                    console.log({ text })
+                    const decodedBase64 = decodeCompressedBase64(text)
+                    ;(responseContent as any).textDecoded = decodedBase64
+                } catch (error) {
+                    console.error('base64 decode error', error)
                 }
             }
         }
         return super.onSaveRecording(recordingId, recording)
+    }
+
+    private filterHeaders(headers: { name: string; value: string }[]): { name: string; value: string }[] {
+        const removeHeaderNames = new Set(['set-cookie', 'server', 'via'])
+        const removeHeaderPrefixes = ['x-trace', 'cf-']
+        return headers.filter(
+            header =>
+                !removeHeaderNames.has(header.name) &&
+                removeHeaderPrefixes.every(prefix => !header.name.startsWith(prefix))
+        )
     }
 }
 
@@ -120,7 +240,7 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 console.error('CODY_RECORDING_MODE is required when CODY_RECORDING_DIRECTORY is set.')
                 process.exit(1)
             }
-            Polly.register(NodeHttpAdapter)
+            Polly.register(CodyNodeHttpAdapter)
             Polly.register(CodyPersister)
             polly = new Polly(options.recordingName ?? 'CodyAgent', {
                 flushRequestsOnStop: true,
@@ -133,8 +253,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 expiresIn: options.expiresIn,
                 persisterOptions: {
                     keepUnusedRequests: true,
-                    // For cleaner diffs https://netflix.github.io/pollyjs/#/configuration?id=disablesortingharentries
-                    disableSortingHarEntries: true,
                     fs: {
                         recordingsDir: options.recordingDirectory,
                     },
@@ -156,8 +274,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
         process.stderr.write('Starting Cody Agent...\n')
 
         const agent = new Agent({ polly })
-
-        console.log = console.error
 
         // Force the agent process to exit when stdin/stdout close as an attempt to
         // prevent zombie agent processes. We experienced this problem when we

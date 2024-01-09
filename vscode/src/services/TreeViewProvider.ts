@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
 
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { AuthStatus } from '../chat/protocol'
+import { type AuthStatus } from '../chat/protocol'
 
 import { groupCodyChats } from './HistoryChat'
-import { CodySidebarTreeItem, CodyTreeItemType, getCodyTreeItems } from './treeViewItems'
+import { getCodyTreeItems, type CodySidebarTreeItem, type CodyTreeItemType } from './treeViewItems'
 
 export class ChatTreeItem extends vscode.TreeItem {
     public children: ChatTreeItem[] | undefined

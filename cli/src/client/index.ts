@@ -1,12 +1,12 @@
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { GlobalOptions } from '../program'
+import { type GlobalOptions } from '../program'
 
 import { createCodebaseContext } from './context'
 

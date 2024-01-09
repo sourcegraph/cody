@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
-import { CodyStatusBar } from '../services/StatusBar'
+import { type CodyStatusBar } from '../services/StatusBar'
 
-import { CodeCompletionsClient } from './client'
-import { ContextStrategy } from './context/context-strategy'
+import { type CodeCompletionsClient } from './client'
+import { type ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
@@ -51,22 +51,9 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [
-        providerConfig,
-        lspLightContextFlag,
-        bfgContextFlag,
-        bfgMixedContextFlag,
-        localMixedContextFlag,
-        disableRecyclingOfPreviousRequests,
-        dynamicMultilineCompletionsFlag,
-        hotStreakFlag,
-    ] = await Promise.all([
+    const [providerConfig, bfgMixedContextFlag, dynamicMultilineCompletionsFlag, hotStreakFlag] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLspLight),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfg),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextLocalMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
@@ -82,14 +69,8 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
                 ? 'jaccard-similarity'
-                : lspLightContextFlag
-                ? 'lsp-light'
-                : bfgContextFlag
-                ? 'bfg'
                 : bfgMixedContextFlag
                 ? 'bfg-mixed'
-                : localMixedContextFlag
-                ? 'local-mixed'
                 : 'jaccard-similarity'
 
         const dynamicMultilineCompletions =
@@ -98,11 +79,11 @@ export async function createInlineCompletionItemProvider({
 
         const authStatus = authProvider.getAuthStatus()
         const completionsProvider = new InlineCompletionItemProvider({
+            authStatus: authProvider.getAuthStatus(),
             providerConfig,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,
-            disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,

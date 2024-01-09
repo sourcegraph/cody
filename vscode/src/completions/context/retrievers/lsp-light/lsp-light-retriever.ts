@@ -5,12 +5,17 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange } from '../../../../graph/lsp/graph'
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet, SymbolContextSnippet } from '../../../types'
-import { CustomAbortController, CustomAbortSignal } from '../../utils'
+import {
+    type ContextRetriever,
+    type ContextRetrieverOptions,
+    type ContextSnippet,
+    type SymbolContextSnippet,
+} from '../../../types'
+import { CustomAbortController, type CustomAbortSignal } from '../../utils'
 
 export class LspLightRetriever implements ContextRetriever {
     public identifier = 'lsp-light'
@@ -217,8 +222,10 @@ function hoverContextsToSnippets(contexts: HoverContext[]): SymbolContextSnippet
 }
 
 function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
+    const uri = URI.parse(context.uri)
     return {
-        fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
+        fileUri: uri,
+        fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
         symbol: context.symbolName,
         content: context.content.join('\n').trim(),
     }

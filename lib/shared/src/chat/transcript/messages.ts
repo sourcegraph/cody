@@ -1,9 +1,9 @@
-import { ContextFile, PreciseContext } from '../../codebase-context/messages'
-import { Message } from '../../sourcegraph-api'
-import { CodyDefaultCommands } from '../prompts'
-import { RecipeID } from '../recipes/recipe'
+import { type ContextFile, type PreciseContext } from '../../codebase-context/messages'
+import { type CodyDefaultCommands } from '../../commands'
+import { type Message } from '../../sourcegraph-api'
+import { type RecipeID } from '../recipes/recipe'
 
-import { TranscriptJSON } from '.'
+import { type TranscriptJSON } from '.'
 
 export interface ChatButton {
     label: string
@@ -19,8 +19,7 @@ export interface ChatMessage extends Message {
     buttons?: ChatButton[]
     data?: any
     metadata?: ChatMetadata
-    // TODO(dantup): Is anyone using string?
-    error?: string | ChatError
+    error?: ChatError
 }
 
 export interface InteractionMessage extends ChatMessage {
@@ -31,6 +30,16 @@ export interface ChatError {
     kind?: string
     name: string
     message: string
+
+    // Rate-limit properties
+    retryAfter?: string | null
+    limit?: number
+    userMessage?: string
+    retryAfterDate?: Date
+    retryAfterDateString?: string // same as retry after Date but JSON serializable
+    retryMessage?: string
+    feature?: string
+    upgradeIsAvailable?: boolean
 
     // Prevent Error from being passed as ChatError.
     // Errors should be converted using errorToChatError.

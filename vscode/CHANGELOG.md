@@ -7,13 +7,56 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Chat: Add a history quick in the editor panel for chats grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
+- Edit: Added support for user-provided context. Use "@" to include files and "@#" to include specific symbols. [pull/2574](https://github.com/sourcegraph/cody/pull/2574)
 
 ### Fixed
+
+- Chat no longer shows "embeddings" as the source for all automatically included context files [issues/2244](https://github.com/sourcegraph/cody/issues/2244)/[pull/2408](https://github.com/sourcegraph/cody/pull/2408)
+- Display the source and range of enhanced context correctly in UI. [pull/2542](https://github.com/sourcegraph/cody/pull/2542)
+- Context from directory for commands and custom commands now shows up correctly under enhanced context. [issues/2548](https://github.com/sourcegraph/cody/issues/2548)/[pull/2542](https://github.com/sourcegraph/cody/pull/2542)
+- @-mentioning the same file a second time in chat no longer duplicates the filename prefix [issues/2243](https://github.com/sourcegraph/cody/issues/2243)/[pull/2474](https://github.com/sourcegraph/cody/pull/2474)
+- Do not automatically append open file name to display text for chat questions. [pull/2580](https://github.com/sourcegraph/cody/pull/2580)
+- Fixed unresponsive stop button in chat when an error is presented. [pull/2588](https://github.com/sourcegraph/cody/pull/2588)
+- Added existing `cody.useContext` config to chat to control context fetching strategy. [pull/2616](https://github.com/sourcegraph/cody/pull/2616)
 
 ### Changed
 
 - Chat: Display chats in the treeview provider grouped by last interaction timestamp. [pull/2250](https://github.com/sourcegraph/cody/pull/2250)
 - Autocomplete: Accepting a full line completion will not immedialty start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
+- Folders named 'bin/' are no longer filtered out from chat `@`-mentions but instead ranked lower. [pull/2472](https://github.com/sourcegraph/cody/pull/2472)
+- Files ignored in `.cody/ignore` (if the internal experiment is enabled) will no longer show up in chat `@`-mentions. [pull/2472](https://github.com/sourcegraph/cody/pull/2472)
+- Adds a new experiment to test a higher parameter StarCoder model for single-line completions. [pull/2632](https://github.com/sourcegraph/cody/pull/2632)
+
+## [1.0.5]
+
+### Added
+
+- [Internal] New `cody.internal.unstable` setting for enabling unstable experimental features for internal use only. Included `.cody/ignore` for internal testing. [pulls/1382](https://github.com/sourcegraph/cody/pull/1382)
+
+### Fixed
+
+- @-mentioning files on Windows no longer sometimes renders visible markdown for the links in the chat [issues/2388](https://github.com/sourcegraph/cody/issues/2388)/[pull/2398](https://github.com/sourcegraph/cody/pull/2398)
+- Mentioning multiple files in chat no longer only includes the first file [issues/2402](https://github.com/sourcegraph/cody/issues/2402)/[pull/2405](https://github.com/sourcegraph/cody/pull/2405)
+- Enhanced context is no longer added to commands and custom commands that do not require codebase context. [pulls/2537](https://github.com/sourcegraph/cody/pull/2537)
+- Unblock `AltGraph` key on chat inputs. [pulls/2558](https://github.com/sourcegraph/cody/pull/2558)
+- Display error messages from the LLM without replacing existing responses from Cody in the Chat UI. [pull/2566](https://github.com/sourcegraph/cody/pull/2566)
+
+### Changed
+
+- The `inline` mode for Custom Commands has been removed. [pull/2551](https://github.com/sourcegraph/cody/pull/2551)
+
+## [1.0.4]
+
+### Added
+
+### Fixed
+
+- Fixed config parsing to ensure we read the right remote server endpoint everywhere. [pulls/2456](https://github.com/sourcegraph/cody/pull/2456)
+
+### Changed
+
+- Autocomplete: Accepting a full line completion will not immediately start another completion request on the same line. [pulls/2446](https://github.com/sourcegraph/cody/pull/2446)
+- Changes to the model in the new chat experience on the Cody Pro plan will now be remembered. [pull/2438](https://github.com/sourcegraph/cody/pull/2438)
 
 ## [1.0.3]
 
@@ -35,6 +78,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Fixes the Code Lenses feature. [issues/2428](https://github.com/sourcegraph/cody/issues/2428)
 
 ### Changed
+
+- The chat history is now associated to the currently logged in account. [issues/2261](https://github.com/sourcegraph/cody/issues/2261)
 
 ## [1.0.1]
 
@@ -134,6 +179,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Replace "Sign Out" with an account dialog. [pull/2233](https://github.com/sourcegraph/cody/pull/2233)
 - Chat: Update chat icon and transcript gradient. [pull/2254](https://github.com/sourcegraph/cody/pull/2254)
+- Remove the experimental `syntacticPostProcessing` flag. This behavior is now the default.
 
 ## [0.18.2]
 

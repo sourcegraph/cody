@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { AuthMethod } from '../chat/protocol'
+import { type AuthMethod } from '../chat/protocol'
 
-import { AuthProvider } from './AuthProvider'
+import { type AuthProvider } from './AuthProvider'
 
 // An auth provider for simplified onboarding. This is a sidecar to AuthProvider
 // so we can deprecate the experiment later. AuthProviderSimplified only works

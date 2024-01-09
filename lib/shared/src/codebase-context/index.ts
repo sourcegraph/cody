@@ -1,12 +1,12 @@
-import { Configuration } from '../configuration'
-import { ActiveTextEditorSelectionRange } from '../editor'
-import { EmbeddingsSearch } from '../embeddings'
-import { GraphContextFetcher } from '../graph-context'
+import { type Configuration } from '../configuration'
+import { type ActiveTextEditorSelectionRange } from '../editor'
+import { type EmbeddingsSearch } from '../embeddings'
+import { type GraphContextFetcher } from '../graph-context'
 import {
-    ContextResult,
-    FilenameContextFetcher,
-    IndexedKeywordContextFetcher,
-    LocalEmbeddingsFetcher,
+    type ContextResult,
+    type FilenameContextFetcher,
+    type IndexedKeywordContextFetcher,
+    type LocalEmbeddingsFetcher,
 } from '../local-context'
 import {
     isMarkdownFile,
@@ -14,13 +14,18 @@ import {
     populateMarkdownContextTemplate,
     populatePreciseCodeContextTemplate,
 } from '../prompt/templates'
-import { Message } from '../sourcegraph-api'
-import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
-import { UnifiedContextFetcher } from '../unified-context'
+import { type Message } from '../sourcegraph-api'
+import { isDotCom } from '../sourcegraph-api/environments'
+import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { type UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
-import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithResponse } from './messages'
+import {
+    getContextMessageWithResponse,
+    type ContextFile,
+    type ContextFileSource,
+    type ContextMessage,
+} from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number
@@ -30,8 +35,9 @@ export interface ContextSearchOptions {
 export class CodebaseContext {
     private embeddingResultsError = ''
     constructor(
-        private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
-        private readonly codebase: string | undefined,
+        private config: Pick<Configuration, 'useContext' | 'experimentalLocalSymbols'>,
+        private codebase: string | undefined,
+        private getServerEndpoint: () => string,
         public embeddings: EmbeddingsSearch | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
@@ -100,12 +106,12 @@ export class CodebaseContext {
         if (this.embeddings && this.config.useContext !== 'keyword') {
             return {
                 results: await this.getEmbeddingSearchResults(query, options),
-                endpoint: this.config.serverEndpoint,
+                endpoint: this.getServerEndpoint(),
             }
         }
         return {
             results: [],
-            endpoint: this.config.serverEndpoint,
+            endpoint: this.getServerEndpoint(),
         }
     }
 
@@ -121,14 +127,14 @@ export class CodebaseContext {
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
             .flatMap(groupedResults => CodebaseContext.makeContextMessageWithResponse(groupedResults))
-            .map(message => contextMessageWithSource(message, 'embeddings'))
+            .map(message => contextMessageWithSource(message, 'embeddings', this.codebase))
     }
 
     private async getEmbeddingSearchResults(
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
-        if (this.config.serverEndpoint === DOTCOM_URL.toString() && this.localEmbeddings) {
+        if (isDotCom(this.getServerEndpoint()) && this.localEmbeddings) {
             // TODO(dpc): Check whether the local embeddings index exists for
             // this repo before relying on it.
             // TODO(dpc): Fetch code and text results.
@@ -297,9 +303,14 @@ function resultsToMessages(results: ContextResult[]): ContextMessage[] {
     })
 }
 
-function contextMessageWithSource(message: ContextMessage, source: ContextFileSource): ContextMessage {
+function contextMessageWithSource(
+    message: ContextMessage,
+    source: ContextFileSource,
+    codebase?: string
+): ContextMessage {
     if (message.file) {
         message.file.source = source
+        message.file.repoName = codebase ?? message.file.repoName
     }
     return message
 }

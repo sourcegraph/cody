@@ -1,6 +1,6 @@
 import dedent from 'dedent'
-import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
-import * as vscode from 'vscode'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { Position } from '../../../../testutils/mocks'
@@ -140,6 +140,11 @@ describe('LspLightRetriever', () => {
             {
               "content": "foo(): void",
               "fileName": "/document1.ts",
+              "fileUri": {
+                "$mid": 1,
+                "path": "/document1.ts",
+                "scheme": "file",
+              },
               "symbol": "foo",
             },
           ]
@@ -185,6 +190,11 @@ describe('LspLightRetriever', () => {
             {
               "content": "foo(): void",
               "fileName": "/document1.ts",
+              "fileUri": {
+                "$mid": 1,
+                "path": "/document1.ts",
+                "scheme": "file",
+              },
               "symbol": "foo",
             },
           ]

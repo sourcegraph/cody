@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext } from '../get-current-doc-context'
+import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
+import { type DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -13,8 +13,8 @@ import {
     OPENING_CODE_TAG,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type ContextSnippet } from '../types'
 
 import {
     generateCompletions,
@@ -22,11 +22,11 @@ import {
     getLineNumberDependentCompletionParams,
 } from './generate-completions'
 import {
-    CompletionProviderTracer,
     Provider,
-    ProviderConfig,
-    ProviderOptions,
     standardContextSizeHints,
+    type CompletionProviderTracer,
+    type ProviderConfig,
+    type ProviderOptions,
 } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256
@@ -128,7 +128,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
-            topK: 0.5,
+            topP: 0.5,
         }
 
         await generateCompletions({

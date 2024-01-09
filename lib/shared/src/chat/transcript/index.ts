@@ -1,10 +1,15 @@
-import { ContextFile, ContextMessage, OldContextMessage, PreciseContext } from '../../codebase-context/messages'
+import {
+    type ContextFile,
+    type ContextMessage,
+    type OldContextMessage,
+    type PreciseContext,
+} from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
-import { Message } from '../../sourcegraph-api'
+import { type Message } from '../../sourcegraph-api'
 
-import { Interaction, InteractionJSON } from './interaction'
-import { ChatMessage, errorToChatError } from './messages'
+import { Interaction, type InteractionJSON } from './interaction'
+import { errorToChatError, type ChatMessage } from './messages'
 
 export interface TranscriptJSONScope {
     includeInferredRepository: boolean

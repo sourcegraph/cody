@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
 import { Provider } from './providers/provider'
-import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
+import { RequestManager, type RequestManagerResult, type RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
-import { ContextSnippet } from './types'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type ContextSnippet } from './types'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -70,7 +70,12 @@ describe('RequestManager', () => {
         const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider, suffix?: string) =>
-            requestManager.request(docState(prefix, suffix), [provider], [])
+            requestManager.request({
+                requestParams: docState(prefix, suffix),
+                providers: [provider],
+                context: [],
+                isCacheEnabled: true,
+            })
     })
 
     it('resolves a single request', async () => {

@@ -1,28 +1,25 @@
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
-    ActiveTextEditor,
-    ActiveTextEditorDiagnostic,
-    ActiveTextEditorSelection,
-    ActiveTextEditorViewControllers,
-    ActiveTextEditorVisibleContent,
-    Editor,
+    type ActiveTextEditor,
+    type ActiveTextEditorDiagnostic,
+    type ActiveTextEditorSelection,
+    type ActiveTextEditorViewControllers,
+    type ActiveTextEditorVisibleContent,
+    type Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 
-import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { type TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
-import { Agent } from './agent'
+import { type Agent } from './agent'
 import { DocumentOffsets } from './offsets'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
 
     constructor(private agent: Agent) {}
-
-    public didReceiveFixupText(): Promise<void> {
-        throw new Error('Method not implemented.')
-    }
 
     /** @deprecated Use {@link AgentEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
@@ -36,6 +33,9 @@ export class AgentEditor implements Editor {
 
     private activeDocument(): TextDocumentWithUri | undefined {
         if (this.agent.workspace.activeDocumentFilePath === null) {
+            return undefined
+        }
+        if (isCodyIgnoredFile(URI.file(this.agent.workspace.activeDocumentFilePath.fsPath))) {
             return undefined
         }
         return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)?.underlying

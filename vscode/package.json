@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -797,11 +797,11 @@
           "enum": [
             "embeddings",
             "keyword",
-            "none",
-            "blended"
+            "blended",
+            "none"
           ],
           "default": "embeddings",
-          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context. Selecting 'none' will limit Cody to using only the currently open file."
+          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword-based context. Selecting 'none' will limit Cody to using only the currently open file."
         },
         "cody.customHeaders": {
           "order": 4,
@@ -897,6 +897,12 @@
           "type": "string",
           "markdownDescription": "Path to symf binary",
           "default": ""
+        },
+        "cody.experimental.tracing": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable OpenTelemetry tracing",
+          "default": false
         },
         "cody.debug.enable": {
           "order": 99,
@@ -997,6 +1003,12 @@
             "bfg-mixed"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.internal.unstable": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
+          "default": false
         }
       }
     },
@@ -1027,17 +1039,20 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.45.1",
     "@opentelemetry/resources": "^1.18.1",
     "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.14.0",
+    "@sourcegraph/telemetry": "^0.16.0",
     "@storybook/preview-api": "^7.6.2",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.35",

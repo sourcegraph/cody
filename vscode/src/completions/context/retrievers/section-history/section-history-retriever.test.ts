@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, Mock, vitest } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vitest, type Mock } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import { range } from '../../../../testutils/textDocument'
@@ -227,6 +227,7 @@ describe('GraphSectionObserver', () => {
             expect(context[0]).toEqual({
                 content: 'foo\nbar\nfoo',
                 fileName: document2Uri.fsPath,
+                fileUri: document2Uri,
             })
         })
 

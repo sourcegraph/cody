@@ -2,17 +2,18 @@ import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     defaultEventRecordingOptions,
     NoOpTelemetryExporter,
-    TelemetryEventInput,
-    TelemetryProcessor,
+    TimestampTelemetryProcessor,
+    type TelemetryEventInput,
+    type TelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
-import { Configuration, ConfigurationWithAccessToken, CONTEXT_SELECTION_ID } from '../configuration'
+import { CONTEXT_SELECTION_ID, type Configuration, type ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import { LogEventMode } from '../sourcegraph-api/graphql/client'
+import { type LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
-import { BillingCategory, BillingProduct } from '.'
+import { type BillingCategory, type BillingProduct } from '.'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -44,7 +45,11 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
                 clientVersion: extensionDetails.version,
             },
             new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
-            [new ConfigurationMetadataProcessor(config)],
+            [
+                new ConfigurationMetadataProcessor(config),
+                // Generate timestamps when recording events, instead of serverside
+                new TimestampTelemetryProcessor(),
+            ],
             {
                 ...defaultEventRecordingOptions,
                 bufferTimeMs: 0, // disable buffering for now

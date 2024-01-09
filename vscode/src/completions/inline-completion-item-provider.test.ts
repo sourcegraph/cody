@@ -1,21 +1,23 @@
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { type AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
+import { withPosixPaths } from '../testutils/textDocument'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
-import { CompletionLogID } from './logger'
+import { type CompletionLogID } from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './test-helpers'
-import { InlineCompletionItem } from './types'
+import { type InlineCompletionItem } from './types'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -38,6 +40,22 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
+const DUMMY_AUTH_STATUS: AuthStatus = {
+    endpoint: 'https://fastsourcegraph.com',
+    isDotCom: true,
+    isLoggedIn: true,
+    showInvalidAccessTokenError: false,
+    authenticated: true,
+    hasVerifiedEmail: true,
+    requiresVerifiedEmail: true,
+    siteHasCodyEnabled: true,
+    siteVersion: '1234',
+    primaryEmail: 'heisenberg@exmaple.com',
+    displayName: 'w.w.',
+    avatarURL: '',
+    userCanUpgrade: false,
+}
+
 graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
@@ -58,6 +76,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             }),
             triggerNotice: null,
             contextStrategy: 'none',
+            authStatus: DUMMY_AUTH_STATUS,
             ...superArgs,
         })
         this.getInlineCompletions = mockGetInlineCompletions
@@ -120,7 +139,7 @@ describe('InlineCompletionItemProvider', () => {
         fn.mockReset()
 
         // But it is returned and saved.
-        expect(provider.lastCandidate).toMatchInlineSnapshot(`
+        expect(withPosixPaths(provider.lastCandidate!)).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
               "currentLinePrefix": "const foo = ",
@@ -165,7 +184,6 @@ describe('InlineCompletionItemProvider', () => {
             },
             "uri": {
               "$mid": 1,
-              "external": "file:///test.ts",
               "path": "/test.ts",
               "scheme": "file",
             },
@@ -222,7 +240,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
-            await localStorage.setChatHistory({
+            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
                 chat: { a: null as any },
                 input: [''],
             })

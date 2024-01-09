@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/require-await */
+import { Readable } from 'stream'
+
 import { describe, expect, it } from 'vitest'
 
 import { createSSEIterator } from './client'
 
 describe('createSSEIterator', () => {
     it('yields SSE messages from the iterator', async () => {
-        async function* createIterator(): AsyncIterableIterator<BufferSource> {
+        async function* createIterator() {
             yield Buffer.from('event: completion\ndata: {"foo":"bar"}\n\n')
             yield Buffer.from('event: completion\ndata: {"baz":"qux"}\n\n')
         }
 
         const messages = []
-        const iterator = createSSEIterator(createIterator())
+        const iterator = createSSEIterator(Readable.from(createIterator()))
 
         for await (const message of iterator) {
             messages.push(message)
@@ -23,7 +25,7 @@ describe('createSSEIterator', () => {
     })
 
     it('buffers partial responses', async () => {
-        async function* createIterator(): AsyncIterableIterator<BufferSource> {
+        async function* createIterator() {
             yield Buffer.from('event: comple')
             yield Buffer.from('tion\ndata: {"foo":"bar"}\n')
             yield Buffer.from('\nevent: comple')
@@ -31,7 +33,7 @@ describe('createSSEIterator', () => {
         }
 
         const messages = []
-        const iterator = createSSEIterator(createIterator())
+        const iterator = createSSEIterator(Readable.from(createIterator()))
 
         for await (const message of iterator) {
             messages.push(message)
@@ -43,12 +45,12 @@ describe('createSSEIterator', () => {
     })
 
     it('skips intermediate completion events', async () => {
-        async function* createIterator(): AsyncIterableIterator<BufferSource> {
+        async function* createIterator() {
             yield Buffer.from('event: completion\ndata: {"foo":"bar"}\n\nevent: completion\ndata: {"baz":"qux"}\n\n')
         }
 
         const messages = []
-        const iterator = createSSEIterator(createIterator())
+        const iterator = createSSEIterator(Readable.from(createIterator()))
 
         for await (const message of iterator) {
             messages.push(message)
@@ -57,12 +59,12 @@ describe('createSSEIterator', () => {
     })
 
     it('handles `: ` in the event name', async () => {
-        async function* createIterator(): AsyncIterableIterator<BufferSource> {
+        async function* createIterator() {
             yield Buffer.from('event: foo: bar\ndata: {"baz":"qux"}\n\n')
         }
 
         const messages = []
-        const iterator = createSSEIterator(createIterator())
+        const iterator = createSSEIterator(Readable.from(createIterator()))
 
         for await (const message of iterator) {
             messages.push(message)

@@ -1,4 +1,4 @@
-import { FixupIdleTaskRunner } from './roles'
+import { type FixupIdleTaskRunner } from './roles'
 
 /**
  * Runs callbacks "later".

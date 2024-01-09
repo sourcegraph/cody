@@ -1,18 +1,20 @@
-import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
-import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type URI } from 'vscode-uri'
 
-import { View } from '../../webviews/NavBar'
+import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
+import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+
+import { type View } from '../../webviews/NavBar'
 
 /**
  * A message sent from the webview to the extension host.
@@ -47,6 +49,7 @@ export type WebviewMessage =
           command: 'openFile'
           filePath: string
           range?: ActiveTextEditorSelectionRange
+          uri?: URI
       }
     | {
           command: 'openLocalFileWithRange'
@@ -105,7 +108,7 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
+    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
     | { type: 'chatModels'; models: ChatModelProvider[] }
@@ -116,7 +119,8 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<ConfigurationWithAccessToken, 'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -141,6 +145,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 export interface AuthStatus {
     username?: string
     endpoint: string | null
+    isDotCom: boolean
     isLoggedIn: boolean
     showInvalidAccessTokenError: boolean
     authenticated: boolean
@@ -166,6 +171,7 @@ export interface AuthStatus {
 
 export const defaultAuthStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -177,10 +183,11 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const unauthenticatedStatus = {
     endpoint: '',
+    isDotCom: true,
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,
@@ -192,9 +199,10 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
+    isDotCom: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
     isLoggedIn: false,
@@ -207,7 +215,7 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
-}
+} satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {

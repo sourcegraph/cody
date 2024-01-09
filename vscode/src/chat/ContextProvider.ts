@@ -1,32 +1,37 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import {
+    type ContextGroup,
+    type ContextStatusProvider,
+} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
-import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { type IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
+import { type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { PlatformContext } from '../extension.common'
+import { getEditor } from '../editor/active-editor'
+import { type VSCodeEditor } from '../editor/vscode-editor'
+import { type PlatformContext } from '../extension.common'
 import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
-import { LocalEmbeddingsController } from '../local-context/local-embeddings'
+import { type LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
-import { gitDirectoryUri, repositoryRemoteUrl } from '../repository/repositoryHelpers'
-import { AuthProvider } from '../services/AuthProvider'
+import { getCodebaseFromWorkspaceUri, gitDirectoryUri } from '../repository/repositoryHelpers'
+import { type AuthProvider } from '../services/AuthProvider'
+import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 
-import { SidebarChatWebview } from './chat-view/SidebarChatProvider'
+import { type SidebarChatWebview } from './chat-view/SidebarViewController'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { type AuthStatus, type ConfigurationSubsetForWebview, type LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -46,6 +51,7 @@ export type Config = Pick<
     | 'experimentalSymfContext'
     | 'editorTitleCommandIcon'
     | 'experimentalLocalSymbols'
+    | 'internalUnstable'
 >
 
 export enum ContextEvent {
@@ -146,6 +152,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
         const codebaseContext = await getCodebaseContext(
             this.config,
+            this.authProvider.getAuthStatus(),
             this.rgPath,
             this.symf,
             this.editor,
@@ -191,6 +198,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             // Update codebase context
             const codebaseContext = await getCodebaseContext(
                 newConfig,
+                this.authProvider.getAuthStatus(),
                 this.rgPath,
                 this.symf,
                 this.editor,
@@ -221,7 +229,10 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
      */
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
-            const editorContext = this.editor.getActiveTextEditor()
+            const editor = getEditor()
+            const activeEditor = editor.active
+            const fileName = vscode.workspace.asRelativePath(activeEditor?.document?.uri.fsPath || '')
+
             // TODO(dpc): Remove this when enhanced context status encapsulates this information.
             await this.webview?.postMessage({
                 type: 'contextStatus',
@@ -231,8 +242,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
-                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selectionRange: editorContext?.selectionRange,
+                    filePath: editor.ignored ? 'ignored' : fileName,
+                    selectionRange: editor.ignored ? undefined : activeEditor?.selection,
                     supportsKeyword: true,
                 },
             })
@@ -259,6 +270,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                experimentalGuardrails: this.config.experimentalGuardrails,
             }
 
             // update codebase context on configuration change
@@ -302,13 +314,11 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
 /**
  * Gets codebase context for the current workspace.
- * @param config Cody configuration
- * @param rgPath Path to rg (ripgrep) executable
- * @param editor Editor instance
  * @returns CodebaseContext if a codebase can be determined, else null
  */
 async function getCodebaseContext(
     config: Config,
+    authStatus: AuthStatus,
     rgPath: string | null,
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
@@ -321,12 +331,16 @@ async function getCodebaseContext(
     if (!workspaceRoot) {
         return null
     }
-    const remoteUrl = repositoryRemoteUrl(workspaceRoot)
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
+    const currentFile = getEditor()?.active?.document?.uri
+    // Get codebase from config or fallback to getting codebase name from current file URL
+    // Always use the codebase from config as this is manually set by the user
+    const codebase = config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
     if (!codebase) {
         return null
     }
+
+    // Map the ignore rules for the workspace with the codebase name
+    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot.fsPath)
 
     // TODO: When we remove this class (ContextProvider), SimpleChatContextProvider
     // should be updated to invoke localEmbeddings.load when the codebase changes
@@ -348,6 +362,7 @@ async function getCodebaseContext(
     return new CodebaseContext(
         config,
         codebase,
+        () => authStatus.endpoint ?? '',
         // Use embeddings search if there are no local embeddings.
         (!(await hasLocalEmbeddings) && embeddingsSearch) || null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,

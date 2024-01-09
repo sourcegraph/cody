@@ -1,6 +1,6 @@
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { type SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 const getRepoId = async (client: SourcegraphGraphQLAPIClient, codebase: string) => {
@@ -23,8 +23,9 @@ export async function createCodebaseContext(
         repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, codebase, repoId) : null
 
     const codebaseContext = new CodebaseContext(
-        { useContext: contextType, serverEndpoint, experimentalLocalSymbols: false },
+        { useContext: contextType, experimentalLocalSymbols: false },
         codebase,
+        () => serverEndpoint,
         embeddingsSearch,
         null,
         null,

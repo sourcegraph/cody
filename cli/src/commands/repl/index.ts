@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import prompts from 'prompts'
 
 import { getCompletionWithContext } from '../../client/completions'
-import { GlobalOptions } from '../../program'
+import { type GlobalOptions } from '../../program'
 
 interface ReplCommandOptions {
     prompt?: string

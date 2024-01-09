@@ -5,7 +5,7 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import { URI } from 'vscode-uri'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
@@ -14,9 +14,9 @@ import {
     EmbeddingsEnabledPopup,
     EmbeddingsNotFoundEnterprisePopup,
     EmbeddingsNotFoundPopup,
-    OnboardingPopupProps,
+    type OnboardingPopupProps,
 } from './Popups/OnboardingExperimentPopups'
-import { Popup, PopupOpenProps } from './Popups/Popup'
+import { Popup, type PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
 import popupStyles from './Popups/Popup.module.css'

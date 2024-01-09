@@ -2,23 +2,23 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage, ChatModelProvider } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type ChatModelProvider, type Guardrails } from '@sourcegraph/cody-shared'
 
 import {
-    ApiPostMessage,
-    ChatButtonProps,
-    ChatModelDropdownMenuProps,
-    ChatUISubmitButtonProps,
-    ChatUITextAreaProps,
-    CodeBlockActionsProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
+    type ApiPostMessage,
+    type ChatButtonProps,
+    type ChatModelDropdownMenuProps,
+    type ChatUISubmitButtonProps,
+    type ChatUITextAreaProps,
+    type CodeBlockActionsProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
+    type UserAccountInfo,
 } from '../Chat'
 
-import { FileLinkProps } from './components/ContextFiles'
-import { SymbolLinkProps } from './PreciseContext'
-import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
+import { type FileLinkProps } from './components/ContextFiles'
+import { type SymbolLinkProps } from './PreciseContext'
+import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
 
@@ -44,8 +44,9 @@ export const Transcript: React.FunctionComponent<
         chatModels?: ChatModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
         onCurrentChatModelChange?: (model: ChatModelProvider) => void
-        userInfo?: UserAccountInfo
+        userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
+        guardrails?: Guardrails
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -77,6 +78,7 @@ export const Transcript: React.FunctionComponent<
     onCurrentChatModelChange,
     userInfo,
     postMessage,
+    guardrails,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -181,6 +183,7 @@ export const Transcript: React.FunctionComponent<
                     ChatButtonComponent={ChatButtonComponent}
                     userInfo={userInfo}
                     postMessage={postMessage}
+                    guardrails={guardrails}
                 />
             )
         }
@@ -224,6 +227,7 @@ export const Transcript: React.FunctionComponent<
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
+                        userInfo={userInfo}
                     />
                 )}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (

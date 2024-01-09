@@ -1,4 +1,4 @@
-import { Point, SyntaxNode } from 'web-tree-sitter'
+import { type Point, type SyntaxNode } from 'web-tree-sitter'
 
 import { isDefined } from '@sourcegraph/cody-shared'
 

@@ -1,51 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    CodyLLMSiteConfiguration,
-    GraphQLAPIClientConfig,
     graphqlClient,
+    type CodyLLMSiteConfiguration,
+    type GraphQLAPIClientConfig,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { CodeCompletionsClient } from '../client'
+import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
+import { type CodeCompletionsClient } from '../client'
 
 import { createProviderConfig } from './create-provider'
-
-const DEFAULT_VSCODE_SETTINGS: Configuration = {
-    serverEndpoint: DOTCOM_URL.href,
-    proxy: null,
-    codebase: '',
-    customHeaders: {},
-    chatPreInstruction: 'My name is John Doe.',
-    useContext: 'embeddings',
-    autocomplete: true,
-    autocompleteLanguages: { '*': true },
-    commandCodeLenses: false,
-    editorTitleCommandIcon: true,
-    experimentalChatPredictions: false,
-    experimentalGuardrails: false,
-    experimentalLocalSymbols: false,
-    experimentalSimpleChatContext: true,
-    experimentalSymfContext: false,
-    codeActions: true,
-    isRunningInsideAgent: false,
-    debugEnable: false,
-    debugVerbose: false,
-    debugFilter: null,
-    telemetryLevel: 'all',
-    autocompleteAdvancedProvider: null,
-    autocompleteAdvancedServerEndpoint: null,
-    autocompleteAdvancedModel: null,
-    autocompleteAdvancedAccessToken: null,
-    autocompleteCompleteSuggestWidgetSelection: false,
-    autocompleteExperimentalSyntacticPostProcessing: false,
-    autocompleteExperimentalGraphContext: null,
-    autocompleteTimeouts: {},
-    testingLocalEmbeddingsEndpoint: undefined,
-    testingLocalEmbeddingsIndexLibraryPath: undefined,
-    testingLocalEmbeddingsModel: undefined,
-}
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({
     ...DEFAULT_VSCODE_SETTINGS,
@@ -138,7 +103,6 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
                     autocompleteAdvancedProvider: 'unstable-openai',
-                    autocompleteAdvancedServerEndpoint: 'https://unstable-openai.com',
                 }),
                 dummyCodeCompletionsClient,
                 { provider: 'azure-open-ai', completionModel: 'gpt-35-turbo-test' }

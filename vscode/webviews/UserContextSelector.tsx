@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
 

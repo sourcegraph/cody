@@ -1,9 +1,11 @@
-import { expect, Frame, FrameLocator, Locator, Page } from '@playwright/test'
+import { expect, type Frame, type FrameLocator, type Locator, type Page } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { test } from './helpers'
+import { test as baseTest, type DotcomUrlOverride } from './helpers'
+
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
 test('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/free`, {

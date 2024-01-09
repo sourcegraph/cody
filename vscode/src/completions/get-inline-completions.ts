@@ -1,22 +1,27 @@
-import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import type * as vscode from 'vscode'
+import { type URI } from 'vscode-uri'
 
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { getActiveTraceAndSpanId, startAsyncSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logError } from '../log'
-import { CompletionIntent } from '../tree-sitter/query-sdk'
+import { type CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { ContextMixer } from './context/context-mixer'
-import { DocumentContext, insertIntoDocContext } from './get-current-doc-context'
-import { AutocompleteItem } from './inline-completion-item-provider'
+import { type ContextMixer } from './context/context-mixer'
+import { insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
-import { CompletionLogID } from './logger'
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
-import { RequestManager, RequestParams } from './request-manager'
+import { type CompletionLogID } from './logger'
+import {
+    type CompletionProviderTracer,
+    type Provider,
+    type ProviderConfig,
+    type ProviderOptions,
+} from './providers/provider'
+import { type RequestManager, type RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
-import { ProvideInlineCompletionsItemTraceData } from './tracer'
+import { type AutocompleteItem } from './suggested-autocomplete-items-cache'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type ProvideInlineCompletionsItemTraceData } from './tracer'
 
 export interface InlineCompletionsParams {
     // Context
@@ -36,6 +41,7 @@ export interface InlineCompletionsParams {
     contextMixer: ContextMixer
 
     // UI state
+    isDotComUser: boolean
     lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -182,6 +188,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         dynamicMultilineCompletions,
         hotStreak,
         lastAcceptedCompletionItem,
+        isDotComUser,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -265,7 +272,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     })
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
-    await startAsyncSpan('autocomplete.debounce', async () => {
+    await wrapInActiveSpan('autocomplete.debounce', async () => {
         const interval =
             ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) + (artificialDelay ?? 0)
         if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
@@ -282,7 +289,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     CompletionLogger.start(logId)
 
     // Fetch context
-    const contextResult = await startAsyncSpan('autocomplete.retrieve', async () => {
+    const contextResult = await wrapInActiveSpan('autocomplete.retrieve', async () => {
         return contextMixer.getContext({
             document,
             position,
@@ -315,7 +322,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
-    const reqContext: RequestParams = {
+    const requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -324,14 +331,15 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Get the processed completions from providers
-    const { completions, source } = await requestManager.request(
-        reqContext,
-        completionProviders,
-        contextResult?.context ?? [],
-        tracer ? createCompletionProviderTracer(tracer) : undefined
-    )
+    const { completions, source } = await requestManager.request({
+        requestParams,
+        providers: completionProviders,
+        context: contextResult?.context ?? [],
+        isCacheEnabled: triggerKind !== TriggerKind.Manual,
+        tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
+    })
 
-    CompletionLogger.loaded(logId, reqContext, completions, source)
+    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
 
     return {
         logId,

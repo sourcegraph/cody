@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
 import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
-import { MessageHandler } from '../../../../jsonrpc/jsonrpc'
+import { type MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
-import { Repository } from '../../../../repository/builtinGitExtension'
+import { type Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { captureException } from '../../../../services/sentry/sentry'
 import { getContextRange } from '../../../doc-context-getters'
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
 
-import { inferGitRepository, SimpleRepository } from './simple-git'
+import { inferGitRepository, type SimpleRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'

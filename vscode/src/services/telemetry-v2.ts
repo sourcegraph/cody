@@ -1,12 +1,12 @@
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
-    TelemetryRecorder,
     TelemetryRecorderProvider,
+    type TelemetryRecorder,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
+import { CallbackTelemetryProcessor, TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
 
@@ -60,6 +60,7 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { no
                     event.action
                 }: ${JSON.stringify({
                     parameters: event.parameters,
+                    timestamp: event.timestamp,
                 })}`
             )
         }),
@@ -81,8 +82,11 @@ export async function createOrUpdateTelemetryRecorderProvider(
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
+    // Add timestamp processor for realistic data in output for dev or no-op scenarios
+    const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
+
     if (config.telemetryLevel === 'off' || !extensionDetails.ide || extensionDetails.ideExtensionType !== 'Cody') {
-        updateGlobalInstances(new NoOpTelemetryRecorderProvider())
+        updateGlobalInstances(defaultNoOpProvider)
         return
     }
 
@@ -97,7 +101,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
-        updateGlobalInstances(new NoOpTelemetryRecorderProvider())
+        updateGlobalInstances(defaultNoOpProvider)
     } else {
         updateGlobalInstances(
             new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID, legacyBackcompatLogEventMode)

@@ -3,24 +3,24 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
-    ChatButtonProps,
-    ChatSubmitType,
     Chat as ChatUI,
-    ChatUISubmitButtonProps,
-    ChatUISuggestionButtonProps,
-    ChatUITextAreaProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
+    type ChatButtonProps,
+    type ChatSubmitType,
+    type ChatUISubmitButtonProps,
+    type ChatUISuggestionButtonProps,
+    type ChatUITextAreaProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
+    type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
@@ -30,10 +30,10 @@ import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
-import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
+import { type OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import { VSCodeWrapper } from './utils/VSCodeApi'
+import { type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -52,7 +52,7 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
-    chatCommands?: [string, CodyPrompt][]
+    chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
     applessOnboarding: {
         endpoint: string | null
@@ -64,6 +64,7 @@ interface ChatboxProps {
     chatModels?: ChatModelProvider[]
     enableNewChatUI: boolean
     userInfo: UserAccountInfo
+    guardrails?: Guardrails
 }
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
@@ -88,14 +89,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatModels,
     enableNewChatUI,
     userInfo,
+    guardrails,
 }) => {
-    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
-
     const abortMessageInProgress = useCallback(() => {
-        abortMessageInProgressInternal()
         vscodeAPI.postMessage({ command: 'abort' })
-        setAbortMessageInProgress(() => () => undefined)
-    }, [abortMessageInProgressInternal, vscodeAPI])
+    }, [vscodeAPI])
 
     const addEnhancedContext = useEnhancedContextEnabled()
 
@@ -247,6 +245,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             userInfo={userInfo}
             EnhancedContextSettings={enableNewChatUI ? EnhancedContextSettings : undefined}
             postMessage={msg => vscodeAPI.postMessage(msg)}
+            guardrails={guardrails}
         />
     )
 }
@@ -441,7 +440,7 @@ function normalize(input: string): string {
     return input.trim().toLowerCase()
 }
 
-function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string): [string, CodyPrompt][] {
+function filterChatCommands(chatCommands: [string, CodyCommand][], query: string): [string, CodyCommand][] {
     const normalizedQuery = normalize(query)
 
     if (!isSlashCommand(normalizedQuery)) {
@@ -449,7 +448,7 @@ function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string)
     }
 
     const [slashCommand] = normalizedQuery.split(' ')
-    const matchingCommands: [string, CodyPrompt][] = chatCommands.filter(
+    const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
         ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
     )
     return matchingCommands.sort()

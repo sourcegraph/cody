@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
-import { ChildProcessWithoutNullStreams } from 'child_process'
+import { type ChildProcessWithoutNullStreams } from 'child_process'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { dirname } from 'path'
 import { Readable, Writable } from 'stream'
@@ -9,9 +9,9 @@ import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
 
-import * as agent from './agent-protocol'
-import * as bfg from './bfg-protocol'
-import * as embeddings from './embeddings-protocol'
+import type * as agent from './agent-protocol'
+import type * as bfg from './bfg-protocol'
+import type * as embeddings from './embeddings-protocol'
 
 type Requests = bfg.Requests & agent.Requests & embeddings.Requests
 type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
@@ -187,13 +187,17 @@ class MessageDecoder extends Writable {
                         }
                         this.callback(null, data)
                     } catch (error: any) {
-                        console.log(
-                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}'. Error:\n${error}`
-                        )
                         if (tracePath) {
                             appendFileSync(tracePath, '<- ' + JSON.stringify({ error }, null, 4) + '\n')
                         }
-                        this.callback(error, null)
+                        process.stderr.write(
+                            `jsonrpc.ts: JSON parse error against input '${this.contentBuffer}', contentLengthRemaining=${this.contentLengthRemaining}. Error:\n${error}\n`
+                        )
+                        // Kill the process to surface the error as early as
+                        // possible. Before, we did `this.callback(error, null)`
+                        // and it regularly got the agent into an infinite loop
+                        // that was difficult to debug.
+                        process.exit(1)
                     }
 
                     continue
@@ -289,13 +293,14 @@ export class MessageHandler {
             this.exit()
         })
         child.on('exit', code => {
-            reject?.(new Error(`exit: ${code}`))
+            if (code !== 0) {
+                reject?.(new Error(`exit: ${code}`))
+            }
             this.exit()
         })
         child.stderr.on('data', data => {
             console.error(`----stderr----\n${data}--------------`)
         })
-        // child.stderr.pipe(process.stderr)
         child.stdout.pipe(this.messageDecoder)
         this.messageEncoder.pipe(child.stdin)
     }
@@ -343,7 +348,13 @@ export class MessageHandler {
                                 id: msg.id,
                                 error: {
                                     code,
-                                    message,
+                                    // Include the stack in the message because
+                                    // some JSON-RPC bindings like lsp4j don't
+                                    // expose access to the `data` property,
+                                    // only `message`. The stack is super
+                                    // helpful to track down unexpected
+                                    // exceptions.
+                                    message: `${message}\n${stack}`,
                                     data: JSON.stringify({ error, stack }),
                                 },
                             }

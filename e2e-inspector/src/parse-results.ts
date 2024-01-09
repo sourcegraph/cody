@@ -1,4 +1,4 @@
-import { TestResult } from '@sourcegraph/cody-e2e/src/test-results'
+import { type TestResult } from '@sourcegraph/cody-e2e/src/test-results'
 
 export interface TestResults {
     runs: TestResult[][]

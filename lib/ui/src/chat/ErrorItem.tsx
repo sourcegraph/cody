@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react'
 
-import { ChatError, ContextWindowLimitError, RateLimitError } from '@sourcegraph/cody-shared'
+import { ContextWindowLimitError, RateLimitError, type ChatError } from '@sourcegraph/cody-shared'
 
-import { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../Chat'
+import { type ApiPostMessage, type ChatButtonProps, type UserAccountInfo } from '../Chat'
 
 import styles from './ErrorItem.module.css'
 
@@ -12,14 +12,15 @@ import styles from './ErrorItem.module.css'
 export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, postMessage }) {
+}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
                 error={error as RateLimitError}
                 ChatButtonComponent={ChatButtonComponent}
+                userInfo={userInfo}
                 postMessage={postMessage}
             />
         )
@@ -45,8 +46,8 @@ export const RequestErrorItem: React.FunctionComponent<{
     error: string
 }> = React.memo(function ErrorItemContent({ error }) {
     return (
-        <div className="cody-chat-error">
-            <span>Request failed: </span>
+        <div className={styles.requestError}>
+            <span className={styles.requestErrorTitle}>Request Failed: </span>
             {error}
         </div>
     )
@@ -87,12 +88,12 @@ export const ContextWindowLimitErrorItem: React.FunctionComponent<{
 export const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo?: UserAccountInfo
+    userInfo: UserAccountInfo
     postMessage: ApiPostMessage
 }> = React.memo(function RateLimitErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
-    const isEnterpriseUser = userInfo?.isDotComUser !== true
+    const isEnterpriseUser = userInfo.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 

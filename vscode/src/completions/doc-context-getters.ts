@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../tree-sitter/language'
-import { CompletionIntent, execQueryWrapper } from '../tree-sitter/query-sdk'
+import { execQueryWrapper, type CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { DocumentContext } from './get-current-doc-context'
+import { type DocumentContext } from './get-current-doc-context'
 
 export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentContext): string {
     const { currentLinePrefix, injectedPrefix } = docContext

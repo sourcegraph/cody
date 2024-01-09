@@ -1,8 +1,8 @@
-import { ConfigurationWithAccessToken } from '../configuration'
+import { type ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
-import { TelemetryEventProperties } from '.'
+import { type TelemetryEventProperties } from '.'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'

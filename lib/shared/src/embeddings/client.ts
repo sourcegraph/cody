@@ -1,7 +1,7 @@
-import * as status from '../codebase-context/context-status'
-import { EmbeddingsSearchResults, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import type * as status from '../codebase-context/context-status'
+import { type EmbeddingsSearchResults, type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-import { EmbeddingsSearch } from '.'
+import { type EmbeddingsSearch } from '.'
 
 export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     constructor(

@@ -4,8 +4,13 @@ import fuzzysort from 'fuzzysort'
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import {
+    type ContextFileSource,
+    type ContextFileType,
+    type SymbolKind,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 
@@ -13,10 +18,15 @@ const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): 
     // TODO(toolmantim): Add support for the search.exclude option, e.g.
     // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
     // {}))
-    const fileExcludesPattern = '**/{*.env,.git,out/,dist/,bin/,snap,node_modules,__pycache__}**'
+    const fileExcludesPattern = '**/{*.env,.git,out/,dist/,snap,node_modules,__pycache__}**'
     // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
     return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
 }
+
+// Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
+// but could also be junk (`bin/` in .NET). If a file path contains a segment matching any of these
+// items it will be ranked low unless the users query contains the exact segment.
+const lowScoringPathSegments = ['bin']
 
 // This is expensive for large repos (e.g. Chromium), so we only do it max once
 // every 10 seconds. It also handily supports a cancellation callback to use
@@ -66,10 +76,26 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
+    // Remove ignored files and apply a penalty for segments that are in the low scoring list.
+    const adjustedResults = [...results]
+        .filter(result => !isCodyIgnoredFile(result.obj.uri))
+        .map(result => {
+            const segments = result.obj.uri.fsPath.split(path.sep)
+            for (const lowScoringPathSegment of lowScoringPathSegments) {
+                if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
+                    return {
+                        ...result,
+                        score: result.score - 100000,
+                    }
+                }
+            }
+            return result
+        })
+
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
-    // by score, then by path) to ensure the order stays the same
-    const sortedResults = [...results].sort((a, b) => {
+    // by score, then by path) to ensure the order stays the same.
+    const sortedResults = adjustedResults.sort((a, b) => {
         return (
             b.score - a.score ||
             new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.fsPath, b.obj.uri.fsPath)
@@ -110,7 +136,7 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    const symbols = results.map(result => result.obj)
+    const symbols = results.map(result => result.obj).filter(symbol => !isCodyIgnoredFile(symbol.location.uri))
 
     if (!symbols.length) {
         return []
@@ -118,18 +144,20 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
 
     const matches = []
     for (const symbol of symbols) {
-        // TODO(toolmantim): Update the kinds to match above
-        const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
-        const source: ContextFileSource = 'user'
-        const contextFile: ContextFile = createContextFileFromUri(
-            symbol.location.uri,
-            source,
-            'symbol',
-            symbol.location.range,
-            kind
-        )
-        contextFile.fileName = symbol.name
-        matches.push(contextFile)
+        if (!isCodyIgnoredFile(symbol?.location.uri)) {
+            // TODO(toolmantim): Update the kinds to match above
+            const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
+            const source: ContextFileSource = 'user'
+            const contextFile: ContextFile = createContextFileFromUri(
+                symbol.location.uri,
+                source,
+                'symbol',
+                symbol.location.range,
+                kind
+            )
+            contextFile.fileName = symbol.name
+            matches.push(contextFile)
+        }
     }
 
     return matches
@@ -139,6 +167,7 @@ export function getOpenTabsContextFile(): ContextFile[] {
     // de-dupe by fspath in case if they have a file open in two tabs
     const fsPaths = new Set()
     return getOpenTabsUris()
+        ?.filter(uri => !isCodyIgnoredFile(uri))
         .filter(uri => {
             if (!fsPaths.has(uri.fsPath)) {
                 fsPaths.add(uri.fsPath)

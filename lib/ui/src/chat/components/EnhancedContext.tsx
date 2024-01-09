@@ -1,10 +1,13 @@
 import React from 'react'
 
-import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
+import { type URI } from 'vscode-uri'
+
+import { type ActiveTextEditorSelectionRange, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
 export interface FileLinkProps {
+    uri?: URI
     path: string
     repoName?: string
     revision?: string
@@ -62,6 +65,7 @@ export const EnhancedContext: React.FunctionComponent<{
                 verb: '',
                 object: (
                     <FileLink
+                        uri={file.uri}
                         path={file.fileName}
                         repoName={file.repoName}
                         revision={file.revision}

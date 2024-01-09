@@ -2,6 +2,8 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 
 import { isError } from '../utils'
 
+import { type BrowserOrNodeResponse } from './graphql/client'
+
 function formatRetryAfterDate(retryAfterDate: Date): string {
     const now = new Date()
     if (differenceInDays(retryAfterDate, now) < 7) {
@@ -73,7 +75,7 @@ export class NetworkError extends Error {
     public readonly status: number
 
     constructor(
-        response: Response,
+        response: BrowserOrNodeResponse,
         content: string,
         public traceId: string | undefined
     ) {
@@ -90,13 +92,16 @@ export function isAuthError(error: unknown): boolean {
     return error instanceof NetworkError && (error.status === 401 || error.status === 403)
 }
 
-export class AbortError extends Error {}
+export class AbortError extends Error {
+    // Added to make Typescript understand that AbortError is not the same as Error.
+    public readonly isAbortError = true
+}
 
-export function isAbortError(error: unknown): boolean {
+export function isAbortError(error: any): error is AbortError {
     return (
         isError(error) &&
         // custom abort error
-        (error instanceof AbortError ||
+        ((error instanceof AbortError && error.isAbortError) ||
             // http module
             error.message === 'aborted' ||
             // fetch

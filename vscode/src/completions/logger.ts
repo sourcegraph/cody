@@ -2,25 +2,24 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { type KnownString, type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
-import { CompletionIntent } from '../tree-sitter/query-sdk'
+import { type CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { ContextSummary } from './context/context-mixer'
-import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import { type ContextSummary } from './context/context-mixer'
+import { type InlineCompletionsResultSource, type TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
-import { RequestParams } from './request-manager'
+import { type RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
-import { InlineCompletionItem } from './types'
+import { type InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -466,7 +465,8 @@ export function loaded(
     id: CompletionLogID,
     params: RequestParams,
     items: InlineCompletionItemWithAnalytics[],
-    source: InlineCompletionsResultSource
+    source: InlineCompletionsResultSource,
+    isDotComUser: boolean
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
@@ -486,7 +486,6 @@ export function loaded(
     }
 
     if (event.items.length === 0) {
-        const isDotComUser = isDotComServer()
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 }
@@ -497,7 +496,7 @@ export function loaded(
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID, completion: InlineCompletionItemWithAnalytics): void {
+export function suggested(id: CompletionLogID): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return
@@ -535,7 +534,8 @@ export function accepted(
     id: CompletionLogID,
     document: vscode.TextDocument,
     completion: InlineCompletionItemWithAnalytics,
-    trackedRange: vscode.Range | undefined
+    trackedRange: vscode.Range | undefined,
+    isDotComUser: boolean
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
@@ -590,7 +590,7 @@ export function accepted(
     logSuggestionEvents()
     logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
-        acceptedItem: completionItemToItemInfo(completion),
+        acceptedItem: completionItemToItemInfo(completion, isDotComUser),
     })
     statistics.logAccepted()
 
@@ -612,7 +612,8 @@ export function accepted(
 export function partiallyAccept(
     id: CompletionLogID,
     completion: InlineCompletionItemWithAnalytics,
-    acceptedLength: number
+    acceptedLength: number,
+    isDotComUser: boolean
 ): void {
     const completionEvent = activeSuggestionRequests.get(id)
     // Only log partial acceptances if the completion was not yet fully accepted
@@ -632,7 +633,7 @@ export function partiallyAccept(
 
     logCompletionPartiallyAcceptedEvent({
         ...getSharedParams(completionEvent),
-        acceptedItem: completionItemToItemInfo(completion),
+        acceptedItem: completionItemToItemInfo(completion, isDotComUser),
         acceptedLength,
         acceptedLengthDelta,
     })
@@ -773,7 +774,7 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
     }
 }
 
-function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser = false): CompletionItemInfo {
+function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics, isDotComUser: boolean): CompletionItemInfo {
     const { lineCount, charCount } = lineAndCharCount(item)
 
     const completionItemInfo: CompletionItemInfo = {
@@ -821,10 +822,4 @@ function getOtherCompletionProvider(): string[] {
 function isRunningInsideAgent(): boolean {
     const config = getConfiguration(vscode.workspace.getConfiguration())
     return !!config.isRunningInsideAgent
-}
-
-// 🚨 SECURITY: this helper ensures we log additional data only for DotCom users.
-function isDotComServer(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return isDotCom(config.serverEndpoint)
 }
