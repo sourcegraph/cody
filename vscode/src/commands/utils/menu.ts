@@ -1,7 +1,7 @@
 import { commands, QuickInputButtons, ThemeIcon, window, type QuickPickItem } from 'vscode'
 
-import { type CodyPrompt } from '@sourcegraph/cody-shared'
-import { type CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
+import { type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 
 import { type ContextOption } from '.'
 
@@ -47,7 +47,7 @@ const addOption: QuickPickItem = {
     description: 'Create a new reusable command',
 }
 
-export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
+export const recentlyUsedSeparatorAsPrompt: [string, CodyCommand][] = [
     ['separator', { prompt: 'separator', slashCommand: '' }],
 ]
 

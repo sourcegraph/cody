@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { type CodyPrompt, type CodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type CodyCommand, type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
@@ -23,7 +23,7 @@ export interface IContextProvider {
     // Relevant context pulled from the editor state and broader repository
     getEnhancedContext(query: string): Promise<ContextItem[]>
 
-    getCommandContext(promptText: string, contextConfig: CodyPromptContext): Promise<ContextItem[]>
+    getCommandContext(promptText: string, contextConfig: CodyCommandContext): Promise<ContextItem[]>
 }
 
 export interface IPrompter {
@@ -32,7 +32,7 @@ export interface IPrompter {
         contextProvider: IContextProvider,
         useEnhancedContext: boolean,
         byteLimit: number,
-        command?: CodyPrompt
+        command?: CodyCommand
     ): Promise<{
         prompt: Message[]
         contextLimitWarnings: string[]
@@ -51,7 +51,7 @@ export class DefaultPrompter implements IPrompter {
         contextProvider: IContextProvider,
         useEnhancedContext: boolean,
         byteLimit: number,
-        command?: CodyPrompt
+        command?: CodyCommand
     ): Promise<{
         prompt: Message[]
         contextLimitWarnings: string[]

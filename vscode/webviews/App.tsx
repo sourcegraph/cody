@@ -4,14 +4,14 @@ import './App.css'
 
 import { type Attribution, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { trailingNonAlphaNumericRegex } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
+import { trailingNonAlphaNumericRegex } from '../src/commands/prompt/utils'
 
 import { Chat } from './Chat'
 import {
@@ -67,7 +67,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [myPrompts, setMyPrompts] = useState<
-        [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
+        [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
@@ -140,7 +140,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setSuggestions(message.suggestions)
                         break
                     case 'custom-prompts': {
-                        let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
+                        let prompts: [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }][] =
                             message.prompts
 
                         if (!prompts) {
@@ -328,11 +328,11 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
  * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
  */
 function groupPrompts(
-    acc: [string, CodyPrompt & { isLastInGroup?: boolean }][],
-    [key, command]: [string, CodyPrompt],
+    acc: [string, CodyCommand & { isLastInGroup?: boolean }][],
+    [key, command]: [string, CodyCommand],
     index: number,
-    array: [string, CodyPrompt][]
-): [string, CodyPrompt & { isLastInGroup?: boolean }][] {
+    array: [string, CodyCommand][]
+): [string, CodyCommand & { isLastInGroup?: boolean }][] {
     if (key === 'separator') {
         return acc
     }
@@ -355,7 +355,7 @@ const instructionLabels: Record<string, string> = {
 /**
  * Adds `instruction` field to a prompt if it requires additional instruction.
  */
-function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
+function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [string, T & { instruction?: string }] {
     const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
 }

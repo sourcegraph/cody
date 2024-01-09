@@ -8,7 +8,7 @@ import {
     type ChatContextStatus,
     type ChatMessage,
     type ChatModelProvider,
-    type CodyPrompt,
+    type CodyCommand,
     type ContextFile,
     type Guardrails,
 } from '@sourcegraph/cody-shared'
@@ -61,8 +61,8 @@ interface ChatProps extends ChatClassNames {
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    chatCommands?: [string, CodyPrompt][] | null
-    filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
+    chatCommands?: [string, CodyCommand][] | null
+    filterChatCommands?: (chatCommands: [string, CodyCommand][], input: string) => [string, CodyCommand][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
@@ -143,7 +143,7 @@ export interface CodeBlockActionsProps {
 export interface ChatCommandsProps {
     setFormInput: (input: string) => void
     setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyPrompt][] | null
+    chatCommands?: [string, CodyCommand][] | null
     selectedChatCommand?: number
     onSubmit: (input: string, inputType: ChatSubmitType) => void
 }
@@ -232,7 +232,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     guardrails,
 }) => {
     const [inputRows, setInputRows] = useState(1)
-    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyCommand & { instruction?: string }][] | null>(
         chatCommands || null
     )
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)

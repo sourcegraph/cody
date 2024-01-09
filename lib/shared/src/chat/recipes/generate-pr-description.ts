@@ -4,9 +4,9 @@ import path from 'path'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { newInteraction } from '../prompts/utils'
 import { type Interaction } from '../transcript/interaction'
 
+import { newInteraction } from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class PrDescription implements Recipe {

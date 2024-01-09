@@ -2,11 +2,11 @@ import { type URI } from 'vscode-uri'
 
 import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { type CodyPrompt, type CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -108,7 +108,7 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
+    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
     | { type: 'chatModels'; models: ChatModelProvider[] }

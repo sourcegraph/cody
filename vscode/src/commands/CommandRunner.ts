@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type CodyPrompt } from '@sourcegraph/cody-shared'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
@@ -17,7 +17,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
  *
  * Has id, editor, contextOutput, and disposables properties.
  *
- * Constructor takes command CodyPrompt, instruction string,
+ * Constructor takes command CodyCommand, instruction string,
  * and isFixupRequest boolean. Sets up editor and calls runFixup if needed.
  *
  * TODO bee add status
@@ -30,7 +30,7 @@ export class CommandRunner implements vscode.Disposable {
     private kind: string
 
     constructor(
-        private command: CodyPrompt,
+        private command: CodyCommand,
         public instruction?: string,
         private isFixupRequest?: boolean
     ) {
@@ -96,10 +96,10 @@ export class CommandRunner implements vscode.Disposable {
     }
 
     /**
-     * codyCommand getter returns command CodyPrompt if not a fixup request,
+     * codyCommand getter returns command CodyCommand if not a fixup request,
      * otherwise returns null. Updates context output if needed.
      */
-    public get codyCommand(): CodyPrompt | null {
+    public get codyCommand(): CodyCommand | null {
         if (this.isFixupRequest) {
             return null
         }

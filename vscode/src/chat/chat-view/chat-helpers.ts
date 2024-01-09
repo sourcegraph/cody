@@ -3,9 +3,10 @@ import path from 'path'
 import * as vscode from 'vscode'
 
 import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
-import { createVSCodeRelativePath } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/helpers'
 import { type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { type EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+
+import { createVSCodeRelativePath } from '../../editor-context/helpers'
 
 import { type CodebaseIdentifiers } from './CodebaseStatusProvider'
 import { type ContextItem } from './SimpleChatModel'

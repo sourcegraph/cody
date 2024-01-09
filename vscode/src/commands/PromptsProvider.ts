@@ -1,11 +1,12 @@
-import { getDefaultCommandsMap, type CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 
 import { logDebug } from '../log'
 
+import { getDefaultCommandsMap } from '.'
 import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
-const editorCommands: CodyPrompt[] = [
+const editorCommands: CodyCommand[] = [
     {
         description: ASK_QUESTION_COMMAND.description,
         prompt: ASK_QUESTION_COMMAND.slashCommand,
@@ -23,7 +24,7 @@ export class PromptsProvider {
     private defaultPromptsMap = getDefaultCommandsMap(editorCommands)
 
     // The commands grouped by default prompts and custom prompts
-    private allCommands = new Map<string, CodyPrompt>()
+    private allCommands = new Map<string, CodyCommand>()
 
     constructor() {
         // add the default prompts to the all commands map
@@ -33,14 +34,14 @@ export class PromptsProvider {
     /**
      * Find a prompt by its id
      */
-    public get(id: string): CodyPrompt | undefined {
+    public get(id: string): CodyCommand | undefined {
         return this.allCommands.get(id)
     }
 
     /**
      * Return default and custom commands without the separator which is added for quick pick menu
      */
-    public getGroupedCommands(keepSeparator: boolean): [string, CodyPrompt][] {
+    public getGroupedCommands(keepSeparator: boolean): [string, CodyCommand][] {
         if (keepSeparator) {
             return [...this.allCommands]
         }
@@ -50,7 +51,7 @@ export class PromptsProvider {
     /**
      * Group the default prompts with the custom prompts and add a separator
      */
-    public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
+    public groupCommands(customCommands = new Map<string, CodyCommand>()): void {
         const combinedMap = new Map([...this.defaultPromptsMap])
         combinedMap.set('separator', { prompt: 'separator', slashCommand: '' })
         this.allCommands = new Map([...customCommands, ...combinedMap].sort())

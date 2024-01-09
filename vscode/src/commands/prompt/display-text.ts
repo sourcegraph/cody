@@ -1,5 +1,5 @@
-import { type ContextFile } from '../../codebase-context/messages'
-import { type ActiveTextEditorSelection } from '../../editor'
+import { type ContextFile } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { trailingNonAlphaNumericRegex } from './utils'
 
