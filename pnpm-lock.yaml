@@ -306,6 +306,9 @@ importers:
       '@types/marked':
         specifier: ^5.0.0
         version: 5.0.0
+      '@types/node-fetch':
+        specifier: ^2.6.4
+        version: 2.6.4
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0

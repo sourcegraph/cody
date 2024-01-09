@@ -1,4 +1,5 @@
 import fetch from 'isomorphic-fetch'
+import type { Response as NodeResponse } from 'node-fetch'
 
 import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
@@ -34,6 +35,12 @@ import {
     SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
+
+export type BrowserOrNodeResponse = Response | NodeResponse
+
+export function isNodeResponse(response: BrowserOrNodeResponse): response is NodeResponse {
+    return Boolean(response.body && !('getReader' in response.body))
+}
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 

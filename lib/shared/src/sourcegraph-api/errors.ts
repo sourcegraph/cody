@@ -2,6 +2,8 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 
 import { isError } from '../utils'
 
+import { BrowserOrNodeResponse } from './graphql/client'
+
 function formatRetryAfterDate(retryAfterDate: Date): string {
     const now = new Date()
     if (differenceInDays(retryAfterDate, now) < 7) {
@@ -73,7 +75,7 @@ export class NetworkError extends Error {
     public readonly status: number
 
     constructor(
-        response: Response,
+        response: BrowserOrNodeResponse,
         content: string,
         public traceId: string | undefined
     ) {
@@ -92,7 +94,7 @@ export function isAuthError(error: unknown): boolean {
 
 export class AbortError extends Error {}
 
-export function isAbortError(error: unknown): boolean {
+export function isAbortError(error: unknown): error is AbortError {
     return (
         isError(error) &&
         // custom abort error
