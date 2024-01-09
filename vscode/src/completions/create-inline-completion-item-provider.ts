@@ -51,16 +51,9 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [
-        providerConfig,
-        bfgMixedContextFlag,
-        disableRecyclingOfPreviousRequests,
-        dynamicMultilineCompletionsFlag,
-        hotStreakFlag,
-    ] = await Promise.all([
+    const [providerConfig, bfgMixedContextFlag, dynamicMultilineCompletionsFlag, hotStreakFlag] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
@@ -91,7 +84,6 @@ export async function createInlineCompletionItemProvider({
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,
-            disableRecyclingOfPreviousRequests,
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             contextStrategy,
