@@ -361,9 +361,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello!",
+            "displayText": " Hello! Nice to meet you.",
             "speaker": "assistant",
-            "text": " Hello!",
+            "text": " Hello! Nice to meet you.",
           }
         `,
             explainPollyError
@@ -409,7 +409,7 @@ describe('Agent', () => {
     // able to return stable results in replay mode. Also, we don't have an
     // access token in ci so this test can only pass when running locally (for
     // now).
-    it.skip('allows us to send a chat message with enhanced context enabled', async () => {
+    it('allows us to send a chat message with enhanced context enabled', async () => {
         await openFile(animalUri)
         await client.request('command/execute', { command: 'cody.search.index-update' })
         const lastMessage = await client.sendSingleMessage(
