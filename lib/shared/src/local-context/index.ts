@@ -3,7 +3,7 @@ import { type URI } from 'vscode-uri'
 import { type ContextFile } from '../codebase-context/messages'
 import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
-export interface ContextResult extends ContextFile {
+export type ContextResult = ContextFile & {
     repoName?: string
     revision?: string
     fileName: string

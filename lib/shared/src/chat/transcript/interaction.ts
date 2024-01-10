@@ -41,14 +41,14 @@ export class Interaction {
             const message = contextMessages[i]
             // Skips the assistant message if the human message is ignored
             if (message.speaker === 'human' && message.file) {
-                const { uri, repoName, fileName, source } = message.file
+                const { uri, repoName, source } = message.file
                 if (uri && isCodyIgnoredFile(uri)) {
                     i++
                     continue
                 }
                 // Filter embedding results from the current workspace
                 if (source === 'embeddings') {
-                    if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
+                    if (repoName && isCodyIgnoredFilePath(repoName, uri.fsPath)) {
                         i++
                         continue
                     }

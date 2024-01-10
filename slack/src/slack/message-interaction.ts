@@ -49,15 +49,7 @@ class SlackInteraction {
                 contextSearchOptions
             )
 
-            this.contextMessages.push(
-                ...contextMessages.map(message => {
-                    if (message.file) {
-                        message.file.fileName = `https://${codebase}/blob/main/${message.file.fileName}`
-                    }
-
-                    return message
-                })
-            )
+            this.contextMessages.push(...contextMessages)
         }
     }
 

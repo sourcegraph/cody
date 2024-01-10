@@ -4,6 +4,7 @@ import { type Interaction } from '../transcript/interaction'
 
 import {
     getContextMessagesFromSelection,
+    getFileExtension,
     getNormalizedLanguageName,
     MARKDOWN_FORMAT_PROMPT,
     newInteraction,
@@ -26,7 +27,7 @@ export class ExplainCodeDetailed implements Recipe {
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
 
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const languageName = getNormalizedLanguageName(getFileExtension(selection.fileUri))
         const promptMessage = `Please explain the following ${languageName} code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const displayText = `Explain the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 

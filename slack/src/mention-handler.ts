@@ -2,6 +2,7 @@ import { type AppMentionEvent } from '@slack/bolt'
 import { type Message as SlackReplyMessage } from '@slack/web-api/dist/response/ChannelsRepliesResponse'
 import { throttle } from 'lodash'
 
+import { displayPath } from '@sourcegraph/cody-shared'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { type Message as PromptMessage } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -112,9 +113,7 @@ function startCompletionStreaming(
     const { contextFiles = [] } = lastInteraction.toChat().pop()!
 
     // Build the markdown list of file links.
-    const contextFilesList = contextFiles
-        .map(file => `[${file.fileName.split('/').pop()}](${file.fileName})`)
-        .join(', ')
+    const contextFilesList = contextFiles.map(file => `[${displayPath(file.uri)}](${file.uri.toString()})`).join(', ')
 
     const suffix = contextFiles.length > 0 ? '\n\n**Files used**:\n' + contextFilesList : ''
 

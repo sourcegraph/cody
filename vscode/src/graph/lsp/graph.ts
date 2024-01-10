@@ -39,7 +39,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     const label = 'getGraphContextFromEditor'
     performance.mark(label)
 
-    const uri = workspaceRootUri.with({ path: activeEditor.filePath })
+    const uri = activeEditor.fileUri
     const contexts = await getGraphContextFromSelection(
         [{ uri, range: activeEditor.selectionRange }],
         new Map([[uri.fsPath, activeEditor.content.split('\n')]]),

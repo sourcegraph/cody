@@ -67,7 +67,7 @@ export async function getCompletionWithContext(
     const { prompt: finalPrompt, contextFiles } = await transcript.getPromptForLastInteraction(
         getPreamble(client.codebaseContext.getCodebase())
     )
-    debugLog(debug, 'Context files', contextFiles.map(({ fileName }) => fileName).join('\n'))
+    debugLog(debug, 'Context files', contextFiles.map(({ uri }) => uri.toString()).join('\n'))
     transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
     return getCompletion(client.completionsClient, finalPrompt)

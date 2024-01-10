@@ -95,7 +95,7 @@ export const buildInteraction = async ({
         { speaker: 'assistant', text: assistantText, prefix: assistantPrefix },
         getContext({
             intent: task.intent,
-            fileName: task.fixupFile.uri.fsPath,
+            uri: task.fixupFile.uri,
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
             context,

@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { displayPath } from '@sourcegraph/cody-shared'
 import { getFileExtension, getNormalizedLanguageName } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
@@ -47,9 +48,11 @@ export function promptTextWithCodeSelection(
     if (!selection) {
         return null
     }
-    const extension = getFileExtension(selection.fileName)
+    const extension = getFileExtension(selection.fileUri)
     const languageName = getNormalizedLanguageName(extension)
-    const codePrefix = `I have this ${languageName} code selected in my editor from my codebase file ${selection.fileName}:`
+    const codePrefix = `I have this ${languageName} code selected in my editor from my codebase file ${displayPath(
+        selection.fileUri
+    )}:`
 
     // Use the whole context window for the prompt because we're attaching no files
     const maxTokenCount = MAX_AVAILABLE_PROMPT_LENGTH - (codePrefix.length + prompt.length) / CHARS_PER_TOKEN

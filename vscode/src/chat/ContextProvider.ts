@@ -236,10 +236,16 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
             }
+            const workspaceFolderUris = vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
             // update codebase context on configuration change
             await this.updateCodebaseContext()
-            await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+            await this.webview?.postMessage({
+                type: 'config',
+                config: configForWebview,
+                authStatus,
+                workspaceFolderUris,
+            })
 
             logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
