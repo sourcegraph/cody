@@ -18,7 +18,7 @@ export interface Guardrails {
 // GuardrailsPost implements Guardrails interface by synchronizing on message
 // passing between webview and extension process.
 export class GuardrailsPost implements Guardrails {
-    private currentRequests: Map<string, DeferredAttributionSearch> = new Map()
+    private currentRequests: Map<string, AttributionSearchSync> = new Map()
     private postSnippet: (txt: string) => void
 
     constructor(postSnippet: (txt: string) => void) {
@@ -28,7 +28,7 @@ export class GuardrailsPost implements Guardrails {
     public searchAttribution(snippet: string): Promise<Attribution> {
         let request = this.currentRequests.get(snippet)
         if (request === undefined) {
-            request = new DeferredAttributionSearch()
+            request = new AttributionSearchSync()
             this.currentRequests.set(snippet, request)
             this.postSnippet(snippet)
         }
@@ -40,7 +40,7 @@ export class GuardrailsPost implements Guardrails {
         if (request !== undefined) {
             request.resolve(result)
         }
-        // TODO: What in case there the message is not for an ongoing request?
+        // Do nothing in case there the message is not for an ongoing request.
     }
 
     public notifyAttributionFailure(snippet: string, error: Error): void {
@@ -48,10 +48,13 @@ export class GuardrailsPost implements Guardrails {
         if (request !== undefined) {
             request.reject(error)
         }
+        // Do nothing in case there the message is not for an ongoing request.
     }
 }
 
-class DeferredAttributionSearch {
+// AttributionSearchSync provides syncronization for webview / extension messages
+// in form of a Promise API for a single search.
+class AttributionSearchSync {
     public promise: Promise<Attribution>
     public resolve!: (result: Attribution) => void
     public reject!: (cause: any) => void
