@@ -1,4 +1,4 @@
-import { parse } from 'path'
+import { posix, sep } from 'path'
 
 import { describe, expect, it } from 'vitest'
 
@@ -48,7 +48,7 @@ describe('convertFsPathToTestFile', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/testFile.ts'
         const expectedFilePath = '/path/to/file.test.ts'
-        const expected = parse(expectedFilePath).name
+        const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
@@ -56,7 +56,7 @@ describe('convertFsPathToTestFile', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/existingTestFile.test.ts'
         const expectedFilePath = '/path/to/file.test.ts'
-        const expected = parse(expectedFilePath).name
+        const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
@@ -64,7 +64,7 @@ describe('convertFsPathToTestFile', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/testExistingFile.test.ts'
         const expectedFilePath = '/path/to/file.test.ts'
-        const expected = parse(expectedFilePath).name
+        const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
@@ -72,7 +72,7 @@ describe('convertFsPathToTestFile', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/test-ExistingFile.test.ts'
         const expectedFilePath = '/path/to/file.test.ts'
-        const expected = parse(expectedFilePath).name
+        const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
@@ -80,14 +80,18 @@ describe('convertFsPathToTestFile', () => {
         const filePath = '/path/to/file.py'
         const existingTestFilePath = '/path/to/testFile_test.py'
         const expectedFilePath = '/path/to/file_test.py'
-        const expected = parse(expectedFilePath).name
+        const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
     it('should generate a test file path for a non-test file path in python when no exisiting test path provided', () => {
         const filePath = '/path/to/test-file.py'
         const expectedFilePath = '/path/to/test-file_test.py'
-        const expected = parse(expectedFilePath).name
+        const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath)).toBe(expected)
     })
 })
+
+function withPlatformSlashes(input: string) {
+    return input.replaceAll(posix.sep, sep)
+}
