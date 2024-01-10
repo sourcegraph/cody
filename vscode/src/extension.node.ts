@@ -31,13 +31,21 @@ import { NodeSentryService } from './services/sentry/sentry.node'
 export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
     initializeNetworkAgent()
 
+    // NOTE: local embeddings were causing flaky test failures in CI due to
+    // failures around downloading the cody-engine binary. The root problem
+    // seems caused by the fact that we don't handle the error case when failing
+    // to download the binary, which caused the entire agent Node process to
+    // exit and fail the tests. For now, we have disabled local embeddings like
+    // this to unblock further progress. Tracked here
+    // https://github.com/sourcegraph/jetbrains/issues/270
     const isLocalEmbeddingsDisabled = process.env.CODY_LOCAL_EMBEDDINGS_DISABLED === 'true'
-    const maybeCreateLocalEmbeddingsController = isLocalEmbeddingsDisabled
-        ? undefined
-        : (config: LocalEmbeddingsConfig): LocalEmbeddingsController => createLocalEmbeddingsController(context, config)
+
     return activateCommon(context, {
         getRgPath,
-        createLocalEmbeddingsController: maybeCreateLocalEmbeddingsController,
+        createLocalEmbeddingsController: isLocalEmbeddingsDisabled
+            ? undefined
+            : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
+                  createLocalEmbeddingsController(context, config),
         createCommandsController: (...args) => new CommandsController(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),

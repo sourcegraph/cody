@@ -4,6 +4,11 @@ import packageJson from '../package.json'
 
 const { properties } = packageJson.contributes.configuration
 
+export function defaultConfigurationValue(key: string): any {
+    const value = (properties as any)[key as any]?.default
+    return value
+}
+
 export type ConfigurationKeysMap = {
     // Use key remapping to get a nice typescript interface with the correct keys.
     // https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as

@@ -7,6 +7,7 @@
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import fspromises from 'fs/promises'
 
+import type * as vscode_types from 'vscode'
 import type {
     Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
@@ -14,7 +15,6 @@ import type {
     Position as VSCodePosition,
     Range as VSCodeRange,
 } from 'vscode'
-import type * as vscode_types from 'vscode'
 
 import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
@@ -710,8 +710,12 @@ export const vsCodeMocks = {
     TreeItem,
     WorkspaceEdit,
     UIKind,
+    QuickInputButtons,
     Uri,
     languages,
+    env: {
+        uiKind: 1 satisfies vscode_types.UIKind.Desktop,
+    },
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
@@ -816,7 +820,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrails: false,
     experimentalLocalSymbols: false,
     experimentalSimpleChatContext: true,
-    experimentalSymfContext: false,
+    experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
     isRunningInsideAgent: false,
@@ -833,6 +837,10 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
+    autocompleteExperimentalOllamaOptions: {
+        model: 'codellama:7b-code',
+        url: 'http://localhost:11434',
+    },
     autocompleteTimeouts: {
         multiline: undefined,
         singleline: undefined,

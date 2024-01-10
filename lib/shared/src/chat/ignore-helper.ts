@@ -116,6 +116,11 @@ export class IgnoreHelper {
             return false
         }
 
+        // Ignore all non-file URIs
+        if (uri.scheme !== 'file') {
+            return true
+        }
+
         this.ensureFileUri('uri', uri)
         this.ensureAbsolute('uri.fsPath', uri.fsPath)
         const workspaceRoot = this.findWorkspaceRoot(uri.fsPath)

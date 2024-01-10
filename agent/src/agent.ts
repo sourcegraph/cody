@@ -173,9 +173,11 @@ export class Agent extends MessageHandler {
         this.registerRequest('initialize', async clientInfo => {
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
-            process.stderr.write(
-                `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
-            )
+            if (process.env.CODY_DEBUG === 'true') {
+                process.stderr.write(
+                    `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
+                )
+            }
 
             vscode_shim.setClientInfo(clientInfo)
             // Register client info

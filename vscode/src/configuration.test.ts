@@ -52,7 +52,7 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.simpleChatContext':
                         return true
                     case 'cody.experimental.symfContext':
-                        return false
+                        return true
                     case 'cody.experimental.tracing':
                         return true
                     case 'cody.debug.enable':
@@ -83,6 +83,11 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
+                    case 'cody.autocomplete.experimental.ollamaOptions':
+                        return {
+                            model: 'codellama:7b-code',
+                            url: 'http://localhost:11434',
+                        }
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'lsp-light'
                     case 'cody.advanced.agent.running':
@@ -112,7 +117,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: true,
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
-            experimentalSymfContext: false,
+            experimentalSymfContext: true,
             experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
@@ -132,6 +137,10 @@ describe('getConfiguration', () => {
             autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
+            autocompleteExperimentalOllamaOptions: {
+                model: 'codellama:7b-code',
+                url: 'http://localhost:11434',
+            },
             autocompleteTimeouts: {
                 multiline: undefined,
                 singleline: undefined,
