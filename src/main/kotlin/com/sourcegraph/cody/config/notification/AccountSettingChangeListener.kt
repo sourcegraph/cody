@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config.notification
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
@@ -53,7 +54,9 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
             UpgradeToCodyProNotification.chatRateLimitError.set(null)
             CodyAutocompleteStatusService.resetApplication(project)
-            codyToolWindowContent.refreshSubscriptionTab()
+            ApplicationManager.getApplication().executeOnPooledThread {
+              codyToolWindowContent.refreshSubscriptionTab()
+            }
 
             // Log install events
             if (context.serverUrlChanged) {

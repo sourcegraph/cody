@@ -4,23 +4,24 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.IconUtil
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
-import com.intellij.vcs.log.runInEdtAsync
 import com.intellij.xml.util.XmlStringUtil
 import com.sourcegraph.cody.agent.CodyAgent.Companion.getInitializedServer
 import com.sourcegraph.cody.agent.CodyAgent.Companion.isConnected
+import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol.*
@@ -111,20 +112,21 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     refreshPanelsVisibility()
 
     addWelcomeMessage()
-    refreshSubscriptionTab()
+    ApplicationManager.getApplication().executeOnPooledThread { refreshSubscriptionTab() }
     loadNewChatId()
   }
 
+  @RequiresBackgroundThread
   fun refreshSubscriptionTab() {
-    runInEdtAsync(Disposer.newCheckedDisposable()) {
-      tryRestartingAgentIfNotRunning(project)
-      getInitializedServer(project).thenAccept { server ->
-        if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
-          addNewSubscriptionTab(server)
-        } else {
+    tryRestartingAgentIfNotRunning(project)
+    getInitializedServer(project).thenAccept { server ->
+      if (tabbedPane.tabCount < SUBSCRIPTION_TAB_INDEX + 1) {
+        addNewSubscriptionTab(server)
+      } else {
+        ApplicationManager.getApplication().invokeLater {
           tabbedPane.remove(SUBSCRIPTION_TAB_INDEX)
-          addNewSubscriptionTab(server)
         }
+        addNewSubscriptionTab(server)
       }
     }
   }
@@ -163,7 +165,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       }
       if (jetbrainsUserId != agentUserId) {
         if (agentUserId != null) {
-          logger.error("User id in JetBrains is different from agent")
+          logger.warn("User id in JetBrains is different from agent: restarting agent...")
+          CodyAgentManager.restartAgent(project)
+          refreshSubscriptionTab()
           return
         }
         return
@@ -181,9 +185,11 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
                   }
                   .get()
           if (isCurrentUserPro != null) {
-            val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
-            tabbedPane.insertTab(
-                "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+            ApplicationManager.getApplication().invokeLater {
+              val subscriptionPanel = createSubscriptionTab(isCurrentUserPro)
+              tabbedPane.insertTab(
+                  "Subscription", null, subscriptionPanel, null, SUBSCRIPTION_TAB_INDEX)
+            }
           }
         }
       }
