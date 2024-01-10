@@ -86,6 +86,9 @@ describe('JaccardSimilarityRetriever', () => {
         })
 
         // With the default window size, the whole test class will be included
+        //
+        // NOTE: We leave a big gap here of lines that does not matched our source line at all so we
+        // force the algorithm to not merge the two sections.
         expect(snippets[0].content).toMatchInlineSnapshot(`
           "export class TestClass {
               // Method 1 of TestClass
@@ -124,13 +127,18 @@ describe('JaccardSimilarityRetriever', () => {
           "export class TestClass {
               // Method 1 of TestClass
               methodOne() {
-                  console.log('one')"
+                  console.log('one')
+              }
+
+
+          "
         `)
         expect(snippets[1].content).toMatchInlineSnapshot(`
           "    // Method 2 of TestClass
               methodTwo() {
                   console.log('two')
-              }"
+              }
+          }"
         `)
     })
 
@@ -217,7 +225,14 @@ describe('JaccardSimilarityRetriever', () => {
         expect(snippets[0].content).toMatchInlineSnapshot(`
           "export class TestClass {
               // Method 1 of TestClass
-              methodOne() {"
+              methodOne() {
+                  console.log('one')
+              }
+              // Method 2 of TestClass
+              methodTwo() {
+                  console.log('two')
+              }
+          }"
         `)
     })
 })
