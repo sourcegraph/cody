@@ -221,6 +221,5 @@ function getDocCommandRange(
 }
 
 function isFixupCommand(command: CodyCommand, instruction?: string): boolean {
-    const fixupMode = command.mode !== 'ask' || instruction?.startsWith('/edit ')
-    return fixupMode || false
+    return command.mode !== 'ask' || instruction?.startsWith('/edit ')
 }

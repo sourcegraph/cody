@@ -50,7 +50,12 @@ export class FixupTask {
     public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
-        private readonly _fixupFile: FixupFile,
+       /**
+       * The file that will be updated by Cody with the replacement text at the end of stream
+       * This is set by the FixupController when creating the task,
+       * and will be updated by the FixupController for tasks using the 'new' mode
+       */
+        public fixupFile: FixupFile,
         public readonly instruction: string,
         public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
