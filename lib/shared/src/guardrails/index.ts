@@ -4,7 +4,6 @@ import { isError } from '../utils'
 export interface Attribution {
     limitHit: boolean
     repositories: RepositoryAttribution[]
-    totalCount: number
 }
 
 export interface RepositoryAttribution {
