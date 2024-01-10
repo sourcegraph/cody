@@ -14,6 +14,8 @@ export interface Guardrails {
     searchAttribution(snippet: string): Promise<Attribution | Error>
 }
 
+const timeout = 2000
+
 // GuardrailsPost implements Guardrails interface by synchronizing on message
 // passing between webview and extension process.
 export class GuardrailsPost implements Guardrails {
@@ -26,6 +28,10 @@ export class GuardrailsPost implements Guardrails {
             request = new AttributionSearchSync()
             this.currentRequests.set(snippet, request)
             this.postSnippet(snippet)
+            // Timeout in case anything goes wrong on the extension side.
+            setTimeout(() => {
+                this.notifyAttributionFailure(snippet, new Error('Timed out.'))
+            }, timeout)
         }
         return request.promise
     }
