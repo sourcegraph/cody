@@ -61,25 +61,39 @@ export function bestJaccardMatches(
     ]
 
     // Slide over the target text line by line
-    for (let i = 0; i < wordsForEachLine.length - windowSize; i++) {
-        // Subtract the words from the line we are scrolling past
-        windowCount += subtract(windowWords, wordsForEachLine[i])
-        bothCount += subtract(bothWords, wordsForEachLine[i])
+    //
+    // We start at 1 since we already calculated the first match at startLine 0,
+    // this way, i can refer to the startLine of the current window
+    for (let i = 1; i <= lines.length - windowSize; i++) {
+        // Subtract the words from the line we are scrolling away from
+        windowCount += subtract(windowWords, wordsForEachLine[i - 1])
+        bothCount += subtract(bothWords, wordsForEachLine[i - 1])
 
         // Add the words from the new line our window just slid over
         const { windowIncrease, intersectionIncrease } = add(
             targetWords,
             windowWords,
             bothWords,
-            wordsForEachLine[i + windowSize]
+            wordsForEachLine[i + windowSize - 1]
         )
         windowCount += windowIncrease
         bothCount += intersectionIncrease
 
+        // If the new window starts with an empty line, skip over it, unless we're at the end. This
+        // will slightly increase the yield when handling with source code as
+        // we don't want to have a match starting with a lot of empty lines.
+        //
+        // Note: We use the string value of the current lines, and not the word occurrences, to
+        // determine it's truly empty
+        const isLastWindow = i === lines.length - windowSize
+        if (lines[i].trim() === '' && !isLastWindow) {
+            continue
+        }
+
         // compute the jaccard distance between our target text and window
         const score = jaccardDistance(targetCount, windowCount, bothCount)
-        const startLine = i + 1
-        const endLine = i + windowSize + 1
+        const startLine = i
+        const endLine = i + windowSize
         windows.push({ score, content: lines.slice(startLine, endLine).join('\n'), startLine, endLine })
     }
 

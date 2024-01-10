@@ -26,20 +26,6 @@ describe('getWords', () => {
 })
 `
 
-const matchSnippet = `
-describe('bestJaccardMatch', () => {
-    it('should return the best match', () => {
-        const matchText = [
-            'foo',
-            'bar',
-            'baz',
-            'qux',
-            'quux',
-        ].join('\n')
-    })
-})
-`
-
 const MAX_MATCHES = 50
 
 describe('getWords', () => {
@@ -173,17 +159,76 @@ describe('bestJaccardMatch', () => {
     })
 
     it('works with code snippets', () => {
-        expect(bestJaccardMatches(targetSnippet, matchSnippet, 5, MAX_MATCHES)[0]).toMatchInlineSnapshot(`
+        expect(
+            bestJaccardMatches(
+                targetSnippet,
+                dedent`
+                    describe('bestJaccardMatch', () => {
+                        it('should return the best match', () => {
+                            const matchText = [
+                                'foo',
+                                'bar',
+                                'baz',
+                                'qux',
+                                'quux',
+                            ].join('\n')
+                        })
+                    })
+                `,
+                5,
+                MAX_MATCHES
+            )[0]
+        ).toMatchInlineSnapshot(`
           {
             "content": "describe('bestJaccardMatch', () => {
               it('should return the best match', () => {
                   const matchText = [
                       'foo',
                       'bar',",
-            "endLine": 6,
+            "endLine": 5,
             "score": 0.08695652173913043,
-            "startLine": 1,
+            "startLine": 0,
           }
         `)
+    })
+
+    it('skips over windows with empty start lines', () => {
+        const matches = bestJaccardMatches(
+            'foo',
+            dedent`
+                // foo
+                // unrelated 1
+                // unrelated 2
+
+
+                // foo
+                // unrelated 3
+                // unrelated 4
+            `,
+            3,
+            MAX_MATCHES
+        )
+
+        expect(matches[0].content).toBe('// foo\n// unrelated 1\n// unrelated 2')
+        expect(matches[1].content).toBe('// foo\n// unrelated 3\n// unrelated 4')
+    })
+
+    it("does not skips over windows with empty start lines if we're at the en", () => {
+        const matches = bestJaccardMatches(
+            targetSnippet,
+            dedent`
+                // foo
+                // unrelated
+                // unrelated
+
+
+                // foo
+            `,
+            3,
+            MAX_MATCHES
+        )
+
+        expect(matches[0].content).toBe('\n\n// foo')
+        expect(matches[1].content).toBe('// foo\n// unrelated\n// unrelated')
     })
 })
