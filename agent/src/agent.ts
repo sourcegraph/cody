@@ -290,6 +290,19 @@ export class Agent extends MessageHandler {
             }
         })
 
+        this.registerRequest('testing/progress', async ({ title }) => {
+            const thenable = await vscode.window.withProgress(
+                { title: 'testing/progress', location: vscode.ProgressLocation.Notification, cancellable: true },
+                progress => {
+                    progress.report({ message: 'message1' })
+                    progress.report({ increment: 50 })
+                    progress.report({ increment: 50 })
+                    return Promise.resolve({ result: `Hello ${title}` })
+                }
+            )
+            return thenable
+        })
+
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
                 Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({

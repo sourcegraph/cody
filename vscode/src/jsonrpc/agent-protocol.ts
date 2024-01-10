@@ -91,6 +91,11 @@ export type Requests = {
     // `chat/submitMessage`.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
 
+    // Only used for testing purposes. If you want to write an integration test
+    // for dealing with progress bars then you can send a request to this
+    // endpoint to emulate the scenario where the server creates a progress bar.
+    'testing/progress': [{ title: string }, { result: string }]
+
     // ================
     // Server -> Client
     // ================
@@ -169,7 +174,7 @@ export type Notifications = {
     // on the chat reply.
     'webview/postMessage': [{ id: string; message: ExtensionMessage }]
 
-    'progress/start': [ProgressCreateParams]
+    'progress/start': [ProgressStartParams]
 
     // Update about an ongoing progress bar from progress/create. This
     // notification can only be sent from the server while the progress/create
@@ -378,7 +383,7 @@ export interface DebugMessage {
     message: string
 }
 
-export interface ProgressCreateParams {
+export interface ProgressStartParams {
     /** Unique ID for this operation. */
     id: string
     options: ProgressOptions
