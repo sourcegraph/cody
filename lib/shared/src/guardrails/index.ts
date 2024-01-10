@@ -33,6 +33,7 @@ export class GuardrailsPost implements Guardrails {
     public notifyAttributionSuccess(snippet: string, result: Attribution): void {
         const request = this.currentRequests.get(snippet)
         if (request !== undefined) {
+            this.currentRequests.delete(snippet)
             request.resolve(result)
         }
         // Do nothing in case there the message is not for an ongoing request.
@@ -41,6 +42,7 @@ export class GuardrailsPost implements Guardrails {
     public notifyAttributionFailure(snippet: string, error: Error): void {
         const request = this.currentRequests.get(snippet)
         if (request !== undefined) {
+            this.currentRequests.delete(snippet)
             request.reject(error)
         }
         // Do nothing in case there the message is not for an ongoing request.
