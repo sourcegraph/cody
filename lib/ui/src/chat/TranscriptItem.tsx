@@ -17,8 +17,7 @@ import {
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
-import { type FileLinkProps } from './components/ContextFiles'
-import { EnhancedContext } from './components/EnhancedContext'
+import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { PreciseContexts, type SymbolLinkProps } from './PreciseContext'
 

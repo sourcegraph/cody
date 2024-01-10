@@ -176,7 +176,7 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
 
 export function stripContextWrapper(text: string): string | undefined {
     {
-        const start = text.indexOf('Use following code snippet')
+        const start = text.indexOf('Use the following code snippet')
         if (start >= 0) {
             text = text.slice(start)
             const lines = text.split('\n')
