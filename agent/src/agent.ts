@@ -281,6 +281,15 @@ export class Agent extends MessageHandler {
             })
         })
 
+        this.registerNotification('progress/cancel', ({ id }) => {
+            const token = vscode_shim.progressBars.get(id)
+            if (token) {
+                token.cancel()
+            } else {
+                console.error(`progress/cancel: unknown ID ${id}`)
+            }
+        })
+
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
                 Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({

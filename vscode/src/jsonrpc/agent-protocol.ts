@@ -150,6 +150,10 @@ export type Notifications = {
     // The chat transcript grows indefinitely if this notification is never sent.
     'transcript/reset': [null]
 
+    // User requested to cancel this progress bar. Only supported for progress
+    // bars with `cancelable: true`.
+    'progress/cancel': [{ id: string }]
+
     // ================
     // Server -> Client
     // ================
@@ -164,6 +168,15 @@ export type Notifications = {
     // chat/new). Subscribe to these messages to get access to streaming updates
     // on the chat reply.
     'webview/postMessage': [{ id: string; message: ExtensionMessage }]
+
+    'progress/start': [ProgressCreateParams]
+
+    // Update about an ongoing progress bar from progress/create. This
+    // notification can only be sent from the server while the progress/create
+    // request has not finished responding.
+    'progress/report': [ProgressReportParams]
+
+    'progress/end': [{ id: string }]
 }
 
 export interface CancelParams {
@@ -224,6 +237,9 @@ export interface ClientCapabilities {
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
     git?: 'none' | 'disabled'
+    // If 'enabled', the client must implement the progress/start,
+    // progress/report, and progress/end notification endpoints.
+    progressBars?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {
@@ -360,4 +376,49 @@ export interface ExecuteCommandParams {
 export interface DebugMessage {
     channel: string
     message: string
+}
+
+export interface ProgressCreateParams {
+    /** Unique ID for this operation. */
+    id: string
+    options: ProgressOptions
+}
+export interface ProgressReportParams {
+    /** Unique ID for this operation. */
+    id: string
+    /** (optional) Text message to display in the progress bar */
+    message?: string
+    /**
+     * (optional) increment to indicate how much percentage of the total
+     * operation has been completed since the last report. The total % of the
+     * job that is complete is the sum of all published increments. An increment
+     * of 10 indicates '10%' of the progress has completed since the last
+     * report. Can never be negative, and total can never exceed 100.
+     */
+    increment?: number
+}
+export interface ProgressOptions {
+    /**
+     * A human-readable string which will be used to describe the
+     * operation.
+     */
+    title?: string
+    /**
+     * The location at which progress should show.
+     * Either `location` or `locationViewId` must be set
+     */
+    location?: string // one of: 'SourceControl' | 'Window' | 'Notification'
+    /**
+     * The location at which progress should show.
+     * Either `location` or `locationViewId` must be set
+     */
+    locationViewId?: string
+
+    /**
+     * Controls if a cancel button should show to allow the user to
+     * cancel the long running operation.  Note that currently only
+     * `ProgressLocation.Notification` is supporting to show a cancel
+     * button.
+     */
+    cancellable?: boolean
 }
