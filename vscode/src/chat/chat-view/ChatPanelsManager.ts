@@ -50,7 +50,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string }
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
 
     protected disposables: vscode.Disposable[] = []
 
@@ -90,6 +90,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.currentAuthAccount = {
             endpoint: authStatus.endpoint ?? '',
             primaryEmail: authStatus.primaryEmail,
+            username: authStatus.username,
         }
 
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)

@@ -215,7 +215,7 @@ export class LocalStorage {
 export const localStorage = new LocalStorage()
 
 function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
-    return `${authStatus.endpoint}-${authStatus.primaryEmail}`
+    return `${authStatus.endpoint}-${authStatus.username}`
 }
 
 /**
