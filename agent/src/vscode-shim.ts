@@ -2,6 +2,7 @@
 import { execSync } from 'child_process'
 import path from 'path'
 
+import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
 // <VERY IMPORTANT - PLEASE READ>
@@ -31,6 +32,7 @@ import {
     ExtensionKind,
     FileType,
     LogLevel,
+    ProgressLocation,
     Range,
     StatusBarAlignment,
     UIKind,
@@ -414,6 +416,8 @@ export function setCreateWebviewPanel(newCreateWebviewPanel: typeof vscode.windo
     shimmedCreateWebviewPanel = newCreateWebviewPanel
 }
 
+export const progressBars = new Map<string, CancellationTokenSource>()
+
 const _window: Partial<typeof vscode.window> = {
     createTreeView: () => defaultTreeView,
     tabGroups,
@@ -443,13 +447,43 @@ const _window: Partial<typeof vscode.window> = {
     registerWebviewViewProvider: () => emptyDisposable,
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
-    withProgress: async (_, handler) => {
+    withProgress: async (options, handler) => {
+        const progressClient = clientInfo?.capabilities?.progressBars === 'enabled' ? agent : undefined
+        const id = uuid.v4()
+        const tokenSource = new CancellationTokenSource()
+        const token = tokenSource.token
+        progressBars.set(id, tokenSource)
+        token.onCancellationRequested(() => progressBars.delete(id))
+
+        if (progressClient) {
+            const location = typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
+            const locationViewId = typeof options.location === 'object' ? options.location.viewId : undefined
+            progressClient.notify('progress/start', {
+                id,
+                options: { title: options.title, cancellable: options.cancellable, location, locationViewId },
+            })
+        }
         try {
-            const result = await handler({ report: () => {} }, new CancellationTokenSource().token)
+            const result = await handler(
+                {
+                    report: ({ message, increment }) => {
+                        if (progressClient && !token.isCancellationRequested) {
+                            progressClient.notify('progress/report', { id, message, increment })
+                        }
+                    },
+                },
+                token
+            )
             return result
         } catch (error) {
             console.error('window.withProgress: uncaught error', error)
             throw error
+        } finally {
+            tokenSource.dispose()
+            progressBars.delete(id)
+            if (progressClient) {
+                progressClient.notify('progress/end', { id })
+            }
         }
     },
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,

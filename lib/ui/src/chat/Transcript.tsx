@@ -16,7 +16,7 @@ import {
     type UserAccountInfo,
 } from '../Chat'
 
-import { type FileLinkProps } from './components/ContextFiles'
+import { type FileLinkProps } from './components/EnhancedContext'
 import { type SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 
