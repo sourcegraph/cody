@@ -172,7 +172,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                             currentUser: {
                                 id: 'u',
                                 hasVerifiedEmail: true,
-                                codyProEnabled: false,
                                 displayName: 'Person',
                                 username: 'person',
                                 avatarURL: '',

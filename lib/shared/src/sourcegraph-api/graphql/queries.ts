@@ -20,7 +20,6 @@ query CurrentUser {
         displayName
         username
         avatarURL
-        codyProEnabled
         primaryEmail {
             email
         }

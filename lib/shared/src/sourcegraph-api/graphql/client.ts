@@ -75,7 +75,6 @@ interface CurrentUserInfoResponse {
         displayName?: string
         username: string
         avatarURL: string
-        codyProEnabled: boolean | null
         primaryEmail?: { email: string } | null
     } | null
 }
@@ -186,7 +185,6 @@ export interface CurrentUserInfo {
     username: string
     displayName?: string
     avatarURL: string
-    codyProEnabled: boolean | null
     primaryEmail?: { email: string } | null
 }
 
