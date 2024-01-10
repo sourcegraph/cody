@@ -41,7 +41,7 @@ export class Interaction {
             const message = contextMessages[i]
             // Skips the assistant message if the human message is ignored
             if (message.speaker === 'human' && message.file) {
-                if (message.file.uri && isCodyIgnoredFile(message.file.uri)) {
+                if (isCodyIgnoredFile(message.file.uri)) {
                     i++
                     continue
                 }

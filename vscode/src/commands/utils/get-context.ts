@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
 
@@ -34,14 +36,14 @@ export const getContextForCommand = async (
         contextMessages.push(...editorContext.getEditorSelectionContext())
     }
     if (contextConfig.currentFile && selection?.fileUri) {
-        contextMessages.push(...(await editorContext.getFilePathContext(selection?.fileUri?.fsPath)))
+        contextMessages.push(...(await editorContext.getFilePathContext(selection.fileUri)))
     }
     if (contextConfig.filePath) {
-        contextMessages.push(...(await editorContext.getFilePathContext(contextConfig.filePath)))
+        contextMessages.push(...(await editorContext.getFilePathContext(vscode.Uri.file(contextConfig.filePath))))
     }
     if (contextConfig.directoryPath) {
         contextMessages.push(
-            ...(await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileName))
+            ...(await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileUri))
         )
     }
     if (contextConfig.currentDir) {
@@ -52,7 +54,7 @@ export const getContextForCommand = async (
     }
     // Additional context for unit tests requests
     if (isUnitTestRequest && contextMessages.length < 2) {
-        if (selection?.fileName) {
+        if (selection) {
             contextMessages.push(...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)))
         }
     }

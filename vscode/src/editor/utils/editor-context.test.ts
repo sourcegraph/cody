@@ -1,3 +1,5 @@
+import { basename } from 'path'
+
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
@@ -25,7 +27,7 @@ describe('getFileContextFiles', () => {
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
         const results = await getFileContextFiles(query, maxResults, new vscode.CancellationTokenSource().token)
 
-        return results.map(uri => uri.path?.basename)
+        return results.map(f => basename(f.uri.fsPath))
     }
 
     it('fuzzy filters results', async () => {

@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import {
     type ContextFile,
     type ContextMessage,
@@ -58,7 +60,7 @@ export class Transcript {
 
                                 const { fileName } = message as any as OldContextMessage
                                 if (fileName) {
-                                    return { ...message, file: { fileName } }
+                                    return { ...message, file: { type: 'file', uri: URI.file(fileName) } }
                                 }
 
                                 return message

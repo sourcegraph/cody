@@ -47,7 +47,6 @@ export class AgentEditor implements Editor {
             return null
         }
         return {
-            filePath: document.uri.fsPath,
             fileUri: document.uri,
             selectionRange: document.selection,
             content: document.content || '',
@@ -71,7 +70,6 @@ export class AgentEditor implements Editor {
         const offsets = new DocumentOffsets(document.underlying)
         if (!document.selection) {
             return {
-                fileName: document.uri.fsPath,
                 fileUri: document.uri,
                 selectionRange: document.selection,
                 precedingText: document.content ?? '',
@@ -82,7 +80,6 @@ export class AgentEditor implements Editor {
         const from = offsets.offset(document.selection.start)
         const to = offsets.offset(document.selection.end)
         return {
-            fileName: document.uri.fsPath,
             fileUri: document.uri,
             selectionRange: document.selection,
             precedingText: document.content.slice(0, from),
@@ -95,7 +92,6 @@ export class AgentEditor implements Editor {
         const document = this.activeDocument()
         if (document !== undefined && document.selection === undefined) {
             return {
-                fileName: document.uri.fsPath,
                 fileUri: document.uri,
                 precedingText: '',
                 selectedText: document.content || '',
@@ -124,7 +120,6 @@ export class AgentEditor implements Editor {
         }
         return {
             content: document.content || '',
-            fileName: document.uri.fsPath,
             fileUri: document.uri,
         }
     }

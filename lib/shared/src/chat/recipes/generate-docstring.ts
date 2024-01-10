@@ -27,8 +27,8 @@ export class GenerateDocstring implements Recipe {
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
 
-        const extension = getFileExtension(selection.fileName)
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const extension = getFileExtension(selection.fileUri)
+        const languageName = getNormalizedLanguageName(extension)
         const promptPrefix = `Generate a comment documenting the parameters and functionality of the following ${languageName} code:`
         let additionalInstructions = `Use the ${languageName} documentation style to generate a ${languageName} comment.`
         if (extension === 'java') {

@@ -26,9 +26,9 @@ export class GenerateTest implements Recipe {
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
-        const extension = getFileExtension(selection.fileName)
+        const extension = getFileExtension(selection.fileUri)
 
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const languageName = getNormalizedLanguageName(extension)
         const promptMessage = `Generate a unit test in ${languageName} for the following code:\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `Here is the generated unit test:\n\`\`\`${extension}\n`
 

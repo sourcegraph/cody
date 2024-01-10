@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import { describe, it } from 'vitest'
+import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
@@ -243,7 +244,10 @@ describe('Transcript', () => {
 
     it('includes currently visible content from the editor', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveTextEditorVisibleContent: () => ({
+                fileUri: URI.file('/internal/lib.go'),
+                content: 'package lib',
+            }),
         })
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
@@ -308,7 +312,10 @@ describe('Transcript', () => {
 
     it('does not include currently visible content from the editor if no codebase context is required', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveTextEditorVisibleContent: () => ({
+                fileUri: URI.file('/internal/lib.go'),
+                content: 'package lib',
+            }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
 

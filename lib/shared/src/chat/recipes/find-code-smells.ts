@@ -2,7 +2,7 @@ import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS }
 import { truncateText } from '../../prompt/truncation'
 import { type Interaction } from '../transcript/interaction'
 
-import { getNormalizedLanguageName, newInteraction } from './helpers'
+import { getFileExtension, getNormalizedLanguageName, newInteraction } from './helpers'
 import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class FindCodeSmells implements Recipe {
@@ -17,7 +17,7 @@ export class FindCodeSmells implements Recipe {
             return Promise.resolve(null)
         }
 
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const languageName = getNormalizedLanguageName(getFileExtension(selection.fileUri))
         const promptPrefix = `Find code smells, potential bugs, and unhandled errors in my ${languageName} code:`
         const promptSuffix = `List maximum five of them as a list (if you have more in mind, mention that these are the top five), with a short context, reasoning, and suggestion on each.
 If you have no ideas because the code looks fine, feel free to say that it already looks fine.`

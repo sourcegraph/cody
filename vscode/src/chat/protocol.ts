@@ -40,9 +40,8 @@ export type WebviewMessage =
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
-          filePath: string
+          uri: URI
           range?: ActiveTextEditorSelectionRange
-          uri?: URI
       }
     | {
           command: 'openLocalFileWithRange'
@@ -96,7 +95,12 @@ export type WebviewMessage =
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
-    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
+    | {
+          type: 'config'
+          config: ConfigurationSubsetForWebview & LocalEnv
+          authStatus: AuthStatus
+          workspaceFolderUris: string[]
+      }
     | { type: 'history'; messages: UserLocalHistory | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
@@ -120,7 +124,7 @@ export type ExtensionMessage =
           error?: string
       }
 
-export interface WebviewSubmitMessage {
+interface WebviewSubmitMessage {
     text: string
     submitType: ChatSubmitType
     addEnhancedContext?: boolean

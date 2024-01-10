@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { EDIT_COMMAND, menu_buttons } from '../commands/utils/menu'
@@ -24,9 +24,9 @@ function getLabelForContextFile(file: ContextFile): string {
     const isFileType = file.type === 'file'
     const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
     if (isFileType) {
-        return `${file.path?.relative}${rangeLabel}`
+        return `${displayPath(file.uri)}${rangeLabel}`
     }
-    return `${file.path?.relative}${rangeLabel}#${file.fileName}`
+    return `${displayPath(file.uri)}${rangeLabel}#${file.symbolName}`
 }
 
 /**
@@ -91,7 +91,7 @@ export class FixupTypingUI {
                 key: getLabelForContextFile(result),
                 file: result,
                 shortLabel: `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
-                    result.fileName
+                    result.symbolName
                 }`,
             }))
         }
