@@ -24,7 +24,7 @@ export class RateLimitError extends Error {
     public readonly retryMessage: string | undefined
 
     constructor(
-        public readonly feature: string,
+        public readonly feature: 'autocompletions' | 'chat messages and commands',
         public readonly message: string,
         /* Whether an upgrade is available that would increase rate limits. */
         public readonly upgradeIsAvailable: boolean,
