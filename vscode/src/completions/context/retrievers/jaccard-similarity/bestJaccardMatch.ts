@@ -3,90 +3,64 @@ import winkUtils from 'wink-nlp-utils'
 export interface JaccardMatch {
     score: number
     content: string
+    startLine: number
+    endLine: number
 }
+
+type WordOccurrences = Map<string, number>
 
 /**
  * Finds the window from matchText with the lowest Jaccard distance from targetText.
  * The Jaccard distance is the ratio of intersection over union, using a bag-of-words-with-count as
  * the representation for text snippet.
- *
  * @param targetText is the text that serves as the target we are trying to find a match for
  * @param matchText is the text we are sliding our window through to find the best match
  * @param windowSize is the size of the match window in number of lines
- * @returns
+ * @param maxMatches is the maximum number of matches to return
  */
-export function bestJaccardMatch(targetText: string, matchText: string, windowSize: number): JaccardMatch | null {
-    const wordCount = (words: Map<string, number>): number => {
-        let count = 0
-        for (const v of words.values()) {
-            count += v
-        }
-        return count
-    }
-    // Subtract the subtrahend bag of words from minuend and return the net change in word count
-    const subtract = (minuend: Map<string, number>, subtrahend: Map<string, number>): number => {
-        let decrease = 0 // will be non-positive
-        for (const [word, count] of subtrahend) {
-            const currentCount = minuend.get(word) || 0
-            const newCount = Math.max(0, currentCount - count)
-            minuend.set(word, newCount)
-            decrease += newCount - currentCount
-        }
-        return decrease
-    }
-    // Add incorporates a new line into window and intersection, updating each, and returns the net
-    // increase in size for each
-    const add = (
-        target: Map<string, number>,
-        window: Map<string, number>,
-        intersection: Map<string, number>,
-        newLine: Map<string, number>
-    ): { windowIncrease: number; intersectionIncrease: number } => {
-        let windowIncrease = 0
-        let intersectionIncrease = 0
-        for (const [word, count] of newLine) {
-            windowIncrease += count
-            window.set(word, (window.get(word) || 0) + count)
-
-            const targetCount = target.get(word) || 0
-            if (targetCount > 0) {
-                const intersectionCount = intersection.get(word) || 0
-                const newIntersectionCount = Math.min(count + intersectionCount, targetCount)
-                intersection.set(word, newIntersectionCount)
-                intersectionIncrease += newIntersectionCount - intersectionCount
-            }
-        }
-        return { windowIncrease, intersectionIncrease }
-    }
-
+export function bestJaccardMatches(
+    targetText: string,
+    matchText: string,
+    windowSize: number,
+    maxMatches: number
+): JaccardMatch[] {
     // Get the bag-of-words-count dictionary for the target text
-    const targetWords = getWords(targetText)
-    const targetCount = wordCount(targetWords)
+    const targetWords = getWordOccurrences(targetText)
+    const targetCount = sumWordCounts(targetWords)
 
     // Split the matchText into lines
     const lines = matchText.split('\n')
-    const wordsForEachLine = lines.map(line => getWords(line))
+    const wordsForEachLine = lines.map(line => getWordOccurrences(line))
 
     // Initialize the bag of words for the topmost window
-    const windowWords = new Map<string, number>()
-    for (let i = 0; i < Math.min(windowSize, lines.length); i++) {
+    const firstWindowStart = 0
+    const firstWindowEnd = Math.min(windowSize, lines.length)
+    const windowWords: WordOccurrences = new Map()
+    for (let i = firstWindowStart; i < firstWindowEnd; i++) {
         for (const [wordInThisLine, wordInThisLineCount] of wordsForEachLine[i].entries()) {
             windowWords.set(wordInThisLine, (windowWords.get(wordInThisLine) || 0) + wordInThisLineCount)
         }
     }
 
-    let windowCount = wordCount(windowWords)
+    let windowCount = sumWordCounts(windowWords)
     // Initialize the bag of words for the intersection of the match window and targetText
     const bothWords = new Map<string, number>()
     for (const [word, wordCount] of targetWords.entries()) {
         bothWords.set(word, Math.min(wordCount, windowWords.get(word) || 0))
     }
-    let bothCount = wordCount(bothWords)
+    let bothCount = sumWordCounts(bothWords)
 
-    // Slide our window through matchText, keeping track of the best score and window so far
-    let bestScore = jaccardDistance(targetCount, windowCount, bothCount)
-    let bestWindow = [0, Math.min(windowSize, lines.length)]
+    // Initialize the result set with the first window
+    const windows: JaccardMatch[] = [
+        {
+            score: jaccardDistance(targetCount, windowCount, bothCount),
+            content: lines.slice(firstWindowStart, firstWindowEnd).join('\n'),
+            startLine: firstWindowStart,
+            endLine: firstWindowEnd,
+        },
+    ]
 
+    // Slide over the target text line by line
     for (let i = 0; i < wordsForEachLine.length - windowSize; i++) {
         // Subtract the words from the line we are scrolling past
         windowCount += subtract(windowWords, wordsForEachLine[i])
@@ -102,22 +76,16 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
         windowCount += windowIncrease
         bothCount += intersectionIncrease
 
-        // We only do a Jaccard similarity every 5 lines to avoid excessive CPU burn. Since the
-        // windows are 50 lines, this should still give good results.
-        if (i % 5 === 0) {
-            // compute the jaccard distance between our target text and window
-            const score = jaccardDistance(targetCount, windowCount, bothCount)
-            if (score > bestScore) {
-                bestScore = score
-                bestWindow = [i + 1, i + windowSize + 1]
-            }
-        }
+        // compute the jaccard distance between our target text and window
+        const score = jaccardDistance(targetCount, windowCount, bothCount)
+        const startLine = i + 1
+        const endLine = i + windowSize + 1
+        windows.push({ score, content: lines.slice(startLine, endLine).join('\n'), startLine, endLine })
     }
 
-    return {
-        score: bestScore,
-        content: lines.slice(bestWindow[0], bestWindow[1]).join('\n'),
-    }
+    windows.sort((a, b) => b.score - a.score)
+
+    return windows.slice(0, maxMatches)
 }
 
 export function jaccardDistance(left: number, right: number, intersection: number): number {
@@ -131,8 +99,8 @@ export function jaccardDistance(left: number, right: number, intersection: numbe
     return intersection / union
 }
 
-export function getWords(s: string): Map<string, number> {
-    const frequencyCounter = new Map<string, number>()
+export function getWordOccurrences(s: string): WordOccurrences {
+    const frequencyCounter: WordOccurrences = new Map()
     const words = winkUtils.string.tokenize0(s)
 
     const filteredWords = winkUtils.tokens.removeWords(words)
@@ -141,4 +109,49 @@ export function getWords(s: string): Map<string, number> {
         frequencyCounter.set(stem, (frequencyCounter.get(stem) || 0) + 1)
     }
     return frequencyCounter
+}
+
+function sumWordCounts(words: Map<string, number>): number {
+    let count = 0
+    for (const v of words.values()) {
+        count += v
+    }
+    return count
+}
+
+// Subtract the subtrahend bag of words from minuend and return the net change in word count
+function subtract(minuend: WordOccurrences, subtrahend: WordOccurrences): number {
+    let decrease = 0 // will be non-positive
+    for (const [word, count] of subtrahend) {
+        const currentCount = minuend.get(word) || 0
+        const newCount = Math.max(0, currentCount - count)
+        minuend.set(word, newCount)
+        decrease += newCount - currentCount
+    }
+    return decrease
+}
+
+// Add incorporates a new line into window and intersection, updating each, and returns the net
+// increase in size for each
+function add(
+    target: WordOccurrences,
+    window: WordOccurrences,
+    intersection: WordOccurrences,
+    newLine: WordOccurrences
+): { windowIncrease: number; intersectionIncrease: number } {
+    let windowIncrease = 0
+    let intersectionIncrease = 0
+    for (const [word, count] of newLine) {
+        windowIncrease += count
+        window.set(word, (window.get(word) || 0) + count)
+
+        const targetCount = target.get(word) || 0
+        if (targetCount > 0) {
+            const intersectionCount = intersection.get(word) || 0
+            const newIntersectionCount = Math.min(count + intersectionCount, targetCount)
+            intersection.set(word, newIntersectionCount)
+            intersectionIncrease += newIntersectionCount - intersectionCount
+        }
+    }
+    return { windowIncrease, intersectionIncrease }
 }

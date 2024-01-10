@@ -5,10 +5,11 @@ import { type URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 
-import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
+import { getContextRange } from '../../../doc-context-getters'
+import { type ContextRetriever, type ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
-import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
+import { bestJaccardMatches, type JaccardMatch } from './bestJaccardMatch'
 import { VSCodeDocumentHistory, type DocumentHistory } from './history'
 
 /**
@@ -17,7 +18,13 @@ import { VSCodeDocumentHistory, type DocumentHistory } from './history'
  * that is most similar to the 'targetText'. In essence, it sets the maximum number
  * of lines that the best match can be. A larger 'windowSize' means larger potential matches
  */
-export const SNIPPET_WINDOW_SIZE = 50
+const SNIPPET_WINDOW_SIZE = 50
+
+/**
+ * Limits the number of jaccard windows that are fetched for a single file. This is mostly added to
+ * avoid large files taking up too much compute time.
+ */
+const MAX_MATCHES_PER_FILE = 10
 
 /**
  * The Jaccard Similarity Retriever is a sparse, local-only, retrieval strategy that uses local
@@ -25,27 +32,55 @@ export const SNIPPET_WINDOW_SIZE = 50
  * editor prefix.
  */
 export class JaccardSimilarityRetriever implements ContextRetriever {
+    constructor(
+        private snippetWindowSize: number = SNIPPET_WINDOW_SIZE,
+        private maxMatchesPerFile: number = MAX_MATCHES_PER_FILE
+    ) {}
+
     public identifier = 'jaccard-similarity'
     private history = new VSCodeDocumentHistory()
 
-    public async retrieve({ document, docContext, abortSignal }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
-        const targetText = lastNLines(docContext.prefix, SNIPPET_WINDOW_SIZE)
+    public async retrieve({
+        document,
+        docContext,
+        abortSignal,
+    }: ContextRetrieverOptions): Promise<JaccardMatchWithFilename[]> {
+        const targetText = lastNLines(docContext.prefix, this.snippetWindowSize)
         const files = await getRelevantFiles(document, this.history)
+
+        const contextRange = getContextRange(document, docContext)
+        const contextLineRange = { start: contextRange.start.line, end: contextRange.end.line }
 
         const matches: JaccardMatchWithFilename[] = []
         for (const { uri, contents } of files) {
-            const match = bestJaccardMatch(targetText, contents, SNIPPET_WINDOW_SIZE)
-            if (!match || abortSignal?.aborted || isCodyIgnoredFile(uri)) {
+            if (isCodyIgnoredFile(uri) || abortSignal?.aborted) {
                 continue
             }
+            const fileMatches = bestJaccardMatches(targetText, contents, this.snippetWindowSize, this.maxMatchesPerFile)
 
-            matches.push({
-                // Use relative path to remove redundant information from the prompts and
-                // keep in sync with embeddings search results which use relative to repo root paths
-                fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
-                ...match,
-                uri,
-            })
+            // Use relative path to remove redundant information from the prompts and
+            // keep in sync with embeddings search results which use relative to repo root paths
+            const readableFileName = path.normalize(vscode.workspace.asRelativePath(uri.fsPath))
+
+            for (const match of fileMatches) {
+                if (
+                    uri.toString() === document.uri.toString() &&
+                    containedInLineRange(
+                        uri,
+                        { start: match.startLine, end: match.endLine },
+                        document.uri,
+                        contextLineRange
+                    )
+                ) {
+                    continue
+                }
+
+                matches.push({
+                    fileName: readableFileName,
+                    ...match,
+                    uri,
+                })
+            }
         }
 
         matches.sort((a, b) => b.score - a.score)
@@ -93,11 +128,6 @@ async function getRelevantFiles(
     }
 
     function addDocument(document: vscode.TextDocument): void {
-        if (document.uri.toString() === currentDocument.uri.toString()) {
-            // omit current file
-            return
-        }
-
         // Only add files and VSCode user settings.
         if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
             return
@@ -198,4 +228,22 @@ async function getRelevantFiles(
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+/**
+ * @returns true if range A is inside range B
+ */
+function containedInLineRange(
+    uriA: vscode.Uri,
+    lineRangeA: { start: number; end: number },
+    uriB: vscode.Uri,
+    lineRangeB: { start: number; end: number }
+): boolean {
+    if (uriA.toString() !== uriB.toString()) {
+        return false
+    }
+    return (
+        (lineRangeA.start >= lineRangeB.start && lineRangeA.start <= lineRangeB.end) ||
+        (lineRangeA.end >= lineRangeB.start && lineRangeA.end <= lineRangeB.end)
+    )
 }
