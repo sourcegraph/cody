@@ -69,6 +69,8 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
                 switch (key) {
                     case localStorage.ANONYMOUS_USER_ID_KEY:
                         return vscode_shim.extensionConfiguration?.anonymousUserID
+                    case localStorage.LAST_USED_ENDPOINT:
+                        return vscode_shim.extensionConfiguration?.serverEndpoint
                     default:
                         return globalStorage.get(key)
                 }
