@@ -64,14 +64,15 @@ describe('JaccardSimilarityRetriever', () => {
             { document: otherDocument },
             { document: unrelatedDocument },
         ] as any)
-        vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(uri => {
-            if (uri && uri.toString().indexOf('unrelated') > -1) {
+        vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(((uri: vscode.Uri) => {
+            if (uri && uri.toString().includes('unrelated')) {
                 return Promise.resolve(unrelatedDocument)
-            } else if (uri && uri.toString().indexOf('test-class.test') > -1) {
+            }
+            if (uri && uri.toString().includes('test-class.test')) {
                 return Promise.resolve(testDocument)
             }
             return Promise.resolve(otherDocument)
-        })
+        }) as any)
     })
 
     it('should retrieve relevant context snippets from other files, based on the editor prefix', async () => {
