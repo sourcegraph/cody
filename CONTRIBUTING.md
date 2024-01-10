@@ -11,26 +11,16 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 ## Development
 
-- Install Java 11 via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`.
+### Prerequisites
+
+- Java 11: we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`.
   Confirm that you have Java 11 installed with `java -version`.
-- Clone `https://github.com/sourcegraph/sourcegraph`
-- Clone `https://github.com/sourcegraph/cody` in a sibling directory.
-  The toplevel directories for sourcegraph/sourcegraph and sourcegraph/cody must be next to each other.
-- Install the following two IntelliJ plugins to format Java and Kotlin on file save
-    - https://plugins.jetbrains.com/plugin/8527-google-java-format
-    - https://plugins.jetbrains.com/plugin/14912-ktfmt
+- Set up the Cody agent dev environment.
+  - Clone `https://github.com/sourcegraph/cody` in a sibling directory.
+  - Install its dependencies. The easiest way is [with `asdf`](https://github.com/sourcegraph/cody/blob/main/doc/dev/index.md). If not using `asdf`, you just need to install the dependency versions listed in the `.tool-versions` file in that repository.
+  - From the root directory of the repository, `cd ./agent && pnpm install && pnpm build`
 
-Few tips and tricks regarding versioning of the tooling:
-
-- If you are using macOS make sure to install `pnpm`  version `8.6.7`  using `corepack` and
-  not `brew`: `corepack install --global pnpm@8.6.7`.
-  Currently `brew` does not allow you to pick custom `pnpm` version which is
-  causing [various issues](https://github.com/pnpm/pnpm/issues/6903).
-- Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
-- If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
-  Otherwise you won't see effects of your changes.
-- Running `:runIde PplatformRuntimeVersion=X.Y` for the first time might fail due to missing IntelliJ installation. You
-  can fix it by running `:runIde PplatformVersion=X.Y` once - even if compilation fails it fixes your caches.
+### Running
 
 | What                                                             | Command                                                                  |
 |------------------------------------------------------------------|--------------------------------------------------------------------------|
@@ -45,6 +35,24 @@ Few tips and tricks regarding versioning of the tooling:
 | Build deployable plugin                                          | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
 | Reformat Java and Kotlin sources                                 | `./gradlew spotlessApply`                                                |
 | Debug agent JSON-RPC communication                               | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
+
+### Editor config
+
+- Install the following two IntelliJ plugins to format Java and Kotlin on file save
+    - https://plugins.jetbrains.com/plugin/8527-google-java-format
+    - https://plugins.jetbrains.com/plugin/14912-ktfmt
+
+### Troubleshooting
+
+Few tips and tricks regarding versioning of the tooling:
+
+- If you are using macOS and chose not to use `asdf`, use `corepack`, not `brew`, to install `pnpm`  version `8.6.7`: `corepack install --global pnpm@8.6.7`
+  Currently `brew` does not allow you to pick custom `pnpm` version which is causing [various issues](https://github.com/pnpm/pnpm/issues/6903).
+- Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
+- If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
+  Otherwise you won't see effects of your changes.
+- Running `:runIde PplatformRuntimeVersion=X.Y` for the first time might fail due to missing IntelliJ installation. You
+  can fix it by running `:runIde PplatformVersion=X.Y` once - even if compilation fails it fixes your caches.
 
 ## Using Nightly channel releases
 
