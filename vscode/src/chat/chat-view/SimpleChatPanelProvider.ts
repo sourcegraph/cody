@@ -426,7 +426,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                         snippet: message.snippet,
                         attribution: {
                             repositoryNames: [],
-                            totalCount: 0,
                             limitHit: true,
                         },
                     })

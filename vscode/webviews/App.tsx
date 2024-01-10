@@ -8,6 +8,7 @@ import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { GuardrailsPost } from '@sourcegraph/cody-shared/src/guardrails'
 import { type UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
 
 import { type AuthMethod, type AuthStatus, type LocalEnv } from '../src/chat/protocol'
@@ -25,7 +26,6 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
-import { GuardrailsPost } from '@sourcegraph/cody-shared/src/guardrails'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<
@@ -172,7 +172,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     return { name }
                                 }),
                                 limitHit: message.attribution.limitHit,
-                                totalCount: message.attribution.totalCount,
                             })
                         }
                         if (message.error) {

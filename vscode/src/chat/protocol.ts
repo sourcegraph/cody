@@ -124,7 +124,6 @@ export type ExtensionMessage =
           snippet: string
           attribution?: {
               repositoryNames: string[]
-              totalCount: number
               limitHit: boolean
           }
           error?: string
