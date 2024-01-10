@@ -468,47 +468,49 @@ describe('Agent', () => {
             assert(progressID !== undefined, JSON.stringify(client.progressMessages))
             const messages = client.progressMessages
                 .filter(message => message.id === progressID)
-                .map(({ method, message }) => [method, message])
+                .map(({ method, message }) => [method, { ...message, id: 'THE_ID' }])
             expect(messages).toMatchInlineSnapshot(`
-          [
-            [
-              "progress/start",
-              {
-                "id": "ID_0",
-                "options": {
-                  "cancellable": true,
-                  "location": "Notification",
-                  "title": "testing/progress",
-                },
-              },
-            ],
-            [
-              "progress/report",
-              {
-                "id": "ID_0",
-                "message": "message1",
-              },
-            ],
-            [
-              "progress/report",
-              {
-                "id": "ID_0",
-                "increment": 50,
-              },
-            ],
-            [
-              "progress/report",
-              {
-                "id": "ID_0",
-                "increment": 50,
-              },
-            ],
-            [
-              "progress/end",
-              {},
-            ],
-          ]
-        `)
+              [
+                [
+                  "progress/start",
+                  {
+                    "id": "THE_ID",
+                    "options": {
+                      "cancellable": true,
+                      "location": "Notification",
+                      "title": "testing/progress",
+                    },
+                  },
+                ],
+                [
+                  "progress/report",
+                  {
+                    "id": "THE_ID",
+                    "message": "message1",
+                  },
+                ],
+                [
+                  "progress/report",
+                  {
+                    "id": "THE_ID",
+                    "increment": 50,
+                  },
+                ],
+                [
+                  "progress/report",
+                  {
+                    "id": "THE_ID",
+                    "increment": 50,
+                  },
+                ],
+                [
+                  "progress/end",
+                  {
+                    "id": "THE_ID",
+                  },
+                ],
+              ]
+            `)
         })
         it('progress can be cancelled', async () => {
             const disposable = client.progressStartEvents.event(params => {
