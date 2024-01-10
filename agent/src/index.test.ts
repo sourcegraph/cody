@@ -7,7 +7,7 @@ import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Uri } from 'vscode'
 
-import { type ChatMessage } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
 
@@ -60,7 +60,10 @@ export class TestClient extends MessageHandler {
         }
     }
 
-    public async sendSingleMessage(text: string): Promise<ChatMessage | undefined> {
+    public async sendSingleMessage(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+    ): Promise<ChatMessage | undefined> {
         const id = await this.request('chat/new', null)
         const reply = await this.request('chat/submitMessage', {
             id,
@@ -68,8 +71,8 @@ export class TestClient extends MessageHandler {
                 command: 'submit',
                 text,
                 submitType: 'user',
-                addEnhancedContext: false,
-                contextFiles: [],
+                addEnhancedContext: params?.addEnhancedContext ?? false,
+                contextFiles: params?.contextFiles,
             },
         })
 
@@ -122,7 +125,7 @@ export class TestClient extends MessageHandler {
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-        return spawn('node', ['--inspect', '--enable-source-maps', agentScript, 'jsonrpc'], {
+        return spawn('node', ['--enable-source-maps', agentScript, 'jsonrpc'], {
             stdio: 'pipe',
             cwd: agentDir,
             env: {
@@ -162,6 +165,30 @@ export class TestClient extends MessageHandler {
     }
 }
 
+const explainPollyError = `
+
+    ===================================================[ NOTICE ]=======================================================
+    If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
+    Run the following commands locally to update the recordings:
+
+      export SRC_ACCESS_TOKEN=YOUR_TOKEN
+      export SRC_ACCESS_TOKEN_WITH_RATE_LIMIT=RATE_LIMITED_TOKEN # see https://sourcegraph.slack.com/archives/C059N5FRYG3/p1702990080820699
+      export SRC_ENDPOINT=https://sourcegraph.com
+      pnpm update-agent-recordings
+      # Press 'u' to update the snapshots if the new behavior makes sense. It's
+      # normal that the LLM returns minor changes to the wording.
+      git commit -am "Update agent recordings"
+
+
+    More details in https://github.com/sourcegraph/cody/tree/main/agent#updating-the-polly-http-recordings
+    ====================================================================================================================
+
+    `
+
+const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
+const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
+const workspaceRootPath = workspaceRootUri.fsPath
+
 describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
     // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
@@ -174,31 +201,16 @@ describe('Agent', () => {
 
     const dotcom = 'https://sourcegraph.com'
     if (process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true') {
-        console.log('Because CODY_RECORDING_MODE=record, validating that you are authenticated to sourcegraph.com')
         execSync('src login', { stdio: 'inherit' })
         assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
     }
-
-    const explainPollyError = `
-
-    ===================================================[ NOTICE ]=======================================================
-    If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
-    Please check https://github.com/sourcegraph/cody/tree/main/agent#updating-the-polly-http-recordings for the details.
-    ====================================================================================================================
-
-    `
 
     if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
         it('Agent tests are skipped due to VITEST_ONLY environment variable', () => {})
         return
     }
 
-    const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
-    const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
-    const workspaceRootPath = workspaceRootUri.fsPath
-
     const client = new TestClient('defaultClient', process.env.SRC_ACCESS_TOKEN)
-    const rateLimitedClient = new TestClient('rateLimitedClient', process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
 
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     //
@@ -213,8 +225,7 @@ describe('Agent', () => {
         await fspromises.mkdir(workspaceRootPath, { recursive: true })
         await fspromises.cp(prototypePath, workspaceRootPath, { recursive: true })
         await client.initialize()
-        await rateLimitedClient.initialize()
-    }, 1000000)
+    }, 10_000)
 
     it('handles config changes correctly', () => {
         // Send two config change notifications because this is what the
@@ -297,15 +308,14 @@ describe('Agent', () => {
     }, 10_000)
 
     it('allows us to send a very short chat message', async () => {
-        await openFile(animalUri)
         const lastMessage = await client.sendSingleMessage('Hello!')
         expect(lastMessage).toMatchInlineSnapshot(
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! Nice to meet you.",
+            "displayText": " Hello!",
             "speaker": "assistant",
-            "text": " Hello! Nice to meet you.",
+            "text": " Hello!",
           }
         `,
             explainPollyError
@@ -313,7 +323,6 @@ describe('Agent', () => {
     }, 20_000)
 
     it('allows us to send a longer chat message', async () => {
-        await openFile(animalUri)
         const lastMessage = await client.sendSingleMessage('Generate simple hello world function in java!')
         const trimmedMessage = lastMessage?.text
             ?.split('\n')
@@ -339,19 +348,55 @@ describe('Agent', () => {
 
           - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
 
-          - Inside the main method, we call System.out.println(\\"Hello World\\"); to print the text \\"Hello World!\\" to the console.
+          - Inside main, we call System.out.println(\\"Hello World!\\"); to print the text \\"Hello World!\\" to the console.
 
-          - The println method prints the text and a newline character.
+          - The println method handles printing the text and moving to a new line after.
 
-          So in summary, this program defines a Main class with a static main method that prints \\"Hello World!\\" when executed. This is the simplest Hello World program in Java."
+          So this simple program prints \\"Hello World!\\" when run. To run it from the command line you would compile with \`javac Main.java\` and then run \`java Main\`."
         `,
             explainPollyError
         )
     }, 20_000)
 
-    it('get rate limit error if exceeding usage on rate limited account', async () => {
-        const lastMessage = await rateLimitedClient.sendSingleMessage('sqrt(9)')
-        expect(lastMessage?.error?.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
+    // This test is skipped because it shells out to `symf expand-query`, which
+    // requires an access token to send an llm request and is, therefore, not
+    // able to return stable results in replay mode. Also, we don't have an
+    // access token in ci so this test can only pass when running locally (for
+    // now).
+    it.skip('allows us to send a chat message with enhanced context enabled', async () => {
+        await openFile(animalUri)
+        await client.request('command/execute', { command: 'cody.search.index-update' })
+        const lastMessage = await client.sendSingleMessage(
+            'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
+            {
+                addEnhancedContext: true,
+            }
+        )
+        // TODO: make this test return a TypeScript implementation of
+        // `animal.ts`. It currently doesn't do this because the workspace root
+        // is not a git directory and symf reports some git-related error.
+        expect(lastMessage?.text).toMatchInlineSnapshot(
+            `
+          " Here is the code for the Dog class implementing the Animal interface:
+
+          \`\`\`java
+          public class Dog implements Animal {
+
+            @Override
+            public void makeSound() {
+              System.out.println(\\"Woof!\\");
+            }
+
+            @Override
+            public void move() {
+              System.out.println(\\"The dog runs.\\");
+            }
+
+          }
+          \`\`\`"
+        `,
+            explainPollyError
+        )
     }, 20_000)
 
     // TODO Fix test - fails intermittently on CI
@@ -361,10 +406,27 @@ describe('Agent', () => {
         await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
     }, 600)
 
+    describe('RateLimitedAgent', () => {
+        const rateLimitedClient = new TestClient('rateLimitedClient', process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT)
+        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
+        beforeAll(async () => {
+            await rateLimitedClient.initialize()
+        }, 10_000)
+
+        it('get rate limit error if exceeding usage on rate limited account', async () => {
+            const lastMessage = await rateLimitedClient.sendSingleMessage('sqrt(9)')
+            expect(lastMessage?.error?.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
+        }, 20_000)
+
+        afterAll(async () => {
+            await rateLimitedClient.shutdownAndExit()
+            // Long timeout because to allow Polly.js to persist HTTP recordings
+        }, 20_000)
+    })
+
     afterAll(async () => {
         await fspromises.rm(workspaceRootPath, { recursive: true, force: true })
         await client.shutdownAndExit()
-        await rateLimitedClient.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 20_000)
 })

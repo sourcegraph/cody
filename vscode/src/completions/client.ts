@@ -24,10 +24,10 @@ import { forkSignal } from './utils'
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
 
-export interface CodeCompletionsClient {
+export interface CodeCompletionsClient<T = CodeCompletionsParams> {
     complete(
-        params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
+        params: T,
+        onPartialResponse: (incompleteResponse: CompletionResponse) => void,
         signal?: AbortSignal
     ): Promise<CompletionResponse>
     onConfigurationChange(newConfig: CompletionsClientConfig): void
@@ -271,6 +271,6 @@ function parseSSEEvent(message: string): SSEMessage {
     return { event, data }
 }
 
-function createTimeout(timeoutMs: number): Promise<never> {
+export function createTimeout(timeoutMs: number): Promise<never> {
     return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
 }

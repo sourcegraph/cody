@@ -19,7 +19,7 @@ export async function getAccessToken(): Promise<string | null> {
 
         if (!TestSupport.instance) {
             // Display system notification because the error was caused by system storage
-            console.error(`Failed to retrieve access token for Cody from secret storage: ${error}`)
+            logDebug('getAccessToken', `Failed to retrieve access token for Cody from secret storage: ${error}`)
         }
 
         return null

@@ -7,6 +7,8 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
+import packageJson from '../package.json'
+
 import { CONFIG_KEY, getConfigEnumValues, type ConfigKeys, type ConfigurationKeysMap } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
@@ -102,7 +104,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocompleteExperimentalGraphContext,
         experimentalChatPredictions: getHiddenSetting('experimental.chatPredictions', isTesting),
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
-        experimentalSymfContext: getHiddenSetting('experimental.symfContext', false),
+        experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalLocalSymbols: getHiddenSetting('experimental.localSymbols', false),
@@ -114,6 +116,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         ),
 
         autocompleteExperimentalHotStreak: getHiddenSetting('autocomplete.experimental.hotStreak', false),
+        autocompleteExperimentalOllamaOptions: config.get(
+            CONFIG_KEY.autocompleteExperimentalOllamaOptions,
+            packageJson.contributes.configuration.properties['cody.autocomplete.experimental.ollamaOptions'].default
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
