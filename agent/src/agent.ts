@@ -64,7 +64,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
         globalState: {
-            keys: () => [...globalStorage.keys()],
+            keys: () => [localStorage.ANONYMOUS_USER_ID_KEY, ...globalStorage.keys()],
             get: key => {
                 switch (key) {
                     case localStorage.ANONYMOUS_USER_ID_KEY:
