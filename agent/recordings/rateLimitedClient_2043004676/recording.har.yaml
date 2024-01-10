@@ -71,13 +71,13 @@ log:
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 6bcfc636fc45489bf567157aaff03960
+            value: 761506b7800fcf009150738c61f91f18
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
             value: DENY
           - name: x-is-cody-pro-user
-            value: "false"
+            value: "true"
           - name: x-ratelimit-limit
             value: "1"
           - name: x-ratelimit-remaining
@@ -158,18 +158,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 212
-          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZjCzQQBAAA="]'
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: anthropic/claude-2.0
-                  chatModelMaxTokens: 12000
-                  completionModel: anthropic/claude-instant-1
-                  completionModelMaxTokens: 9000
-                  fastChatModel: anthropic/claude-instant-1
-                  fastChatModelMaxTokens: 9000
+          size: 222
+          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UF","jiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//w==","AwCpmMLNBAEAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -268,13 +258,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 128
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: sourcegraph
+          size: 131
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV","Pj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -379,19 +364,19 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 364
-          text: '["H4sIAAAAAAAAA2yPTU7DMBSE7/LWaSKoqFpLlahoxV8JCJq2sHuxXxNTx45sJzSpchjOwsVQFJbsZubTSDNnEOgR2Bl4ZS1pnziyvZUCGGz3seKf5vS8SS6flos5BJCj25KVB0liVaBUwLytKAAhXamwibEgYLD8+a6lgAAqR1YPWU2uJWVq1x5lKHDgWKNHm7yugUHufelYFKl8HGbGZIr6Njfak/YhN0WE0eImmxq+vn9/aMfHL3vyajrSI9rvsvQt3U7u4v3thzLF4vFqlu7ERT53s8mIQwDciObFmpXGVJEAdkDlKIDSygJt83flDDSIf8ZeZz3qZ0DXdd0vAAAA//8DAMfxW405AQAA"]'
+          size: 360
+          text: '["H4sIAAAAAAAAA2yPy0rEMBSG3+Wse0EchxoYsOgsBqTepkVXw2lybDOmTSdJg23pw/gsvpiU0Z27/8IP3z+BQIfAJuC9MdS63JJZrBTAoHjNFD/qz4d9fpGNfAMB1GgLMvJdktg2KBUwZ3oKQEjbKRwybAgY3H1/eSkggN6Sac+ZQC9F5MmOpLS344eEANCjQ5M/3wOD2rnOsjhW9WVUaV0pWtZct45aF3HdxBint1Wi+S5dhfqgku4U9uExrV/UTl+t9uapcEmxprdy9KemD+tDubHX65BDAFyL4dHobYulIvFH3RnZoBl+n0xAZ/EP6021VAsFzPM8/wAAAP//AwB6yrPiOAEAAA=="]'
           textDecoded:
             data:
               currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocLIYJz3kwrxtl8-n-eXWgbSbV6HNXGZlomAK59bWd1h=s96-c
-                codyProEnabled: false
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocIA4-o_l8pq-u-jAhSlIo54TrQVt8V6eYbzvqmu-h_b=s96-c
+                codyProEnabled: true
                 displayName: Dávid
                 hasVerifiedEmail: true
-                id: VXNlcjoxOTU2MDA=
+                id: VXNlcjoxOTU1Nzc=
                 primaryEmail:
-                  email: veszelovszki.david@gmail.com
-                username: veszelovszki.david
+                  email: david.veszelovszki@gmail.com
+                username: david.veszelovszki
         cookies: []
         headers:
           - name: date
@@ -865,8 +850,41 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 527
-          text: '["H4sIAAAAAAAAA5SSUW7cMAxE7+Lv8AJ7gFyi6Ac=","LY1lNTLpUtSujcXevfCmaJIGa2P/BIjD4ePw2kV27k7XDmcujR3xFezN8Fo41e7049oJT+hOXQVbGCmoOMSp54pIhSVRhCN4Vuleuq0LutPApeL28k8cNK4URnaaNLyRo/pBMTfXoNNc4LjbNE7bwyFh/dC6tW/S2ZR+wXvjLHW/9IvLHW1x6odEU14QnxkxrsJTDjS14rlk2drdv7J+HuK4kRuHLGlPIm5c/d0gszjVVZwXGnMaS06jH+jfd/TEZmKu3BeQIayhZEmkA82Gc9ZWyfC7ofoOZV+0p3kLsF6yh5HYwJXqqOah7SmNt/jzlL0SlgBERBrU7if0BfM/iL/nKrjQG9aL2k6aNSdpM9VmZ6wE2VjjM+vBwK04VWcLGmE0rr3lSFWbBSTjeXzsrjNkUx2UOQomuK2EZVbzI/KIvqWnLvgBxUMjSKRWYaTSK1v8HsfP2+0PAAAA//8DALpIcV5iBAAA"]'
+          size: 452
+          text: '["H4sIAAAAAAAAA6ySW27jMAxF96LvcgNZQDcxmA9aupbYypKHpBIbQfZeNBhgXo2LAvOt++A90DUkdg6na8CZ62BHegb7UDxXzhZO366h8YJwCrGnnXh4j31ZKxwUe3NsTtOcaZENKTyF9xSE08zVcHs6MLtylJYfWxwVC1x3wrZ29V9K1/G7cKp9opUzyC7isRAr2MhKV4/D7XGFSW5jJRt6xk5oPNWvjUiYeVQnc9bYE5TKPqkksj40Iiuv5ZO8WNhp6fGVHOaPxcoOqrKIG2GLQEKiuevd9gfIv/B8cLXY+1JSxD1WaZn6TKviLH0YKX4M2BG2e+KqnV7gk7I0e1huYI2FGi70iv3S9b/gPd66aj8QNFc2p3uHcHOyvTlvVCSXKrn44af84Ma98SKRllFdqjTQzyfp7R+G32+3NwAAAP//AwAy+I6XcgMAAA=="]'
+          textDecoded:
+            data:
+              evaluatedFeatureFlags:
+                - name: cody-autocomplete-context-bfg-mixed
+                  value: false
+                - name: cody-autocomplete-tracing
+                  value: false
+                - name: telemetry-export
+                  value: true
+                - name: blob-page-switch-areas-shortcuts
+                  value: false
+                - name: signup-survey-enabled
+                  value: false
+                - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
+                  value: false
+                - name: cody-chat-mock-test
+                  value: false
+                - name: rate-limits-exceeded-for-testing
+                  value: true
+                - name: cody-autocomplete-disable-recycling-of-previous-requests
+                  value: false
+                - name: cody-pro-jetbrains
+                  value: true
+                - name: search-new-keyword
+                  value: false
+                - name: cody-autocomplete-default-starcoder-hybrid
+                  value: true
+                - name: cody-pro
+                  value: true
+                - name: contrast-compliant-syntax-highlighting
+                  value: false
+                - name: cody-autocomplete-dynamic-multiline-completions
+                  value: false
         cookies: []
         headers:
           - name: date
@@ -1085,8 +1103,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 115
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
@@ -1194,8 +1217,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 115
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
@@ -1206,6 +1234,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1294,8 +1324,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 158
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8=","AwD/h5WCVAAAAA=="]'
+          size: 151
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
         cookies: []
         headers:
           - name: date
@@ -1605,12 +1635,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 136
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5sYmBvFGBkYmugaGuoYG8aZ6RroplmapickGxknGZklKtbW1AAAAAP//AwArauoHSQAAAA=="]'
-          textDecoded:
-            data:
-              site:
-                productVersion: 257340_2024-01-10_5.2-d96eac03b36b
+          size: 142
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkp","pcklYalFxZn5eUpWSkam5sYmBvFGBkYmugaGuoYG8aZ6RroplmapickGxknGZklKtbW1AAAAAP//","AwArauoHSQAAAA=="]'
         cookies: []
         headers:
           - name: date

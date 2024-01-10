@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -7,13 +9,13 @@ import { type Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
 import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
-import { type IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { createClient as createCodeCompletionsClint, type CodeCompletionsClient } from './completions/client'
 import { type PlatformContext } from './extension.common'
 import { type LocalEmbeddingsConfig, type LocalEmbeddingsController } from './local-context/local-embeddings'
+import { type SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -23,6 +25,7 @@ interface ExternalServices {
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     localEmbeddings: LocalEmbeddingsController | undefined
+    symfRunner: SymfRunner | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -42,9 +45,9 @@ type ExternalServicesConfiguration = Pick<
     LocalEmbeddingsConfig
 
 export async function configureExternalServices(
+    context: vscode.ExtensionContext,
     initialConfig: ExternalServicesConfiguration,
     rgPath: string | null,
-    symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     platform: Pick<
         PlatformContext,
@@ -53,12 +56,20 @@ export async function configureExternalServices(
         | 'createCompletionsClient'
         | 'createSentryService'
         | 'createOpenTelemetryService'
+        | 'createSymfRunner'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClint(initialConfig, logger)
+
+    const symfRunner = platform.createSymfRunner?.(
+        context,
+        initialConfig.serverEndpoint,
+        initialConfig.accessToken,
+        completionsClient
+    )
 
     const repoId = initialConfig.codebase ? await graphqlClient.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -84,7 +95,7 @@ export async function configureExternalServices(
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         null,
-        symf,
+        symfRunner,
         undefined
     )
 
@@ -97,6 +108,7 @@ export async function configureExternalServices(
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        symfRunner,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)
