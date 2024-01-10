@@ -18,11 +18,7 @@ export interface Guardrails {
 // passing between webview and extension process.
 export class GuardrailsPost implements Guardrails {
     private currentRequests: Map<string, AttributionSearchSync> = new Map()
-    private postSnippet: (txt: string) => void
-
-    constructor(postSnippet: (txt: string) => void) {
-        this.postSnippet = postSnippet
-    }
+    constructor(private postSnippet: (txt: string) => void) {}
 
     public searchAttribution(snippet: string): Promise<Attribution> {
         let request = this.currentRequests.get(snippet)
