@@ -281,6 +281,59 @@ export class Agent extends MessageHandler {
             })
         })
 
+        this.registerNotification('progress/cancel', ({ id }) => {
+            const token = vscode_shim.progressBars.get(id)
+            if (token) {
+                token.cancel()
+            } else {
+                console.error(`progress/cancel: unknown ID ${id}`)
+            }
+        })
+
+        this.registerRequest('testing/progress', async ({ title }) => {
+            const thenable = await vscode.window.withProgress(
+                { title: 'testing/progress', location: vscode.ProgressLocation.Notification, cancellable: true },
+                progress => {
+                    progress.report({ message: 'message1' })
+                    progress.report({ increment: 50 })
+                    progress.report({ increment: 50 })
+                    return Promise.resolve({ result: `Hello ${title}` })
+                }
+            )
+            return thenable
+        })
+
+        this.registerRequest('testing/progressCancelation', async ({ title }) => {
+            const message = await vscode.window.withProgress<string>(
+                {
+                    title: 'testing/progressCancelation',
+                    location: vscode.ProgressLocation.Notification,
+                    cancellable: true,
+                },
+                (progress, token) => {
+                    return new Promise<string>((resolve, reject) => {
+                        token.onCancellationRequested(() => {
+                            progress.report({ message: 'before resolution' })
+                            resolve(`request with title '${title}' cancelled`)
+                            progress.report({ message: 'after resolution' })
+                        })
+                        setTimeout(
+                            () =>
+                                reject(
+                                    new Error(
+                                        'testing/progressCancelation did not resolve within 5 seconds. ' +
+                                            'To fix this problem, send a progress/cancel notification with the same ID ' +
+                                            'as the progress/start notification with title "testing/progressCancelation"'
+                                    )
+                                ),
+                            5_000
+                        )
+                    })
+                }
+            )
+            return { result: message }
+        })
+
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
                 Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
