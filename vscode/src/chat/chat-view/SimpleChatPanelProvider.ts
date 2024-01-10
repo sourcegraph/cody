@@ -2,8 +2,10 @@ import * as path from 'path'
 
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
+    isDefined,
     type ActiveTextEditorSelectionRange,
     type ChatMessage,
     type CodyCommand,
@@ -181,6 +183,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
 
     // Select the chat model to use in Chat
     private selectModel(models: ChatModelProvider[]): string {
+        const authStatus = this.authProvider.getAuthStatus()
+        // Free user can only use the default model
+        if (authStatus.isDotCom && authStatus.userCanUpgrade) {
+            return models[0].model
+        }
         // Check for the last selected model
         const lastSelectedModelID = localStorage.get('model')
         if (lastSelectedModelID) {
@@ -1441,35 +1448,44 @@ class ContextProvider implements IContextProvider {
     }
 }
 
-function contextFilesToContextItems(
+export async function contextFilesToContextItems(
     editor: Editor,
     files: ContextFile[],
     fetchContent?: boolean
 ): Promise<ContextItem[]> {
-    return Promise.all(
-        files.map(async (file: ContextFile): Promise<ContextItem> => {
-            const range = viewRangeToRange(file.range)
-            const uri = file.uri
-                ? // This object may have came via postMessage and might not be a
-                  // real vscode.Uri instance so convert it if required (otherwise
-                  // toString() later will be '[Object object]' and not what we
-                  // expect).
-                  typeof file.uri === 'object'
-                    ? vscode.Uri.from(file.uri)
-                    : file.uri
-                : vscode.Uri.file(file.fileName)
-            let text = file.content
-            if (!text && fetchContent) {
-                text = await editor.getTextEditorContentForFile(uri, range)
-            }
-            return {
-                uri,
-                range,
-                text: text || '',
-                source: file.source,
-            }
-        })
-    )
+    return (
+        await Promise.all(
+            files.map(async (file: ContextFile): Promise<ContextItem | null> => {
+                const range = viewRangeToRange(file.range)
+                const uri = file.uri
+                    ? // This object may have came via postMessage and might not be a
+                      // real vscode.Uri instance so convert it if required (otherwise
+                      // toString() later will be '[Object object]' and not what we
+                      // expect).
+                      file.uri instanceof vscode.Uri || file.uri instanceof URI
+                        ? file.uri
+                        : vscode.Uri.from(file.uri)
+                    : vscode.Uri.file(file.fileName)
+                let text = file.content
+                if (!text && fetchContent) {
+                    try {
+                        text = await editor.getTextEditorContentForFile(uri, range)
+                    } catch (error) {
+                        void vscode.window.showErrorMessage(
+                            `Cody could not include context from ${uri}. (Reason: ${error})`
+                        )
+                        return null
+                    }
+                }
+                return {
+                    uri,
+                    range,
+                    text: text || '',
+                    source: file.source,
+                }
+            })
+        )
+    ).filter(isDefined)
 }
 
 function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {

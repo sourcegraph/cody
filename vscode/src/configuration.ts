@@ -114,6 +114,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         ),
 
         autocompleteExperimentalHotStreak: getHiddenSetting('autocomplete.experimental.hotStreak', false),
+        autocompleteExperimentalOllamaOptions: getHiddenSetting('autocomplete.experimental.ollamaOptions', {
+            url: 'http://localhost:11434',
+            model: 'codellama:7b-code',
+        }),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages

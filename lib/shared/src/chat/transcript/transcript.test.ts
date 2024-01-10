@@ -94,7 +94,10 @@ describe('Transcript', () => {
         const expectedPrompt = [
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            {
+                speaker: 'human',
+                text: 'Use the following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+            },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
@@ -137,7 +140,10 @@ describe('Transcript', () => {
         const expectedPrompt = [
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            {
+                speaker: 'human',
+                text: 'Use the following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+            },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
@@ -196,7 +202,10 @@ describe('Transcript', () => {
             { speaker: 'assistant', text: assistantResponse },
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            {
+                speaker: 'human',
+                text: 'Use the following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+            },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how to create a batch change' },
             { speaker: 'assistant', text: undefined },
@@ -277,12 +286,12 @@ describe('Transcript', () => {
             { speaker: 'assistant', text: 'Ok.' },
             {
                 speaker: 'human',
-                text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+                text: 'Use the following code snippet from file `src/main.go`:\n```go\npackage main\n```',
             },
             { speaker: 'assistant', text: 'Ok.' },
             {
                 speaker: 'human',
-                text: 'I have the `internal/lib.go` file opened in my editor. Use following code snippet from file `internal/lib.go`:\n```go\npackage lib\n```',
+                text: 'I have the `internal/lib.go` file opened in my editor. Use the following code snippet from file `internal/lib.go`:\n```go\npackage lib\n```',
             },
             {
                 speaker: 'assistant',
@@ -383,7 +392,10 @@ describe('Transcript', () => {
             { speaker: 'assistant', text: 'By setting the Authorization header.' },
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
-            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            {
+                speaker: 'human',
+                text: 'Use the following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+            },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: CODY_INTRO_PROMPT + 'how do to delete them' },
             { speaker: 'assistant', text: undefined },
