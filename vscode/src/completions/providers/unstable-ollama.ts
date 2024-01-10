@@ -26,8 +26,6 @@ function fileNameLine(fileName: string, commentStart: string): string {
 }
 
 function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: string): string {
-    prompt.suffix = '' // TODO(valery): find the balance between using `docContext.suffix` and keeping a good perf.
-
     const config = getLanguageConfig(prompt.languageId)
     const commentStart = config?.commentStart || '//'
 
@@ -44,7 +42,7 @@ function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: 
 
     const currentFileNameComment = fileNameLine(prompt.fileName, commentStart)
 
-    if (model === 'codellama' && infill) {
+    if (model.startsWith('codellama:') && infill) {
         const infillPrefix = context + currentFileNameComment + prompt.prefix
 
         /**
@@ -89,9 +87,7 @@ class UnstableOllamaProvider extends Provider {
 
         if (process.env.OLLAMA_CONTEXT_SNIPPETS) {
             // TODO(valery): find the balance between using context and keeping a good perf.
-            const maxPromptChars = 1234 /* tokensToChars(
-                this.ollamaOptions.parameters.num_ctx * (1 - this.options.responsePercentage)
-            )    */
+            const maxPromptChars = 1234
 
             for (const snippet of snippets) {
                 const extendedSnippets = [...prompt.snippets, snippet]
@@ -131,7 +127,6 @@ class UnstableOllamaProvider extends Provider {
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
             options: {
-                // seed: 1337,
                 stop: SINGLE_LINE_STOP_SEQUENCES,
                 temperature: 0.2,
                 top_k: -1,
@@ -185,6 +180,10 @@ const SHARED_STOP_SEQUENCES = [
 ]
 
 const SINGLE_LINE_STOP_SEQUENCES = ['\n', ...SHARED_STOP_SEQUENCES]
+
+// TODO(valery): find the balance between using less stop tokens to get more multiline completions and keeping a good perf.
+// `SHARED_STOP_SEQUENCES` are not included because the number of multiline completions goes down significantly
+// leaving an impression that Ollama provider support only singleline completions.
 const MULTI_LINE_STOP_SEQUENCES: string[] = ['\n\n', EOT_TOKEN /* ...SHARED_STOP_SEQUENCES */]
 
 const PROVIDER_IDENTIFIER = 'unstable-ollama'
