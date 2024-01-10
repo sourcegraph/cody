@@ -5,6 +5,7 @@ import os from 'os'
 import path from 'path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 
 import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
@@ -39,6 +40,7 @@ export class TestClient extends MessageHandler {
     // start/end/report have different types.
     public progressMessages: ProgressMessage[] = []
     public progressIDs = new Map<string, number>()
+    public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
 
     constructor(
         public readonly name: string,
@@ -50,6 +52,7 @@ export class TestClient extends MessageHandler {
         this.info = this.getClientInfo()
 
         this.registerNotification('progress/start', message => {
+            this.progressStartEvents.fire(message)
             message.id = this.progressID(message.id)
             this.progressMessages.push({ method: 'progress/start', id: message.id, message })
         })
@@ -451,21 +454,22 @@ describe('Agent', () => {
         await client.request('recipes/execute', { id: 'chat-question', humanChatInput: 'How do I implement sum?' })
     }, 600)
 
-    it('progress notifications are sent', async () => {
-        const { result } = await client.request('testing/progress', { title: 'Susan' })
-        expect(result).toStrictEqual('Hello Susan')
-        let progressID: string | undefined
-        for (const message of client.progressMessages) {
-            if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
-                progressID = message.message.id
-                break
+    describe('progress bars', () => {
+        it('messages are sent', async () => {
+            const { result } = await client.request('testing/progress', { title: 'Susan' })
+            expect(result).toStrictEqual('Hello Susan')
+            let progressID: string | undefined
+            for (const message of client.progressMessages) {
+                if (message.method === 'progress/start' && message.message.options.title === 'testing/progress') {
+                    progressID = message.message.id
+                    break
+                }
             }
-        }
-        assert(progressID !== undefined, JSON.stringify(client.progressMessages))
-        const messages = client.progressMessages
-            .filter(message => message.id === progressID)
-            .map(({ method, message }) => [method, message])
-        expect(messages).toMatchInlineSnapshot(`
+            assert(progressID !== undefined, JSON.stringify(client.progressMessages))
+            const messages = client.progressMessages
+                .filter(message => message.id === progressID)
+                .map(({ method, message }) => [method, message])
+            expect(messages).toMatchInlineSnapshot(`
           [
             [
               "progress/start",
@@ -505,6 +509,20 @@ describe('Agent', () => {
             ],
           ]
         `)
+        })
+        it('progress can be cancelled', async () => {
+            const disposable = client.progressStartEvents.event(params => {
+                if (params.options.title === 'testing/progressCancelation') {
+                    client.notify('progress/cancel', { id: params.id })
+                }
+            })
+            try {
+                const { result } = await client.request('testing/progressCancelation', { title: 'Leona' })
+                expect(result).toStrictEqual("request with title 'Leona' cancelled")
+            } finally {
+                disposable.dispose()
+            }
+        })
     })
 
     describe('RateLimitedAgent', () => {

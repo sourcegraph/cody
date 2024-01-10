@@ -96,6 +96,10 @@ export type Requests = {
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
 
+    // Only used for testing purposes. This operation runs indefinitely unless
+    // the client sends progress/cancel.
+    'testing/progressCancelation': [{ title: string }, { result: string }]
+
     // ================
     // Server -> Client
     // ================
