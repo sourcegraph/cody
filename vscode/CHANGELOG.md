@@ -17,6 +17,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Do not automatically append open file name to display text for chat questions. [pull/2580](https://github.com/sourcegraph/cody/pull/2580)
 - Fixed unresponsive stop button in chat when an error is presented. [pull/2588](https://github.com/sourcegraph/cody/pull/2588)
 - Added existing `cody.useContext` config to chat to control context fetching strategy. [pull/2616](https://github.com/sourcegraph/cody/pull/2616)
+- Fixed extension start up issue for enterprise users who do not have primary email set up. [pull/2665](https://github.com/sourcegraph/cody/pull/2665)
+- All Chat windows are now closed properly on sign out. [pull/2665](https://github.com/sourcegraph/cody/pull/2665)
 - [Internal] Opening files with non-file schemed URLs no longer breaks Autocomplete when `.cody/ignore` is enabled. [pull/2640](https://github.com/sourcegraph/cody/pull/2640)
 
 ### Changed
