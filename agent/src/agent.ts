@@ -20,6 +20,7 @@ import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
@@ -65,7 +66,15 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         globalState: {
             keys: () => [...globalStorage.keys()],
             get: key => {
-                return globalStorage.get(key)
+                if (globalStorage.has(key)) {
+                    return globalStorage.get(key)
+                }
+                switch (key) {
+                    case localStorage.ANONYMOUS_USER_ID_KEY:
+                        return vscode_shim.extensionConfiguration?.anonymousUserID
+                    default:
+                        return undefined
+                }
             },
             update: (key, value) => {
                 globalStorage.set(key, value)
