@@ -3,31 +3,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { DocumentContext } from '../../../get-current-doc-context'
-import { document } from '../../../test-helpers'
+import { getCurrentDocContext } from '../../../get-current-doc-context'
+import { document, documentAndPosition } from '../../../test-helpers'
 
 import { JaccardSimilarityRetriever } from './jaccard-similarity-retriever'
 
-const testDocument = document(
+const { document: testDocument, position: testPosition } = documentAndPosition(
     dedent`
-        // Write a test for TestClass
-
+        // Write a test for the class TestClass
+        █
     `,
     'typescript',
     URI.file('/test-class.test.ts').toString()
 )
-const testDocContext: DocumentContext = {
-    position: new vscode.Position(1, 0),
-    multilineTrigger: null,
-    multilineTriggerPosition: null,
-    prefix: '// Write a test for the class TestClass\n',
-    suffix: '\n',
-    injectedPrefix: null,
-    currentLinePrefix: '',
-    currentLineSuffix: '\n',
-    prevNonEmptyLine: '// Write a test for TestClass',
-    nextNonEmptyLine: '',
-}
+const testDocContext = getCurrentDocContext({
+    document: testDocument,
+    position: testPosition,
+    maxPrefixLength: 100,
+    maxSuffixLength: 0,
+    dynamicMultilineCompletions: false,
+})
+
 const DEFAULT_HINTS = {
     maxChars: 1000,
     maxMs: 100,
@@ -142,10 +138,10 @@ describe('JaccardSimilarityRetriever', () => {
         // We limit the window size to 3 lines
         const retriever = new JaccardSimilarityRetriever(3)
 
-        const testDocument = document(
+        const { document: testDocument, position: testPosition } = documentAndPosition(
             dedent`
                 // Write a test for TestClass
-
+                █
                 class TestClass {
                     // Maybe this is relevant tho?
                 }
@@ -159,18 +155,13 @@ describe('JaccardSimilarityRetriever', () => {
             return Promise.resolve(testDocument)
         })
 
-        const testDocContext: DocumentContext = {
-            position: new vscode.Position(1, 0),
-            multilineTrigger: null,
-            multilineTriggerPosition: null,
-            prefix: '// Write a test for the class TestClass\n',
-            suffix: '',
-            injectedPrefix: null,
-            currentLinePrefix: '',
-            currentLineSuffix: '\n',
-            prevNonEmptyLine: '// Write a test for TestClass',
-            nextNonEmptyLine: 'class TestClass {',
-        }
+        const testDocContext = getCurrentDocContext({
+            document: testDocument,
+            position: testPosition,
+            maxPrefixLength: 100,
+            maxSuffixLength: 0,
+            dynamicMultilineCompletions: false,
+        })
 
         const snippets = await retriever.retrieve({
             document: testDocument,
@@ -214,19 +205,6 @@ describe('JaccardSimilarityRetriever', () => {
         vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(uri => {
             return Promise.resolve(otherDocument)
         })
-
-        const testDocContext: DocumentContext = {
-            position: new vscode.Position(1, 0),
-            multilineTrigger: null,
-            multilineTriggerPosition: null,
-            prefix: '// Write a test for the class TestClass\n',
-            suffix: '',
-            injectedPrefix: null,
-            currentLinePrefix: '',
-            currentLineSuffix: '\n',
-            prevNonEmptyLine: '// Write a test for TestClass',
-            nextNonEmptyLine: 'class TestClass {',
-        }
 
         const snippets = await retriever.retrieve({
             document: testDocument,
