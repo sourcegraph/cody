@@ -57,21 +57,21 @@ log:
             value: "0"
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: retry-after
+            value: "0"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 34a141d5c96c3e71fdc1814ad67dc347
+            value: 6bcfc636fc45489bf567157aaff03960
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -180,8 +180,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -287,8 +285,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -406,8 +402,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -504,8 +498,6 @@ log:
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -600,8 +592,6 @@ log:
             value: "37"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -696,8 +686,6 @@ log:
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -792,8 +780,6 @@ log:
             value: "38"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -879,51 +865,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 520
-          text: '["H4sIAAAAAAAAA5STUW7jMAxE76Lv8gI5QC+x2A9aGsvaypJLUomFIHdf2CiwbbGJm29xqDej0dUFNnanq8OZc2NDeAVbE7xmjupOv66u8Ax3cr6GTtys+jovGQYKGLllIzUWXwOEpj5ICqS1iUcUXib34rbFcKeRs+L28nXfIvXfhEn7PCBsoJzmZEpYPRAQaKxCBrVU4l0hSqCmEKplqCzh0WxdUDb2Q9hiwmq0m09cjLQX45WmFKec4vSV6LteweInKrjQG/qlSjgI5kdB33X1nxVJecggge8+pxKpjrQIzqk2JcF7g5rehxpyHWjhCNJLMj8RC1hJpyrm2yPlzuInNpqrf9sf7xnvJuwfR5tiaQtpkzM6oWw2n0qmF56Tp7llSzkV0MdRquWBLUPGDJNOWJcq9sSNmUtsW5SZDcX3u9KP1gQMLR5/JPoDG4TTZ+pDlq3YWI2GMdKcVoTDDu+KYjSwIuxeKMDgt7y+i3/fbn8BAAD//wMAQbm/7WIEAAA="]'
-          textDecoded:
-            data:
-              evaluatedFeatureFlags:
-                - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
-                  value: false
-                - name: cody-pro
-                  value: true
-                - name: rate-limits-exceeded-for-testing
-                  value: true
-                - name: end-user-onboarding
-                  value: true
-                - name: opencodegraph
-                  value: false
-                - name: contrast-compliant-syntax-highlighting
-                  value: false
-                - name: search-new-keyword
-                  value: false
-                - name: cody-autocomplete-default-starcoder-hybrid
-                  value: true
-                - name: cody-autocomplete-disable-recycling-of-previous-requests
-                  value: false
-                - name: blob-page-switch-areas-shortcuts
-                  value: false
-                - name: cody-chat-mock-test
-                  value: false
-                - name: cody-autocomplete-tracing
-                  value: false
-                - name: signup-survey-enabled
-                  value: true
-                - name: cody-autocomplete-dynamic-multiline-completions
-                  value: false
-                - name: telemetry-export
-                  value: true
-                - name: cody-autocomplete-language-latency
-                  value: true
-                - name: search-debug
-                  value: false
-                - name: cody-pro-jetbrains
-                  value: true
-                - name: cody-autocomplete-context-bfg-mixed
-                  value: false
-                - name: search-content-based-lang-detection
-                  value: false
+          size: 527
+          text: '["H4sIAAAAAAAAA5SSUW7cMAxE7+Lv8AJ7gFyi6Ac=","LY1lNTLpUtSujcXevfCmaJIGa2P/BIjD4ePw2kV27k7XDmcujR3xFezN8Fo41e7049oJT+hOXQVbGCmoOMSp54pIhSVRhCN4Vuleuq0LutPApeL28k8cNK4URnaaNLyRo/pBMTfXoNNc4LjbNE7bwyFh/dC6tW/S2ZR+wXvjLHW/9IvLHW1x6odEU14QnxkxrsJTDjS14rlk2drdv7J+HuK4kRuHLGlPIm5c/d0gszjVVZwXGnMaS06jH+jfd/TEZmKu3BeQIayhZEmkA82Gc9ZWyfC7ofoOZV+0p3kLsF6yh5HYwJXqqOah7SmNt/jzlL0SlgBERBrU7if0BfM/iL/nKrjQG9aL2k6aNSdpM9VmZ6wE2VjjM+vBwK04VWcLGmE0rr3lSFWbBSTjeXzsrjNkUx2UOQomuK2EZVbzI/KIvqWnLvgBxUMjSKRWYaTSK1v8HsfP2+0PAAAA//8DALpIcV5iBAAA"]'
         cookies: []
         headers:
           - name: date
@@ -934,8 +877,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1049,8 +990,6 @@ log:
             value: "26"
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1146,13 +1085,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -1163,8 +1097,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1262,13 +1194,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -1279,8 +1206,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1369,13 +1294,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 148
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
-          textDecoded:
-            data:
-              repository:
-                embeddingExists: true
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 158
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8=","AwD/h5WCVAAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1386,8 +1306,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1475,8 +1393,12 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 123
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//","AwDHAhygPQAAAA=="]'
+          size: 120
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          textDecoded:
+            data:
+              repository:
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
         cookies: []
         headers:
           - name: date
@@ -1487,8 +1409,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1599,8 +1519,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1703,8 +1621,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
