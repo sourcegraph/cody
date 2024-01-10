@@ -41,6 +41,10 @@ describe('JaccardSimilarityRetriever', () => {
                 methodOne() {
                     console.log('one')
                 }
+
+
+
+
                 // Method 2 of TestClass
                 methodTwo() {
                     console.log('two')
@@ -85,31 +89,22 @@ describe('JaccardSimilarityRetriever', () => {
             abortSignal: new AbortController().signal,
         })
 
-        expect(snippets[0]).toMatchInlineSnapshot(`
-          {
-            "content": "export class TestClass {
+        // With the default window size, the whole test class will be included
+        expect(snippets[0].content).toMatchInlineSnapshot(`
+          "export class TestClass {
               // Method 1 of TestClass
               methodOne() {
                   console.log('one')
               }
+
+
+
+
               // Method 2 of TestClass
               methodTwo() {
                   console.log('two')
               }
-          }",
-            "endLine": 10,
-            "fileName": "/test-class.ts",
-            "score": 0.10526315789473684,
-            "startLine": 0,
-            "uri": {
-              "$mid": 1,
-              "_sep": undefined,
-              "external": "file:///test-class.ts",
-              "fsPath": "/test-class.ts",
-              "path": "/test-class.ts",
-              "scheme": "file",
-            },
-          }
+          }"
         `)
         // The unrelated file is added last with a much lower score.
         expect(snippets[1].fileName).toBe('/unrelated.ts')
@@ -117,7 +112,8 @@ describe('JaccardSimilarityRetriever', () => {
     })
 
     it('should pick multiple matches from the same file', async () => {
-        const retriever = new JaccardSimilarityRetriever(3 /* jaccard window size */)
+        // We limit the window size to 4 lines
+        const retriever = new JaccardSimilarityRetriever(4)
 
         const snippets = await retriever.retrieve({
             document: testDocument,
@@ -127,49 +123,24 @@ describe('JaccardSimilarityRetriever', () => {
             abortSignal: new AbortController().signal,
         })
 
-        expect(snippets[0]).toMatchInlineSnapshot(`
-          {
-            "content": "export class TestClass {
+        // The first snippet contains the top of the file
+        expect(snippets[0].content).toMatchInlineSnapshot(`
+          "export class TestClass {
               // Method 1 of TestClass
-              methodOne() {",
-            "endLine": 3,
-            "fileName": "/test-class.ts",
-            "score": 0.2222222222222222,
-            "startLine": 0,
-            "uri": {
-              "$mid": 1,
-              "_sep": undefined,
-              "external": "file:///test-class.ts",
-              "fsPath": "/test-class.ts",
-              "path": "/test-class.ts",
-              "scheme": "file",
-            },
-          }
+              methodOne() {
+                  console.log('one')"
         `)
-
-        expect(snippets[1]).toMatchInlineSnapshot(`
-          {
-            "content": "    }
-              // Method 2 of TestClass
-              methodTwo() {",
-            "endLine": 7,
-            "fileName": "/test-class.ts",
-            "score": 0.14285714285714285,
-            "startLine": 4,
-            "uri": {
-              "$mid": 1,
-              "_sep": undefined,
-              "external": "file:///test-class.ts",
-              "fsPath": "/test-class.ts",
-              "path": "/test-class.ts",
-              "scheme": "file",
-            },
-          }
+        expect(snippets[1].content).toMatchInlineSnapshot(`
+          "    // Method 2 of TestClass
+              methodTwo() {
+                  console.log('two')
+              }"
         `)
     })
 
     it('should include matches from the same file that do not overlap the prefix/suffix', async () => {
-        const retriever = new JaccardSimilarityRetriever(3 /* jaccard window size */)
+        // We limit the window size to 3 lines
+        const retriever = new JaccardSimilarityRetriever(3)
 
         const testDocument = document(
             dedent`
@@ -209,26 +180,66 @@ describe('JaccardSimilarityRetriever', () => {
             abortSignal: new AbortController().signal,
         })
 
-        expect(snippets[0]).toMatchInlineSnapshot(`
-          {
-            "content": "class TestClass {
+        expect(snippets[0].content).toMatchInlineSnapshot(`
+          "class TestClass {
               // Maybe this is relevant tho?
-          }",
-            "endLine": 5,
-            "fileName": "/test-class.test.ts",
-            "score": 0.125,
-            "startLine": 2,
-            "uri": {
-              "$mid": 1,
-              "_sep": undefined,
-              "external": "file:///test-class.test.ts",
-              "fsPath": "/test-class.test.ts",
-              "path": "/test-class.test.ts",
-              "scheme": "file",
-            },
-          }
+          }"
         `)
     })
 
-    it('should merge multiple matches from the same file into one snippet if they overlap')
+    it('should merge multiple matches from the same file into one snippet if they overlap', async () => {
+        // We limit the window size to 3 lines
+        const retriever = new JaccardSimilarityRetriever(3)
+
+        // NOTE: This document has no space between the top relevant section, so we expect it to be
+        // merged into one.
+        const otherDocument = document(
+            dedent`
+                export class TestClass {
+                    // Method 1 of TestClass
+                    methodOne() {
+                        console.log('one')
+                    }
+                    // Method 2 of TestClass
+                    methodTwo() {
+                        console.log('two')
+                    }
+                }
+            `,
+            'typescript',
+            URI.file('test-class.ts').toString()
+        )
+
+        vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([{ document: otherDocument }] as any)
+        vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(uri => {
+            return Promise.resolve(otherDocument)
+        })
+
+        const testDocContext: DocumentContext = {
+            position: new vscode.Position(1, 0),
+            multilineTrigger: null,
+            multilineTriggerPosition: null,
+            prefix: '// Write a test for the class TestClass\n',
+            suffix: '',
+            injectedPrefix: null,
+            currentLinePrefix: '',
+            currentLineSuffix: '\n',
+            prevNonEmptyLine: '// Write a test for TestClass',
+            nextNonEmptyLine: 'class TestClass {',
+        }
+
+        const snippets = await retriever.retrieve({
+            document: testDocument,
+            position: testDocContext.position,
+            docContext: testDocContext,
+            hints: DEFAULT_HINTS,
+            abortSignal: new AbortController().signal,
+        })
+
+        expect(snippets[0].content).toMatchInlineSnapshot(`
+          "export class TestClass {
+              // Method 1 of TestClass
+              methodOne() {"
+        `)
+    })
 })
