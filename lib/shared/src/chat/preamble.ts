@@ -1,4 +1,4 @@
-import { Message } from '../sourcegraph-api'
+import { type Message } from '../sourcegraph-api'
 
 export function getSimplePreamble(preInstruction?: string | undefined): Message[] {
     return [

@@ -1,13 +1,13 @@
-import { AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
+import { type AutocompleteTimeouts } from '@sourcegraph/cody-shared/src/configuration'
 
-import { CodeCompletionsParams } from '../client'
+import { type CodeCompletionsParams } from '../client'
 
 import {
     fetchAndProcessCompletions,
-    FetchAndProcessCompletionsParams,
     fetchAndProcessDynamicMultilineCompletions,
+    type FetchAndProcessCompletionsParams,
 } from './fetch-and-process-completions'
-import { ProviderOptions } from './provider'
+import { type ProviderOptions } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256
 

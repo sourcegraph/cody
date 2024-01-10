@@ -2,22 +2,22 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { Polly } from '@pollyjs/core'
+import { type Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
-import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
+import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { setUserAgent, type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
@@ -26,7 +26,7 @@ import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
-import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
+import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration, type RecipeInfo } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
@@ -100,12 +100,14 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
     })
 }
 
-export async function newAgentClient(clientInfo: ClientInfo): Promise<MessageHandler> {
+export async function newAgentClient(clientInfo: ClientInfo & { codyAgentPath?: string }): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
         const serverHandler = new MessageHandler()
-        const args = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
-        args.push('jsonrpc')
-        const child = spawn(process.argv[0], args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
+        const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        nodeArguments.push('jsonrpc')
+        const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
+        const args = clientInfo.codyAgentPath ? [] : nodeArguments
+        const child = spawn(arg0, args, { env: { ENABLE_SENTRY: 'false', ...process.env } })
         serverHandler.connectProcess(child, reject)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
@@ -171,9 +173,11 @@ export class Agent extends MessageHandler {
         this.registerRequest('initialize', async clientInfo => {
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
-            process.stderr.write(
-                `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
-            )
+            if (process.env.CODY_DEBUG === 'true') {
+                process.stderr.write(
+                    `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
+                )
+            }
 
             vscode_shim.setClientInfo(clientInfo)
             // Register client info
@@ -518,7 +522,6 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('chat/new', async () => {
             const id = await new Promise<string>((resolve, reject) => {
-                console.log('STAAAAAAAAAAAAAAAAAART')
                 // HACK: when triggering this command, Cody creates a webview under the hood and there's
                 // no clean way for us (yet) to pair the webview with this command invocation.
                 // To work around this limitation, we hijack the `webview/create` handler to capture
@@ -534,7 +537,6 @@ export class Agent extends MessageHandler {
                     reject(new Error('chat/new: timed out waiting for chat panel to be created'))
                 }, 1000)
             })
-            console.log('END')
 
             // Important: this request never responds if we await on the messages here.
             this.receiveWebviewMessage(id, { command: 'ready' }).then(

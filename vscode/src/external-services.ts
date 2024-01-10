@@ -1,19 +1,19 @@
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { type Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
-import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { type IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
-import { PlatformContext } from './extension.common'
-import { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
+import { createClient as createCodeCompletionsClint, type CodeCompletionsClient } from './completions/client'
+import { type PlatformContext } from './extension.common'
+import { type LocalEmbeddingsConfig, type LocalEmbeddingsController } from './local-context/local-embeddings'
 import { logDebug, logger } from './log'
 
 interface ExternalServices {
@@ -37,6 +37,7 @@ type ExternalServicesConfiguration = Pick<
     | 'accessToken'
     | 'debugEnable'
     | 'experimentalLocalSymbols'
+    | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig
 

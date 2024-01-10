@@ -4,14 +4,15 @@ import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
-    ContextGroup,
-    ContextProvider,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
-    SearchProvider,
+    type ContextGroup,
+    type ContextProvider,
+    type EnhancedContextContextT,
+    type LocalEmbeddingsProvider,
+    type SearchProvider,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
 import { PopupFrame } from '../Popups/Popup'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import popupStyles from '../Popups/Popup.module.css'
 import styles from './EnhancedContextSettings.module.css'
@@ -244,6 +245,12 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
                 setEnabled(shouldEnable)
+                // Log when a user clicks on the Enhanced Context toggle
+                getVSCodeAPI().postMessage({
+                    command: 'event',
+                    eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+                    properties: { useEnhancedContext: shouldEnable },
+                })
             }
         },
         [events, enabled]

@@ -1,14 +1,14 @@
 import dedent from 'dedent'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
-import * as Parser from 'web-tree-sitter'
+import type * as vscode from 'vscode'
+import type * as Parser from 'web-tree-sitter'
 
 import { range } from '../testutils/textDocument'
 import { asPoint } from '../tree-sitter/parse-tree-cache'
 import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getContextRange } from './doc-context-getters'
-import { DocumentContext, getCurrentDocContext, insertIntoDocContext } from './get-current-doc-context'
+import { getCurrentDocContext, insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletionContext) {
@@ -263,7 +263,11 @@ describe('getCurrentDocContext', () => {
         }
 
         beforeAll(async () => {
-            parser = await initTreeSitterParser()
+            const initializedParser = await initTreeSitterParser()
+            if (initializedParser === undefined) {
+                throw new Error('Could not initialize tree-sitter parser')
+            }
+            parser = initializedParser
         })
 
         afterAll(() => {

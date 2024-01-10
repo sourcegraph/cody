@@ -1,31 +1,26 @@
 import * as vscode from 'vscode'
 
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    FeatureFlagProvider,
     featureFlagProvider,
+    type FeatureFlagProvider,
 } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { View } from '../../../webviews/NavBar'
-import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { SymfRunner } from '../../local-context/symf'
+import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { MessageProviderOptions } from '../MessageProvider'
-import { AuthStatus, ExtensionMessage } from '../protocol'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type MessageProviderOptions } from '../MessageProvider'
+import { type AuthStatus, type ExtensionMessage } from '../protocol'
 
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
-import { SidebarViewOptions } from './SidebarViewController'
+import { type SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import { SimpleChatRecipeAdapter } from './SimpleChatRecipeAdapter'
 
 type ChatID = string
 
@@ -41,28 +36,10 @@ export interface ChatPanelProviderOptions extends MessageProviderOptions {
     featureFlagProvider: FeatureFlagProvider
 }
 
-/**
- * An interface to swap out SimpleChatPanelProvider for ChatPanelProvider
- */
-export interface IChatPanelProvider extends vscode.Disposable {
-    executeRecipe(recipeID: RecipeID, chatID: ChatID, context: any): Promise<void>
-    executeCustomCommand(title: string, type?: CustomCommandType): Promise<void>
-    clearAndRestartSession(): Promise<void>
-    handleChatTitle(title: string): void
-    triggerNotice(notice: { key: string }): void
-    webviewPanel?: vscode.WebviewPanel
-    webview?: ChatViewProviderWebview
-    sessionID: string
-    setWebviewView(view: View): Promise<void>
-    restoreSession(chatID: string): Promise<void>
-    setConfiguration?: (config: Config) => void
-    revive: (panel: vscode.WebviewPanel, chatID: string) => Promise<void>
-}
-
 export class ChatPanelsManager implements vscode.Disposable {
     // Chat views in editor panels
-    private activePanelProvider: IChatPanelProvider | undefined = undefined
-    private panelProvidersMap: Map<ChatID, IChatPanelProvider> = new Map()
+    private activePanelProvider: SimpleChatPanelProvider | undefined = undefined
+    private panelProvidersMap: Map<ChatID, SimpleChatPanelProvider> = new Map()
 
     private options: ChatPanelProviderOptions
 
@@ -124,7 +101,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         await this.updateTreeViewHistory()
     }
 
-    public async getChatPanel(): Promise<IChatPanelProvider> {
+    public async getChatPanel(): Promise<SimpleChatPanelProvider> {
         const provider = await this.createWebviewPanel()
         // Check if any existing panel is available
         return this.activePanelProvider || provider
@@ -137,7 +114,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         chatID?: string,
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
-    ): Promise<IChatPanelProvider> {
+    ): Promise<SimpleChatPanelProvider> {
         if (chatID && this.panelProvidersMap.has(chatID)) {
             const provider = this.panelProvidersMap.get(chatID)
             if (provider?.webviewPanel) {
@@ -217,12 +194,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             embeddingsClient: this.embeddingsClient,
             localEmbeddings: this.localEmbeddings,
             symf: this.symf,
-            recipeAdapter: new SimpleChatRecipeAdapter(
-                this.options.editor,
-                this.options.intentDetector,
-                this.options.contextProvider,
-                this.options.platform
-            ),
             models,
         })
     }
@@ -239,30 +210,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         if (chat) {
             void this.treeView?.reveal(chat, { select: true, focus: false })
         }
-    }
-
-    /**
-     * Executes a recipe in the chat view.
-     */
-    public async executeRecipe(recipeId: RecipeID, humanChatInput: string, source?: ChatEventSource): Promise<void> {
-        logDebug('ChatPanelsManager:executeRecipe', recipeId)
-
-        // Run command in a new webview to avoid conflicts with context from exisiting chat
-        // Only applies when commands are run outside of chat input box
-        const chatProvider = await this.getChatPanel()
-        await chatProvider.executeRecipe(recipeId, humanChatInput, source)
-    }
-
-    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
-        logDebug('ChatPanelsManager:executeCustomCommand', title)
-        const customPromptActions = ['add', 'get', 'menu']
-        if (!customPromptActions.includes(title)) {
-            await this.executeRecipe('custom-prompt', title, 'custom-commands')
-            return
-        }
-
-        const chatProvider = await this.getChatPanel()
-        await chatProvider.executeCustomCommand(title, type)
     }
 
     private async updateTreeViewHistory(): Promise<void> {

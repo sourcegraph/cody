@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { DetectedEntity } from '@sourcegraph/cody-e2e/src/entity-detection'
-import { Fact } from '@sourcegraph/cody-e2e/src/test-cases'
-import { InteractionTestCaseResult, TestResult } from '@sourcegraph/cody-e2e/src/test-results'
+import { type DetectedEntity } from '@sourcegraph/cody-e2e/src/entity-detection'
+import { type Fact } from '@sourcegraph/cody-e2e/src/test-cases'
+import { type InteractionTestCaseResult, type TestResult } from '@sourcegraph/cody-e2e/src/test-results'
 
 import { QualityMetrics } from './QualityMetrics'
 

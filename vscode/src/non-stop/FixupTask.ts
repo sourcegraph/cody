@@ -1,10 +1,12 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { Diff } from './diff'
-import { FixupFile } from './FixupFile'
+import { type EditIntent } from '../edit/types'
+
+import { type Diff } from './diff'
+import { type FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 export type taskID = string
@@ -44,8 +46,9 @@ export class FixupTask {
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
+        public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
-        public readonly intent: FixupIntent = 'edit',
+        public readonly intent: EditIntent = 'edit',
         public selectionRange: vscode.Range,
         /* insert mode means insert replacement at selection, otherwise replace selection contents with replacement */
         public insertMode?: boolean,

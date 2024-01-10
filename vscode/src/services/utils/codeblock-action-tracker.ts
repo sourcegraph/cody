@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
 import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'

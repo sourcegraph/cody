@@ -2,14 +2,14 @@ import * as vscode from 'vscode'
 
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { View } from '../../../webviews/NavBar'
+import { type View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { openExternalLinks } from '../../services/utils/workspace-action'
-import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import { ExtensionMessage, WebviewMessage } from '../protocol'
+import { MessageProvider, type MessageErrorType, type MessageProviderOptions } from '../MessageProvider'
+import { type ExtensionMessage, type WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 

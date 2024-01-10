@@ -11,7 +11,7 @@ import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 const utf8 = new TextDecoder('utf-8')
 
 /**
- * Parses `.code/.ignore` files from the workspace and sets up a watcher to refresh
+ * Parses `.code/ignore` files from the workspace and sets up a watcher to refresh
  * whenever the files change.
  *
  * This is called once the git extension has started up
@@ -101,16 +101,14 @@ async function refresh(uri: vscode.Uri): Promise<void> {
         })
     )
 
-    if (codebaseName) {
-        ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
-        logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
-        return
-    }
+    logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 
+    // Main workspace root
+    ignores.setIgnoreFiles(wf.uri.fsPath, filesWithContent, codebaseName)
+    // Nested codebases
     for (const cb of codebases) {
         ignores.setIgnoreFiles(cb[1], filesWithContent, cb[0])
     }
-    logDebug('CodyIgnore:refresh:workspace', wf.uri.fsPath)
 }
 
 /**

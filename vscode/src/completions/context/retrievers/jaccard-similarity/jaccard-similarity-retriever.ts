@@ -1,15 +1,15 @@
 import path from 'path'
 
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 
-import { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import { type ContextRetriever, type ContextRetrieverOptions, type ContextSnippet } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
-import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
-import { DocumentHistory, VSCodeDocumentHistory } from './history'
+import { bestJaccardMatch, type JaccardMatch } from './bestJaccardMatch'
+import { VSCodeDocumentHistory, type DocumentHistory } from './history'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many

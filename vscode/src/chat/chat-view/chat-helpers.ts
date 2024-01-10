@@ -2,12 +2,14 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
-import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import { type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { CodebaseIdentifiers } from './CodebaseStatusProvider'
-import { ContextItem } from './SimpleChatModel'
+import { createVSCodeRelativePath } from '../../editor-context/helpers'
+
+import { type CodebaseIdentifiers } from './CodebaseStatusProvider'
+import { type ContextItem } from './SimpleChatModel'
 
 export const relativeFileUrlScheme = 'cody-file-relative'
 export const embeddingsUrlScheme = 'cody-remote-embeddings'
@@ -57,8 +59,8 @@ export function rangeToFragment(range: ActiveTextEditorSelectionRange): string {
 }
 
 export function fragmentToRange(fragment: string): ActiveTextEditorSelectionRange | undefined {
-    const match = fragment.match(/^L(\d+)-(\d+)$/)
-    if (!match) {
+    const match = fragment?.match(/^L(\d+)-(\d+)$/)
+    if (!fragment || !match) {
         return undefined
     }
     return {
@@ -135,14 +137,18 @@ export async function openFile(
     range?: ActiveTextEditorSelectionRange,
     currentViewColumn?: vscode.ViewColumn
 ): Promise<void> {
-    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absPath))
+    try {
+        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absPath))
 
-    let viewColumn = vscode.ViewColumn.Beside
-    if (currentViewColumn) {
-        viewColumn = currentViewColumn - 1 || currentViewColumn + 1
+        let viewColumn = vscode.ViewColumn.Beside
+        if (currentViewColumn) {
+            viewColumn = currentViewColumn - 1 || currentViewColumn + 1
+        }
+        const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
+        await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
+    } catch (error) {
+        console.error(error)
     }
-    const selection = range ? new vscode.Range(range.start.line, 0, range.end.line, 0) : range
-    await vscode.window.showTextDocument(doc, { selection, viewColumn, preserveFocus: true, preview: true })
 }
 
 // The approximate inverse of CodebaseContext.makeContextMessageWithResponse
@@ -163,6 +169,7 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
         uri:
             contextMessage.file.uri ||
             legacyContextFileUri(contextMessage.file.fileName, activeEditorSelectionRangeToRange(range)),
+        source: contextMessage.file.source,
         range: range && new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character),
     }
 }
@@ -206,8 +213,8 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
         }
         contextFiles.push({
             uri: item.uri,
-            fileName: relFsPath,
-            source: 'embeddings',
+            fileName: createVSCodeRelativePath(item.uri) || relFsPath,
+            source: item.source || 'embeddings',
             range: rangeToActiveTextEditorSelectionRange(item.range),
             content: item.text,
         })

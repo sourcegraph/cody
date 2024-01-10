@@ -1,19 +1,19 @@
 import path from 'path'
 
-import Parser, { QueryCapture, QueryMatch } from 'web-tree-sitter'
+import { type default as Parser, type QueryCapture, type QueryMatch } from 'web-tree-sitter'
 
 import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
 
 import { SupportedLanguage } from './grammars'
 import { createParser } from './parser'
-import { DocumentQuerySDK, getDocumentQuerySDK } from './query-sdk'
+import { getDocumentQuerySDK, type DocumentQuerySDK } from './query-sdk'
 
 export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')
 
 /**
  * Should be used in tests only.
  */
-export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser> {
+export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser | undefined> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,

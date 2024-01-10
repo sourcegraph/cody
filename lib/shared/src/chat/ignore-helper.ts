@@ -1,17 +1,19 @@
 import path from 'path'
 
-import ignore, { Ignore } from 'ignore'
-import { URI } from 'vscode-uri'
+import ignore, { type Ignore } from 'ignore'
+import { type URI } from 'vscode-uri'
 
 /**
  * The Cody ignore file path in the native platform style (backslashes on Windows).
+ *
+ * e.g: `C:\\Users\\me\\my-project\\.cody\\ignore` or `Users/username/my-project/.cody/ignore`
  */
-export const CODY_IGNORE_FILENAME = path.join('.cody', '.ignore')
+export const CODY_IGNORE_FILENAME = path.join('.cody', 'ignore')
 
 /**
  * The Cody ignore file path in POSIX style (always forward slashes).
  */
-export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', '.ignore')
+export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', 'ignore')
 
 /**
  * A helper to efficiently check if a file should be ignored from a set
@@ -112,6 +114,11 @@ export class IgnoreHelper {
         // Do not ignore if the feature is not enabled
         if (!this.isActive) {
             return false
+        }
+
+        // Ignore all non-file URIs
+        if (uri.scheme !== 'file') {
+            return true
         }
 
         this.ensureFileUri('uri', uri)

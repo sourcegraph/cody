@@ -1,10 +1,10 @@
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
-    TelemetryRecorder,
     TelemetryRecorderProvider,
+    type TelemetryRecorder,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { CallbackTelemetryProcessor, TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 

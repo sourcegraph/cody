@@ -1,16 +1,20 @@
 import * as vscode from 'vscode'
 
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { type CodyCommand, type CodyCommandContext } from '@sourcegraph/cody-shared/src/commands'
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
+    populateContextTemplateFromText,
+    populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared/src/prompt/templates'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { logDebug } from '../../log'
 
-import { ContextItem, contextItemId, MessageWithContext, SimpleChatModel } from './SimpleChatModel'
+import { contextItemId, type ContextItem, type MessageWithContext, type SimpleChatModel } from './SimpleChatModel'
 
 export interface IContextProvider {
     // Context explicitly specified by user
@@ -18,6 +22,8 @@ export interface IContextProvider {
 
     // Relevant context pulled from the editor state and broader repository
     getEnhancedContext(query: string): Promise<ContextItem[]>
+
+    getCommandContext(promptText: string, contextConfig: CodyCommandContext): Promise<ContextItem[]>
 }
 
 export interface IPrompter {
@@ -25,7 +31,8 @@ export interface IPrompter {
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
         useEnhancedContext: boolean,
-        byteLimit: number
+        byteLimit: number,
+        command?: CodyCommand
     ): Promise<{
         prompt: Message[]
         contextLimitWarnings: string[]
@@ -43,7 +50,8 @@ export class DefaultPrompter implements IPrompter {
         chat: SimpleChatModel,
         contextProvider: IContextProvider,
         useEnhancedContext: boolean,
-        byteLimit: number
+        byteLimit: number,
+        command?: CodyCommand
     ): Promise<{
         prompt: Message[]
         contextLimitWarnings: string[]
@@ -109,9 +117,11 @@ export class DefaultPrompter implements IPrompter {
         if (lastMessage.message.speaker === 'assistant') {
             throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
         }
-        if (useEnhancedContext) {
+        if (useEnhancedContext || command) {
             // Add additional context from current editor or broader search
-            const additionalContextItems = await contextProvider.getEnhancedContext(lastMessage.message.text)
+            const additionalContextItems = command
+                ? await contextProvider.getCommandContext(command.prompt, command.context || { codebase: false })
+                : await contextProvider.getEnhancedContext(lastMessage.message.text)
             const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                 additionalContextItems,
                 (item: ContextItem) => this.renderContextItem(item)
@@ -133,8 +143,22 @@ export class DefaultPrompter implements IPrompter {
     }
 
     private renderContextItem(contextItem: ContextItem): Message[] {
+        console.log(new Error(JSON.stringify(contextItem)))
+        // Do not create context item for empty file
+        if (!contextItem.text?.trim()?.length) {
+            return []
+        }
         let messageText: string
-        if (isMarkdownFile(contextItem.uri.fsPath)) {
+        if (contextItem.source === 'selection') {
+            messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
+        } else if (contextItem.source === 'editor') {
+            // This template text works well with prompts in our commands
+            // Using populateCodeContextTemplate here will cause confusion to Cody
+            const templateText = 'Codebase context from file path {fileName}: '
+            messageText = populateContextTemplateFromText(templateText, contextItem.text, contextItem.uri.fsPath)
+        } else if (contextItem.source === 'terminal') {
+            messageText = contextItem.text
+        } else if (isMarkdownFile(contextItem.uri.fsPath)) {
             messageText = populateMarkdownContextTemplate(contextItem.text, contextItem.uri.fsPath)
         } else {
             messageText = populateCodeContextTemplate(contextItem.text, contextItem.uri.fsPath)
@@ -209,6 +233,10 @@ class PromptBuilder {
         const ignored: ContextItem[] = []
         const duplicate: ContextItem[] = []
         for (const contextItem of contextItems) {
+            if (contextItem.uri.scheme === 'file' && isCodyIgnoredFile(contextItem.uri)) {
+                ignored.push(contextItem)
+                continue
+            }
             const id = contextItemId(contextItem)
             if (this.seenContext.has(id)) {
                 duplicate.push(contextItem)

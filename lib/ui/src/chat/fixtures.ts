@@ -1,4 +1,4 @@
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { type ChatMessage } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
     simple: [

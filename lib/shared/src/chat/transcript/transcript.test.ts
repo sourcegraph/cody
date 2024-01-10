@@ -5,7 +5,7 @@ import { describe, it } from 'vitest'
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { CODY_INTRO_PROMPT } from '../../prompt/prompt-mixin'
-import { Message } from '../../sourcegraph-api'
+import { type Message } from '../../sourcegraph-api'
 import { MockEditor, MockEmbeddingsClient, MockIntentDetector, newRecipeContext } from '../../test/mocks'
 import { ChatQuestion } from '../recipes/chat-question'
 

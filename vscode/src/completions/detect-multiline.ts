@@ -1,9 +1,9 @@
 import { Position } from 'vscode'
 
+import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 import { getLanguageConfig } from '../tree-sitter/language'
 
-import { DocumentDependentContext, LinesContext } from './get-current-doc-context'
-import { completionPostProcessLogger } from './post-process-logger'
+import { type DocumentDependentContext, type LinesContext } from './get-current-doc-context'
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,
@@ -27,35 +27,28 @@ interface DetectMultilineResult {
 
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
     const { docContext, languageId, dynamicMultilineCompletions, position } = params
-    const {
-        prefix,
-        prevNonEmptyLine,
-        nextNonEmptyLine,
-        currentLinePrefix,
-        currentLineSuffix,
-        completionPostProcessId,
-    } = docContext
+    const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
     const blockStart = getLanguageConfig(languageId)?.blockStart
     const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
 
-    const checkInvocation =
+    const currentLineText =
         currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix
+
+    const isMethodOrFunctionInvocation =
+        !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) && currentLineText.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
 
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
-    if (
-        !dynamicMultilineCompletions &&
-        !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
-        checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
-    ) {
+    if (!dynamicMultilineCompletions && isMethodOrFunctionInvocation) {
+        addAutocompleteDebugEvent('detectMultiline', { dynamicMultilineCompletions, isMethodOrFunctionInvocation })
+
         return {
             multilineTrigger: null,
             multilineTriggerPosition: null,
         }
     }
 
-    completionPostProcessLogger.info({ completionPostProcessId, stage: 'detectMultiline', text: currentLinePrefix })
     const openingBracketMatch = getLastLine(prefix.trimEnd()).match(OPENING_BRACKET_REGEX)
 
     const isSameLineOpeningBracketMatch =
@@ -76,6 +69,12 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
     if ((dynamicMultilineCompletions && isNewLineOpeningBracketMatch) || isSameLineOpeningBracketMatch) {
+        addAutocompleteDebugEvent('detectMultiline', {
+            dynamicMultilineCompletions,
+            isNewLineOpeningBracketMatch,
+            isSameLineOpeningBracketMatch,
+        })
+
         return {
             multilineTrigger: openingBracketMatch[0],
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),
@@ -99,6 +98,12 @@ export function detectMultiline(params: DetectMultilineParams): DetectMultilineR
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
 
     if ((dynamicMultilineCompletions && nonEmptyLineEndsWithBlockStart) || isEmptyLineAfterBlockStart) {
+        addAutocompleteDebugEvent('detectMultiline', {
+            dynamicMultilineCompletions,
+            nonEmptyLineEndsWithBlockStart,
+            isEmptyLineAfterBlockStart,
+        })
+
         return {
             multilineTrigger: blockStart,
             multilineTriggerPosition: getPrefixLastNonEmptyCharPosition(prefix, position),

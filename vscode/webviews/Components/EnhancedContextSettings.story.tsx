@@ -1,15 +1,18 @@
 import { useArgs } from '@storybook/preview-api'
-import { Meta, StoryObj } from '@storybook/react'
+import { type Meta, type StoryObj } from '@storybook/react'
 
-import { LocalEmbeddingsProvider, SearchProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import {
+    type LocalEmbeddingsProvider,
+    type SearchProvider,
+} from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
 import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
-    EnhancedContextEventHandlersT,
     EnhancedContextSettings,
+    type EnhancedContextEventHandlersT,
 } from './EnhancedContextSettings'
 
 const meta: Meta<typeof EnhancedContextSettings> = {

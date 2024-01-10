@@ -15,7 +15,8 @@ import {
     TimeoutError,
     TracedError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { addTraceparent, getActiveTraceAndSpanId } from '@sourcegraph/cody-shared/src/tracing'
+import { isNodeResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { fetch } from '../fetch'
 
@@ -23,10 +24,10 @@ import { forkSignal } from './utils'
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
 
-export interface CodeCompletionsClient {
+export interface CodeCompletionsClient<T = CodeCompletionsParams> {
     complete(
-        params: CodeCompletionsParams,
-        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
+        params: T,
+        onPartialResponse: (incompleteResponse: CompletionResponse) => void,
         signal?: AbortSignal
     ): Promise<CompletionResponse>
     onConfigurationChange(newConfig: CompletionsClientConfig): void
@@ -94,7 +95,7 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
             headers.set('Accept-Encoding', 'gzip;q=0')
         }
 
-        const response: Response = await fetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify({
                 ...params,
@@ -136,30 +137,30 @@ export function createClient(config: CompletionsClientConfig, logger?: Completio
         // regular JSON payload. This ensures that the request also works against older backends
         const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-        if (isStreamingResponse) {
+        if (isStreamingResponse && isNodeResponse(response)) {
             let lastResponse: CompletionResponse | undefined
             try {
-                // The any cast is necessary because `node-fetch` (The polyfill for fetch we use via
-                // `isomorphic-fetch`) does not implement a proper ReadableStream interface but
-                // instead exposes a Node Stream.
-                //
-                // Since we directly require from `isomporphic-fetch` and gate this branch out from
-                // non Node environments, the response.body will always be a Node Stream instead
-                const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
+                const iterator = createSSEIterator(response.body)
+                let chunkIndex = 0
 
-                for await (const chunk of iterator) {
-                    if (chunk.event === 'error') {
-                        throw new Error(chunk.data)
+                for await (const { event, data } of iterator) {
+                    if (event === 'error') {
+                        throw new Error(data)
                     }
 
-                    if (chunk.event === 'completion') {
+                    if (event === 'completion') {
                         if (signal?.aborted) {
                             break // Stop processing the already received chunks.
                         }
 
-                        lastResponse = JSON.parse(chunk.data) as CompletionResponse
-                        onPartialResponse?.(lastResponse)
+                        lastResponse = JSON.parse(data) as CompletionResponse
+                        wrapInActiveSpan(
+                            `autocomplete.onPartialResponse.${chunkIndex}`,
+                            () => onPartialResponse?.(lastResponse!)
+                        )
                     }
+
+                    chunkIndex += 1
                 }
 
                 if (lastResponse === undefined) {
@@ -215,13 +216,12 @@ interface SSEMessage {
 }
 
 const SSE_TERMINATOR = '\n\n'
-export async function* createSSEIterator(iterator: AsyncIterableIterator<BufferSource>): AsyncGenerator<SSEMessage> {
+export async function* createSSEIterator(iterator: NodeJS.ReadableStream): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
         const messages: SSEMessage[] = []
 
-        const data = new TextDecoder().decode(event)
-        buffer += data
+        buffer += event.toString()
 
         let index: number
         while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
@@ -271,6 +271,6 @@ function parseSSEEvent(message: string): SSEMessage {
     return { event, data }
 }
 
-function createTimeout(timeoutMs: number): Promise<never> {
+export function createTimeout(timeoutMs: number): Promise<never> {
     return new Promise((_, reject) => setTimeout(() => reject(new TimeoutError('The request timed out')), timeoutMs))
 }

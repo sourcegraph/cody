@@ -1,6 +1,6 @@
 import path from 'path'
 
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 /**
  * A handle to a fixup file. FixupFileWatcher is the factory for these; do not

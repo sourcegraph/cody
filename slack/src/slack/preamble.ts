@@ -1,4 +1,4 @@
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 const actions = `You are Cody, an AI-powered coding assistant created by Sourcegraph. You work inside a Slack workspace. You have access to the Slack thread conversation with all the replies. You perform the following actions:
 - Answer general programming questions.

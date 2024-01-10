@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { version } from '../../package.json'
-import { LocalEnv } from '../chat/protocol'
+import { type LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../commands/utils/helpers'
 import { fetch } from '../fetch'
 import { logDebug, logError } from '../log'

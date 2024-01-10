@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
+import { type ActiveTextEditorSelectionRange, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 

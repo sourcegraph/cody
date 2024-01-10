@@ -1,10 +1,10 @@
 import chalk from 'chalk'
 
-import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
-import { FactCheck } from './fact-check'
-import { LLMJudgement } from './llm-judge'
-import { InteractionTestCase, TestCase } from './test-cases'
+import { type FactCheck } from './fact-check'
+import { type LLMJudgement } from './llm-judge'
+import { type InteractionTestCase, type TestCase } from './test-cases'
 
 export interface InteractionTestCaseResult extends InteractionTestCase, FactCheck, LLMJudgement {
     answer: string

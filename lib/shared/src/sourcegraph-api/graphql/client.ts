@@ -1,9 +1,10 @@
 import fetch from 'isomorphic-fetch'
+import type { Response as NodeResponse } from 'node-fetch'
 
-import { TelemetryEventInput } from '@sourcegraph/telemetry'
+import { type TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { ConfigurationWithAccessToken } from '../../configuration'
-import { addTraceparent, startAsyncSpan } from '../../tracing'
+import { type ConfigurationWithAccessToken } from '../../configuration'
+import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
@@ -34,6 +35,14 @@ import {
     SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
+
+export type BrowserOrNodeResponse = Response | NodeResponse
+
+export function isNodeResponse(response: BrowserOrNodeResponse): response is NodeResponse {
+    return Boolean(response.body && !('getReader' in response.body))
+}
+
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 interface APIResponse<T> {
     data?: T
@@ -502,6 +511,9 @@ export class SourcegraphGraphQLAPIClient {
      * TelemetryRecorder from '@sourcegraph/telemetry' instead.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
+        for (const event of events) {
+            this.anonymizeTelemetryEventInput(event)
+        }
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
             events,
         })
@@ -568,12 +580,34 @@ export class SourcegraphGraphQLAPIClient {
         return {}
     }
 
+    private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
+        if (isAgentTesting) {
+            delete event.timestamp
+            event.parameters.interactionID = undefined
+            event.parameters.billingMetadata = undefined
+            event.parameters.metadata = undefined
+            event.parameters.metadata = undefined
+            event.parameters.privateMetadata = {}
+        }
+    }
+
+    private anonymizeEvent(event: event): void {
+        if (isAgentTesting) {
+            event.publicArgument = undefined
+            event.argument = undefined
+            event.userCookieID = 'ANONYMOUS_USER_COOKIE_ID'
+            event.hashedLicenseKey = undefined
+        }
+    }
+
     private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
+        this.anonymizeEvent(event)
         const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
         return extractDataOrError(response, data => data)
     }
 
     private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
+        this.anonymizeEvent(event)
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
         const initialDataOrError = extractDataOrError(initialResponse, data => data)
 
@@ -691,7 +725,7 @@ export class SourcegraphGraphQLAPIClient {
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
-        return startAsyncSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
+        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
@@ -714,7 +748,7 @@ export class SourcegraphGraphQLAPIClient {
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
-        return startAsyncSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
+        return wrapInActiveSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),

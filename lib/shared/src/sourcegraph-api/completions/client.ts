@@ -1,6 +1,6 @@
-import { ConfigurationWithAccessToken } from '../../configuration'
+import { type ConfigurationWithAccessToken } from '../../configuration'
 
-import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
+import { type CompletionCallbacks, type CompletionParameters, type CompletionResponse, type Event } from './types'
 
 export interface CompletionLogger {
     startCompletion(

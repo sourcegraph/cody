@@ -9,6 +9,11 @@ export interface IncrementalTextConsumer {
      * Notify the consumer that the text is complete.
      */
     close: () => void
+
+    /**
+     * Notify the consumer about an error.
+     */
+    error?: (error: Error) => void
 }
 
 // Maximum/minimum amount of time to wait between character chunks
@@ -113,9 +118,13 @@ export class Typewriter implements IncrementalTextConsumer {
         }
         // Clean up the consumer, finished promise.
         if (this.upstreamClosed) {
+            if (error) {
+                if (this.consumer.error) {
+                    this.consumer.error(error)
+                    return
+                }
+            }
             this.consumer.close()
-        } else {
-            console.error('Typewriter stopped', error)
         }
     }
 }

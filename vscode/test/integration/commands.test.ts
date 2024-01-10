@@ -2,39 +2,36 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { afterIntegrationTest, beforeIntegrationTest, getTranscript, waitUntil } from './helpers'
+import {
+    afterIntegrationTest,
+    beforeIntegrationTest,
+    getTextEditorWithSelection,
+    getTranscript,
+    waitUntil,
+} from './helpers'
 
-// TODO update tests to work with new simple chat
-
+// This checks the chat messages after submitting a command to make sure it contains
+// display text which includes command name and file name
 suite('Commands', function () {
     this.beforeEach(beforeIntegrationTest)
     this.afterEach(afterIntegrationTest)
-
-    async function getTextEditorWithSelection(): Promise<void> {
-        // Open Main.java
-        assert.ok(vscode.workspace.workspaceFolders)
-        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
-        const textEditor = await vscode.window.showTextDocument(mainJavaUri)
-
-        // Select the "main" method
-        textEditor.selection = new vscode.Selection(5, 0, 7, 0)
-    }
-
     // regex for /^hello from the assistant$/
     const assistantRegex = /^hello from the assistant$/
 
-    test.skip('Explain Code', async () => {
+    test('Explain Code', async () => {
         await getTextEditorWithSelection()
 
         // Run the "explain" command
         await vscode.commands.executeCommand('cody.command.explain-code')
 
-        // Check the chat transcript contains text from prompt
-        assert.match((await getTranscript(0)).displayText || '', /\/explain/)
+        const humanMessage = await getTranscript(0)
+        assert.match(humanMessage?.displayText || '', /\/explain \[_@Main.java/)
+        // 2 context files: selection and current file
+        assert.equal(humanMessage?.contextFiles?.length, 2)
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
-    test.skip('Find Code Smells', async () => {
+    test('Find Code Smells', async () => {
         await getTextEditorWithSelection()
 
         // Run the "/smell" command
@@ -42,12 +39,14 @@ suite('Commands', function () {
 
         // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /\/smell/)
+        assert.match(humanMessage.displayText || '', /\/smell \[_@Main.java/)
+        // 1 context file: selection or visible context
+        assert.equal(humanMessage?.contextFiles?.length, 1)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
-    test.skip('Generate Unit Tests', async () => {
+    test('Generate Unit Tests', async () => {
         await getTextEditorWithSelection()
 
         // Run the "/test" command
@@ -55,7 +54,11 @@ suite('Commands', function () {
 
         // Check the chat transcript contains text from prompt
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /\/unit test/)
+        assert.match(humanMessage.displayText || '', /\/test \[_@Main.java/)
+
+        // Has one or more context
+        const contextFileSize = humanMessage?.contextFiles?.length || 0
+        assert.ok(contextFileSize > 1)
 
         await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })

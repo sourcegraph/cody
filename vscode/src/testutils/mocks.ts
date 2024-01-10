@@ -5,8 +5,9 @@
 /* eslint-disable import/no-duplicates */
 /* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-import fs from 'fs/promises'
+import fspromises from 'fs/promises'
 
+import type * as vscode_types from 'vscode'
 import type {
     Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
@@ -14,8 +15,8 @@ import type {
     Position as VSCodePosition,
     Range as VSCodeRange,
 } from 'vscode'
-import type * as vscode_types from 'vscode'
 
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { Uri } from './uri'
@@ -278,9 +279,9 @@ export class Position implements VSCodePosition {
     public with(line?: number, character?: number): VSCodePosition
     public with(change: { line?: number; character?: number }): VSCodePosition
     public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
-        const line = typeof arg === 'number' ? arg : arg?.line
-        character = arg && typeof arg !== 'number' ? arg.character : character
-        return new Position(this.line + (line || 0), this.character + (character || 0))
+        const newLine = typeof arg === 'number' ? arg : arg?.line
+        const newCharacter = arg && typeof arg !== 'number' ? arg?.character : character
+        return new Position(newLine ?? this.line, newCharacter ?? this.character)
     }
 
     public compareTo(other: VSCodePosition): number {
@@ -510,6 +511,7 @@ export class CancellationToken implements vscode_types.CancellationToken {
     }
     onCancellationRequested = this.emitter.event
 }
+// @cody refactor
 export class CancellationTokenSource implements vscode_types.CancellationTokenSource {
     public token = new CancellationToken()
     cancel(): void {
@@ -522,34 +524,68 @@ export class CancellationTokenSource implements vscode_types.CancellationTokenSo
     }
 }
 
-const workspaceFs: Partial<vscode_types.FileSystem> = {
-    async stat(uri) {
-        const stat = await fs.stat(uri.fsPath)
+export const workspaceFs: typeof vscode_types.workspace.fs = {
+    stat: async uri => {
+        const stat = await fspromises.stat(uri.fsPath)
+        const type = stat.isFile()
+            ? FileType.File
+            : stat.isDirectory()
+            ? FileType.Directory
+            : stat.isSymbolicLink()
+            ? FileType.SymbolicLink
+            : FileType.Unknown
 
         return {
-            ...stat,
-            type: FileType.File,
-            ctime: stat.ctime.getTime(),
-            mtime: stat.mtime.getTime(),
-        } as vscode_types.FileStat
+            type,
+            ctime: stat.ctimeMs,
+            mtime: stat.mtimeMs,
+            size: stat.size,
+        }
     },
-    async readDirectory(uri) {
-        const entries = await fs.readdir(uri.fsPath, { withFileTypes: true })
+    readDirectory: async uri => {
+        const entries = await fspromises.readdir(uri.fsPath, { withFileTypes: true })
 
         return entries.map(entry => {
             const type = entry.isFile()
                 ? FileType.File
-                : entry.isSymbolicLink()
-                ? FileType.SymbolicLink
                 : entry.isDirectory()
                 ? FileType.Directory
+                : entry.isSymbolicLink()
+                ? FileType.SymbolicLink
                 : FileType.Unknown
 
             return [entry.name, type]
         })
     },
-    readFile(uri) {
-        return fs.readFile(uri.fsPath)
+    createDirectory: async uri => {
+        await fspromises.mkdir(uri.fsPath, { recursive: true })
+    },
+    readFile: async uri => {
+        const content = await fspromises.readFile(uri.fsPath)
+        return new Uint8Array(content.buffer)
+    },
+    writeFile: async (uri, content) => {
+        await fspromises.writeFile(uri.fsPath, content)
+    },
+    delete: async (uri, options) => {
+        await fspromises.rm(uri.fsPath, { recursive: options?.recursive ?? false })
+    },
+    rename: async (source, target, options) => {
+        if (options?.overwrite ?? false) {
+            await fspromises.unlink(target.fsPath)
+        }
+        await fspromises.link(source.fsPath, target.fsPath)
+        await fspromises.unlink(source.fsPath)
+    },
+    copy: async (source, target, options) => {
+        const mode = options?.overwrite ? 0 : fspromises.constants.COPYFILE_EXCL
+        await fspromises.copyFile(source.fsPath, target.fsPath, mode)
+    },
+    isWritableFileSystem: scheme => {
+        if (scheme === 'file') {
+            return true
+        }
+        return false
     },
 }
 
@@ -662,6 +698,7 @@ export enum UIKind {
 }
 
 export const vsCodeMocks = {
+    FileType,
     Range,
     Position,
     InlineCompletionItem,
@@ -673,8 +710,12 @@ export const vsCodeMocks = {
     TreeItem,
     WorkspaceEdit,
     UIKind,
+    QuickInputButtons,
     Uri,
     languages,
+    env: {
+        uiKind: 1 satisfies vscode_types.UIKind.Desktop,
+    },
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
@@ -762,3 +803,49 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 export const decGaMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>([FeatureFlag.CodyPro]))
+
+export const DEFAULT_VSCODE_SETTINGS = {
+    proxy: null,
+    codebase: '',
+    customHeaders: {},
+    chatPreInstruction: '',
+    useContext: 'embeddings',
+    autocomplete: true,
+    autocompleteLanguages: {
+        '*': true,
+    },
+    commandCodeLenses: false,
+    editorTitleCommandIcon: true,
+    experimentalChatPredictions: false,
+    experimentalGuardrails: false,
+    experimentalLocalSymbols: false,
+    experimentalSimpleChatContext: true,
+    experimentalSymfContext: true,
+    experimentalTracing: false,
+    codeActions: true,
+    isRunningInsideAgent: false,
+    agentIDE: undefined,
+    debugEnable: false,
+    debugVerbose: false,
+    debugFilter: null,
+    telemetryLevel: 'all',
+    internalUnstable: false,
+    autocompleteAdvancedProvider: null,
+    autocompleteAdvancedModel: null,
+    autocompleteCompleteSuggestWidgetSelection: true,
+    autocompleteFormatOnAccept: true,
+    autocompleteExperimentalDynamicMultilineCompletions: false,
+    autocompleteExperimentalHotStreak: false,
+    autocompleteExperimentalGraphContext: null,
+    autocompleteExperimentalOllamaOptions: {
+        model: 'codellama:7b-code',
+        url: 'http://localhost:11434',
+    },
+    autocompleteTimeouts: {
+        multiline: undefined,
+        singleline: undefined,
+    },
+    testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsIndexLibraryPath: undefined,
+    testingLocalEmbeddingsModel: undefined,
+} satisfies Configuration

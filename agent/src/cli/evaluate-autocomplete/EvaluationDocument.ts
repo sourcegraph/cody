@@ -1,22 +1,26 @@
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { ObjectHeaderItem } from 'csv-writer/src/lib/record'
-import * as vscode from 'vscode'
+import { type ObjectHeaderItem } from 'csv-writer/src/lib/record'
+import type * as vscode from 'vscode'
 
-import { CompletionBookkeepingEvent, CompletionItemInfo } from '../../../../vscode/src/completions/logger'
+import { type CompletionBookkeepingEvent, type CompletionItemInfo } from '../../../../vscode/src/completions/logger'
 import { TextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
+
+import { type AutocompleteMatchKind } from './AutocompleteMatcher'
+
+export type EvaluationDocumentParams = Pick<
+    EvaluationItem,
+    'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
+>
 
 export class EvaluationDocument {
     public items: EvaluationItem[] = []
     public readonly lines: string[]
     public readonly textDocument: AgentTextDocument
     constructor(
-        public readonly params: Pick<
-            EvaluationItem,
-            'languageid' | 'workspace' | 'strategy' | 'fixture' | 'filepath' | 'revision'
-        >,
+        public readonly params: EvaluationDocumentParams,
         public readonly text: string,
         public readonly uri: vscode.Uri,
         public readonly snapshotDirectory?: string
@@ -66,7 +70,7 @@ export class EvaluationDocument {
     // can customize rendering for the `evaluate-autocomplete` command. For example,
     // we will need to come up with a good solution for multi-line completions that may not
     // be relevant for scip-typescript.
-    private formatSnapshot(): string {
+    public formatSnapshot(): string {
         const commentSyntax = commentSyntaxForLanguage(this.params.languageid)
         const out: string[] = []
         this.items.sort(compareItemByRange)
@@ -78,17 +82,18 @@ export class EvaluationDocument {
             while (occurrenceIndex < this.items.length && this.items[occurrenceIndex].rangeStartLine === lineNumber) {
                 const item = this.items[occurrenceIndex]
                 occurrenceIndex++
-                if (item.rangeStartLine !== item.rangeEndLine) {
-                    // Skip multiline occurrences for now.
-                    continue
-                }
                 out.push(commentSyntax)
                 out.push(' '.repeat(item.range.start.character))
-                const length = item.range.end.character - item.range.start.character
+                const length = item.range.isSingleLine
+                    ? item.range.end.character - item.range.start.character
+                    : this.textDocument.lineAt(item.range.start.line).text.length - item.range.start.character
                 if (length < 0) {
                     throw new Error(this.format(item.range, 'negative length occurrence!'))
                 }
                 out.push('^'.repeat(length))
+                if (!item.range.isSingleLine) {
+                    out.push(` ${item.range.end.line}:${item.range.end.character}`)
+                }
                 out.push(' AUTOCOMPLETE')
                 if (item.resultEmpty) {
                     out.push(' EMPTY_RESULT')
@@ -141,7 +146,9 @@ export class EvaluationDocument {
         const carets = length < 0 ? '<negative length>' : '^'.repeat(length)
         const multilineSuffix = range.isSingleLine ? '' : ` ${range.end.line}:${range.end.character}`
         const message = diagnostic ? ' ' + diagnostic : ''
-        return `${this.params.filepath}:${range.start.line}:${range.start.character}${message}\n${line}\n${indent}${carets}${multilineSuffix}`
+        const previousLine = range.start.line > 0 ? this.lines[range.start.line - 1] : ''
+        const nextLine = range.start.line < this.lines.length - 1 ? this.lines[range.start.line + 1] : ''
+        return `${this.params.filepath}:${range.start.line}:${range.start.character}${message}\n${previousLine}\n${line}\n${indent}${carets}${multilineSuffix}\n${nextLine}`
     }
 
     public log(range: vscode.Range): void {
@@ -163,6 +170,7 @@ export interface EvaluationItem {
     range: vscode.Range
     multiline?: boolean
     completionIntent?: string
+    autocompleteKind?: AutocompleteMatchKind
     providerIdentifier?: string
     providerModel?: string
     stopReason?: string
@@ -196,6 +204,7 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'revision', title: 'REVISION' },
     { id: 'multiline', title: 'MULTILINE' },
     { id: 'completionIntent', title: 'COMPLETION_INTENT' },
+    { id: 'autocompleteKind', title: 'AUTOCOMPLETE_KIND' },
     { id: 'rangeStartLine', title: 'RANGE_START_LINE' },
     { id: 'rangeStartCharacter', title: 'RANGE_START_CHARACTER' },
     { id: 'rangeEndLine', title: 'RANGE_END_LINE' },

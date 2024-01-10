@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { debounce } from 'lodash'
 import { LRUCache } from 'lru-cache'
 
-import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
+import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 

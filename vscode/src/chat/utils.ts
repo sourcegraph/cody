@@ -1,4 +1,4 @@
-import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from './protocol'
+import { defaultAuthStatus, unauthenticatedStatus, type AuthStatus } from './protocol'
 
 /**
  * Checks a user's authentication status.

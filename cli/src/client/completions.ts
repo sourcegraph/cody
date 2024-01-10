@@ -1,16 +1,16 @@
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import {
     bufferStream,
-    SourcegraphCompletionsClient,
+    type SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { debugLog } from '../log'
-import { GlobalOptions } from '../program'
+import { type GlobalOptions } from '../program'
 
-import { Client, getClient } from '.'
+import { getClient, type Client } from '.'
 import { interactionFromMessage } from './interactions'
 import { getPreamble } from './preamble'
 

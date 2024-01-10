@@ -1,13 +1,13 @@
-import { exec } from 'child_process'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import os from 'os'
-import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
 import { getEditor } from '../../editor/active-editor'
 import { logDebug, logError } from '../../log'
 
-import { UserWorkspaceInfo } from '.'
+import { type UserWorkspaceInfo } from '.'
 import { outputWrapper } from './helpers'
 
 const rootPath: () => string | undefined = () => vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
@@ -22,7 +22,7 @@ export class ToolsProvider {
     private user: UserWorkspaceInfo
     private shell = vscode.env.shell
 
-    constructor(public context: vscode.ExtensionContext) {
+    constructor() {
         this.user = this.getUserInfo()
     }
 

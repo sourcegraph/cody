@@ -1,9 +1,7 @@
 import * as vscode from 'vscode'
 
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FixupIntent } from '@sourcegraph/cody-shared/src/editor'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -12,25 +10,22 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
-import { FixupManager } from './chat/FixupViewProvider'
-import { MessageProviderOptions } from './chat/MessageProvider'
+import { type MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
     ACCOUNT_USAGE_URL,
-    AuthStatus,
     CODY_FEEDBACK_URL,
+    type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
-import { ExecuteEditArguments } from './edit/execute'
-import { getEditor } from './editor/active-editor'
+import { EditManager } from './edit/manager'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { PlatformContext } from './extension.common'
+import { type PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
-import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
@@ -45,7 +40,6 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { workspaceActionsOnConfigChange } from './services/utils/workspace-action'
-import { TestSupport } from './test-support'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -105,17 +99,8 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    // Controller for Non-Stop Cody
-    const fixup = new FixupController()
-    disposables.push(fixup)
-    if (TestSupport.instance) {
-        TestSupport.instance.fixupController.set(fixup)
-    }
-
-    const editor = new VSCodeEditor({
-        fixups: fixup,
-        command: platform.createCommandsController?.(context),
-    })
+    const commandsController = platform.createCommandsController?.(context.extensionPath)
+    const editor = new VSCodeEditor({ command: commandsController })
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -125,12 +110,10 @@ const register = async (
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
-    if (config.autocompleteExperimentalSyntacticPostProcessing) {
-        parseAllVisibleDocuments()
+    parseAllVisibleDocuments()
 
-        disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
-        disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
-    }
+    disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+    disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
 
     // Enable tracking for pasting chat responses into editor text
     disposables.push(
@@ -193,8 +176,6 @@ const register = async (
     // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
     await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatMockTest)
 
-    const fixupManager = new FixupManager(messageProviderOptions)
-
     const embeddingsClient = new CachedRemoteEmbeddingsClient(initialConfig)
     const chatManager = new ChatManager(
         {
@@ -207,6 +188,7 @@ const register = async (
         symfRunner || null
     )
 
+    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
     disposables.push(new CodeActionProvider({ contextProvider }))
 
     let oldConfig = JSON.stringify(initialConfig)
@@ -279,64 +261,25 @@ const register = async (
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
-    const executeRecipeInChatView = async (
-        recipe: RecipeID,
-        openChatView = true,
-        humanInput = '',
-        source: ChatEventSource = 'editor'
-    ): Promise<void> => {
-        await chatManager.executeRecipe(recipe, humanInput, openChatView, source)
-    }
-
-    const executeFixup = async (
-        args: ExecuteEditArguments = {},
-        source: ChatEventSource = 'editor' // where the command was triggered from
-    ): Promise<void> => {
-        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source }, { hasV2Event: true })
-        telemetryRecorder.recordEvent('cody.command.edit', 'executed', { privateMetadata: { source } })
-        const editor = getEditor()
-        if (editor.ignored) {
-            console.error('File was ignored by Cody.')
+    // Execute Cody Commands and Cody Custom Commands
+    const executeCommand = async (commandKey: string, source: ChatEventSource = 'editor'): Promise<void> => {
+        const command = await commandsController?.findCommand(commandKey)
+        if (!command) {
             return
         }
-        const document = args.document || editor.active?.document
-        if (!document) {
-            void vscode.window.showErrorMessage('Please open a file before running a command.')
+        // If it's not a ask command, it's a fixup command. If it's a fixup request, we can exit early
+        // This is because findCommand will start the CommandRunner,
+        // which would send all fixup requests to the FixupController
+        if (command.mode !== 'ask') {
             return
         }
 
-        const range = args.range || editor.active?.selection
-        if (!range) {
-            return
-        }
-
-        const task = args.instruction?.trim()
-            ? await fixup.createTask(document.uri, args.instruction, range, args.intent, args.insertMode, source)
-            : await fixup.promptUserForTask(args, source)
-        if (!task) {
-            return
-        }
-
-        const provider = fixupManager.getProviderForTask(task)
-        return provider.startFix()
+        return chatManager.executeCommand(command, source)
     }
 
     const statusBar = createStatusBar()
 
     disposables.push(
-        vscode.commands.registerCommand(
-            'cody.command.edit-code',
-            (
-                args: {
-                    range?: vscode.Range
-                    instruction?: string
-                    intent?: FixupIntent
-                    document?: vscode.TextDocument
-                    insertMode?: boolean
-                },
-                source?: ChatEventSource
-            ) => executeFixup(args, source)
-        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (url, token) => authProvider.auth(url, token)),
@@ -367,9 +310,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
         ),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) => {
-            await executeRecipeInChatView('chat-question', true, input, source)
-        }),
+        vscode.commands.registerCommand('cody.action.chat', async (input: string, source?: ChatEventSource) =>
+            executeCommand(`/ask ${input}`, source)
+        ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
         }),
@@ -378,24 +321,11 @@ const register = async (
             () => editor.controllers.command?.menu('custom')
         ),
         vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
-        vscode.commands.registerCommand('cody.action.commands.exec', async title => {
-            await chatManager.executeCustomCommand(title)
-        }),
-        vscode.commands.registerCommand('cody.command.explain-code', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/explain')
-        }),
-        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/test')
-        }),
-        vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInChatView('custom-prompt', false, '/doc')
-        }),
-        vscode.commands.registerCommand('cody.command.smell-code', async () => {
-            await executeRecipeInChatView('custom-prompt', true, '/smell')
-        }),
-        vscode.commands.registerCommand('cody.command.context-search', () =>
-            executeRecipeInChatView('context-search', true)
-        ),
+        vscode.commands.registerCommand('cody.action.commands.exec', async title => executeCommand(title)),
+        vscode.commands.registerCommand('cody.command.explain-code', async () => executeCommand('/explain')),
+        vscode.commands.registerCommand('cody.command.generate-tests', async () => executeCommand('/test')),
+        vscode.commands.registerCommand('cody.command.document-code', async () => executeCommand('/doc')),
+        vscode.commands.registerCommand('cody.command.smell-code', async () => executeCommand('/smell')),
 
         // Account links
         vscode.commands.registerCommand('cody.show-page', (page: string) => {

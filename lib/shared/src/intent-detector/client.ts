@@ -1,9 +1,9 @@
 import { ANSWER_TOKENS } from '../prompt/constants'
-import { Message } from '../sourcegraph-api'
-import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { type Message } from '../sourcegraph-api'
+import { type SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import { type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-import { IntentClassificationOption, IntentDetector } from '.'
+import { type IntentClassificationOption, type IntentDetector } from '.'
 
 const editorRegexps = [/editor/, /(open|current|this|entire)\s+file/, /current(ly)?\s+open/, /have\s+open/]
 

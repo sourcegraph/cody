@@ -1,14 +1,26 @@
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange } from '../editor'
-import { Message } from '../sourcegraph-api'
+import { type ActiveTextEditorSelectionRange } from '../editor'
+import { type Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context file.
 // embeddings: context file returned by the embeddings client
 // user: context file provided by the user explicitly via chat input
 // keyword: the context file returned from local keyword search
 // editor: context file retrieved from the current editor
-export type ContextFileSource = 'embeddings' | 'user' | 'keyword' | 'editor' | 'filename' | 'unified'
+// search: context file returned by symf search
+// selection: selected code from the current editor
+// terminal: output from shell terminal
+export type ContextFileSource =
+    | 'embeddings'
+    | 'user'
+    | 'keyword'
+    | 'editor'
+    | 'filename'
+    | 'search'
+    | 'unified'
+    | 'selection'
+    | 'terminal'
 
 export type ContextFileType = 'file' | 'symbol'
 

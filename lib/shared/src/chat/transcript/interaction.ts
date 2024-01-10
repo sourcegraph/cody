@@ -1,7 +1,7 @@
-import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
+import { type ContextFile, type ContextMessage, type PreciseContext } from '../../codebase-context/messages'
 import { isCodyIgnoredFile, isCodyIgnoredFilePath } from '../context-filter'
 
-import { ChatMessage, ChatMetadata, InteractionMessage } from './messages'
+import { type ChatMessage, type ChatMetadata, type InteractionMessage } from './messages'
 
 export interface InteractionJSON {
     humanMessage: InteractionMessage

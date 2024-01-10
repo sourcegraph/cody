@@ -1,12 +1,11 @@
-import { DocumentContext, getDerivedDocContext } from '../get-current-doc-context'
-import { completionPostProcessLogger } from '../post-process-logger'
+import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
+import { getDerivedDocContext, type DocumentContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { getMatchingSuffixLength } from '../text-processing/process-inline-completions'
 
-import { FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
+import { type FetchAndProcessCompletionsParams } from './fetch-and-process-completions'
 
 interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsParams {
-    completionPostProcessId: string
     initialCompletion: string
 }
 
@@ -16,7 +15,7 @@ interface GetUpdatedDocumentContextParams extends FetchAndProcessCompletionsPara
  * 3. Otherwise, returns the initial document context.
  */
 export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): DocumentContext {
-    const { completionPostProcessId, initialCompletion, providerOptions } = params
+    const { initialCompletion, providerOptions } = params
     const {
         position,
         document,
@@ -28,9 +27,8 @@ export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): D
     const matchingSuffixLength = getMatchingSuffixLength(firstLine, currentLineSuffix)
     const updatedPosition = position.translate(0, Math.max(firstLine.length - 1, 0))
 
-    completionPostProcessLogger.info({
-        completionPostProcessId,
-        stage: 'getDerivedDocContext',
+    addAutocompleteDebugEvent('getDerivedDocContext', {
+        currentLinePrefix: docContext.currentLinePrefix,
         text: initialCompletion,
     })
 
@@ -44,22 +42,19 @@ export function getUpdatedDocContext(params: GetUpdatedDocumentContextParams): D
             // to reduce the chances of breaking the parse tree with redundant symbols.
             suffix: suffix.slice(matchingSuffixLength),
             injectedPrefix: null,
-            completionPostProcessId,
         },
     })
 
     const isMultilineBasedOnFirstLine = Boolean(updatedDocContext.multilineTrigger)
 
     if (isMultilineBasedOnFirstLine) {
-        completionPostProcessLogger.info({
-            completionPostProcessId,
-            stage: 'isMultilineBasedOnFirstLine',
+        addAutocompleteDebugEvent('isMultilineBasedOnFirstLine', {
+            currentLinePrefix: docContext.currentLinePrefix,
             text: initialCompletion,
         })
 
         return {
             ...docContext,
-            completionPostProcessId,
             multilineTrigger: updatedDocContext.multilineTrigger,
             multilineTriggerPosition: updatedDocContext.multilineTriggerPosition,
         }

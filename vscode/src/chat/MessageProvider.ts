@@ -1,37 +1,40 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { Recipe, RecipeID, RecipeType } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import { RecipeType, type Recipe, type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { ChatEventSource, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import {
+    type ChatEventSource,
+    type ChatMessage,
+    type UserLocalHistory,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { showAskQuestionQuickPick } from '../commands/utils/menu'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { PlatformContext } from '../extension.common'
+import { type VSCodeEditor } from '../editor/vscode-editor'
+import { type PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
-import { FixupTask } from '../non-stop/FixupTask'
-import { AuthProvider, isNetworkError } from '../services/AuthProvider'
+import { isNetworkError, type AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
-import { TestSupport } from '../test-support'
+import { type TestSupport } from '../test-support'
 
 import { chatHistory } from './chat-view/ChatHistoryManager'
-import { ContextProvider } from './ContextProvider'
+import { type ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
 
 /**
@@ -63,7 +66,7 @@ abstract class MessageHandler {
     protected abstract handleTranscript(transcript: ChatMessage[], messageInProgress: boolean): void
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleSuggestions(suggestions: string[]): void
-    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
+    protected abstract handleCodyCommands(prompts: [string, CodyCommand][]): void
     protected abstract handleError(error: Error, type: MessageErrorType): void
 }
 
@@ -104,10 +107,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     constructor(options: MessageProviderOptions) {
         super()
-
-        if (TestSupport.instance) {
-            TestSupport.instance.messageProvider.set(this)
-        }
 
         this.chat = options.chat
         this.intentDetector = options.intentDetector
@@ -367,12 +366,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
-        const command = await this.chatCommandsFilter(
-            humanChatInput,
-            recipeId,
-            { source, requestID },
-            userInputContextFiles
-        )
+        const command = await this.chatCommandsFilter(humanChatInput, recipeId, { source, requestID })
         if (!command) {
             return
         }
@@ -467,8 +461,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
         const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, properties, { hasV2Event: true })
-        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
+        telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, properties, { hasV2Event: true })
+        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'recipe-used', { metadata: { ...contextSummary } })
     }
 
     protected async runRecipeForSuggestion(
@@ -504,7 +498,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
         const args = { requestID: this.currentRequestID, source }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, args, { hasV2Event: true })
+        telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, args, { hasV2Event: true })
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -576,14 +570,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        return this.executeRecipe('custom-prompt', title, 'custom-commands')
+        return vscode.commands.executeCommand('cody.action.commands.exec', title)
     }
 
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID,
-        eventTrace?: { requestID?: string; source?: ChatEventSource },
-        userContextFiles?: ContextFile[]
+        eventTrace?: { requestID?: string; source?: ChatEventSource }
     ): Promise<{ text: string; recipeId: RecipeID; source?: ChatEventSource } | void> {
         const source = eventTrace?.source || undefined
         text = text.trim()
@@ -634,23 +627,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     const assistantResponse = 'Command failed. Please open a file and try again.'
                     return this.addCustomInteraction({ assistantResponse, text, source })
                 }
-                const commandRunnerID = await this.editor.controllers.command?.addCommand(
-                    text,
-                    eventTrace?.requestID,
-                    userContextFiles
-                )
-                // no op
-                if (!commandRunnerID) {
-                    return
-                }
-
-                if (commandRunnerID === 'invalid') {
-                    const assistantResponse = `__${text}__ is not a valid command`
-                    // If no command found, send error message to view
-                    return this.addCustomInteraction({ assistantResponse, text, source })
-                }
-
-                return { text: commandRunnerID, recipeId: 'custom-prompt', source }
+                return vscode.commands.executeCommand('cody.action.commands.exec', text)
             }
         }
     }
@@ -773,17 +750,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return []
         }
         return this.transcript.toChat()
-    }
-
-    public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
-        if (!testing) {
-            console.error('used ForTesting method without test support object')
-            return []
-        }
-        if (!this.editor.controllers.fixups) {
-            throw new Error('no fixup controller')
-        }
-        return this.editor.controllers.fixups.getTasks()
     }
 
     public dispose(): void {

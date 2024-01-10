@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { Guardrails, renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import { renderCodyMarkdown, type Guardrails } from '@sourcegraph/cody-shared'
 
-import { CodeBlockActionsProps } from '../Chat'
+import { type CodeBlockActionsProps } from '../Chat'
 import {
     CheckCodeBlockIcon,
     CopyCodeBlockIcon,

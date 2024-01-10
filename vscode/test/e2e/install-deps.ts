@@ -1,6 +1,11 @@
 import { spawn } from 'child_process'
 
-import { ConsoleReporter, downloadAndUnzipVSCode, ProgressReport, ProgressReportStage } from '@vscode/test-electron'
+import {
+    ConsoleReporter,
+    downloadAndUnzipVSCode,
+    ProgressReportStage,
+    type ProgressReport,
+} from '@vscode/test-electron'
 
 export const vscodeVersion = '1.81.1'
 
@@ -22,8 +27,18 @@ export function installChromium(): Promise<void> {
     const proc = spawn('pnpm', ['exec', 'playwright', 'install', 'chromium'], { shell: true })
     return new Promise<void>((resolve, reject) => {
         proc.on('error', e => console.error(e))
-        proc.stderr.on('data', e => console.error(e.toString()))
-        proc.stdout.on('data', e => console.log(e.toString()))
+        proc.stderr.on('data', e => {
+            const message = e.toString()
+            if (message) {
+                console.error(message)
+            }
+        })
+        proc.stdout.on('data', e => {
+            const message = e.toString()
+            if (message) {
+                console.log(message)
+            }
+        })
         proc.on('close', code => {
             if (code) {
                 reject(new Error(`Process failed: ${code}}`))

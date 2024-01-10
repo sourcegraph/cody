@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -783,11 +783,11 @@
           "enum": [
             "embeddings",
             "keyword",
-            "none",
-            "blended"
+            "blended",
+            "none"
           ],
           "default": "embeddings",
-          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context. Selecting 'none' will limit Cody to using only the currently open file."
+          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword-based context. Selecting 'none' will limit Cody to using only the currently open file."
         },
         "cody.customHeaders": {
           "order": 4,
@@ -884,6 +884,12 @@
           "markdownDescription": "Path to symf binary",
           "default": ""
         },
+        "cody.experimental.tracing": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable OpenTelemetry tracing",
+          "default": false
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -920,9 +926,18 @@
             null,
             "anthropic",
             "fireworks",
-            "unstable-openai"
+            "unstable-openai",
+            "unstable-ollama"
           ],
-          "markdownDescription": "The provider used for code autocomplete. Check the Cody output channel for error messages if autocomplete is not working as expected."
+          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
+        },
+        "cody.autocomplete.advanced.serverEndpoint": {
+          "type": "string",
+          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
+        },
+        "cody.autocomplete.advanced.accessToken": {
+          "type": "string",
+          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.model": {
           "type": "string",
@@ -976,6 +991,39 @@
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
+        "cody.autocomplete.experimental.ollamaOptions": {
+          "type": "object",
+          "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
+          "default": {
+            "url": "http://localhost:11434",
+            "model": "codellama:7b-code"
+          },
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Ollama API.",
+              "default": "http://localhost:11434"
+            },
+            "model": {
+              "type": "string",
+              "default": "codellama:7b-code",
+              "examples": [
+                "codellama:7b-code",
+                "codellama:13b-code"
+              ]
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for how Ollama will run the model. See Ollama [PARAMETER documentation](https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-request-with-options).",
+              "properties": {
+                "num_ctx": "number",
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number"
+              }
+            }
+          }
+        },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",
@@ -1011,10 +1059,13 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@mdi/js": "^7.2.96",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.45.1",
     "@opentelemetry/resources": "^1.18.1",
     "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
