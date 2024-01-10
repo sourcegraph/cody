@@ -125,7 +125,6 @@ export class ChatQuestion implements Recipe {
                 }
             }
         }
-        console.log(contextFileMessages)
         return contextFileMessages
     }
 }
