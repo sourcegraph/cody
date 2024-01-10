@@ -12,12 +12,15 @@ import * as vscode from 'vscode'
 
 import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
 import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../log'
 
 import { getSymfPath } from './download-symf'
 
 const execFile = promisify(_execFile)
+
+const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
     // The root of all symf index directories
@@ -94,6 +97,40 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
+        return isAgentTesting
+            ? this.getResultsWithVSCTermExpansion(userQuery, scopeDirs)
+            : this.getResultsWithSymfTermExpansion(userQuery, scopeDirs)
+    }
+
+    private async getResultsWithSymfTermExpansion(
+        userQuery: string,
+        scopeDirs: string[]
+    ): Promise<Promise<Result[]>[]> {
+        const { symfPath, serverEndpoint, accessToken } = await this.getSymfInfo()
+        const expandedQuery = execFile(symfPath, ['expand-query', userQuery], {
+            env: {
+                SOURCEGRAPH_TOKEN: accessToken,
+                SOURCEGRAPH_URL: serverEndpoint,
+            },
+            maxBuffer: 1024 * 1024 * 1024,
+            timeout: 1000 * 10, // timeout in 10 seconds
+        })
+            .then(({ stdout }) => stdout.trim())
+            .catch(error => {
+                if (isError(error) && error.message.includes('429')) {
+                    // HACK: if we hit a rate limit error from symf, just return the original
+                    // user query without term expansion, because we expect that we'll immediately
+                    // hit a rate limit error again when the chat request is sent (but there
+                    // we'll have the appropriate metadata to handle it properly).
+                    return userQuery
+                }
+                throw error
+            })
+
+        return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+    }
+
+    private getResultsWithVSCTermExpansion(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
         const expandedQuery = expandQuery(this.completionsClient, userQuery)
         return Promise.resolve(scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir)))
     }
