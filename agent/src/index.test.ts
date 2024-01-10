@@ -361,9 +361,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello! Nice to meet you.",
+            "displayText": " Hello there!",
             "speaker": "assistant",
-            "text": " Hello! Nice to meet you.",
+            "text": " Hello there!",
           }
         `,
             explainPollyError
@@ -372,10 +372,7 @@ describe('Agent', () => {
 
     it('allows us to send a longer chat message', async () => {
         const lastMessage = await client.sendSingleMessage('Generate simple hello world function in java!')
-        const trimmedMessage = lastMessage?.text
-            ?.split('\n')
-            .map(line => line.trimEnd())
-            .join('\n')
+        const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
           " Here is a simple Hello World program in Java:
@@ -392,13 +389,19 @@ describe('Agent', () => {
 
           - The code is wrapped in a class called Main. In Java, code must be contained within classes.
 
-          - The main method is the entry point of the program. It is marked as public static void - this means it can be called from outside the class, doesn't require an instance of Main to be called, and does not return anything.
+          - The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.
 
-          - System.out.println prints the text \\"Hello World!\\" to the console. This is the simplest way to generate output in Java.
+          - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
 
-          - The code must be contained within the main method in order to execute. When running the program, the Java runtime looks for the main method and starts executing the code there.
+          - System.out.println prints the text \\"Hello World!\\" to the console.
 
-          So in summary, this program defines a Main class with a main method that prints \\"Hello World!\\" to the console when executed. The public static void main(String[] args) method is required in order to define an executable Java program."
+          To run this:
+
+          1. Save the code in a file called Main.java
+          2. Compile it with: javac Main.java
+          3. Run it with: java Main
+
+          This will print \\"Hello World!\\" to the console when executed."
         `,
             explainPollyError
         )
@@ -421,7 +424,7 @@ describe('Agent', () => {
         // TODO: make this test return a TypeScript implementation of
         // `animal.ts`. It currently doesn't do this because the workspace root
         // is not a git directory and symf reports some git-related error.
-        expect(lastMessage?.text).toMatchInlineSnapshot(
+        expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
             `
           " Here is the code for the Dog class implementing the Animal interface:
 
@@ -549,3 +552,10 @@ describe('Agent', () => {
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 20_000)
 })
+
+function trimEndOfLine(text: string): string {
+    return text
+        .split('\n')
+        .map(line => line.trimEnd())
+        .join('\n')
+}
