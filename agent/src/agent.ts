@@ -66,14 +66,11 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         globalState: {
             keys: () => [...globalStorage.keys()],
             get: key => {
-                if (globalStorage.has(key)) {
-                    return globalStorage.get(key)
-                }
                 switch (key) {
                     case localStorage.ANONYMOUS_USER_ID_KEY:
                         return vscode_shim.extensionConfiguration?.anonymousUserID
                     default:
-                        return undefined
+                        return globalStorage.get(key)
                 }
             },
             update: (key, value) => {
