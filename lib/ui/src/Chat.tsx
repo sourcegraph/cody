@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { type CodeBlockMeta } from './chat/CodeBlocks'
-import { type FileLinkProps } from './chat/components/ContextFiles'
+import { type FileLinkProps } from './chat/components/EnhancedContext'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { type SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
