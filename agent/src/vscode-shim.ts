@@ -467,7 +467,7 @@ const _window: Partial<typeof vscode.window> = {
             const result = await handler(
                 {
                     report: ({ message, increment }) => {
-                        if (progressClient) {
+                        if (progressClient && !token.isCancellationRequested) {
                             progressClient.notify('progress/report', { id, message, increment })
                         }
                     },
