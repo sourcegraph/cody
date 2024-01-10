@@ -173,6 +173,7 @@ jobs:
       - run: pnpm install
       - run: pnpm run build
       - run: pnpm -C vscode run build
+      - run: pnpm -C vscode run release:dry-run
 
   lint:
     runs-on: ubuntu-latest
