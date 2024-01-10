@@ -35,9 +35,11 @@ class CodyAgentCodebase(private val underlying: CodyAgentServer, val project: Pr
       application.runReadAction {
         val openedFileName = file.name
         val relativeFilePath: String? = ProjectFileUtils.getRelativePathToProjectRoot(project, file)
-        CodyToolWindowContent.getInstance(project)
-            .embeddingStatusView
-            .setOpenedFileName(openedFileName, relativeFilePath)
+        ApplicationManager.getApplication().invokeLater {
+          CodyToolWindowContent.getInstance(project)
+              .embeddingStatusView
+              .setOpenedFileName(openedFileName, relativeFilePath)
+        }
       }
     }
   }

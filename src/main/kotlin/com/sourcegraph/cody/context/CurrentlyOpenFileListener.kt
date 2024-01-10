@@ -11,15 +11,18 @@ class CurrentlyOpenFileListener(
     private val embeddingStatusView: EmbeddingStatusView
 ) : FileEditorManagerListener {
   override fun selectionChanged(event: FileEditorManagerEvent) {
-    ApplicationManager.getApplication().runReadAction {
-      val newFile = event.newFile
-      val openedFileName = newFile?.name ?: ""
-      var relativeFilePath: String? = null
+    val newFile = event.newFile
+    val openedFileName = newFile?.name ?: ""
+    var relativeFilePath: String? = null
 
+    ApplicationManager.getApplication().executeOnPooledThread {
       if (newFile != null) {
         relativeFilePath = ProjectFileUtils.getRelativePathToProjectRoot(project, newFile)
       }
-      embeddingStatusView.setOpenedFileName(openedFileName, relativeFilePath)
+
+      ApplicationManager.getApplication().invokeLater {
+        embeddingStatusView.setOpenedFileName(openedFileName, relativeFilePath)
+      }
     }
   }
 }
