@@ -459,7 +459,7 @@ export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boo
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
-    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test}${fileExtension}`
+    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test,spec_${fileName},${fileName}_spec,spec.${fileName},${fileName}.spec,${fileName}Spec}${fileExtension}`
 
     if (allTestFiles) {
         return `${root}${defaultTestFilePattern}`

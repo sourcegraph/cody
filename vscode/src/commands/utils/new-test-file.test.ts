@@ -2,23 +2,7 @@ import { posix, sep } from 'path'
 
 import { describe, expect, it } from 'vitest'
 
-import { convertFsPathToTestFile, createDefaultTestFileNameByLanguageExt, isValidTestFileName } from './new-test-file'
-
-describe('isValidTestFileName', () => {
-    it('should return false for undefined file path', () => {
-        expect(isValidTestFileName(undefined)).toBe(false)
-    })
-
-    it('should return true for valid test file names', () => {
-        expect(isValidTestFileName('test_file.ts')).toBe(true)
-        expect(isValidTestFileName('file.test.js')).toBe(true)
-    })
-
-    it('should return false for invalid test file names', () => {
-        expect(isValidTestFileName('file.ts')).toBe(false)
-        expect(isValidTestFileName('test-file.js')).toBe(false)
-    })
-})
+import { convertFsPathToTestFile, createDefaultTestFileNameByLanguageExt } from './new-test-file'
 
 describe('createDefaultTestFileNameByLanguageExt', () => {
     // All test should work with ext including . or not
@@ -27,9 +11,13 @@ describe('createDefaultTestFileNameByLanguageExt', () => {
         expect(createDefaultTestFileNameByLanguageExt('file', '.js')).toBe('file.test.js')
     })
 
-    it('should create a test file name with _test suffix for py and rb files', () => {
+    it('should create a test file name with _test suffix for py and go files', () => {
         expect(createDefaultTestFileNameByLanguageExt('file', '.py')).toBe('file_test.py')
-        expect(createDefaultTestFileNameByLanguageExt('file', 'rb')).toBe('file_test.rb')
+        expect(createDefaultTestFileNameByLanguageExt('file', 'go')).toBe('file_test.go')
+    })
+
+    it('should create a test file name with _spec suffix for rb files', () => {
+        expect(createDefaultTestFileNameByLanguageExt('file', '.rb')).toBe('file_spec.rb')
     })
 
     it('should create a test file name with Test suffix for other files', () => {
@@ -44,10 +32,23 @@ describe('convertFsPathToTestFile', () => {
         expect(convertFsPathToTestFile(testFilePath)).toBe(testFilePath)
     })
 
+    it('should return the current file path if it is already a spec file', () => {
+        const testFilePath = '/path/to/testFile.spec.rb'
+        expect(convertFsPathToTestFile(testFilePath)).toBe(testFilePath)
+    })
+
     it('should generate a test file path from a non-test file path', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/testFile.ts'
         const expectedFilePath = '/path/to/file.test.ts'
+        const expected = withPlatformSlashes(expectedFilePath)
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
+    })
+
+    it('should generate the default spec file path from a non-test file path for ruby', () => {
+        const filePath = '/path/to/file.rb'
+        const existingTestFilePath = '/path/to/testFile.ts'
+        const expectedFilePath = '/path/to/file_spec.rb'
         const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
@@ -60,7 +61,7 @@ describe('convertFsPathToTestFile', () => {
         expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
-    it('should respect different naming conventions', () => {
+    it('should respect test file with different naming conventions', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/testExistingFile.test.ts'
         const expectedFilePath = '/path/to/file.test.ts'
@@ -89,6 +90,14 @@ describe('convertFsPathToTestFile', () => {
         const expectedFilePath = '/path/to/test-file_test.py'
         const expected = withPlatformSlashes(expectedFilePath)
         expect(convertFsPathToTestFile(filePath)).toBe(expected)
+    })
+
+    it('should generate the default spec file path for ruby when no exisiting test files is found', () => {
+        const filePath = '/path/to/file.rb'
+        const existingTestFilePath = undefined
+        const expectedFilePath = '/path/to/file_spec.rb'
+        const expected = withPlatformSlashes(expectedFilePath)
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 })
 

@@ -1,29 +1,16 @@
 import { basename, dirname, extname, join } from 'path'
 
-export function isValidTestFileName(filePath?: string): boolean {
-    if (!filePath) {
-        return false
-    }
+import { isValidTestFileName } from '../prompt/utils'
 
-    const fileNameWithExt = basename(filePath).toLowerCase()
-    const extension = extname(fileNameWithExt)
-    const fileName = fileNameWithExt.replace(extension, '')
-
-    if (TEST_FILE_EXTENSIONS.has(extension)) {
-        // Check if there is '.' or '_' before or after 'test'
-        return /(_|.)test(_|\.)/.test(fileName) || /test(_|\.)/.test(fileName)
-    }
-
-    return fileName.includes('test') && !fileName.includes('test-')
-}
-
-const TEST_FILE_EXTENSIONS = new Set(['ts', 'js', 'tsx', 'jsx', 'py', 'rb', 'go', 'cs', 'cpp', 'cc'])
 // Language extension that uses '.test' suffix for test files
 const TEST_FILE_DOT_SUFFIX_EXTENSIONS = new Set(['js', 'ts', 'jsx', 'tsx'])
 // language extension that uses '_test' suffix for test files
-const TEST_FILE_DASH_SUFFIX_EXTENSIONS = new Set(['py', 'rb', 'go'])
+const TEST_FILE_DASH_SUFFIX_EXTENSIONS = new Set(['py', 'go'])
+// language extension that uses '_spec' suffix for most unit test files
+const TEST_FILE_SPEC_SUFFIX_EXTENSIONS = new Set(['rb'])
 
 /**
+ * NOTE: This is used as fallback when test files cannot be found in current workspace
  * Generates a default test file name based on the original file name and extension.
  * @param fileName - The original file name
  * @param ext - The file extension
@@ -35,9 +22,11 @@ export function createDefaultTestFileNameByLanguageExt(fileName: string, ext: st
     if (TEST_FILE_DOT_SUFFIX_EXTENSIONS.has(ext)) {
         return `${fileName}.test.${ext}`
     }
-
     if (TEST_FILE_DASH_SUFFIX_EXTENSIONS.has(ext)) {
         return `${fileName}_test.${ext}`
+    }
+    if (TEST_FILE_SPEC_SUFFIX_EXTENSIONS.has(ext)) {
+        return `${fileName}_spec.${ext}`
     }
 
     return `${fileName}Test.${ext}`
@@ -73,7 +62,9 @@ export function convertFsPathToTestFile(currentFilePath: string, existingTestFil
 
         // Check if the existing test file has a non-alphanumeric character at the test character index
         // If so, we will use the default test file naming convention
-        const testCharIndex = existingFileNameWithoutExt.toLowerCase().lastIndexOf('test')
+        const testCharIndex =
+            existingFileNameWithoutExt.toLowerCase().lastIndexOf('test') ||
+            existingFileNameWithoutExt.toLowerCase().lastIndexOf('spec')
         if (testCharIndex > -1 && !/^[\da-z]$/i.test(existingFileNameWithoutExt[testCharIndex - 1])) {
             return join(dirPath, createDefaultTestFileNameByLanguageExt(currentFileNameWithoutExt, currentFileExt))
         }
