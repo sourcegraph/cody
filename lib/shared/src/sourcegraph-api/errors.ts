@@ -33,12 +33,7 @@ export class RateLimitError extends Error {
         public readonly retryAfter?: string | null
     ) {
         super(message)
-        if (upgradeIsAvailable) {
-            this.userMessage = `You've used all ${feature} for the month.`
-        } else {
-            // Don't display Pro & Enterprise’s fair use limit numbers, as they're for abuse protection only
-            this.userMessage = `You've used all ${feature} for today.`
-        }
+        this.userMessage = `You've used all ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + parseInt(retryAfter, 10) * 1000)
