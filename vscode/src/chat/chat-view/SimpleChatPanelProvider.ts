@@ -181,6 +181,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
 
     // Select the chat model to use in Chat
     private selectModel(models: ChatModelProvider[]): string {
+        const authStatus = this.authProvider.getAuthStatus()
+        // Free user can only use the default model
+        if (authStatus.isDotCom && authStatus.userCanUpgrade) {
+            return models[0].model
+        }
         // Check for the last selected model
         const lastSelectedModelID = localStorage.get('model')
         if (lastSelectedModelID) {
