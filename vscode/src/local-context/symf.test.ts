@@ -10,7 +10,7 @@ import { expandQuery } from './symf'
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
         accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
-        serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+        serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
         debugEnable: true,
     })
