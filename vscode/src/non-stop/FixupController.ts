@@ -1,4 +1,3 @@
-import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ContextFile } from '@sourcegraph/cody-shared'
@@ -128,52 +127,6 @@ export class FixupController
                 })
             )
         }
-
-        /** GHOST TEXT TEMP AREA */
-        const editHintDecoration = vscode.window.createTextEditorDecorationType({
-            isWholeLine: true,
-            after: {
-                contentText: '\u00A0⌘K to Edit, ⌘L to Chat',
-                color: new vscode.ThemeColor('editorGhostText.foreground'),
-            },
-        })
-        let activeGhostDecoration: vscode.DecorationOptions | null = null
-
-        const addGhostText = throttle(
-            (position: vscode.Position, editor: vscode.TextEditor) => {
-                activeGhostDecoration = { range: new vscode.Range(position, position) }
-                editor.setDecorations(editHintDecoration, [activeGhostDecoration])
-            },
-            250,
-            { leading: false, trailing: true }
-        )
-        vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
-            const editor = event.textEditor
-            const firstSelection = event.selections[0]
-
-            if (firstSelection.isEmpty) {
-                // Nothing selected, clear existing
-                activeGhostDecoration = null
-                return editor.setDecorations(editHintDecoration, [])
-            }
-
-            /**
-             * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
-             * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
-             */
-            const targetPosition = firstSelection.isReversed
-                ? firstSelection.active
-                : firstSelection.active.translate(firstSelection.end.character === 0 ? -1 : 0)
-
-            if (activeGhostDecoration && activeGhostDecoration.range.start.line !== targetPosition.line) {
-                // Selection changed, remove existing decoration
-                activeGhostDecoration = null
-                editor.setDecorations(editHintDecoration, [])
-            }
-
-            return addGhostText(targetPosition, editor)
-        })
-        /** END GHOST TEXT */
     }
 
     /**

@@ -19,6 +19,7 @@ import {
     CODY_FEEDBACK_URL,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
+import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
@@ -188,8 +189,11 @@ const register = async (
         symfRunner || null
     )
 
-    disposables.push(new EditManager({ chat: chatClient, editor, contextProvider }))
-    disposables.push(new CodeActionProvider({ contextProvider }))
+    disposables.push(
+        new EditManager({ chat: chatClient, editor, contextProvider }),
+        new CodeActionProvider({ contextProvider }),
+        new GhostHintDecorator()
+    )
 
     let oldConfig = JSON.stringify(initialConfig)
     function onConfigurationChange(newConfig: ConfigurationWithAccessToken): void {
