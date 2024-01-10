@@ -46,7 +46,7 @@ export interface ProviderContextSizeHints {
 
 export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
     return {
-        totalFileContextChars: Math.floor(maxContextTokens * 0.9), // keep 10% margin for preamble, etc.
+        totalFileContextChars: Math.floor(tokensToChars(0.9 * maxContextTokens)), // keep 10% margin for preamble, etc.
         prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
         suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
     }
