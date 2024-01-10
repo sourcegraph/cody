@@ -139,7 +139,7 @@ export class AuthProvider {
     public async signoutMenu(): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:logout:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
-        const { endpoint } = this.authStatus
+        const { endpoint } = this.getAuthStatus()
 
         if (endpoint) {
             await this.signout(endpoint)
@@ -153,8 +153,9 @@ export class AuthProvider {
         }
 
         if (!isDotCom(this.authStatus.endpoint)) {
+            const username = this.authStatus.username || this.authStatus.displayName
             const option = await vscode.window.showInformationMessage(
-                `Signed in as ${this.authStatus.primaryEmail}`,
+                `Signed in as @${username}`,
                 {
                     modal: true,
                     detail: `Enterprise Instance:\n${this.authStatus.endpoint}`,
@@ -178,12 +179,10 @@ export class AuthProvider {
         const options = codyProEnabled
             ? ['Manage Account', 'Switch Account...', 'Sign Out']
             : ['Switch Account...', 'Sign Out']
+        const displayName = this.authStatus.displayName || this.authStatus.username
+        const email = this.authStatus.primaryEmail || 'No Email'
         const option = await vscode.window.showInformationMessage(
-            `Signed in as ${
-                this.authStatus.displayName
-                    ? `${this.authStatus.displayName} (${this.authStatus.primaryEmail})`
-                    : this.authStatus.primaryEmail
-            }`,
+            `Signed in as ${displayName} (${email})}`,
             { modal: true, detail },
             ...options
         )
@@ -233,9 +232,9 @@ export class AuthProvider {
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
+        const userInfo = await this.client.getCurrentUserInfo()
 
         if (!isDotCom) {
-            const userInfo = await this.client.getEnterpriseCurrentUserInfo()
             const hasVerifiedEmail = false
 
             // check first if it's a network error
@@ -255,13 +254,13 @@ export class AuthProvider {
                 /* userCanUpgrade: */ false,
                 version,
                 userInfo.avatarURL,
-                userInfo.primaryEmail.email,
+                userInfo.username,
                 userInfo.displayName,
+                userInfo.primaryEmail?.email,
                 configOverwrites
             )
         }
 
-        const userInfo = await this.client.getDotComCurrentUserInfo()
         const isCodyEnabled = true
 
         // check first if it's a network error
@@ -287,8 +286,9 @@ export class AuthProvider {
             userCanUpgrade,
             version,
             userInfo.avatarURL,
-            userInfo.primaryEmail.email,
+            userInfo.username,
             userInfo.displayName,
+            userInfo.primaryEmail?.email,
             configOverwrites
         )
     }

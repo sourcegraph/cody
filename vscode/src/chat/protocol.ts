@@ -156,7 +156,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
  * verified email.
  */
 export interface AuthStatus {
-    username?: string
+    username: string
     endpoint: string | null
     isDotCom: boolean
     isLoggedIn: boolean
@@ -169,7 +169,7 @@ export interface AuthStatus {
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
     primaryEmail: string
-    displayName: string
+    displayName?: string
     avatarURL: string
     /**
      * Whether the users account can be upgraded.
@@ -193,6 +193,7 @@ export const defaultAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -209,6 +210,7 @@ export const unauthenticatedStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -225,6 +227,7 @@ export const networkErrorAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',

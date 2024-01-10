@@ -239,12 +239,13 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        // Update context provider first since it will also update the configuration
-        await contextProvider.syncAuthStatus()
-
-        featureFlagProvider.syncAuthStatus()
+        // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
-
+        // Update context provider first it will also update the configuration
+        await contextProvider.syncAuthStatus()
+        // feature flag provider
+        featureFlagProvider.syncAuthStatus()
+        // Symf
         if (symfRunner && authStatus.isLoggedIn) {
             getAccessToken()
                 .then(token => {
@@ -453,21 +454,7 @@ const register = async (
     vscode.window.onDidChangeWindowState(async ws => {
         const endpoint = authProvider.getAuthStatus().endpoint
         if (ws.focused && endpoint && isDotCom(endpoint)) {
-            const res = await graphqlClient.getDotComCurrentUserInfo()
-            if (res instanceof Error) {
-                console.error(res)
-                return
-            }
-
-            const authStatus = authProvider.getAuthStatus()
-
-            authStatus.hasVerifiedEmail = res.hasVerifiedEmail
-            authStatus.userCanUpgrade = !res.codyProEnabled
-            authStatus.primaryEmail = res.primaryEmail.email
-            authStatus.displayName = res.displayName
-            authStatus.avatarURL = res.avatarURL
-
-            void chatManager.syncAuthStatus(authStatus)
+            await authProvider.reloadAuthStatus()
         }
     })
 

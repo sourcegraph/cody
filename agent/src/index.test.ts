@@ -390,17 +390,15 @@ describe('Agent', () => {
 
           To break this down:
 
-          - The code is wrapped in a class called Main. In Java, code must be inside a class.
+          - The code is wrapped in a class called Main. In Java, code must be contained within classes.
 
-          - The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.
+          - The main method is the entry point of the program. It is marked as public static void - this means it can be called from outside the class, doesn't require an instance of Main to be called, and does not return anything.
 
-          - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
+          - System.out.println prints the text \\"Hello World!\\" to the console. This is the simplest way to generate output in Java.
 
-          - Inside main, we call System.out.println(\\"Hello World!\\"); to print the text \\"Hello World!\\" to the console.
+          - The code must be contained within the main method in order to execute. When running the program, the Java runtime looks for the main method and starts executing the code there.
 
-          - The println method handles printing the text and moving to a new line after.
-
-          So this simple program prints \\"Hello World!\\" when run. To run it from the command line you would compile with \`javac Main.java\` and then run \`java Main\`."
+          So in summary, this program defines a Main class with a main method that prints \\"Hello World!\\" to the console when executed. The public static void main(String[] args) method is required in order to define an executable Java program."
         `,
             explainPollyError
         )

@@ -12,26 +12,15 @@ query CurrentUser {
     }
 }`
 
-export const DOT_COM_CURRENT_USER_INFO_QUERY = `
+export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
         id
         hasVerifiedEmail
         displayName
+        username
         avatarURL
         codyProEnabled
-        primaryEmail {
-            email
-        }
-    }
-}`
-
-export const ENTERPRISE_CURRENT_USER_INFO_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        displayName
-        avatarURL
         primaryEmail {
             email
         }

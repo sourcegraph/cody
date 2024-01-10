@@ -71,13 +71,13 @@ log:
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 8021f57f24a9cc23d041b6fbcf88a00d
+            value: 6bcfc636fc45489bf567157aaff03960
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
             value: DENY
           - name: x-is-cody-pro-user
-            value: "true"
+            value: "false"
           - name: x-ratelimit-limit
             value: "1"
           - name: x-ratelimit-remaining
@@ -319,7 +319,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bc9d710017cb613b863131822d75d5c7
+    - _id: 4ae74ba5fbde655d9886623eddcc0d04
       _order: 0
       cache: {}
       request:
@@ -339,7 +339,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "233"
+            value: "251"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -362,6 +362,7 @@ log:
                       id
                       hasVerifiedEmail
                       displayName
+                      username
                       avatarURL
                       codyProEnabled
                       primaryEmail {
@@ -378,18 +379,19 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: '["H4sIAAAAAAAAAzTOS07DMBSF4b3ccR5CtFWwVIkIOqhUhVcTwai6sS+JixOntmORRFkMa2FjKAJm59eZfBMIdAhsAt4bQ63LLZklpQAGxWum+Fl/Phzzq2zkWwigRluQke+SxK5BqYA501MAQtpO4ZBhQ8Dg/vvLSwEBoEeHJn8+AIPauc6yOFb1dVRpXSnqLRmuW0eti7huYozTuyrRfJ+uQn1SSXcJ+/Cc1i9qr9ero3kqXFJs6K0c/aXpw/pUbu3NJuQQANdieDR612KpSPyrOiMbNMOfdAL6HSDQSxF5siMp7e34IW+r5VoUMM/z/AMAAP//AwAIjrPLGAEAAA=="]'
+          size: 364
+          text: '["H4sIAAAAAAAAA2yPTU7DMBSE7/LWaSKoqFpLlahoxV8JCJq2sHuxXxNTx45sJzSpchjOwsVQFJbsZubTSDNnEOgR2Bl4ZS1pnziyvZUCGGz3seKf5vS8SS6flos5BJCj25KVB0liVaBUwLytKAAhXamwibEgYLD8+a6lgAAqR1YPWU2uJWVq1x5lKHDgWKNHm7yugUHufelYFKl8HGbGZIr6Njfak/YhN0WE0eImmxq+vn9/aMfHL3vyajrSI9rvsvQt3U7u4v3thzLF4vFqlu7ERT53s8mIQwDciObFmpXGVJEAdkDlKIDSygJt83flDDSIf8ZeZz3qZ0DXdd0vAAAA//8DAMfxW405AQAA"]'
           textDecoded:
             data:
               currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocIA4-o_l8pq-u-jAhSlIo54TrQVt8V6eYbzvqmu-h_b=s96-c
-                codyProEnabled: true
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocLIYJz3kwrxtl8-n-eXWgbSbV6HNXGZlomAK59bWd1h=s96-c
+                codyProEnabled: false
                 displayName: Dávid
                 hasVerifiedEmail: true
-                id: VXNlcjoxOTU1Nzc=
+                id: VXNlcjoxOTU2MDA=
                 primaryEmail:
-                  email: david.veszelovszki@gmail.com
+                  email: veszelovszki.david@gmail.com
+                username: veszelovszki.david
         cookies: []
         headers:
           - name: date
@@ -580,100 +582,6 @@ log:
           mimeType: application/json
           size: 37
           text: '{"data":{"evaluateFeatureFlag":null}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 6da3ef8e96a914f2db1f9ebf28035fb2
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "160"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-pro
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
         cookies: []
         headers:
           - name: date
@@ -957,41 +865,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 444
-          text: '["H4sIAAAAAAAAA6xRW24bMQy8i77DC/gAuUTRD640KzHRShuSsndh+O6BjQKFW9hBgHxzXpw5h8TO4XAOOHId7EivYB+K18rZwuHXOTReEA4h9rRTLOy09PhODvPwEq4shMPM1XB5uQfz8B77slY4KPbm2JymOdMiG9Jj8lT7RCtnkJ3EYyFWsJGVrh6H22OmSW5jJRt6xE5oPNVnRreUq/a/CNdxpwfWWKjhRO/YT12fiCk7qMoiboQtAgmJ5q63pqTlhyaOigWuO2Fbu/pD4P+lJrHri6SIe6zSMvWZVsVR+jBSfAzYs76uoyib001RuDnZ3pw3KpJLlVzuk389syvHb1ISZh7VyZw19gSlsk8qiawPjcjKa/l6Q3qDT8rS7Dv97Y0XibSM6lKlgf6cpDf7iR/+yfL7cvkEAAD//wMASs0t4XIDAAA="]'
-          textDecoded:
-            data:
-              evaluatedFeatureFlags:
-                - name: cody-chat-mock-test
-                  value: false
-                - name: cody-autocomplete-context-bfg-mixed
-                  value: false
-                - name: blob-page-switch-areas-shortcuts
-                  value: false
-                - name: signup-survey-enabled
-                  value: false
-                - name: cody-pro
-                  value: true
-                - name: search-new-keyword
-                  value: false
-                - name: rate-limits-exceeded-for-testing
-                  value: true
-                - name: telemetry-export
-                  value: true
-                - name: cody-autocomplete-disable-recycling-of-previous-requests
-                  value: false
-                - name: contrast-compliant-syntax-highlighting
-                  value: false
-                - name: cody-autocomplete-tracing
-                  value: false
-                - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
-                  value: false
-                - name: cody-pro-jetbrains
-                  value: true
-                - name: cody-autocomplete-dynamic-multiline-completions
-                  value: false
-                - name: cody-autocomplete-default-starcoder-hybrid
-                  value: true
+          size: 527
+          text: '["H4sIAAAAAAAAA5SSUW7cMAxE7+Lv8AJ7gFyi6Ac=","LY1lNTLpUtSujcXevfCmaJIGa2P/BIjD4ePw2kV27k7XDmcujR3xFezN8Fo41e7049oJT+hOXQVbGCmoOMSp54pIhSVRhCN4Vuleuq0LutPApeL28k8cNK4URnaaNLyRo/pBMTfXoNNc4LjbNE7bwyFh/dC6tW/S2ZR+wXvjLHW/9IvLHW1x6odEU14QnxkxrsJTDjS14rlk2drdv7J+HuK4kRuHLGlPIm5c/d0gszjVVZwXGnMaS06jH+jfd/TEZmKu3BeQIayhZEmkA82Gc9ZWyfC7ofoOZV+0p3kLsF6yh5HYwJXqqOah7SmNt/jzlL0SlgBERBrU7if0BfM/iL/nKrjQG9aL2k6aNSdpM9VmZ6wE2VjjM+vBwK04VWcLGmE0rr3lSFWbBSTjeXzsrjNkUx2UOQomuK2EZVbzI/KIvqWnLvgBxUMjSKRWYaTSK1v8HsfP2+0PAAAA//8DALpIcV5iBAAA"]'
         cookies: []
         headers:
           - name: date
@@ -1210,13 +1085,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -1324,13 +1194,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -1341,8 +1206,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1431,13 +1294,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 148
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
-          textDecoded:
-            data:
-              repository:
-                embeddingExists: true
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 158
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8=","AwD/h5WCVAAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1535,8 +1393,12 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 123
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          size: 120
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          textDecoded:
+            data:
+              repository:
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
         cookies: []
         headers:
           - name: date
@@ -1743,8 +1605,12 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 142
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkp","pcklYalFxZn5eUpWSkam5gbmFvFGBkYmugaGugaW8aZ6RrppKcZGxmYWqYaWpklKtbW1AAAAAP//","AwCEdlSPSQAAAA=="]'
+          size: 136
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5sYmBvFGBkYmugaGuoYG8aZ6RroplmapickGxknGZklKtbW1AAAAAP//AwArauoHSQAAAA=="]'
+          textDecoded:
+            data:
+              site:
+                productVersion: 257340_2024-01-10_5.2-d96eac03b36b
         cookies: []
         headers:
           - name: date
