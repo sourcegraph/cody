@@ -1,3 +1,5 @@
+import { parse } from 'path'
+
 import { describe, expect, it } from 'vitest'
 
 import { convertFsPathToTestFile, createDefaultTestFileNameByLanguageExt, isValidTestFileName } from './new-test-file'
@@ -45,35 +47,47 @@ describe('convertFsPathToTestFile', () => {
     it('should generate a test file path from a non-test file path', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/testFile.ts'
-        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe('/path/to/file.test.ts')
+        const expectedFilePath = '/path/to/file.test.ts'
+        const expected = parse(expectedFilePath).name
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
     it('should follow an existing test file path', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/existingTestFile.test.ts'
-        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe('/path/to/file.test.ts')
+        const expectedFilePath = '/path/to/file.test.ts'
+        const expected = parse(expectedFilePath).name
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
     it('should respect different naming conventions', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/testExistingFile.test.ts'
-        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe('/path/to/file.test.ts')
+        const expectedFilePath = '/path/to/file.test.ts'
+        const expected = parse(expectedFilePath).name
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
     it('should handle a non-alphanumeric character at the test character index', () => {
         const filePath = '/path/to/file.ts'
         const existingTestFilePath = '/path/to/test-ExistingFile.test.ts'
-        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe('/path/to/file.test.ts')
+        const expectedFilePath = '/path/to/file.test.ts'
+        const expected = parse(expectedFilePath).name
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
     it('should generate a test file path for a non-test file path in python', () => {
         const filePath = '/path/to/file.py'
         const existingTestFilePath = '/path/to/testFile_test.py'
-        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe('/path/to/file_test.py')
+        const expectedFilePath = '/path/to/file_test.py'
+        const expected = parse(expectedFilePath).name
+        expect(convertFsPathToTestFile(filePath, existingTestFilePath)).toBe(expected)
     })
 
     it('should generate a test file path for a non-test file path in python when no exisiting test path provided', () => {
         const filePath = '/path/to/test-file.py'
-        expect(convertFsPathToTestFile(filePath)).toBe('/path/to/test-file_test.py')
+        const expectedFilePath = '/path/to/test-file_test.py'
+        const expected = parse(expectedFilePath).name
+        expect(convertFsPathToTestFile(filePath)).toBe(expected)
     })
 })
