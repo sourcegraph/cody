@@ -996,7 +996,7 @@
           "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
           "default": {
             "url": "http://localhost:11434",
-            "model": "codellama:7b-code"
+            "model": "codellama:7b"
           },
           "properties": {
             "url": {
@@ -1006,9 +1006,9 @@
             },
             "model": {
               "type": "string",
-              "default": "codellama:7b-code",
+              "default": "codellama:7b",
               "examples": [
-                "codellama:7b-code",
+                "codellama:7b",
                 "codellama:13b-code"
               ]
             },

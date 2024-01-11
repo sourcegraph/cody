@@ -85,7 +85,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
-                            model: 'codellama:7b-code',
+                            model: 'codellama:7b',
                             url: 'http://localhost:11434',
                         }
                     case 'cody.autocomplete.experimental.graphContext':
@@ -138,7 +138,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteExperimentalOllamaOptions: {
-                model: 'codellama:7b-code',
+                model: 'codellama:7b',
                 url: 'http://localhost:11434',
             },
             autocompleteTimeouts: {

@@ -838,7 +838,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalOllamaOptions: {
-        model: 'codellama:7b-code',
+        model: 'codellama:7b',
         url: 'http://localhost:11434',
     },
     autocompleteTimeouts: {

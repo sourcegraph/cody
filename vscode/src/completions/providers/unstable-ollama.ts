@@ -199,7 +199,7 @@ export function createProviderConfig(ollamaOptions: OllamaOptions): ProviderConf
             // We don't use other files as context yet in Ollama, so this doesn't matter.
             totalFileContextChars: 0,
 
-            // Ollama evaluates the prompt at ~50 tok/s for codellama:7b-code on a MacBook Air M2.
+            // Ollama evaluates the prompt at ~50 tok/s for codellama:7b on a MacBook Air M2.
             // If the prompt has a common prefix across inference requests, subsequent requests do
             // not incur prompt reevaluation and are therefore much faster. So, we want a large
             // document prefix that covers the entire document (except in cases where the document
