@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 import { type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { type ChatHistory, type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
@@ -31,7 +30,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<
         (Pick<Configuration, 'debugEnable' | 'experimentalGuardrails'> & LocalEnv) | null
     >(null)
-    const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
@@ -47,7 +45,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
 
-    const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -98,7 +95,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     }
                     case 'config':
                         setConfig(message.config)
-                        setEndpoint(message.authStatus.endpoint)
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
                             isCodyProUser: !message.authStatus.userCanUpgrade,
@@ -115,9 +111,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)
-                        break
-                    case 'contextStatus':
-                        setContextStatus(message.contextStatus)
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.context)
@@ -237,13 +230,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
-    // Callbacks used checking whether Enterprise admin has enabled embeddings
-    const onboardingPopupProps = {
-        reloadStatus: () => {
-            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'reload-state' })
-        },
-    }
-
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
@@ -283,7 +269,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         messageBeingEdited={messageBeingEdited}
                                         setMessageBeingEdited={setMessageBeingEdited}
                                         transcript={transcript}
-                                        contextStatus={contextStatus}
                                         contextSelection={contextSelection}
                                         formInput={formInput}
                                         setFormInput={setFormInput}
@@ -295,11 +280,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         telemetryService={telemetryService}
                                         chatCommands={myPrompts || undefined}
                                         isTranscriptError={isTranscriptError}
-                                        applessOnboarding={{
-                                            endpoint,
-                                            embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
-                                            props: { onboardingPopupProps },
-                                        }}
                                         chatModels={chatModels}
                                         enableNewChatUI={true}
                                         setChatModels={setChatModels}
