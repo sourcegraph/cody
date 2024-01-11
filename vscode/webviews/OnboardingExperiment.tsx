@@ -1,5 +1,4 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
 
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
@@ -73,8 +72,8 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>
                 <img src={onboardingSplashImage} alt="Hi, I'm Cody" className={styles.logo} />
-                <div className={classNames(styles.section, styles.authMethodScreen)}>
-                    <h1>Sign In to Get Started</h1>
+                <div className={styles.section}>
+                    <h1>Use Cody Free or Cody Pro</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
                             {uiKindIsWeb ? (
@@ -119,13 +118,20 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                <div className={styles.otherSignInOptions}>
-                    <h2>Using Sourcegraph Enterprise?</h2>
-                    <p>
-                        <button type="button" className={styles.linkButton} onClick={otherSignInClick}>
-                            Sign In to Your Enterprise Instance
-                        </button>
-                    </p>
+                <div className={styles.section}>
+                    <h1>Use Cody Enterprise</h1>
+                    <div className={styles.buttonWidthSizer}>
+                        <div className={styles.buttonStack}>
+                            <VSCodeButton
+                                className={styles.button}
+                                type="button"
+                                onClick={otherSignInClick}
+                            >
+                                Sign In to Your Enterprise&nbsp;Instance
+                            </VSCodeButton>
+                        </div>
+                    </div>
+                    <p>Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a></p>
                 </div>
             </div>
             <div className={styles.terms}>
