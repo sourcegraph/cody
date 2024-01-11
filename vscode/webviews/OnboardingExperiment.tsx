@@ -73,7 +73,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
             <div className={styles.sectionsContainer}>
                 <img src={onboardingSplashImage} alt="Hi, I'm Cody" className={styles.logo} />
                 <div className={styles.section}>
-                    <h1>Use Cody Free or Cody Pro</h1>
+                    <h1>Cody Free or Cody Pro</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
                             {uiKindIsWeb ? (
@@ -119,7 +119,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     </div>
                 </div>
                 <div className={styles.section}>
-                    <h1>Use Cody Enterprise</h1>
+                    <h1>Cody Enterprise</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
                             <VSCodeButton
