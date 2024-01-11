@@ -203,6 +203,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private disposeChatPanelsManager(): void {
+        void vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         this.options.contextProvider.webview = this.sidebarViewController.webview
         this.chatPanelsManager.dispose()
     }

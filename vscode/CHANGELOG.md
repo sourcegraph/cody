@@ -6,6 +6,30 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+- Autocomplete: Fixes an issue where the context retriever would truncate the results too aggressively. [pull/2652](https://github.com/sourcegraph/cody/pull/2652)
+
+### Changed
+
+- Made the Enterprise login button more prominent. [pull/2672](https://github.com/sourcegraph/cody/pull/2672)
+
+## [1.1.2]
+
+### Fixed
+
+- Fixing Steal the cursor issue https://github.com/sourcegraph/cody/pull/2674
+
+## [1.1.1]
+
+### Fixed
+
+- Fixed authentication issue when trying to connect to an enterprise instance. [pull/2667](https://github.com/sourcegraph/cody/pull/2667)
+
+## [1.1.0]
+
+### Added
+
 - Edit: Added support for user-provided context. Use "@" to include files and "@#" to include specific symbols. [pull/2574](https://github.com/sourcegraph/cody/pull/2574)
 - Autocomplete: Experimental support for inline completions with Code Llama via [Ollama](https://ollama.ai/) running locally. [pull/2635](https://github.com/sourcegraph/cody/pull/2635)
 
@@ -19,7 +43,13 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Fixed unresponsive stop button in chat when an error is presented. [pull/2588](https://github.com/sourcegraph/cody/pull/2588)
 - Added existing `cody.useContext` config to chat to control context fetching strategy. [pull/2616](https://github.com/sourcegraph/cody/pull/2616)
 - Autocomplete: Fixes an issue where the context retriever would truncate the results too aggressively. [pull/2652](https://github.com/sourcegraph/cody/pull/2652)
+- Fixed issue with incorrect chat model selected on first chat session for DotCom users after reauthorization. [issues/2648](https://github.com/sourcegraph/cody/issues/2648)
+- [Internal] Opening files with non-file schemed URLs no longer breaks Autocomplete when `.cody/ignore` is enabled. [pull/2640](https://github.com/sourcegraph/cody/pull/2640)
+- Fixed extension start up issue for enterprise users who do not have primary email set up. [pull/2665](https://github.com/sourcegraph/cody/pull/2665)
+- All Chat windows are now closed properly on sign out. [pull/2665](https://github.com/sourcegraph/cody/pull/2665)
+- Fixed issue with incorrect chat model selected on first chat session for DotCom users after reauthorization. [issues/2648](https://github.com/sourcegraph/cody/issues/2648)
 - Fixed unresponsive dropdown menu for selecting chat model in Chat view. [pull/2627](https://github.com/sourcegraph/cody/pull/2627)
+- [Internal] Opening files with non-file schemed URLs no longer breaks Autocomplete when `.cody/ignore` is enabled. [pull/2640](https://github.com/sourcegraph/cody/pull/2640)
 
 ### Changed
 
