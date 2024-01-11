@@ -3,11 +3,19 @@ import type * as vscode from 'vscode'
 import { type ContextRetriever } from '../types'
 
 import { type BfgRetriever } from './retrievers/bfg/bfg-retriever'
+import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
-import { JaccardSimilarityRetriever } from './retrievers/new-jaccard-similarity/jaccard-similarity-retriever'
+import { JaccardSimilarityRetriever as NewJaccardSimilarityRetriever } from './retrievers/new-jaccard-similarity/jaccard-similarity-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
 
-export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'bfg-mixed' | 'local-mixed' | 'none'
+export type ContextStrategy =
+    | 'lsp-light'
+    | 'bfg'
+    | 'jaccard-similarity'
+    | 'new-jaccard-similarity'
+    | 'bfg-mixed'
+    | 'local-mixed'
+    | 'none'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
@@ -44,6 +52,10 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
             case 'jaccard-similarity':
                 this.localRetriever = new JaccardSimilarityRetriever()
+                this.disposables.push(this.localRetriever)
+                break
+            case 'new-jaccard-similarity':
+                this.localRetriever = new NewJaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
                 break
             case 'local-mixed':
@@ -103,8 +115,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 }
                 break
 
-            // The jaccard similarity strategy only uses the local retriever
-            case 'jaccard-similarity': {
+            // The jaccard similarity strategies only uses the local retriever
+            case 'jaccard-similarity':
+            case 'new-jaccard-similarity': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
                 }
