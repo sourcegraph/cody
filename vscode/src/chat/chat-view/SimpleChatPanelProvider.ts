@@ -646,8 +646,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 const properties = {
                     requestID,
                     chatModel: this.chatModel.modelID,
-                    // 🚨 SECURITY: included only for DotCom users.
-                    promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                     contextSummary,
                 }
 
@@ -658,6 +656,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
                         metadata: { ...contextSummary },
+                        // 🚨 SECURITY: included only for DotCom users.
+                        privateMetadata: {
+                            properties,
+                            promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
+                        },
                     })
                 }
             },
@@ -946,6 +949,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
                 metadata: {
                     ...codeCount,
+                },
+                privateMetadata: {
+                    requestID,
+                    responseText: rawResponse,
                 },
             })
         }

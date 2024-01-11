@@ -60,6 +60,7 @@ function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { no
                     event.action
                 }: ${JSON.stringify({
                     parameters: event.parameters,
+                    private: event.privateMetadata,
                     timestamp: event.timestamp,
                 })}`
             )

@@ -236,7 +236,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const responseText = this.isDotComUser ? text : undefined
                 telemetryService.log(
                     'CodyVSCodeExtension:chatResponse:hasCode',
-                    { ...codeCount, ...metadata, requestID, responseText },
+                    { ...codeCount, ...metadata, requestID },
                     { hasV2Event: true }
                 )
 
@@ -247,6 +247,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         {
                             metadata: {
                                 ...codeCount,
+                            },
+                            privateMetadata: {
+                                ...metadata,
+                                responseText,
                             },
                         }
                     )
@@ -460,9 +464,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
 
         const promptText = this.isDotComUser ? interaction.getHumanMessage().text : undefined
-        const properties = { contextSummary, source, requestID, chatModel: this.chatModel, promptText }
+        const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
         telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, properties, { hasV2Event: true })
-        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'recipe-used', { metadata: { ...contextSummary } })
+        // only include transcript data in v2 telemetry(telemtryRecorder) and as privateMetadata
+        telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'recipe-used', {
+            metadata: { ...contextSummary },
+            privateMetadata: { promptText },
+        })
     }
 
     protected async runRecipeForSuggestion(
