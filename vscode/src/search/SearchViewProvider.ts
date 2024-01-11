@@ -5,9 +5,11 @@ import * as vscode from 'vscode'
 
 import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import { type Result, type SearchPanelFile, type SearchPanelSnippet } from '@sourcegraph/cody-shared/src/local-context'
+import type { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { type WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
+import { type LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { type IndexStartEvent, type SymfRunner } from '../local-context/symf'
 
 const searchDecorationType = vscode.window.createTextEditorDecorationType({
@@ -123,6 +125,34 @@ class IndexManager implements vscode.Disposable {
     }
 }
 
+// Function to Convert Embeddings Results to Regular Results
+function convertToResult(embeddingResult: EmbeddingsSearchResult): Result {
+
+    return {
+        fqname: `${embeddingResult.repoName || ''}/${embeddingResult.fileName}`, // Construct fqname from repoName and fileName
+        name: embeddingResult.fileName,
+        type: 'code', // Type is assumed to be 'code'; adjust as needed
+        doc: embeddingResult.content,
+        exported: false, // Assuming exported as false; adjust as needed
+        lang: 'unknown', // Assuming language as unknown; adjust as needed
+        file: embeddingResult.fileName,
+        range: {
+            // Assuming some logic to calculate startByte and endByte from content
+            startByte: 0,
+            endByte: embeddingResult.content.length,
+            startPoint: {
+                row: embeddingResult.startLine,
+                col: 0, // Assuming start column as 0
+            },
+            endPoint: {
+                row: embeddingResult.endLine,
+                col: 0, // Assuming end column as 0
+            },
+        },
+        summary: embeddingResult.content.slice(0, 100), // Assuming summary as first 100 chars of content
+    }
+}
+
 export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private webview?: vscode.Webview
@@ -131,11 +161,15 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
     constructor(
         private extensionUri: vscode.Uri,
-        private symfRunner: SymfRunner
+        private symfRunner: SymfRunner,
+        private localEmbeddings: LocalEmbeddingsController | null
     ) {
         this.indexManager = new IndexManager(this.symfRunner)
         this.disposables.push(this.indexManager)
         this.disposables.push(this.cancellationManager)
+
+        // Ensure Indexing Happens for Local Embeddings
+        void this.localEmbeddings?.index()
     }
 
     public dispose(): void {
@@ -260,8 +294,15 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         }
 
         const symf = this.symfRunner
+
         if (!symf) {
             throw new Error('this.symfRunner is undefined')
+        }
+
+        // Ensure LocalEmbeddings are initialized
+        const localEmbeddings = this.localEmbeddings
+        if (!localEmbeddings) {
+            throw new Error('this.localEmbeddings is undefined')
         }
 
         const scopeDirs = getScopeDirs()
@@ -278,10 +319,17 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
             const cumulativeResults: SearchPanelFile[] = []
             this.indexManager.showMessageIfIndexingInProgress(scopeDirs)
-            const resultSets = await symf.getResults(query, scopeDirs)
+            // const resultSets = await symf.getResults(query, scopeDirs)
+
+            // Search using userQuery Local Embeddings
+            const embeddingsResults = await localEmbeddings.getContext(query, 10)
+
+            // Convert Embeddings Results to Regular Results
+            const resultSets = embeddingsResults.map(embeddingResult => [convertToResult(embeddingResult)])
+
             for (const resultSet of resultSets) {
                 try {
-                    cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
+                    cumulativeResults.push(...(await resultsToDisplayResults(resultSet)))
                     await this.webview?.postMessage({
                         type: 'update-search-results',
                         results: cumulativeResults,

@@ -227,7 +227,12 @@ const register = async (
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
     if (symfRunner && config.experimentalSymfContext) {
-        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        const searchViewProvider = new SearchViewProvider(
+            context.extensionUri,
+            symfRunner,
+            localEmbeddings ?? null,
+        )
+
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
         disposables.push(
