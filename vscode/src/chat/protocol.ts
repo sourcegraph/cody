@@ -87,7 +87,7 @@ export type WebviewMessage =
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
-          uriJSON: unknown
+          uri: URI
           range: { start: { line: number; character: number }; end: { line: number; character: number } }
       }
     | {

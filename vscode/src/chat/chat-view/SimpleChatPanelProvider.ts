@@ -2,9 +2,9 @@ import * as path from 'path'
 
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 
 import {
+    hydrateAfterPostMessage,
     isDefined,
     type ActiveTextEditorSelectionRange,
     type ChatMessage,
@@ -293,7 +293,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             panel.dispose()
         })
 
-        this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        this.disposables.push(
+            panel.webview.onDidReceiveMessage(message =>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
+            )
+        )
 
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
@@ -1472,15 +1477,7 @@ export async function contextFilesToContextItems(
         await Promise.all(
             files.map(async (file: ContextFile): Promise<ContextItem | null> => {
                 const range = viewRangeToRange(file.range)
-                const uri = file.uri
-                    ? // This object may have came via postMessage and might not be a
-                      // real vscode.Uri instance so convert it if required (otherwise
-                      // toString() later will be '[Object object]' and not what we
-                      // expect).
-                      file.uri instanceof vscode.Uri || file.uri instanceof URI
-                        ? file.uri
-                        : vscode.Uri.from(file.uri)
-                    : vscode.Uri.file(file.fileName)
+                const uri = file.uri ?? vscode.Uri.file(file.fileName)
                 let text = file.content
                 if (!text && fetchContent) {
                     try {
