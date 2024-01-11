@@ -96,6 +96,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.internal.unstable':
                         return false
+                    case 'cody.internal.ghostHints':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }

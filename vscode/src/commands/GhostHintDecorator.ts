@@ -1,6 +1,9 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
+const WINDOWS_LABEL = 'Ctrl+K to Edit, Ctrl+L to Chat'
+const MACOS_LABEL = '⌘K to Edit, ⌘L to Chat'
+
 /**
  * Creates a new decoration for showing a "ghost" hint to the user.
  *
@@ -13,17 +16,27 @@ import * as vscode from 'vscode'
 export const ghostHintDecoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     after: {
-        contentText: '⌘K to Edit, ⌘L to Chat',
+        contentText: process.platform === 'win32' ? WINDOWS_LABEL : MACOS_LABEL,
         color: new vscode.ThemeColor('editorGhostText.foreground'),
         margin: '0 0 0 1em',
     },
 })
 
 export class GhostHintDecorator implements vscode.Disposable {
+    private isActive = false
     private disposables: vscode.Disposable[] = []
     private activeDecoration: vscode.DecorationOptions | null = null
 
     constructor() {
+        this.updateConfig()
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('cody')) {
+                this.updateConfig()
+            }
+        })
+    }
+
+    private init(): void {
         const setGhostText = throttle(
             (position: vscode.Position, editor: vscode.TextEditor) => {
                 this.activeDecoration = { range: new vscode.Range(position, position) }
@@ -63,7 +76,22 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
     }
 
+    private updateConfig(): void {
+        const config = vscode.workspace.getConfiguration('cody')
+        const isEnabled = config.get('internal.ghostHints') as boolean
+
+        if (!isEnabled) {
+            return this.dispose()
+        }
+
+        if (isEnabled && !this.isActive) {
+            this.isActive = true
+            return this.init()
+        }
+    }
+
     public dispose(): void {
+        this.isActive = false
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
