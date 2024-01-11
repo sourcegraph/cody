@@ -77,6 +77,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
     },
     render: function Render() {
         const [args, updateArgs] = useArgs()
+        const [isOpen, setIsOpen] = useState<boolean>(args.isOpen)
 
         const eventHandlers: EnhancedContextEventHandlersT = {
             onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
@@ -117,7 +118,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                             right: 20,
                         }}
                     >
-                        <EnhancedContextSettings isOpen={args.isOpen} setOpen={() => {}} />
+                        <EnhancedContextSettings isOpen={isOpen} setOpen={() => setIsOpen(!isOpen)} />
                     </div>
                 </EnhancedContextEventHandlers.Provider>
             </EnhancedContextContext.Provider>
@@ -126,7 +127,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
 }
 
 export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
-    render: () => {
+    render: function Render() {
         const [isOpen, setIsOpen] = useState<boolean>(true)
         return (
             <EnhancedContextContext.Provider
@@ -174,7 +175,7 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                         right: 20,
                     }}
                 >
-                    <EnhancedContextSettings isOpen={isOpen} setOpen={setIsOpen} />
+                    <EnhancedContextSettings isOpen={isOpen} setOpen={() => setIsOpen(!isOpen)} />
                 </div>
             </EnhancedContextContext.Provider>
         )
