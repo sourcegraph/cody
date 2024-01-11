@@ -94,8 +94,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
-        const expandedQuery = expandQuery(this.completionsClient, userQuery)
-        return Promise.resolve(scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir)))
+        // const expandedQuery = expandQuery(this.completionsClient, userQuery)
+
+        // Removed Query Expansion and Perform Search on Native User String
+        return Promise.resolve(
+            scopeDirs.map(scopeDir => this.getResultsForScopeDir(Promise.resolve(userQuery), scopeDir))
+        )
     }
 
     /**
