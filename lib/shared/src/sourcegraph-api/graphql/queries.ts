@@ -6,7 +6,7 @@ query CurrentUser {
 }`
 
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
-query CurrentUser {
+query CurrentUserCodyProEnabled {
     currentUser {
         codyProEnabled
     }
@@ -20,7 +20,6 @@ query CurrentUser {
         displayName
         username
         avatarURL
-        codyProEnabled
         primaryEmail {
             email
         }

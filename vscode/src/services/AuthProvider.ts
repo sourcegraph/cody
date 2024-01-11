@@ -262,6 +262,7 @@ export class AuthProvider {
         }
 
         const isCodyEnabled = true
+        const proStatus = await this.client.getCurrentUserCodyProEnabled()
 
         // check first if it's a network error
         if (isError(userInfo)) {
@@ -270,12 +271,11 @@ export class AuthProvider {
             }
             return { ...unauthenticatedStatus, endpoint }
         }
-
         const userCanUpgrade =
             isDotCom &&
-            'codyProEnabled' in userInfo &&
-            typeof userInfo.codyProEnabled === 'boolean' &&
-            !userInfo.codyProEnabled
+            'codyProEnabled' in proStatus &&
+            typeof proStatus.codyProEnabled === 'boolean' &&
+            !proStatus.codyProEnabled
 
         return newAuthStatus(
             endpoint,
