@@ -122,16 +122,14 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <h1>Cody Enterprise</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            <VSCodeButton
-                                className={styles.button}
-                                type="button"
-                                onClick={otherSignInClick}
-                            >
+                            <VSCodeButton className={styles.button} type="button" onClick={otherSignInClick}>
                                 Sign In to Your Enterprise&nbsp;Instance
                             </VSCodeButton>
                         </div>
                     </div>
-                    <p>Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a></p>
+                    <p>
+                        Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
+                    </p>
                 </div>
             </div>
             <div className={styles.terms}>
