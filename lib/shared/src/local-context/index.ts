@@ -1,3 +1,5 @@
+import { type URI } from 'vscode-uri'
+
 import { type ContextFile } from '../codebase-context/messages'
 import { type EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
@@ -53,8 +55,7 @@ export interface IndexedKeywordContextFetcher {
  * File result that renders in the search panel webview
  */
 export interface SearchPanelFile {
-    uriString: string
-    uriJSON: unknown
+    uri: URI
     basename: string
     dirname: string
     wsname?: string
