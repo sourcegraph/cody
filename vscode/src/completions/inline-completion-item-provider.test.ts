@@ -28,11 +28,6 @@ vi.mock('vscode', () => ({
             return null
         },
     },
-    window: {
-        ...vsCodeMocks.window,
-        visibleTextEditors: [],
-        tabGroups: { all: [] },
-    },
 }))
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
