@@ -183,6 +183,17 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                     })
                 )
                 break
+            case 'CurrentUserCodyProEnabled':
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            currentUser: {
+                                codyProEnabled: false,
+                            },
+                        },
+                    })
+                )
+                break
             case 'IsContextRequiredForChatQuery':
                 res.send(JSON.stringify({ data: { isContextRequiredForChatQuery: false } }))
                 break

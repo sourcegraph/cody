@@ -271,7 +271,6 @@ export class AuthProvider {
             }
             return { ...unauthenticatedStatus, endpoint }
         }
-
         const userCanUpgrade =
             isDotCom &&
             'codyProEnabled' in proStatus &&
