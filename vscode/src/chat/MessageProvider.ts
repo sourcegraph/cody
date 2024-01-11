@@ -247,6 +247,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         {
                             metadata: {
                                 ...codeCount,
+                                recordsPrivateMetadataTranscript: 1,
                             },
                             privateMetadata: {
                                 ...metadata,
@@ -467,7 +468,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const properties = { contextSummary, source, requestID, chatModel: this.chatModel }
         telemetryService.log(`CodyVSCodeExtension:${recipe.id}:recipe-used`, properties, { hasV2Event: true })
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'recipe-used', {
-            metadata: { ...contextSummary },
+            metadata: { ...contextSummary, recordsPrivateMetadataTranscript: 1 },
             privateMetadata: {
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                 promptText: this.isDotComUser ? interaction.getHumanMessage().text : undefined,

@@ -655,7 +655,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                         hasV2Event: true,
                     })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                        metadata: { ...contextSummary },
+                        metadata: { ...contextSummary, recordsPrivateMetadataTranscript: 1 },
                         privateMetadata: {
                             properties,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
@@ -951,6 +951,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
                 metadata: {
                     ...codeCount,
+                    recordsPrivateMetadataTranscript: 1,
                 },
                 privateMetadata: {
                     requestID,
