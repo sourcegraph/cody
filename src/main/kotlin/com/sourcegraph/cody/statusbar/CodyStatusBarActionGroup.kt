@@ -56,10 +56,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
             Triple(
                 CodyBundle.getString("status-widget.warning.autocompletion-and-chat.action-title"),
                 CodyBundle.getString("status-widget.warning.autocompletion-and-chat.content")
-                    .fmt(
-                        autocompleteRLE.limit?.let { " $it" } ?: "",
-                        chatRLE.limit?.let { " $it" } ?: "",
-                        suggestionOrExplanation),
+                    .fmt(suggestionOrExplanation),
                 CodyBundle.getString("status-widget.warning.autocompletion-and-chat.dialog-title"))
           }
           autocompleteRLE != null -> {
@@ -67,14 +64,14 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
             Triple(
                 CodyBundle.getString("status-widget.warning.autocompletion.action-title"),
                 CodyBundle.getString("status-widget.warning.autocompletion.content")
-                    .fmt(autocompleteRLE.limit?.let { " $it" } ?: "", suggestionOrExplanation),
+                    .fmt(suggestionOrExplanation),
                 CodyBundle.getString("status-widget.warning.autocompletion.dialog-title"))
           }
           chatRLE != null -> {
             Triple(
                 CodyBundle.getString("status-widget.warning.chat.action-title"),
                 CodyBundle.getString("status-widget.warning.chat.content")
-                    .fmt(chatRLE.limit?.let { " $it" } ?: "", suggestionOrExplanation),
+                    .fmt(suggestionOrExplanation),
                 CodyBundle.getString("status-widget.warning.chat.dialog-title"))
           }
           else -> return null
