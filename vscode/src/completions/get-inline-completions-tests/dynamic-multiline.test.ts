@@ -15,7 +15,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
     })
 
     it('continues generating a multiline completion if a multiline trigger is found on the first line', async () => {
-        const firstParams = params(
+        const requestParams = params(
             'function █',
             [
                 completion`├myFunction() {
@@ -53,7 +53,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             }
         )
 
-        const completions = await getInlineCompletions(firstParams)
+        const completions = await getInlineCompletions(requestParams)
         expect(completions?.items[0]?.insertText).toMatchInlineSnapshot(`
             "myFunction() {
                 console.log(1)
@@ -65,7 +65,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
     })
 
     it('does not use dynamic multiline for certain black listed cases', async () => {
-        const firstParams = params(
+        const requestParams = params(
             'class █',
             [
                 completion`├Test {
@@ -106,7 +106,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             }
         )
 
-        const completions = await getInlineCompletions(firstParams)
+        const completions = await getInlineCompletions(requestParams)
         expect(completions?.items[0]?.insertText).toMatchInlineSnapshot('"Test {"')
     })
 })
