@@ -656,9 +656,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                     })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
                         metadata: { ...contextSummary },
-                        // 🚨 SECURITY: included only for DotCom users.
                         privateMetadata: {
                             properties,
+                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                             promptText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? promptText : undefined,
                         },
                     })
@@ -937,6 +937,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         void this.saveSession()
         this.postViewTranscript()
 
+        const authStatus = this.authProvider.getAuthStatus()
+
         // Count code generated from response
         const codeCount = countGeneratedCode(rawResponse)
         if (codeCount?.charCount) {
@@ -952,7 +954,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 },
                 privateMetadata: {
                     requestID,
-                    responseText: rawResponse,
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    responseText: authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
                 },
             })
         }

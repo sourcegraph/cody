@@ -233,7 +233,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 // Count code generated from response
                 const codeCount = countGeneratedCode(text)
                 const metadata = lastInteraction?.getHumanMessage().metadata
-                const responseText = this.isDotComUser ? text : undefined
+
                 telemetryService.log(
                     'CodyVSCodeExtension:chatResponse:hasCode',
                     { ...codeCount, ...metadata, requestID },
@@ -250,7 +250,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                             },
                             privateMetadata: {
                                 ...metadata,
-                                responseText,
+                                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                                responseText: this.isDotComUser ? text : undefined,
                             },
                         }
                     )
