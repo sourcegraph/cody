@@ -8,9 +8,9 @@ import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-fil
 import { getContextRange } from '../../../doc-context-getters'
 import { type ContextRetriever, type ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
+import { VSCodeDocumentHistory, type DocumentHistory } from '../jaccard-similarity/history'
 
 import { bestJaccardMatches, type JaccardMatch } from './bestJaccardMatch'
-import { VSCodeDocumentHistory, type DocumentHistory } from './history'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many

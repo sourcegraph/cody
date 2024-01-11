@@ -3,8 +3,8 @@ import type * as vscode from 'vscode'
 import { type ContextRetriever } from '../types'
 
 import { type BfgRetriever } from './retrievers/bfg/bfg-retriever'
-import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
+import { JaccardSimilarityRetriever } from './retrievers/new-jaccard-similarity/jaccard-similarity-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
 
 export type ContextStrategy = 'lsp-light' | 'bfg' | 'jaccard-similarity' | 'bfg-mixed' | 'local-mixed' | 'none'
