@@ -419,6 +419,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
+            case 'attribution-search':
+                setTimeout(() => {
+                    void this.postMessage({
+                        type: 'attribution',
+                        snippet: message.snippet,
+                        attribution: {
+                            repositoryNames: [],
+                            limitHit: true,
+                        },
+                    })
+                }, 1000)
+                break
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }

@@ -6,11 +6,12 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 
 import { Mutex } from 'async-mutex'
+import { XMLParser } from 'fast-xml-parser'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
 import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { logDebug } from '../log'
 
@@ -28,7 +29,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     constructor(
         private context: vscode.ExtensionContext,
         private sourcegraphServerEndpoint: string | null,
-        private authToken: string | null
+        private authToken: string | null,
+        private completionsClient: SourcegraphCompletionsClient
     ) {
         const indexRoot = path.join(context.globalStorageUri.fsPath, 'symf', 'indexroot')
         void SymfRunner.removeOldIndexRoot(indexRoot)
@@ -91,29 +93,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return { accessToken, serverEndpoint, symfPath }
     }
 
-    public async getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
-        const { symfPath, serverEndpoint, accessToken } = await this.getSymfInfo()
-        const expandedQuery = execFile(symfPath, ['expand-query', userQuery], {
-            env: {
-                SOURCEGRAPH_TOKEN: accessToken,
-                SOURCEGRAPH_URL: serverEndpoint,
-            },
-            maxBuffer: 1024 * 1024 * 1024,
-            timeout: 1000 * 10, // timeout in 10 seconds
-        })
-            .then(({ stdout }) => stdout.trim())
-            .catch(error => {
-                if (isError(error) && error.message.includes('429')) {
-                    // HACK: if we hit a rate limit error from symf, just return the original
-                    // user query without term expansion, because we expect that we'll immediately
-                    // hit a rate limit error again when the chat request is sent (but there
-                    // we'll have the appropriate metadata to handle it properly).
-                    return userQuery
-                }
-                throw error
-            })
-
-        return scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+    public getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
+        const expandedQuery = expandQuery(this.completionsClient, userQuery)
+        return Promise.resolve(scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir)))
     }
 
     /**
@@ -542,4 +524,58 @@ function toSymfError(error: unknown): Error {
         errorMessage = `symf index creation failed: ${error}`
     }
     return new EvalError(errorMessage)
+}
+
+export function expandQuery(completionsClient: SourcegraphCompletionsClient, query: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const streamingText: string[] = []
+        completionsClient.stream(
+            {
+                messages: [
+                    {
+                        speaker: 'human',
+                        text: `You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                    },
+                    { speaker: 'assistant' },
+                ],
+                maxTokensToSample: 400,
+                temperature: 0,
+                topK: 1,
+                fast: true,
+            },
+            {
+                onChange(text) {
+                    streamingText.push(text)
+                },
+                onComplete() {
+                    const text = streamingText.at(-1) ?? ''
+                    try {
+                        const parser = new XMLParser()
+                        const document = parser.parse(text)
+                        const keywords: { value?: string; variants?: string; weight?: number }[] =
+                            document?.keywords?.keyword ?? []
+                        const result = new Set<string>()
+                        for (const { value, variants } of keywords) {
+                            if (typeof value === 'string' && value) {
+                                result.add(value)
+                            }
+                            if (typeof variants === 'string') {
+                                for (const variant of variants.split(' ')) {
+                                    if (variant) {
+                                        result.add(variant)
+                                    }
+                                }
+                            }
+                        }
+                        resolve([...result].sort().join(' '))
+                    } catch (error) {
+                        reject(error)
+                    }
+                },
+                onError(error) {
+                    reject(error)
+                },
+            }
+        )
+    })
 }

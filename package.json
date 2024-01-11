@@ -27,7 +27,8 @@
     "test:unit": "vitest run",
     "test:integration": "pnpm -C vscode test:integration",
     "test:e2e": "pnpm -C vscode test:e2e",
-    "update-agent-recordings": "rm -rf agent/recordings && pnpm build && CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts"
+    "update-agent-recordings": "rm -rf agent/recordings && pnpm build && CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts",
+    "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.1.1",

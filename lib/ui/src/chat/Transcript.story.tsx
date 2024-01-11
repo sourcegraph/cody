@@ -1,6 +1,6 @@
 import { type Meta, type StoryObj } from '@storybook/react'
 
-import { type FileLinkProps } from './components/ContextFiles'
+import { type FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 import { Transcript } from './Transcript'
 

@@ -9,6 +9,7 @@ import { defaultAuthStatus, unauthenticatedStatus, type AuthStatus } from './pro
  * @param version The Sourcegraph instance version.
  * @param avatarURL The user's avatar URL, or '' if not set.
  * @param primaryEmail The user's primary email, or '' if not set.
+ * @param username The user's username.
  * @param displayName The user's display name, or '' if not set.
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
@@ -21,8 +22,9 @@ export function newAuthStatus(
     userCanUpgrade: boolean,
     version: string,
     avatarURL: string,
-    primaryEmail: string,
-    displayName: string,
+    username: string,
+    displayName?: string,
+    primaryEmail?: string,
     configOverwrites?: AuthStatus['configOverwrites']
 ): AuthStatus {
     if (!user) {
@@ -38,8 +40,9 @@ export function newAuthStatus(
     authStatus.userCanUpgrade = userCanUpgrade
     authStatus.siteVersion = version
     authStatus.avatarURL = avatarURL
-    authStatus.primaryEmail = primaryEmail
-    authStatus.displayName = displayName
+    authStatus.primaryEmail = primaryEmail || ''
+    authStatus.displayName = displayName || ''
+    authStatus.username = username
     if (configOverwrites) {
         authStatus.configOverwrites = configOverwrites
     }
