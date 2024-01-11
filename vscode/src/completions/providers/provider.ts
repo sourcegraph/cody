@@ -97,4 +97,7 @@ export interface CompletionProviderTracer {
 export interface CompletionProviderTracerResultData {
     /** The post-processed completions that are returned by the provider. */
     completions: InlineCompletionItemWithAnalytics[]
+
+    /** Free-form text with debugging or timing information. */
+    debugMessage?: string
 }

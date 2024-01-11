@@ -37,7 +37,7 @@ class CancellationManager implements vscode.Disposable {
 }
 
 class IndexManager implements vscode.Disposable {
-    private currentlyRefreshing = new Set<string>()
+    private currentlyRefreshing = new Map<string, Promise<void>>()
     private scopeDirIndexInProgress: Map<string, Promise<void>> = new Map()
     private disposables: vscode.Disposable[] = []
 
@@ -98,13 +98,18 @@ class IndexManager implements vscode.Disposable {
         )
     }
 
-    public async refreshIndex(scopeDir: string): Promise<void> {
-        if (this.currentlyRefreshing.has(scopeDir)) {
-            return
+    public refreshIndex(scopeDir: string): Promise<void> {
+        const fromCache = this.currentlyRefreshing.get(scopeDir)
+        if (fromCache) {
+            return fromCache
         }
-        try {
-            this.currentlyRefreshing.add(scopeDir)
+        const result = this.forceRefreshIndex(scopeDir)
+        this.currentlyRefreshing.set(scopeDir, result)
+        return result
+    }
 
+    private async forceRefreshIndex(scopeDir: string): Promise<void> {
+        try {
             await this.symf.deleteIndex(scopeDir)
             await this.symf.ensureIndex(scopeDir, { hard: true })
         } catch (error) {

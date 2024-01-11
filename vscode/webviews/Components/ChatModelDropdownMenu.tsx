@@ -19,6 +19,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     userInfo,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
+    const currentModelIndex = models.indexOf(models.find(m => m.default) || models[0])
     const dropdownRef = useRef<DropdownProps>(null)
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
@@ -77,6 +78,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 disabled={disabled}
                 className={styles.dropdownContainer}
                 onChange={handleChange}
+                selectedIndex={currentModelIndex}
                 {...(!disabled && enabledDropdownProps)}
             >
                 {models?.map((option, index) => (

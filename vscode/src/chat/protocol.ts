@@ -94,6 +94,10 @@ export type WebviewMessage =
     | {
           command: 'reset'
       }
+    | {
+          command: 'attribution-search'
+          snippet: string
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -115,6 +119,15 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | {
+          type: 'attribution'
+          snippet: string
+          attribution?: {
+              repositoryNames: string[]
+              limitHit: boolean
+          }
+          error?: string
+      }
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -143,7 +156,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
  * verified email.
  */
 export interface AuthStatus {
-    username?: string
+    username: string
     endpoint: string | null
     isDotCom: boolean
     isLoggedIn: boolean
@@ -156,7 +169,7 @@ export interface AuthStatus {
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
     primaryEmail: string
-    displayName: string
+    displayName?: string
     avatarURL: string
     /**
      * Whether the users account can be upgraded.
@@ -180,6 +193,7 @@ export const defaultAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -196,6 +210,7 @@ export const unauthenticatedStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -212,6 +227,7 @@ export const networkErrorAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',

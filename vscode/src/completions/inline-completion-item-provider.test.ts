@@ -51,6 +51,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     siteHasCodyEnabled: true,
     siteVersion: '1234',
     primaryEmail: 'heisenberg@exmaple.com',
+    username: 'uwu',
     displayName: 'w.w.',
     avatarURL: '',
     userCanUpgrade: false,
@@ -615,7 +616,7 @@ describe('InlineCompletionItemProvider', () => {
                     canUpgrade
                         ? expect.objectContaining({
                               title: 'Upgrade to Continue Using Cody Autocomplete',
-                              description: "You've used all 1234 autocompletions for the month.",
+                              description: "You've used all autocompletions for the month.",
                           })
                         : expect.objectContaining({
                               title: 'Cody Autocomplete Disabled Due to Rate Limit',
