@@ -4,10 +4,8 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     Chat as ChatUI,
@@ -26,11 +24,9 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
-import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
-import { type OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
 import { type VSCodeWrapper } from './utils/VSCodeApi'
@@ -43,7 +39,6 @@ interface ChatboxProps {
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
-    contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -54,11 +49,6 @@ interface ChatboxProps {
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
-    applessOnboarding: {
-        endpoint: string | null
-        embeddingsEndpoint?: string
-        props: { onboardingPopupProps: OnboardingPopupProps }
-    }
     contextSelection?: ContextFile[] | null
     setChatModels?: (models: ChatModelProvider[]) => void
     chatModels?: ChatModelProvider[]
@@ -72,7 +62,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageBeingEdited,
     setMessageBeingEdited,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -83,7 +72,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setSuggestions,
     chatCommands,
     isTranscriptError,
-    applessOnboarding,
     contextSelection,
     setChatModels,
     chatModels,
@@ -153,13 +141,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 transcript: '',
             }
 
-            if (applessOnboarding.endpoint && isDotCom(applessOnboarding.endpoint)) {
+            if (userInfo.isDotComUser) {
                 eventData.transcript = JSON.stringify(transcript)
             }
 
             telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
         },
-        [telemetryService, transcript, applessOnboarding]
+        [telemetryService, transcript, userInfo]
     )
 
     const onCopyBtnClick = useCallback(
@@ -191,7 +179,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             messageBeingEdited={messageBeingEdited}
             setMessageBeingEdited={setMessageBeingEdited}
             transcript={transcript}
-            contextStatus={contextStatus}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}
@@ -232,11 +219,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            contextStatusComponent={ChatInputContextSimplified}
-            contextStatusComponentProps={{
-                contextStatus,
-                ...applessOnboarding.props,
-            }}
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
