@@ -1,6 +1,10 @@
 .inner-container {
     height: 100%;
-    overflow: auto;
+
+    /* popups use a screen to capture clicks outside the popups; this is
+       necessary so that the screen can extend to the extent of the view without
+       scrollbars */
+    overflow: clip;
 }
 
 .transcript-item {
