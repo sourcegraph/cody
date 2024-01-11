@@ -10,9 +10,10 @@ export interface JaccardMatch {
 type WordOccurrences = Map<string, number>
 
 /**
- * Finds the window from matchText with the lowest Jaccard distance from targetText.
- * The Jaccard distance is the ratio of intersection over union, using a bag-of-words-with-count as
- * the representation for text snippet.
+ * Finds the window from matchText with the highest Jaccard similarity to the targetText.
+ *
+ * The Jaccard similarity is the ratio of the number of words that are common to both texts
+ * to the number of words that are unique to either text.
  * @param targetText is the text that serves as the target we are trying to find a match for
  * @param matchText is the text we are sliding our window through to find the best match
  * @param windowSize is the size of the match window in number of lines
@@ -60,7 +61,7 @@ export function bestJaccardMatches(
     // Initialize the result set with the first window
     const windows: JaccardMatch[] = [
         {
-            score: jaccardDistance(targetWordCounts, windowWordCounts, intersectionWordCounts),
+            score: jaccardSimilarity(targetWordCounts, windowWordCounts, intersectionWordCounts),
             content: lines.slice(firstWindowStart, firstWindowEnd + 1).join('\n'),
             startLine: firstWindowStart,
             endLine: firstWindowEnd,
@@ -100,8 +101,9 @@ export function bestJaccardMatches(
             continue
         }
 
-        // Compute the jaccard distance between our target text and window
-        const score = jaccardDistance(targetWordCounts, windowWordCounts, intersectionWordCounts)
+        // Compute the jaccard similarity between our target text and window
+        const score = jaccardSimilarity(targetWordCounts, windowWordCounts, intersectionWordCounts)
+
         const startLine = i
         const endLine = i + windowSize - 1
         windows.push({ score, content: lines.slice(startLine, endLine + 1).join('\n'), startLine, endLine })
@@ -112,7 +114,7 @@ export function bestJaccardMatches(
     return windows.slice(0, maxMatches)
 }
 
-export function jaccardDistance(left: number, right: number, intersection: number): number {
+export function jaccardSimilarity(left: number, right: number, intersection: number): number {
     const union = left + right - intersection
     if (union < 0) {
         throw new Error("intersection can't be greater than the sum of left and right")
