@@ -161,7 +161,7 @@ export class ChatManager implements vscode.Disposable {
                 }
             })
         } catch (error) {
-            logError('MessageProvider:exportHistory', 'Failed to export chat history', error)
+            logError('ChatManager:exportHistory', 'Failed to export chat history', error)
         }
     }
 
