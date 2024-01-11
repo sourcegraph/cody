@@ -77,32 +77,32 @@ describe('getWords', () => {
 
 describe('bestJaccardMatch', () => {
     it('should return the best match', () => {
-        const matchText = [
-            'foo',
-            'bar',
-            'baz',
-            'qux',
-            'quux',
-            'quuz',
-            'corge',
-            'grault',
-            'garply',
-            'waldo',
-            'fred',
-            'plugh',
-            'xyzzy',
-            'thud',
-        ].join('\n')
+        const matchText = dedent`
+            foo
+            bar
+            baz
+            qux
+            quux
+            quuz
+            corge
+            grault
+            garply
+            waldo
+            fred
+            plugh
+            xyzzy
+            thud
+        `
         expect(bestJaccardMatches('foo\nbar\nbaz', matchText, 3, MAX_MATCHES)[0]).toEqual({
             score: 1,
             content: 'foo\nbar\nbaz',
-            endLine: 3,
+            endLine: 2,
             startLine: 0,
         })
         expect(bestJaccardMatches('bar\nquux', matchText, 4, MAX_MATCHES)[0]).toEqual({
             score: 0.5,
             content: 'bar\nbaz\nqux\nquux',
-            endLine: 5,
+            endLine: 4,
             startLine: 1,
         })
         expect(
@@ -115,7 +115,7 @@ describe('bestJaccardMatch', () => {
         ).toEqual({
             score: 0.3,
             startLine: 4,
-            endLine: 10,
+            endLine: 9,
             content: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
         })
     })
@@ -185,11 +185,20 @@ describe('bestJaccardMatch', () => {
                   const matchText = [
                       'foo',
                       'bar',",
-            "endLine": 5,
+            "endLine": 4,
             "score": 0.08695652173913043,
             "startLine": 0,
           }
         `)
+    })
+
+    it('works for input texts that are shorter than the window size', () => {
+        expect(bestJaccardMatches('foo', 'foo', 10, MAX_MATCHES)[0]).toEqual({
+            content: 'foo',
+            endLine: 0,
+            score: 1,
+            startLine: 0,
+        })
     })
 
     it('skips over windows with empty start lines', () => {

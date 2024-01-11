@@ -22,12 +22,10 @@ const SNIPPET_WINDOW_SIZE = 50
 
 /**
  * Limits the number of jaccard windows that are fetched for a single file. This is mostly added to
- * avoid large files taking up too much compute time.
- *
- * This number should be >= SNIPPET_WINDOW_SIZE, as we slide over the window line-by-line and thus,
- * when sliding over a high-signal area, we might get a lot of matches inside the same window.
+ * avoid large files taking up too much compute time and to avoid a single file to take up too much
+ * of the whole context window.
  */
-const MAX_MATCHES_PER_FILE = 50
+const MAX_MATCHES_PER_FILE = 20
 
 /**
  * The Jaccard Similarity Retriever is a sparse, local-only, retrieval strategy that uses local
@@ -66,41 +64,17 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
             // keep in sync with embeddings search results which use relative to repo root paths
             const readableFileName = path.normalize(vscode.workspace.asRelativePath(uri.fsPath))
 
+            // Ignore matches with 0 overlap to our source file
+            const relatedMatches = fileMatches.filter(match => match.score > 0)
+
             // TODO: Cluster matches by score. For now we assume that every match that is returned
             // is of equal importance to the user (we truncate the list by maxMatchesPerFile to
             // avoid this being too many results), but ideally we can create clusters so that merged
             // sections do not become too big
 
-            // Merge overlapping ranges
-            if (fileMatches.length > 1) {
-                const mergedMatches = [fileMatches[0]]
-                for (let i = 1; i < fileMatches.length; i++) {
-                    const match = fileMatches[i]
-                    let merged = false
-                    for (const mergedMatch of mergedMatches) {
-                        if (
-                            startOrEndOverlapsLineRange(uri, { start: match.startLine, end: match.endLine }, uri, {
-                                start: mergedMatch.startLine,
-                                end: mergedMatch.endLine,
-                            })
-                        ) {
-                            // TODO: Maybe we need to boost the score but for now we pick the max
-                            mergedMatch.score = Math.max(mergedMatch.score, match.score)
-                            mergedMatch.startLine = Math.min(mergedMatch.startLine, match.startLine)
-                            mergedMatch.endLine = Math.max(mergedMatch.endLine, match.endLine)
-                            mergedMatch.content = lines.slice(mergedMatch.startLine, mergedMatch.endLine).join('\n')
-                            merged = true
-                            break
-                        }
-                    }
+            const mergedMatches = mergeOverlappingMatches(document.uri, lines, relatedMatches)
 
-                    if (!merged) {
-                        mergedMatches.push(match)
-                    }
-                }
-            }
-
-            for (const match of fileMatches) {
+            for (const match of mergedMatches) {
                 if (
                     uri.toString() === document.uri.toString() &&
                     startOrEndOverlapsLineRange(
@@ -284,4 +258,41 @@ function startOrEndOverlapsLineRange(
         (lineRangeA.start >= lineRangeB.start && lineRangeA.start <= lineRangeB.end) ||
         (lineRangeA.end >= lineRangeB.start && lineRangeA.end <= lineRangeB.end)
     )
+}
+
+function mergeOverlappingMatches(uri: vscode.Uri, lines: string[], matches: JaccardMatch[]): JaccardMatch[] {
+    if (matches.length <= 1) {
+        return matches
+    }
+
+    // We first sort the ranges based on the startLine to avoid creating a second match for
+    // something that would be merged into another one later
+    const sortedMatches = matches.slice(0).sort((a, b) => a.startLine - b.startLine)
+
+    const mergedMatches = [sortedMatches[0]]
+    for (let i = 1; i < sortedMatches.length; i++) {
+        const match = sortedMatches[i]
+        let merged = false
+        for (const mergedMatch of mergedMatches) {
+            if (
+                startOrEndOverlapsLineRange(uri, { start: match.startLine, end: match.endLine }, uri, {
+                    start: mergedMatch.startLine,
+                    end: mergedMatch.endLine,
+                })
+            ) {
+                // TODO: We may need to boost the score but for now we pick the max of both matches
+                mergedMatch.score = Math.max(mergedMatch.score, match.score)
+                mergedMatch.startLine = Math.min(mergedMatch.startLine, match.startLine)
+                mergedMatch.endLine = Math.max(mergedMatch.endLine, match.endLine)
+                mergedMatch.content = lines.slice(mergedMatch.startLine, mergedMatch.endLine).join('\n')
+                merged = true
+                break
+            }
+        }
+
+        if (!merged) {
+            mergedMatches.push(match)
+        }
+    }
+    return mergedMatches
 }

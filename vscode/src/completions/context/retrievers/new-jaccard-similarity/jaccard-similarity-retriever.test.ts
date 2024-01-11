@@ -106,9 +106,8 @@ describe('JaccardSimilarityRetriever', () => {
               }
           }"
         `)
-        // The unrelated file is added last with a much lower score.
-        expect(snippets[1].fileName).toBe('/unrelated.ts')
-        expect(snippets[1].score).toBeLessThan(0.05)
+        // The unrelated file should not be added since it does not overlap with the query at all
+        expect(snippets[1]).toBeUndefined()
     })
 
     it('should pick multiple matches from the same file', async () => {
@@ -123,23 +122,20 @@ describe('JaccardSimilarityRetriever', () => {
             abortSignal: new AbortController().signal,
         })
 
-        // The first snippet contains the top of the file
+        expect(snippets).toHaveLength(2)
+        // The first snippet contains the top of the file...
         expect(snippets[0].content).toMatchInlineSnapshot(`
           "export class TestClass {
               // Method 1 of TestClass
               methodOne() {
-                  console.log('one')
-              }
-
-
-          "
+                  console.log('one')"
         `)
+        // ...the second one contains the bottom.
         expect(snippets[1].content).toMatchInlineSnapshot(`
           "    // Method 2 of TestClass
               methodTwo() {
                   console.log('two')
-              }
-          }"
+              }"
         `)
     })
 
@@ -151,6 +147,9 @@ describe('JaccardSimilarityRetriever', () => {
             dedent`
                 // Write a test for TestClass
                 █
+
+
+
                 class TestClass {
                     // Maybe this is relevant tho?
                 }
@@ -189,7 +188,7 @@ describe('JaccardSimilarityRetriever', () => {
 
     it('should merge multiple matches from the same file into one snippet if they overlap', async () => {
         // We limit the window size to 3 lines
-        const retriever = new JaccardSimilarityRetriever(3)
+        const retriever = new JaccardSimilarityRetriever(4)
 
         // NOTE: This document has no space between the top relevant section, so we expect it to be
         // merged into one.
@@ -223,6 +222,7 @@ describe('JaccardSimilarityRetriever', () => {
             abortSignal: new AbortController().signal,
         })
 
+        expect(snippets).toHaveLength(1)
         expect(snippets[0].content).toMatchInlineSnapshot(`
           "export class TestClass {
               // Method 1 of TestClass
@@ -231,9 +231,7 @@ describe('JaccardSimilarityRetriever', () => {
               }
               // Method 2 of TestClass
               methodTwo() {
-                  console.log('two')
-              }
-          }"
+                  console.log('two')"
         `)
     })
 })
