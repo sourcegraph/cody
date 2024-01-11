@@ -68,6 +68,14 @@ export type Requests = {
     'chat/submitMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
     'chat/editMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
 
+    // Trigger chat-based commands (explain, test, smell), which are effectively
+    // shortcuts to start a new chat with a templated question. The return value
+    // of these commands is the same as `chat/new`, an ID to reference to the
+    // webview panel where the reply from this command appears.
+    'commands/explain': [null, string]
+    'commands/test': [null, string]
+    'commands/smell': [null, string]
+
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
     'command/execute': [ExecuteCommandParams, any]

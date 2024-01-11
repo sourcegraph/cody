@@ -1,7 +1,9 @@
 import { beforeAll } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { isWindows, setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
+import { isWindows } from '@sourcegraph/cody-shared'
+
+import { setDisplayPathEnvInfo } from '../../../lib/shared/src/editor/displayPath'
 
 beforeAll(() => {
     const isWin = isWindows()

@@ -86,6 +86,45 @@ export class TestClient extends MessageHandler {
     }
 
     public webviewMessages: WebviewPostMessageParams[] = []
+    public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
+
+    /**
+     * Returns a promise of the first `type: 'transcript'` message where
+     * `isMessageInProgress: false` and messages is non-empty. This is a helper
+     * function you may need to re-implement if you are writing a Cody client to
+     * write tests. The tricky bit is that we don't have full control over when
+     * the server starts streaming messages to the client, it may start before
+     * chat/new or commands/* requests respond with the ID of the chat session.
+     * Therefore, the only way to correctly identify the first reply in the chat session
+     * is by 1) recording all `webview/postMessage` for unknown IDs and 2)
+     * implement a similar helper that deals with both cases where the first message
+     * has already been sent and when it hasn't been sent.
+     */
+    public firstNonEmptyTranscript(id: string): Promise<ExtensionTranscriptMessage> {
+        const disposables: vscode.Disposable[] = []
+        return new Promise<ExtensionTranscriptMessage>((resolve, reject) => {
+            const onMessage = (message: WebviewPostMessageParams): void => {
+                if (message.id !== id) {
+                    return
+                }
+                if (
+                    message.message.type === 'transcript' &&
+                    message.message.messages.length > 0 &&
+                    !message.message.isMessageInProgress
+                ) {
+                    resolve(message.message)
+                } else if (message.message.type === 'errors') {
+                    reject(new Error(`expected transcript, obtained ${JSON.stringify(message.message)}`))
+                }
+            }
+
+            for (const message of this.webviewMessages) {
+                onMessage(message)
+            }
+            disposables.push(this.webviewMessagesEmitter.event(params => onMessage(params)))
+        }).finally(() => vscode.Disposable.from(...disposables).dispose())
+    }
+
     public async initialize() {
         this.agentProcess = this.spawnAgentProcess()
 
@@ -95,6 +134,7 @@ export class TestClient extends MessageHandler {
 
         this.registerNotification('webview/postMessage', params => {
             this.webviewMessages.push(params)
+            this.webviewMessagesEmitter.fire(params)
         })
 
         try {
@@ -351,9 +391,9 @@ describe('Agent', () => {
             cursor >= 0
                 ? document.positionAt(cursor)
                 : selectionStart >= 0
-                ? document.positionAt(selectionEnd)
+                ? document.positionAt(selectionStart)
                 : undefined
-        const end = cursor >= 0 ? start : selectionStart >= 0 ? document.positionAt(selectionStart) : undefined
+        const end = cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
         client.notify('textDocument/didOpen', {
             uri: uri.toString(),
             content,
@@ -388,13 +428,13 @@ describe('Agent', () => {
         const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
         expect(lastMessage).toMatchInlineSnapshot(
             `
-          {
-            "contextFiles": [],
-            "displayText": " Hello!",
-            "speaker": "assistant",
-            "text": " Hello!",
-          }
-        `,
+              {
+                "contextFiles": [],
+                "displayText": " Hello!",
+                "speaker": "assistant",
+                "text": " Hello!",
+              }
+            `,
             explainPollyError
         )
     }, 20_000)
@@ -447,30 +487,30 @@ describe('Agent', () => {
         const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-          " Here is a simple Hello World program in Java:
+              " Here is a simple Hello World program in Java:
 
-          \`\`\`java
-          public class Main {
+              \`\`\`java
+              public class Main {
 
-            public static void main(String[] args) {
-              System.out.println(\\"Hello World!\\");
-            }
+                public static void main(String[] args) {
+                  System.out.println(\\"Hello World!\\");
+                }
 
-          }
-          \`\`\`
+              }
+              \`\`\`
 
-          This program prints \\"Hello World!\\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
+              This program prints \\"Hello World!\\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
 
-          To run this:
+              To run this:
 
-          1. Save the code in a file called Main.java
-          2. Compile it with: javac Main.java
-          3. Run it with: java Main
+              1. Save the code in a file called Main.java
+              2. Compile it with: javac Main.java
+              3. Run it with: java Main
 
-          The \\"Hello World!\\" text will be printed to the console.
+              The \\"Hello World!\\" text will be printed to the console.
 
-          Let me know if you need any clarification or have additional requirements for the Java program!"
-        `,
+              Let me know if you need any clarification or have additional requirements for the Java program!"
+            `,
             explainPollyError
         )
     }, 20_000)
@@ -494,27 +534,117 @@ describe('Agent', () => {
         // is not a git directory and symf reports some git-related error.
         expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
             `
-          " Here is the code for the Dog class implementing the Animal interface:
+          " Here is the Dog class that implements the Animal interface:
 
-          \`\`\`java
-          public class Dog implements Animal {
+          \`\`\`typescript
+          export class Dog implements Animal {
+            name: string;
 
-            @Override
-            public void makeSound() {
-              System.out.println(\\"Woof!\\");
+            constructor(name: string) {
+              this.name = name;
             }
 
-            @Override
-            public void move() {
-              System.out.println(\\"The dog runs\\");
+            makeAnimalSound() {
+              return 'Woof!';
             }
 
+            isMammal = true;
           }
           \`\`\`"
         `,
             explainPollyError
         )
     }, 20_000)
+
+    describe('Commands', () => {
+        it('explain', async () => {
+            await openFile(animalUri)
+            const id = await client.request('commands/explain', null)
+            const lastMessage = await client.firstNonEmptyTranscript(id)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " The selected code defines an Animal interface in TypeScript.
+
+              It starts by exporting the interface, which makes it available to other files that import this one.
+
+              The interface is called Animal and has 3 properties:
+
+              1. name - This is a string that represents the animal's name.
+
+              2. makeAnimalSound() - This is a method that returns a string sound the animal makes.
+
+              3. isMammal - This is a boolean property that indicates if the animal is a mammal or not.
+
+              By defining this interface, we set up a blueprint for what fields and methods an Animal object will have. Other classes can then implement this interface to take on these requirements. For example, we could make a Dog class that implements Animal and provides the proper name, sound, and mammal flag.
+
+              Interfaces allow us to define contracts in our code, setting consistent expectations for different objects. This helps with organization and interoperability. By exporting the Animal interface, we make it available across multiple files. Other files that import src/animal.ts can use the Animal type for functions, variables, classes and more. This allows us to reuse the interface and ensures a consistent API.
+
+              In summary, the selected code defines and exports an Animal interface with common fields for animal objects in TypeScript. This creates a reusable structure other parts of the codebase can implement and rely on. It sets clear expectations for what an Animal object should look like and do."
+            `,
+                explainPollyError
+            )
+        }, 20_000)
+
+        it('test', async () => {
+            await openFile(animalUri)
+            const id = await client.request('commands/test', null)
+            const lastMessage = await client.firstNonEmptyTranscript(id)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `
+              " No test framework or libraries were detected in the shared context. Since this is TypeScript code, I will generate Jest tests:
+
+              \`\`\`ts
+              import { Animal } from './animal';
+
+              describe('Animal', () => {
+
+                test('makeAnimalSound returns expected sound', () => {
+                  const animal: Animal = {
+                    name: 'Dog',
+                    makeAnimalSound: () => 'Woof',
+                    isMammal: true
+                  };
+                  expect(animal.makeAnimalSound()).toEqual('Woof');
+                });
+
+                test('isMammal returns true for mammal', () => {
+                  const animal: Animal = {
+                    name: 'Dog',
+                    makeAnimalSound: () => 'Woof',
+                    isMammal: true
+                  };
+                  expect(animal.isMammal).toBeTruthy();
+                });
+
+                test('isMammal returns false for non-mammal', () => {
+                  const animal: Animal = {
+                    name: 'Snake',
+                    makeAnimalSound: () => 'Hiss',
+                    isMammal: false
+                  };
+                  expect(animal.isMammal).toBeFalsy();
+                });
+
+              });
+              \`\`\`
+
+              This generates a basic Jest test suite for the Animal interface, validating the makeAnimalSound and isMammal properties with simple assertions. Additional tests could be added for more robust coverage."
+            `,
+                explainPollyError
+            )
+        }, 20_000)
+
+        it('smell', async () => {
+            await openFile(animalUri)
+            const id = await client.request('commands/smell', null)
+            const lastMessage = await client.firstNonEmptyTranscript(id)
+
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                '""',
+                explainPollyError
+            )
+        }, 20_000)
+    })
 
     // TODO Fix test - fails intermittently on CI
     // e.g. https://github.com/sourcegraph/cody/actions/runs/7191096335/job/19585263054#step:9:1723

@@ -89,7 +89,7 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<void> {
+    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<ChatSession | undefined> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -99,6 +99,7 @@ export class ChatManager implements vscode.Disposable {
         // Else, open a new chanel panel and run the command in the new panel
         const chatProvider = await this.getChatProvider()
         await chatProvider.handleCommands(command, source)
+        return chatProvider
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

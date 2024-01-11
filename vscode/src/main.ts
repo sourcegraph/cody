@@ -9,6 +9,7 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { type ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import { ContextProvider } from './chat/ContextProvider'
 import { type MessageProviderOptions } from './chat/MessageProvider'
 import {
@@ -266,7 +267,10 @@ const register = async (
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
 
     // Execute Cody Commands and Cody Custom Commands
-    const executeCommand = async (commandKey: string, source: ChatEventSource = 'editor'): Promise<void> => {
+    const executeCommand = async (
+        commandKey: string,
+        source: ChatEventSource = 'editor'
+    ): Promise<ChatSession | undefined> => {
         const command = await commandsController?.findCommand(commandKey)
         if (!command) {
             return
