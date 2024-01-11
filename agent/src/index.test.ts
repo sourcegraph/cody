@@ -175,6 +175,7 @@ export class TestClient extends MessageHandler {
             cwd: agentDir,
             env: {
                 CODY_SHIM_TESTING: 'true',
+                CODY_TEMPERATURE_ZERO: 'true',
                 CODY_LOCAL_EMBEDDINGS_DISABLED: 'true',
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
@@ -361,9 +362,9 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello there!",
+            "displayText": " Hello there! How can I help you with coding today?",
             "speaker": "assistant",
-            "text": " Hello there!",
+            "text": " Hello there! How can I help you with coding today?",
           }
         `,
             explainPollyError
@@ -375,7 +376,7 @@ describe('Agent', () => {
         const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-          " Here is a simple Hello World program in Java:
+          " Here is a simple Hello World function in Java:
 
           \`\`\`java
           public class Main {
@@ -385,21 +386,13 @@ describe('Agent', () => {
           }
           \`\`\`
 
-          To break this down:
-
-          - The code is wrapped in a class called Main. In Java, code must be contained within classes.
-
-          - The main method is the entry point of the program. It is marked as static so it can be run without creating an instance of Main.
-
-          - The main method accepts a String array called args as a parameter. This contains any command line arguments passed to the program.
-
-          - System.out.println prints the text \\"Hello World!\\" to the console.
+          This defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \\"Hello World!\\" to the console using System.out.println.
 
           To run this:
 
           1. Save the code in a file called Main.java
-          2. Compile it with: javac Main.java
-          3. Run it with: java Main
+          2. Compile it with \`javac Main.java\`
+          3. Run it with \`java Main\`
 
           This will print \\"Hello World!\\" to the console when executed."
         `,

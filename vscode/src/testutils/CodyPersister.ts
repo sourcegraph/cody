@@ -78,6 +78,8 @@ export class CodyPersister extends FSPersister {
                     case 'retry-after':
                         header.value = '0'
                         break
+                    case 'x-cloud-trace-context':
+                        header.value = 'e3280902f3d7c7e5307db550c8425e2c'
                 }
             }
 
