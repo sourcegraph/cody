@@ -681,6 +681,70 @@ cases.forEach(isTreeSitterEnabled => {
                       }"
                 `)
                 })
+
+                it('handles missing brackets gracefully to truncate the completion correctly', async () => {
+                    const requestParams = params('console.log(1); const █', [completion``], {
+                        onNetworkRequest(_params, onPartialResponse) {
+                            onPartialResponse?.(completion`
+                                ├MyCoolObject = {
+                                constructor() {`)
+                            onPartialResponse?.(completion`
+                                ├MyCoolObject = {
+                                constructor() {
+                                    console.log(1)
+
+                                    if (false`)
+                            onPartialResponse?.(completion`
+                                ├MyCoolObject = {
+                                constructor() {
+                                    console.log(1)
+
+                                    if (false) {
+                                        console.log(2)
+                                    }
+
+                                    const result = {
+                                        value:`)
+                            onPartialResponse?.(completion`
+                                ├MyCoolObject = {
+                                constructor() {
+                                    console.log(1)
+
+                                    if (false) {
+                                        console.log(2)
+                                    }
+
+                                    const result = {
+                                        value: true
+                                    }
+
+                                    return result
+                                }
+                            }
+                            console.log(5)┤`)
+                        },
+                        dynamicMultilineCompletions: true,
+                    })
+
+                    const [insertText] = await getInlineCompletionsInsertText(requestParams)
+                    expect(insertText).toMatchInlineSnapshot(`
+                      "MyCoolObject = {
+                          constructor() {
+                              console.log(1)
+
+                              if (false) {
+                                  console.log(2)
+                              }
+
+                              const result = {
+                                  value: true
+                              }
+
+                              return result
+                          }
+                      }"
+                    `)
+                })
             }
         })
     })

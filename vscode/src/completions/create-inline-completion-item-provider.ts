@@ -51,9 +51,16 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, bfgMixedContextFlag, dynamicMultilineCompletionsFlag, hotStreakFlag] = await Promise.all([
+    const [
+        providerConfig,
+        bfgMixedContextFlag,
+        newJaccardSimilarityContextFlag,
+        dynamicMultilineCompletionsFlag,
+        hotStreakFlag,
+    ] = await Promise.all([
         createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextBfgMixed),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextNewJaccardSimilarity),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteHotStreak),
     ])
@@ -69,8 +76,12 @@ export async function createInlineCompletionItemProvider({
                 ? 'local-mixed'
                 : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
                 ? 'jaccard-similarity'
+                : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
+                ? 'new-jaccard-similarity'
                 : bfgMixedContextFlag
                 ? 'bfg-mixed'
+                : newJaccardSimilarityContextFlag
+                ? 'new-jaccard-similarity'
                 : 'jaccard-similarity'
 
         const dynamicMultilineCompletions =

@@ -10,6 +10,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Autocomplete: Fixes an issue where the context retriever would truncate the results too aggressively. [pull/2652](https://github.com/sourcegraph/cody/pull/2652)
 
+- Autocomplete: Improve the stability of multiline completion truncation during streaming by gracefully handling missing brackets in incomplete code segments. [pull/2682](https://github.com/sourcegraph/cody/pull/2682)
+
 ### Changed
 
 - Made the Enterprise login button more prominent. [pull/2672](https://github.com/sourcegraph/cody/pull/2672)
@@ -32,6 +34,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Edit: Added support for user-provided context. Use "@" to include files and "@#" to include specific symbols. [pull/2574](https://github.com/sourcegraph/cody/pull/2574)
 - Autocomplete: Experimental support for inline completions with Code Llama via [Ollama](https://ollama.ai/) running locally. [pull/2635](https://github.com/sourcegraph/cody/pull/2635)
+- Autocomplete: Improves the jaccard similarity retriever to find better matches. [pull/2662](https://github.com/sourcegraph/cody/pull/2662)
 
 ### Fixed
 
