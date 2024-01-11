@@ -12,6 +12,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Made the Enterprise login button more prominent. [pull/2672](https://github.com/sourcegraph/cody/pull/2672)
 
+## [1.1.2]
+
+### Fixed
+
+- Fixing Steal the cursor issue https://github.com/sourcegraph/cody/pull/2674
+
 ## [1.1.1]
 
 ### Fixed
