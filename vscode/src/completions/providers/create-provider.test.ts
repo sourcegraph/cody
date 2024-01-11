@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    CodyLLMSiteConfiguration,
-    GraphQLAPIClientConfig,
     graphqlClient,
+    type CodyLLMSiteConfiguration,
+    type GraphQLAPIClientConfig,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
-import { CodeCompletionsClient } from '../client'
+import { type CodeCompletionsClient } from '../client'
 
 import { createProviderConfig } from './create-provider'
 

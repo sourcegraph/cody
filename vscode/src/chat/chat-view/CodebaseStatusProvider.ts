@@ -1,23 +1,23 @@
 import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import {
-    ContextGroup,
-    ContextProvider,
-    ContextStatusProvider,
-    Disposable,
+    type ContextGroup,
+    type ContextProvider,
+    type ContextStatusProvider,
+    type Disposable,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getConfiguration } from '../../configuration'
 import { getEditor } from '../../editor/active-editor'
-import { SymfRunner } from '../../local-context/symf'
+import { type SymfRunner } from '../../local-context/symf'
 import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
 import { updateCodyIgnoreCodespaceMap } from '../../services/context-filter'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 export interface CodebaseIdentifiers {
     local: string

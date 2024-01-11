@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
-import { CodyStatusBar } from '../services/StatusBar'
+import { type CodyStatusBar } from '../services/StatusBar'
 
-import { CodeCompletionsClient } from './client'
-import { ContextStrategy } from './context/context-strategy'
+import { type CodeCompletionsClient } from './client'
+import { type ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'

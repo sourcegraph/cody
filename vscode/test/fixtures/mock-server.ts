@@ -1,10 +1,10 @@
-import { Socket } from 'node:net'
+import { type Socket } from 'node:net'
 
 import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 import * as uuid from 'uuid'
 
-import { TelemetryEventInput } from '@sourcegraph/telemetry'
+import { type TelemetryEventInput } from '@sourcegraph/telemetry'
 
 // create interface for the request
 interface MockRequest {
@@ -172,12 +172,23 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                             currentUser: {
                                 id: 'u',
                                 hasVerifiedEmail: true,
-                                codyProEnabled: false,
                                 displayName: 'Person',
+                                username: 'person',
                                 avatarURL: '',
                                 primaryEmail: {
                                     email: 'person@company.comp',
                                 },
+                            },
+                        },
+                    })
+                )
+                break
+            case 'CurrentUserCodyProEnabled':
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            currentUser: {
+                                codyProEnabled: false,
                             },
                         },
                     })

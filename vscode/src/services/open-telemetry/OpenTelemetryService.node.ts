@@ -6,7 +6,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { version } from '../../version'

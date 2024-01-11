@@ -1,7 +1,7 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { DocumentContext } from './get-current-doc-context'
-import { AutocompleteItem } from './suggested-autocomplete-items-cache'
+import { type DocumentContext } from './get-current-doc-context'
+import { type AutocompleteItem } from './suggested-autocomplete-items-cache'
 
 export function isCompletionVisible(
     completion: AutocompleteItem,

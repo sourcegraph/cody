@@ -3,21 +3,27 @@ import { dirname } from 'path'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { ContextMessage, getContextMessageWithResponse } from '../../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../../editor'
-import { MAX_CURRENT_FILE_TOKENS } from '../../../prompt/constants'
+import { getFileExtension } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import {
+    getContextMessageWithResponse,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentEditorContextTemplate,
+    populateCurrentEditorSelectedContextTemplate,
     populateCurrentFileFromEditorSelectionContextTemplate,
     populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
-} from '../../../prompt/templates'
-import { truncateText } from '../../../prompt/truncation'
-import { getFileExtension } from '../../recipes/helpers'
-import { answers, displayFileName } from '../templates'
+} from '@sourcegraph/cody-shared/src/prompt/templates'
+import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
+
+import { answers, displayFileName } from '../commands/prompt/templates'
+import { type VSCodeEditor } from '../editor/vscode-editor'
 
 import {
     createHumanDisplayTextWithDocLink,
@@ -35,7 +41,7 @@ import {
 
 export class VSCodeEditorContext {
     constructor(
-        private editor: Editor,
+        private editor: VSCodeEditor,
         private selection?: ActiveTextEditorSelection | null
     ) {}
 
@@ -56,6 +62,29 @@ export class VSCodeEditorContext {
 
         // Create markdown link to the file
         return createHumanDisplayTextWithDocLink(humanInput, fileUri, this.selection)
+    }
+
+    public getEditorSelectionContext(): ContextMessage[] {
+        const fileText = this.selection?.selectedText.trim()
+        const fileUri = this.selection?.fileUri
+        if (!fileText || !fileUri) {
+            return []
+        }
+        const fileName = fileUri.fsPath
+        const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
+        // Create context message
+        const contextMessage = getContextMessageWithResponse(
+            populateCurrentEditorSelectedContextTemplate(truncatedText, fileName),
+            {
+                fileName,
+                uri: fileUri,
+                content: truncatedText,
+                source: 'selection',
+                range: this.selection?.selectionRange || undefined,
+            }
+        )
+
+        return contextMessage
     }
 
     /**

@@ -3,7 +3,7 @@ import https from 'https'
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { type Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from './configuration'
 import { agent } from './fetch'

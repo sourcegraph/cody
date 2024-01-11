@@ -6,31 +6,19 @@ query CurrentUser {
 }`
 
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
-query CurrentUser {
+query CurrentUserCodyProEnabled {
     currentUser {
         codyProEnabled
     }
 }`
 
-export const DOT_COM_CURRENT_USER_INFO_QUERY = `
+export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
         id
         hasVerifiedEmail
         displayName
-        avatarURL
-        codyProEnabled
-        primaryEmail {
-            email
-        }
-    }
-}`
-
-export const ENTERPRISE_CURRENT_USER_INFO_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        displayName
+        username
         avatarURL
         primaryEmail {
             email

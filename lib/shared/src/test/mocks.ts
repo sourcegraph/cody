@@ -1,19 +1,19 @@
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
-import { RecipeContext } from '../chat/recipes/recipe'
+import { type RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
 import {
-    ActiveTextEditor,
-    ActiveTextEditorDiagnostic,
-    ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
-    ActiveTextEditorVisibleContent,
-    Editor,
+    type ActiveTextEditor,
+    type ActiveTextEditorDiagnostic,
+    type ActiveTextEditorSelection,
+    type ActiveTextEditorSelectionRange,
+    type ActiveTextEditorVisibleContent,
+    type Editor,
 } from '../editor'
-import { EmbeddingsSearch } from '../embeddings'
-import { IntentClassificationOption, IntentDetector } from '../intent-detector'
-import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
+import { type EmbeddingsSearch } from '../embeddings'
+import { type IntentClassificationOption, type IntentDetector } from '../intent-detector'
+import { type EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
     public readonly repoId = 'test-repo-id'

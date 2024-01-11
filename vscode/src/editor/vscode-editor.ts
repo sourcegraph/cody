@@ -13,7 +13,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CommandsController } from '../commands/CommandsController'
+import { type CommandsController } from '../commands/CommandsController'
 
 import { getEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'

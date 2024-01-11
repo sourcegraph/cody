@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
-import { aggregateResults, AggregateTestResults, TestResult } from '@sourcegraph/cody-e2e/src/test-results'
+import { aggregateResults, type AggregateTestResults, type TestResult } from '@sourcegraph/cody-e2e/src/test-results'
 
-import { parseTestResults, TestResults } from './parse-results'
+import { parseTestResults, type TestResults } from './parse-results'
 import { QualityMetrics } from './QualityMetrics'
 import { TestCase } from './TestCase'
 

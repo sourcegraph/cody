@@ -1,23 +1,22 @@
-import { CodebaseContext } from '../../codebase-context'
+import { type CodebaseContext } from '../../codebase-context'
 import {
-    ContextFile,
-    ContextMessage,
     createContextMessageByFile,
     getContextMessageWithResponse,
+    type ContextFile,
+    type ContextMessage,
 } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
+import { type ActiveTextEditorSelection, type Editor } from '../../editor'
+import { type IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { createDisplayTextWithFileLinks } from '../prompts/display-text'
 import { Interaction } from '../transcript/interaction'
 
 import { isSingleWord, numResults } from './helpers'
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
     public id: RecipeID = 'chat-question'
@@ -29,10 +28,7 @@ export class ChatQuestion implements Recipe {
         const source = this.id
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
-        const contextFiles = context.userInputContextFiles
-        const displayText = contextFiles?.length
-            ? createDisplayTextWithFileLinks(contextFiles, humanChatInput)
-            : humanChatInput
+        const displayText = humanChatInput
 
         return Promise.resolve(
             new Interaction(
@@ -129,7 +125,6 @@ export class ChatQuestion implements Recipe {
                 }
             }
         }
-        console.log(contextFileMessages)
         return contextFileMessages
     }
 }

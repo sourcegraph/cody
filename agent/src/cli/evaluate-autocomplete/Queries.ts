@@ -1,7 +1,7 @@
 import * as fspromises from 'fs/promises'
 import * as path from 'path'
 
-import Parser, { Query } from 'web-tree-sitter'
+import { type default as Parser, type Query } from 'web-tree-sitter'
 
 import { SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 

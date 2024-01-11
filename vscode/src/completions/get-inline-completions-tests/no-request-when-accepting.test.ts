@@ -1,12 +1,12 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { TriggerKind } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
-import { getInlineCompletions, params, V } from './helpers'
+import { getInlineCompletions, params, type V } from './helpers'
 
 // Simulate the VS Code behavior where accepting a completion will immediately start a new
 // completion request.

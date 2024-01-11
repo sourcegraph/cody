@@ -5,15 +5,15 @@ import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-import { AuthStatus } from '../chat/protocol'
+import { type AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import { CodyStatusBar } from '../services/StatusBar'
+import { type CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { getArtificialDelay, LatencyFeatureFlags, resetArtificialDelay } from './artificial-delay'
+import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
 import { ContextMixer } from './context/context-mixer'
-import { ContextStrategy, DefaultContextStrategyFactory } from './context/context-strategy'
+import { DefaultContextStrategyFactory, type ContextStrategy } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
 import { FirstCompletionDecorationHandler } from './first-completion-decoration-handler'
@@ -21,24 +21,24 @@ import { formatCompletion } from './format-completion'
 import { getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
-    InlineCompletionsParams,
     InlineCompletionsResultSource,
-    LastInlineCompletionCandidate,
     TriggerKind,
+    type InlineCompletionsParams,
+    type LastInlineCompletionCandidate,
 } from './get-inline-completions'
 import { isCompletionVisible } from './is-completion-visible'
 import * as CompletionLogger from './logger'
-import { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
-import { ProviderConfig } from './providers/provider'
-import { RequestManager, RequestParams } from './request-manager'
+import { type CompletionBookkeepingEvent, type CompletionItemID, type CompletionLogID } from './logger'
+import { type ProviderConfig } from './providers/provider'
+import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
 import {
     analyticsItemToAutocompleteItem,
-    AutocompleteInlineAcceptedCommandArgs,
-    AutocompleteItem,
     suggestedAutocompleteItemsCache,
+    type AutocompleteInlineAcceptedCommandArgs,
+    type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
-import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import { type ProvideInlineCompletionItemsTracer, type ProvideInlineCompletionsItemTraceData } from './tracer'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID

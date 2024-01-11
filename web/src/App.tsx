@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
+import { createClient, type Client, type Transcript } from '@sourcegraph/cody-shared/src/chat/client'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isErrorLike, type ErrorLike } from '@sourcegraph/cody-shared/src/common'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -108,7 +108,6 @@ export const App: React.FunctionComponent = () => {
                             <Chat
                                 messageInProgress={messageInProgress}
                                 transcript={transcript}
-                                contextStatus={{ codebase: config.codebase }}
                                 formInput={formInput}
                                 setFormInput={setFormInput}
                                 inputHistory={inputHistory}

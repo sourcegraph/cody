@@ -1,12 +1,12 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { EditIntent } from '../edit/types'
+import { type EditIntent } from '../edit/types'
 
-import { FixupFile } from './FixupFile'
-import { FixupTask } from './FixupTask'
+import { type FixupFile } from './FixupFile'
+import { type FixupTask } from './FixupTask'
 
 // Role interfaces so that sub-objects of the FixupController can consume a
 // narrow part of the controller.

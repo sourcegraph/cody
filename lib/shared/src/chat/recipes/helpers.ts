@@ -1,9 +1,11 @@
 import path from 'path'
 
-import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { type CodebaseContext } from '../../codebase-context'
+import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
+import { Interaction } from '../transcript/interaction'
+import { type ChatEventSource } from '../transcript/messages'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
 
@@ -77,4 +79,44 @@ export const numResults = {
 
 export function isSingleWord(str: string): boolean {
     return str.trim().split(/\s+/).length === 1
+}
+
+/**
+ * Creates a new Interaction object with the given parameters.
+ */
+export async function newInteraction(args: {
+    text?: string
+    displayText?: string
+    contextMessages?: Promise<ContextMessage[]>
+    assistantText?: string
+    assistantDisplayText?: string
+    assistantPrefix?: string
+    source?: ChatEventSource
+    requestID?: string
+}): Promise<Interaction> {
+    const {
+        text,
+        displayText,
+        contextMessages,
+        assistantText,
+        assistantDisplayText,
+        assistantPrefix,
+        source,
+        requestID,
+    } = args
+    const metadata = { source, requestID }
+    return Promise.resolve(
+        new Interaction(
+            { speaker: 'human', text, displayText, metadata },
+            {
+                speaker: 'assistant',
+                text: assistantText,
+                displayText: assistantDisplayText,
+                prefix: assistantPrefix,
+                metadata,
+            },
+            Promise.resolve(contextMessages || []),
+            []
+        )
+    )
 }

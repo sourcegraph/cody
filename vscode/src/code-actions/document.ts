@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ExecuteEditArguments } from '../edit/execute'
+import { type ExecuteEditArguments } from '../edit/execute'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 export class DocumentCodeAction implements vscode.CodeActionProvider {

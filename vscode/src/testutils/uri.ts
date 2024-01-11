@@ -1,5 +1,5 @@
 import { URI, Utils } from 'vscode-uri'
-import { UriComponents } from 'vscode-uri/lib/umd/uri'
+import { type UriComponents } from 'vscode-uri/lib/umd/uri'
 
 /**
  *

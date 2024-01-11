@@ -1,6 +1,6 @@
-import { DetectedEntity, detectEntities } from './entity-detection'
+import { detectEntities, type DetectedEntity } from './entity-detection'
 import { detectHallucinations } from './hallucinations'
-import { Fact } from './test-cases'
+import { type Fact } from './test-cases'
 
 export interface FactCheck {
     missingFacts: Fact[]

@@ -118,6 +118,20 @@ pass after recording. Worst case, feel free to disable the agent tests by
 uncommenting the block of code in `index.test.ts`. See comment in the code for
 more details about how to disable agent tests.
 
+## Iterating on agent tests
+
+For a fast edit/test/debug feedback loop when iterating on agent tests, use the `CODY_RECORD_IF_MISSING=true` mode.
+
+```sh
+CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts
+```
+
+The benefit of this workflow is that the agent replays from the HTTP recording
+for tests that haven't changed, and only sends HTTP requests for new tests.
+
+When you are happy with the result, make sure to run `pnpm
+update-agent-recordings` to clean unused recordings.
+
 ## Miscellaneous notes
 
 - By the nature of using JSON-RPC via stdin/stdout, both the agent server and

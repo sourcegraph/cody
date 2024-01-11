@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion, nextTick } from '../test-helpers'
 
-import { getInlineCompletions, params, V } from './helpers'
+import { getInlineCompletions, params, type V } from './helpers'
 
 describe('[getInlineCompletions] streaming', () => {
     it('terminates early for a single-line request', async () => {

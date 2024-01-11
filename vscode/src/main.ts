@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -10,13 +10,13 @@ import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/grap
 import { CachedRemoteEmbeddingsClient } from './chat/CachedRemoteEmbeddingsClient'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextProvider } from './chat/ContextProvider'
-import { MessageProviderOptions } from './chat/MessageProvider'
+import { type MessageProviderOptions } from './chat/MessageProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
     ACCOUNT_USAGE_URL,
-    AuthStatus,
     CODY_FEEDBACK_URL,
+    type AuthStatus,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -24,7 +24,7 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { PlatformContext } from './extension.common'
+import { type PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug } from './log'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -131,11 +131,6 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
-    const symfRunner = platform.createSymfRunner?.(context, initialConfig.serverEndpoint, initialConfig.accessToken)
-    if (symfRunner) {
-        disposables.push(symfRunner)
-    }
-
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
 
@@ -147,7 +142,12 @@ const register = async (
         guardrails,
         localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
+        symfRunner,
+    } = await configureExternalServices(context, initialConfig, rgPath, editor, platform)
+
+    if (symfRunner) {
+        disposables.push(symfRunner)
+    }
 
     const contextProvider = new ContextProvider(
         initialConfig,
@@ -243,12 +243,13 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        // Update context provider first since it will also update the configuration
-        await contextProvider.syncAuthStatus()
-
-        featureFlagProvider.syncAuthStatus()
+        // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
-
+        // Update context provider first it will also update the configuration
+        await contextProvider.syncAuthStatus()
+        // feature flag provider
+        featureFlagProvider.syncAuthStatus()
+        // Symf
         if (symfRunner && authStatus.isLoggedIn) {
             getAccessToken()
                 .then(token => {
@@ -428,6 +429,20 @@ const register = async (
         }),
         vscode.commands.registerCommand('agent.auth.reload', async () => {
             await authProvider.reloadAuthStatus()
+        }),
+        // Check if user has just moved back from a browser window to upgrade cody pro
+        vscode.window.onDidChangeWindowState(async ws => {
+            const authStatus = authProvider.getAuthStatus()
+            const endpoint = authStatus.endpoint
+            if (ws.focused && endpoint && isDotCom(endpoint) && authStatus.isLoggedIn) {
+                const res = await graphqlClient.getCurrentUserCodyProEnabled()
+                if (res instanceof Error) {
+                    console.error(res)
+                    return
+                }
+                authStatus.userCanUpgrade = !res.codyProEnabled
+                void chatManager.syncAuthStatus(authStatus)
+            }
         })
     )
 
@@ -453,27 +468,6 @@ const register = async (
     }
     authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
     updateAuthStatusBarIndicator()
-
-    vscode.window.onDidChangeWindowState(async ws => {
-        const endpoint = authProvider.getAuthStatus().endpoint
-        if (ws.focused && endpoint && isDotCom(endpoint)) {
-            const res = await graphqlClient.getDotComCurrentUserInfo()
-            if (res instanceof Error) {
-                console.error(res)
-                return
-            }
-
-            const authStatus = authProvider.getAuthStatus()
-
-            authStatus.hasVerifiedEmail = res.hasVerifiedEmail
-            authStatus.userCanUpgrade = !res.codyProEnabled
-            authStatus.primaryEmail = res.primaryEmail.email
-            authStatus.displayName = res.displayName
-            authStatus.avatarURL = res.avatarURL
-
-            void chatManager.syncAuthStatus(authStatus)
-        }
-    })
 
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution

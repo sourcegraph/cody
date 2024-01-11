@@ -4,11 +4,11 @@ import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
-    ContextGroup,
-    ContextProvider,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
-    SearchProvider,
+    type ContextGroup,
+    type ContextProvider,
+    type EnhancedContextContextT,
+    type LocalEmbeddingsProvider,
+    type SearchProvider,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
 import { PopupFrame } from '../Popups/Popup'

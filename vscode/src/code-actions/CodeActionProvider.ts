@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { Config, ContextProvider } from '../chat/ContextProvider'
+import { type Config, type ContextProvider } from '../chat/ContextProvider'
 
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'

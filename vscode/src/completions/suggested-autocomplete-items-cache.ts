@@ -2,10 +2,10 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { DocumentContext } from './get-current-doc-context'
-import { CompletionItemID, CompletionLogID } from './logger'
-import { RequestParams } from './request-manager'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type DocumentContext } from './get-current-doc-context'
+import { type CompletionItemID, type CompletionLogID } from './logger'
+import { type RequestParams } from './request-manager'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 interface AutocompleteItemParams {
     insertText: string | vscode.SnippetString

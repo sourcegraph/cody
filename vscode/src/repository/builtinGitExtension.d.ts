@@ -3,9 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationToken, Command, Disposable, Event, ProviderResult, Uri } from 'vscode'
+import {
+    type CancellationToken,
+    type Command,
+    type Disposable,
+    type Event,
+    type ProviderResult,
+    type Uri,
+} from 'vscode'
 
-export { ProviderResult } from 'vscode'
+export type { ProviderResult } from 'vscode'
 
 export interface Git {
     readonly path: string

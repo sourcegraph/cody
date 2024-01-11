@@ -1,22 +1,21 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatModelProvider, type CodyCommand } from '@sourcegraph/cody-shared'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { View } from '../../../webviews/NavBar'
+import { type View } from '../../../webviews/NavBar'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
-import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { SymfRunner } from '../../local-context/symf'
+import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { AuthStatus } from '../protocol'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type AuthStatus } from '../protocol'
 
 import { ChatPanelsManager } from './ChatPanelsManager'
-import { SidebarViewController, SidebarViewOptions } from './SidebarViewController'
-import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
+import { type SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -85,7 +84,7 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyPrompt, source: ChatEventSource): Promise<void> {
+    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<void> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -204,6 +203,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private disposeChatPanelsManager(): void {
+        void vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         this.options.contextProvider.webview = this.sidebarViewController.webview
         this.chatPanelsManager.dispose()
     }

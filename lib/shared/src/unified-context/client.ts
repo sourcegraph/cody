@@ -1,7 +1,7 @@
 import { isErrorLike } from '../common'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { type SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-import { UnifiedContextFetcher, UnifiedContextFetcherResult } from '.'
+import { type UnifiedContextFetcher, type UnifiedContextFetcherResult } from '.'
 
 export class UnifiedContextFetcherClient implements UnifiedContextFetcher {
     constructor(

@@ -71,13 +71,13 @@ log:
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: a8e6a387e9141b770d6ad9a7d3ae86fd
+            value: 84a8b2f36bd6a381b80cbf525d971426
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
             value: DENY
           - name: x-is-cody-pro-user
-            value: "true"
+            value: "false"
           - name: x-ratelimit-limit
             value: "1"
           - name: x-ratelimit-remaining
@@ -323,7 +323,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bc9d710017cb613b863131822d75d5c7
+    - _id: b97b51a84cc5c39d12d228fd1e107fa1
       _order: 0
       cache: {}
       request:
@@ -343,7 +343,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "233"
+            value: "227"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -366,8 +366,8 @@ log:
                       id
                       hasVerifiedEmail
                       displayName
+                      username
                       avatarURL
-                      codyProEnabled
                       primaryEmail {
                           email
                       }
@@ -382,18 +382,122 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: '["H4sIAAAAAAAAAzTOS07DMBSF4b3ccR5CtFWwVIkIOqhUhVcTwai6sS+JixOntmORRFkMa2FjKAJm59eZfBMIdAhsAt4bQ63LLZklpQAGxWum+Fl/Phzzq2zkWwigRluQke+SxK5BqYA501MAQtpO4ZBhQ8Dg/vvLSwEBoEeHJn8+AIPauc6yOFb1dVRpXSnqLRmuW0eti7huYozTuyrRfJ+uQn1SSXcJ+/Cc1i9qr9ero3kqXFJs6K0c/aXpw/pUbu3NJuQQANdieDR612KpSPyrOiMbNMOfdAL6HSDQSxF5siMp7e34IW+r5VoUMM/z/AMAAP//AwAIjrPLGAEAAA=="]'
+          size: 344
+          text: '["H4sIAAAAAAAAA2yO3U6DQBSE3+Vc8xNtbNpNmkis8a9iokLRu8PuEdYuLNldsIXwMD6LL2YIXno3M18mMwMIdAhsAN4aQ7VLLJnJSgEM0ixW/FMfn16T88dttAEPSrQpGfkhSVxXKBUwZ1ryQEjbKDzFWBEw2P58d1KAB60lU89ZR7YnpTvbH2QgcObYoUOTPO+AQelcY1kYqnIRFFoXiqY217Wj2gVcVyGG0VWx0nx393bfLw5f5ujUyq99yvZF/pKny9s4u3lXuooeLtb5XpyVG7te+hw8aIys0Jz+Pg9As/jn1WUxoWkPxnEcfwEAAP//AwCyKDmxIgEAAA=="]'
           textDecoded:
             data:
               currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocIA4-o_l8pq-u-jAhSlIo54TrQVt8V6eYbzvqmu-h_b=s96-c
-                codyProEnabled: true
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocLIYJz3kwrxtl8-n-eXWgbSbV6HNXGZlomAK59bWd1h=s96-c
                 displayName: Dávid
                 hasVerifiedEmail: true
-                id: VXNlcjoxOTU1Nzc=
+                id: VXNlcjoxOTU2MDA=
                 primaryEmail:
-                  email: david.veszelovszki@gmail.com
+                  email: veszelovszki.david@gmail.com
+                username: veszelovszki.david
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: retry-after
+            value: "0"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fb21b36f1f7c652617e0a9e8c3d194a3
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: rateLimitedClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentUser {
+                  currentUser {
+                      codyProEnabled
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentUser
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentUser
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 100
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlZKLi0qSs0rCS1OLQJz81MqA4ryXfMSk3JSU5Ss0hJzilNra2sBAAAA//8DAFJUb/wxAAAA"]'
+          textDecoded:
+            data:
+              currentUser:
+                codyProEnabled: false
         cookies: []
         headers:
           - name: date
@@ -632,102 +736,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6da3ef8e96a914f2db1f9ebf28035fb2
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "160"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-pro
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "0"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 7e2cae0c3275084cb257ee48fead6fb9
       _order: 0
       cache: {}
@@ -771,102 +779,6 @@ log:
                   }
             variables:
               flagName: cody-autocomplete-context-bfg-mixed
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        content:
-          mimeType: application/json
-          size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "38"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "0"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 50b031b05a8f064cbb7c320d4adb6bdc
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "208"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-autocomplete-disable-recycling-of-previous-requests
         queryString:
           - name: EvaluateFeatureFlag
             value: null
@@ -1069,40 +981,50 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 444
-          text: '["H4sIAAAAAAAAA5SSUU4kMQxE75JvfIE5AJdAfLiT6sSQTnptZ6Zbo7k7AiEEu4Jevl1+dpV9DYmdw+kacOY62JHuwT4U95WzhdPDNTReEE7BJLexkg09Yyc0nipSuAuvfQinmavhdvchjz3txMN77Mta4aAk9tpDirjHKi1Tn2lVnKUPI8WfAXM7IMbCTkuPz+Qw/17sqFjguhO2tesnpes42BMzj+pkzhp7glLZJ5X0C0TszbE5TXOmRbbDnFbt39Kn2idaOYPsIh4LsYKNrHT1OA4D+y9rZH1oRFZey294rhyl5WN39ASflKXZDyk2VzanN7pwc7K9OW9UJJcqufjxqK9u98aLRFpGdanSQO8l6e2H2JQdVGURN8IWgYREc9e3j/uywl8ODKyxUMOFnrFfuv5z9sfb7QUAAP//AwBsUsNwcgMAAA=="]'
+          size: 524
+          text: '["H4sIAAAAAAAAA6ySUW7cMAxE76Lv8AJ7gFyi6ActjWU1suiS1K6Nxd49cJqkSYrsYoH+CRA5HD7OOSR2DodzwJFrZ0d6BHtXPFbOFg4/zqHxjHAIBtY4UcLQc3gIeznCYeRquDy8V0VJG8WJnWaJT+Qwv1HM3SXKvFQ4KG2N5xJp7tVLLQ30+lWk2T1CUZpjdRrGTHNZke5ygZF7dTJnjZKgNG2DlkQmXSOy8jL9D72/Gq79o8Qr65clmtPAhkSVW6YER9xp3DN/7+yc94ejxe3buY6KGa4bYV1E/ZbBhhM9YTuJXuXbXNn8zykLNyfbmvNKU8lTLXny0vJdPIvxUEGKuMVaWiYZaVEci3Qjxe8O81txWVToF3xQLh+j9WVR5Z1fmYsbYY1AQqJR9CXZn2x/aXyb8T3CkltfyLoesRHavlG6LvcJgivHq9zQEnWDkrRBWNM1t7Kg7cm8Ee2hykDLniQ7FY8TsYKNbBL12P9F/vNyeQYAAP//AwA/9+8XYgQAAA=="]'
           textDecoded:
             data:
               evaluatedFeatureFlags:
-                - name: signup-survey-enabled
-                  value: false
-                - name: cody-autocomplete-disable-recycling-of-previous-requests
+                - name: search-debug
                   value: false
                 - name: cody-chat-mock-test
                   value: false
-                - name: telemetry-export
-                  value: true
-                - name: cody-autocomplete-default-starcoder-hybrid
-                  value: true
-                - name: cody-autocomplete-context-bfg-mixed
+                - name: cody-autocomplete-dynamic-multiline-completions
                   value: false
-                - name: cody-pro
-                  value: true
-                - name: blob-page-switch-areas-shortcuts
+                - name: cody-autocomplete-context-bfg-mixed
                   value: false
                 - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
                   value: false
-                - name: cody-autocomplete-tracing
+                - name: cody-autocomplete-default-starcoder-hybrid
+                  value: true
+                - name: search-content-based-lang-detection
+                  value: false
+                - name: cody-autocomplete-language-latency
+                  value: true
+                - name: telemetry-export
+                  value: true
+                - name: search-new-keyword
+                  value: false
+                - name: contrast-compliant-syntax-highlighting
+                  value: false
+                - name: cody-autocomplete-disable-recycling-of-previous-requests
                   value: false
                 - name: cody-pro-jetbrains
                   value: true
-                - name: contrast-compliant-syntax-highlighting
-                  value: false
-                - name: cody-autocomplete-dynamic-multiline-completions
-                  value: false
                 - name: rate-limits-exceeded-for-testing
                   value: true
-                - name: search-new-keyword
+                - name: cody-pro
+                  value: true
+                - name: signup-survey-enabled
+                  value: true
+                - name: cody-autocomplete-tracing
+                  value: false
+                - name: end-user-onboarding
+                  value: true
+                - name: opencodegraph
+                  value: false
+                - name: blob-page-switch-areas-shortcuts
                   value: false
         cookies: []
         headers:
@@ -1263,7 +1185,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c63cf23de38703e896ef70b35a6908a4
+    - _id: eed92b456f519c7972e07cb5478a1c63
       _order: 0
       cache: {}
       request:
@@ -1283,7 +1205,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "342"
+            value: "350"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -1310,14 +1232,14 @@ log:
               }
             variables:
               events:
-                - action: connected
-                  feature: cody.auth
+                - action: executed
+                  feature: cody.chat-question
                   parameters:
                     privateMetadata: {}
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.0.5
+                    clientVersion: 1.1.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1379,7 +1301,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1a71934de7e17499fc6950eb40367602
+    - _id: 869d103f953a0c3190caf0857cab1466
       _order: 0
       cache: {}
       request:
@@ -1399,7 +1321,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "360"
+            value: "342"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -1426,14 +1348,14 @@ log:
               }
             variables:
               events:
-                - action: recipe-used
-                  feature: cody.recipe.chat-question
+                - action: connected
+                  feature: cody.auth
                   parameters:
                     privateMetadata: {}
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.0.5
+                    clientVersion: 1.1.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1544,8 +1466,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 155
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8=","AwD/h5WCVAAAAA=="]'
+          size: 148
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
+          textDecoded:
+            data:
+              repository:
+                embeddingExists: true
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
         cookies: []
         headers:
           - name: date
@@ -1645,12 +1572,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 120
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
-          textDecoded:
-            data:
-              repository:
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 123
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//","AwDHAhygPQAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1862,11 +1785,11 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkamZhaGFvFGBkYmugaGugZm8aZ6RrqWiSZppkbJKSZGhilKtbW1AAAAAP//AwCkSWFZSQAAAA=="]'
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5sYmBvFGBkYmugaGuoYG8aZ6RroplmapickGxknGZklKtbW1AAAAAP//AwArauoHSQAAAA=="]'
           textDecoded:
             data:
               site:
-                productVersion: 256818_2024-01-06_5.2-9a4f52cd421d
+                productVersion: 257340_2024-01-10_5.2-d96eac03b36b
         cookies: []
         headers:
           - name: date

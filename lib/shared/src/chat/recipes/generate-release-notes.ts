@@ -2,10 +2,10 @@ import { spawnSync } from 'child_process'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { newInteraction } from '../prompts/utils'
-import { Interaction } from '../transcript/interaction'
+import { type Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext, RecipeID } from './recipe'
+import { newInteraction } from './helpers'
+import { type Recipe, type RecipeContext, type RecipeID } from './recipe'
 
 export class ReleaseNotes implements Recipe {
     public id: RecipeID = 'release-notes'

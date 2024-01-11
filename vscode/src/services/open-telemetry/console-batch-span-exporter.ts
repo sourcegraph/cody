@@ -1,5 +1,5 @@
 import { ExportResultCode, hrTimeToMilliseconds, type ExportResult } from '@opentelemetry/core'
-import { ReadableSpan, Span, SpanExporter } from '@opentelemetry/sdk-trace-base'
+import { Span, type ReadableSpan, type SpanExporter } from '@opentelemetry/sdk-trace-base'
 
 interface FormattedSpan extends ReadableSpan {
     children: FormattedSpan[]

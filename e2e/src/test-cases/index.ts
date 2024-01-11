@@ -1,4 +1,4 @@
-import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
+import { type ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 
 export interface Fact {
     type: 'literal' | 'regex'

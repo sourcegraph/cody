@@ -1,5 +1,5 @@
 import { logDebug } from '../log'
-import { CompletionIntent } from '../tree-sitter/queries'
+import { type CompletionIntent } from '../tree-sitter/queries'
 
 export interface LatencyFeatureFlags {
     user?: boolean

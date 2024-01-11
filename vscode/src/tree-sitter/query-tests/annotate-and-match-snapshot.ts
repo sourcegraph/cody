@@ -5,9 +5,9 @@ import path from 'path'
 import dedent from 'dedent'
 import { findLast } from 'lodash'
 import { expect } from 'vitest'
-import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
+import { type default as Parser, type Point, type SyntaxNode } from 'web-tree-sitter'
 
-import { SupportedLanguage } from '../grammars'
+import { type SupportedLanguage } from '../grammars'
 import { getLanguageConfig } from '../language'
 
 interface CommentSymbolInfo {

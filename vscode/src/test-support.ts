@@ -1,8 +1,8 @@
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { MockReranker, Reranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
-import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { MockReranker, type Reranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
+import { type ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
+import { type SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the

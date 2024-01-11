@@ -1,9 +1,9 @@
-import { ContextFile, PreciseContext } from '../../codebase-context/messages'
-import { Message } from '../../sourcegraph-api'
-import { CodyDefaultCommands } from '../prompts'
-import { RecipeID } from '../recipes/recipe'
+import { type ContextFile, type PreciseContext } from '../../codebase-context/messages'
+import { type CodyDefaultCommands } from '../../commands'
+import { type Message } from '../../sourcegraph-api'
+import { type RecipeID } from '../recipes/recipe'
 
-import { TranscriptJSON } from '.'
+import { type TranscriptJSON } from '.'
 
 export interface ChatButton {
     label: string

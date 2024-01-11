@@ -6,7 +6,7 @@ import { FindCodeSmells } from './find-code-smells'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { ImproveVariableNames } from './improve-variable-names'
-import { Recipe, RecipeID } from './recipe'
+import { type Recipe, type RecipeID } from './recipe'
 import { TranslateToLanguage } from './translate'
 
 const registeredRecipes: { [id in RecipeID]?: Recipe } = {}

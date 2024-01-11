@@ -3,6 +3,8 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { logDebug } from './log'
+
 /**
  * Get the path to `rg` (ripgrep) that is bundled with VS Code.
  */
@@ -24,6 +26,6 @@ export async function getRgPath(): Promise<string | null> {
         }
     }
 
-    console.log('Did not find bundled `rg`.')
+    logDebug('getRgPath', 'Did not find bundled `rg`.')
     return null
 }

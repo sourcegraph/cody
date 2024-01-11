@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.0.5",
+  "version": "1.1.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -927,7 +927,8 @@
             null,
             "anthropic",
             "fireworks",
-            "unstable-openai"
+            "unstable-openai",
+            "unstable-ollama"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
@@ -991,6 +992,39 @@
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
+        "cody.autocomplete.experimental.ollamaOptions": {
+          "type": "object",
+          "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
+          "default": {
+            "url": "http://localhost:11434",
+            "model": "codellama:7b-code"
+          },
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Ollama API.",
+              "default": "http://localhost:11434"
+            },
+            "model": {
+              "type": "string",
+              "default": "codellama:7b-code",
+              "examples": [
+                "codellama:7b-code",
+                "codellama:13b-code"
+              ]
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for how Ollama will run the model. See Ollama [PARAMETER documentation](https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-request-with-options).",
+              "properties": {
+                "num_ctx": "number",
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number"
+              }
+            }
+          }
+        },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",
@@ -1048,6 +1082,7 @@
     "axios": "^1.3.6",
     "classnames": "^2.3.2",
     "detect-indent": "^7.0.1",
+    "fast-xml-parser": "^4.3.2",
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
@@ -1071,21 +1106,29 @@
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
     "@playwright/test": "^1.33.0",
+    "@pollyjs/adapter-node-http": "^6.0.6",
+    "@pollyjs/core": "^6.0.6",
+    "@pollyjs/node-server": "^6.0.6",
+    "@pollyjs/persister": "^6.0.6",
+    "@pollyjs/persister-fs": "^6.0.6",
     "@types/axios": "^0.14.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
+    "@types/fs-extra": "^11.0.4",
     "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/mock-require": "^2.0.1",
+    "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
     "@types/unzipper": "^0.10.7",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
+    "@types/yaml": "^1.9.7",
     "@vscode/test-electron": "^2.3.2",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
@@ -1094,12 +1137,16 @@
     "dedent": "^0.7.0",
     "envalid": "^7.3.1",
     "express": "^4.18.2",
+    "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
+    "node-server": "link:@types/pollyjs/node-server",
     "ovsx": "^0.8.2",
+    "pako": "^2.1.0",
     "path-browserify": "^1.0.1",
     "playwright": "^1.33.0",
     "progress": "^2.0.3",
-    "semver": "^7.5.4"
+    "semver": "^7.5.4",
+    "yaml": "^2.3.4"
   }
 }
