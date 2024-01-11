@@ -349,7 +349,7 @@ function addInstructions<T extends CodyCommand>([key, command]: [string, T]): [s
 }
 
 function getWelcomeMessageByOS(os: string): string {
-    const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
+    const welcomeMessageMarkdown = `Welcome to Cody by Jayesh! Start writing code and Cody will autocomplete lines and entire functions for you.
 
 To run [Cody Commands](command:cody.action.commands.menu) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
         os === 'darwin' ? '⌥' : 'Alt'
