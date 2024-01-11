@@ -655,7 +655,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                         hasV2Event: true,
                     })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                        metadata: { ...contextSummary, recordsPrivateMetadataTranscript: 1 },
+                        metadata: {
+                            ...contextSummary,
+                            // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
+                            // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                            recordsPrivateMetadataTranscript:
+                                authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                        },
                         privateMetadata: {
                             properties,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
@@ -951,7 +957,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
                 metadata: {
                     ...codeCount,
-                    recordsPrivateMetadataTranscript: 1,
+                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
+                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                    recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
                 },
                 privateMetadata: {
                     requestID,
