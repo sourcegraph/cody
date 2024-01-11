@@ -1,9 +1,9 @@
 import * as uuid from 'uuid'
-import { Memento } from 'vscode'
+import { type Memento } from 'vscode'
 
-import { ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatHistory, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { AuthStatus } from '../chat/protocol'
+import { type AuthStatus } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
@@ -21,8 +21,8 @@ type AccountKeyedChatHistory = {
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    protected readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    protected readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
@@ -215,7 +215,7 @@ export class LocalStorage {
 export const localStorage = new LocalStorage()
 
 function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
-    return `${authStatus.endpoint}-${authStatus.primaryEmail}`
+    return `${authStatus.endpoint}-${authStatus.username}`
 }
 
 /**

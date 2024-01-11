@@ -1,4 +1,4 @@
-import { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
+import { type ExtensionMessage, type WebviewMessage } from '../../src/chat/protocol'
 
 declare const acquireVsCodeApi: () => VSCodeApi
 

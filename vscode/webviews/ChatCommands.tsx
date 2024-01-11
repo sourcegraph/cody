@@ -3,8 +3,8 @@ import React, { useEffect, useRef } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type CodyCommand } from '@sourcegraph/cody-shared'
+import { type ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './ChatCommands.module.css'
 
@@ -66,7 +66,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
                     chatCommands?.map(
-                        ([, prompt]: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }], i) => {
+                        ([, prompt]: [string, CodyCommand & { isLastInGroup?: boolean; instruction?: string }], i) => {
                             const title = `${prompt.slashCommand}${prompt.instruction ? ` ${prompt.instruction}` : ''}`
                             const hasSeparator = prompt.isLastInGroup && i < chatCommands.length - 1
                             return (

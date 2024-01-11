@@ -1,13 +1,14 @@
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
-import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
+import { type MyPrompts } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -29,7 +30,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     private custom: CustomPromptsStore
     public default = new PromptsProvider()
 
-    private myPromptsMap = new Map<string, CodyPrompt>()
+    private myPromptsMap = new Map<string, CodyCommand>()
 
     private lastUsedCommands = new Set<string>()
 
@@ -63,7 +64,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         text: string,
         requestID?: string,
         contextFiles?: ContextFile[]
-    ): Promise<CodyPrompt | null> {
+    ): Promise<CodyCommand | null> {
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
@@ -85,7 +86,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         return command
     }
 
-    private async createCodyCommandRunner(command: CodyPrompt, input = ''): Promise<CommandRunner | undefined> {
+    private async createCodyCommandRunner(command: CodyCommand, input = ''): Promise<CommandRunner | undefined> {
         const commandKey = command.slashCommand
         const defaultEditCommands = new Set(['/edit', '/doc'])
         const isFixupRequest = defaultEditCommands.has(commandKey) || command.mode !== 'ask'
@@ -119,7 +120,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Get the list of command names and prompts to send to the webview for display.
      * @returns An array of tuples containing the command name and prompt object.
      */
-    public async getAllCommands(keepSperator = false): Promise<[string, CodyPrompt][]> {
+    public async getAllCommands(keepSperator = false): Promise<[string, CodyCommand][]> {
         await this.refresh()
         return this.default.getGroupedCommands(keepSperator)
     }
@@ -380,8 +381,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Get the list of recently used commands from the local storage
      */
-    private getLastUsedCommands(): [string, CodyPrompt][] {
-        return [...this.lastUsedCommands]?.map(id => [id, this.default.get(id) as CodyPrompt]) || []
+    private getLastUsedCommands(): [string, CodyCommand][] {
+        return [...this.lastUsedCommands]?.map(id => [id, this.default.get(id) as CodyCommand]) || []
     }
 
     /**
@@ -463,13 +464,13 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
         this.fileWatcherDisposables = []
         this.disposables = []
-        this.myPromptsMap = new Map<string, CodyPrompt>()
+        this.myPromptsMap = new Map<string, CodyCommand>()
         this.commandRunners = new Map()
         logDebug('CommandsController:dispose', 'disposed')
     }
 }
 
-function getCustomMenuQuickPickItems(commands: [string, CodyPrompt][]): vscode.QuickPickItem[] {
+function getCustomMenuQuickPickItems(commands: [string, CodyCommand][]): vscode.QuickPickItem[] {
     return commands
         ?.filter(command => command !== null && command?.[1]?.type !== 'default')
         .map(commandItem => {

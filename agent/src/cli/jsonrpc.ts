@@ -1,10 +1,8 @@
-import NodeHttpAdapter from '@pollyjs/adapter-node-http'
-import { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
-import { Har } from '@pollyjs/persister'
-import FSPersister from '@pollyjs/persister-fs'
+import { type EXPIRY_STRATEGY, type MODE, type Polly } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
 
+import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
@@ -42,84 +40,6 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
             throw new commander.InvalidArgumentError(
                 'Not a valid expiry strategy. Valid options are error, warn, or record.'
             )
-    }
-}
-
-class CodyNodeHttpAdapter extends NodeHttpAdapter {
-    public async onRequest(request: Request): Promise<void> {
-        if (request.body) {
-            request.body = request.body
-                .replaceAll(/`([^`]*)(cody-vscode-shim-test[^`]*)`/g, '`$2`')
-                .replaceAll(/(\\\\)(\w)/g, '/$2')
-        }
-
-        return super.onRequest(request)
-    }
-}
-
-/**
- * The default file system persister with the following customizations
- *
- * - Replaces Cody access tokens with the string "REDACTED" because we don't
- *   want to commit the access token into git.
- * - To avoid diff churn/conflicts:
- *   - Sets date headers to a known static date
- *   - Removes cookies
- *   - Sets dates/timing information stored by Polly to static values
- */
-class CodyPersister extends FSPersister {
-    public static get id(): string {
-        return 'cody-fs'
-    }
-    public onSaveRecording(recordingId: string, recording: Har): Promise<void> {
-        const entries = recording.log.entries
-        for (const entry of entries) {
-            // Clean up the entries to reduce the size of the diff when re-recording
-            // and to remove any access tokens.
-
-            // Update any headers
-            const headers = [...entry.request.headers, ...entry.response.headers]
-            for (const header of headers) {
-                switch (header.name) {
-                    case 'authorization':
-                        header.value = 'token REDACTED'
-                        break
-                    case 'date':
-                        header.value = 'Fri, 05 Jan 2024 11:11:11 GMT'
-                        break
-                }
-            }
-
-            // Remove any headers and cookies we don't need at all.
-            entry.request.headers = this.filterHeaders(entry.request.headers)
-            entry.response.headers = this.filterHeaders(entry.response.headers)
-            entry.request.cookies.length = 0
-            entry.response.cookies.length = 0
-
-            // And other misc fields.
-            entry.startedDateTime = 'Fri, 05 Jan 2024 00:00:00 GMT'
-            entry.time = 0
-            entry.timings = {
-                blocked: -1,
-                connect: -1,
-                dns: -1,
-                receive: 0,
-                send: 0,
-                ssl: -1,
-                wait: 0,
-            }
-        }
-        return super.onSaveRecording(recordingId, recording)
-    }
-
-    private filterHeaders(headers: { name: string; value: string }[]): { name: string; value: string }[] {
-        const removeHeaderNames = new Set(['set-cookie', 'server', 'via'])
-        const removeHeaderPrefixes = ['x-trace', 'cf-']
-        return headers.filter(
-            header =>
-                !removeHeaderNames.has(header.name) &&
-                removeHeaderPrefixes.every(prefix => !header.name.startsWith(prefix))
-        )
     }
 }
 
@@ -175,40 +95,27 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 console.error('CODY_RECORDING_MODE is required when CODY_RECORDING_DIRECTORY is set.')
                 process.exit(1)
             }
-            Polly.register(CodyNodeHttpAdapter)
-            Polly.register(CodyPersister)
-            polly = new Polly(options.recordingName ?? 'CodyAgent', {
-                flushRequestsOnStop: true,
-                recordIfMissing: options.recordIfMissing ?? options.recordingMode === 'record',
-                mode: options.recordingMode,
-                adapters: ['node-http'],
-                persister: 'cody-fs',
-                recordFailedRequests: true,
-                expiryStrategy: options.recordingExpiryStrategy,
+            polly = startPollyRecording({
+                recordingName: options.recordingName ?? 'CodyAgent',
+                recordingDirectory: options.recordingDirectory,
+                recordingMode: options.recordingMode,
                 expiresIn: options.expiresIn,
-                persisterOptions: {
-                    keepUnusedRequests: true,
-                    // For cleaner diffs https://netflix.github.io/pollyjs/#/configuration?id=disablesortingharentries
-                    disableSortingHarEntries: true,
-                    fs: {
-                        recordingsDir: options.recordingDirectory,
-                    },
-                },
-                matchRequestsBy: {
-                    headers: false,
-                    order: false,
-                },
+                recordIfMissing: options.recordIfMissing,
+                recordingExpiryStrategy: options.recordingExpiryStrategy,
             })
             // Automatically pass through requests to download bfg binaries
             // because we don't want to record the binary downloads for
             // macOS/Windows/Linux
             polly.server.get('https://github.com/sourcegraph/bfg/*path').passthrough()
+            polly.server.get('https://github.com/sourcegraph/symf/*path').passthrough()
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)
         }
 
-        process.stderr.write('Starting Cody Agent...\n')
+        if (process.env.CODY_DEBUG === 'true') {
+            process.stderr.write('Starting Cody Agent...\n')
+        }
 
         const agent = new Agent({ polly })
 

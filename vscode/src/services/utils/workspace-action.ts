@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
 
 import { openUri } from '../../chat/chat-view/chat-helpers'
 

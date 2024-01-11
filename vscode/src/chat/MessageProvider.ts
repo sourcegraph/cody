@@ -1,37 +1,40 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { Recipe, RecipeID, RecipeType } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+import { RecipeType, type Recipe, type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { ChatEventSource, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import {
+    type ChatEventSource,
+    type ChatMessage,
+    type UserLocalHistory,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessageForChat, reformatBotMessageForEdit } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { type IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { showAskQuestionQuickPick } from '../commands/utils/menu'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { PlatformContext } from '../extension.common'
+import { type VSCodeEditor } from '../editor/vscode-editor'
+import { type PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
-import { FixupTask } from '../non-stop/FixupTask'
-import { AuthProvider, isNetworkError } from '../services/AuthProvider'
+import { isNetworkError, type AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
-import { TestSupport } from '../test-support'
+import { type TestSupport } from '../test-support'
 
 import { chatHistory } from './chat-view/ChatHistoryManager'
-import { ContextProvider } from './ContextProvider'
+import { type ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
 
 /**
@@ -63,7 +66,7 @@ abstract class MessageHandler {
     protected abstract handleTranscript(transcript: ChatMessage[], messageInProgress: boolean): void
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleSuggestions(suggestions: string[]): void
-    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
+    protected abstract handleCodyCommands(prompts: [string, CodyCommand][]): void
     protected abstract handleError(error: Error, type: MessageErrorType): void
 }
 
@@ -747,17 +750,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return []
         }
         return this.transcript.toChat()
-    }
-
-    public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
-        if (!testing) {
-            console.error('used ForTesting method without test support object')
-            return []
-        }
-        if (!this.editor.controllers.fixups) {
-            throw new Error('no fixup controller')
-        }
-        return this.editor.controllers.fixups.getTasks()
     }
 
     public dispose(): void {

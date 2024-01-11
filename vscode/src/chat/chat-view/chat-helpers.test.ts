@@ -16,7 +16,7 @@ import {
     rangeToFragment,
     stripContextWrapper,
 } from './chat-helpers'
-import { ContextItem } from './SimpleChatModel'
+import { type ContextItem } from './SimpleChatModel'
 
 describe('unwrap context snippets', () => {
     test('should wrap and unwrap context item snippets', () => {

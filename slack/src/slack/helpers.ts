@@ -1,5 +1,5 @@
-import { KnownEventFromType, SlackEvent } from '@slack/bolt'
-import { ChatPostMessageResponse } from '@slack/web-api'
+import { type KnownEventFromType, type SlackEvent } from '@slack/bolt'
+import { type ChatPostMessageResponse } from '@slack/web-api'
 import slackifyMarkdown from 'slackify-markdown'
 
 import { webClient } from './init'

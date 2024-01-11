@@ -1,11 +1,18 @@
 import { findLast } from 'lodash'
-import { Position, TextDocument } from 'vscode'
-import Parser, { Language, Point, Query, QueryCapture, SyntaxNode } from 'web-tree-sitter'
+import { type Position, type TextDocument } from 'vscode'
+import {
+    type Language,
+    type default as Parser,
+    type Point,
+    type Query,
+    type QueryCapture,
+    type SyntaxNode,
+} from 'web-tree-sitter'
 
-import { getParseLanguage, SupportedLanguage } from './grammars'
+import { getParseLanguage, type SupportedLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
 import { getParser } from './parser'
-import { CompletionIntent, intentPriority, languages, QueryName } from './queries'
+import { intentPriority, languages, type CompletionIntent, type QueryName } from './queries'
 
 interface ParsedQuery {
     compiled: Query
@@ -344,4 +351,4 @@ export function execQueryWrapper<T extends keyof QueryWrappers>(
     return []
 }
 
-export { CompletionIntent }
+export type { CompletionIntent }

@@ -3,22 +3,22 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import {
-    ChatButton,
-    ChatContextStatus,
-    ChatMessage,
-    ChatModelProvider,
-    CodyPrompt,
-    ContextFile,
-    Guardrails,
     isDefined,
+    type ChatButton,
+    type ChatContextStatus,
+    type ChatMessage,
+    type ChatModelProvider,
+    type CodyCommand,
+    type ContextFile,
+    type Guardrails,
 } from '@sourcegraph/cody-shared'
 
-import { CodeBlockMeta } from './chat/CodeBlocks'
-import { FileLinkProps } from './chat/components/ContextFiles'
+import { type CodeBlockMeta } from './chat/CodeBlocks'
+import { type FileLinkProps } from './chat/components/EnhancedContext'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
-import { SymbolLinkProps } from './chat/PreciseContext'
+import { type SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
-import { TranscriptItemClassNames } from './chat/TranscriptItem'
+import { type TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 
@@ -61,8 +61,8 @@ interface ChatProps extends ChatClassNames {
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    chatCommands?: [string, CodyPrompt][] | null
-    filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
+    chatCommands?: [string, CodyCommand][] | null
+    filterChatCommands?: (chatCommands: [string, CodyCommand][], input: string) => [string, CodyCommand][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
     contextSelection?: ContextFile[] | null
@@ -143,7 +143,7 @@ export interface CodeBlockActionsProps {
 export interface ChatCommandsProps {
     setFormInput: (input: string) => void
     setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyPrompt][] | null
+    chatCommands?: [string, CodyCommand][] | null
     selectedChatCommand?: number
     onSubmit: (input: string, inputType: ChatSubmitType) => void
 }
@@ -232,7 +232,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     guardrails,
 }) => {
     const [inputRows, setInputRows] = useState(1)
-    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyCommand & { instruction?: string }][] | null>(
         chatCommands || null
     )
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)

@@ -1,4 +1,4 @@
-import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
+import { type TelemetryEventInput, type TelemetryExporter } from '@sourcegraph/telemetry'
 
 import { isError } from '../../utils'
 

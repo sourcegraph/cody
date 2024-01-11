@@ -1,11 +1,10 @@
 import * as vscode from 'vscode'
 
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { FixupIntent, VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
-import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
+import { type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ExecuteEditArguments } from '../edit/execute'
+import { type ExecuteEditArguments } from '../edit/execute'
+import { type EditIntent } from '../edit/types'
 import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
@@ -13,29 +12,28 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-import { computeDiff, Diff } from './diff'
+import { computeDiff, type Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
-import { FixupFile } from './FixupFile'
+import { type FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
-import { FixupTask, taskID } from './FixupTask'
+import { FixupTask, type taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
-import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
+import {
+    type FixupFileCollection,
+    type FixupIdleTaskRunner,
+    type FixupTaskFactory,
+    type FixupTextChanged,
+} from './roles'
+import { TaskViewProvider, type FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
-    implements
-        VsCodeFixupController,
-        FixupFileCollection,
-        FixupIdleTaskRunner,
-        FixupTaskFactory,
-        FixupTextChanged,
-        vscode.Disposable
+    implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, vscode.Disposable
 {
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
@@ -169,8 +167,9 @@ export class FixupController
     public async createTask(
         documentUri: vscode.Uri,
         instruction: string,
+        userContextFiles: ContextFile[],
         selectionRange: vscode.Range,
-        intent?: FixupIntent,
+        intent?: EditIntent,
         insertMode?: boolean,
         source?: ChatEventSource
     ): Promise<FixupTask> {
@@ -179,7 +178,7 @@ export class FixupController
         if (intent !== 'add') {
             selectionRange = await this.getFixupTaskSmartSelection(documentUri, selectionRange)
         }
-        const task = new FixupTask(fixupFile, instruction, intent, selectionRange, insertMode, source)
+        const task = new FixupTask(fixupFile, instruction, userContextFiles, intent, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -760,43 +759,6 @@ export class FixupController
         return Array.from(this.tasks.values())
     }
 
-    // Called by the non-stop recipe to gather current state for the task.
-    public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
-        const task = this.tasks.get(id)
-        if (!task) {
-            return undefined
-        }
-
-        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        const precedingText = document.getText(
-            new vscode.Range(
-                task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),
-                task.selectionRange.start
-            )
-        )
-        const selectedText = document.getText(task.selectionRange)
-        if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
-            throw new Error("The amount of text selected exceeds Cody's current capacity.")
-        }
-
-        // TODO: original text should be a property of the diff so that we
-        // can apply diffs even while re-spinning
-        task.original = selectedText
-        const followingText = document.getText(
-            new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
-        )
-
-        return {
-            instruction: task.instruction,
-            intent: task.intent,
-            fileName: task.fixupFile.uri.fsPath,
-            precedingText,
-            selectedText,
-            followingText,
-            selectionRange: task.selectionRange,
-        }
-    }
-
     public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
@@ -1045,17 +1007,34 @@ export class FixupController
         }
         const previousRange = task.originalRange
         const previousInstruction = task.instruction
+        const previousUserContextFiles = task.userContextFiles
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
 
         // Prompt the user for a new instruction, and create a new fixup
-        const instruction = await this.typingUI.getInstructionFromQuickPick({ value: previousInstruction })
+        const input = await this.typingUI.getInputFromQuickPick({
+            filePath: task.fixupFile.filePath,
+            range: previousRange,
+            initialValue: previousInstruction,
+            initialSelectedContextFiles: previousUserContextFiles,
+            source: 'code-lens',
+        })
+        if (!input) {
+            return
+        }
 
         // Revert and remove the previous task
         await this.undoTask(task)
 
         void vscode.commands.executeCommand(
             'cody.command.edit-code',
-            { range: previousRange, instruction, document, intent: task.intent, insertMode: task.insertMode },
+            {
+                range: previousRange,
+                instruction: input.instruction,
+                userContextFiles: input.userContextFiles,
+                document,
+                intent: task.intent,
+                insertMode: task.insertMode,
+            } satisfies ExecuteEditArguments,
             'code-lens'
         )
     }

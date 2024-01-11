@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { SimpleChatPanelProvider } from '../../src/chat/chat-view/SimpleChatPanelProvider'
+import { type SimpleChatPanelProvider } from '../../src/chat/chat-view/SimpleChatPanelProvider'
 
 import {
     afterIntegrationTest,

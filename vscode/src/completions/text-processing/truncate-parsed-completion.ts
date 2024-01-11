@@ -1,12 +1,12 @@
-import { TextDocument } from 'vscode'
-import { Point, SyntaxNode } from 'web-tree-sitter'
+import { type TextDocument } from 'vscode'
+import { type Point, type SyntaxNode } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { DocumentContext } from '../get-current-doc-context'
+import { type DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, ParsedCompletion } from './parse-completion'
-import { BRACKET_PAIR, getFirstLine, OpeningBracket } from './utils'
+import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import { BRACKET_PAIR, getFirstLine, type OpeningBracket } from './utils'
 
 interface CompletionContext {
     completion: ParsedCompletion

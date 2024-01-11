@@ -3,7 +3,7 @@ import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 
-import { test as base, expect, Frame, FrameLocator, Page } from '@playwright/test'
+import { test as base, expect, type Frame, type FrameLocator, type Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 

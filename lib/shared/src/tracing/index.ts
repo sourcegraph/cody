@@ -1,4 +1,4 @@
-import opentelemetry, { context, Exception, propagation, SpanStatusCode } from '@opentelemetry/api'
+import opentelemetry, { context, propagation, SpanStatusCode, type Exception } from '@opentelemetry/api'
 
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'

@@ -1,7 +1,7 @@
 import path from 'path'
 
 import * as vscode from 'vscode'
-import Parser from 'web-tree-sitter'
+import type Parser from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'

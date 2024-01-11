@@ -1,8 +1,9 @@
 import fetch from 'isomorphic-fetch'
+import type { Response as NodeResponse } from 'node-fetch'
 
-import { TelemetryEventInput } from '@sourcegraph/telemetry'
+import { type TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { ConfigurationWithAccessToken } from '../../configuration'
+import { type ConfigurationWithAccessToken } from '../../configuration'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -16,8 +17,7 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
     CURRENT_USER_ID_QUERY,
-    DOT_COM_CURRENT_USER_INFO_QUERY,
-    ENTERPRISE_CURRENT_USER_INFO_QUERY,
+    CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
     GET_FEATURE_FLAGS_QUERY,
@@ -34,6 +34,12 @@ import {
     SEARCH_EMBEDDINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
+
+export type BrowserOrNodeResponse = Response | NodeResponse
+
+export function isNodeResponse(response: BrowserOrNodeResponse): response is NodeResponse {
+    return Boolean(response.body && !('getReader' in response.body))
+}
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -62,27 +68,14 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
-interface DotComCurrentUserInfoResponse {
+interface CurrentUserInfoResponse {
     currentUser: {
         id: string
         hasVerifiedEmail: boolean
-        displayName: string
+        displayName?: string
+        username: string
         avatarURL: string
-        codyProEnabled: boolean
-        primaryEmail: {
-            email: string
-        }
-    } | null
-}
-
-interface EnterpriseCurrentUserInfoResponse {
-    currentUser: {
-        id: string
-        displayName: string
-        avatarURL: string
-        primaryEmail: {
-            email: string
-        }
+        primaryEmail?: { email: string } | null
     } | null
 }
 
@@ -184,6 +177,15 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
+}
+
+export interface CurrentUserInfo {
+    id: string
+    hasVerifiedEmail: boolean
+    username: string
+    displayName?: string
+    avatarURL: string
+    primaryEmail?: { email: string } | null
 }
 
 interface IsContextRequiredForChatQueryResponse {
@@ -353,47 +355,12 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getEnterpriseCurrentUserInfo(): Promise<
-        | {
-              id: string
-              displayName: string
-              avatarURL: string
-              primaryEmail: {
-                  email: string
-              }
-          }
-        | Error
-    > {
-        return this.fetchSourcegraphAPI<APIResponse<EnterpriseCurrentUserInfoResponse>>(
-            ENTERPRISE_CURRENT_USER_INFO_QUERY,
-            {}
-        ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
-            )
-        )
-    }
-
-    public async getDotComCurrentUserInfo(): Promise<
-        | {
-              id: string
-              hasVerifiedEmail: boolean
-              codyProEnabled: boolean
-              displayName: string
-              avatarURL: string
-              primaryEmail: {
-                  email: string
-              }
-          }
-        | Error
-    > {
-        return this.fetchSourcegraphAPI<APIResponse<DotComCurrentUserInfoResponse>>(
-            DOT_COM_CURRENT_USER_INFO_QUERY,
-            {}
-        ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
-            )
+    public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(CURRENT_USER_INFO_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+                )
         )
     }
 

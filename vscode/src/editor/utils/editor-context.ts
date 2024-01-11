@@ -4,9 +4,13 @@ import fuzzysort from 'fuzzysort'
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile } from '@sourcegraph/cody-shared'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
-import { ContextFileSource, ContextFileType, SymbolKind } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import {
+    type ContextFileSource,
+    type ContextFileType,
+    type SymbolKind,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 

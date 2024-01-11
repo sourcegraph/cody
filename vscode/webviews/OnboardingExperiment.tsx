@@ -1,14 +1,14 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { AuthMethod } from '../src/chat/protocol'
+import { type AuthMethod } from '../src/chat/protocol'
 
 import onboardingSplashImage from './cody-onboarding-splash.svg'
 import signInLogoGitHub from './sign-in-logo-github.svg'
 import signInLogoGitLab from './sign-in-logo-gitlab.svg'
 import signInLogoGoogle from './sign-in-logo-google.svg'
-import { VSCodeWrapper } from './utils/VSCodeApi'
+import { type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
 

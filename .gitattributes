@@ -2,4 +2,4 @@
 # code and snapshots assume this.
 * text=auto eol=lf
 CHANGELOG.md merge=union
-agent/recordings/*/*.har merge=ours
+agent/recordings/*/recording.har.yaml merge=ours

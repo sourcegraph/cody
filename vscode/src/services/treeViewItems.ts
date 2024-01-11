@@ -3,7 +3,7 @@ import { findLast } from 'lodash'
 import { FeatureFlag } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
-import { AuthStatus, CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL } from '../chat/protocol'
+import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, type AuthStatus } from '../chat/protocol'
 import { releaseNotesURL, releaseType } from '../release'
 import { version } from '../version'
 

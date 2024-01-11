@@ -9,7 +9,19 @@ const config: StorybookConfig = {
         options: {},
     },
     async viteFinal(config) {
-        return mergeConfig(config, { css: { modules: { localsConvention: 'camelCaseOnly' } } })
+        return mergeConfig(config, {
+            resolve: {
+                alias: [
+                    // In dev mode, build from TypeScript sources so we don't need to run `tsc -b`
+                    // in the background.
+                    {
+                        find: /^(@sourcegraph\/[\w-]+)$/,
+                        replacement: '$1/src/index',
+                    },
+                ],
+            },
+            css: { modules: { localsConvention: 'camelCaseOnly' } },
+        })
     },
     docs: {
         autodocs: 'tag',

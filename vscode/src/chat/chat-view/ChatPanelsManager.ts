@@ -1,25 +1,25 @@
 import * as vscode from 'vscode'
 
 import { ChatModelProvider } from '@sourcegraph/cody-shared'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    FeatureFlagProvider,
     featureFlagProvider,
+    type FeatureFlagProvider,
 } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
-import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { SymfRunner } from '../../local-context/symf'
+import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { type SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { MessageProviderOptions } from '../MessageProvider'
-import { AuthStatus, ExtensionMessage } from '../protocol'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type MessageProviderOptions } from '../MessageProvider'
+import { type AuthStatus, type ExtensionMessage } from '../protocol'
 
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
-import { SidebarViewOptions } from './SidebarViewController'
+import { type SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 type ChatID = string
@@ -50,7 +50,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string }
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
 
     protected disposables: vscode.Disposable[] = []
 
@@ -81,24 +81,21 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        this.supportTreeViewProvider.syncAuthStatus(authStatus)
-        if (!authStatus.isLoggedIn) {
-            this.disposePanels()
-        } else if (
-            this.currentAuthAccount &&
-            (this.currentAuthAccount.endpoint !== authStatus.endpoint ||
-                this.currentAuthAccount.primaryEmail !== authStatus.primaryEmail)
-        ) {
+        const hasLoggedOut = !authStatus.isLoggedIn
+        const hasSwitchedAccount = this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
+        if (hasLoggedOut || hasSwitchedAccount) {
             this.disposePanels()
         }
 
         this.currentAuthAccount = {
             endpoint: authStatus.endpoint ?? '',
             primaryEmail: authStatus.primaryEmail,
+            username: authStatus.username,
         }
 
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         await this.updateTreeViewHistory()
+        this.supportTreeViewProvider.syncAuthStatus(authStatus)
     }
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {
@@ -300,12 +297,19 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
     }
 
+    // Dispose all open panels
     private disposePanels(): void {
-        // Dispose all open panels
-        this.panelProvidersMap.forEach(provider => {
+        // dispose activePanelProvider if exists
+        const activePanelID = this.activePanelProvider?.sessionID
+        if (activePanelID) {
+            this.disposeProvider(activePanelID)
+        }
+        // loop through the panel provider map
+        const panelsProvider = Array.from(this.panelProvidersMap.values())
+        for (const provider of panelsProvider) {
             provider.webviewPanel?.dispose()
             provider.dispose()
-        })
+        }
         this.panelProvidersMap.clear()
         void this.updateTreeViewHistory()
     }

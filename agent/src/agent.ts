@@ -2,31 +2,32 @@ import { spawn } from 'child_process'
 import * as fspromises from 'fs/promises'
 import path from 'path'
 
-import { Polly } from '@pollyjs/core'
+import { type Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
-import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
+import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { LogEventMode, setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+import { setUserAgent, type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWebPanel, AgentWebPanels } from './AgentWebPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
-import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol-alias'
+import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration, type RecipeInfo } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
@@ -63,9 +64,16 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         extensionPath: paths.config,
         extensionUri: vscode.Uri.file(paths.config),
         globalState: {
-            keys: () => [...globalStorage.keys()],
+            keys: () => [localStorage.ANONYMOUS_USER_ID_KEY, ...globalStorage.keys()],
             get: key => {
-                return globalStorage.get(key)
+                switch (key) {
+                    case localStorage.ANONYMOUS_USER_ID_KEY:
+                        return vscode_shim.extensionConfiguration?.anonymousUserID
+                    case localStorage.LAST_USED_ENDPOINT:
+                        return vscode_shim.extensionConfiguration?.serverEndpoint
+                    default:
+                        return globalStorage.get(key)
+                }
             },
             update: (key, value) => {
                 globalStorage.set(key, value)
@@ -173,9 +181,11 @@ export class Agent extends MessageHandler {
         this.registerRequest('initialize', async clientInfo => {
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
-            process.stderr.write(
-                `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
-            )
+            if (process.env.CODY_DEBUG === 'true') {
+                process.stderr.write(
+                    `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
+                )
+            }
 
             vscode_shim.setClientInfo(clientInfo)
             // Register client info
@@ -277,6 +287,59 @@ export class Agent extends MessageHandler {
             this.setClientAndTelemetry(config).catch(() => {
                 process.stderr.write('Cody Agent: failed to update configuration\n')
             })
+        })
+
+        this.registerNotification('progress/cancel', ({ id }) => {
+            const token = vscode_shim.progressBars.get(id)
+            if (token) {
+                token.cancel()
+            } else {
+                console.error(`progress/cancel: unknown ID ${id}`)
+            }
+        })
+
+        this.registerRequest('testing/progress', async ({ title }) => {
+            const thenable = await vscode.window.withProgress(
+                { title: 'testing/progress', location: vscode.ProgressLocation.Notification, cancellable: true },
+                progress => {
+                    progress.report({ message: 'message1' })
+                    progress.report({ increment: 50 })
+                    progress.report({ increment: 50 })
+                    return Promise.resolve({ result: `Hello ${title}` })
+                }
+            )
+            return thenable
+        })
+
+        this.registerRequest('testing/progressCancelation', async ({ title }) => {
+            const message = await vscode.window.withProgress<string>(
+                {
+                    title: 'testing/progressCancelation',
+                    location: vscode.ProgressLocation.Notification,
+                    cancellable: true,
+                },
+                (progress, token) => {
+                    return new Promise<string>((resolve, reject) => {
+                        token.onCancellationRequested(() => {
+                            progress.report({ message: 'before resolution' })
+                            resolve(`request with title '${title}' cancelled`)
+                            progress.report({ message: 'after resolution' })
+                        })
+                        setTimeout(
+                            () =>
+                                reject(
+                                    new Error(
+                                        'testing/progressCancelation did not resolve within 5 seconds. ' +
+                                            'To fix this problem, send a progress/cancel notification with the same ID ' +
+                                            'as the progress/start notification with title "testing/progressCancelation"'
+                                    )
+                                ),
+                            5_000
+                        )
+                    })
+                }
+            )
+            return { result: message }
         })
 
         this.registerRequest('recipes/list', () =>

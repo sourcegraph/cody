@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { aggregateResults, TestResult } from '@sourcegraph/cody-e2e/src/test-results'
+import { aggregateResults, type TestResult } from '@sourcegraph/cody-e2e/src/test-results'
 
 import styles from './QualityMetrics.module.css'
 

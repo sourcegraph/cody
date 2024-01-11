@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { TelemetryEventProperties, TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
-import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import { type Configuration, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type TelemetryEventProperties, type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { EventLogger, type ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'

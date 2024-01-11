@@ -2,13 +2,14 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
-import { createVSCodeRelativePath } from '@sourcegraph/cody-shared/src/chat/prompts/vscode-context/helpers'
-import { ContextFile, ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type ActiveTextEditorSelectionRange } from '@sourcegraph/cody-shared'
+import { type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { CodebaseIdentifiers } from './CodebaseStatusProvider'
-import { ContextItem } from './SimpleChatModel'
+import { createVSCodeRelativePath } from '../../editor-context/helpers'
+
+import { type CodebaseIdentifiers } from './CodebaseStatusProvider'
+import { type ContextItem } from './SimpleChatModel'
 
 export const relativeFileUrlScheme = 'cody-file-relative'
 export const embeddingsUrlScheme = 'cody-remote-embeddings'
@@ -175,7 +176,7 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
 
 export function stripContextWrapper(text: string): string | undefined {
     {
-        const start = text.indexOf('Use following code snippet')
+        const start = text.indexOf('Use the following code snippet')
         if (start >= 0) {
             text = text.slice(start)
             const lines = text.split('\n')

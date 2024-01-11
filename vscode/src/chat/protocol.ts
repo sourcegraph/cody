@@ -1,20 +1,20 @@
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange, ChatModelProvider, ContextFile } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
-import { ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
-import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import { type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
+import { type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
+import { type CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
-import { ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type ChatSubmitType } from '@sourcegraph/cody-ui/src/Chat'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 
-import { View } from '../../webviews/NavBar'
+import { type View } from '../../webviews/NavBar'
 
 /**
  * A message sent from the webview to the extension host.
@@ -94,6 +94,10 @@ export type WebviewMessage =
     | {
           command: 'reset'
       }
+    | {
+          command: 'attribution-search'
+          snippet: string
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -108,13 +112,22 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'notice'; notice: { key: string } }
-    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
+    | { type: 'custom-prompts'; prompts: [string, CodyCommand][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'userContextFiles'; context: ContextFile[] | null; kind?: ContextFileType }
     | { type: 'chatModels'; models: ChatModelProvider[] }
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | {
+          type: 'attribution'
+          snippet: string
+          attribution?: {
+              repositoryNames: string[]
+              limitHit: boolean
+          }
+          error?: string
+      }
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -143,7 +156,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
  * verified email.
  */
 export interface AuthStatus {
-    username?: string
+    username: string
     endpoint: string | null
     isDotCom: boolean
     isLoggedIn: boolean
@@ -156,7 +169,7 @@ export interface AuthStatus {
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
     primaryEmail: string
-    displayName: string
+    displayName?: string
     avatarURL: string
     /**
      * Whether the users account can be upgraded.
@@ -180,6 +193,7 @@ export const defaultAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -196,6 +210,7 @@ export const unauthenticatedStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -212,6 +227,7 @@ export const networkErrorAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',

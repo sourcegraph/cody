@@ -2,7 +2,9 @@ import type * as vscode from 'vscode'
 
 import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
+
+import { type ClientInfo, type ExtensionConfiguration } from './protocol-alias'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(
@@ -25,7 +27,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         if (this.prefix.length === 0) {
             return section
         }
-        return [section, ...this.prefix].join('.')
+        return [...this.prefix, section].join('.')
     }
 
     private clientNameToIDE(value: string): Configuration['agentIDE'] | undefined {
@@ -82,16 +84,18 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             case 'cody.autocomplete.experimental.syntacticPostProcessing':
                 // False because we don't embed WASM with the agent yet.
                 return false
-            case 'cody.experimental.symfContext':
-                // Symf is disabled because the tests fail with the following error when symf is enabled:
-                //   EvalError: symf index creation failed: Error: spawn Unknown system error -8
-                return false
+            case 'cody.useContext':
+                // Disable embeddings by default.
+                return 'keyword'
             case 'cody.codebase':
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':
                 return this.clientNameToIDE(this.clientInfo()?.name ?? '')
             default:
-                return defaultValue
+                // VS Code picks up default value in package.json, and only uses
+                // the `defaultValue` parameter if package.json provides no
+                // default.
+                return defaultConfigurationValue(section) ?? defaultValue
         }
     }
 
