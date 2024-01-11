@@ -10,11 +10,17 @@ import { Uri } from 'vscode'
 
 import { type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
 
-import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
+import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler } from './jsonrpc-alias'
-import { type ClientInfo, type ProgressReportParams, type ProgressStartParams, type ServerInfo } from './protocol-alias'
+import {
+    WebviewPostMessageParams,
+    type ClientInfo,
+    type ProgressReportParams,
+    type ProgressStartParams,
+    type ServerInfo,
+} from './protocol-alias'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 interface ProgressStartMessage {
@@ -79,6 +85,7 @@ export class TestClient extends MessageHandler {
         return `ID_${freshID}`
     }
 
+    public webviewMessages: WebviewPostMessageParams[] = []
     public async initialize() {
         this.agentProcess = this.spawnAgentProcess()
 
@@ -86,9 +93,8 @@ export class TestClient extends MessageHandler {
             console.error(error)
         })
 
-        const notifications: ExtensionMessage[] = []
-        this.registerNotification('webview/postMessage', ({ message }) => {
-            notifications.push(message)
+        this.registerNotification('webview/postMessage', params => {
+            this.webviewMessages.push(params)
         })
 
         try {
@@ -110,20 +116,18 @@ export class TestClient extends MessageHandler {
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
     ): Promise<ChatMessage | undefined> {
         const id = await this.request('chat/new', null)
-        const reply = await this.request('chat/submitMessage', {
-            id,
-            message: {
-                command: 'submit',
-                text,
-                submitType: 'user',
-                addEnhancedContext: params?.addEnhancedContext ?? false,
-                contextFiles: params?.contextFiles,
-            },
-        })
-
-        if (reply.type !== 'transcript') {
-            throw new Error(`Unexpected reply: ${JSON.stringify(reply)}`)
-        }
+        const reply = asTranscriptMessage(
+            await this.request('chat/submitMessage', {
+                id,
+                message: {
+                    command: 'submit',
+                    text,
+                    submitType: 'user',
+                    addEnhancedContext: params?.addEnhancedContext ?? false,
+                    contextFiles: params?.contextFiles,
+                },
+            })
+        )
 
         return reply.messages.at(-1)
     }
@@ -362,11 +366,54 @@ describe('Agent', () => {
             `
           {
             "contextFiles": [],
-            "displayText": " Hello there! How can I help you with coding today?",
+            "displayText": " Hello!",
             "speaker": "assistant",
-            "text": " Hello there! How can I help you with coding today?",
+            "text": " Hello!",
           }
         `,
+            explainPollyError
+        )
+    }, 20_000)
+
+    it('allows us to restore a chat', async () => {
+        // Step 1: create a chat session where I share my name.
+        const id1 = await client.request('chat/new', null)
+        const reply1 = asTranscriptMessage(
+            await client.request('chat/submitMessage', {
+                id: id1,
+                message: {
+                    command: 'submit',
+                    text: 'My name is Lars Monsen',
+                    submitType: 'user',
+                    addEnhancedContext: false,
+                },
+            })
+        )
+
+        // Step 2: restore a new chat session with a transcript including my name, and
+        //  and assert that it can retrieve my name from the transcript.
+        const {
+            models: [model],
+        } = await client.request('chat/models', { id: id1 })
+
+        const id2 = await client.request('chat/restore', {
+            modelID: model.model,
+            messages: reply1.messages,
+            chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
+        })
+        const reply2 = asTranscriptMessage(
+            await client.request('chat/submitMessage', {
+                id: id2,
+                message: {
+                    command: 'submit',
+                    text: 'What is my name?',
+                    submitType: 'user',
+                    addEnhancedContext: false,
+                },
+            })
+        )
+        expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
+            '" You told me your name is Lars Monsen."',
             explainPollyError
         )
     }, 20_000)
@@ -376,25 +423,29 @@ describe('Agent', () => {
         const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
-          " Here is a simple Hello World function in Java:
+          " Here is a simple Hello World program in Java:
 
           \`\`\`java
           public class Main {
+
             public static void main(String[] args) {
               System.out.println(\\"Hello World!\\");
             }
+
           }
           \`\`\`
 
-          This defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \\"Hello World!\\" to the console using System.out.println.
+          This program prints \\"Hello World!\\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.
 
           To run this:
 
           1. Save the code in a file called Main.java
-          2. Compile it with \`javac Main.java\`
-          3. Run it with \`java Main\`
+          2. Compile it with: javac Main.java
+          3. Run it with: java Main
 
-          This will print \\"Hello World!\\" to the console when executed."
+          The \\"Hello World!\\" text will be printed to the console.
+
+          Let me know if you need any clarification or have additional requirements for the Java program!"
         `,
             explainPollyError
         )
@@ -431,7 +482,7 @@ describe('Agent', () => {
 
             @Override
             public void move() {
-              System.out.println(\\"The dog runs.\\");
+              System.out.println(\\"The dog runs\\");
             }
 
           }
@@ -551,4 +602,11 @@ function trimEndOfLine(text: string): string {
         .split('\n')
         .map(line => line.trimEnd())
         .join('\n')
+}
+
+function asTranscriptMessage(reply: ExtensionMessage): ExtensionTranscriptMessage {
+    if (reply.type === 'transcript') {
+        return reply
+    }
+    throw new Error(`expected transcript, got: ${JSON.stringify(reply)}`)
 }

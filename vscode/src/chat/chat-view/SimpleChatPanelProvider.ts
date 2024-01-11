@@ -96,7 +96,12 @@ interface SimpleChatPanelProviderOptions {
     models: ChatModelProvider[]
 }
 
-export class SimpleChatPanelProvider implements vscode.Disposable {
+export interface ChatSession {
+    webviewPanel?: vscode.WebviewPanel
+    sessionID: string
+}
+
+export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private _webviewPanel?: vscode.WebviewPanel
     public get webviewPanel(): vscode.WebviewPanel | undefined {
         return this._webviewPanel
@@ -633,6 +638,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         // The text we will use to send to LLM
         const promptText = command ? [command.prompt, command.additionalInput].join(' ')?.trim() : inputText
         this.chatModel.addHumanMessage({ text: promptText }, displayText)
+
         await this.saveSession(inputText)
         // trigger the context progress indicator
         this.postViewTranscript({ speaker: 'assistant' })

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
+import { ChatModelProvider } from '@sourcegraph/cody-shared'
 import type { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import type { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -44,9 +45,19 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
-    // High-level wrapper around command/execute and  webview/create to start a
-    // new chat session.  Returns a UUID for the chat session.
+    // Start a new chat session and returns a UUID that can be used to reference
+    // this session in other requests like chat/submitMessage or
+    // webview/didDispose.
     'chat/new': [null, string]
+
+    // Similar to `chat/new` except it starts a new chat session from an
+    // existing transcript. The chatID matches the `chatID` property of the
+    // `type: 'transcript'` ExtensionMessage that is sent via
+    // `webview/postMessage`. Returns a new *panel* ID, which can be used to
+    // send a chat message via `chat/submitMessage`.
+    'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
+
+    'chat/models': [{ id: string }, { models: ChatModelProvider[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
     // to submit a chat message. The ID is the return value of chat/id, and the
@@ -176,7 +187,7 @@ export type Notifications = {
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
     // on the chat reply.
-    'webview/postMessage': [{ id: string; message: ExtensionMessage }]
+    'webview/postMessage': [WebviewPostMessageParams]
 
     'progress/start': [ProgressStartParams]
 
@@ -430,4 +441,9 @@ export interface ProgressOptions {
      * button.
      */
     cancellable?: boolean
+}
+
+export interface WebviewPostMessageParams {
+    id: string
+    message: ExtensionMessage
 }

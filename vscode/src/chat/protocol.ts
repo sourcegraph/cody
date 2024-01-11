@@ -26,13 +26,7 @@ export type WebviewMessage =
           eventName: string
           properties: TelemetryEventProperties | undefined
       } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | {
-          command: 'submit'
-          text: string
-          submitType: ChatSubmitType
-          addEnhancedContext?: boolean
-          contextFiles?: ContextFile[]
-      }
+    | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
@@ -104,7 +98,7 @@ export type WebviewMessage =
 export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
-    | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
+    | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
@@ -125,6 +119,19 @@ export type ExtensionMessage =
           }
           error?: string
       }
+
+export interface WebviewSubmitMessage {
+    text: string
+    submitType: ChatSubmitType
+    addEnhancedContext?: boolean
+    contextFiles?: ContextFile[]
+}
+
+export interface ExtensionTranscriptMessage {
+    messages: ChatMessage[]
+    isMessageInProgress: boolean
+    chatID: string
+}
 
 /**
  * The subset of configuration that is visible to the webview.
