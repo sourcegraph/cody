@@ -687,15 +687,13 @@ cases.forEach(isTreeSitterEnabled => {
                         onNetworkRequest(_params, onPartialResponse) {
                             onPartialResponse?.(completion`
                                 ├MyCoolObject = {
-                                constructor() {
-                            ┤`)
+                                constructor() {`)
                             onPartialResponse?.(completion`
                                 ├MyCoolObject = {
                                 constructor() {
                                     console.log(1)
 
-                                    if (false
-                            `)
+                                    if (false`)
                             onPartialResponse?.(completion`
                                 ├MyCoolObject = {
                                 constructor() {
@@ -706,8 +704,7 @@ cases.forEach(isTreeSitterEnabled => {
                                     }
 
                                     const result = {
-                                        value:
-                            `)
+                                        value:`)
                             onPartialResponse?.(completion`
                                 ├MyCoolObject = {
                                 constructor() {
