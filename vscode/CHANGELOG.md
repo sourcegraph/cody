@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Autocomplete: Improve the stability of multiline completion truncation during streaming by gracefully handling missing brackets in incomplete code segments. [pull/2682](https://github.com/sourcegraph/cody/pull/2682)
+
 ### Changed
 
 - Made the Enterprise login button more prominent. [pull/2672](https://github.com/sourcegraph/cody/pull/2672)

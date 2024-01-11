@@ -682,7 +682,7 @@ cases.forEach(isTreeSitterEnabled => {
                 `)
                 })
 
-                it('handles missing brackes gracefully to truncate the completion correctly', async () => {
+                it('handles missing brackets gracefully to truncate the completion correctly', async () => {
                     const requestParams = params('console.log(1); const █', [completion``], {
                         onNetworkRequest(_params, onPartialResponse) {
                             onPartialResponse?.(completion`
