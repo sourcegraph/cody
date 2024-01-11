@@ -10,6 +10,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [1.1.1]
+
+### Fixed
+
+- Fixed authentication issue when trying to connect to an enterprise instance. [pull/2667](https://github.com/sourcegraph/cody/pull/2667)
+
 ## [1.1.0]
 
 ### Added
