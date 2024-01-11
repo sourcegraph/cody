@@ -82,10 +82,11 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Updates the tree view with the provided tree items, filtering out any
      * that do not meet the required criteria to show.
      */
-    public async updateTree(treeItems?: CodySidebarTreeItem[]): Promise<void> {
+    public async updateTree(authStatus: AuthStatus, treeItems?: CodySidebarTreeItem[]): Promise<void> {
         if (treeItems) {
             this.treeItems = treeItems
         }
+        this.authStatus = authStatus
         return this.refresh()
     }
 
@@ -137,7 +138,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
      * Method to initialize the grouped chats for the History items
      */
     private async initializeGroupedChats(): Promise<void> {
-        const groupedChats = groupCodyChats()
+        const groupedChats = groupCodyChats(this.authStatus)
         if (!groupedChats) {
             return
         }

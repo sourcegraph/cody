@@ -2,8 +2,9 @@ import * as vscode from 'vscode'
 
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
+import { type AuthStatus } from '../chat/protocol'
 
-import { CodySidebarTreeItem } from './treeViewItems'
+import { type CodySidebarTreeItem } from './treeViewItems'
 
 interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]
@@ -26,7 +27,7 @@ const monthYearEqual = (d1: Date, d2: Date): boolean => {
     return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
 }
 
-export function groupCodyChats(): GroupedChats | null {
+export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
     const todayChats: CodySidebarTreeItem[] = []
     const yesterdayChats: CodySidebarTreeItem[] = []
     const thisMonthChats: CodySidebarTreeItem[] = []
@@ -47,7 +48,11 @@ export function groupCodyChats(): GroupedChats | null {
         'N months ago': nMonthsChats,
     }
 
-    const chats = chatHistory.localHistory?.chat
+    if (!authStatus) {
+        return null
+    }
+
+    const chats = chatHistory.getLocalHistory(authStatus)?.chat
     if (!chats) {
         return null
     }
@@ -93,8 +98,8 @@ export function groupCodyChats(): GroupedChats | null {
     }
 }
 
-export async function displayHistoryQuickPick(): Promise<void> {
-    const groupedChats = groupCodyChats()
+export async function displayHistoryQuickPick(authStatus: AuthStatus): Promise<void> {
+    const groupedChats = groupCodyChats(authStatus)
     if (!groupedChats) {
         return
     }

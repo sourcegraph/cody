@@ -212,7 +212,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
-        await this.treeViewProvider.updateTree()
+        await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
     }
 
     public async editChatHistory(chatID: string, label: string): Promise<void> {

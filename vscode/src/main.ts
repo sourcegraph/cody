@@ -308,7 +308,7 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
         vscode.commands.registerCommand('cody.chat.history.panel', async () => {
-            await displayHistoryQuickPick()
+            await displayHistoryQuickPick(authProvider.getAuthStatus())
         }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai chat' })
