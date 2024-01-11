@@ -1,4 +1,3 @@
-import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -121,7 +120,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     // - With every MessageProvider, including ChatPanelProvider.
     public async init(): Promise<void> {
         await this.updateCodebaseContext()
-        await this.publishContextStatus()
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -182,8 +180,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         } else if (this.codebaseContext.embeddings) {
             this.statusEmbeddings = this.statusAggregator.addProvider(this.codebaseContext.embeddings)
         }
-
-        await this.publishContextStatus()
     }
 
     /**
@@ -222,38 +218,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 telemetryRecorder.recordEvent('cody.auth', eventValue)
                 break
         }
-    }
-
-    /**
-     * Publish the current context status to the webview.
-     */
-    private async publishContextStatus(): Promise<void> {
-        const send = async (): Promise<void> => {
-            const editor = getEditor()
-            const activeEditor = editor.active
-            const fileName = vscode.workspace.asRelativePath(activeEditor?.document?.uri.fsPath || '')
-
-            // TODO(dpc): Remove this when enhanced context status encapsulates this information.
-            await this.webview?.postMessage({
-                type: 'contextStatus',
-                contextStatus: {
-                    mode: this.config.useContext,
-                    endpoint: this.authProvider.getAuthStatus().endpoint || undefined,
-                    connection: this.codebaseContext.checkEmbeddingsConnection(),
-                    embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
-                    codebase: this.codebaseContext.getCodebase(),
-                    filePath: editor.ignored ? 'ignored' : fileName,
-                    selectionRange: editor.ignored ? undefined : activeEditor?.selection,
-                    supportsKeyword: true,
-                },
-            })
-        }
-        const throttledSend = throttle(send, 250, { leading: true, trailing: true })
-
-        this.disposables.push(this.configurationChangeEvent.event(() => throttledSend()))
-        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => throttledSend()))
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => throttledSend()))
-        return throttledSend()
     }
 
     /**
