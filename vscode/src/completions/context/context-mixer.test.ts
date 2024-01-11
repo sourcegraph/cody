@@ -95,7 +95,7 @@ describe('ContextMixer', () => {
                     },
                 },
                 strategy: 'jaccard-similarity',
-                totalChars: 34,
+                totalChars: 42,
             })
         })
     })
@@ -174,7 +174,7 @@ describe('ContextMixer', () => {
                     },
                 },
                 strategy: 'jaccard-similarity',
-                totalChars: 92,
+                totalChars: 100,
             })
         })
     })

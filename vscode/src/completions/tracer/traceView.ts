@@ -247,7 +247,6 @@ function codeDetailsWithSummary(
                   .replaceAll('<', '&lt;')
                   .replaceAll('>', '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
     return `
-<details>
 <details${open ? ' open' : ''}>
 <summary>${title}${excerptMarkdown}</summary>
 

@@ -1,7 +1,6 @@
 import { type URI } from 'vscode-uri'
 
 import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
@@ -88,7 +87,7 @@ export type WebviewMessage =
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
-          uriJSON: unknown
+          uri: URI
           range: { start: { line: number; character: number }; end: { line: number; character: number } }
       }
     | {
@@ -106,8 +105,6 @@ export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
-    // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
-    | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }

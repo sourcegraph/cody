@@ -152,9 +152,12 @@ export class ContextMixer implements vscode.Disposable {
 
         const fusedDocuments = [...fusedDocumentScores.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])
 
+        // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
+        // total chars with the prefix and suffix sizes.
+        let totalChars = options.docContext.prefix.length + options.docContext.suffix.length
+
         const mixedContext: ContextSnippet[] = []
         const retrieverStats: ContextSummary['retrieverStats'] = {}
-        let totalChars = 0
         let position = 0
         // Now that we have a sorted list of documents (with the first document being the highest
         // ranked one), we use top-k to combine snippets from each retriever into a result set.

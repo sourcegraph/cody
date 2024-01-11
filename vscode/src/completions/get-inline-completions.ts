@@ -295,7 +295,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             position,
             docContext,
             abortSignal,
-            maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+            maxChars: providerConfig.contextSizeHints.totalChars,
         })
     })
     if (abortSignal?.aborted) {

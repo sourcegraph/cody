@@ -425,6 +425,20 @@ const register = async (
         }),
         vscode.commands.registerCommand('agent.auth.reload', async () => {
             await authProvider.reloadAuthStatus()
+        }),
+        // Check if user has just moved back from a browser window to upgrade cody pro
+        vscode.window.onDidChangeWindowState(async ws => {
+            const authStatus = authProvider.getAuthStatus()
+            const endpoint = authStatus.endpoint
+            if (ws.focused && endpoint && isDotCom(endpoint) && authStatus.isLoggedIn) {
+                const res = await graphqlClient.getCurrentUserCodyProEnabled()
+                if (res instanceof Error) {
+                    console.error(res)
+                    return
+                }
+                authStatus.userCanUpgrade = !res.codyProEnabled
+                void chatManager.syncAuthStatus(authStatus)
+            }
         })
     )
 
@@ -450,13 +464,6 @@ const register = async (
     }
     authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
     updateAuthStatusBarIndicator()
-
-    vscode.window.onDidChangeWindowState(async ws => {
-        const endpoint = authProvider.getAuthStatus().endpoint
-        if (ws.focused && endpoint && isDotCom(endpoint)) {
-            await authProvider.reloadAuthStatus()
-        }
-    })
 
     let completionsProvider: vscode.Disposable | null = null
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution

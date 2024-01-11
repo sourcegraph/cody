@@ -89,8 +89,8 @@ test('@-file empty state', async ({ page, sidebar }) => {
         )
     ).toBeVisible()
 
-    // Also ensure explicitly @-included context is not showing up as enhanced context
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).not.toBeVisible()
+    // Ensure explicitly @-included context shows up as enhanced context
+    expect(await chatPanelFrame.getByText(/^✨ Context:/).count()).toEqual(2)
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
