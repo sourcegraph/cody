@@ -32,6 +32,6 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await signOut(page)
 
     const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
-    await expect(sidebarFrame.getByRole('heading', { name: 'Sign In to Get Started' })).toBeVisible()
+    await expect(sidebarFrame.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })).toBeVisible()
     await assertEvents(loggedEvents, expectedEvents)
 })
