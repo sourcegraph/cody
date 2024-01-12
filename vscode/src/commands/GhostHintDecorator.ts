@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 
 import { isGenerateIntent } from '../edit/utils/edit-selection'
 
-const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : '⌘K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : '⌘L'
+const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
+const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
 
 /**
  * Creates a new decoration for showing a "ghost" hint to the user.
@@ -64,11 +64,12 @@ export class GhostHintDecorator implements vscode.Disposable {
                     this.clearGhostText(editor)
                 }
 
+                const isGenerate = isGenerateIntent(editor.document, selection)
                 const ghostText = `${EDIT_SHORTCUT_LABEL} to ${
-                    selection.isEmpty ? 'Generate' : 'Edit'
+                    isGenerate ? 'Generate' : 'Edit'
                 }, ${CHAT_SHORTCUT_LABEL} to Chat`
 
-                if (isGenerateIntent(editor.document, selection)) {
+                if (isGenerate) {
                     // Generate code flow, cancel any pending edit flow and show new text immediately
                     this.throttledSetGhostText.cancel()
                     return this.setGhostText(editor, targetPosition, ghostText)
