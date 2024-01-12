@@ -10,6 +10,7 @@ import { getFileContextFiles, getSymbolContextFiles } from '../editor/utils/edit
 
 import { type FixupTask } from './FixupTask'
 import { type FixupTaskFactory } from './roles'
+import { updateRangeMultipleChanges, type TextChange } from './tracked-range'
 
 function removeAfterLastAt(str: string): string {
     const lastIndex = str.lastIndexOf('@')
@@ -236,10 +237,25 @@ export class FixupTypingUI {
             return null
         }
         const document = args.document || editor?.document
-        const range = args.range || editor?.selection
+        let range = args.range || editor?.selection
         if (!document || !range) {
             return null
         }
+
+        /**
+         * Listens for text document changes and updates the range when changes occur.
+         * This allows the range to stay in sync if the user continues editing after
+         * requesting the refactoring.
+         */
+        const textDocumentListener = vscode.workspace.onDidChangeTextDocument(event => {
+            if (event.document !== document) {
+                return
+            }
+
+            const changes = new Array<TextChange>(...event.contentChanges)
+            range = updateRangeMultipleChanges(range, changes)
+        })
+
         const input = await this.getInputFromQuickPick({
             filePath: document.uri.fsPath,
             range,
@@ -258,6 +274,8 @@ export class FixupTypingUI {
             args.insertMode,
             source
         )
+
+        textDocumentListener.dispose()
 
         // Return focus to the editor
         void vscode.window.showTextDocument(document)
