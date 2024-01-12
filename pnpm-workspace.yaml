@@ -4,7 +4,6 @@ packages:
   - agent
   - cli
   - lib/*
-  - slack
   - vscode
   - completions-review-tool
   - snippet-extractor
