@@ -111,6 +111,10 @@ export class TestClient extends MessageHandler {
         }
     }
 
+    public async setChatModel(id: string, model: string): Promise<void> {
+        await this.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
+    }
+
     public async sendSingleMessage(
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
@@ -359,6 +363,20 @@ describe('Agent', () => {
         )
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
+
+    it('allows us to set the chat model', async () => {
+        const id = await client.request('chat/new', null)
+        {
+            await client.setChatModel(id, 'openai/gpt-3.5-turbo')
+            const lastMessage = await client.sendSingleMessage('which company, other than sourcegraph, created you?')
+            expect(lastMessage?.text?.toLocaleLowerCase().indexOf('openai')).toBeGreaterThanOrEqual(0)
+        }
+        {
+            await client.setChatModel(id, 'anthropic/claude-2.0')
+            const lastMessage = await client.sendSingleMessage('which company, other than sourcegraph, created you?')
+            expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeGreaterThanOrEqual(0)
+        }
+    })
 
     it('allows us to send a very short chat message', async () => {
         const lastMessage = await client.sendSingleMessage('Hello!')
