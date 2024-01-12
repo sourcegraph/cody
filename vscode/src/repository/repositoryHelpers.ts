@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 
 import { logDebug } from '../log'
-import { setUpCodyIgnore, updateCodyIgnoreCodespaceMap } from '../services/context-filter'
+import { setUpCodyIgnore } from '../services/context-filter'
 
 import { type API, type GitExtension, type Repository } from './builtinGitExtension'
 
@@ -61,7 +61,6 @@ export async function gitAPIinit(): Promise<vscode.Disposable | undefined> {
             setUpCodyIgnore()
             // This throws error if the git extension is disabled
             vscodeGitAPI = extension.exports?.getAPI(1)
-            getAllCodebasesInWorkspace().map(result => updateCodyIgnoreCodespaceMap(result.codebase, result.ws))
         }
     }
     // Initialize the git extension if it is available
