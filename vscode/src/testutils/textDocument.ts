@@ -49,7 +49,7 @@ function createTextLine(text: string, range: Range): TextLine {
         text,
         range,
         rangeIncludingLineBreak: range.with({ end: range.end.translate({ characterDelta: 1 }) }),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
         firstNonWhitespaceCharacterIndex: text.match(/^\s*/)![0].length,
         isEmptyOrWhitespace: /^\s*$/.test(text),
     }

@@ -378,6 +378,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             await vscode.window.showErrorMessage(`Cody Embeddings — Error: ${error?.message}`)
         }
     }
@@ -452,9 +453,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
             logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
 
             const noRemoteErrorMessage = "repository does not have a default fetch URL, so can't be named for an index"
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const noRemote = error.message === noRemoteErrorMessage
 
             const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const notGit = notAGitRepositoryErrorMessage.test(error.message)
 
             let errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
@@ -551,6 +554,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
                         JSON.stringify(error)
                     )
                     await vscode.window.showErrorMessage(
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         `Cody Embeddings — Error resolving embeddings issue: ${error?.message}`
                     )
                 }

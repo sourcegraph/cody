@@ -112,6 +112,7 @@ export class LocalStorage {
             return { chat: {}, input: [] }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         return (history as any)[key]
     }
 

@@ -2,6 +2,7 @@ import { useArgs, useState } from '@storybook/preview-api'
 import { type Meta, type StoryObj } from '@storybook/react'
 
 import {
+    type ContextProvider,
     type LocalEmbeddingsProvider,
     type SearchProvider,
 } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
@@ -35,6 +36,7 @@ const meta: Meta<typeof EnhancedContextSettings> = {
 export default meta
 
 interface SingleTileArgs {
+    isOpen: boolean
     name: string
     kind: 'embeddings' | 'graph' | 'search'
     type: 'local' | 'remote'
@@ -76,7 +78,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
         remoteName: { control: 'text' },
     },
     render: function Render() {
-        const [args, updateArgs] = useArgs()
+        const [args, updateArgs] = useArgs<SingleTileArgs>()
         const [isOpen, setIsOpen] = useState<boolean>(args.isOpen)
 
         const eventHandlers: EnhancedContextEventHandlersT = {
@@ -98,13 +100,14 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                         {
                             name: args.name,
                             providers: [
+                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 {
                                     kind: args.kind,
                                     type: args.type,
                                     state: args.state,
                                     origin: args.origin,
                                     remoteName: args.remoteName,
-                                },
+                                } as ContextProvider,
                             ],
                         },
                     ],

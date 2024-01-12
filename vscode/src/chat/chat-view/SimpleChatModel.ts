@@ -100,7 +100,7 @@ export class SimpleChatModel {
     }
 
     public getLastHumanMessage(): MessageWithContext | undefined {
-        return findLast(this.messagesWithContext, (message: any) => message.message.speaker === 'human')
+        return findLast(this.messagesWithContext, message => message.message.speaker === 'human')
     }
 
     public updateLastHumanMessage(message: Omit<Message, 'speaker'>): void {

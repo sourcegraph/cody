@@ -7,8 +7,6 @@
   "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
   "scripts": {
     "start": "ts-node-transpile-only ./src/app.ts",
-    "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "build": "esbuild ./src/app.ts --bundle --outfile=dist/app.js --external:hnswlib-node --format=cjs --platform=node",
     "build:ts": "tsc --build --emitDeclarationOnly",
     "build:docker": "IMAGE=cody-slack:0.0.1 ./build.sh",

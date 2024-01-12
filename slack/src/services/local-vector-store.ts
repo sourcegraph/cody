@@ -34,6 +34,7 @@ async function getDocuments() {
 const VECTOR_UPDATE_TIMEOUT = 12 * 60 * 60 * 1000
 
 function scheduleVectorUpdate(vectorStore: HNSWLib, timeout: number) {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     setTimeout(async () => {
         try {
             vectorStore._index = undefined
