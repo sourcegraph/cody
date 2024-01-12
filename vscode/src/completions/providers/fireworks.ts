@@ -38,13 +38,12 @@ const EOT_LLAMA_CODE = ' <EOT>'
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
-    // Models in production
+    // Virtual model strings. Cody Gateway will map to an actual model
+    starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
 
-    // Models in evaluation
-    'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
-    'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
+    // Fireworks model identifiers
     'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
@@ -58,11 +57,10 @@ type FireworksModel =
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
+        case 'starcoder':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
-        case 'starcoder-7b':
-        case 'starcoder-3b':
-        case 'starcoder-1b': {
+        case 'starcoder-7b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
             // other providers.
             return 2048
