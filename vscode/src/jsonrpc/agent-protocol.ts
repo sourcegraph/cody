@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
+import { type ChatModelProvider } from '@sourcegraph/cody-shared'
 import type { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import type { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'

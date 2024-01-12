@@ -15,11 +15,11 @@ import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/
 import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler } from './jsonrpc-alias'
 import {
-    WebviewPostMessageParams,
     type ClientInfo,
     type ProgressReportParams,
     type ProgressStartParams,
     type ServerInfo,
+    type WebviewPostMessageParams,
 } from './protocol-alias'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage

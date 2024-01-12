@@ -19,8 +19,8 @@ import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
-import { ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
-import { AuthStatus, type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
+import { type ChatSession } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
+import { type AuthStatus, type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
@@ -30,13 +30,7 @@ import { AgentWebPanels, AgentWebviewPanel } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc-alias'
-import {
-    ClientCapabilities,
-    type AutocompleteItem,
-    type ClientInfo,
-    type ExtensionConfiguration,
-    type RecipeInfo,
-} from './protocol-alias'
+import { type AutocompleteItem, type ClientInfo, type ExtensionConfiguration, type RecipeInfo } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
@@ -580,7 +574,7 @@ export class Agent extends MessageHandler {
                 }
             }
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
+            await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
             return this.createChatPanel(vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]))
         })
 
@@ -758,13 +752,13 @@ export class Agent extends MessageHandler {
             throw new Error(`No webview panel for sessionID ${sessionID}`)
         }
         if (!(webviewPanel instanceof AgentWebviewPanel)) {
-            throw new Error(`Expected AgentWebviewPanel, received ${webviewPanel}`)
+            throw new TypeError(`Expected AgentWebviewPanel, received ${JSON.stringify(webviewPanel)}`)
         }
         if (webviewPanel.chatID === undefined) {
             webviewPanel.chatID = sessionID
         }
         if (sessionID !== webviewPanel.chatID) {
-            throw new Error(
+            throw new TypeError(
                 `Mismatching chatID, (sessionID) ${sessionID} !== ${webviewPanel.chatID} (webviewPanel.chatID)`
             )
         }

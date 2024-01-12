@@ -1,7 +1,7 @@
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
+import { type ChatModelProvider } from '@sourcegraph/cody-shared'
 
 import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 

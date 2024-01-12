@@ -35,8 +35,9 @@ export class AgentGlobalState implements vscode.Memento {
         }
     }
 
-    public async update(key: string, value: any): Promise<void> {
+    public update(key: string, value: any): Promise<void> {
         this.globalStorage.set(key, value)
+        return Promise.resolve()
     }
 
     public setKeysForSync(): void {
