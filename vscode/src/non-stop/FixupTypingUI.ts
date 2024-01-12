@@ -256,8 +256,7 @@ export class FixupTypingUI {
             range,
             args.intent,
             args.mode,
-            source,
-            args.command
+            source
         )
 
         // Return focus to the editor

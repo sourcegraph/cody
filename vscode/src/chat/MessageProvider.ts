@@ -23,6 +23,7 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
+import { type CommandsController } from '../commands/CommandsController'
 import { showAskQuestionQuickPick } from '../commands/utils/menu'
 import { type VSCodeEditor } from '../editor/vscode-editor'
 import { type PlatformContext } from '../extension.common'
@@ -78,6 +79,7 @@ export interface MessageProviderOptions {
     authProvider: AuthProvider
     contextProvider: ContextProvider
     platform: Pick<PlatformContext, 'recipes'>
+    commandsController?: CommandsController
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable {
@@ -101,6 +103,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected authProvider: AuthProvider
     protected readonly contextProvider: ContextProvider
     protected platform: Pick<PlatformContext, 'recipes'>
+    protected commandsController: CommandsController | undefined
 
     protected chatModel: string | undefined = undefined
     protected chatTitle: string | undefined = 'Untitled'
@@ -115,6 +118,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.platform = options.platform
+        this.commandsController = options.commandsController
 
         // Listen to configuration changes to possibly enable Custom Commands
         this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
@@ -557,14 +561,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.sendCodyCommands()
                 break
             case 'menu':
-                await this.editor.controllers.command?.menu('custom')
+                await this.commandsController?.menu('custom')
                 await this.sendCodyCommands()
                 break
             case 'add':
                 if (!type) {
                     break
                 }
-                await this.editor.controllers.command?.configFileAction('add', type)
+                await this.commandsController?.configFileAction('add', type)
                 telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked', undefined, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.addCommandButton', 'clicked')
                 break
@@ -595,11 +599,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 telemetryRecorder.recordEvent(`cody.sidebar.commandConfigMenuButton.${source}`, 'clicked')
                 return vscode.commands.executeCommand('cody.settings.commands')
 
-            case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
+            case /^\/o(pen)?\s/.test(text) && this.commandsController !== undefined:
                 telemetryService.log('CodyVSCodeExtension:command:openFile:executed', eventTrace, { hasV2Event: true })
                 telemetryRecorder.recordEvent('cody.command.openFile', 'executed')
                 // open the user's ~/.vscode/cody.json file
-                return this.editor.controllers.command?.open(text.split(' ')[1])
+                return this.commandsController?.open(text.split(' ')[1])
 
             case /^\/r(eset)?$/.test(text):
                 telemetryService.log('CodyVSCodeExtension:command:resetChat:executed', eventTrace, { hasV2Event: true })
@@ -660,11 +664,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private async sendCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.command?.refresh()
-            const commands = (await this.editor.controllers.command?.getAllCommands(true)) || []
+            await this.commandsController?.refresh()
+            const commands = (await this.commandsController?.getAllCommands(true)) || []
             void this.handleCodyCommands(commands)
         }
-        this.editor.controllers.command?.setMessenger(send)
+        this.commandsController?.setMessenger(send)
         await send()
     }
 

@@ -1,5 +1,3 @@
-import { type ContextFile } from '../codebase-context/messages'
-
 // A list of default cody commands
 export type CodyDefaultCommands = 'ask' | 'doc' | 'edit' | 'explain' | 'smell' | 'test' | 'reset'
 
@@ -12,13 +10,7 @@ export interface CodyCommand {
     type?: CodyCommandType
     slashCommand: string
     mode?: CodyCommandMode
-
-    // internal properties
-    contextFiles?: ContextFile[]
     additionalInput?: string
-    fixup?: {
-        taskID: string
-    }
 }
 
 /**

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
 import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shared/src/commands'
 import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
+import { type VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
@@ -40,7 +40,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor(extensionPath: string) {
+    constructor(
+        private readonly editor: VSCodeEditor,
+        extensionPath: string
+    ) {
         this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
@@ -60,11 +63,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         return !!this.default.get(commandKey)
     }
 
-    public async findCommand(
-        text: string,
-        requestID?: string,
-        contextFiles?: ContextFile[]
-    ): Promise<CodyCommand | null> {
+    public async findCommand(text: string, requestID?: string): Promise<CodyCommand | null> {
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text
@@ -81,7 +80,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         command.additionalInput = commandInput
         command.mode = command.prompt.startsWith('/edit') ? 'edit' : command.mode || 'ask'
         command.requestID = requestID
-        command.contextFiles = contextFiles
         await this.createCodyCommandRunner(command, commandInput)
         return command
     }
@@ -92,7 +90,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         logDebug('CommandsController:createCodyCommandRunner:creating', commandKey)
 
         // Start the command runner
-        const runner = new CommandRunner(command, input)
+        const runner = new CommandRunner(this.editor, command, input)
         this.commandRunners.set(runner.id, runner)
 
         // Save command to command history

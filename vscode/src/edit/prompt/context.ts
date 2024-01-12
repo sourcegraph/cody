@@ -17,7 +17,6 @@ import {
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText, truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { getContextForCommand } from '../../commands/utils/get-context'
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { type EditIntent } from '../types'
 
@@ -127,6 +126,7 @@ const getContextFromIntent = async ({
 
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextFile[]
+    contextMessages?: ContextMessage[]
     editor: VSCodeEditor
     command?: CodyCommand
 }
@@ -134,12 +134,15 @@ interface GetContextOptions extends GetContextFromIntentOptions {
 export const getContext = async ({
     userContextFiles,
     editor,
-    command,
+    contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextMessage[]> => {
-    const derivedContextMessages = command?.context
-        ? await getContextForCommand(editor, command)
-        : await getContextFromIntent({ editor, ...options })
+    // return contextMessages is already provided by the caller
+    if (contextMessages) {
+        return contextMessages
+    }
+
+    const derivedContextMessages = await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []
     for (const file of userContextFiles) {

@@ -1,14 +1,22 @@
+import path from 'path'
+
+import { URI } from 'vscode-uri'
+
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
+import { convertFsPathToTestFile } from '../commands/utils/new-test-file'
+import { doesFileExist } from '../editor-context/helpers'
 import { logError } from '../log'
 import { type FixupController } from '../non-stop/FixupController'
+import { NewFixupFileMap } from '../non-stop/FixupFile'
 import { type FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
 import { type EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
+import { PROMPT_TOPICS } from './prompt/constants'
 import { contentSanitizer } from './utils'
 
 interface EditProviderOptions extends EditManagerOptions {
@@ -58,6 +66,22 @@ export class EditProvider {
                 return Promise.resolve()
             },
         })
+
+        // Listen to file name suggestion from responses
+        // Allows Cody to let us know which file we should add the new content to
+        if (this.config.task.mode === 'file') {
+            let filepath = ''
+            multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+                onResponse: async (content: string) => {
+                    filepath += content
+                    void this.handleFileCreationResponse(filepath, true)
+                    return Promise.resolve()
+                },
+                onTurnComplete: async () => {
+                    return Promise.resolve()
+                },
+            })
+        }
 
         let textConsumed = 0
         this.cancelCompletionCallback = this.config.chat.chat(
@@ -109,6 +133,15 @@ export class EditProvider {
             return
         }
 
+        // If the response finished and we didn't receive file name suggestion,
+        // we will create one manually before inserting the response to the new file
+        if (this.config.task.mode === 'file' && !NewFixupFileMap.get(this.config.task.id)) {
+            if (isMessageInProgress) {
+                return
+            }
+            await this.handleFileCreationResponse('', isMessageInProgress)
+        }
+
         const intentsForInsert = ['add', 'new']
         return intentsForInsert.includes(this.config.task.intent)
             ? this.handleFixupInsert(response, isMessageInProgress)
@@ -158,6 +191,48 @@ export class EditProvider {
                 await this.insertionPromise
             } finally {
                 this.insertionPromise = null
+            }
+        }
+    }
+
+    private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
+        const task = this.config.task
+        // Manually create the file if no name was suggested
+        if (!text.length && !isMessageInProgress) {
+            const cbTestFile = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))?.file?.uri
+                ?.fsPath
+            if (cbTestFile) {
+                const testFsPath = convertFsPathToTestFile(task.fixupFile.uri.fsPath, cbTestFile)
+                const fileExists = await doesFileExist(URI.file(testFsPath))
+                const newFileUri = URI.parse(fileExists ? testFsPath : `untitled:${testFsPath}`)
+                await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
+            }
+            return
+        }
+
+        const opentag = `<${PROMPT_TOPICS.FILENAME}>`
+        const closetag = `</${PROMPT_TOPICS.FILENAME}>`
+        const isCompleted = text.indexOf(closetag)
+
+        const currentFileUri = this.config.task.fixupFile.uri.fsPath
+        const currentFileName = path.basename(currentFileUri)
+        // remove open and close tags from text
+        const newFileName = text.trim().replaceAll(new RegExp(opentag + '(.*)' + closetag, 'g'), '$1')
+        const haveSameExtensions = path.extname(currentFileName) === path.extname(newFileName)
+
+        // Create a new file uri by replacing the file name of the currentFileUri with fileName
+        const newFileFsPath = currentFileUri.replace(currentFileName, newFileName.trim())
+
+        if (isCompleted && haveSameExtensions) {
+            const fileIsFound = await doesFileExist(URI.parse(newFileFsPath))
+            if (!NewFixupFileMap.get(task.id)) {
+                const newFileUri = URI.parse(fileIsFound ? newFileFsPath : `untitled:${newFileFsPath}`)
+                this.insertionPromise = this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
+                try {
+                    await this.insertionPromise
+                } finally {
+                    this.insertionPromise = null
+                }
             }
         }
     }

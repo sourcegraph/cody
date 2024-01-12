@@ -32,6 +32,7 @@ import { ContextWindowLimitError, isRateLimitError } from '@sourcegraph/cody-sha
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { type View } from '../../../webviews/NavBar'
+import { type CommandsController } from '../../commands/CommandsController'
 import { createDisplayTextWithFileLinks, createDisplayTextWithFileSelection } from '../../commands/prompt/display-text'
 import { getContextForCommand } from '../../commands/utils/get-context'
 import { getFullConfig } from '../../configuration'
@@ -94,6 +95,7 @@ interface SimpleChatPanelProviderOptions {
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
     models: ChatModelProvider[]
+    commandsController?: CommandsController
 }
 
 export class SimpleChatPanelProvider implements vscode.Disposable {
@@ -122,6 +124,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly treeView: TreeViewProvider
+    private readonly commandsController?: CommandsController
 
     private history = new ChatHistoryManager()
     private prompter: IPrompter = new DefaultPrompter()
@@ -146,6 +149,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         editor,
         treeView,
         models,
+        commandsController,
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
@@ -159,6 +163,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(this.selectModel(models))
         this.sessionID = this.chatModel.sessionID
+        this.commandsController = commandsController
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -560,7 +565,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 // User has clicked the settings button for commands
                 return vscode.commands.executeCommand('cody.settings.commands')
             }
-            const command = await this.editor.controllers.command?.findCommand(text)
+            const command = await this.commandsController?.findCommand(text)
             if (command) {
                 return this.handleCommands(command, 'chat', requestID)
             }
@@ -949,13 +954,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
             title = title.trim()
             switch (title) {
                 case 'menu':
-                    await this.editor.controllers.command?.menu('custom')
+                    await this.commandsController?.menu('custom')
                     break
                 case 'add':
                     if (!type) {
                         break
                     }
-                    await this.editor.controllers.command?.configFileAction('add', type)
+                    await this.commandsController?.configFileAction('add', type)
                     telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked', undefined, {
                         hasV2Event: true,
                     })
@@ -974,8 +979,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
      */
     private async postCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.command?.refresh()
-            const allCommands = await this.editor.controllers.command?.getAllCommands(true)
+            await this.commandsController?.refresh()
+            const allCommands = await this.commandsController?.getAllCommands(true)
             // HACK: filter out commands that make inline changes and /ask (synonymous with a generic question)
             const prompts =
                 allCommands?.filter(([id, { mode }]) => {
@@ -994,7 +999,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
                 prompts,
             })
         }
-        this.editor.controllers.command?.setMessenger(send)
+        this.commandsController?.setMessenger(send)
         await send()
     }
 

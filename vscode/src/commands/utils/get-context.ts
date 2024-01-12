@@ -1,16 +1,10 @@
-import * as vscode from 'vscode'
-
 import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 
-import { doesFileExist } from '../../editor-context/helpers'
 import { VSCodeEditorContext } from '../../editor-context/VSCodeEditorContext'
 import { type VSCodeEditor } from '../../editor/vscode-editor'
 import { logDebug } from '../../log'
-import { NewFixupFileMap } from '../../non-stop/FixupFile'
 import { extractTestType } from '../prompt/utils'
-
-import { convertFsPathToTestFile } from './new-test-file'
 
 export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCommand): Promise<ContextMessage[]> => {
     logDebug('getContextForCommand', 'getting context')
@@ -57,17 +51,6 @@ export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCo
     if (isUnitTestRequest && contextMessages.length < 2) {
         if (selection?.fileName) {
             contextMessages.push(...(await editorContext.getUnitTestContextMessages(selection, workspaceRootUri)))
-        }
-    }
-
-    // Add the newly generated test file uri to the fixup file map with the task id
-    if (isUnitTestRequest && smartSelection?.fileUri && command.fixup?.taskID) {
-        const codebaseTestFile = contextMessages.find(m => m.file?.fileName.includes('test'))?.file?.fileName
-        if (codebaseTestFile) {
-            const testFsPath = convertFsPathToTestFile(smartSelection?.fileUri.fsPath, codebaseTestFile)
-            const isFileExists = await doesFileExist(vscode.Uri.file(testFsPath))
-            const docUri = vscode.Uri.parse(isFileExists ? testFsPath : `untitled:${testFsPath}`)
-            NewFixupFileMap.set(command.fixup?.taskID, docUri)
         }
     }
 

@@ -7,9 +7,12 @@ import { executeEdit, type ExecuteEditArguments } from '../edit/execute'
 import { type EditIntent, type EditMode } from '../edit/types'
 import { getEditor } from '../editor/active-editor'
 import { getSmartSelection } from '../editor/utils'
+import { type VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+
+import { getContextForCommand } from './utils/get-context'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -28,11 +31,12 @@ export class CommandRunner implements vscode.Disposable {
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
     private kind: string
+    private isFixupRequest = false
 
     constructor(
-        private command: CodyCommand,
-        public instruction?: string,
-        private isFixupRequest?: boolean
+        private readonly vscodeEditor: VSCodeEditor,
+        private readonly command: CodyCommand,
+        public instruction?: string
     ) {
         // use commandKey to identify default command in telemetry
         const commandKey = command.slashCommand
@@ -159,6 +163,8 @@ export class CommandRunner implements vscode.Disposable {
         const intent: EditIntent = this.kind === 'doc' ? 'doc' : this.command.mode === 'file' ? 'new' : 'edit'
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         const source = this.kind === 'custom' ? 'custom-commands' : this.kind
+
+        const contextMessages = await getContextForCommand(this.vscodeEditor, this.command)
         await executeEdit(
             {
                 range,
@@ -166,7 +172,7 @@ export class CommandRunner implements vscode.Disposable {
                 document: doc,
                 intent,
                 mode: this.command.mode as EditMode,
-                command: this.command,
+                contextMessages,
             } satisfies ExecuteEditArguments,
             source as ChatEventSource
         )
@@ -221,5 +227,5 @@ function getDocCommandRange(
 }
 
 function isFixupCommand(command: CodyCommand, instruction?: string): boolean {
-    return command.mode !== 'ask' || instruction?.startsWith('/edit ')
+    return instruction?.startsWith('/edit ') || command.mode !== 'ask'
 }

@@ -11,12 +11,8 @@ import { CodyTaskState } from './utils'
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
     switch (task.state) {
+        case CodyTaskState.pending:
         case CodyTaskState.working: {
-            if (task.command?.slashCommand === '/test') {
-                const title = getGeneratingTestLens(codeLensRange)
-                const cancel = getCancelLens(codeLensRange, task.id)
-                return [title, cancel]
-            }
             const title = getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]

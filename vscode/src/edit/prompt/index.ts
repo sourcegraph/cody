@@ -100,12 +100,12 @@ export const buildInteraction = async ({
             fileName: task.fixupFile.uri.fsPath,
             selectionRange: task.selectionRange,
             userContextFiles: task.userContextFiles,
+            contextMessages: task.contextMessages,
             context,
             editor,
             followingText,
             precedingText,
             selectedText,
-            command: task.command,
         }),
         []
     )

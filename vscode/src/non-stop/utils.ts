@@ -7,6 +7,7 @@ export enum CodyTaskState {
     'applied' = 6,
     'finished' = 7,
     'error' = 8,
+    'pending' = 9,
 }
 
 export type CodyTaskList = {
@@ -60,5 +61,12 @@ export const fixupTaskList: CodyTaskList = {
         id: 'error',
         icon: 'stop',
         description: 'The task failed',
+    },
+    // Use pending to prevent edits being applied before a request has been completed
+    // e.g. an edit is pending for a new file to be created
+    [CodyTaskState.pending]: {
+        id: 'pending',
+        icon: 'sync~spin',
+        description: 'The edit is pending for a response before it can continue',
     },
 }

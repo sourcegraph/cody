@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextFile } from '@sourcegraph/cody-shared'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { type EditIntent, type EditMode } from './types'
 
@@ -9,10 +10,10 @@ export interface ExecuteEditArguments {
     document?: vscode.TextDocument
     instruction?: string
     userContextFiles?: ContextFile[]
+    contextMessages?: ContextMessage[]
     intent?: EditIntent
     range?: vscode.Range
     mode?: EditMode
-    command?: CodyCommand
 }
 
 /**

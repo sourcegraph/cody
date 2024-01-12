@@ -1,7 +1,6 @@
 import path from 'path'
 
 import type * as vscode from 'vscode'
-import { type URI } from 'vscode-uri'
 
 /**
  * A handle to a fixup file. FixupFileWatcher is the factory for these; do not
@@ -41,21 +40,32 @@ export class FixupFile {
 
 class FixupFileUriStore {
     private store
+    private map = new Map<string, string>()
 
     constructor() {
-        this.store = new Map<string, URI>()
+        // taskID <-> test file uri
+        this.store = new Map<string, vscode.Uri>()
     }
 
-    public get(taskID: string): URI | undefined {
+    public get(taskID: string): vscode.Uri | undefined {
         return this.store.get(taskID)
     }
 
-    public set(taskID: string, uri: URI): void {
+    public match(uri: vscode.Uri): string | undefined {
+        return this.map.get(uri.toString())
+    }
+
+    public set(taskID: string, uri: vscode.Uri): void {
         this.store.set(taskID, uri)
+        this.map.set(uri.toString(), taskID)
     }
 
     public delete(taskID: string): void {
+        const uri = this.store.get(taskID)
         this.store.delete(taskID)
+        if (uri) {
+            this.map.delete(uri.toString())
+        }
     }
 }
 

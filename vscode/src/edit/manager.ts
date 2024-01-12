@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommand } from '@sourcegraph/cody-shared'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
@@ -40,7 +39,6 @@ export class EditManager implements vscode.Disposable {
                         intent?: EditIntent
                         document?: vscode.TextDocument
                         mode?: EditMode
-                        command?: CodyCommand
                     },
                     source?: ChatEventSource
                 ) => this.executeEdit(args, source)
@@ -83,7 +81,7 @@ export class EditManager implements vscode.Disposable {
                   args.intent,
                   args.mode,
                   source,
-                  args.command
+                  args.contextMessages
               )
             : await this.controller.promptUserForTask(args, source)
         if (!task) {
