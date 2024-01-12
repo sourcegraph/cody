@@ -304,6 +304,9 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
           object : DumbAwareAction(recipe.title) {
             override fun actionPerformed(e: AnActionEvent) {
               GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked")
+              val editorManager = FileEditorManager.getInstance(project)
+              CodyEditorFactoryListener.Util.informAgentAboutEditorChange(
+                  editorManager.selectedTextEditor)
               sendMessage(project, recipe.title, recipe.id)
             }
           }
