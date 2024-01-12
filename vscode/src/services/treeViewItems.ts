@@ -24,6 +24,8 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+
+    isExperimentalCommand?: string
 }
 
 /**
@@ -163,6 +165,13 @@ const commandsItems: CodySidebarTreeItem[] = [
         icon: 'package',
         command: { command: 'cody.command.generate-tests' },
         description: 'Generate unit tests',
+    },
+    {
+        title: 'Test File',
+        icon: 'package',
+        command: { command: 'cody.command.unit-tests' },
+        description: 'Experimental: Add tests to test file',
+        isExperimentalCommand: 'cody.experimental.commands',
     },
     {
         title: 'Custom',

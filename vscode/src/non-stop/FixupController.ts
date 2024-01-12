@@ -497,7 +497,7 @@ export class FixupController
         // Inform the user about the change if it happened in the background
         // TODO: This will show a new notification for each unique file name.
         // Consider only ever showing 1 notification that opens a UI to display all fixups.
-        if (!visibleEditor) {
+        if (!visibleEditor && task.mode !== 'file') {
             await this.notifyTaskComplete(task)
         }
     }
@@ -777,10 +777,6 @@ export class FixupController
             return
         }
 
-        if (task.state === CodyTaskState.pending) {
-            return
-        }
-
         if (task.state !== CodyTaskState.inserting) {
             this.setTaskState(task, CodyTaskState.inserting)
         }
@@ -819,7 +815,7 @@ export class FixupController
 
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
-        if (!task || task.state === CodyTaskState.pending) {
+        if (!task) {
             return Promise.resolve()
         }
         if (task.state !== CodyTaskState.working) {
@@ -871,6 +867,8 @@ export class FixupController
         const range = new vscode.Range(pos, pos)
         task.selectionRange = range
         task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
+        // Set original text to empty as we are not replacing original text but appending to file
+        task.original = ''
 
         // Show the new document before streaming start
         await vscode.window.showTextDocument(doc, { selection: range, viewColumn: vscode.ViewColumn.Beside })

@@ -12,8 +12,6 @@ import {
     type SymbolKind,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
-import { getFoldingRanges } from '../../editor-context/helpers'
-
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
 
 const findWorkspaceFiles = async (cancellationToken: vscode.CancellationToken): Promise<vscode.Uri[]> => {
@@ -230,28 +228,4 @@ function asRelativePath(uri: vscode.Uri): string {
     relativePath = relativePath.replaceAll(path.posix.sep, path.sep)
 
     return relativePath
-}
-
-/**
- * Gets the line number of the last import statement in the given file URI.
- */
-async function getLastLineOfImports(fileUri: vscode.Uri): Promise<number> {
-    try {
-        const lastImportRange = await getFoldingRanges(fileUri, 'imports', true)
-        const lastImportLineRange = lastImportRange?.[0]
-        if (!lastImportLineRange) {
-            throw new Error('No import ranges found')
-        }
-
-        // Get the line number of the last import statement
-        return lastImportLineRange.end + 1
-    } catch {
-        return 0
-    }
-}
-
-export async function getImportsRange(fileUri: vscode.Uri): Promise<vscode.Range> {
-    // Get the line number of the last import statement
-    const lastImportLine = await getLastLineOfImports(fileUri)
-    return new vscode.Range(0, 0, lastImportLine, 0)
 }

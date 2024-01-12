@@ -36,7 +36,7 @@ export interface CodyCommandContext {
     none?: boolean
 }
 
-export type CodyCommandType = 'workspace' | 'user' | 'default' | 'recently used'
+export type CodyCommandType = CustomCommandType | 'default' | 'recently used' | 'experimental'
 
 export type CustomCommandType = 'workspace' | 'user'
 

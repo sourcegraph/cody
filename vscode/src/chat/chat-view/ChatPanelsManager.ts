@@ -48,6 +48,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     public treeView
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
+    public commandTreeViewProvider = new TreeViewProvider('command', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string }
@@ -73,10 +74,12 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.disposables.push(
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeViewProvider),
             vscode.window.registerTreeDataProvider('cody.support.tree.view', this.supportTreeViewProvider),
-            vscode.window.registerTreeDataProvider(
-                'cody.commands.tree.view',
-                new TreeViewProvider('command', featureFlagProvider)
-            )
+            vscode.window.registerTreeDataProvider('cody.commands.tree.view', this.commandTreeViewProvider),
+            vscode.workspace.onDidChangeConfiguration(async event => {
+                if (event.affectsConfiguration('cody')) {
+                    await this.commandTreeViewProvider.refresh()
+                }
+            })
         )
     }
 

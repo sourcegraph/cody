@@ -212,7 +212,6 @@ export class EditProvider {
 
         const opentag = `<${PROMPT_TOPICS.FILENAME}>`
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
-        const isCompleted = text.indexOf(closetag)
 
         const currentFileUri = this.config.task.fixupFile.uri.fsPath
         const currentFileName = path.basename(currentFileUri)
@@ -223,16 +222,14 @@ export class EditProvider {
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
         const newFileFsPath = currentFileUri.replace(currentFileName, newFileName.trim())
 
-        if (isCompleted && haveSameExtensions) {
+        if (haveSameExtensions && !NewFixupFileMap.get(task.id)) {
             const fileIsFound = await doesFileExist(URI.parse(newFileFsPath))
-            if (!NewFixupFileMap.get(task.id)) {
-                const newFileUri = URI.parse(fileIsFound ? newFileFsPath : `untitled:${newFileFsPath}`)
-                this.insertionPromise = this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
-                try {
-                    await this.insertionPromise
-                } finally {
-                    this.insertionPromise = null
-                }
+            const newFileUri = URI.parse(fileIsFound ? newFileFsPath : `untitled:${newFileFsPath}`)
+            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
+            try {
+                await this.insertionPromise
+            } finally {
+                this.insertionPromise = null
             }
         }
     }

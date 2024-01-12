@@ -179,12 +179,3 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     }
     return lens
 }
-
-function getGeneratingTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(sync~spin) Cody is generating tests...',
-        command: 'cody.focus',
-    }
-    return lens
-}

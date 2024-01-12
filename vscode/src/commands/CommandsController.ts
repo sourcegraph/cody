@@ -8,7 +8,7 @@ import { type VSCodeEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
-import { type MyPrompts } from '.'
+import { type CodyCommandsFile } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -28,9 +28,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     private tools: ToolsProvider
     private custom: CustomPromptsStore
-    public default = new PromptsProvider()
-
-    private myPromptsMap = new Map<string, CodyCommand>()
+    // Provide the default Cody Commands
+    public default
+    // Provide the custom commands from user file system or codebase
+    private userCustomCommandsMap = new Map<string, CodyCommand>()
 
     private lastUsedCommands = new Set<string>()
 
@@ -40,10 +41,15 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
+    private enableExperimentalCommands = false
+
     constructor(
         private readonly editor: VSCodeEditor,
         extensionPath: string
     ) {
+        const config = vscode.workspace.getConfiguration('cody')
+        const enableExperimentalCommands = config.get('cody.experimental.commands', false)
+        this.default = new PromptsProvider(enableExperimentalCommands)
         this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
@@ -53,14 +59,15 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
-    }
 
-    public isCommand(text: string): boolean {
-        const commandSplit = text.split(' ')
-        // The unique key for the command. e.g. /test
-        const commandKey = commandSplit.shift() || text
-
-        return !!this.default.get(commandKey)
+        this.disposables.push(
+            vscode.workspace.onDidChangeConfiguration(async event => {
+                if (event.affectsConfiguration('cody')) {
+                    this.enableExperimentalCommands = enableExperimentalCommands
+                    await this.refresh()
+                }
+            })
+        )
     }
 
     public async findCommand(text: string, requestID?: string): Promise<CodyCommand | null> {
@@ -78,6 +85,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             command.prompt = command.prompt.replace('/ask', '')
         }
         command.additionalInput = commandInput
+        // Default mode to /ask if not specified
         command.mode = command.prompt.startsWith('/edit') ? 'edit' : command.mode || 'ask'
         command.requestID = requestID
         await this.createCodyCommandRunner(command, commandInput)
@@ -96,15 +104,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
-        // Fixup request will be taken care by the fixup recipe in the CommandRunner
-        if (runner.codyCommand?.mode !== 'ask') {
-            return undefined
-        }
-
+        // TODO bee runs tools in runner instead
         // Run shell command if any
         const shellCommand = command.context?.command
         if (shellCommand) {
             await runner.runShell(this.tools.exeCommand(shellCommand))
+        }
+
+        // Fixup request will be taken care by the fixup recipe in the CommandRunner
+        if (runner.codyCommand?.mode !== 'ask') {
+            return undefined
         }
 
         this.commandRunners.delete(runner.id)
@@ -125,7 +134,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Gets the custom prompt configuration by refreshing the store.
      * @returns The custom prompt configuration object containing the prompt map, premade text, and starter text.
      */
-    public async getCustomConfig(): Promise<MyPrompts> {
+    public async getCustomConfig(): Promise<CodyCommandsFile> {
         const myPromptsConfig = await this.custom.refresh()
         return myPromptsConfig
     }
@@ -157,8 +166,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public async refresh(): Promise<void> {
         await this.saveLastUsedCommands()
         const { commands } = await this.custom.refresh()
-        this.myPromptsMap = commands
-        this.default.groupCommands(commands)
+        this.userCustomCommandsMap = commands
+        this.default.groupCommands(commands, this.enableExperimentalCommands)
     }
 
     /**
@@ -336,7 +345,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Allows user to enter the prompt name and prompt description in the input box
      */
     private async addNewUserCommandQuick(): Promise<void> {
-        const newCommand = await showNewCustomCommandMenu(this.myPromptsMap)
+        const newCommand = await showNewCustomCommandMenu(this.userCustomCommandsMap)
         if (!newCommand) {
             return
         }
@@ -460,7 +469,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
         this.fileWatcherDisposables = []
         this.disposables = []
-        this.myPromptsMap = new Map<string, CodyCommand>()
+        this.userCustomCommandsMap = new Map<string, CodyCommand>()
         this.commandRunners = new Map()
         logDebug('CommandsController:dispose', 'disposed')
     }
