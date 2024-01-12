@@ -1104,7 +1104,7 @@
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
-    "@playwright/test": "^1.33.0",
+    "@playwright/test": "1.39.0",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/node-server": "^6.0.6",
@@ -1143,7 +1143,7 @@
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
     "path-browserify": "^1.0.1",
-    "playwright": "^1.33.0",
+    "playwright": "1.39.0",
     "progress": "^2.0.3",
     "semver": "^7.5.4",
     "yaml": "^2.3.4"

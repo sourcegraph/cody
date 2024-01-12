@@ -262,16 +262,34 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         localStorage.setItem(hasOpenedBeforeKey, 'true')
     }
 
+    // Can't point at and use VSCodeCheckBox type with 'ref'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const autofocusTarget = React.useRef<any>(null)
+    React.useEffect(() => {
+        if (isOpen) {
+            autofocusTarget.current?.focus()
+        }
+    }, [isOpen])
+
+    // Can't point at and use VSCodeButton type with 'ref'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const restoreFocusTarget = React.useRef<any>(null)
+    const handleDismiss = React.useCallback(() => {
+        setOpen(false)
+        restoreFocusTarget.current?.focus()
+    }, [setOpen, restoreFocusTarget])
+
     return (
         <div className={classNames(popupStyles.popupHost)}>
-            <PopupFrame
-                isOpen={isOpen}
-                onDismiss={() => setOpen(false)}
-                classNames={[popupStyles.popupTrail, styles.popup]}
-            >
+            <PopupFrame isOpen={isOpen} onDismiss={handleDismiss} classNames={[popupStyles.popupTrail, styles.popup]}>
                 <div className={styles.container}>
                     <div>
-                        <VSCodeCheckbox onChange={enabledChanged} checked={enabled} id="enhanced-context-checkbox" />
+                        <VSCodeCheckbox
+                            onChange={enabledChanged}
+                            checked={enabled}
+                            id="enhanced-context-checkbox"
+                            ref={autofocusTarget}
+                        />
                     </div>
                     <div>
                         <label htmlFor="enhanced-context-checkbox">
@@ -295,6 +313,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 type="button"
                 onClick={() => setOpen(!isOpen)}
                 title="Configure Enhanced Context"
+                ref={restoreFocusTarget}
             >
                 <i className="codicon codicon-sparkle" />
                 {isOpen || hasOpenedBefore ? null : <div className={styles.glowyDot} />}
