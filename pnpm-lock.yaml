@@ -311,9 +311,6 @@ importers:
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
-      x2js:
-        specifier: ^3.4.4
-        version: 3.4.4
     devDependencies:
       '@types/dompurify':
         specifier: ^3.0.2
@@ -7139,11 +7136,6 @@ packages:
 
   /@xmldom/xmldom@0.7.11:
     resolution: {integrity: sha512-UDi3g6Jss/W5FnSzO9jCtQwEpfymt0M+sPPlmLhDH6h2TJ8j4ESE/LpmNPBij15J5NKkk4/cg/qoVMdWI3vnlQ==}
-    engines: {node: '>=10.0.0'}
-    dev: false
-
-  /@xmldom/xmldom@0.8.10:
-    resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
     engines: {node: '>=10.0.0'}
     dev: false
 
@@ -16673,12 +16665,6 @@ packages:
       utf-8-validate:
         optional: true
     dev: true
-
-  /x2js@3.4.4:
-    resolution: {integrity: sha512-yG/ThaBCgnsa3aoMPAe7QwDpcyU4D70hjXC4Y1lZSfD/Tgd0MpE19FnZZRAjekryw0c8cffpOt9zsPEiqktO6Q==}
-    dependencies:
-      '@xmldom/xmldom': 0.8.10
-    dev: false
 
   /xml-name-validator@4.0.0:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
