@@ -34,7 +34,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
 
     let headingTitle
     if (formInput.endsWith('@')) {
-        headingTitle = 'Search for a file to include, or type # to search symbols..'
+        headingTitle = 'Search for a file to include, or type # to search symbols...'
     } else if (formInput.endsWith('@#')) {
         headingTitle = 'Search for a symbol to include...'
     } else if (formInput.match(/@[^ #]+$/)) {

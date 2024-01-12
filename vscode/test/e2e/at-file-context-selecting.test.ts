@@ -17,7 +17,7 @@ test('@-file empty state', async ({ page, sidebar }) => {
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('@')
     await expect(
-        chatPanelFrame.getByRole('heading', { name: 'Search for a file to include, or type # to search symbols..' })
+        chatPanelFrame.getByRole('heading', { name: 'Search for a file to include, or type # to search symbols...' })
     ).toBeVisible()
 
     // No results
