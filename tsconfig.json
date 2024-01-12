@@ -34,7 +34,6 @@
     { "path": "slack" },
     { "path": "vscode" },
     { "path": "vscode/test/integration" },
-    { "path": "vscode/scripts" },
-    { "path": "web" }
+    { "path": "vscode/scripts" }
   ]
 }
