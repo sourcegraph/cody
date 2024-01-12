@@ -11,6 +11,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Fixes an issue where the context retriever would truncate the results too aggressively. [pull/2652](https://github.com/sourcegraph/cody/pull/2652)
 - Autocomplete: Improve the stability of multiline completion truncation during streaming by gracefully handling missing brackets in incomplete code segments. [pull/2682](https://github.com/sourcegraph/cody/pull/2682)
 - Autocomplete: Improves the jaccard similarity retriever to find better matches. [pull/2662](https://github.com/sourcegraph/cody/pull/2662)
+- Edit: Fixes an issue where concurrent applying edits could result in the incorrect insertion point for a new edit. [pull/2707](https://github.com/sourcegraph/cody/pull/2707)
 
 ### Changed
 
