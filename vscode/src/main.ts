@@ -453,7 +453,7 @@ const register = async (
         }
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In To Use Cody',
+                title: 'Sign In to Use Cody',
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {

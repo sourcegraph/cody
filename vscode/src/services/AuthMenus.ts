@@ -87,8 +87,8 @@ export async function showAccessTokenInputBox(endpoint: string): Promise<string 
 
 export const AuthMenuOptions = {
     signin: {
-        title: 'Other Sign in Options',
-        placeholder: 'Choose a sign in option',
+        title: 'Other Sign-in Options',
+        placeholder: 'Choose a sign-in option',
     },
     switch: {
         title: 'Switch Account',
@@ -99,20 +99,20 @@ export const AuthMenuOptions = {
 export const LoginMenuOptionItems = [
     {
         id: 'enterprise',
-        label: 'Sign in to Sourcegraph Enterprise instance',
+        label: 'Sign In to Sourcegraph Enterprise Instance',
         description: 'v5.1 and above',
         totalSteps: 1,
         picked: true,
     },
     {
         id: 'token',
-        label: 'Sign in to Sourcegraph Enterprise instance via Access Token',
+        label: 'Sign In to Sourcegraph Enterprise Instance with Access Token',
         description: 'v5.0 and above',
         totalSteps: 2,
     },
     {
         id: 'token',
-        label: 'Sign in with URL and Access Token',
+        label: 'Sign In with URL and Access Token',
         totalSteps: 2,
     },
 ]
