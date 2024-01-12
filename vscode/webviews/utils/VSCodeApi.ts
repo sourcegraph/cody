@@ -28,7 +28,6 @@ export function getVSCodeAPI(): VSCodeWrapper {
             postMessage: message => vsCodeApi.postMessage(message),
             onMessage: callback => {
                 const listener = (event: MessageEvent<ExtensionMessage>): void => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))
                 }
                 window.addEventListener('message', listener)

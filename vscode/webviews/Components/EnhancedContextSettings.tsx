@@ -263,7 +263,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     }
 
     // Can't point at and use VSCodeCheckBox type with 'ref'
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
@@ -272,7 +272,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     }, [isOpen])
 
     // Can't point at and use VSCodeButton type with 'ref'
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)

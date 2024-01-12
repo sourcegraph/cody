@@ -20,7 +20,6 @@ export class FixupScheduler implements FixupIdleTaskRunner {
 
     /**
      * Schedules a callback which will run when the event loop is idle.
-     *
      * @param callback the callback to run.
      */
     public scheduleIdle<T>(worker: () => T): Promise<T> {

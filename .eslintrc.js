@@ -33,6 +33,9 @@ const config = {
     'unicorn/prefer-top-level-await': 'off',
     'unicorn/prefer-dom-node-remove': 'off',
     'ban/ban': 'off',
+
+    '@typescript-eslint/no-explicit-any': 'off',
+
     '@typescript-eslint/consistent-type-exports': [
       'error',
       {
@@ -52,6 +55,13 @@ const config = {
       files: ['*.d.ts'],
       rules: {
         'no-restricted-imports': 'off',
+      },
+    },
+    {
+      files: '*.test.ts?(x)',
+      rules: {
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
       },
     },
     {
