@@ -2,7 +2,6 @@ packages:
   - e2e-inspector
   - e2e
   - agent
-  - cli
   - lib/*
   - vscode
   - completions-review-tool

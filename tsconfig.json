@@ -28,7 +28,6 @@
     { "path": "e2e-inspector" },
     { "path": "e2e" },
     { "path": "agent" },
-    { "path": "cli" },
     { "path": "lib/shared" },
     { "path": "lib/ui" },
     { "path": "vscode" },
