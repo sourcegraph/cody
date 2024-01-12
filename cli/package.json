@@ -11,8 +11,6 @@
   },
   "scripts": {
     "start": "pnpm run --silent build && dist/cody",
-    "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "vitest",
     "build": "esbuild ./src/program.ts --bundle --outfile=dist/cody --platform=node --log-level=warning --alias:vscode=../agent/src/vscode-shim.ts",
     "build-ts": "tsc --build --emitDeclarationOnly",

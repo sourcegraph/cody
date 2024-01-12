@@ -37,6 +37,7 @@ http.createServer((req, res) => {
         console.log('>', req.url)
         console.log(payload)
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const mockedResponse = (endpoints as any)[req.url as any]
         if (mockedResponse) {
             console.log('<', mockedResponse)

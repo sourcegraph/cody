@@ -22,3 +22,4 @@ export const CodyLogo = React.memo(() => (
         />
     </svg>
 ))
+CodyLogo.displayName = 'CodyLogo'

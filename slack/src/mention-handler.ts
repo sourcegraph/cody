@@ -62,6 +62,7 @@ async function restoreTranscriptFromSlackThread(
     const transcript = new Transcript()
 
     const mergedMessages = mergeSequentialUserMessages(messages)
+
     const newHumanMessage = mergedMessages.pop()!
 
     mergedMessages.forEach(message => {

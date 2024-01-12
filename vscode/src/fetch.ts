@@ -32,8 +32,9 @@ export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Bro
         init.headers = headers
     }
 
-    return isomorphicFetch(input, {
+    const initWithAgent: RequestInit & { agent: (typeof agent)['current'] } = {
         ...init,
         agent: agent.current,
-    } as RequestInit)
+    }
+    return isomorphicFetch(input, initWithAgent)
 }

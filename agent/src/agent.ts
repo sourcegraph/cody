@@ -95,12 +95,13 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
                 secretStorage.set(key, value)
                 return Promise.resolve()
             },
-            delete(key) {
+            delete() {
                 return Promise.resolve()
             },
         },
         storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
+
         workspaceState: {} as any,
         globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: paths.data,
@@ -382,6 +383,7 @@ export class Agent extends MessageHandler {
                 await client.executeRecipe(data.id, {
                     signal: abortController.signal,
                     humanChatInput: data.humanChatInput,
+
                     data: data.data,
                 })
             } catch (error) {
@@ -617,7 +619,10 @@ export class Agent extends MessageHandler {
             }
             const panel = this.webPanels.panels.get(id)
             if (!panel) {
-                return Promise.resolve({ type: 'errors', errors: `No panel with id ${id} found` } as ExtensionMessage)
+                return Promise.resolve({
+                    type: 'errors',
+                    errors: `No panel with id ${id} found`,
+                } satisfies ExtensionMessage)
             }
             if (panel.isMessageInProgress) {
                 throw new Error('Message is already in progress')

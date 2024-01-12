@@ -120,6 +120,7 @@ function downloadFile(url: string): Promise<WriteStream> {
 
             res.on('data', (chunk): void => {
                 file.write(chunk)
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 progress.tick(chunk.length)
             })
                 .on('end', () => {

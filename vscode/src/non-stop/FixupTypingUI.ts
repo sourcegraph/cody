@@ -138,6 +138,7 @@ export class FixupTypingUI {
 
         // VS Code automatically sorts quick pick items by label.
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ;(quickPick as any).sortByLabel = false
 
         if (source === 'menu') {

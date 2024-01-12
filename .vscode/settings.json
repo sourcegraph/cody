@@ -20,11 +20,12 @@
   "typescript.tsc.autoDetect": "off",
   "typescript.tsdk": "node_modules/typescript/lib",
   "task.allowAutomaticTasks": "on",
-  "eslint.lintTask.enable": false,
+  "eslint.lintTask.enable": true,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll": "explicit"
   },
+  "eslint.rules.customizations": [{ "rule": "*", "severity": "error" }],
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "[typescriptreact]": {

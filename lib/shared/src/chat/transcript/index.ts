@@ -229,10 +229,11 @@ export class Transcript {
         contextFiles: ContextFile[],
         preciseContexts: PreciseContext[] = []
     ): void {
-        if (this.interactions.length === 0) {
+        const lastInteraction = this.interactions.at(-1)
+        if (!lastInteraction) {
             throw new Error('Cannot set context files for empty transcript')
         }
-        this.interactions.at(-1)!.setUsedContext(contextFiles, preciseContexts)
+        lastInteraction.setUsedContext(contextFiles, preciseContexts)
     }
 
     public toChat(): ChatMessage[] {
