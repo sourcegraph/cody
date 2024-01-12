@@ -28,11 +28,6 @@ vi.mock('vscode', () => ({
             return null
         },
     },
-    window: {
-        ...vsCodeMocks.window,
-        visibleTextEditors: [],
-        tabGroups: { all: [] },
-    },
 }))
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
@@ -51,6 +46,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     siteHasCodyEnabled: true,
     siteVersion: '1234',
     primaryEmail: 'heisenberg@exmaple.com',
+    username: 'uwu',
     displayName: 'w.w.',
     avatarURL: '',
     userCanUpgrade: false,
@@ -68,10 +64,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+
             statusBar: null as any,
             providerConfig: createProviderConfig({
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
             }),
             triggerNotice: null,
@@ -615,7 +610,7 @@ describe('InlineCompletionItemProvider', () => {
                     canUpgrade
                         ? expect.objectContaining({
                               title: 'Upgrade to Continue Using Cody Autocomplete',
-                              description: "You've used all 1234 autocompletions for the month.",
+                              description: "You've used all autocompletions for the month.",
                           })
                         : expect.objectContaining({
                               title: 'Cody Autocomplete Disabled Due to Rate Limit',

@@ -112,9 +112,11 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
 async function unzipBfg(zipFile: string, destinationDir: string): Promise<void> {
     const zip = fs.createReadStream(zipFile).pipe(unzipper.Parse({ forceStream: true }))
     for await (const entry of zip) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         if (entry.path.endsWith('/')) {
             continue
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         entry.pipe(fs.createWriteStream(path.join(destinationDir, entry.path)))
     }
 }
@@ -129,6 +131,7 @@ async function downloadBfgBinary(url: string, destination: string): Promise<void
     })
 
     const stream = fs.createWriteStream(destination)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     response.data.pipe(stream)
 
     await new Promise((resolve, reject) => {

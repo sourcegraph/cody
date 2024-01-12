@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable import/no-duplicates */
 /* eslint-disable @typescript-eslint/no-empty-function */
@@ -730,6 +727,8 @@ export const vsCodeMocks = {
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
         onDidChangeActiveTextEditor() {},
         createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
+        visibleTextEditors: [],
+        tabGroups: { all: [] },
     },
     commands: {
         registerCommand: () => ({ dispose: () => {} }),

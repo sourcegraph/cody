@@ -24,7 +24,7 @@ export class RateLimitError extends Error {
     public readonly retryMessage: string | undefined
 
     constructor(
-        public readonly feature: string,
+        public readonly feature: 'autocompletions' | 'chat messages and commands',
         public readonly message: string,
         /* Whether an upgrade is available that would increase rate limits. */
         public readonly upgradeIsAvailable: boolean,
@@ -33,12 +33,7 @@ export class RateLimitError extends Error {
         public readonly retryAfter?: string | null
     ) {
         super(message)
-        if (upgradeIsAvailable) {
-            this.userMessage = `You've used all${limit ? ` ${limit}` : ''} ${feature} for the month.`
-        } else {
-            // Don't display Pro & Enterprise’s fair use limit numbers, as they're for abuse protection only
-            this.userMessage = `You've used all ${feature} for today.`
-        }
+        this.userMessage = `You've used all ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + parseInt(retryAfter, 10) * 1000)
@@ -55,6 +50,7 @@ In particular, 'autocomplete/execute' in `agent.ts` and was affected.
 It was required to add `(error as any)?.name === RateLimitError.errorName`.
  *  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 

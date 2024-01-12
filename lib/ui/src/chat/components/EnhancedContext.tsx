@@ -30,10 +30,6 @@ export const EnhancedContext: React.FunctionComponent<{
         if (uniqueFiles.has(file.fileName)) {
             return false
         }
-        // Skip files added by user. e.g. @-files
-        if (file.source === 'user') {
-            return false
-        }
         uniqueFiles.add(file.fileName)
         return true
     })

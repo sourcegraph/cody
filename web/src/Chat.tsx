@@ -24,7 +24,6 @@ interface ChatProps
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -39,7 +38,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         setMessageBeingEdited={noop}
         messageInProgress={messageInProgress}
         transcript={transcript}
-        contextStatus={contextStatus}
         formInput={formInput}
         setFormInput={setFormInput}
         inputHistory={inputHistory}

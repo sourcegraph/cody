@@ -9,6 +9,7 @@ const { PORT } = ENVIRONMENT_CONFIG
 
 async function createAppContext() {
     // Init codebase context clients for specified Slack channels.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const appContext = { codebaseContexts: {} } as AppContext
     for (const codebase of DEFAULT_CODEBASES) {
         appContext.codebaseContexts[codebase] = await createCodebaseContext(

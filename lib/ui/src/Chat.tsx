@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import {
     isDefined,
     type ChatButton,
-    type ChatContextStatus,
     type ChatMessage,
     type ChatModelProvider,
     type CodyCommand,
@@ -15,7 +14,6 @@ import {
 
 import { type CodeBlockMeta } from './chat/CodeBlocks'
 import { type FileLinkProps } from './chat/components/EnhancedContext'
-import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { type SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
 import { type TranscriptItemClassNames } from './chat/TranscriptItem'
@@ -27,14 +25,11 @@ interface ChatProps extends ChatClassNames {
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
-    contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string, submitType: ChatSubmitType, userContextFiles?: Map<string, ContextFile>) => void
-    contextStatusComponent?: React.FunctionComponent<any>
-    contextStatusComponentProps?: any
     gettingStartedComponent?: React.FunctionComponent<any>
     gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
@@ -174,7 +169,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     messageBeingEdited,
     setMessageBeingEdited,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -209,8 +203,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerification = false,
     codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
-    contextStatusComponent: ContextStatusComponent,
-    contextStatusComponentProps = {},
     gettingStartedComponent: GettingStartedComponent,
     gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
@@ -649,12 +641,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         }
                     />
                 </div>
-                {!EnhancedContextSettings && ContextStatusComponent && (
-                    <ContextStatusComponent {...contextStatusComponentProps} />
-                )}
-                {!EnhancedContextSettings && !ContextStatusComponent && contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
-                )}
             </form>
         </div>
     )

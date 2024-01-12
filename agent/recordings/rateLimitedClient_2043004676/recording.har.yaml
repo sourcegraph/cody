@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: b4a608bdb7b328f3aa319bb4d2aa720d
+    - _id: e165d1526a4b74e8eb512ee50e8f06e4
       _order: 0
       cache: {}
       request:
@@ -38,7 +38,7 @@ log:
                 text: sqrt(9)
               - speaker: assistant
             model: anthropic/claude-2.0
-            temperature: 0.2
+            temperature: 0
             topK: -1
             topP: -1
         queryString: []
@@ -57,21 +57,21 @@ log:
             value: "0"
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: retry-after
-            value: "0"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 8021f57f24a9cc23d041b6fbcf88a00d
+            value: e3280902f3d7c7e5307db550c8425e2c
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -158,18 +158,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 212
-          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZjCzQQBAAA="]'
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: anthropic/claude-2.0
-                  chatModelMaxTokens: 12000
-                  completionModel: anthropic/claude-instant-1
-                  completionModelMaxTokens: 9000
-                  fastChatModel: anthropic/claude-instant-1
-                  fastChatModelMaxTokens: 9000
+          size: 219
+          text: '["H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140fnhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//w==","AwCpmMLNBAEAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -180,6 +170,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -268,13 +260,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 128
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: sourcegraph
+          size: 131
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//","AwAfFAXARQAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -285,6 +272,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -319,7 +308,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bc9d710017cb613b863131822d75d5c7
+    - _id: b97b51a84cc5c39d12d228fd1e107fa1
       _order: 0
       cache: {}
       request:
@@ -339,7 +328,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "233"
+            value: "227"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -362,8 +351,8 @@ log:
                       id
                       hasVerifiedEmail
                       displayName
+                      username
                       avatarURL
-                      codyProEnabled
                       primaryEmail {
                           email
                       }
@@ -378,18 +367,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: '["H4sIAAAAAAAAAzTOS07DMBSF4b3ccR5CtFWwVIkIOqhUhVcTwai6sS+JixOntmORRFkMa2FjKAJm59eZfBMIdAhsAt4bQ63LLZklpQAGxWum+Fl/Phzzq2zkWwigRluQke+SxK5BqYA501MAQtpO4ZBhQ8Dg/vvLSwEBoEeHJn8+AIPauc6yOFb1dVRpXSnqLRmuW0eti7huYozTuyrRfJ+uQn1SSXcJ+/Cc1i9qr9ero3kqXFJs6K0c/aXpw/pUbu3NJuQQANdieDR612KpSPyrOiMbNMOfdAL6HSDQSxF5siMp7e34IW+r5VoUMM/z/AMAAP//AwAIjrPLGAEAAA=="]'
-          textDecoded:
-            data:
-              currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocIA4-o_l8pq-u-jAhSlIo54TrQVt8V6eYbzvqmu-h_b=s96-c
-                codyProEnabled: true
-                displayName: Dávid
-                hasVerifiedEmail: true
-                id: VXNlcjoxOTU1Nzc=
-                primaryEmail:
-                  email: david.veszelovszki@gmail.com
+          size: 347
+          text: '["H4sIAAAAAAAAA2yOzUrDQBSF3+Wu84PYljhQMGgXBYmoTdBVuZ25JlNnMunMZLAJeRifxReT0C7dnR8O5xtBoEdgI/DeWmp96cjOVgpgUL0Xih/N9/OuvCkGvoYIGnQVWfkpSWw0SgXM254iENJ1Cs8FagIGj78/QQqIoHdk20smMEiRBHIDKRPc8CUhAgzo0ZavT8Cg8b5zLE1Vc5vUxtSK5jU3rafWJ9zoFNP8oc4M3+aL2OxV1p3iPj7mzZvamuViZ18qn1Ur+jgM4aT7uNkf1u5uFXOIoLNSoz1fmUegi/iH6r6eq/kPpmma/gAAAP//","AwAWfOcnIgEAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -400,6 +379,112 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c24c1c5c8d214fde2fe90194baba56ed
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: rateLimitedClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "115"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentUserCodyProEnabled {
+                  currentUser {
+                      codyProEnabled
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentUserCodyProEnabled
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentUserCodyProEnabled
+      response:
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 100
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlZKLi0qSs0rCS1OLQJz81MqA4ryXfMSk3JSU5SsSopKU2trawEAAAD//wMAqqwCpjAAAAA="]'
+          textDecoded:
+            data:
+              currentUser:
+                codyProEnabled: true
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -496,6 +581,8 @@ log:
             value: "38"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -590,100 +677,8 @@ log:
             value: "37"
           - name: connection
             value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 6da3ef8e96a914f2db1f9ebf28035fb2
-      _order: 0
-      cache: {}
-      request:
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token REDACTED
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: rateLimitedClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "160"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-        headersSize: 0
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query EvaluateFeatureFlag($flagName: String!) {
-                      evaluateFeatureFlag(flagName: $flagName)
-                  }
-            variables:
-              flagName: cody-pro
-        queryString:
-          - name: EvaluateFeatureFlag
-            value: null
-        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
-      response:
-        content:
-          mimeType: application/json
-          size: 37
-          text: '{"data":{"evaluateFeatureFlag":true}}'
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 05 Jan 2024 11:11:11 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "37"
-          - name: connection
-            value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -778,6 +773,8 @@ log:
             value: "38"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -872,6 +869,8 @@ log:
             value: "38"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -957,11 +956,19 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 444
-          text: '["H4sIAAAAAAAAA6xRW24bMQy8i77DC/gAuUTRD640KzHRShuSsndh+O6BjQKFW9hBgHxzXpw5h8TO4XAOOHId7EivYB+K18rZwuHXOTReEA4h9rRTLOy09PhODvPwEq4shMPM1XB5uQfz8B77slY4KPbm2JymOdMiG9Jj8lT7RCtnkJ3EYyFWsJGVrh6H22OmSW5jJRt6xE5oPNVnRreUq/a/CNdxpwfWWKjhRO/YT12fiCk7qMoiboQtAgmJ5q63pqTlhyaOigWuO2Fbu/pD4P+lJrHri6SIe6zSMvWZVsVR+jBSfAzYs76uoyib001RuDnZ3pw3KpJLlVzuk389syvHb1ISZh7VyZw19gSlsk8qiawPjcjKa/l6Q3qDT8rS7Dv97Y0XibSM6lKlgf6cpDf7iR/+yfL7cvkEAAD//wMASs0t4XIDAAA="]'
+          size: 452
+          text: '["H4sIAAAAAAAAA6ySQW7jMAxF76J1eYEcoJcouqClb4mtLHlIKrER5O5FZwq0QZFkM2t+PvLz8xwSO4fDOeDIdbAjPYN9KJ4rZwuHl3NovCAcQuxpJx7eY1/WCgelvfEikZZRXao00FdJerPwFD6JCIeZq+HydA1atX8rXMdPgbKDqiziRtgikJBo7koOc2n5ZqOBNRZqONE79lPX9GCLWNhp6fH9L/qB+Mp77M2xOU1zpkU23Jk01T7RyhlkJ/FYiBVsZKWrx+F3LmWS21jJhh6xExpPFXctNVc2/xeDcHOyvTlvVCSXKrlcX++xy4SZR3UyZ409Qansk0q6mcBvhCvH/zSVrA+NyMpruc1zVCxw3Qnb2tXv77pqpzf4pCw/f/ahrST2mQYp4h6rtEx9plVxlD6MFH8G7He0r5fLBwAAAP//AwBVv5cKcgMAAA=="]'
           textDecoded:
             data:
               evaluatedFeatureFlags:
+                - name: cody-autocomplete-dynamic-multiline-completions
+                  value: false
+                - name: cody-pro
+                  value: true
+                - name: rate-limits-exceeded-for-testing
+                  value: true
+                - name: search-new-keyword
+                  value: false
                 - name: cody-chat-mock-test
                   value: false
                 - name: cody-autocomplete-context-bfg-mixed
@@ -970,28 +977,20 @@ log:
                   value: false
                 - name: signup-survey-enabled
                   value: false
-                - name: cody-pro
-                  value: true
-                - name: search-new-keyword
-                  value: false
-                - name: rate-limits-exceeded-for-testing
-                  value: true
-                - name: telemetry-export
-                  value: true
-                - name: cody-autocomplete-disable-recycling-of-previous-requests
-                  value: false
                 - name: contrast-compliant-syntax-highlighting
                   value: false
+                - name: cody-autocomplete-default-starcoder-hybrid
+                  value: true
                 - name: cody-autocomplete-tracing
                   value: false
                 - name: cody-autocomplete-default-starcoder-hybrid-sourcegraph
                   value: false
+                - name: telemetry-export
+                  value: true
                 - name: cody-pro-jetbrains
                   value: true
-                - name: cody-autocomplete-dynamic-multiline-completions
+                - name: cody-autocomplete-disable-recycling-of-previous-requests
                   value: false
-                - name: cody-autocomplete-default-starcoder-hybrid
-                  value: true
         cookies: []
         headers:
           - name: date
@@ -1002,6 +1001,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1115,6 +1116,8 @@ log:
             value: "26"
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1147,7 +1150,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 8b1d3e6611c711a5af2e145069c311ac
+    - _id: cfd63f4827acb03e3e51f65d9fc0d0af
       _order: 0
       cache: {}
       request:
@@ -1201,7 +1204,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.0.5
+                    clientVersion: 1.1.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1227,6 +1230,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1261,7 +1266,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c63cf23de38703e896ef70b35a6908a4
+    - _id: 2b1f22fb4872a677facadef9efb4ea2d
       _order: 0
       cache: {}
       request:
@@ -1315,7 +1320,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.0.5
+                    clientVersion: 1.1.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -1324,13 +1329,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 119
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1431,13 +1431,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 148
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8DAP+HlYJUAAAA"]'
-          textDecoded:
-            data:
-              repository:
-                embeddingExists: true
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 155
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VdJRSc5NSU1Iy89JdKzKLS4qVrEqKSlNra2sBAAAA//8=","AwD/h5WCVAAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -1448,6 +1443,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1535,8 +1532,12 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 123
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          size: 120
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          textDecoded:
+            data:
+              repository:
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
         cookies: []
         headers:
           - name: date
@@ -1547,6 +1548,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1657,6 +1660,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1743,8 +1748,12 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 142
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkp","pcklYalFxZn5eUpWSkam5gbmFvFGBkYmugaGugaW8aZ6RrppKcZGxmYWqYaWpklKtbW1AAAAAP//","AwCEdlSPSQAAAA=="]'
+          size: 136
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkam5qZGFvFGBkYmugaGuoaG8aZ6RroGlgZmxmmplpYpRqlKtbW1AAAAAP//AwDzjpyXSQAAAA=="]'
+          textDecoded:
+            data:
+              site:
+                productVersion: 257528_2024-01-11_5.2-09063fe99d2e
         cookies: []
         headers:
           - name: date
@@ -1755,6 +1764,8 @@ log:
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin

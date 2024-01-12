@@ -51,7 +51,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     public commandTreeViewProvider = new TreeViewProvider('command', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string }
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
 
     protected disposables: vscode.Disposable[] = []
 
@@ -84,24 +84,21 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        this.supportTreeViewProvider.syncAuthStatus(authStatus)
-        if (!authStatus.isLoggedIn) {
-            this.disposePanels()
-        } else if (
-            this.currentAuthAccount &&
-            (this.currentAuthAccount.endpoint !== authStatus.endpoint ||
-                this.currentAuthAccount.primaryEmail !== authStatus.primaryEmail)
-        ) {
+        const hasLoggedOut = !authStatus.isLoggedIn
+        const hasSwitchedAccount = this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
+        if (hasLoggedOut || hasSwitchedAccount) {
             this.disposePanels()
         }
 
         this.currentAuthAccount = {
             endpoint: authStatus.endpoint ?? '',
             primaryEmail: authStatus.primaryEmail,
+            username: authStatus.username,
         }
 
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         await this.updateTreeViewHistory()
+        this.supportTreeViewProvider.syncAuthStatus(authStatus)
     }
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {
@@ -304,12 +301,19 @@ export class ChatPanelsManager implements vscode.Disposable {
         }
     }
 
+    // Dispose all open panels
     private disposePanels(): void {
-        // Dispose all open panels
-        this.panelProvidersMap.forEach(provider => {
+        // dispose activePanelProvider if exists
+        const activePanelID = this.activePanelProvider?.sessionID
+        if (activePanelID) {
+            this.disposeProvider(activePanelID)
+        }
+        // loop through the panel provider map
+        const panelsProvider = Array.from(this.panelProvidersMap.values())
+        for (const provider of panelsProvider) {
             provider.webviewPanel?.dispose()
             provider.dispose()
-        })
+        }
         this.panelProvidersMap.clear()
         void this.updateTreeViewHistory()
     }

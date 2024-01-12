@@ -1,7 +1,6 @@
 import { type URI } from 'vscode-uri'
 
 import { type ActiveTextEditorSelectionRange, type ChatModelProvider, type ContextFile } from '@sourcegraph/cody-shared'
-import { type ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { type RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { type ChatMessage, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { type EnhancedContextContextT } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
@@ -88,11 +87,15 @@ export type WebviewMessage =
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
-          uriJSON: unknown
+          uri: URI
           range: { start: { line: number; character: number }; end: { line: number; character: number } }
       }
     | {
           command: 'reset'
+      }
+    | {
+          command: 'attribution-search'
+          snippet: string
       }
 
 /**
@@ -102,8 +105,6 @@ export type ExtensionMessage =
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean; chatID: string }
-    // TODO(dpc): Remove classic context status when enhanced context status encapsulates the same information.
-    | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
@@ -115,6 +116,15 @@ export type ExtensionMessage =
     | { type: 'update-search-results'; results: SearchPanelFile[]; query: string }
     | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; context: EnhancedContextContextT }
+    | {
+          type: 'attribution'
+          snippet: string
+          attribution?: {
+              repositoryNames: string[]
+              limitHit: boolean
+          }
+          error?: string
+      }
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -143,7 +153,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
  * verified email.
  */
 export interface AuthStatus {
-    username?: string
+    username: string
     endpoint: string | null
     isDotCom: boolean
     isLoggedIn: boolean
@@ -156,7 +166,7 @@ export interface AuthStatus {
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
     primaryEmail: string
-    displayName: string
+    displayName?: string
     avatarURL: string
     /**
      * Whether the users account can be upgraded.
@@ -180,6 +190,7 @@ export const defaultAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -196,6 +207,7 @@ export const unauthenticatedStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
@@ -212,6 +224,7 @@ export const networkErrorAuthStatus = {
     siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
+    username: '',
     primaryEmail: '',
     displayName: '',
     avatarURL: '',

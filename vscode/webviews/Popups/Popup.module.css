@@ -1,4 +1,15 @@
+.backdrop {
+    position: absolute;
+    inset: -100vh -100vw;
+    width: 200vw;
+    height: 200vh;
+    z-index: 1;
+    background-color: rgba(0 0 0 0.01);
+}
+
 .popup {
+    z-index: 2;
+
     --notice-border-radius: 6px;
     text-align: left;
     box-sizing: border-box;
@@ -24,6 +35,8 @@
 }
 
 .pointy-bit {
+    z-index: 3;
+
     position: absolute;
     left: calc(50% - 6px);
     bottom: 100%;
@@ -38,8 +51,6 @@
     border-bottom: 1px solid var(--vscode-widget-border);
 
     /* no box shadow on this, it relies on overlapping the rest of the popup */
-
-    z-index: 1;
 }
 
 .popup-host {
@@ -52,14 +63,6 @@
     gap: 4px;
 }
 
-.row > .notice-close {
-    flex-grow: 0;
-}
-
-.row > :not(.notice-close) {
-    flex-grow: 1;
-}
-
 .action-button-container :nth-last-child(-n + 1) {
     background-color: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
@@ -68,11 +71,6 @@
 
 .action-button-container :nth-last-child(-n + 1):hover {
     background-color: var(--vscode-button-secondaryHoverBackground);
-}
-
-.notice-close {
-    margin-top: -5px;
-    margin-right: -5px;
 }
 
 .popup h1,

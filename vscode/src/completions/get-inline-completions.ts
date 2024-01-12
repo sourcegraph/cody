@@ -143,7 +143,6 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
@@ -295,7 +294,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             position,
             docContext,
             abortSignal,
-            maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+            maxChars: providerConfig.contextSizeHints.totalChars,
         })
     })
     if (abortSignal?.aborted) {

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type * as vscode from 'vscode'
 
 import { TextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'

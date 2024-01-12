@@ -89,7 +89,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         )
     })
 
-    it('ignore repeated file names that are followed by another character', () => {
+    it('ignores repeated file names that are followed by another character', () => {
         const text = 'Compare and explain @foo.js and @bar.js. What does @foo.js#FooBar() do?'
 
         const result = replaceFileNameWithMarkdownLink(text, '@foo.js', '/path/foo.js', 10)

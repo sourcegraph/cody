@@ -172,12 +172,23 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                             currentUser: {
                                 id: 'u',
                                 hasVerifiedEmail: true,
-                                codyProEnabled: false,
                                 displayName: 'Person',
+                                username: 'person',
                                 avatarURL: '',
                                 primaryEmail: {
                                     email: 'person@company.comp',
                                 },
+                            },
+                        },
+                    })
+                )
+                break
+            case 'CurrentUserCodyProEnabled':
+                res.send(
+                    JSON.stringify({
+                        data: {
+                            currentUser: {
+                                codyProEnabled: false,
                             },
                         },
                     })

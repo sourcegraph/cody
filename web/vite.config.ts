@@ -1,19 +1,13 @@
-/// <reference types="vitest" />
-
 import { resolve } from 'path'
 
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
 
-export default defineConfig({
+import { defineProjectWithDefaults } from '../.config/viteShared'
+
+export default defineProjectWithDefaults(__dirname, {
     plugins: [react()],
     publicDir: 'resources',
     base: './',
-    css: {
-        modules: {
-            localsConvention: 'camelCaseOnly',
-        },
-    },
     build: {
         emptyOutDir: false,
         outDir: 'dist',

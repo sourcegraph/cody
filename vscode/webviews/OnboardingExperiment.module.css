@@ -6,6 +6,10 @@
     color: var(--vscode-editor-foreground);
 }
 
+.sections-container {
+    flex: 1;
+}
+
 .logo {
     margin-bottom: 1rem;
 }
@@ -25,52 +29,34 @@
     width: 100%;
 }
 
-.section.auth-method-screen {
+.section {
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
     border: 1px solid var(--vscode-widget-border);
     box-shadow: 0 2px 16px 0 var(--vscode-widget-shadow);
     border-radius: 4px;
+    margin-bottom: var(--spacing);
+    padding: var(--spacing);
 }
 
-@media (min-width: 640px) {
-    .section.auth-method-screen {
+@media (width >= 640px) {
+    .section {
         width: fit-content;
         min-width: 300px;
     }
 }
 
-.auth-method-screen h1 {
-    font-size: 1.2em;
+.section h1 {
+    font-size: 14px;
     font-weight: 500;
     line-height: 1;
-    margin: 0 0 0.75rem 0;
+    margin: 0 0 0.75rem;
 }
 
-.auth-method-screen .button {
-    font-weight: 500;
-}
-
-.sections-container {
-    flex: 1;
-}
-
-.section {
-    border: 0.1em solid;
-    border-width: 0.1em;
-    margin-bottom: var(--spacing);
-    padding: var(--spacing);
-}
-
-.other-sign-in-options h2 {
-    font-size: inherit;
-    font-weight: 500;
-    margin: 0;
-    opacity: 80%;
-}
-
-.other-sign-in-options p {
-    margin: 0.33rem 0 0 0;
+.section p {
+    margin: 15px 0 0;
+    font-size: 12px;
+    opacity: 0.8;
 }
 
 .button {
@@ -83,7 +69,7 @@
     margin-right: auto;
 }
 
-@media (min-width: 640px) {
+@media (width >= 640px) {
     .button {
         margin-left: 0;
     }
@@ -91,7 +77,7 @@
 
 .terms {
     font-size: 90%;
-    opacity: 80%;
+    opacity: 0.8;
     margin-bottom: 0.5rem;
     line-height: 1.4;
 }
@@ -99,16 +85,4 @@
 .button img {
     width: 16px;
     margin-inline-end: 0.5rem;
-}
-
-/* To suppress jsx-eslint/anchor-is-valid. */
-.link-button {
-    background-color: transparent;
-    color: var(--vscode-textLink-foreground);
-    border: none;
-    cursor: pointer;
-    display: inline;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
 }

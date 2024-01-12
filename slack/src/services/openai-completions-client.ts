@@ -62,6 +62,7 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
 
                             try {
                                 const delta = JSON.parse(data.trim())
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                                 const newTextChunk = delta.choices[0].delta?.content
 
                                 if (newTextChunk) {

@@ -6,6 +6,6 @@
     "outDir": "dist",
   },
   "include": ["**/*", ".*", "package.json"],
-  "exclude": ["dist"],
+  "exclude": ["dist", "vitest.config.ts"],
   "references": [{ "path": "../lib/shared" }],
 }
