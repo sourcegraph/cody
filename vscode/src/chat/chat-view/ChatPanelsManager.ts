@@ -264,18 +264,19 @@ export class ChatPanelsManager implements vscode.Disposable {
         await chatProvider.clearAndRestartSession()
     }
 
-    public async restorePanel(chatID: string, chatQuestion?: string): Promise<void> {
+    public async restorePanel(chatID: string, chatQuestion?: string): Promise<SimpleChatPanelProvider | undefined> {
         try {
             logDebug('ChatPanelsManager', 'restorePanel')
             // Panel already exists, just reveal it
             const provider = this.panelProvidersMap.get(chatID)
             if (provider) {
                 provider.webviewPanel?.reveal()
-                return
+                return provider
             }
-            await this.createWebviewPanel(chatID, chatQuestion)
+            return await this.createWebviewPanel(chatID, chatQuestion)
         } catch (error) {
             console.error(error, 'errored restoring panel')
+            return undefined
         }
     }
 

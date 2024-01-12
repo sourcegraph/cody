@@ -1,15 +1,24 @@
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
+import { type ChatModelProvider } from '@sourcegraph/cody-shared'
+
 import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
 
 import { defaultWebviewPanel, EventEmitter } from './vscode-shim'
 
 /** Utility class to manage a list of `AgentWebPanel` instances. */
 export class AgentWebPanels {
-    public panels = new Map<string, AgentWebPanel>()
-    public add(panel: AgentWebPanel): void {
+    public panels = new Map<string, AgentWebviewPanel>()
+    public add(panel: AgentWebviewPanel): void {
         this.panels.set(panel.panelID, panel)
+    }
+    public getPanelOrError(id: string): AgentWebviewPanel {
+        const result = this.panels.get(id)
+        if (!result) {
+            throw new Error('No panel with ID' + id)
+        }
+        return result
     }
 }
 
@@ -18,9 +27,11 @@ export class AgentWebPanels {
  * delegate the implementation to the remote JSON-RPC client via the custom
  * `receiveMessage` and `postMessage` event emitters.
  */
-export class AgentWebPanel implements vscode.WebviewPanel {
+export class AgentWebviewPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
-    public chatID: string | undefined
+    public chatID: string | undefined // also known as `sessionID` in some parts of the Cody codebase
+    public models: ChatModelProvider[] | undefined
+    public isInitialized = false
     public isMessageInProgress: undefined | boolean
     // Event that fires whenever the `isMessageInProgress` value changes from the `type: 'transcript'` message.
     public messageInProgressChange = new EventEmitter<ExtensionMessage>()
@@ -43,6 +54,14 @@ export class AgentWebPanel implements vscode.WebviewPanel {
             onDidReceiveMessage: this.receiveMessage,
             onDidPostMessage: this.postMessage,
         })
+    }
+
+    public initialize(): void {
+        if (!this.isInitialized) {
+            this.receiveMessage.fire({ command: 'ready' })
+            this.receiveMessage.fire({ command: 'initialized' })
+            this.isInitialized = true
+        }
     }
 
     public get viewType(): string {

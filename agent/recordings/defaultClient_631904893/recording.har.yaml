@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 8a049c80771d508a499a55e49d24b525
+    - _id: fcca5fb83a32d07929e4efe13707abcd
       _order: 0
       cache: {}
       request:
@@ -31,7 +31,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "1273"
+            value: "1228"
           - name: host
             value: sourcegraph.com
         headersSize: 0
@@ -73,12 +73,6 @@ log:
                   ```
               - speaker: assistant
                 text: "<CODE5711>export function sum(a: number, b: number): number {"
-            stopSequences:
-              - |-
-                
-
-                Human:
-              - </CODE5711>
             stream: true
             temperature: 0.5
             timeoutMs: 15000
@@ -88,7 +82,7 @@ log:
       response:
         content:
           mimeType: text/event-stream
-          size: 619
+          size: 1023
           text: >+
             event: completion
 
@@ -122,12 +116,32 @@ log:
 
             event: completion
 
-            data: {"completion":"\n  return a + b;\n}","stopReason":""}
+            data: {"completion":"\n  return a + b;\n}\u003c/","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n  return a + b;\n}","stopReason":"stop_sequence"}
+            data: {"completion":"\n  return a + b;\n}\u003c/CODE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}\u003c/CODE57","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}\u003c/CODE5711","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}\u003c/CODE5711\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n  return a + b;\n}\u003c/CODE5711\u003e","stopReason":"stop_sequence"}
 
 
             event: done
@@ -217,71 +231,296 @@ log:
       response:
         content:
           mimeType: text/event-stream
-          size: 1187
+          size: 232
+          text: |+
+            event: completion
+            data: {"completion":" Hello","stopReason":""}
+
+            event: completion
+            data: {"completion":" Hello!","stopReason":""}
+
+            event: completion
+            data: {"completion":" Hello!","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fece36b889d50c30ff71490dd58a3123
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: My name is Lars Monsen
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 637
           text: >+
             event: completion
 
-            data: {"completion":" Hello","stopReason":""}
+            data: {"completion":" Nice","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there","stopReason":""}
+            data: {"completion":" Nice to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there!","stopReason":""}
+            data: {"completion":" Nice to meet","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How","stopReason":""}
+            data: {"completion":" Nice to meet you","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can","stopReason":""}
+            data: {"completion":" Nice to meet you L","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I","stopReason":""}
+            data: {"completion":" Nice to meet you Lars","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help","stopReason":""}
+            data: {"completion":" Nice to meet you Lars!","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help you","stopReason":""}
+            data: {"completion":" Nice to meet you Lars!","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 709610ab90fe7a9b084d94f0d9d1cf49
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token REDACTED
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: My name is Lars Monsen
+              - speaker: assistant
+                text: " Nice to meet you Lars!"
+              - speaker: human
+                text: What is my name?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        content:
+          mimeType: text/event-stream
+          size: 1036
+          text: >+
+            event: completion
+
+            data: {"completion":" You","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help you with","stopReason":""}
+            data: {"completion":" You told","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help you with coding","stopReason":""}
+            data: {"completion":" You told me","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help you with coding today","stopReason":""}
+            data: {"completion":" You told me your","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help you with coding today?","stopReason":""}
+            data: {"completion":" You told me your name","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Hello there! How can I help you with coding today?","stopReason":"stop_sequence"}
+            data: {"completion":" You told me your name is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" You told me your name is L","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" You told me your name is Lars","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" You told me your name is Lars Mon","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" You told me your name is Lars Monsen","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" You told me your name is Lars Monsen.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" You told me your name is Lars Monsen.","stopReason":"stop_sequence"}
 
 
             event: done
@@ -371,7 +610,7 @@ log:
       response:
         content:
           mimeType: text/event-stream
-          size: 47761
+          size: 59837
           text: >+
             event: completion
 
@@ -405,647 +644,722 @@ log:
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n ","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[]","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[]","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args)","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args)","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n   ","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n   ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\");","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\");","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n ","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method,","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method,","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The print","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `jav","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: jav","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java`","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` ","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\"","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to the","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to the console","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to the console when","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to the console when executed","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to the console when executed.","stopReason":""}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is a simple Hello World function in Java:\n\n```java\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n}\n```\n\nThis defines a Main class with a main method, which is the entry point for a Java program. Inside the main method, it prints \"Hello World!\" to the console using System.out.println.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with `javac Main.java` \n3. Run it with `java Main`\n\nThis will print \"Hello World!\" to the console when executed.","stopReason":"stop_sequence"}
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clar","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements for the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements for the Java","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements for the Java program","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements for the Java program!","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Here is a simple Hello World program in Java:\n\n```java\npublic class Main {\n\n  public static void main(String[] args) {\n    System.out.println(\"Hello World!\"); \n  }\n\n}\n```\n\nThis program prints \"Hello World!\" to the console when run. It contains a main method inside a class called Main, as all Java programs require. The println statement prints the text to the console.\n\nTo run this:\n\n1. Save the code in a file called Main.java\n2. Compile it with: javac Main.java\n3. Run it with: java Main\n\nThe \"Hello World!\" text will be printed to the console.\n\nLet me know if you need any clarification or have additional requirements for the Java program!","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1062,8 +1376,6 @@ log:
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2084,8 +2396,6 @@ log:
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2160,7 +2470,7 @@ log:
       response:
         content:
           mimeType: text/event-stream
-          size: 15726
+          size: 15742
           text: >+
             event: completion
 
@@ -2399,112 +2709,112 @@ log:
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n ","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move()","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move()","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n   ","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n   ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs\");","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n ","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs\");\n ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs\");\n  }","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }\n\n}","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs\");\n  }\n\n}","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }\n\n}\n```","stopReason":""}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs\");\n  }\n\n}\n```","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override\n  public void move() {\n    System.out.println(\"The dog runs.\");\n  }\n\n}\n```","stopReason":"stop_sequence"}
+            data: {"completion":" Here is the code for the Dog class implementing the Animal interface:\n\n```java\npublic class Dog implements Animal {\n\n  @Override\n  public void makeSound() {\n    System.out.println(\"Woof!\"); \n  }\n\n  @Override \n  public void move() {\n    System.out.println(\"The dog runs\");\n  }\n\n}\n```","stopReason":"stop_sequence"}
 
 
             event: done
@@ -2521,8 +2831,6 @@ log:
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2724,13 +3032,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 128
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: sourcegraph
+          size: 131
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmV","Pj6+zvl5aZnppUWJJZn5eSDxgqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA=="]'
         cookies: []
         headers:
           - name: date
@@ -3082,7 +3385,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f183d7475b363dc45d23134c3118a915
+    - _id: 7e2cae0c3275084cb257ee48fead6fb9
       _order: 0
       cache: {}
       request:
@@ -3102,7 +3405,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "180"
+            value: "187"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -3124,7 +3427,7 @@ log:
                       evaluateFeatureFlag(flagName: $flagName)
                   }
             variables:
-              flagName: cody-autocomplete-hot-streak
+              flagName: cody-autocomplete-context-bfg-mixed
         queryString:
           - name: EvaluateFeatureFlag
             value: null
@@ -3176,7 +3479,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7e2cae0c3275084cb257ee48fead6fb9
+    - _id: 439739878f840e0513a8e492c2f6d215
       _order: 0
       cache: {}
       request:
@@ -3196,7 +3499,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "187"
+            value: "192"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -3218,7 +3521,7 @@ log:
                       evaluateFeatureFlag(flagName: $flagName)
                   }
             variables:
-              flagName: cody-autocomplete-context-bfg-mixed
+              flagName: cody-autocomplete-new-jaccard-similarity
         queryString:
           - name: EvaluateFeatureFlag
             value: null
@@ -3226,8 +3529,8 @@ log:
       response:
         content:
           mimeType: application/json
-          size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
+          size: 37
+          text: '{"data":{"evaluateFeatureFlag":null}}'
         cookies: []
         headers:
           - name: date
@@ -3235,7 +3538,7 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: "38"
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
@@ -3320,8 +3623,8 @@ log:
       response:
         content:
           mimeType: application/json
-          size: 38
-          text: '{"data":{"evaluateFeatureFlag":false}}'
+          size: 37
+          text: '{"data":{"evaluateFeatureFlag":true}}'
         cookies: []
         headers:
           - name: date
@@ -3329,7 +3632,101 @@ log:
           - name: content-type
             value: application/json
           - name: content-length
-            value: "38"
+            value: "37"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: Fri, 05 Jan 2024 00:00:00 GMT
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: f183d7475b363dc45d23134c3118a915
+      _order: 0
+      cache: {}
+      request:
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token REDACTED
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "180"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+        headersSize: 0
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |2
+              
+                  query EvaluateFeatureFlag($flagName: String!) {
+                      evaluateFeatureFlag(flagName: $flagName)
+                  }
+            variables:
+              flagName: cody-autocomplete-hot-streak
+        queryString:
+          - name: EvaluateFeatureFlag
+            value: null
+        url: https://sourcegraph.com/.api/graphql?EvaluateFeatureFlag
+      response:
+        content:
+          mimeType: application/json
+          size: 37
+          text: '{"data":{"evaluateFeatureFlag":true}}'
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 05 Jan 2024 11:11:11 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "37"
           - name: connection
             value: close
           - name: access-control-allow-credentials
@@ -3511,8 +3908,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 815
-          text: '["H4sIAAAAAAAA/5RVW3LcOAy8i76DC/gAucTWfoA=","ZI+EHYpUAHBmtC7ffYvyVCr2RpLzpyo2H93obr0OiZ2Hl9cBN86NHek72Jvie+bRhpe/XofCM4aXYdQlDt+GDsPw4trw9u3nooE1TlTvBWqTLLvAWNNKi9ZjADevsc5LhoMyl7Hx2D8cJa7HW+8IhCRelRRRFtgu3pExw3UlPJaq/gdvSmvhWSLNLbtkKaDnktTyy4UXzvbrQXVBiTVhVF6m3etCroGWztju4nEiVrCRTVU9Nt8ntL0zTuw013glh+1zek5MytK8H32nScyrnsj7QYVYi+PhFC4jzfJA2mduMpa2kDW9YSUUDvkIzjHCTEIGXSSDXIHzuXPOZ3ynNaikXRSnWQpx4by6RPv/Qz/hfzSJVzJndfLalC5Vu0YTikvscaJm0ANLdA2Vzd8NJFycbC3OD5pknLKMk0sZ9/ejvF9BtYTKmj6ATyfoyvHw+N9YX6xr0tO1xixlpHqhRXGT2owUPxrMDwm/NwD9Aw/KUvb9/JyZcrme0To3R8/F2U0JoR2I8UQV3OmK9V71wMGL1tSik7VgUWXZmoEUnKBk0JtEEMdYW/H9U5R7AcosboRHBBLS5rGe7cPB9bqmfyuu+6Q/mz1ynH7O94DaJikeC1RmFOf90P3GPbhwy75FpjehPhNJVpvGz8X4NVG/rObXn3NuJ5OEwHrmqK0ii1NgQ9p+ZZTgiP3lB/UX6Ca2/cS2VrmLT1SqI9R63c/Le1uRuYLnnsxRnELuix+3/P329l8AAAD//3p5sfn6BwAA"]'
+          size: 711
+          text: '["H4sIAAAAAAA=","AP+MlFFy2zAMRO+i7+ACPkAu0ekHSK5F1BSpAqAdN5O7d+Rk0iYN5X5zAZIPi32eEjtPh+cJZy6dHekR7F3xWHi26fDteaq8YDpMsaUrrdroBzwoS7XpYdqKMB1cO14e3qUcI8wkFNBRCsgVGIqVHVRkETfCUwQSEh2bksNc6vyn8MjF/q6cdY3DtiZz7StZ1zOuhMqhII17oSbqBqVWQ2NNHy7+1Hq7l341nHwo2WDtHm4kh4JQWqCVZ5BdxGMmVrCR5aYeu4/BtxU1toRZec1D1aot9ehkPVhUWV1aNVJwgpJBzxJBHGPr1cfEbr/g7i22ZS1wUMKRe3EyZ91eoZSvQSXtg8DTCpUF1bnsKy8IxGUsMrDGTAmh77iGA53FxDeHta50Ec9UmyO0dhqjfWsude2+TeJCWcybjsf8Neb/5vt2YcWFTrhemu649x2PSUJgvc8R6UZAEWXFzianRSpx5XJ1iUaRYwYlsTvrFFt1ZXO6mUO4Otm1Oj9RljkXmfP+ar99/o5/Pr/uny3/6vcxs9PS4ukWMPfmrVxPe1nwDnRrO1Q5Cha43tzedCz82SWebgvkr+7cgpC7Z1SXuMXzLaXsLrltAKhOgQ2JCteZEhxxM+Hd4napUMuyDt/5SprMFbxInWkWp1C2w11SH/LCleMXLvj+8vI7AAD//zCSuUqXBgAA"]'
         cookies: []
         headers:
           - name: date
@@ -4064,8 +4461,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 122
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
@@ -4173,8 +4575,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 122
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
@@ -4282,8 +4689,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 115
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
@@ -4391,8 +4803,13 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 122
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//w==","AwCEdn1qOgAAAA=="]'
+          size: 112
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
@@ -4609,13 +5026,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 112
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
+          size: 115
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoE","cYpSk/OLUlzLUvNKikH8xJzyxMpiv8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA="]'
         cookies: []
         headers:
           - name: date
@@ -4626,8 +5038,6 @@ log:
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "0"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -4820,8 +5230,12 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 123
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+q","BPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          size: 120
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA=="]'
+          textDecoded:
+            data:
+              repository:
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
         cookies: []
         headers:
           - name: date
@@ -4923,15 +5337,8 @@ log:
         content:
           encoding: base64
           mimeType: application/json
-          size: 212
-          text: '["H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaRwfnuekgTA6QtgyG+u8HEf/mn74BIlaA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cfsONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFqgAAAA"]'
-          textDecoded:
-            data:
-              site:
-                productSubscription:
-                  license:
-                    hashedKey: bd8965b2eef3a61b4e05647a401026066c88116c8594a0c10b09cfb38b9e1669
-                siteID: SourcegraphWeb
+          size: 215
+          text: '["H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52aGFcrbMLoaR","wfnuekgTA6QtgyG+u8HEf/mn74BIlaA/oKSq/99v0MO47ln0mWmbH8pwgS2vcZc67lwkp62mdTnBK4ku5WdnKrPGQd/QA0cfsONGdWoJLTs1HborOWNNgwZRvLcWxXfBkRFr2ASZuPUc1CIG+Jx9AQAA//8DAGHOuFqgAAAA"]'
         cookies: []
         headers:
           - name: date
@@ -5029,7 +5436,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkp","pcklYalFxZn5eUpWSkam5qZGFvFGBkYmugaGuoaG8aZ6RroGlgZmxmmplpYpRqlKtbW1AAAAAP//AwDzjpyXSQAAAA=="]'
+          text: '["H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkp","pcklYalFxZn5eUpWSkam5mbmJvFGBkYmugaGuoZG8aZ6Rrpp5ikWackGaYmGiYlKtbW1AAAAAP//AwCdi4Q5SQAAAA=="]'
         cookies: []
         headers:
           - name: date
