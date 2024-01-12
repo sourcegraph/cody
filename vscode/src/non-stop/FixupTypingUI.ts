@@ -250,7 +250,7 @@ export class FixupTypingUI {
         }
 
         const task = this.taskFactory.createTask(
-            document.uri,
+            document,
             input.instruction,
             input.userContextFiles,
             range,

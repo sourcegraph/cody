@@ -4,6 +4,7 @@ import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { type ContextProvider } from '../chat/ContextProvider'
+import { type GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import { type VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
@@ -19,6 +20,7 @@ export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
     contextProvider: ContextProvider
+    ghostHintDecorator: GhostHintDecorator
 }
 
 export class EditManager implements vscode.Disposable {
@@ -72,9 +74,14 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
+        if (editor.active) {
+            // Clear out any active ghost text
+            this.options.ghostHintDecorator.clearGhostText(editor.active)
+        }
+
         const task = args.instruction?.trim()
             ? await this.controller.createTask(
-                  document.uri,
+                  document,
                   args.instruction,
                   args.userContextFiles ?? [],
                   range,

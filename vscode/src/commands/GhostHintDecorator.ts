@@ -1,6 +1,8 @@
 import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 
+import { isGenerateIntent } from '../edit/utils/edit-selection'
+
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
 
@@ -41,9 +43,9 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
                 const editor = event.textEditor
-                const firstSelection = event.selections[0]
+                const selection = event.selections[0]
 
-                if (firstSelection.isEmpty && !editor.document.lineAt(firstSelection.start.line).isEmptyOrWhitespace) {
+                if (selection.isEmpty && !editor.document.lineAt(selection.start.line).isEmptyOrWhitespace) {
                     // Empty selection but non-empty line, so we don't show a message to avoid spamming the user with text.
                     this.clearGhostText(editor)
                     return
@@ -53,9 +55,9 @@ export class GhostHintDecorator implements vscode.Disposable {
                  * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
                  * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
                  */
-                const targetPosition = firstSelection.isReversed
-                    ? firstSelection.active
-                    : firstSelection.active.translate(firstSelection.end.character === 0 ? -1 : 0)
+                const targetPosition = selection.isReversed
+                    ? selection.active
+                    : selection.active.translate(selection.end.character === 0 ? -1 : 0)
 
                 if (this.activeDecoration && this.activeDecoration.range.start.line !== targetPosition.line) {
                     // Selection changed, remove existing decoration
@@ -63,10 +65,10 @@ export class GhostHintDecorator implements vscode.Disposable {
                 }
 
                 const ghostText = `${EDIT_SHORTCUT_LABEL} to ${
-                    firstSelection.isEmpty ? 'Generate' : 'Edit'
+                    selection.isEmpty ? 'Generate' : 'Edit'
                 }, ${CHAT_SHORTCUT_LABEL} to Chat`
 
-                if (firstSelection.isEmpty) {
+                if (isGenerateIntent(editor.document, selection)) {
                     // Generate code flow, cancel any pending edit flow and show new text immediately
                     this.throttledSetGhostText.cancel()
                     return this.setGhostText(editor, targetPosition, ghostText)
@@ -86,7 +88,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
     }
 
-    private clearGhostText(editor: vscode.TextEditor): void {
+    public clearGhostText(editor: vscode.TextEditor): void {
         this.throttledSetGhostText.cancel()
         this.activeDecoration = null
         editor.setDecorations(ghostHintDecoration, [])

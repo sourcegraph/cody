@@ -189,10 +189,11 @@ const register = async (
         symfRunner || null
     )
 
+    const ghostHintDecorator = new GhostHintDecorator()
     disposables.push(
-        new EditManager({ chat: chatClient, editor, contextProvider }),
-        new CodeActionProvider({ contextProvider }),
-        new GhostHintDecorator()
+        ghostHintDecorator,
+        new EditManager({ chat: chatClient, editor, contextProvider, ghostHintDecorator }),
+        new CodeActionProvider({ contextProvider })
     )
 
     let oldConfig = JSON.stringify(initialConfig)
