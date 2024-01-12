@@ -1,8 +1,8 @@
-import { throttle } from 'lodash'
+import { throttle, type DebouncedFunc } from 'lodash'
 import * as vscode from 'vscode'
 
-const WINDOWS_LABEL = 'Ctrl+K to Edit, Ctrl+L to Chat'
-const MACOS_LABEL = '⌘K to Edit, ⌘L to Chat'
+const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
+const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
 
 /**
  * Creates a new decoration for showing a "ghost" hint to the user.
@@ -16,18 +16,19 @@ const MACOS_LABEL = '⌘K to Edit, ⌘L to Chat'
 export const ghostHintDecoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     after: {
-        contentText: process.platform === 'win32' ? WINDOWS_LABEL : MACOS_LABEL,
         color: new vscode.ThemeColor('editorGhostText.foreground'),
         margin: '0 0 0 1em',
     },
 })
 
 export class GhostHintDecorator implements vscode.Disposable {
-    private isActive = false
     private disposables: vscode.Disposable[] = []
+    private isActive = false
     private activeDecoration: vscode.DecorationOptions | null = null
+    private throttledSetGhostText: DebouncedFunc<typeof this.setGhostText>
 
     constructor() {
+        this.throttledSetGhostText = throttle(this.setGhostText.bind(this), 250, { leading: false, trailing: true })
         this.updateConfig()
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
@@ -37,24 +38,15 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     private init(): void {
-        const setGhostText = throttle(
-            (position: vscode.Position, editor: vscode.TextEditor) => {
-                this.activeDecoration = { range: new vscode.Range(position, position) }
-                editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
-            },
-            250,
-            { leading: false, trailing: true }
-        )
-
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
                 const editor = event.textEditor
                 const firstSelection = event.selections[0]
 
-                if (firstSelection.isEmpty) {
-                    // Nothing selected, clear existing
-                    this.activeDecoration = null
-                    return editor.setDecorations(ghostHintDecoration, [])
+                if (firstSelection.isEmpty && !editor.document.lineAt(firstSelection.start.line).isEmptyOrWhitespace) {
+                    // Empty selection but non-empty line, so we don't show a message to avoid spamming the user with text.
+                    this.clearGhostText(editor)
+                    return
                 }
 
                 /**
@@ -67,13 +59,37 @@ export class GhostHintDecorator implements vscode.Disposable {
 
                 if (this.activeDecoration && this.activeDecoration.range.start.line !== targetPosition.line) {
                     // Selection changed, remove existing decoration
-                    this.activeDecoration = null
-                    editor.setDecorations(ghostHintDecoration, [])
+                    this.clearGhostText(editor)
                 }
 
-                setGhostText(targetPosition, editor)
+                const ghostText = `${EDIT_SHORTCUT_LABEL} to ${
+                    firstSelection.isEmpty ? 'Generate' : 'Edit'
+                }, ${CHAT_SHORTCUT_LABEL} to Chat`
+
+                if (firstSelection.isEmpty) {
+                    // Generate code flow, cancel any pending edit flow and show new text immediately
+                    this.throttledSetGhostText.cancel()
+                    return this.setGhostText(editor, targetPosition, ghostText)
+                }
+
+                // Edit code flow, throttled show to avoid spamming whilst the user makes an active selection
+                return this.throttledSetGhostText(editor, targetPosition, ghostText)
             })
         )
+    }
+
+    private setGhostText(editor: vscode.TextEditor, position: vscode.Position, text: string): void {
+        this.activeDecoration = {
+            range: new vscode.Range(position, position),
+            renderOptions: { after: { contentText: text } },
+        }
+        editor.setDecorations(ghostHintDecoration, [this.activeDecoration])
+    }
+
+    private clearGhostText(editor: vscode.TextEditor): void {
+        this.throttledSetGhostText.cancel()
+        this.activeDecoration = null
+        editor.setDecorations(ghostHintDecoration, [])
     }
 
     private updateConfig(): void {
