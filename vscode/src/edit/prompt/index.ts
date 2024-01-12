@@ -72,7 +72,6 @@ export const buildInteraction = async ({
     if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
-    task.original = selectedText
     const followingText = document.getText(
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )

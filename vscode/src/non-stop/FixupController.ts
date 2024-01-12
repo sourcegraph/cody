@@ -178,7 +178,16 @@ export class FixupController
         if (intent !== 'add') {
             selectionRange = await getEditSmartSelection(document, selectionRange)
         }
-        const task = new FixupTask(fixupFile, instruction, userContextFiles, intent, selectionRange, insertMode, source)
+        const task = new FixupTask(
+            fixupFile,
+            instruction,
+            userContextFiles,
+            intent,
+            document.getText(selectionRange),
+            selectionRange,
+            insertMode,
+            source
+        )
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task

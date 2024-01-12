@@ -17,7 +17,7 @@ export class FixupTask {
     /**
      * The original text that we're working on updating. Set when we start an LLM spin.
      */
-    public original = ''
+    public original: string
     /**
      * The original range that we're working on updating.
      * Used to perform an accurate retry. We cannot use `selectionRange` as that range may expand with the replacement code.
@@ -49,6 +49,7 @@ export class FixupTask {
         public readonly userContextFiles: ContextFile[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent = 'edit',
+        public selectionText: string,
         public selectionRange: vscode.Range,
         /* insert mode means insert replacement at selection, otherwise replace selection contents with replacement */
         public insertMode?: boolean,
@@ -57,6 +58,7 @@ export class FixupTask {
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
+        this.original = selectionText
         this.originalRange = selectionRange
         // If there's no text determined to be selected then we will override the intent, as we can only add new code.
         this.intent = selectionRange.isEmpty ? 'add' : intent
