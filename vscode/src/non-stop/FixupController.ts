@@ -614,7 +614,12 @@ export class FixupController
         }, options)
     }
 
+    // Notify users of task completion when the edited file is not visible
     private async notifyTaskComplete(task: FixupTask): Promise<void> {
+        // Don't show for file mode as the doc will be displayed when done
+        if (task.mode === 'file') {
+            return
+        }
         const showChangesButton = 'Show Changes'
         const result = await vscode.window.showInformationMessage(
             `Edit applied to ${task.fixupFile.fileName}`,
