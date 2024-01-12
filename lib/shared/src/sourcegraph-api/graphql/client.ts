@@ -164,7 +164,7 @@ export interface EmbeddingsSearchResults {
     textResults: EmbeddingsSearchResult[]
 }
 
-export interface SearchAttributionResults {
+interface SearchAttributionResults {
     limitHit: boolean
     nodes: { repositoryName: string }[]
 }
@@ -179,7 +179,7 @@ export interface CodyLLMSiteConfiguration {
     provider?: string
 }
 
-export interface CurrentUserInfo {
+interface CurrentUserInfo {
     id: string
     hasVerifiedEmail: boolean
     username: string
@@ -749,9 +749,6 @@ async function verifyResponseCode(response: Response): Promise<Response> {
     }
     return response
 }
-
-class RepoNotFoundError extends Error {}
-export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
 
 export type LogEventMode =
     | 'dotcom-only' // only log to dotcom

@@ -27,7 +27,7 @@ import {
     type ContextMessage,
 } from './messages'
 
-export interface ContextSearchOptions {
+interface ContextSearchOptions {
     numCodeResults: number
     numTextResults: number
 }

@@ -1,7 +1,7 @@
 /**
  * Processes the part of a response from Cody addressed to a specific topic.
  */
-export interface BotResponseSubscriber {
+interface BotResponseSubscriber {
     /**
      * Processes incremental content from the bot. This may be called multiple times during a turn.
      * @param content the incremental text from the bot that was addressed to the subscriber

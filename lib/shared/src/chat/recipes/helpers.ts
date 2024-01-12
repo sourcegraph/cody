@@ -29,16 +29,6 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     rs: 'Rust',
 }
 
-export const commandRegex = {
-    chat: new RegExp(/^(?!.*\/n(ew)?\s|.*\/f(ix)?\s)/i), // For now, if the input does not start with /n or /f, it is a chat
-    edit: new RegExp(/^\/e(dit)?\s/i),
-    touch: new RegExp(/^\/t(ouch)?\s/i),
-    touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test(s)?\s)/i), // Has /touch or /t but no test or tests in the string
-    noTest: new RegExp(/^(?!.*test)/i),
-    search: new RegExp(/^\/s(earch)?\s/i),
-    test: new RegExp(/^\/n(ew)?\s|test(s)?\s/, 'i'),
-}
-
 export function getNormalizedLanguageName(extension: string): string {
     return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }

@@ -15,7 +15,7 @@ function nullLog(filterLabel: string, text: string, ...args: unknown[]): void {
 
 export const registeredRecipes: { [id in RecipeID]?: Recipe } = {}
 
-export function getRecipe(id: RecipeID): Recipe | undefined {
+function getRecipe(id: RecipeID): Recipe | undefined {
     return registeredRecipes[id]
 }
 
