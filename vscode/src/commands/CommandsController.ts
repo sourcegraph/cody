@@ -68,7 +68,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const editor = getEditor()
         if (!editor.active || editor.ignored) {
             const message = editor.ignored
-                ? 'The active editor is ignored.'
+                ? 'The file is on the .cody/ignore list. Please remove it from the list and try again.'
                 : 'No editor is active. Please open a file and try again.'
             void vscode.window.showErrorMessage(message)
             return null
