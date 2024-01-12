@@ -7,3 +7,5 @@ dist/
 .env
 .idea/
 playwright/**/*.webm
+**/*.iml
+**/*.vsix
