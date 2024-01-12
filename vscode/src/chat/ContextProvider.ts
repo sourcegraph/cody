@@ -23,7 +23,6 @@ import { type LocalEmbeddingsController } from '../local-context/local-embedding
 import { logDebug } from '../log'
 import { getCodebaseFromWorkspaceUri, gitDirectoryUri } from '../repository/repositoryHelpers'
 import { type AuthProvider } from '../services/AuthProvider'
-import { updateCodyIgnoreCodespaceMap } from '../services/context-filter'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -95,7 +94,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 await this.updateCodebaseContext()
             }),
             this.statusAggregator,
-            this.statusAggregator.onDidChangeStatus(_ => {
+            this.statusAggregator.onDidChangeStatus(() => {
                 this.contextStatusChangeEmitter.fire(this)
             }),
             this.contextStatusChangeEmitter
@@ -103,7 +102,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
         if (this.localEmbeddings) {
             this.disposables.push(
-                this.localEmbeddings.onChange(_ => {
+                this.localEmbeddings.onChange(() => {
                     void this.forceUpdateCodebaseContext()
                 })
             )
@@ -302,9 +301,6 @@ async function getCodebaseContext(
     if (!codebase) {
         return null
     }
-
-    // Map the ignore rules for the workspace with the codebase name
-    updateCodyIgnoreCodespaceMap(codebase, workspaceRoot.fsPath)
 
     // TODO: When we remove this class (ContextProvider), SimpleChatContextProvider
     // should be updated to invoke localEmbeddings.load when the codebase changes
