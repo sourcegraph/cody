@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 
 import { isGenerateIntent } from '../edit/utils/edit-selection'
 
-const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : 'Cmd+K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : 'Cmd+L'
+const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+K' : '⌘K'
+const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Ctrl+L' : '⌘L'
 
 /**
  * Creates a new decoration for showing a "ghost" hint to the user.
