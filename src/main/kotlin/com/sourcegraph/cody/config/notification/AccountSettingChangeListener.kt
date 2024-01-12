@@ -18,12 +18,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
     connection.subscribe(
         AccountSettingChangeActionNotifier.TOPIC,
         object : AccountSettingChangeActionNotifier {
-          override fun beforeAction(serverUrlChanged: Boolean) {
-            if (serverUrlChanged) {
-              GraphQlLogger.logUninstallEvent(project)
-              CodyApplicationSettings.instance.isInstallEventLogged = false
-            }
-          }
+          override fun beforeAction(serverUrlChanged: Boolean) {}
 
           override fun afterAction(context: AccountSettingChangeContext) {
             val codyApplicationSettings = CodyApplicationSettings.instance
@@ -58,16 +53,10 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               codyToolWindowContent.refreshSubscriptionTab()
             }
 
-            // Log install events
             if (context.serverUrlChanged) {
-              GraphQlLogger.logInstallEvent(project).thenAccept { e ->
-                codyApplicationSettings.isInstallEventLogged = e
-              }
-            } else if (context.accessTokenChanged &&
-                !codyApplicationSettings.isInstallEventLogged) {
-              GraphQlLogger.logInstallEvent(project).thenAccept { e ->
-                codyApplicationSettings.isInstallEventLogged = e
-              }
+              GraphQlLogger.logCodyEvent(project, "settings.serverURL", "changed")
+            } else if (context.accessTokenChanged) {
+              GraphQlLogger.logCodyEvent(project, "settings.accessToken", "changed")
             }
           }
         })
