@@ -1,22 +1,27 @@
-import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import type * as vscode from 'vscode'
+import { type URI } from 'vscode-uri'
 
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { getActiveTraceAndSpanId, wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 import { logError } from '../log'
-import { CompletionIntent } from '../tree-sitter/query-sdk'
+import { type CompletionIntent } from '../tree-sitter/query-sdk'
 
-import { ContextMixer } from './context/context-mixer'
-import { DocumentContext, insertIntoDocContext } from './get-current-doc-context'
-import { AutocompleteItem } from './inline-completion-item-provider'
+import { type ContextMixer } from './context/context-mixer'
+import { insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
-import { CompletionLogID } from './logger'
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
-import { RequestManager, RequestParams } from './request-manager'
+import { type CompletionLogID } from './logger'
+import {
+    type CompletionProviderTracer,
+    type Provider,
+    type ProviderConfig,
+    type ProviderOptions,
+} from './providers/provider'
+import { type RequestManager, type RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
-import { ProvideInlineCompletionsItemTraceData } from './tracer'
+import { type AutocompleteItem } from './suggested-autocomplete-items-cache'
+import { type InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { type ProvideInlineCompletionsItemTraceData } from './tracer'
 
 export interface InlineCompletionsParams {
     // Context
@@ -138,7 +143,6 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
@@ -290,7 +294,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             position,
             docContext,
             abortSignal,
-            maxChars: providerConfig.contextSizeHints.totalFileContextChars,
+            maxChars: providerConfig.contextSizeHints.totalChars,
         })
     })
     if (abortSignal?.aborted) {

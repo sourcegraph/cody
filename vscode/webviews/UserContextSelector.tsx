@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './UserContextSelector.module.css'
 
@@ -34,7 +34,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
 
     let headingTitle
     if (formInput.endsWith('@')) {
-        headingTitle = 'Search for a file to include, or type # to search symbols..'
+        headingTitle = 'Search for a file to include, or type # to search symbols...'
     } else if (formInput.endsWith('@#')) {
         headingTitle = 'Search for a symbol to include...'
     } else if (formInput.match(/@[^ #]+$/)) {

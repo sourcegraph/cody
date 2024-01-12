@@ -1,11 +1,11 @@
-import { Position, TextDocument } from 'vscode'
+import { type Position, type TextDocument } from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { DocumentContext } from '../get-current-doc-context'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import { type DocumentContext } from '../get-current-doc-context'
+import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type ContextSnippet } from '../types'
 
 export interface ProviderConfig {
     /**
@@ -34,8 +34,8 @@ export interface ProviderConfig {
 }
 
 export interface ProviderContextSizeHints {
-    /** Total max length of all file context (prefix + suffix + snippets). */
-    totalFileContextChars: number
+    /** Total max length of all context (prefix + suffix + snippets). */
+    totalChars: number
 
     /** Max length of the document prefix (text before the cursor). */
     prefixChars: number
@@ -46,7 +46,7 @@ export interface ProviderContextSizeHints {
 
 export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
     return {
-        totalFileContextChars: Math.floor(maxContextTokens * 0.9), // keep 10% margin for preamble, etc.
+        totalChars: Math.floor(tokensToChars(0.9 * maxContextTokens)), // keep 10% margin for preamble, etc.
         prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
         suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
     }
@@ -97,4 +97,7 @@ export interface CompletionProviderTracer {
 export interface CompletionProviderTracerResultData {
     /** The post-processed completions that are returned by the provider. */
     completions: InlineCompletionItemWithAnalytics[]
+
+    /** Free-form text with debugging or timing information. */
+    debugMessage?: string
 }

@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
 
-import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { type Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { type Configuration, type ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { CommandsController } from './commands/CommandsController'
-import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
+import { type CommandsController } from './commands/CommandsController'
+import { type BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
@@ -14,10 +14,9 @@ import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-c
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
-import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { captureException, SentryService } from './services/sentry/sentry'
+import { type OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
+import { captureException, type SentryService } from './services/sentry/sentry'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T extends new (...args: any) => any> = T extends new (...args: infer A) => infer R
     ? (...args: A) => R
     : never

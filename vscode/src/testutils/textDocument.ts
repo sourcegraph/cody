@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDocument } from 'vscode'
-import { TextDocument } from 'vscode-languageserver-textdocument'
+import { type TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
 import { vsCodeMocks } from './mocks'
@@ -49,7 +49,7 @@ function createTextLine(text: string, range: Range): TextLine {
         text,
         range,
         rangeIncludingLineBreak: range.with({ end: range.end.translate({ characterDelta: 1 }) }),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
         firstNonWhitespaceCharacterIndex: text.match(/^\s*/)![0].length,
         isEmptyOrWhitespace: /^\s*$/.test(text),
     }

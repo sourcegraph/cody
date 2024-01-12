@@ -1,8 +1,7 @@
-import { expect } from '@playwright/test'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import * as status from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import type * as status from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 
 import { ContextStatusAggregator } from './enhanced-context-status'
 

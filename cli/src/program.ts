@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 import { Command } from 'commander'
 
-import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
+import { type ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 
 import { commitCommand } from './commands/commit'
 import { replCommand } from './commands/repl'

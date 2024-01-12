@@ -1,6 +1,6 @@
 import dedent from 'dedent'
-import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
-import * as vscode from 'vscode'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { Position } from '../../../../testutils/mocks'

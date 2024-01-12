@@ -1,26 +1,30 @@
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatModelProvider } from '@sourcegraph/cody-shared'
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatModelProvider, type CodyCommand } from '@sourcegraph/cody-shared'
+import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { type ChatEventSource } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { View } from '../../../webviews/NavBar'
+import { type View } from '../../../webviews/NavBar'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
-import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { SymfRunner } from '../../local-context/symf'
-import { logDebug } from '../../log'
-import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
-import { AuthStatus } from '../protocol'
+import { type LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { type SymfRunner } from '../../local-context/symf'
+import { logDebug, logError } from '../../log'
+import { localStorage } from '../../services/LocalStorageProvider'
+import { telemetryService } from '../../services/telemetry'
+import { telemetryRecorder } from '../../services/telemetry-v2'
+import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
+import { type AuthStatus } from '../protocol'
 
 import { ChatPanelsManager } from './ChatPanelsManager'
-import { SidebarViewController, SidebarViewOptions } from './SidebarViewController'
-import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
+import { type SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
- * Manages chat view providers and panels.
+ * Manages the sidebar webview for auth/onboarding.
+ *
+ * TODO(sqs): rename from its legacy name ChatManager
  */
 export class ChatManager implements vscode.Disposable {
     // SidebarView is used for auth view and running tasks that do not require a chat view
@@ -30,7 +34,7 @@ export class ChatManager implements vscode.Disposable {
 
     private options: SidebarViewOptions
 
-    protected disposables: vscode.Disposable[] = []
+    private disposables: vscode.Disposable[] = []
 
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
@@ -85,7 +89,7 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider?.setWebviewView(view)
     }
 
-    public async executeCommand(command: CodyPrompt, source: ChatEventSource): Promise<void> {
+    public async executeCommand(command: CodyCommand, source: ChatEventSource): Promise<void> {
         logDebug('ChatManager:executeCommand:called', command.slashCommand)
         if (!vscode.window.visibleTextEditors.length) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -97,7 +101,7 @@ export class ChatManager implements vscode.Disposable {
         await chatProvider.handleCommands(command, source)
     }
 
-    public async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
+    private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
         const chatID = treeItem?.id
         const chatLabel = treeItem?.label as vscode.TreeItemLabel
         if (chatID) {
@@ -105,7 +109,7 @@ export class ChatManager implements vscode.Disposable {
         }
     }
 
-    public async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
+    private async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
         const chatID = treeItem?.id
         if (chatID) {
             await this.chatPanelsManager.clearHistory(chatID)
@@ -136,32 +140,33 @@ export class ChatManager implements vscode.Disposable {
         await this.chatPanelsManager.clearAndRestartSession()
     }
 
-    public async restoreSession(chatID: string): Promise<void> {
-        const chatProvider = await this.getChatProvider()
-        await chatProvider.restoreSession(chatID)
-    }
-
     /**
      * Export chat history to file system
      */
-    public async exportHistory(): Promise<void> {
-        // Use sidebar chat view for non-chat-session specfic actions
-        await this.sidebarViewController.exportHistory()
+    private async exportHistory(): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked', undefined, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
+        const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
+        const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
+        if (!exportPath || !historyJson) {
+            return
+        }
+        try {
+            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+            await vscode.workspace.fs.writeFile(exportPath, logContent)
+            // Display message and ask if user wants to open file
+            void vscode.window.showInformationMessage('Chat history exported successfully.', 'Open').then(choice => {
+                if (choice === 'Open') {
+                    void vscode.commands.executeCommand('vscode.open', exportPath)
+                }
+            })
+        } catch (error) {
+            logError('ChatManager:exportHistory', 'Failed to export chat history', error)
+        }
     }
 
     public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
         await this.sidebarViewController.simplifiedOnboardingReloadEmbeddingsState()
-    }
-
-    /**
-     * Creates a new webview panel for chat.
-     */
-    public async createWebviewPanel(
-        chatID?: string,
-        chatQuestion?: string
-    ): Promise<SimpleChatPanelProvider | undefined> {
-        logDebug('ChatManager:createWebviewPanel', 'creating')
-        return this.chatPanelsManager.createWebviewPanel(chatID, chatQuestion)
     }
 
     public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -204,6 +209,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private disposeChatPanelsManager(): void {
+        void vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         this.options.contextProvider.webview = this.sidebarViewController.webview
         this.chatPanelsManager.dispose()
     }

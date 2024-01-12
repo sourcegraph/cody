@@ -3,7 +3,7 @@ import assert from 'assert'
 import { describe, expect, it } from 'vitest'
 import { Position, Range } from 'vscode'
 
-import { updateFixedRange, updateRange, updateRangeMultipleChanges, UpdateRangeOptions } from './tracked-range'
+import { updateFixedRange, updateRange, updateRangeMultipleChanges, type UpdateRangeOptions } from './tracked-range'
 
 // Creates a position.
 function pos(line: number, character: number): Position {

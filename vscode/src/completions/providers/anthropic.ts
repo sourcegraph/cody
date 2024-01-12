@@ -2,10 +2,10 @@ import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
-import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext } from '../get-current-doc-context'
+import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
+import { type DocumentContext } from '../get-current-doc-context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -13,11 +13,11 @@ import {
     getHeadAndTail,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
-    PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
+    type PrefixComponents,
 } from '../text-processing'
-import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import { ContextSnippet } from '../types'
+import { type InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { type ContextSnippet } from '../types'
 import { messagesToText } from '../utils'
 
 import {
@@ -26,11 +26,11 @@ import {
     getLineNumberDependentCompletionParams,
 } from './generate-completions'
 import {
-    CompletionProviderTracer,
     Provider,
-    ProviderConfig,
-    ProviderOptions,
     standardContextSizeHints,
+    type CompletionProviderTracer,
+    type ProviderConfig,
+    type ProviderOptions,
 } from './provider'
 
 const MAX_RESPONSE_TOKENS = 256

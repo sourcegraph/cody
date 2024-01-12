@@ -1,4 +1,4 @@
-import DOMPurify, { Config as DOMPurifyConfig } from 'dompurify'
+import DOMPurify, { type Config as DOMPurifyConfig } from 'dompurify'
 import { highlight, highlightAuto } from 'highlight.js/lib/core'
 import { marked } from 'marked'
 
@@ -17,7 +17,6 @@ const escapeHTML = (html: string): string => {
  * Attempts to syntax-highlight the given code.
  * If the language is not given, it is auto-detected.
  * If an error occurs, the code is returned as plain text with escaped HTML entities
- *
  * @param code The code to highlight
  * @param language The language of the code, if known
  * @returns Safe HTML
@@ -43,7 +42,6 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
- *
  * @param markdown The markdown to render
  */
 export const renderMarkdown = (

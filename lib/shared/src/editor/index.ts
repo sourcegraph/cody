@@ -1,4 +1,4 @@
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 export interface ActiveTextEditor {
     content: string
@@ -58,43 +58,16 @@ export interface TextDocumentContent {
     revision?: string
 }
 
-/**
- * The intent classification for the fixup.
- * Manually determined depending on how the fixup is triggered.
- */
-export type FixupIntent = 'add' | 'edit' | 'fix' | 'doc'
-
-export interface VsCodeFixupTaskRecipeData {
-    instruction: string
-    intent: FixupIntent
-    fileName: string
-    precedingText: string
-    selectedText: string
-    followingText: string
-    selectionRange: ActiveTextEditorSelectionRange
-}
-
-export interface VsCodeFixupController {
-    getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
-}
-
 export interface VsCodeCommandsController {
     menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
-export interface ActiveTextEditorViewControllers<
-    F extends VsCodeFixupController = VsCodeFixupController,
-    C extends VsCodeCommandsController = VsCodeCommandsController,
-> {
-    readonly fixups?: F
+export interface ActiveTextEditorViewControllers<C extends VsCodeCommandsController = VsCodeCommandsController> {
     readonly command?: C
 }
 
-export interface Editor<
-    F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeCommandsController = VsCodeCommandsController,
-> {
-    controllers?: ActiveTextEditorViewControllers<F, P>
+export interface Editor<P extends VsCodeCommandsController = VsCodeCommandsController> {
+    controllers?: ActiveTextEditorViewControllers<P>
 
     /**
      * The path of the workspace root if on the file system, otherwise `null`.
@@ -130,14 +103,10 @@ export interface Editor<
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
     showInputBox(prompt?: string): Promise<string | undefined>
-
-    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
-    // move the recipe to vscode and remove this entrypoint.
-    didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void>
 }
 
 export class NoopEditor implements Editor {
-    public controllers?: ActiveTextEditorViewControllers<VsCodeFixupController, VsCodeCommandsController> | undefined
+    public controllers?: ActiveTextEditorViewControllers<VsCodeCommandsController> | undefined
 
     public getWorkspaceRootPath(): string | null {
         return null
@@ -196,9 +165,5 @@ export class NoopEditor implements Editor {
 
     public showInputBox(_prompt?: string): Promise<string | undefined> {
         return Promise.resolve(undefined)
-    }
-
-    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
-        return Promise.resolve()
     }
 }

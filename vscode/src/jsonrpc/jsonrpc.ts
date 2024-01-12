@@ -1,17 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
-import { ChildProcessWithoutNullStreams } from 'child_process'
+import { type ChildProcessWithoutNullStreams } from 'child_process'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { dirname } from 'path'
 import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
+import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import * as agent from './agent-protocol'
-import * as bfg from './bfg-protocol'
-import * as embeddings from './embeddings-protocol'
+import type * as agent from './agent-protocol'
+import type * as bfg from './bfg-protocol'
+import type * as embeddings from './embeddings-protocol'
 
 type Requests = bfg.Requests & agent.Requests & embeddings.Requests
 type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
@@ -178,7 +177,6 @@ class MessageDecoder extends Writable {
             } else {
                 if (this.contentLengthRemaining === 0) {
                     try {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         const data = JSON.parse(this.contentBuffer.toString())
                         this.contentBuffer = Buffer.alloc(0)
                         this.contentLengthRemaining = null
@@ -293,7 +291,9 @@ export class MessageHandler {
             this.exit()
         })
         child.on('exit', code => {
-            reject?.(new Error(`exit: ${code}`))
+            if (code !== 0) {
+                reject?.(new Error(`exit: ${code}`))
+            }
             this.exit()
         })
         child.stderr.on('data', data => {
@@ -328,7 +328,7 @@ export class MessageHandler {
                             const data: ResponseMessage<any> = {
                                 jsonrpc: '2.0',
                                 id: msg.id,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
                                 result,
                             }
                             this.messageEncoder.send(data)
@@ -376,7 +376,6 @@ export class MessageHandler {
                     handler.resolve(msg.result)
                 }
                 this.responseHandlers.delete(msg.id)
-                console.log(`### Removing ID ${this.id}`)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
             }
@@ -385,9 +384,12 @@ export class MessageHandler {
             if (
                 msg.method === '$/cancelRequest' &&
                 msg.params &&
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 (typeof msg.params.id === 'string' || typeof msg.params.id === 'number')
             ) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 this.cancelTokens.get(msg.params.id)?.cancel()
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 this.cancelTokens.delete(msg.params.id)
             } else {
                 const notificationHandler = this.notificationHandlers.get(msg.method)
@@ -425,7 +427,6 @@ export class MessageHandler {
         this.messageEncoder.send(data)
 
         return new Promise((resolve, reject) => {
-            console.log(`### Adding ID ${this.id}`)
             this.responseHandlers.set(id, { resolve, reject })
         })
     }

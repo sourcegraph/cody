@@ -1,12 +1,12 @@
-import { AppMentionEvent } from '@slack/bolt'
-import { Message as SlackReplyMessage } from '@slack/web-api/dist/response/ChannelsRepliesResponse'
+import { type AppMentionEvent } from '@slack/bolt'
+import { type Message as SlackReplyMessage } from '@slack/web-api/dist/response/ChannelsRepliesResponse'
 import { throttle } from 'lodash'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { reformatBotMessageForChat } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { Message as PromptMessage } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { type Message as PromptMessage } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
-import { AppContext } from './constants'
+import { type AppContext } from './constants'
 import { streamCompletions } from './services/stream-completions'
 import * as slackHelpers from './slack/helpers'
 import { cleanupMessageForPrompt, getSlackInteraction } from './slack/message-interaction'
@@ -62,6 +62,7 @@ async function restoreTranscriptFromSlackThread(
     const transcript = new Transcript()
 
     const mergedMessages = mergeSequentialUserMessages(messages)
+
     const newHumanMessage = mergedMessages.pop()!
 
     mergedMessages.forEach(message => {

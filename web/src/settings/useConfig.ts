@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 
 import type { ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
 

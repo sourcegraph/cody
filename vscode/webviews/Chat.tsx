@@ -3,37 +3,33 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatModelProvider, ContextFile, Guardrails } from '@sourcegraph/cody-shared'
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+import { type ChatModelProvider, type ContextFile, type Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
+import { type TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
-    ChatButtonProps,
-    ChatSubmitType,
     Chat as ChatUI,
-    ChatUISubmitButtonProps,
-    ChatUISuggestionButtonProps,
-    ChatUITextAreaProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
+    type ChatButtonProps,
+    type ChatSubmitType,
+    type ChatUISubmitButtonProps,
+    type ChatUISuggestionButtonProps,
+    type ChatUITextAreaProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
+    type UserAccountInfo,
 } from '@sourcegraph/cody-ui/src/Chat'
-import { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { type CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
-import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings, useEnhancedContextEnabled } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
-import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
-import { VSCodeWrapper } from './utils/VSCodeApi'
+import { type VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -43,7 +39,6 @@ interface ChatboxProps {
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
-    contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -52,13 +47,8 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
-    chatCommands?: [string, CodyPrompt][]
+    chatCommands?: [string, CodyCommand][]
     isTranscriptError: boolean
-    applessOnboarding: {
-        endpoint: string | null
-        embeddingsEndpoint?: string
-        props: { onboardingPopupProps: OnboardingPopupProps }
-    }
     contextSelection?: ContextFile[] | null
     setChatModels?: (models: ChatModelProvider[]) => void
     chatModels?: ChatModelProvider[]
@@ -72,7 +62,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageBeingEdited,
     setMessageBeingEdited,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -83,7 +72,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setSuggestions,
     chatCommands,
     isTranscriptError,
-    applessOnboarding,
     contextSelection,
     setChatModels,
     chatModels,
@@ -153,13 +141,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 transcript: '',
             }
 
-            if (applessOnboarding.endpoint && isDotCom(applessOnboarding.endpoint)) {
+            if (userInfo.isDotComUser) {
                 eventData.transcript = JSON.stringify(transcript)
             }
 
             telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
         },
-        [telemetryService, transcript, applessOnboarding]
+        [telemetryService, transcript, userInfo]
     )
 
     const onCopyBtnClick = useCallback(
@@ -191,7 +179,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             messageBeingEdited={messageBeingEdited}
             setMessageBeingEdited={setMessageBeingEdited}
             transcript={transcript}
-            contextStatus={contextStatus}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}
@@ -232,11 +219,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            contextStatusComponent={ChatInputContextSimplified}
-            contextStatusComponentProps={{
-                contextStatus,
-                ...applessOnboarding.props,
-            }}
             contextSelection={contextSelection}
             UserContextSelectorComponent={UserContextSelectorComponent}
             chatModels={chatModels}
@@ -274,7 +256,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         if (autoFocus) {
             inputRef.current?.focus()
         }
-    }, [autoFocus, value, chatModels])
+    }, [autoFocus, value])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -440,7 +422,7 @@ function normalize(input: string): string {
     return input.trim().toLowerCase()
 }
 
-function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string): [string, CodyPrompt][] {
+function filterChatCommands(chatCommands: [string, CodyCommand][], query: string): [string, CodyCommand][] {
     const normalizedQuery = normalize(query)
 
     if (!isSlashCommand(normalizedQuery)) {
@@ -448,7 +430,7 @@ function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string)
     }
 
     const [slashCommand] = normalizedQuery.split(' ')
-    const matchingCommands: [string, CodyPrompt][] = chatCommands.filter(
+    const matchingCommands: [string, CodyCommand][] = chatCommands.filter(
         ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
     )
     return matchingCommands.sort()

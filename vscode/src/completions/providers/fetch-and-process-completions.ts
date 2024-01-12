@@ -1,17 +1,20 @@
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { DocumentContext } from '../get-current-doc-context'
+import { type CodeCompletionsClient, type CodeCompletionsParams } from '../client'
+import { type DocumentContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
-import { InlineCompletionItemWithAnalytics, processCompletion } from '../text-processing/process-inline-completions'
+import {
+    processCompletion,
+    type InlineCompletionItemWithAnalytics,
+} from '../text-processing/process-inline-completions'
 import { forkSignal } from '../utils'
 
 import { getUpdatedDocContext } from './dynamic-multiline'
-import { createHotStreakExtractor, HotStreakExtractor } from './hot-streak'
-import { ProviderOptions } from './provider'
+import { createHotStreakExtractor, type HotStreakExtractor } from './hot-streak'
+import { type ProviderOptions } from './provider'
 
 export interface FetchAndProcessCompletionsParams {
     client: Pick<CodeCompletionsClient, 'complete'>

@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { debounce } from 'lodash'
 import { LRUCache } from 'lru-cache'
 
-import { SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
+import { type SearchPanelFile } from '@sourcegraph/cody-shared/src/local-context'
 
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -119,7 +119,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
         const selectedSnippet = selectedFile.snippets[selectedResult[1]]
         vscodeAPI.postMessage({
             command: 'show-search-result',
-            uriJSON: selectedFile.uriJSON,
+            uri: selectedFile.uri,
             range: selectedSnippet.range,
         })
     }, [selectedResult, vscodeAPI, results])
@@ -262,7 +262,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                     <>
                         {/* File result */}
                         <div
-                            key={`${result.uriString}`}
+                            key={`${result.uri.toString()}`}
                             className={styles.searchResultRow}
                             onKeyDown={e => {
                                 if (e.key === 'Enter') {
@@ -318,7 +318,9 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
                             result.snippets.map((snippet, snippetIndex) => (
                                 <div
                                     className={styles.searchResultRow}
-                                    key={`${result.uriString}#L${snippet.range.start.line}:${snippet.range.start.character}-${snippet.range.end.line}:${snippet.range.end.character}`}
+                                    key={`${result.uri.toString()}#L${snippet.range.start.line}:${
+                                        snippet.range.start.character
+                                    }-${snippet.range.end.line}:${snippet.range.end.character}`}
                                     onClick={() => setSelectedResult([fileIndex, snippetIndex])}
                                     onKeyDown={e => e.key === 'Enter' && setSelectedResult([fileIndex, snippetIndex])}
                                 >

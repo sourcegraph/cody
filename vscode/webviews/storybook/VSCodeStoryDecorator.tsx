@@ -1,4 +1,4 @@
-import { DecoratorFn } from '@storybook/react'
+import { type DecoratorFn } from '@storybook/react'
 
 import styles from './VSCodeStoryDecorator.module.css'
 

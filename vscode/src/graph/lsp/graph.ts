@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type HoverContext, type PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
-import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
+import { type ActiveTextEditorSelectionRange, type Editor } from '@sourcegraph/cody-shared/src/editor'
 
-import { CustomAbortSignal } from '../../completions/context/utils'
+import { type CustomAbortSignal } from '../../completions/context/utils'
 import { logDebug } from '../../log'
 
 import { commonKeywords, identifierPattern, isCommonImport } from './languages'

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { AgentTextDocument } from './AgentTextDocument'
+import { type AgentTextDocument } from './AgentTextDocument'
 
 export function newTextEditor(document: AgentTextDocument): vscode.TextEditor {
     const selection: vscode.Selection = document.textDocument.selection

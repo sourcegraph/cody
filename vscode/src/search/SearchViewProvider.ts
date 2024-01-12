@@ -3,11 +3,12 @@ import * as path from 'path'
 
 import * as vscode from 'vscode'
 
-import { Result, SearchPanelFile, SearchPanelSnippet } from '@sourcegraph/cody-shared/src/local-context'
+import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import { type Result, type SearchPanelFile, type SearchPanelSnippet } from '@sourcegraph/cody-shared/src/local-context'
 
-import { WebviewMessage } from '../chat/protocol'
+import { type WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
-import { IndexStartEvent, SymfRunner } from '../local-context/symf'
+import { type IndexStartEvent, type SymfRunner } from '../local-context/symf'
 
 const searchDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('searchEditor.findMatchBackground'),
@@ -37,7 +38,7 @@ class CancellationManager implements vscode.Disposable {
 }
 
 class IndexManager implements vscode.Disposable {
-    private currentlyRefreshing = new Set<string>()
+    private currentlyRefreshing = new Map<string, Promise<void>>()
     private scopeDirIndexInProgress: Map<string, Promise<void>> = new Map()
     private disposables: vscode.Disposable[] = []
 
@@ -98,13 +99,18 @@ class IndexManager implements vscode.Disposable {
         )
     }
 
-    public async refreshIndex(scopeDir: string): Promise<void> {
-        if (this.currentlyRefreshing.has(scopeDir)) {
-            return
+    public refreshIndex(scopeDir: string): Promise<void> {
+        const fromCache = this.currentlyRefreshing.get(scopeDir)
+        if (fromCache) {
+            return fromCache
         }
-        try {
-            this.currentlyRefreshing.add(scopeDir)
+        const result = this.forceRefreshIndex(scopeDir)
+        this.currentlyRefreshing.set(scopeDir, result)
+        return result
+    }
 
+    private async forceRefreshIndex(scopeDir: string): Promise<void> {
+        try {
             await this.symf.deleteIndex(scopeDir)
             await this.symf.ensureIndex(scopeDir, { hard: true })
         } catch (error) {
@@ -205,7 +211,11 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
             .replaceAll('{cspSource}', webviewView.webview.cspSource)
 
         // Register to receive messages from webview
-        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        this.disposables.push(
+            webviewView.webview.onDidReceiveMessage(message =>
+                this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
+            )
+        )
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -215,9 +225,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 break
             }
             case 'show-search-result': {
-                const { range, uriJSON } = message
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const uri = vscode.Uri.from(uriJSON as any)
+                const { range, uri } = message
                 const vscodeRange = new vscode.Range(
                     range.start.line,
                     range.start.character,
@@ -366,9 +374,7 @@ async function resultsToDisplayResults(results: Result[]): Promise<SearchPanelFi
                     const contents = await vscode.workspace.fs.readFile(uri)
                     const { base, dir, wsName } = getRenderableComponents(group.file)
                     return {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                        uriJSON: uri.toJSON(),
-                        uriString: uri.toString(),
+                        uri,
                         basename: base,
                         dirname: dir,
                         wsname: wsName,

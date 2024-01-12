@@ -1,9 +1,9 @@
 import * as uuid from 'uuid'
-import { Memento } from 'vscode'
+import { type Memento } from 'vscode'
 
-import { ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ChatHistory, type UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { AuthStatus } from '../chat/protocol'
+import { type AuthStatus } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
@@ -21,8 +21,8 @@ type AccountKeyedChatHistory = {
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    protected readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    protected readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
@@ -92,7 +92,7 @@ export class LocalStorage {
 
         // For backwards compatibility, we upgrade the local storage key from the old layout that is
         // not scoped to individual user accounts to be scoped instead.
-        if (history && !isMigratedChatHistory(history)) {
+        if (history && !isMigratedChatHistory2261(history)) {
             // HACK: We spread both parts here as TS would otherwise have issues validating the type
             //       of AccountKeyedChatHistory. This is only three fields though.
             history = {
@@ -112,6 +112,7 @@ export class LocalStorage {
             return { chat: {}, input: [] }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         return (history as any)[key]
     }
 
@@ -132,6 +133,9 @@ export class LocalStorage {
             }
 
             await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
+
+            // MIGRATION: Delete old/orphaned storage data from a previous migration.
+            this.migrateChatHistory2665(fullHistory as AccountKeyedChatHistory)
         } catch (error) {
             console.error(error)
         }
@@ -206,6 +210,20 @@ export class LocalStorage {
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
     }
+
+    /**
+     * In https://github.com/sourcegraph/cody/pull/2665 we migrated the chat history key to use the
+     * user's username instead of their email address. This means that the storage would retain the chat
+     * history under the old key indefinitely. Large storage data slows down extension host activation
+     * and each `Memento#update` call, so we don't want it to linger.
+     */
+    private migrateChatHistory2665(history: AccountKeyedChatHistory): void {
+        const needsMigration = Object.keys(history).some(key => key.includes('@'))
+        if (needsMigration) {
+            const cleanedHistory = Object.fromEntries(Object.entries(history).filter(([key]) => !key.includes('@')))
+            this.storage.update(this.KEY_LOCAL_HISTORY, cleanedHistory).then(() => {}, console.error)
+        }
+    }
 }
 
 /**
@@ -215,7 +233,7 @@ export class LocalStorage {
 export const localStorage = new LocalStorage()
 
 function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
-    return `${authStatus.endpoint}-${authStatus.primaryEmail}`
+    return `${authStatus.endpoint}-${authStatus.username}`
 }
 
 /**
@@ -223,7 +241,7 @@ function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
  * user account. This checks if the new format is used by checking if any key contains a hyphen (the
  * separator between endpoint and email in the new format).
  */
-function isMigratedChatHistory(
+function isMigratedChatHistory2261(
     history: AccountKeyedChatHistory | UserLocalHistory
 ): history is AccountKeyedChatHistory {
     return !!Object.keys(history).find(k => k.includes('-'))

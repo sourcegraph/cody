@@ -2,16 +2,16 @@ import fs from 'fs/promises'
 
 import chalk from 'chalk'
 
-import { ChatMessage } from '@sourcegraph/cody-shared'
+import { type ChatMessage } from '@sourcegraph/cody-shared'
 import { createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { CLIOptions, program } from '.'
+import { program, type CLIOptions } from '.'
 import { factCheck } from './fact-check'
 import { failFastIfAzureEnvVarsNotSet, llmJudge } from './llm-judge'
-import { TestCase, testCases } from './test-cases'
-import { aggregateResults, AggregateTestResults, logAggregateResults, TestResult } from './test-results'
+import { testCases, type TestCase } from './test-cases'
+import { aggregateResults, logAggregateResults, type AggregateTestResults, type TestResult } from './test-results'
 
 async function runTestCase(testCase: TestCase, provider: CLIOptions['provider']): Promise<TestResult | Error> {
     let latestMessage: ChatMessage | null = { text: '', speaker: 'assistant' }

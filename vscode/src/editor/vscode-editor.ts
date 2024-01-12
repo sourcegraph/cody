@@ -13,15 +13,14 @@ import type {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CommandsController } from '../commands/CommandsController'
-import { FixupController } from '../non-stop/FixupController'
+import { type CommandsController } from '../commands/CommandsController'
 
 import { getEditor } from './active-editor'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getSmartSelection } from './utils'
 
-export class VSCodeEditor implements Editor<FixupController, CommandsController> {
-    constructor(public readonly controllers: ActiveTextEditorViewControllers<FixupController, CommandsController>) {
+export class VSCodeEditor implements Editor<CommandsController> {
+    constructor(public readonly controllers: ActiveTextEditorViewControllers<CommandsController>) {
         /**
          * Callback function that calls getEditor().active whenever the visible text editors change in VS Code.
          * This allows tracking of the currently active text editor even when focus moves to something like a webview panel.
@@ -330,14 +329,5 @@ export class VSCodeEditor implements Editor<FixupController, CommandsController>
         return vscode.window.showInputBox({
             placeHolder: prompt || 'Enter here...',
         })
-    }
-
-    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
-    // move the recipe to vscode and remove this entrypoint.
-    public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
-        if (!this.controllers.fixups) {
-            throw new Error('no fixup controller')
-        }
-        await this.controllers.fixups.didReceiveFixupText(id, text, state)
     }
 }

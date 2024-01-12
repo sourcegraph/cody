@@ -1,5 +1,5 @@
-import * as status from '../codebase-context/context-status'
-import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql/client'
+import type * as status from '../codebase-context/context-status'
+import { type EmbeddingsSearchResults } from '../sourcegraph-api/graphql/client'
 
 export interface EmbeddingsSearch extends status.ContextStatusProvider {
     repoId: string

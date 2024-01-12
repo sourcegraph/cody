@@ -50,7 +50,6 @@ export async function getSelectionAroundLine(
  * Finds the folding range containing the given target position.
  *
  * NOTE: exported for testing purposes only
- *
  * @param ranges - The array of folding ranges to search.
  * @param targetLine - The position to find the containing range for.
  * @returns The folding range containing the target position, or undefined if not found.
@@ -142,7 +141,6 @@ async function removeOutermostFoldingRanges(
  * additional nested folding ranges (e.g. for inner code blocks).
  *
  * By removing the nested ranges, you are left with only the top-level outermost folding ranges.
- *
  * @param ranges - Array of folding ranges
  * @returns Array containing only folding ranges that do not contain any nested child ranges
  */
@@ -159,7 +157,6 @@ function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = 
  *
  * This will iterate through the input ranges, and combine any ranges that are adjacent (end line of previous connects to start line of next)
  * into a single combined range.
- *
  * @param ranges - Array of folding ranges to combine
  * @returns Array of combined folding ranges
  */

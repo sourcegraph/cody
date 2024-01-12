@@ -8,10 +8,18 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionCallbacks, CompletionParameters } from './types'
+import { type CompletionCallbacks, type CompletionParameters } from './types'
+
+const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
+        if (isTemperatureZero) {
+            params = {
+                ...params,
+                temperature: 0,
+            }
+        }
         const log = this.logger?.startCompletion(params, this.completionsEndpoint)
 
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request

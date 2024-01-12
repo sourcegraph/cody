@@ -2,9 +2,9 @@ import React, { useRef } from 'react'
 
 import { noop } from 'lodash'
 
-import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
-import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
-import { SymbolLinkProps } from '@sourcegraph/cody-ui/src/chat/PreciseContext'
+import { Chat as ChatUI, type ChatUISubmitButtonProps, type ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import { type SymbolLinkProps } from '@sourcegraph/cody-ui/src/chat/PreciseContext'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
@@ -24,7 +24,6 @@ interface ChatProps
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     transcript,
-    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -39,7 +38,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         setMessageBeingEdited={noop}
         messageInProgress={messageInProgress}
         transcript={transcript}
-        contextStatus={contextStatus}
         formInput={formInput}
         setFormInput={setFormInput}
         inputHistory={inputHistory}

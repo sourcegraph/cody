@@ -2,6 +2,7 @@
 import { execSync } from 'child_process'
 import path from 'path'
 
+import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
 // <VERY IMPORTANT - PLEASE READ>
@@ -31,6 +32,7 @@ import {
     ExtensionKind,
     FileType,
     LogLevel,
+    ProgressLocation,
     Range,
     StatusBarAlignment,
     UIKind,
@@ -51,43 +53,43 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export {
-    emptyEvent,
-    emptyDisposable,
-    Range,
-    Location,
-    Selection,
-    Position,
-    Disposable,
     CancellationTokenSource,
-    EndOfLine,
-    EventEmitter,
-    InlineCompletionItem,
-    InlineCompletionTriggerKind,
-    WorkspaceEdit,
-    QuickPickItemKind,
-    ConfigurationTarget,
-    StatusBarAlignment,
-    RelativePattern,
-    MarkdownString,
-    ProgressLocation,
-    CommentMode,
-    CommentThreadCollapsibleState,
-    OverviewRulerLane,
-    CodeLens,
     CodeAction,
     CodeActionKind,
+    CodeLens,
+    CommentMode,
+    CommentThreadCollapsibleState,
+    ConfigurationTarget,
+    DiagnosticSeverity,
+    Disposable,
+    emptyDisposable,
+    emptyEvent,
+    EndOfLine,
+    EventEmitter,
+    ExtensionMode,
     FileType,
+    InlineCompletionItem,
+    InlineCompletionTriggerKind,
+    Location,
+    MarkdownString,
+    OverviewRulerLane,
+    Position,
+    ProgressLocation,
+    QuickInputButtons,
+    QuickPickItemKind,
+    Range,
+    RelativePattern,
+    Selection,
+    StatusBarAlignment,
+    SymbolKind,
     ThemeColor,
     ThemeIcon,
-    TreeItemCollapsibleState,
     TreeItem,
-    ExtensionMode,
-    DiagnosticSeverity,
-    SymbolKind,
-    ViewColumn,
-    QuickInputButtons,
+    TreeItemCollapsibleState,
     UIKind,
     Uri,
+    ViewColumn,
+    WorkspaceEdit,
 } from '../../vscode/src/testutils/mocks'
 
 const emptyFileWatcher: vscode.FileSystemWatcher = {
@@ -218,6 +220,7 @@ const _workspace: typeof vscode.workspace = {
                         await loop(folder.uri, folder.uri)
                     }
                 } catch (error) {
+                    console.log(new Error().stack)
                     console.error(`workspace.workspace.finFiles: failed to stat workspace folder ${folder.uri}`, error)
                     // ignore invalid workspace folders
                 }
@@ -413,6 +416,8 @@ export function setCreateWebviewPanel(newCreateWebviewPanel: typeof vscode.windo
     shimmedCreateWebviewPanel = newCreateWebviewPanel
 }
 
+export const progressBars = new Map<string, CancellationTokenSource>()
+
 const _window: Partial<typeof vscode.window> = {
     createTreeView: () => defaultTreeView,
     tabGroups,
@@ -442,7 +447,45 @@ const _window: Partial<typeof vscode.window> = {
     registerWebviewViewProvider: () => emptyDisposable,
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
-    withProgress: (_, handler) => handler({ report: () => {} }, new CancellationTokenSource().token),
+    withProgress: async (options, handler) => {
+        const progressClient = clientInfo?.capabilities?.progressBars === 'enabled' ? agent : undefined
+        const id = uuid.v4()
+        const tokenSource = new CancellationTokenSource()
+        const token = tokenSource.token
+        progressBars.set(id, tokenSource)
+        token.onCancellationRequested(() => progressBars.delete(id))
+
+        if (progressClient) {
+            const location = typeof options.location === 'number' ? ProgressLocation[options.location] : undefined
+            const locationViewId = typeof options.location === 'object' ? options.location.viewId : undefined
+            progressClient.notify('progress/start', {
+                id,
+                options: { title: options.title, cancellable: options.cancellable, location, locationViewId },
+            })
+        }
+        try {
+            const result = await handler(
+                {
+                    report: ({ message, increment }) => {
+                        if (progressClient && !token.isCancellationRequested) {
+                            progressClient.notify('progress/report', { id, message, increment })
+                        }
+                    },
+                },
+                token
+            )
+            return result
+        } catch (error) {
+            console.error('window.withProgress: uncaught error', error)
+            throw error
+        } finally {
+            tokenSource.dispose()
+            progressBars.delete(id)
+            if (progressClient) {
+                progressClient.notify('progress/end', { id })
+            }
+        }
+    },
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: onDidChangeVisibleTextEditors.event,
     onDidChangeTextEditorSelection: onDidChangeTextEditorSelection.event,
@@ -529,11 +572,11 @@ const gitExports: GitExtension = {
             getRepository(uri) {
                 try {
                     const cwd = uri.fsPath
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd }).toString().trim()
+                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' }).toString().trim()
                     if (toplevel !== uri.fsPath) {
                         return null
                     }
-                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd }).toString().trim()
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' }).toString().trim()
                     return gitRepository(Uri.file(toplevel), commit)
                 } catch {
                     return null

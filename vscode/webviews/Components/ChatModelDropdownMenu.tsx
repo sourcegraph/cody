@@ -1,9 +1,9 @@
-import React, { ComponentProps, useCallback, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState, type ComponentProps } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
 import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -19,6 +19,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     userInfo,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
+    const currentModelIndex = models.indexOf(models.find(m => m.default) || models[0])
     const dropdownRef = useRef<DropdownProps>(null)
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
@@ -27,6 +28,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 
     const handleChange = useCallback(
         (event: any): void => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const selectedModel = models[event.target?.selectedIndex]
             if (showCodyProBadge && selectedModel.codyProOnly) {
                 getVSCodeAPI().postMessage({ command: 'links', value: 'https://sourcegraph.com/cody/subscription' })
@@ -60,6 +62,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
         onClickCapture: () => {
             // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (!dropdownRef.current?.open) {
                 getVSCodeAPI().postMessage({
                     command: 'event',
@@ -77,6 +80,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 disabled={disabled}
                 className={styles.dropdownContainer}
                 onChange={handleChange}
+                selectedIndex={currentModelIndex}
                 {...(!disabled && enabledDropdownProps)}
             >
                 {models?.map((option, index) => (

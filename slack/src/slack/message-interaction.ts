@@ -1,15 +1,18 @@
-import { HNSWLib } from 'langchain/vectorstores/hnswlib'
+import { type HNSWLib } from 'langchain/vectorstores/hnswlib'
 
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ContextSearchOptions } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { type ContextSearchOptions } from '@sourcegraph/cody-shared/src/codebase-context'
+import {
+    getContextMessageWithResponse,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 // import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { populateMarkdownContextTemplate } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { CodebaseContexts } from '../constants'
+import { type CodebaseContexts } from '../constants'
 
 class SlackInteraction {
     public contextMessages: ContextMessage[] = []

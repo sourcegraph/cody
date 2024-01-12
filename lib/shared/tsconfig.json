@@ -1,11 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
     "rootDir": "src",
     "outDir": "dist",
     "lib": ["ESNext", "DOM.Iterable"],
   },
-  "include": ["src", "src/chat/prompts/cody.json"],
+  "include": ["src"],
   "exclude": ["dist"],
 }

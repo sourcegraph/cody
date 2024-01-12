@@ -1,11 +1,11 @@
 import path from 'path'
 
-import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { type CodebaseContext } from '../../codebase-context'
+import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
-
-import { PROMPT_TOPICS } from './fixup'
+import { Interaction } from '../transcript/interaction'
+import { type ChatEventSource } from '../transcript/messages'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
 
@@ -72,21 +72,6 @@ export function getFileExtension(fileName: string): string {
     return path.extname(fileName).slice(1).toLowerCase()
 }
 
-// This cleans up the code returned by Cody based on current behavior
-// ex. Remove  `tags:` that Cody sometimes include in the returned content
-// It also removes all spaces before a new line to keep the indentations
-export function contentSanitizer(text: string): string {
-    const FIXUP_TAG_TOPICS = `(${PROMPT_TOPICS.OUTPUT}|${PROMPT_TOPICS.SELECTED}|${PROMPT_TOPICS.PRECEDING})`
-    const FIXUP_TAG_REGEX = new RegExp(`^\\s*<${FIXUP_TAG_TOPICS}>|<\\/${FIXUP_TAG_TOPICS}>\\s*$`, 'g')
-    let output = text.replaceAll(FIXUP_TAG_REGEX, '')
-    const tagsIndex = text.indexOf('tags:')
-    if (tagsIndex !== -1) {
-        // NOTE: 6 is the length of `tags:` + 1 space
-        output = output.slice(tagsIndex + 6)
-    }
-    return output.replace(/^\s*\n/, '')
-}
-
 export const numResults = {
     numCodeResults: NUM_CODE_RESULTS,
     numTextResults: NUM_TEXT_RESULTS,
@@ -94,4 +79,44 @@ export const numResults = {
 
 export function isSingleWord(str: string): boolean {
     return str.trim().split(/\s+/).length === 1
+}
+
+/**
+ * Creates a new Interaction object with the given parameters.
+ */
+export async function newInteraction(args: {
+    text?: string
+    displayText?: string
+    contextMessages?: Promise<ContextMessage[]>
+    assistantText?: string
+    assistantDisplayText?: string
+    assistantPrefix?: string
+    source?: ChatEventSource
+    requestID?: string
+}): Promise<Interaction> {
+    const {
+        text,
+        displayText,
+        contextMessages,
+        assistantText,
+        assistantDisplayText,
+        assistantPrefix,
+        source,
+        requestID,
+    } = args
+    const metadata = { source, requestID }
+    return Promise.resolve(
+        new Interaction(
+            { speaker: 'human', text, displayText, metadata },
+            {
+                speaker: 'assistant',
+                text: assistantText,
+                displayText: assistantDisplayText,
+                prefix: assistantPrefix,
+                metadata,
+            },
+            Promise.resolve(contextMessages || []),
+            []
+        )
+    )
 }

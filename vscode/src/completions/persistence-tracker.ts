@@ -4,9 +4,9 @@ import * as vscode from 'vscode'
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 import {
-    CompletionAnalyticsID,
     logCompletionPersistencePresentEvent,
     logCompletionPersistenceRemovedEvent,
+    type CompletionAnalyticsID,
 } from './logger'
 import { lines } from './text-processing'
 
@@ -69,6 +69,7 @@ export class PersistenceTracker implements vscode.Disposable {
             insertRange.start.line,
             insertRange.start.character,
             insertRange.end.line + textLines.length - 1,
+
             textLines.length > 1 ? textLines.at(-1)!.length : insertRange.end.character + textLines[0].length
         )
 

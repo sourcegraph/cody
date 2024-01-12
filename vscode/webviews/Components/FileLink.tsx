@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import { type FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 

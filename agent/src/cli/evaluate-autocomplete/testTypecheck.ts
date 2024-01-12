@@ -3,8 +3,8 @@ import * as fspromises from 'fs/promises'
 import * as os from 'os'
 import path from 'path'
 
-import { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
-import { TestParameters } from './TestParameters'
+import { type EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { type TestParameters } from './TestParameters'
 import { Timer } from './Timer'
 
 async function runCommand(command: string | undefined, cwd: string): Promise<boolean> {

@@ -1,4 +1,4 @@
-import { AppContext, DEFAULT_APP_SETTINGS, DEFAULT_CODEBASES, ENVIRONMENT_CONFIG } from './constants'
+import { DEFAULT_APP_SETTINGS, DEFAULT_CODEBASES, ENVIRONMENT_CONFIG, type AppContext } from './constants'
 import { handleHumanMessage } from './mention-handler'
 import { createCodebaseContext } from './services/codebase-context'
 import { getVectorStore } from './services/local-vector-store'
@@ -9,6 +9,7 @@ const { PORT } = ENVIRONMENT_CONFIG
 
 async function createAppContext() {
     // Init codebase context clients for specified Slack channels.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const appContext = { codebaseContexts: {} } as AppContext
     for (const codebase of DEFAULT_CODEBASES) {
         appContext.codebaseContexts[codebase] = await createCodebaseContext(

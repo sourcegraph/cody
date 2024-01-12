@@ -1,12 +1,12 @@
-import { TextDocument } from 'vscode'
-import { Point, SyntaxNode } from 'web-tree-sitter'
+import { type TextDocument } from 'vscode'
+import { type Point, type SyntaxNode } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import { DocumentContext } from '../get-current-doc-context'
+import { type DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, ParsedCompletion } from './parse-completion'
-import { BRACKET_PAIR, getFirstLine, OpeningBracket } from './utils'
+import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import { BRACKET_PAIR, type OpeningBracket } from './utils'
 
 interface CompletionContext {
     completion: ParsedCompletion
@@ -14,34 +14,33 @@ interface CompletionContext {
     docContext: DocumentContext
 }
 
-interface InsertMissingBracketParams {
-    textToCheck: string
-    textToComplete: string
-    docContext: DocumentContext
-}
-
 /**
- * Inserts a closing bracket if the text to check ends with an opening bracket
- * but the next non-empty line does not start with the corresponding closing bracket.
+ * Inserts missing closing brackets in the completion text.
  * This handles cases where a missing bracket breaks the incomplete parse-tree.
  */
-function insertMissingBracketIfNeeded(params: InsertMissingBracketParams): string {
-    const {
-        textToCheck,
-        textToComplete,
-        docContext: { nextNonEmptyLine },
-    } = params
+export function insertMissingBrackets(text: string): string {
+    const openingStack: OpeningBracket[] = []
+    const bracketPairs = Object.entries(BRACKET_PAIR)
 
-    const openingBracket = Object.keys(BRACKET_PAIR).find(openingBracket =>
-        textToCheck.trimEnd().endsWith(openingBracket)
-    ) as OpeningBracket | undefined
+    for (const char of text) {
+        const bracketPair = bracketPairs.find(([_, closingBracket]) => closingBracket === char)
 
-    const closingBracket = openingBracket && BRACKET_PAIR[openingBracket]
-    if (closingBracket && !nextNonEmptyLine.startsWith(closingBracket) && !textToComplete.endsWith(closingBracket)) {
-        return textToComplete + closingBracket
+        if (bracketPair) {
+            if (openingStack.length > 0 && openingStack.at(-1) === bracketPair[0]) {
+                openingStack.pop()
+            }
+        } else if (Object.keys(BRACKET_PAIR).includes(char)) {
+            openingStack.push(char as OpeningBracket)
+        }
     }
 
-    return textToComplete
+    return (
+        text +
+        openingStack
+            .reverse()
+            .map(openBracket => BRACKET_PAIR[openBracket])
+            .join('')
+    )
 }
 
 interface TruncateParsedCompletionResult {
@@ -68,20 +67,14 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     })
 
     let fixedCompletion = completion
-    let updatedText = insertMissingBracketIfNeeded({
-        textToCheck: getFirstLine(insertText),
-        textToComplete: insertText,
-        docContext,
-    })
-    updatedText = insertMissingBracketIfNeeded({
-        textToCheck: updatedText,
-        textToComplete: updatedText,
-        docContext,
-    })
 
-    if (updatedText.length !== insertText.length) {
+    const insertTextWithMissingBrackets = insertMissingBrackets(docContext.currentLinePrefix + insertText).slice(
+        docContext.currentLinePrefix.length
+    )
+
+    if (insertTextWithMissingBrackets.length !== insertText.length) {
         const updatedCompletion = parseCompletion({
-            completion: { insertText: updatedText },
+            completion: { insertText: insertTextWithMissingBrackets },
             document,
             docContext,
         })

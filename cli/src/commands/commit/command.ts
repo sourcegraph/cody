@@ -6,11 +6,11 @@ import { cwd } from 'process'
 
 import { Command } from 'commander'
 
-import { Client, getClient } from '../../client'
+import { getClient, type Client } from '../../client'
 import { getCompletionWithContext } from '../../client/completions'
-import { createGitHelpers, GitHelpers } from '../../gitHelpers'
+import { createGitHelpers, type GitHelpers } from '../../gitHelpers'
 import { debugLog } from '../../log'
-import { GlobalOptions } from '../../program'
+import { type GlobalOptions } from '../../program'
 
 const spawn = promisify(_spawn)
 

@@ -1,14 +1,14 @@
 import dedent from 'dedent'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
-import * as Parser from 'web-tree-sitter'
+import type * as vscode from 'vscode'
+import type * as Parser from 'web-tree-sitter'
 
 import { range } from '../testutils/textDocument'
 import { asPoint } from '../tree-sitter/parse-tree-cache'
 import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getContextRange } from './doc-context-getters'
-import { DocumentContext, getCurrentDocContext, insertIntoDocContext } from './get-current-doc-context'
+import { getCurrentDocContext, insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletionContext) {
@@ -190,48 +190,6 @@ describe('getCurrentDocContext', () => {
         })
     })
 
-    it('returns the right range for the document context', () => {
-        const { document, position } = documentAndPosition(
-            dedent`
-                function bubbleSort(arr) {
-                    for (let i = 0; i < arr.length; i++) {
-                        for (let j = 0; j < arr.length; j++) {
-                            if (arr[i] > arr[j]) {
-
-                                let temp = █;
-
-                                arr[i] = arr[j];
-                                arr[j] = temp;
-                            }
-                        }
-                    }
-                }
-            `
-        )
-
-        const docContext = getCurrentDocContext({
-            document,
-            position,
-            maxPrefixLength: 140,
-            maxSuffixLength: 60,
-            dynamicMultilineCompletions: false,
-        })
-        const contextRange = getContextRange(document, docContext)
-
-        expect(contextRange).toMatchInlineSnapshot(`
-          Range {
-            "end": Position {
-              "character": 32,
-              "line": 7,
-            },
-            "start": Position {
-              "character": 0,
-              "line": 2,
-            },
-          }
-        `)
-    })
-
     describe('multiline triggers', () => {
         let parser: Parser
 
@@ -371,6 +329,50 @@ describe('getCurrentDocContext', () => {
                 }
             )
         })
+    })
+})
+
+describe('getContextRange', () => {
+    it('returns the right range for the document context', () => {
+        const { document, position } = documentAndPosition(
+            dedent`
+                function bubbleSort(arr) {
+                    for (let i = 0; i < arr.length; i++) {
+                        for (let j = 0; j < arr.length; j++) {
+                            if (arr[i] > arr[j]) {
+
+                                let temp = █;
+
+                                arr[i] = arr[j];
+                                arr[j] = temp;
+                            }
+                        }
+                    }
+                }
+            `
+        )
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
+            dynamicMultilineCompletions: false,
+        })
+        const contextRange = getContextRange(document, docContext)
+
+        expect(contextRange).toMatchInlineSnapshot(`
+          Range {
+            "end": Position {
+              "character": 32,
+              "line": 7,
+            },
+            "start": Position {
+              "character": 0,
+              "line": 2,
+            },
+          }
+        `)
     })
 })
 

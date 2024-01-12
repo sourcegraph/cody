@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
-import { ActiveTextEditorSelectionRange, ContextFile } from '@sourcegraph/cody-shared'
+import { type ActiveTextEditorSelectionRange, type ContextFile } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from '../actions/TranscriptAction'
 
@@ -28,10 +28,6 @@ export const EnhancedContext: React.FunctionComponent<{
 
     const filteredFiles = contextFiles.filter(file => {
         if (uniqueFiles.has(file.fileName)) {
-            return false
-        }
-        // Skip files added by user. e.g. @-files
-        if (file.source === 'user') {
             return false
         }
         uniqueFiles.add(file.fileName)

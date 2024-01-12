@@ -3,7 +3,7 @@ import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } f
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { type CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { testFilePath, wrapVSCodeTextDocument } from '../testutils/textDocument'
 

@@ -1,19 +1,18 @@
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
-import { DocumentContext } from './get-current-doc-context'
-import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { CompletionLogID, logCompletionBookkeepingEvent } from './logger'
-import { CompletionProviderTracer, Provider } from './providers/provider'
+import { type DocumentContext } from './get-current-doc-context'
+import { InlineCompletionsResultSource, type LastInlineCompletionCandidate } from './get-inline-completions'
+import { logCompletionBookkeepingEvent, type CompletionLogID } from './logger'
+import { type CompletionProviderTracer, type Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
-    InlineCompletionItemWithAnalytics,
     processInlineCompletions,
+    type InlineCompletionItemWithAnalytics,
 } from './text-processing/process-inline-completions'
-import { ContextSnippet } from './types'
-import { forkSignal } from './utils'
+import { type ContextSnippet } from './types'
 
 export interface RequestParams {
     /** The request's document */
@@ -58,19 +57,6 @@ interface RequestsManagerParams {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
-    private disableRecyclingOfPreviousRequests = false
-
-    constructor(
-        {
-            disableRecyclingOfPreviousRequests = false,
-        }: {
-            disableRecyclingOfPreviousRequests?: boolean
-        } = {
-            disableRecyclingOfPreviousRequests: false,
-        }
-    ) {
-        this.disableRecyclingOfPreviousRequests = disableRecyclingOfPreviousRequests
-    }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
         const { requestParams, providers, context, isCacheEnabled, tracer } = params
@@ -83,10 +69,7 @@ export class RequestManager {
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
         // complete and try to see if their results can be reused for other inflight requests.
-        let abortController: AbortController = new AbortController()
-        if (this.disableRecyclingOfPreviousRequests && requestParams.abortSignal) {
-            abortController = forkSignal(requestParams.abortSignal)
-        }
+        const abortController: AbortController = new AbortController()
 
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
@@ -138,9 +121,7 @@ export class RequestManager {
                 // check if the request was already fulfilled.
                 request.resolve({ completions: processedCompletions, source: InlineCompletionsResultSource.Network })
 
-                if (!this.disableRecyclingOfPreviousRequests) {
-                    this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
-                }
+                this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
 
                 return processedCompletions
             })

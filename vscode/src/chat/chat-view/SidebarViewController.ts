@@ -2,14 +2,16 @@ import * as vscode from 'vscode'
 
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { View } from '../../../webviews/NavBar'
+import { type View } from '../../../webviews/NavBar'
 import { logDebug } from '../../log'
+import { type AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { openExternalLinks } from '../../services/utils/workspace-action'
-import { MessageErrorType, MessageProvider, MessageProviderOptions } from '../MessageProvider'
-import { ExtensionMessage, WebviewMessage } from '../protocol'
+import { type ContextProvider } from '../ContextProvider'
+import { type MessageErrorType, type MessageProviderOptions } from '../MessageProvider'
+import { type ExtensionMessage, type WebviewMessage } from '../protocol'
 
 import { addWebviewViewHTML } from './ChatManager'
 
@@ -21,13 +23,18 @@ export interface SidebarViewOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
 }
 
-export class SidebarViewController extends MessageProvider implements vscode.WebviewViewProvider {
+export class SidebarViewController implements vscode.WebviewViewProvider {
     private extensionUri: vscode.Uri
     public webview?: SidebarChatWebview
-    public webviewPanel: vscode.WebviewPanel | undefined = undefined
+
+    private disposables: vscode.Disposable[] = []
+
+    private authProvider: AuthProvider
+    private readonly contextProvider: ContextProvider
 
     constructor({ extensionUri, ...options }: SidebarViewOptions) {
-        super(options)
+        this.authProvider = options.authProvider
+        this.contextProvider = options.contextProvider
         this.extensionUri = extensionUri
     }
 
@@ -39,7 +46,7 @@ export class SidebarViewController extends MessageProvider implements vscode.Web
             case 'initialized':
                 logDebug('SidebarViewController:onDidReceiveMessage', 'initialized')
                 await this.setWebviewView('chat')
-                await this.init()
+                await this.contextProvider.init()
                 break
             case 'auth':
                 if (message.type === 'callback' && message.endpoint) {
@@ -98,22 +105,10 @@ export class SidebarViewController extends MessageProvider implements vscode.Web
         await this.contextProvider.forceUpdateCodebaseContext()
     }
 
-    protected handleTranscript(): void {
-        // not required for non-chat view
-    }
-
-    protected handleSuggestions(): void {
-        // not required for non-chat view
-    }
-
-    protected handleHistory(): void {
-        // not required for non-chat view
-    }
-
     /**
      * Display error message in webview as a banner alongside the chat.
      */
-    public handleError(error: Error, type: MessageErrorType): void {
+    private handleError(error: Error, type: MessageErrorType): void {
         if (type === 'transcript') {
             // not required for non-chat view
             return
@@ -121,34 +116,10 @@ export class SidebarViewController extends MessageProvider implements vscode.Web
         void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
     }
 
-    protected handleCodyCommands(): void {
-        // not required for non-chat view
-    }
-
-    /**
-     *
-     * @param notice Triggers displaying a notice.
-     * @param notice.key The key of the notice to display.
-     */
-    public triggerNotice(notice: { key: string }): void {
-        // They may not have chat open, and given the current notices are
-        // designed to be triggered once only during onboarding, we open the
-        // chat view. If we have other notices and this feels too aggressive, we
-        // can make it be conditional on the type of notice being triggered.
-        void vscode.commands.executeCommand('cody.chat.focus', {
-            // Notices are not meant to steal focus from the editor
-            preserveFocus: true,
-        })
-        void this.webview?.postMessage({
-            type: 'notice',
-            notice,
-        })
-    }
-
     /**
      * Set webview view
      */
-    public async setWebviewView(view: View): Promise<void> {
+    private async setWebviewView(view: View): Promise<void> {
         await vscode.commands.executeCommand('cody.chat.focus')
         await this.webview?.postMessage({
             type: 'view',
@@ -161,9 +132,9 @@ export class SidebarViewController extends MessageProvider implements vscode.Web
      */
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         _context: vscode.WebviewViewResolveContext<unknown>,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview

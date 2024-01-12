@@ -8,7 +8,7 @@ console.log = console.error
 // process.stdout, which breaks the `jsonrpc` command, which uses stdout/stdin
 // to communicate with the agent client`jsonrpc` command, which uses
 // stdout/stdin to communicate with the agent client.
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access
 const rootCommand: Command = require('./cli/root').rootCommand
 
 const args = process.argv.slice(2)
