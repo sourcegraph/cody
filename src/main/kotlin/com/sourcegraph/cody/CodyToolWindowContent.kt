@@ -68,9 +68,6 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     recipesPanel.layout = BoxLayout(recipesPanel, BoxLayout.Y_AXIS)
     tabbedPane.insertTab("Commands", null, recipesPanel, null, RECIPES_TAB_INDEX)
 
-    // Initiate filling recipes panel in the background
-    refreshRecipes()
-
     // Chat panel
     messagesPanel.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true)
     val chatPanel = ChatScrollPane(messagesPanel)
@@ -91,6 +88,10 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
       stopGeneratingButton.isVisible = false
       sendButton.isEnabled = promptPanel.textArea.text.isNotBlank()
       ensureBlinkingCursorIsNotDisplayed()
+      recipesPanel.components.filterIsInstance<JButton>().forEach {
+        it.isEnabled = true
+        it.toolTipText = null
+      }
     }
     stopGeneratingButton.isVisible = false
     stopGeneratingButtonPanel.add(stopGeneratingButton)
@@ -112,8 +113,14 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
     refreshPanelsVisibility()
 
     addWelcomeMessage()
-    ApplicationManager.getApplication().executeOnPooledThread { refreshSubscriptionTab() }
-    loadNewChatId()
+
+    // Initiate filling recipes panel in the background
+    refreshRecipes()
+
+    ApplicationManager.getApplication().executeOnPooledThread {
+      refreshSubscriptionTab()
+      loadNewChatId()
+    }
   }
 
   @RequiresBackgroundThread
@@ -215,6 +222,7 @@ class CodyToolWindowContent(private val project: Project) : UpdatableChat {
   }
 
   private fun loadCommands() {
+    tryRestartingAgentIfNotRunning(project)
     getInitializedServer(project).thenAccept { server ->
       if (server == null) {
         setRecipesPanelError()

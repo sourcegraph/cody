@@ -1,6 +1,7 @@
 package com.sourcegraph.cody;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -15,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyFileEditorListener implements FileEditorManagerListener {
+  private static final Logger logger = Logger.getInstance(CodyFileEditorListener.class);
+
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
     if (!ConfigUtil.isCodyEnabled()) {
@@ -36,6 +39,13 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
                   .thenAccept(
                       server -> {
                         if (server == null) {
+                          logger.warn("server is null");
+                          ApplicationManager.getApplication()
+                              .invokeLater(
+                                  () -> {
+                                    fileOpened(source, file);
+                                  });
+
                           return;
                         }
                         if (!CodyAgent.isConnected(source.getProject())) {
