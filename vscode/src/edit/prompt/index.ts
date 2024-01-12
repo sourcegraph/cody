@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
+import { getSimplePreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { type CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
@@ -107,7 +108,8 @@ export const buildInteraction = async ({
         []
     )
     transcript.addInteraction(interaction)
-    const completePrompt = await transcript.getPromptForLastInteraction()
+    const preamble = getSimplePreamble()
+    const completePrompt = await transcript.getPromptForLastInteraction(preamble)
 
     return {
         messages: completePrompt.prompt,
