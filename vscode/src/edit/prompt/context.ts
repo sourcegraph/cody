@@ -21,7 +21,7 @@ import { type EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
 
-export interface GetContextFromIntentOptions {
+interface GetContextFromIntentOptions {
     intent: EditIntent
     selectedText: string
     precedingText: string

@@ -543,7 +543,7 @@ export const extractDefinitionContexts = async (
 /**
  * Shim for default LSP executeDocumentSymbolProvider call. Can be mocked for testing.
  */
-export const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
+const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
     vscode.commands
         .executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[] | undefined>(
             'vscode.executeDocumentSymbolProvider',

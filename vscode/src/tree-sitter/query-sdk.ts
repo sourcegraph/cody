@@ -87,7 +87,7 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     }
 }
 
-export interface QueryWrappers {
+interface QueryWrappers {
     getSinglelineTrigger: (
         node: SyntaxNode,
         start: Point,
@@ -317,7 +317,7 @@ interface QueryPoints {
     endPoint: Point
 }
 
-export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
+function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
     const startPoint = {
         row: position.line,
         column: position.character,

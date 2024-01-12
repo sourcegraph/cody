@@ -52,7 +52,7 @@ export type Config = Pick<
     | 'internalUnstable'
 >
 
-export enum ContextEvent {
+enum ContextEvent {
     Auth = 'auth',
 }
 

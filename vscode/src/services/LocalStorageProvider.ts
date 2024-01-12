@@ -18,7 +18,7 @@ type AccountKeyedChatHistory = {
     input: []
 }
 
-export class LocalStorage {
+class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'

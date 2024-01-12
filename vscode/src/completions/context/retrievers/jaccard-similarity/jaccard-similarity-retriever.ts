@@ -17,7 +17,7 @@ import { VSCodeDocumentHistory, type DocumentHistory } from './history'
  * that is most similar to the 'targetText'. In essence, it sets the maximum number
  * of lines that the best match can be. A larger 'windowSize' means larger potential matches
  */
-export const SNIPPET_WINDOW_SIZE = 50
+const SNIPPET_WINDOW_SIZE = 50
 
 /**
  * The Jaccard Similarity Retriever is a sparse, local-only, retrieval strategy that uses local

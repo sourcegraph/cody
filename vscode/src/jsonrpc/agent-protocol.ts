@@ -199,15 +199,15 @@ export type Notifications = {
     'progress/end': [{ id: string }]
 }
 
-export interface CancelParams {
+interface CancelParams {
     id: string | number
 }
 
-export interface CompletionItemParams {
+interface CompletionItemParams {
     completionID: CompletionItemID
 }
 
-export interface AutocompleteParams {
+interface AutocompleteParams {
     uri: string
     filePath?: string
     position: Position
@@ -217,7 +217,7 @@ export interface AutocompleteParams {
     selectedCompletionInfo?: SelectedCompletionInfo
 }
 
-export interface SelectedCompletionInfo {
+interface SelectedCompletionInfo {
     readonly range: Range
     readonly text: string
 }
@@ -252,7 +252,7 @@ export interface ClientInfo {
     marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
-export interface ClientCapabilities {
+interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
@@ -269,7 +269,7 @@ export interface ServerInfo {
     codyVersion: string | null
     capabilities?: ServerCapabilities
 }
-export interface ServerCapabilities {}
+interface ServerCapabilities {}
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
@@ -315,7 +315,7 @@ export interface ExtensionConfiguration {
  * 'success', in the context of feature.
  * @param parameters should be as described in {@link TelemetryEventParameters}.
  */
-export interface TelemetryEvent {
+interface TelemetryEvent {
     feature: string
     action: string
     parameters?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
@@ -340,7 +340,7 @@ export function newTelemetryEvent<Feature extends string, Action extends string,
 /**
  * @deprecated EventProperties are no longer referenced.
  */
-export interface EventProperties {
+interface EventProperties {
     /**
      * @deprecated Use (ExtensionConfiguration).anonymousUserID instead
      */
@@ -382,18 +382,18 @@ export interface RecipeInfo {
     title: string // Title Case
 }
 
-export interface ExecuteRecipeParams {
+interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
 }
 
-export interface ExecuteCommandParams {
+interface ExecuteCommandParams {
     command: string
     arguments?: any[]
 }
 
-export interface DebugMessage {
+interface DebugMessage {
     channel: string
     message: string
 }
@@ -417,7 +417,7 @@ export interface ProgressReportParams {
      */
     increment?: number
 }
-export interface ProgressOptions {
+interface ProgressOptions {
     /**
      * A human-readable string which will be used to describe the
      * operation.

@@ -22,7 +22,7 @@ interface EnhancedContextSettingsProps {
     setOpen: (open: boolean) => void
 }
 
-export function defaultEnhancedContextContext(): EnhancedContextContextT {
+function defaultEnhancedContextContext(): EnhancedContextContextT {
     return {
         groups: [],
     }
@@ -46,7 +46,7 @@ export interface EnhancedContextEventHandlersT {
     onShouldBuildSymfIndex: (provider: SearchProvider) => void
 }
 
-export function useEnhancedContextContext(): EnhancedContextContextT {
+function useEnhancedContextContext(): EnhancedContextContextT {
     return React.useContext(EnhancedContextContext)
 }
 
@@ -54,7 +54,7 @@ export function useEnhancedContextEnabled(): boolean {
     return React.useContext(EnhancedContextEnabled)
 }
 
-export function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT {
+function useEnhancedContextEventHandlers(): EnhancedContextEventHandlersT {
     return React.useContext(EnhancedContextEventHandlers)
 }
 

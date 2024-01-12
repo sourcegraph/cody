@@ -6,7 +6,7 @@ import { Polly, type EXPIRY_STRATEGY, type MODE } from '@pollyjs/core'
 import { CodyNodeHttpAdapter } from './CodyNodeHttpAdapter'
 import { CodyPersister } from './CodyPersister'
 
-export interface PollyOptions {
+interface PollyOptions {
     recordingName: string
     recordingDirectory?: string
     recordIfMissing?: boolean

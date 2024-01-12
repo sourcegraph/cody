@@ -98,7 +98,7 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
-    const commandsController = platform.createCommandsController?.(context.extensionPath)
+    const commandsController = platform.createCommandsController?.()
     const editor = new VSCodeEditor({ command: commandsController })
 
     // Could we use the `initialConfig` instead?

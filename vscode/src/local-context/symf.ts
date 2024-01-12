@@ -383,7 +383,7 @@ export interface IndexStartEvent {
     done: Promise<void>
 }
 
-export interface IndexEndEvent {
+interface IndexEndEvent {
     scopeDir: string
 }
 

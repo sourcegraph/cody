@@ -24,14 +24,6 @@ export function updateRangeOnDocChange(current: vscode.Range, change: vscode.Ran
 export function getSingleLineRange(line: number): vscode.Range {
     return new vscode.Range(line, 0, line, 0)
 }
-/**
- * Generate icon path for each speaker: cody vs human (sourcegraph)
- */
-export function getIconPath(speaker: string, extPath: string): vscode.Uri {
-    const extensionPath = vscode.Uri.file(extPath)
-    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist/webviews')
-    return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
-}
 
 /**
  * To edit a document by its Uri

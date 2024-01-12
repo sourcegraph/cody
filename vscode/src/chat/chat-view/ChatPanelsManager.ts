@@ -30,7 +30,7 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-export interface ChatPanelProviderOptions extends MessageProviderOptions {
+interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider

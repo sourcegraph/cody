@@ -7,7 +7,7 @@ import { type ContextSnippet } from '../types'
 
 import { type ContextStrategy, type ContextStrategyFactory } from './context-strategy'
 
-export interface GetContextOptions {
+interface GetContextOptions {
     document: vscode.TextDocument
     position: vscode.Position
     docContext: DocumentContext

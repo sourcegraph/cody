@@ -7,8 +7,7 @@
                 "scripts/*.ts",
                 "test/integration/*.ts",
                 "webviews/index.tsx",
-                "../agent/src/index.ts",
-                "../agent/src/agent.ts"
+                "../agent/**/*.ts"
             ],
             "ignore": ["src/testutils/uri.ts"]
         },

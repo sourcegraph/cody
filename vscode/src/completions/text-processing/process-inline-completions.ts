@@ -14,7 +14,7 @@ import { dropParserFields, type ParsedCompletion } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
-export interface ProcessInlineCompletionsParams {
+interface ProcessInlineCompletionsParams {
     document: TextDocument
     position: Position
     docContext: DocumentContext

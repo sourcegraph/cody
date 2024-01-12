@@ -58,7 +58,7 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
     )
 }
 
-export const Icon: React.FunctionComponent = () => (
+const Icon: React.FunctionComponent = () => (
     <svg className={styles.icon} width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path d="M10.3714 9.37143L9 14L7.62857 9.37143L3 8L7.62857 6.62857L9 2L10.3714 6.62857L15 8L10.3714 9.37143Z" />
         <path d="M21 12L17 14.2L13 12L15.2 16L13 20L17 17.8L21 20L18.8 16L21 12Z" />

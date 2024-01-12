@@ -11,8 +11,8 @@ import { createVSCodeRelativePath } from '../../editor-context/helpers'
 import { type CodebaseIdentifiers } from './CodebaseStatusProvider'
 import { type ContextItem } from './SimpleChatModel'
 
-export const relativeFileUrlScheme = 'cody-file-relative'
-export const embeddingsUrlScheme = 'cody-remote-embeddings'
+const relativeFileUrlScheme = 'cody-file-relative'
+const embeddingsUrlScheme = 'cody-remote-embeddings'
 
 /**
  * Returns a URI for a snippet returned from the remote embeddings endpoint
@@ -132,7 +132,7 @@ async function legacyFilenameToAbsPath(fileName: string): Promise<string | null>
     return null
 }
 
-export async function openFile(
+async function openFile(
     absPath: string,
     range?: ActiveTextEditorSelectionRange,
     currentViewColumn?: vscode.ViewColumn
@@ -222,9 +222,7 @@ export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] 
     return contextFiles
 }
 
-export function rangeToActiveTextEditorSelectionRange(
-    range?: vscode.Range
-): ActiveTextEditorSelectionRange | undefined {
+function rangeToActiveTextEditorSelectionRange(range?: vscode.Range): ActiveTextEditorSelectionRange | undefined {
     if (!range) {
         return undefined
     }

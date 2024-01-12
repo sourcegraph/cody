@@ -9,7 +9,7 @@ export enum CodyTaskState {
     'error' = 8,
 }
 
-export type CodyTaskList = {
+type CodyTaskList = {
     [key in CodyTaskState]: {
         id: string
         icon: string

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { logDebug, logError } from '../log'
 
-export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
+const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function getAccessToken(): Promise<string | null> {
     try {
@@ -19,7 +19,7 @@ export async function getAccessToken(): Promise<string | null> {
     }
 }
 
-export interface SecretStorage {
+interface SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
     storeToken(endpoint: string, value: string): Promise<void>
@@ -117,7 +117,7 @@ export class VSCodeSecretStorage implements SecretStorage {
     }
 }
 
-export class InMemorySecretStorage implements SecretStorage {
+class InMemorySecretStorage implements SecretStorage {
     private storage: Map<string, string>
     private callbacks: ((key: string) => Promise<void>)[]
 
