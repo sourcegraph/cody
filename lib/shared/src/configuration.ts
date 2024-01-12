@@ -82,14 +82,12 @@ export interface ConfigurationWithAccessToken extends Configuration {
 export interface OllamaOptions {
     /**
      * URL to the Ollama server.
-     *
      * @example http://localhost:11434
      */
     url: string
 
     /**
      * The Ollama model to use. Currently only codellama and derived models are supported.
-     *
      * @example codellama:7b-code
      */
     model: string

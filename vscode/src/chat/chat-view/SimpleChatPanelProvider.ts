@@ -295,7 +295,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable {
 
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
             )
         )

@@ -14,8 +14,6 @@
   "scripts": {
     "dev": "vite --mode development",
     "build": "tsc --build && vite build --mode production",
-    "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "vitest"
   },
   "dependencies": {

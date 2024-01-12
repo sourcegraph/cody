@@ -26,16 +26,11 @@ export const CODY_IGNORE_FILENAME_POSIX_GLOB = path.posix.join('**', '.cody', 'i
  * `clearIgnoreFiles` should be called for workspace roots as they are removed.
  */
 type ClientWorkspaceRoot = string
-type CodyCodebaseName = string
 export class IgnoreHelper {
     /**
      * A map of workspace roots to their ignore rules.
      */
     private workspaceIgnores = new Map<ClientWorkspaceRoot, Ignore>()
-    /**
-     * A map of codebase to workspace roots with their ignore rules.
-     */
-    private workspaceCodebases = new Map<ClientWorkspaceRoot, CodyCodebaseName>()
 
     /**
      * Check if the configuration is enabled or not
@@ -48,22 +43,11 @@ export class IgnoreHelper {
     }
 
     /**
-     * Updates the mapping of codebase name to workspace root on editor change
-     * @param codebase - The name of the codebase.
-     * @param workspaceRoot - The fs path of the workspace root.
-     */
-    public updateCodebaseWorkspaceMap(codebase: string, workspaceRoot: string): void {
-        if (!this.workspaceCodebases.has(codebase)) {
-            this.workspaceCodebases.set(codebase, workspaceRoot)
-        }
-    }
-
-    /**
      * Builds and caches a single ignore set for all nested ignore files within a workspace root.
      * @param workspaceRoot The full absolute path to the workspace root.
      * @param ignoreFiles The full absolute paths and content of all ignore files within the root.
      */
-    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[], codebaseName?: string): void {
+    public setIgnoreFiles(workspaceRoot: string, ignoreFiles: IgnoreFileContent[]): void {
         this.ensureAbsolute('workspaceRoot', workspaceRoot)
 
         const rules = this.getDefaultIgnores()
@@ -99,10 +83,6 @@ export class IgnoreHelper {
             }
         }
 
-        if (codebaseName) {
-            this.workspaceCodebases.set(codebaseName, workspaceRoot)
-        }
-
         this.workspaceIgnores.set(workspaceRoot, rules)
     }
 
@@ -134,28 +114,6 @@ export class IgnoreHelper {
         }
 
         const relativePath = path.relative(workspaceRoot, uri.fsPath)
-        const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
-        return rules.ignores(relativePath) ?? false
-    }
-
-    /**
-     * Checks if the given file path should be ignored for the provided codebase.
-     *
-     * This checks if ignore rules are enabled, finds the workspace root for the
-     * codebase, gets the ignore rules for that workspace, and checks if those rules
-     * ignore the given relative path.
-     */
-    public isIgnoredByCodebase(codebaseName: string, relativePath: string): boolean {
-        // Do not igno re if the feature is not enabled
-        if (!this.isActive) {
-            return false
-        }
-
-        const workspaceRoot = this.workspaceCodebases.get(codebaseName)
-        if (!workspaceRoot) {
-            return false
-        }
-
         const rules = this.workspaceIgnores.get(workspaceRoot) ?? this.getDefaultIgnores()
         return rules.ignores(relativePath) ?? false
     }
@@ -197,5 +155,4 @@ export class IgnoreHelper {
 interface IgnoreFileContent {
     filePath: string
     content: string
-    codebase?: string
 }

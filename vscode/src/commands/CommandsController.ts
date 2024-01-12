@@ -5,6 +5,7 @@ import { type CodyCommand, type CustomCommandType } from '@sourcegraph/cody-shar
 import { type VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { executeEdit } from '../edit/execute'
+import { getEditor } from '../editor/active-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
@@ -65,6 +66,15 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         requestID?: string,
         contextFiles?: ContextFile[]
     ): Promise<CodyCommand | null> {
+        const editor = getEditor()
+        if (!editor.active || editor.ignored) {
+            const message = editor.ignored
+                ? 'Current file is ignored by a .cody/ignore file. Please remove it from the list and try again.'
+                : 'No editor is active. Please open a file and try again.'
+            void vscode.window.showErrorMessage(message)
+            return null
+        }
+
         const commandSplit = text.split(' ')
         // The unique key for the command. e.g. /test
         const commandKey = commandSplit.shift() || text

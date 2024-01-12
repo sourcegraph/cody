@@ -34,7 +34,7 @@ export function getIconPath(speaker: string, extPath: string): vscode.Uri {
 }
 
 /**
- * To Edit a document by its Uri
+ * To edit a document by its Uri
  * Returns the range of the section with the content replaced by Cody
  */
 export async function editDocByUri(

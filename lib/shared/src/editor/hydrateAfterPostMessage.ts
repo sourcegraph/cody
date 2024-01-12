@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
@@ -21,7 +21,6 @@ export function hydrateAfterPostMessage<T, U>(value: T, hydrateUri: (value: unkn
     if (value instanceof Object) {
         // Hydrate any values that are classes.
         for (const key of Object.keys(value)) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             ;(value as any)[key] = hydrateAfterPostMessage((value as any)[key], hydrateUri)
         }
         return value

@@ -1,5 +1,5 @@
 import { type ContextFile, type ContextMessage, type PreciseContext } from '../../codebase-context/messages'
-import { isCodyIgnoredFile, isCodyIgnoredFilePath } from '../context-filter'
+import { isCodyIgnoredFile } from '../context-filter'
 
 import { type ChatMessage, type ChatMetadata, type InteractionMessage } from './messages'
 
@@ -41,17 +41,9 @@ export class Interaction {
             const message = contextMessages[i]
             // Skips the assistant message if the human message is ignored
             if (message.speaker === 'human' && message.file) {
-                const { uri, repoName, fileName, source } = message.file
-                if (uri && isCodyIgnoredFile(uri)) {
+                if (message.file.uri && isCodyIgnoredFile(message.file.uri)) {
                     i++
                     continue
-                }
-                // Filter embedding results from the current workspace
-                if (source === 'embeddings') {
-                    if (repoName && isCodyIgnoredFilePath(repoName, fileName)) {
-                        i++
-                        continue
-                    }
                 }
             }
             newMessages.push(message)
@@ -82,11 +74,6 @@ export class Interaction {
     public async getFullContext(): Promise<ContextMessage[]> {
         const msgs = await this.removeCodyIgnoredFiles()
         return msgs.map(msg => ({ ...msg }))
-    }
-
-    public async hasContext(): Promise<boolean> {
-        const contextMessages = await this.removeCodyIgnoredFiles()
-        return contextMessages.length > 0
     }
 
     public setUsedContext(usedContextFiles: ContextFile[], usedPreciseContext: PreciseContext[]): void {

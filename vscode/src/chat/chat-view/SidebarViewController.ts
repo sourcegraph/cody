@@ -132,9 +132,9 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
      */
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         _context: vscode.WebviewViewResolveContext<unknown>,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview

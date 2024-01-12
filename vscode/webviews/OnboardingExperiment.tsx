@@ -29,7 +29,7 @@ const WebLogin: React.FunctionComponent<
         <ol>
             <li>
                 <a href="https://sourcegraph.com/sign-up" target="site">
-                    Sign up at sourcegraph.com
+                    Sign Up at Sourcegraph.com
                 </a>
             </li>
             <li>
@@ -50,7 +50,7 @@ const WebLogin: React.FunctionComponent<
                         event.stopPropagation()
                     }}
                 >
-                    Add the Access Token to VScode
+                    Add the Access Token to VS Code
                 </a>
             </li>
         </ol>

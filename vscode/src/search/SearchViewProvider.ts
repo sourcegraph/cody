@@ -213,7 +213,6 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         // Register to receive messages from webview
         this.disposables.push(
             webviewView.webview.onDidReceiveMessage(message =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 this.onDidReceiveMessage(hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)))
             )
         )

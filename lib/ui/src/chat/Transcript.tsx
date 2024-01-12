@@ -147,6 +147,7 @@ export const Transcript: React.FunctionComponent<
 
     const messageToTranscriptItem =
         (offset: number) =>
+        // eslint-disable-next-line react/display-name
         (message: ChatMessage, index: number): JSX.Element | null => {
             if (!message?.displayText && !message.error) {
                 return null

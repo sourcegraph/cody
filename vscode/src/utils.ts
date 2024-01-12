@@ -42,7 +42,7 @@ export function getEditorTabSize(uri: vscode.Uri): number {
 
     const { languageId } = editor.document
     const languageConfig = vscode.workspace.getConfiguration(`[${languageId}]`, uri)
-    const languageSetting = languageConfig.get('editor.tabSize') as number | undefined
+    const languageSetting = languageConfig.get<number>('editor.tabSize')
     // Prefer language specific setting.
     const tabSize = languageSetting || editor.options.tabSize
 

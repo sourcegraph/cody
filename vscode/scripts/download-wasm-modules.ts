@@ -51,6 +51,11 @@ export async function main(): Promise<void> {
 
     try {
         await Promise.all(filesToDownload.map(downloadFile))
+
+        // HACK(sqs): Wait for files to be written. Otherwise sometimes the files are copied before
+        // they are complete, which causes failures in AutocompleteMatcher.test.ts.
+        await new Promise(resolve => setTimeout(resolve, 500))
+
         copyFilesToDistDir()
         console.log('All files were successful downloaded, check resources/wasm directory')
     } catch (error) {
@@ -115,6 +120,7 @@ function downloadFile(url: string): Promise<WriteStream> {
 
             res.on('data', (chunk): void => {
                 file.write(chunk)
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 progress.tick(chunk.length)
             })
                 .on('end', () => {

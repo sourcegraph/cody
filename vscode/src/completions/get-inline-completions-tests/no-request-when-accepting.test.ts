@@ -24,7 +24,7 @@ async function getInlineCompletionAfterAccepting(
             triggerKind,
             lastAcceptedCompletionItem: {
                 requestParams: initialRequestParams,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
                 analyticsItem: item!.items[0]!,
             },
         })

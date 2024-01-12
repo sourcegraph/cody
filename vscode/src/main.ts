@@ -33,7 +33,6 @@ import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { localStorage } from './services/LocalStorageProvider'
-import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
@@ -238,6 +237,7 @@ const register = async (
     }
 
     // Adds a change listener to the auth provider that syncs the auth status
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
@@ -453,7 +453,7 @@ const register = async (
         }
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In To Use Cody',
+                title: 'Sign In to Use Cody',
                 errorType: 'auth',
                 description: 'You need to sign in to use Cody.',
                 onSelect: () => {
@@ -495,7 +495,9 @@ const register = async (
                     client: codeCompletionsClient,
                     statusBar,
                     authProvider,
-                    triggerNotice: notice => chatManager.triggerNotice(notice),
+                    triggerNotice: notice => {
+                        void chatManager.triggerNotice(notice)
+                    },
                     createBfgRetriever: platform.createBfgRetriever,
                 })
             })
@@ -516,9 +518,6 @@ const register = async (
     }
 
     void showSetupNotification(initialConfig)
-
-    // Clean up old onboarding experiment state
-    void OnboardingExperiment.cleanUpCachedSelection()
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {

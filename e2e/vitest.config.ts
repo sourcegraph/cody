@@ -1,8 +1,3 @@
-/// <reference types="vitest" />
+import { defineProjectWithDefaults } from '../.config/viteShared'
 
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-    logLevel: 'warn',
-    test: {},
-})
+export default defineProjectWithDefaults(__dirname, {})

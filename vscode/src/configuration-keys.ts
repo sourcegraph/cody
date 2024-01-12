@@ -5,6 +5,7 @@ import packageJson from '../package.json'
 const { properties } = packageJson.contributes.configuration
 
 export function defaultConfigurationValue(key: string): any {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const value = (properties as any)[key as any]?.default
     return value
 }
@@ -26,6 +27,7 @@ function getConfigFromPackageJson(): ConfigurationKeysMap {
         acc[keyProperty] = key as ConfigurationKeysMap[typeof keyProperty]
 
         return acc
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     }, {} as ConfigurationKeysMap)
 }
 

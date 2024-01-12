@@ -553,6 +553,7 @@ export function expandQuery(completionsClient: SourcegraphCompletionsClient, que
                         const parser = new XMLParser()
                         const document = parser.parse(text)
                         const keywords: { value?: string; variants?: string; weight?: number }[] =
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                             document?.keywords?.keyword ?? []
                         const result = new Set<string>()
                         for (const { value, variants } of keywords) {

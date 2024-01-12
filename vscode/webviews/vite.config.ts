@@ -1,15 +1,11 @@
 import { resolve } from 'path'
 
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
 
-export default defineConfig({
+import { defineProjectWithDefaults } from '../../.config/viteShared'
+
+export default defineProjectWithDefaults(__dirname, {
     plugins: [react()],
-    css: {
-        modules: {
-            localsConvention: 'camelCaseOnly',
-        },
-    },
     root: __dirname,
     base: './',
     build: {

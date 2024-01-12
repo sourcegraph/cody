@@ -6,15 +6,15 @@ import { type Polly } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared/dist/sourcegraph-api/errors'
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/dist/utils'
 import { createClient, type Client } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { setUserAgent, type LogEventMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { type BillingCategory, type BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 import { type TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { type ExtensionMessage, type WebviewMessage } from '../../vscode/src/chat/protocol'
@@ -95,12 +95,13 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
                 secretStorage.set(key, value)
                 return Promise.resolve()
             },
-            delete(key) {
+            delete() {
                 return Promise.resolve()
             },
         },
         storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
+
         workspaceState: {} as any,
         globalStorageUri: vscode.Uri.file(paths.data),
         storagePath: paths.data,
@@ -382,6 +383,7 @@ export class Agent extends MessageHandler {
                 await client.executeRecipe(data.id, {
                     signal: abortController.signal,
                     humanChatInput: data.humanChatInput,
+
                     data: data.data,
                 })
             } catch (error) {
@@ -617,7 +619,10 @@ export class Agent extends MessageHandler {
             }
             const panel = this.webPanels.panels.get(id)
             if (!panel) {
-                return Promise.resolve({ type: 'errors', errors: `No panel with id ${id} found` } as ExtensionMessage)
+                return Promise.resolve({
+                    type: 'errors',
+                    errors: `No panel with id ${id} found`,
+                } satisfies ExtensionMessage)
             }
             if (panel.isMessageInProgress) {
                 throw new Error('Message is already in progress')

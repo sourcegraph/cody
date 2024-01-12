@@ -55,7 +55,7 @@ const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
 const MATCHING_SYMBOL_REGEX = /@#(\S+)$/
 
 const MAX_FUZZY_RESULTS = 20
-const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols..'
+const FILE_HELP_LABEL = 'Search for a file to include, or type # to search symbols...'
 const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
 const NO_MATCHES_LABEL = 'No matches found'
 
@@ -138,6 +138,7 @@ export class FixupTypingUI {
 
         // VS Code automatically sorts quick pick items by label.
         // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ;(quickPick as any).sortByLabel = false
 
         if (source === 'menu') {

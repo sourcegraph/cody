@@ -17,7 +17,6 @@ import type { getRgPath } from './rg'
 import { type OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { captureException, type SentryService } from './services/sentry/sentry'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T extends new (...args: any) => any> = T extends new (...args: infer A) => infer R
     ? (...args: A) => R
     : never
