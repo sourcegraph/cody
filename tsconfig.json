@@ -17,7 +17,7 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": [],
+  "include": [".config/*.ts"],
   "exclude": ["dist", "node_modules"],
   "watchOptions": {
     "watchFile": "useFsEvents",

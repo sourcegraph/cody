@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "sourceMap": true,
+    "sourceMap": false, // sourcemaps come from esbuild/vite
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
@@ -14,12 +14,11 @@
     "playwright.config.ts",
     "test/e2e",
     "webviews",
-    "vite.config.ts",
     "package.json",
     ".storybook/*.ts",
     "../lib/shared/src/telemetry/EventLogger.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration", "**/test-data"],
+  "exclude": ["scripts", "dist", "test/integration", "**/test-data", "vite.config.ts", "webviews/vite.config.ts"],
   "references": [
     {
       "path": "../lib/shared",
