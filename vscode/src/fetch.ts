@@ -24,7 +24,6 @@ import {
  */
 export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
 
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
     if (customUserAgent) {
         init = init ?? {}

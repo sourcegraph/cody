@@ -9,7 +9,6 @@ export interface JaccardMatch {
  * Finds the window from matchText with the lowest Jaccard distance from targetText.
  * The Jaccard distance is the ratio of intersection over union, using a bag-of-words-with-count as
  * the representation for text snippet.
- *
  * @param targetText is the text that serves as the target we are trying to find a match for
  * @param matchText is the text we are sliding our window through to find the best match
  * @param windowSize is the size of the match window in number of lines
