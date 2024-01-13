@@ -1,7 +1,8 @@
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import type * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+
+import { testFileUri } from '@sourcegraph/cody-shared'
 
 import { Position } from '../../../../testutils/mocks'
 import { range, withPosixPaths } from '../../../../testutils/textDocument'
@@ -9,8 +10,8 @@ import { document } from '../../../test-helpers'
 
 import { LspLightRetriever } from './lsp-light-retriever'
 
-const document1Uri = URI.file('/document1.ts')
-const document2Uri = URI.file('/document2.ts')
+const document1Uri = testFileUri('document1.ts')
+const document2Uri = testFileUri('document2.ts')
 
 const disposable = {
     dispose: () => {},

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 
+import { isWindows } from '../common/platform'
+
 import { displayPath, setDisplayPathEnvInfo, uriHasPrefix, type DisplayPathEnvInfo } from './displayPath'
 
 const DISPLAY_PATH_TEST_CASES: {
@@ -121,27 +123,32 @@ function displayPathWithEnvInfo(location: URI | string, envInfo: DisplayPathEnvI
 }
 
 describe('displayPath', () => {
-    for (const { name, tests } of DISPLAY_PATH_TEST_CASES) {
-        function runTestCases(
-            label: string,
-            envInfo: DisplayPathEnvInfo,
-            cases: { input: URI | string; expected: string }[]
-        ) {
-            test(`${name} > ${label}`, () => {
+    for (const {
+        name,
+        tests: { nonWindows, windows, all },
+    } of DISPLAY_PATH_TEST_CASES) {
+        function runTestCases(envInfo: DisplayPathEnvInfo, cases: { input: URI | string; expected: string }[]) {
+            test(name, () => {
                 for (const { input, expected } of cases) {
                     expect(displayPathWithEnvInfo(input, envInfo)).toBe(expected)
                 }
             })
         }
-        if (tests.nonWindows) {
-            runTestCases('nonWindows', { ...tests.nonWindows.envInfo, isWindows: false }, tests.nonWindows.cases)
+        if (nonWindows) {
+            // Don't run non-Windows tests on Windows because our compat layer isn't set up to
+            // handle that (we only handle some partial emulation of Windows on non-Windows).
+            describe.skipIf(isWindows())('nonWindows', () =>
+                runTestCases({ ...nonWindows.envInfo, isWindows: false }, nonWindows.cases)
+            )
         }
-        if (tests.windows) {
-            runTestCases('windows', { ...tests.windows.envInfo, isWindows: true }, tests.windows.cases)
+        if (windows) {
+            describe('windows', () => runTestCases({ ...windows.envInfo, isWindows: true }, windows.cases))
         }
-        if (tests.all) {
-            runTestCases('all(nonWindows)', { ...tests.all.envInfo, isWindows: false }, tests.all.cases)
-            runTestCases('all(windows)', { ...tests.all.envInfo, isWindows: true }, tests.all.cases)
+        if (all) {
+            describe.skipIf(isWindows())('all nonWindows', () =>
+                runTestCases({ ...all.envInfo, isWindows: false }, all.cases)
+            )
+            describe('all windows', () => runTestCases({ ...all.envInfo, isWindows: true }, all.cases))
         }
     }
 })

@@ -1,6 +1,8 @@
 import { describe, expect, it, test } from 'vitest'
 import * as vscode from 'vscode'
 
+import { testFileUri } from '@sourcegraph/cody-shared'
+
 import { editDocByUri, updateRangeOnDocChange } from './InlineAssist'
 
 describe('UpdateRangeOnDocChange returns a new selection range by calculating lines of code changed in current docs', () => {
@@ -49,7 +51,7 @@ describe('UpdateRangeOnDocChange returns a new selection range by calculating li
 
 describe('editDocByUri returns a new selection range by calculating lines of code edited by Cody', () => {
     test('replaces a single line in a document', async () => {
-        const uri = vscode.Uri.file('/tmp/test.txt')
+        const uri = testFileUri('tmp/test.txt')
         const lines = { start: 1, end: 3 }
         const content = 'foo\nfoo\nfoo'
         const range = await editDocByUri(uri, lines, content)
@@ -57,7 +59,7 @@ describe('editDocByUri returns a new selection range by calculating lines of cod
     })
 
     test('replaces multiple lines in a document', async () => {
-        const uri = vscode.Uri.file('/tmp/test.txt')
+        const uri = testFileUri('tmp/test.txt')
         const lines = { start: 1, end: 3 }
         const content = 'foo\nbar\nfoo\nbar\nfoo'
         const range = await editDocByUri(uri, lines, content)

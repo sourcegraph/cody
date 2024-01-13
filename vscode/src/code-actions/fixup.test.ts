@@ -1,7 +1,8 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+
+import { testFileUri } from '@sourcegraph/cody-shared'
 
 import { FixupCodeAction } from './fixup'
 
@@ -124,7 +125,7 @@ describe('fixup code action', () => {
     })
 
     test('produces correct prompt for diagnostics with related information', async () => {
-        const testDocUri = URI.file('/document1.ts')
+        const testDocUri = testFileUri('document1.ts')
         const diagnostics = [
             {
                 severity: vscode.DiagnosticSeverity.Error,

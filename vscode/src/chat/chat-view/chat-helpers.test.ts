@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { URI } from 'vscode-uri'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { testFileUri, type ContextFile } from '@sourcegraph/cody-shared'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import {
     populateCurrentEditorSelectedContextTemplate,
@@ -27,7 +26,7 @@ describe('unwrap context snippets', () => {
         const testCases: TestCase[] = [
             {
                 contextItem: {
-                    uri: vscode.Uri.file('test.ts'),
+                    uri: testFileUri('test.ts'),
                     range: new vscode.Range(0, 1, 2, 3),
                     source: 'editor',
                     text: '// This is code context',
@@ -35,7 +34,7 @@ describe('unwrap context snippets', () => {
             },
             {
                 contextItem: {
-                    uri: vscode.Uri.file('doc.md'),
+                    uri: testFileUri('doc.md'),
                     range: new vscode.Range(0, 1, 2, 3),
                     source: 'editor',
                     text: 'This is markdown context',
@@ -62,11 +61,11 @@ describe('unwrap context snippets', () => {
 
         const testCases: TestCase[] = [
             {
-                input: populateCurrentEditorSelectedContextTemplate('// This is the code', URI.file('/test.ts')),
+                input: populateCurrentEditorSelectedContextTemplate('// This is the code', testFileUri('test.ts')),
                 expOut: '// This is the code',
             },
             {
-                input: populateCurrentSelectedCodeContextTemplate('// This is the code', URI.file('/test.ts')),
+                input: populateCurrentSelectedCodeContextTemplate('// This is the code', testFileUri('test.ts')),
                 expOut: '// This is the code',
             },
         ]

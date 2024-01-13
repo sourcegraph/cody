@@ -1,7 +1,8 @@
 import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+
+import { testFileUri } from '@sourcegraph/cody-shared'
 
 import { getCurrentDocContext } from '../../../get-current-doc-context'
 import { document, documentAndPosition } from '../../../test-helpers'
@@ -14,7 +15,7 @@ const { document: testDocument, position: testPosition } = documentAndPosition(
         █
     `,
     'typescript',
-    URI.file('/test-class.test.ts').toString()
+    testFileUri('test-class.test.ts').toString()
 )
 const testDocContext = getCurrentDocContext({
     document: testDocument,
@@ -48,14 +49,14 @@ describe('JaccardSimilarityRetriever', () => {
             }
         `,
         'typescript',
-        URI.file('/test-class.ts').toString()
+        testFileUri('test-class.ts').toString()
     )
     const unrelatedDocument = document(
         dedent`
             I like turtles
         `,
         'typescript',
-        URI.file('/unrelated.ts').toString()
+        testFileUri('unrelated.ts').toString()
     )
 
     beforeEach(() => {
@@ -155,7 +156,7 @@ describe('JaccardSimilarityRetriever', () => {
                 }
             `,
             'typescript',
-            URI.file('/test-class.test.ts').toString()
+            testFileUri('test-class.test.ts').toString()
         )
 
         vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([{ document: testDocument }] as any)
@@ -206,7 +207,7 @@ describe('JaccardSimilarityRetriever', () => {
                 }
             `,
             'typescript',
-            URI.file('test-class.ts').toString()
+            testFileUri('test-class.ts').toString()
         )
 
         vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([{ document: otherDocument }] as any)
