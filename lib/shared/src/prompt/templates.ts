@@ -1,11 +1,8 @@
 import { type URI } from 'vscode-uri'
 
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
-import { type ActiveTextEditorDiagnostic, type ActiveTextEditorSelection } from '../editor'
+import { type ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
-
-import { MAX_RECIPE_INPUT_TOKENS } from './constants'
-import { truncateText, truncateTextStart } from './truncation'
 
 const CODE_CONTEXT_TEMPLATE = `Use the following code snippet from file \`{filePath}\`:
 \`\`\`{language}
@@ -138,29 +135,6 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, fileUri
         .replace('{code}', code)
         .replaceAll('{filePath}', displayPath(fileUri))
         .replace('{languageName}', languageName)
-}
-
-const CURRENT_FILE_CONTEXT_TEMPLATE = `My selected code from file path \`{filePath}\` in <selected> tags:
-{precedingText}<selected>{selectedText}</selected>{followingText}`
-
-export function populateCurrentFileFromEditorSelectionContextTemplate(
-    selection: ActiveTextEditorSelection,
-    fileUri: URI
-): string {
-    const extension = getFileExtension(fileUri)
-    const languageName = getNormalizedLanguageName(extension)
-    const surroundingTextLength = (MAX_RECIPE_INPUT_TOKENS - selection.selectedText.length) / 2
-    const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS) || ''
-    const truncatedPrecedingText = truncateTextStart(selection.precedingText, surroundingTextLength)
-    const truncatedFollowingText = truncateText(selection.followingText, surroundingTextLength)
-
-    const fileContext = CURRENT_FILE_CONTEXT_TEMPLATE.replace('{languageName}', languageName)
-        .replaceAll('{filePath}', displayPath(fileUri))
-        .replace('{followingText}', truncatedFollowingText)
-        .replace('{selectedText}', truncatedSelectedText)
-        .replace('{precedingText}', truncatedPrecedingText)
-
-    return truncateText(fileContext, MAX_RECIPE_INPUT_TOKENS * 3)
 }
 
 const DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the directory contains {fileName} in my codebase: '
