@@ -1,7 +1,10 @@
 import { beforeAll } from 'vitest'
+import { URI } from 'vscode-uri'
 
-import { setDisplayPathFn } from '../editor/displayPath'
+import { isWindows } from '../common/platform'
+import { setDisplayPathEnvInfo } from '../editor/displayPath'
 
 beforeAll(() => {
-    setDisplayPathFn(location => (typeof location === 'string' ? location : location.path.slice(1)))
+    const isWin = isWindows()
+    setDisplayPathEnvInfo({ isWindows: isWin, workspaceFolders: [isWin ? URI.file('C:\\') : URI.file('/')] })
 })

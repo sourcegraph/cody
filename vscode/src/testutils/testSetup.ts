@@ -1,7 +1,9 @@
-import { beforeEach } from 'vitest'
+import { beforeAll } from 'vitest'
+import { URI } from 'vscode-uri'
 
-import { setDisplayPathFn } from '@sourcegraph/cody-shared'
+import { isWindows, setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 
-beforeEach(() => {
-    setDisplayPathFn(location => (typeof location === 'string' ? location : location.path.slice(1)))
+beforeAll(() => {
+    const isWin = isWindows()
+    setDisplayPathEnvInfo({ isWindows: isWin, workspaceFolders: [isWin ? URI.file('C:\\') : URI.file('/')] })
 })

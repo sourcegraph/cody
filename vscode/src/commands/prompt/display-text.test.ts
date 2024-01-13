@@ -2,21 +2,18 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { setDisplayPathFn } from '@sourcegraph/cody-shared'
+import { setDisplayPathEnvInfo, type DisplayPathEnvInfo } from '@sourcegraph/cody-shared/src/editor/displayPath'
 
 import { replaceFileNameWithMarkdownLink } from './display-text'
 
 describe('replaceFileNameWithMarkdownLink', () => {
     // Mock a `displayPath` function that always uses slashes (even on Windows).
-
-    let origDisplayPath: any
+    let orig: DisplayPathEnvInfo | null
     beforeEach(() => {
-        origDisplayPath = setDisplayPathFn(location =>
-            (typeof location === 'string' ? location : location.path.slice(1)).replaceAll('\\', '/')
-        )
+        orig = setDisplayPathEnvInfo({ isWindows: false, workspaceFolders: [URI.file('/')] })
     })
     afterEach(() => {
-        setDisplayPathFn(origDisplayPath)
+        setDisplayPathEnvInfo(orig)
     })
 
     it('replaces file name with markdown link', () => {
@@ -51,21 +48,23 @@ describe('replaceFileNameWithMarkdownLink', () => {
     })
 
     describe('OS-native path separators', () => {
-        // Mock a `displayPath` function that uses backslashes and make sure it's used everywhere.
+        /** Mimics the behavior of {@link URI.file} on Windows, regardless of the current platform. */
+        function windowsFileURI(fsPath: string): URI {
+            return URI.file(fsPath.replaceAll('\\', '/'))
+        }
 
-        let origDisplayPath: any
+        // Mock a `displayPath` function that uses backslashes and make sure it's used everywhere.
+        let orig: any
         beforeEach(() => {
-            origDisplayPath = setDisplayPathFn(location =>
-                (typeof location === 'string' ? location : location.path.slice(1)).replaceAll('/', '\\')
-            )
+            orig = setDisplayPathEnvInfo({ isWindows: true, workspaceFolders: [windowsFileURI('C:\\')] })
         })
         afterEach(() => {
-            setDisplayPathFn(origDisplayPath)
+            setDisplayPathEnvInfo(orig)
         })
 
         it('uses OS-native path separator', () => {
-            expect(replaceFileNameWithMarkdownLink('Loaded @a\\b.js', URI.file('/a/b.js'))).toEqual(
-                'Loaded [_@a\\b.js_](command:cody.chat.open.file?%22file%3A%2F%2F%2Fa%2Fb.js%3Arange%3A0%22)'
+            expect(replaceFileNameWithMarkdownLink('Loaded @a\\b.js', windowsFileURI('C:\\a\\b.js'))).toEqual(
+                'Loaded [_@a\\b.js_](command:cody.chat.open.file?%22file%3A%2F%2F%2Fc%253A%2Fa%2Fb.js%3Arange%3A0%22)'
             )
         })
     })

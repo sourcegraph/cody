@@ -22,6 +22,7 @@ import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EditManager } from './edit/manager'
+import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { type PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -85,6 +86,10 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
 }> => {
     const disposables: vscode.Disposable[] = []
+
+    // Initialize `displayPath` first because it might be used to display paths in error messages
+    // from the subsequent initialization.
+    disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Set codyignore list on git extension startup
     const gitAPI = await gitAPIinit()
