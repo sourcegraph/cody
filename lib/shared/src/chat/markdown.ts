@@ -1,5 +1,3 @@
-import { marked } from 'marked'
-
 import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '../common/markdown'
 
 /**
@@ -70,11 +68,4 @@ export function renderCodyMarkdown(markdown: string): string {
         dompurifyConfig: DOMPURIFY_CONFIG,
         addTargetBlankToAllLinks: true,
     })
-}
-
-/**
- * Returns the parsed markdown at block level.
- */
-export function parseMarkdown(text: string): marked.Token[] {
-    return marked.Lexer.lex(text, { gfm: true })
 }

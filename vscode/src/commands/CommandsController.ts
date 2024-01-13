@@ -41,11 +41,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor(extensionPath: string) {
+    constructor() {
         this.tools = new ToolsProvider()
         const user = this.tools.getUserInfo()
 
-        this.custom = new CustomPromptsStore(this.isEnabled, extensionPath, user?.workspaceRoot, user.homeDir)
+        this.custom = new CustomPromptsStore(this.isEnabled, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())

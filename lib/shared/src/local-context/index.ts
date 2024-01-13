@@ -10,11 +10,6 @@ export interface ContextResult extends ContextFile {
     content: string
 }
 
-export interface KeywordContextFetcher {
-    getContext(query: string, numResults: number): Promise<ContextResult[]>
-    getSearchContext(query: string, numResults: number): Promise<ContextResult[]>
-}
-
 export interface FilenameContextFetcher {
     getContext(query: string, numResults: number): Promise<ContextResult[]>
 }
@@ -23,12 +18,12 @@ export interface LocalEmbeddingsFetcher {
     getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
 
-export interface Point {
+interface Point {
     row: number
     col: number
 }
 
-export interface Range {
+interface Range {
     startByte: number
     endByte: number
     startPoint: Point

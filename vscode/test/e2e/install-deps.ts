@@ -7,7 +7,7 @@ import {
     type ProgressReport,
 } from '@vscode/test-electron'
 
-export const vscodeVersion = '1.81.1'
+const vscodeVersion = '1.81.1'
 
 // A custom version of the VS Code download reporter that silences matching installation
 // notifications as these otherwise are emitted on every test run
@@ -23,7 +23,7 @@ export function installVsCode(): Promise<string> {
     return downloadAndUnzipVSCode(vscodeVersion, undefined, new CustomConsoleReporter(process.stdout.isTTY))
 }
 
-export function installChromium(): Promise<void> {
+function installChromium(): Promise<void> {
     const proc = spawn('pnpm', ['exec', 'playwright', 'install', 'chromium'], { shell: true })
     return new Promise<void>((resolve, reject) => {
         proc.on('error', e => console.error(e))
@@ -49,7 +49,7 @@ export function installChromium(): Promise<void> {
     })
 }
 
-export function installAllDeps(): Promise<unknown> {
+function installAllDeps(): Promise<unknown> {
     return Promise.all([installVsCode(), installChromium()])
 }
 

@@ -21,7 +21,7 @@ const escapeHTML = (html: string): string => {
  * @param language The language of the code, if known
  * @returns Safe HTML
  */
-export const highlightCodeSafe = (code: string, language?: string): string => {
+const highlightCodeSafe = (code: string, language?: string): string => {
     try {
         if (language === 'plaintext' || language === 'text') {
             return escapeHTML(code)
@@ -123,8 +123,6 @@ export const renderMarkdown = (
 
     return result
 }
-
-export const markdownLexer = (markdown: string): marked.TokensList => marked.lexer(markdown)
 
 /**
  * Escapes markdown by escaping all ASCII punctuation.

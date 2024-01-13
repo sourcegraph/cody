@@ -1,8 +1,3 @@
-export const LOCAL_APP_SETTINGS_DIR = new Map([
-    ['darwin', '~/Library/Application Support/com.sourcegraph.cody/'],
-    ['linux', '~/.local/share/com.sourcegraph.cody/'],
-])
-
 export const LOCAL_APP_LOCATIONS: LocalAppPaths = {
     darwin: [
         {
@@ -26,7 +21,7 @@ export const LOCAL_APP_LOCATIONS: LocalAppPaths = {
     ],
 }
 
-export interface LocalAppPaths {
+interface LocalAppPaths {
     [os: string]: {
         dir: string
         file: string

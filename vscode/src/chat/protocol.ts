@@ -142,7 +142,6 @@ export interface ConfigurationSubsetForWebview
 /**
  * URLs for the Sourcegraph instance and app.
  */
-export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 
 // Community and support

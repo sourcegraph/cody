@@ -50,14 +50,6 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
-export interface TextDocumentContent {
-    content: string
-    fileName: string
-    fileUri?: URI
-    repoName?: string
-    revision?: string
-}
-
 export interface VsCodeCommandsController {
     menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }

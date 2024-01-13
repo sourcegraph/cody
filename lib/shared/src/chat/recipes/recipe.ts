@@ -33,7 +33,7 @@ export type RecipeID =
     | 'release-notes'
     | 'translate-to-language'
 
-export enum RecipeType {
+enum RecipeType {
     Ask = 'ask',
     Edit = 'edit',
 }

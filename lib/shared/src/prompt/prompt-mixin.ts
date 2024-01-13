@@ -50,15 +50,6 @@ export class PromptMixin {
     constructor(private readonly prompt: string) {}
 }
 
-/**
- * Creates a prompt mixin to get Cody to reply in the given language, for example "en-AU" for "Australian English".
- * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
- */
-export function languagePromptMixin(languageCode: string): PromptMixin {
-    const languagePrompt = `Reply in the language with RFC5646/ISO language code "${languageCode}".`
-    return new PromptMixin(languageCode ? languagePrompt : '')
-}
-
 export function newPromptMixin(text: string): PromptMixin {
     return new PromptMixin(text)
 }

@@ -28,13 +28,10 @@
     { "path": "e2e-inspector" },
     { "path": "e2e" },
     { "path": "agent" },
-    { "path": "cli" },
     { "path": "lib/shared" },
     { "path": "lib/ui" },
-    { "path": "slack" },
     { "path": "vscode" },
     { "path": "vscode/test/integration" },
-    { "path": "vscode/scripts" },
-    { "path": "web" }
+    { "path": "vscode/scripts" }
   ]
 }

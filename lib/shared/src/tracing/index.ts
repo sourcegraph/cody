@@ -3,7 +3,7 @@ import opentelemetry, { context, propagation, SpanStatusCode, type Exception } f
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'
 
-export const tracer = opentelemetry.trace.getTracer(INSTRUMENTATION_SCOPE_NAME, INSTRUMENTATION_SCOPE_VERSION)
+const tracer = opentelemetry.trace.getTracer(INSTRUMENTATION_SCOPE_NAME, INSTRUMENTATION_SCOPE_VERSION)
 
 export function getActiveTraceAndSpanId(): { traceId: string; spanId: string } | undefined {
     const activeSpan = opentelemetry.trace.getActiveSpan()

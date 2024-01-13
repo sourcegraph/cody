@@ -114,7 +114,7 @@ export function bestJaccardMatches(
     return windows.slice(0, maxMatches)
 }
 
-export function jaccardSimilarity(left: number, right: number, intersection: number): number {
+function jaccardSimilarity(left: number, right: number, intersection: number): number {
     const union = left + right - intersection
     if (union < 0) {
         throw new Error("intersection can't be greater than the sum of left and right")

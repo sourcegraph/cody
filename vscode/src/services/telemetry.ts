@@ -11,7 +11,7 @@ import { version } from '../version'
 
 import { localStorage } from './LocalStorageProvider'
 
-export let eventLogger: EventLogger | null = null
+let eventLogger: EventLogger | null = null
 let telemetryLevel: 'all' | 'off' | 'agent' = 'off'
 let globalAnonymousUserID: string
 

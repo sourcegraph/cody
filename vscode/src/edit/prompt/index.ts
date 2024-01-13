@@ -19,7 +19,7 @@ import { type EditLLMInteraction, type GetLLMInteractionOptions, type LLMInterac
 
 type SupportedModels = 'anthropic/claude-2.0' | 'anthropic/claude-2.1'
 
-export const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
+const INTERACTION_MODELS: Record<SupportedModels, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
 } as const

@@ -10,7 +10,7 @@ export const LoadingContext: React.FunctionComponent = () => (
     </div>
 )
 
-export const LoadingDots: React.FunctionComponent = () => (
+const LoadingDots: React.FunctionComponent = () => (
     <div className={styles.dotsHolder}>
         <div className={styles.dot} />
         <div className={styles.dot} />

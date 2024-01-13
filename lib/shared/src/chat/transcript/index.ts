@@ -11,7 +11,7 @@ import { type Message } from '../../sourcegraph-api'
 import { Interaction, type InteractionJSON } from './interaction'
 import { errorToChatError, type ChatMessage } from './messages'
 
-export interface TranscriptJSONScope {
+interface TranscriptJSONScope {
     includeInferredRepository: boolean
     includeInferredFile: boolean
     repositories: string[]

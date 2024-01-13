@@ -9,7 +9,7 @@ import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.css'
 
-export const formatFilePath = (filePath: string, selection: ChatContextStatus['selectionRange']): string => {
+const formatFilePath = (filePath: string, selection: ChatContextStatus['selectionRange']): string => {
     const fileName = basename(filePath)
 
     if (!selection) {

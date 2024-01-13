@@ -230,7 +230,7 @@ function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
         content: context.content.join('\n').trim(),
     }
 }
-export function supportedLanguageId(languageId: string): boolean {
+function supportedLanguageId(languageId: string): boolean {
     switch (languageId) {
         case 'python':
         case 'go':

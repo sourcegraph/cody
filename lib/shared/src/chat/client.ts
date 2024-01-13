@@ -14,19 +14,18 @@ import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { type RecipeID } from './recipes/recipe'
-import { Transcript, type TranscriptJSON } from './transcript'
+import { Transcript } from './transcript'
 import { type ChatMessage } from './transcript/messages'
 import { reformatBotMessageForChat } from './viewHelpers'
 
-export type { TranscriptJSON }
 export { Transcript }
 
-export type ClientInitConfig = Pick<
+type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
     'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
 >
 
-export interface ClientInit {
+interface ClientInit {
     config: ClientInitConfig
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: Transcript) => void

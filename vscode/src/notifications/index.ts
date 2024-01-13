@@ -5,7 +5,7 @@ interface Action {
     onClick: () => Thenable<void>
 }
 
-export interface ActionNotification {
+interface ActionNotification {
     message: string
     options?: vscode.MessageOptions
     actions: Action[]

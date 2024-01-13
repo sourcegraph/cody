@@ -13,7 +13,7 @@ import {
 import { version } from '../../version'
 
 export * from '@sentry/core'
-export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
+const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
 
 export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof browserInit>[0]>
 

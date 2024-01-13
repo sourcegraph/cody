@@ -1,0 +1,20 @@
+{
+    "$schema": "https://unpkg.com/knip@3/schema-jsonc.json",
+    "workspaces": {
+        "vscode": {
+            "entry": [
+                "src/extension.*.ts",
+                "scripts/*.ts",
+                "test/integration/*.ts",
+                "webviews/index.tsx",
+                "../agent/**/*.ts"
+            ],
+            "ignore": ["src/testutils/uri.ts"]
+        },
+        "agent": {
+            "ignore": ["**"]
+        }
+    },
+    "ignore": ["**/__mocks__/**", "**/mocks.*"],
+    "exclude": ["classMembers", "enumMembers"]
+}

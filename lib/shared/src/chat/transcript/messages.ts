@@ -61,10 +61,6 @@ export interface ChatHistory {
     [chatID: string]: TranscriptJSON
 }
 
-export interface OldChatHistory {
-    [chatID: string]: ChatMessage[]
-}
-
 export type ChatEventSource =
     | 'chat'
     | 'editor'
