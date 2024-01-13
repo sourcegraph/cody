@@ -6,6 +6,3 @@ export const answers = {
         'Noted. I will refer to this list of files from the {fileName} directory of your codebase to answer your next question.',
     packageJson: 'Noted. I will use the right libraries/framework already setup in your codebase for your questions.',
 }
-
-export const displayFileName = `\n
-    File: `
