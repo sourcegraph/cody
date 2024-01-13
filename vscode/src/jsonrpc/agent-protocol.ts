@@ -66,6 +66,7 @@ export type Requests = {
     // on the request.  Subscribe to webview/postMessage to stream the reply
     // while awaiting on this response.
     'chat/submitMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
+    'chat/editMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.

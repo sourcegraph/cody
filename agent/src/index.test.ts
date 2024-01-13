@@ -115,11 +115,15 @@ export class TestClient extends MessageHandler {
         await this.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
     }
 
-    public async sendSingleMessage(
+    public async reset(id: string): Promise<void> {
+        await this.request('webview/receiveMessage', { id, message: { command: 'reset' } })
+    }
+
+    public async sendMessage(
+        id: string,
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
     ): Promise<ChatMessage | undefined> {
-        const id = await this.request('chat/new', null)
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -132,8 +136,22 @@ export class TestClient extends MessageHandler {
                 },
             })
         )
-
         return reply.messages.at(-1)
+    }
+
+    public async editMessage(id: string, text: string): Promise<ChatMessage | undefined> {
+        const reply = asTranscriptMessage(
+            await this.request('chat/editMessage', { id, message: { command: 'edit', text } })
+        )
+        return reply.messages.at(-1)
+    }
+
+    public async sendSingleMessageToNewChat(
+        text: string,
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+    ): Promise<ChatMessage | undefined> {
+        const id = await this.request('chat/new', null)
+        return this.sendMessage(id, text, params)
     }
 
     public async shutdownAndExit() {
@@ -246,6 +264,8 @@ const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
 const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 const workspaceRootPath = workspaceRootUri.fsPath
 
+const mayRecord = process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+
 describe('Agent', () => {
     // Uncomment the code block below to disable agent tests. Feel free to do this to unblock
     // merging a PR if the agent tests are failing. If you decide to uncomment this block, please
@@ -257,7 +277,7 @@ describe('Agent', () => {
     // }
 
     const dotcom = 'https://sourcegraph.com'
-    if (process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true') {
+    if (mayRecord) {
         execSync('src login', { stdio: 'inherit' })
         assert.strictEqual(process.env.SRC_ENDPOINT, dotcom, 'SRC_ENDPOINT must be https://sourcegraph.com')
     }
@@ -364,22 +384,8 @@ describe('Agent', () => {
         client.notify('autocomplete/completionAccepted', { completionID: completions.items[0].id })
     }, 10_000)
 
-    it('allows us to set the chat model', async () => {
-        const id = await client.request('chat/new', null)
-        {
-            await client.setChatModel(id, 'openai/gpt-3.5-turbo')
-            const lastMessage = await client.sendSingleMessage('which company, other than sourcegraph, created you?')
-            expect(lastMessage?.text?.toLocaleLowerCase().indexOf('openai')).toBeGreaterThanOrEqual(0)
-        }
-        {
-            await client.setChatModel(id, 'anthropic/claude-2.0')
-            const lastMessage = await client.sendSingleMessage('which company, other than sourcegraph, created you?')
-            expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeGreaterThanOrEqual(0)
-        }
-    })
-
     it('allows us to send a very short chat message', async () => {
-        const lastMessage = await client.sendSingleMessage('Hello!')
+        const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
         expect(lastMessage).toMatchInlineSnapshot(
             `
           {
@@ -437,7 +443,7 @@ describe('Agent', () => {
     }, 20_000)
 
     it('allows us to send a longer chat message', async () => {
-        const lastMessage = await client.sendSingleMessage('Generate simple hello world function in java!')
+        const lastMessage = await client.sendSingleMessageToNewChat('Generate simple hello world function in java!')
         const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
         expect(trimmedMessage).toMatchInlineSnapshot(
             `
@@ -477,7 +483,7 @@ describe('Agent', () => {
     it('allows us to send a chat message with enhanced context enabled', async () => {
         await openFile(animalUri)
         await client.request('command/execute', { command: 'cody.search.index-update' })
-        const lastMessage = await client.sendSingleMessage(
+        const lastMessage = await client.sendSingleMessageToNewChat(
             'Write a class Dog that implements the Animal interface in my workspace. Only show the code, no explanation needed.',
             {
                 addEnhancedContext: true,
@@ -588,6 +594,63 @@ describe('Agent', () => {
                 disposable.dispose()
             }
         })
+
+        it('allows us to set the chat model', async () => {
+            const id = await client.request('chat/new', null)
+            {
+                await client.setChatModel(id, 'openai/gpt-3.5-turbo')
+                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('openai')).toBeTruthy()
+            }
+            {
+                await client.setChatModel(id, 'anthropic/claude-2.0')
+                const lastMessage = await client.sendMessage(id, 'which company, other than sourcegraph, created you?')
+                expect(lastMessage?.text?.toLocaleLowerCase().indexOf('anthropic')).toBeTruthy()
+            }
+        })
+
+        it('resets the chat', async () => {
+            const id = await client.request('chat/new', null)
+            await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+            await client.sendMessage(
+                id,
+                'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+            )
+            {
+                const lastMessage = await client.sendMessage(id, 'kramer')
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeTruthy()
+            }
+            await client.reset(id)
+            {
+                const lastMessage = await client.sendMessage(id, 'kramer')
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+            }
+        })
+
+        it(
+            'edits the chat',
+            async () => {
+                const id = await client.request('chat/new', null)
+                await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+                await client.sendMessage(
+                    id,
+                    'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
+                )
+                await client.editMessage(
+                    id,
+                    'Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".'
+                )
+                {
+                    const lastMessage = await client.sendMessage(id, 'kramer')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                }
+                {
+                    const lastMessage = await client.sendMessage(id, 'georgey')
+                    expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
+                }
+            },
+            { timeout: mayRecord ? 10_000 : undefined }
+        )
     })
 
     describe('RateLimitedAgent', () => {
@@ -598,7 +661,7 @@ describe('Agent', () => {
         }, 10_000)
 
         it('get rate limit error if exceeding usage on rate limited account', async () => {
-            const lastMessage = await rateLimitedClient.sendSingleMessage('sqrt(9)')
+            const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
             expect(lastMessage?.error?.name).toMatchInlineSnapshot('"RateLimitError"', explainPollyError)
         }, 20_000)
 

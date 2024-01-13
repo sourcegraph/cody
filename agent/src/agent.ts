@@ -587,8 +587,11 @@ export class Agent extends MessageHandler {
             return { models: panel.models ?? [] }
         })
 
-        this.registerRequest('chat/submitMessage', async ({ id, message }, token) => {
-            if (message.command !== 'submit') {
+        const submitOrEditHandler = async (
+            { id, message }: { id: string; message: WebviewMessage },
+            token: vscode.CancellationToken
+        ): Promise<ExtensionMessage> => {
+            if (message.command !== 'submit' && message.command !== 'edit') {
                 throw new Error('Invalid message, must have a command of "submit"')
             }
             const panel = this.webPanels.getPanelOrError(id)
@@ -625,7 +628,9 @@ export class Agent extends MessageHandler {
             return result.finally(() => {
                 vscode.Disposable.from(...disposables).dispose()
             })
-        })
+        }
+        this.registerRequest('chat/submitMessage', submitOrEditHandler)
+        this.registerRequest('chat/editMessage', submitOrEditHandler)
 
         this.registerRequest('webview/receiveMessage', async ({ id, message }) => {
             await this.receiveWebviewMessage(id, message)
