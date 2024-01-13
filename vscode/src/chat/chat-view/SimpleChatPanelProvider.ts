@@ -12,6 +12,7 @@ import {
     isDefined,
     isDotCom,
     isError,
+    isFileURI,
     isRateLimitError,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
@@ -432,8 +433,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             case 'symf/index': {
                 void this.codebaseStatusProvider.currentCodebase().then((codebase): void => {
-                    if (codebase) {
-                        void this.symf?.ensureIndex(codebase.local, { hard: true })
+                    if (codebase && isFileURI(codebase.localFolder)) {
+                        void this.symf?.ensureIndex(codebase.localFolder, { hard: true })
                     }
                 })
                 break
@@ -1292,8 +1293,8 @@ class ContextProvider implements IContextProvider {
         if (!this.symf) {
             return []
         }
-        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
-        if (!workspaceRoot) {
+        const workspaceRoot = this.editor.getWorkspaceRootUri()
+        if (!workspaceRoot || !isFileURI(workspaceRoot)) {
             return []
         }
 
@@ -1305,8 +1306,7 @@ class ContextProvider implements IContextProvider {
 
         const r0 = (await this.symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(async (result: Result): Promise<ContextItem[] | ContextItem> => {
-                const uri = vscode.Uri.file(result.file)
-                if (isCodyIgnoredFile(uri)) {
+                if (isCodyIgnoredFile(result.file)) {
                     return []
                 }
                 const range = new vscode.Range(
@@ -1318,7 +1318,7 @@ class ContextProvider implements IContextProvider {
 
                 let text: string | undefined
                 try {
-                    text = await this.editor.getTextEditorContentForFile(uri, range)
+                    text = await this.editor.getTextEditorContentForFile(result.file, range)
                     if (!text) {
                         return []
                     }
@@ -1327,7 +1327,7 @@ class ContextProvider implements IContextProvider {
                     return []
                 }
                 return {
-                    uri,
+                    uri: result.file,
                     range,
                     source: 'search',
                     text,

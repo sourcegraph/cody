@@ -9,7 +9,8 @@ import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
 import {
-    isWindows,
+    isFileURI,
+    type FileURI,
     type IndexedKeywordContextFetcher,
     type Result,
     type SourcegraphCompletionsClient,
@@ -72,9 +73,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return { accessToken, serverEndpoint, symfPath }
     }
 
-    public getResults(userQuery: string, scopeDirs: string[]): Promise<Promise<Result[]>[]> {
+    public getResults(userQuery: string, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
         const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
-        return Promise.resolve(scopeDirs.map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir)))
+        return Promise.resolve(
+            scopeDirs.filter(isFileURI).map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+        )
     }
 
     /**
@@ -82,7 +85,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
      * @param keywordQuery is a promise, because query expansion might be an expensive
      * operation that is best done concurrently with querying and (re)building the index.
      */
-    private async getResultsForScopeDir(keywordQuery: Promise<string>, scopeDir: string): Promise<Result[]> {
+    private async getResultsForScopeDir(keywordQuery: Promise<string>, scopeDir: FileURI): Promise<Result[]> {
         const maxRetries = 10
 
         // Run in a loop in case the index is deleted before we can query it
@@ -109,13 +112,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
     }
 
-    public async deleteIndex(scopeDir: string): Promise<void> {
+    public async deleteIndex(scopeDir: FileURI): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeDeleteIndex(scopeDir)
         })
     }
 
-    public async getIndexStatus(scopeDir: string): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
+    public async getIndexStatus(scopeDir: FileURI): Promise<'unindexed' | 'indexing' | 'ready' | 'failed'> {
         if (this.status.isInProgress(scopeDir)) {
             // Check this before waiting on the lock
             return 'indexing'
@@ -132,13 +135,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return 'unindexed'
     }
 
-    public async ensureIndex(scopeDir: string, options: { hard: boolean } = { hard: false }): Promise<void> {
+    public async ensureIndex(scopeDir: FileURI, options: { hard: boolean } = { hard: false }): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeEnsureIndex(scopeDir, options)
         })
     }
 
-    private getIndexLock(scopeDir: string): RWLock {
+    private getIndexLock(scopeDir: FileURI): RWLock {
         const { indexDir } = this.getIndexDir(scopeDir)
         let lock = this.indexLocks.get(indexDir)
         if (lock) {
@@ -149,13 +152,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return lock
     }
 
-    private async unsafeRunQuery(keywordQuery: string, scopeDir: string): Promise<string> {
+    private async unsafeRunQuery(keywordQuery: string, scopeDir: FileURI): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
         const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
         try {
             const { stdout } = await execFile(
                 symfPath,
-                ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', keywordQuery],
+                ['--index-root', indexDir, 'query', '--scopes', scopeDir.fsPath, '--fmt', 'json', keywordQuery],
                 {
                     env: {
                         SOURCEGRAPH_TOKEN: accessToken,
@@ -172,7 +175,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
     }
 
-    private async unsafeDeleteIndex(scopeDir: string): Promise<void> {
+    private async unsafeDeleteIndex(scopeDir: FileURI): Promise<void> {
         const trashRootDir = path.join(this.indexRoot, '.trash')
         await mkdirp(trashRootDir)
         const { indexDir } = this.getIndexDir(scopeDir)
@@ -193,12 +196,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         void rm(trashDir, { recursive: true, force: true }) // delete in background
     }
 
-    private async unsafeIndexExists(scopeDir: string): Promise<boolean> {
+    private async unsafeIndexExists(scopeDir: FileURI): Promise<boolean> {
         const { indexDir } = this.getIndexDir(scopeDir)
         return fileExists(path.join(indexDir, 'index.json'))
     }
 
-    private async unsafeEnsureIndex(scopeDir: string, options: { hard: boolean } = { hard: false }): Promise<void> {
+    private async unsafeEnsureIndex(scopeDir: FileURI, options: { hard: boolean } = { hard: false }): Promise<void> {
         const indexExists = await this.unsafeIndexExists(scopeDir)
         if (indexExists) {
             return
@@ -221,13 +224,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         await this.clearIndexFailure(scopeDir)
     }
 
-    private getIndexDir(scopeDir: string): { indexDir: string; tmpDir: string } {
-        let absIndexedDir = path.resolve(scopeDir)
-        // On Windows, we can't use an absolute path with a dirve letter inside another path
-        // so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
-        // sub-path in the index.
-        if (isWindows() && absIndexedDir[1] === ':') {
-            absIndexedDir = absIndexedDir[0] + absIndexedDir.slice(2)
+    private getIndexDir(scopeDir: FileURI): { indexDir: string; tmpDir: string } {
+        const absIndexedDir = scopeDir.fsPath
+        // TODO(sqs): assert absolute
+        if (!path.isAbsolute(absIndexedDir)) {
+            throw new Error('TODO(sqs)')
         }
         return {
             indexDir: path.join(this.indexRoot, absIndexedDir),
@@ -235,7 +236,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
     }
 
-    private unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
+    private unsafeUpsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: FileURI): Promise<void> {
         const cancellation = new vscode.CancellationTokenSource()
         const upsert = this._unsafeUpsertIndex(indexDir, tmpIndexDir, scopeDir, cancellation.token)
         this.status.didStart({ scopeDir, done: upsert, cancel: () => cancellation.cancel() })
@@ -249,7 +250,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     private async _unsafeUpsertIndex(
         indexDir: string,
         tmpIndexDir: string,
-        scopeDir: string,
+        scopeDir: FileURI,
         cancellationToken: vscode.CancellationToken
     ): Promise<void> {
         const symfPath = await getSymfPath(this.context)
@@ -275,7 +276,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         let wasCancelled = false
         let onExit: (() => void) | undefined
         try {
-            const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir], {
+            const proc = spawn(symfPath, ['--index-root', tmpIndexDir, 'add', scopeDir.fsPath], {
                 env: {
                     ...process.env,
                     GOMAXPROCS: `${maxCPUs}`, // use at most one cpu for indexing
@@ -331,45 +332,59 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
      * Helpers for tracking index failure
      */
 
-    private async markIndexFailed(scopeDir: string): Promise<void> {
+    private async markIndexFailed(scopeDir: FileURI): Promise<void> {
         const failureRoot = path.join(this.indexRoot, '.failed')
         await mkdirp(failureRoot)
 
-        const absIndexedDir = path.resolve(scopeDir)
+        const absIndexedDir = scopeDir.fsPath
+
+        // TODO(sqs): assert absolute
+        if (!path.isAbsolute(absIndexedDir)) {
+            throw new Error('TODO(sqs)')
+        }
+
         const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
 
         await writeFile(failureSentinelFile, '')
     }
 
-    private async didIndexFail(scopeDir: string): Promise<boolean> {
+    private async didIndexFail(scopeDir: FileURI): Promise<boolean> {
         const failureRoot = path.join(this.indexRoot, '.failed')
-        const absIndexedDir = path.resolve(scopeDir)
+        const absIndexedDir = scopeDir.fsPath
+        // TODO(sqs): assert absolute
+        if (!path.isAbsolute(absIndexedDir)) {
+            throw new Error('TODO(sqs)')
+        }
         const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
         return fileExists(failureSentinelFile)
     }
 
-    private async clearIndexFailure(scopeDir: string): Promise<void> {
+    private async clearIndexFailure(scopeDir: FileURI): Promise<void> {
         const failureRoot = path.join(this.indexRoot, '.failed')
-        const absIndexedDir = path.resolve(scopeDir)
+        const absIndexedDir = scopeDir.fsPath
+        // TODO(sqs): assert absolute
+        if (!path.isAbsolute(absIndexedDir)) {
+            throw new Error('TODO(sqs)')
+        }
         const failureSentinelFile = path.join(failureRoot, absIndexedDir.replaceAll(path.sep, '__'))
         await rm(failureSentinelFile, { force: true })
     }
 }
 
 export interface IndexStartEvent {
-    scopeDir: string
+    scopeDir: FileURI
     cancel: () => void
     done: Promise<void>
 }
 
 interface IndexEndEvent {
-    scopeDir: string
+    scopeDir: FileURI
 }
 
 class IndexStatus implements vscode.Disposable {
     private startEmitter = new vscode.EventEmitter<IndexStartEvent>()
     private stopEmitter = new vscode.EventEmitter<IndexEndEvent>()
-    private inProgressDirs = new Set<string>()
+    private inProgressDirs = new Set<string /* uri.toString() */>()
 
     public dispose(): void {
         this.startEmitter.dispose()
@@ -377,12 +392,12 @@ class IndexStatus implements vscode.Disposable {
     }
 
     public didStart(event: IndexStartEvent): void {
-        this.inProgressDirs.add(event.scopeDir)
+        this.inProgressDirs.add(event.scopeDir.toString())
         this.startEmitter.fire(event)
     }
 
     public didEnd(event: IndexEndEvent): void {
-        this.inProgressDirs.delete(event.scopeDir)
+        this.inProgressDirs.delete(event.scopeDir.toString())
         this.stopEmitter.fire(event)
     }
 
@@ -394,8 +409,8 @@ class IndexStatus implements vscode.Disposable {
         return this.stopEmitter.event(cb)
     }
 
-    public isInProgress(scopeDir: string): boolean {
-        return this.inProgressDirs.has(scopeDir)
+    public isInProgress(scopeDir: FileURI): boolean {
+        return this.inProgressDirs.has(scopeDir.toString())
     }
 }
 
@@ -409,9 +424,12 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 function parseSymfStdout(stdout: string): Result[] {
-    const results: Result[] = JSON.parse(stdout) as Result[]
+    interface RawSymfResult extends Omit<Result, 'file'> {
+        file: string
+    }
+    const results = JSON.parse(stdout) as RawSymfResult[]
     return results.map(result => {
-        const { fqname, name, type, doc, exported, lang, file, range, summary } = result
+        const { fqname, name, type, doc, exported, lang, file: fsPath, range, summary } = result
 
         const { row: startRow, col: startColumn } = range.startPoint
         const { row: endRow, col: endColumn } = range.endPoint
@@ -426,7 +444,7 @@ function parseSymfStdout(stdout: string): Result[] {
             doc,
             exported,
             lang,
-            file,
+            file: vscode.Uri.file(fsPath),
             summary,
             range: {
                 startByte,
@@ -440,7 +458,7 @@ function parseSymfStdout(stdout: string): Result[] {
                     col: endColumn,
                 },
             },
-        }
+        } satisfies Result
     })
 }
 

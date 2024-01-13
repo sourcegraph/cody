@@ -37,13 +37,13 @@ export interface Result {
     doc: string
     exported: boolean
     lang: string
-    file: string
+    file: URI
     range: Range
     summary: string
 }
 
 export interface IndexedKeywordContextFetcher {
-    getResults(query: string, scopeDirs: string[]): Promise<Promise<Result[]>[]>
+    getResults(query: string, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
 }
 
 /**
@@ -51,9 +51,6 @@ export interface IndexedKeywordContextFetcher {
  */
 export interface SearchPanelFile {
     uri: URI
-    basename: string
-    dirname: string
-    wsname?: string
     snippets: SearchPanelSnippet[]
 }
 

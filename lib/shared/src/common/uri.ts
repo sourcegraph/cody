@@ -8,6 +8,10 @@ import { type URI } from 'vscode-uri'
  */
 export type FileURI = URI & { scheme: 'file' }
 
+export function isFileURI(uri: URI): uri is FileURI {
+    return uri.scheme === 'file'
+}
+
 declare module 'vscode-uri' {
     // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     export class URI {

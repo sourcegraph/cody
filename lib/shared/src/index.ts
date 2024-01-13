@@ -53,7 +53,7 @@ export { basename, dedupeWith, isDefined, isErrorLike, pluralize } from './commo
 export { ProgrammingLanguage, languageFromFilename, markdownCodeBlockLanguageIDForFilename } from './common/languages'
 export { renderMarkdown } from './common/markdown'
 export { isWindows } from './common/platform'
-export type { FileURI } from './common/uri'
+export { isFileURI, type FileURI } from './common/uri'
 export type {
     AutocompleteTimeouts,
     Configuration,
@@ -94,6 +94,7 @@ export type {
     SearchPanelFile,
     SearchPanelSnippet,
 } from './local-context'
+export { logDebug, logError, setLogger } from './logger'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
@@ -151,4 +152,3 @@ export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
-export { logDebug, logError, setLogger } from './logger'
