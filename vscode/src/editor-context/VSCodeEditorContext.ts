@@ -1,7 +1,7 @@
 import { dirname } from 'path'
 
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { type URI } from 'vscode-uri'
 
 import { getFileExtension } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import {
@@ -15,18 +15,16 @@ import {
     populateContextTemplateFromText,
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
-    populateCurrentFileFromEditorSelectionContextTemplate,
     populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { answers, displayFileName } from '../commands/prompt/templates'
+import { answers } from '../commands/prompt/templates'
 import { type VSCodeEditor } from '../editor/vscode-editor'
 
 import {
-    createHumanDisplayTextWithDocLink,
     createVSCodeRelativePath,
     decodeVSCodeTextDoc,
     findVSCodeFiles,
@@ -44,25 +42,6 @@ export class VSCodeEditorContext {
         private editor: VSCodeEditor,
         private selection?: ActiveTextEditorSelection | null
     ) {}
-
-    public getHumanDisplayText(humanInput: string): string {
-        const workspaceRootUri = this.editor.getWorkspaceRootUri()
-        const fileName = this.selection?.fileName
-        if (!fileName || !this.selection) {
-            return humanInput
-        }
-
-        if (!workspaceRootUri) {
-            return humanInput + displayFileName + fileName
-        }
-
-        // check if fileName is a workspace file or not
-        const isFileWorkspaceFile = isInWorkspace(URI.file(fileName)) !== undefined
-        const fileUri = isFileWorkspaceFile ? vscode.Uri.joinPath(workspaceRootUri, fileName) : URI.file(fileName)
-
-        // Create markdown link to the file
-        return createHumanDisplayTextWithDocLink(humanInput, fileUri, this.selection)
-    }
 
     public getEditorSelectionContext(): ContextMessage[] {
         const fileText = this.selection?.selectedText.trim()
@@ -217,22 +196,6 @@ export class VSCodeEditorContext {
     }
 
     /**
-     * Gets context messages for the current open file in the editor
-     * using the provided selection.
-     */
-    public getCurrentFileContextFromEditorSelection(): ContextMessage[] {
-        if (!this.selection?.selectedText) {
-            return []
-        }
-
-        return getContextMessageWithResponse(
-            populateCurrentFileFromEditorSelectionContextTemplate(this.selection, this.selection.fileName),
-            { ...this.selection, source: 'editor' },
-            answers.file
-        )
-    }
-
-    /**
      * Gets context messages for terminal output.
      */
     public getTerminalOutputContext(commandOutput: string): ContextMessage[] {
@@ -289,7 +252,7 @@ export class VSCodeEditorContext {
         return contextMessages
     }
 
-    public async getDirectoryFileListContext(
+    private async getDirectoryFileListContext(
         workspaceRootUri: URI,
         isTestRequest: boolean,
         fileName?: string
@@ -328,7 +291,7 @@ export class VSCodeEditorContext {
         }
     }
 
-    public async getPackageJsonContext(filePath: string): Promise<ContextMessage[]> {
+    private async getPackageJsonContext(filePath: string): Promise<ContextMessage[]> {
         const currentFilePath = filePath
         if (!currentFilePath) {
             return []
@@ -362,7 +325,7 @@ export class VSCodeEditorContext {
         }
     }
 
-    public async getCurrentFileImportsContext(): Promise<ContextMessage[]> {
+    private async getCurrentFileImportsContext(): Promise<ContextMessage[]> {
         const fileUri = this.selection?.fileUri
         if (!fileUri) {
             return []

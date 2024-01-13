@@ -8,7 +8,6 @@ import {
     getContextMessageWithResponse,
     type ContextMessage,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     populateCodeContextTemplate,
@@ -16,7 +15,7 @@ import {
 } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
-import { createSelectionDisplayText, isValidTestFileName } from '../commands/prompt/utils'
+import { isValidTestFileName } from '../commands/prompt/utils'
 
 /**
  * Checks if a file URI is part of the current workspace.
@@ -188,26 +187,6 @@ export async function getFoldingRanges(
     const lastKind = foldingRanges ? findLast(foldingRanges, range => range.kind === kind) : undefined
 
     return lastKind ? [lastKind] : []
-}
-
-/**
- * Creates a human readable display text with a link to the VS Code editor.
- * @param input - The original human input text.
- * @param docUri - The URI of the referenced text document.
- * @param selection - The selection in the text document.
- * @returns The display text with a VS Code file link and selection range.
- */
-export function createHumanDisplayTextWithDocLink(
-    input: string,
-    docUri: URI,
-    selection: ActiveTextEditorSelection
-): string {
-    const { range, start } = createSelectionDisplayText(selection)
-    const fsPath = docUri.fsPath
-    const fileName = createVSCodeRelativePath(fsPath)
-    const fileLink = `vscode://file${fsPath}:${start}`
-
-    return `${input}\n\nFile: [_${fileName}:${range}_](${fileLink})`
 }
 
 /**
