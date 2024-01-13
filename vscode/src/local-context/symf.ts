@@ -10,6 +10,7 @@ import { XMLParser } from 'fast-xml-parser'
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
+import { isWindows } from '@sourcegraph/cody-shared'
 import { type IndexedKeywordContextFetcher, type Result } from '@sourcegraph/cody-shared/src/local-context'
 import { type SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
@@ -247,7 +248,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         // On Windows, we can't use an absolute path with a dirve letter inside another path
         // so we remove the colon, so `C:\foo\bar` just becomes `C\foo\bar` which is a valid
         // sub-path in the index.
-        if (path.sep === path.win32.sep && absIndexedDir[1] === ':') {
+        if (isWindows() && absIndexedDir[1] === ':') {
             absIndexedDir = absIndexedDir[0] + absIndexedDir.slice(2)
         }
         return {

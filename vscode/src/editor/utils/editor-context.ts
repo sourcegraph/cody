@@ -1,13 +1,15 @@
-import path, { basename, dirname } from 'path'
+import path from 'path'
 
 import fuzzysort from 'fuzzysort'
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { type ContextFile } from '@sourcegraph/cody-shared'
+import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
+    type ContextFileFile,
     type ContextFileSource,
+    type ContextFileSymbol,
     type ContextFileType,
     type SymbolKind,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -42,7 +44,7 @@ export async function getFileContextFiles(
     query: string,
     maxResults: number,
     token: vscode.CancellationToken
-): Promise<ContextFile[]> {
+): Promise<ContextFileFile[]> {
     if (!query.trim()) {
         return []
     }
@@ -62,7 +64,7 @@ export async function getFileContextFiles(
 
     // Add on the relative URIs for search, so we only search the visible part
     // of the path and not the full FS path.
-    const urisWithRelative = uris.map(uri => ({ uri, relative: asRelativePath(uri) }))
+    const urisWithRelative = uris.map(uri => ({ uri, relative: displayPath(uri) }))
     const results = fuzzysort.go(query, urisWithRelative, {
         key: 'relative',
         limit: maxResults,
@@ -104,10 +106,10 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return sortedResults.map(result => createContextFileFromUri(result.obj.uri))
+    return sortedResults.map(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
 }
 
-export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFile[]> {
+export async function getSymbolContextFiles(query: string, maxResults = 20): Promise<ContextFileSymbol[]> {
     if (!query.trim()) {
         return []
     }
@@ -145,17 +147,15 @@ export async function getSymbolContextFiles(query: string, maxResults = 20): Pro
     const matches = []
     for (const symbol of symbols) {
         if (!isCodyIgnoredFile(symbol?.location.uri)) {
-            // TODO(toolmantim): Update the kinds to match above
-            const kind: SymbolKind = symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function'
-            const source: ContextFileSource = 'user'
-            const contextFile: ContextFile = createContextFileFromUri(
+            const contextFile = createContextFileFromUri(
                 symbol.location.uri,
-                source,
+                'user',
                 'symbol',
                 symbol.location.range,
-                kind
+                // TODO(toolmantim): Update the kinds to match above
+                symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function',
+                symbol.name
             )
-            contextFile.fileName = symbol.name
             matches.push(contextFile)
         }
     }
@@ -175,26 +175,47 @@ export function getOpenTabsContextFile(): ContextFile[] {
             }
             return false
         })
-        .map(uri => createContextFileFromUri(uri, 'user', 'file', undefined, undefined))
+        .map(uri => createContextFileFromUri(uri, 'user', 'file'))
 }
 
 function createContextFileFromUri(
     uri: vscode.Uri,
+    source: ContextFileSource,
+    type: 'symbol',
+    selectionRange: vscode.Range,
+    kind: SymbolKind,
+    symbolName: string
+): ContextFileSymbol
+function createContextFileFromUri(
+    uri: vscode.Uri,
+    source: ContextFileSource,
+    type: 'file',
+    selectionRange?: vscode.Range
+): ContextFileFile
+function createContextFileFromUri(
+    uri: vscode.Uri,
     source: ContextFileSource = 'user',
-    type: ContextFileType = 'file',
+    type: ContextFileType,
     selectionRange?: vscode.Range,
-    kind?: SymbolKind
+    kind?: SymbolKind,
+    symbolName?: string
 ): ContextFile {
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
-    return {
-        fileName: vscode.workspace.asRelativePath(uri.fsPath),
-        uri,
-        path: createContextFilePath(uri),
-        range,
-        type,
-        source,
-        kind,
-    }
+    return type === 'file'
+        ? {
+              type,
+              uri,
+              range,
+              source,
+          }
+        : {
+              type,
+              symbolName: symbolName!,
+              uri,
+              range,
+              source,
+              kind: kind!,
+          }
 }
 
 function createContextFileRange(selectionRange: vscode.Range): ContextFile['range'] {
@@ -208,24 +229,4 @@ function createContextFileRange(selectionRange: vscode.Range): ContextFile['rang
             character: selectionRange.end.character,
         },
     }
-}
-
-function createContextFilePath(uri: vscode.Uri): ContextFile['path'] {
-    return {
-        basename: basename(uri.fsPath),
-        dirname: dirname(uri.fsPath),
-        relative: asRelativePath(uri),
-    }
-}
-
-/**
- * Returns a relative path using the correct slash direction for the current platform.
- */
-function asRelativePath(uri: vscode.Uri): string {
-    let relativePath = vscode.workspace.asRelativePath(uri.fsPath)
-    // asRelativePath returns forward slashes on Windows but we want to
-    // render a native path like VS Code does in the file quick-pick.
-    relativePath = relativePath.replaceAll(path.posix.sep, path.sep)
-
-    return relativePath
 }

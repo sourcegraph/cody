@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { type URI } from 'vscode-uri'
+
 import { type CodebaseContext } from '../../codebase-context'
 import { getContextMessageWithResponse, type ContextMessage } from '../../codebase-context/messages'
 import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
@@ -37,7 +39,7 @@ export async function getContextMessagesFromSelection(
     selectedText: string,
     precedingText: string,
     followingText: string,
-    { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
+    { fileUri, repoName, revision }: { fileUri: URI; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
@@ -49,8 +51,9 @@ export async function getContextMessagesFromSelection(
         [precedingText, followingText]
             .filter(text => text.trim().length > 0)
             .flatMap(text =>
-                getContextMessageWithResponse(populateCodeContextTemplate(text, fileName, repoName), {
-                    fileName,
+                getContextMessageWithResponse(populateCodeContextTemplate(text, fileUri, repoName), {
+                    type: 'file',
+                    uri: fileUri,
                     repoName,
                     revision,
                 })
@@ -58,8 +61,11 @@ export async function getContextMessagesFromSelection(
     )
 }
 
-export function getFileExtension(fileName: string): string {
-    return path.extname(fileName).slice(1).toLowerCase()
+export function getFileExtension(file: URI | string): string {
+    return path
+        .extname(typeof file === 'string' ? file : file.path)
+        .slice(1)
+        .toLowerCase()
 }
 
 export const numResults = {

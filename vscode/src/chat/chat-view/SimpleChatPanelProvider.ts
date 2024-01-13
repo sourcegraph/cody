@@ -54,7 +54,7 @@ import {
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
 } from '../../services/utils/codeblock-action-tracker'
-import { openExternalLinks, openFilePath, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 import { type MessageErrorType } from '../MessageProvider'
@@ -67,13 +67,7 @@ import {
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 
-import {
-    getChatPanelTitle,
-    legacyContextFileUri,
-    relativeFileUri,
-    remoteEmbeddingSnippetUri,
-    stripContextWrapper,
-} from './chat-helpers'
+import { getChatPanelTitle, openFile, stripContextWrapper } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
 import { type ChatViewProviderWebview, type Config } from './ChatPanelsManager'
@@ -357,7 +351,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     requestID,
                     message.text,
                     message.submitType,
-                    message.contextFiles || [],
+                    message.contextFiles ?? [],
                     message.addEnhancedContext || false
                 )
                 break
@@ -409,7 +403,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFilePath(message.filePath, message.uri, this.webviewPanel?.viewColumn, message.range)
+                await openFile(message.uri, message.range, this.webviewPanel?.viewColumn)
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range)
@@ -631,7 +625,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // - Append @-file selection for commands
         // Otherwise, use the input text
         const displayText = userContextFiles?.length
-            ? createDisplayTextWithFileLinks(userContextFiles, inputText)
+            ? createDisplayTextWithFileLinks(inputText, userContextFiles)
             : command
             ? createDisplayTextWithFileSelection(inputText, this.editor.getActiveTextEditorSelectionOrEntireFile())
             : inputText
@@ -693,7 +687,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
         }
-        await this.postMessage({ type: 'config', config: configForWebview, authStatus })
+        const workspaceFolderUris = vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+        await this.postMessage({ type: 'config', config: configForWebview, authStatus, workspaceFolderUris })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', { verbose: configForWebview })
     }
 
@@ -1069,7 +1064,7 @@ class ContextProvider implements IContextProvider {
     public async getSmartSelectionContext(): Promise<ContextItem[]> {
         const smartSelection = await this.editor.getActiveTextEditorSmartSelection()
         const selection = smartSelection || this.editor.getActiveTextEditorSelectionOrVisibleContent()
-        if (!selection?.selectedText || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+        if (!selection?.selectedText || isCodyIgnoredFile(selection.fileUri)) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1085,7 +1080,7 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: selection.selectedText,
-                uri: vscode.Uri.file(selection.fileUri?.fsPath || selection.fileName),
+                uri: selection.fileUri,
                 range,
                 source: 'selection',
             },
@@ -1094,7 +1089,7 @@ class ContextProvider implements IContextProvider {
 
     public getCurrentSelectionContext(): ContextItem[] {
         const selection = this.editor.getActiveTextEditorSelection()
-        if (!selection?.selectedText || isCodyIgnoredFile(vscode.Uri.file(selection.fileName))) {
+        if (!selection?.selectedText || isCodyIgnoredFile(selection.fileUri)) {
             return []
         }
         let range: vscode.Range | undefined
@@ -1110,7 +1105,7 @@ class ContextProvider implements IContextProvider {
         return [
             {
                 text: selection.selectedText,
-                uri: vscode.Uri.file(selection.fileName),
+                uri: selection.fileUri,
                 range,
                 source: 'selection',
             },
@@ -1267,12 +1262,7 @@ class ContextProvider implements IContextProvider {
                     result.range.endPoint.col
                 )
 
-                // HACK: we should standardize URI schemes at some point. The way
-                // in which this is handed to the view and received back is a bit
-                // jank
-                const displayUri = relativeFileUri(workspaceRoot, path.relative(workspaceRoot, result.file), range)
-
-                let text
+                let text: string | undefined
                 try {
                     text = await this.editor.getTextEditorContentForFile(uri, range)
                     if (!text) {
@@ -1283,7 +1273,7 @@ class ContextProvider implements IContextProvider {
                     return []
                 }
                 return {
-                    uri: displayUri,
+                    uri,
                     range,
                     source: 'search',
                     text,
@@ -1298,6 +1288,12 @@ class ContextProvider implements IContextProvider {
         if (!this.localEmbeddings) {
             return []
         }
+
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (!workspaceFolder) {
+            return []
+        }
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
@@ -1307,7 +1303,10 @@ class ContextProvider implements IContextProvider {
                 new vscode.Position(result.startLine, 0),
                 new vscode.Position(result.endLine, 0)
             )
-            const uri = relativeFileUri('', result.fileName, range)
+
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, result.fileName)
 
             // Filter out ignored files
             if (!isCodyIgnoredFile(vscode.Uri.file(result.fileName))) {
@@ -1338,6 +1337,11 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (!workspaceFolder) {
+            return []
+        }
+
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching remote embeddings')
         const contextItems: ContextItem[] = []
         const embeddings = await this.embeddingsClient.search([repoId], text, NUM_CODE_RESULTS, NUM_TEXT_RESULTS)
@@ -1345,12 +1349,14 @@ class ContextProvider implements IContextProvider {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
         }
         for (const codeResult of embeddings.codeResults) {
-            const uri = remoteEmbeddingSnippetUri(codebase, codeResult)
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, codeResult.fileName)
             const range = new vscode.Range(
                 new vscode.Position(codeResult.startLine, 0),
                 new vscode.Position(codeResult.endLine, 0)
             )
-            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, codeResult.fileName)))) {
+            if (!isCodyIgnoredFile(uri)) {
                 contextItems.push({
                     uri,
                     range,
@@ -1361,12 +1367,14 @@ class ContextProvider implements IContextProvider {
         }
 
         for (const textResult of embeddings.textResults) {
-            const uri = remoteEmbeddingSnippetUri(codebase, textResult)
+            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
+            // exists in the first workspaceFolder and that the file still exists.
+            const uri = vscode.Uri.joinPath(workspaceFolder.uri, textResult.fileName)
             const range = new vscode.Range(
                 new vscode.Position(textResult.startLine, 0),
                 new vscode.Position(textResult.endLine, 0)
             )
-            if (!isCodyIgnoredFile(vscode.Uri.file(path.join(codebase.local, textResult.fileName)))) {
+            if (!isCodyIgnoredFile(uri)) {
                 contextItems.push({
                     uri,
                     range,
@@ -1453,18 +1461,9 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
-        let readmeDisplayUri = readmeUri
-        const wsFolder = vscode.workspace.getWorkspaceFolder(readmeUri)
-        if (wsFolder) {
-            const readmeRelPath = path.relative(wsFolder.uri.fsPath, readmeUri.fsPath)
-            if (readmeRelPath) {
-                readmeDisplayUri = relativeFileUri(wsFolder.uri.fsPath, readmeRelPath, range)
-            }
-        }
-
         return [
             {
-                uri: readmeDisplayUri,
+                uri: readmeUri,
                 text: truncatedReadmeText,
                 range: viewRangeToRange(range),
                 source: 'editor',
@@ -1482,20 +1481,19 @@ export async function contextFilesToContextItems(
         await Promise.all(
             files.map(async (file: ContextFile): Promise<ContextItem | null> => {
                 const range = viewRangeToRange(file.range)
-                const uri = file.uri ?? vscode.Uri.file(file.fileName)
                 let text = file.content
                 if (!text && fetchContent) {
                     try {
-                        text = await editor.getTextEditorContentForFile(uri, range)
+                        text = await editor.getTextEditorContentForFile(file.uri, range)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${uri}. (Reason: ${error})`
+                            `Cody could not include context from ${file.uri}. (Reason: ${error})`
                         )
                         return null
                     }
                 }
                 return {
-                    uri,
+                    uri: file.uri,
                     range,
                     text: text || '',
                     source: file.source,
@@ -1544,27 +1542,25 @@ function deserializedContextFilesToContextItems(
     files: ContextFile[],
     contextMessages: ContextMessage[]
 ): ContextItem[] {
-    const contextByFile = new Map<string, ContextMessage>()
+    const contextByFile = new Map<string /* uri.toString() */, ContextMessage>()
     for (const contextMessage of contextMessages) {
-        if (!contextMessage.file?.fileName) {
+        if (!contextMessage.file) {
             continue
         }
-        contextByFile.set(contextMessage.file.fileName, contextMessage)
+        contextByFile.set(contextMessage.file.uri.toString(), contextMessage)
     }
 
     return files.map((file: ContextFile): ContextItem => {
         const range = viewRangeToRange(file.range)
-        const fallbackURI = legacyContextFileUri(file.fileName, range)
-        const uri = file.uri || fallbackURI
         let text = file.content
         if (!text) {
-            const contextMessage = contextByFile.get(file.fileName)
+            const contextMessage = contextByFile.get(file.uri.toString())
             if (contextMessage) {
                 text = stripContextWrapper(contextMessage.text || '')
             }
         }
         return {
-            uri,
+            uri: file.uri,
             range,
             text: text || '',
             source: file.source,

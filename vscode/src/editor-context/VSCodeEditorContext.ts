@@ -25,7 +25,6 @@ import { answers } from '../commands/prompt/templates'
 import { type VSCodeEditor } from '../editor/vscode-editor'
 
 import {
-    createVSCodeRelativePath,
     decodeVSCodeTextDoc,
     findVSCodeFiles,
     getCurrentDirFilteredContext,
@@ -49,13 +48,12 @@ export class VSCodeEditorContext {
         if (!fileText || !fileUri) {
             return []
         }
-        const fileName = fileUri.fsPath
         const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
         // Create context message
         const contextMessage = getContextMessageWithResponse(
-            populateCurrentEditorSelectedContextTemplate(truncatedText, fileName),
+            populateCurrentEditorSelectedContextTemplate(truncatedText, fileUri),
             {
-                fileName,
+                type: 'file',
                 uri: fileUri,
                 content: truncatedText,
                 source: 'selection',
@@ -89,23 +87,22 @@ export class VSCodeEditorContext {
 
                 // Get context using file path for files not in the current workspace
                 if (!isInWorkspace(tab.uri)) {
-                    const contextMessage = await this.getFilePathContext(tab.uri.fsPath)
+                    const contextMessage = await this.getFilePathContext(tab.uri)
                     contextMessages.push(...contextMessage)
                     continue
                 }
 
                 // Get file name and extract context from current workspace file
                 const fileUri = tab.uri
-                const fileName = createVSCodeRelativePath(fileUri.fsPath)
                 const fileText = await getCurrentVSCodeDocTextByURI(fileUri)
                 const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
                 const range = new vscode.Range(0, 0, truncatedText.split('\n').length, 0)
 
                 // Create context message
                 const message = getContextMessageWithResponse(
-                    populateCurrentEditorContextTemplate(truncatedText, fileName),
+                    populateCurrentEditorContextTemplate(truncatedText, fileUri),
                     {
-                        fileName,
+                        type: 'file',
                         uri: fileUri,
                         content: truncatedText,
                         source: 'editor',
@@ -130,9 +127,9 @@ export class VSCodeEditorContext {
         if (!activeEditor?.fileUri) {
             return []
         }
-        if (activeEditor.fileUri) {
-            const currentDir = dirname(activeEditor.filePath)
-            return this.getEditorDirContext(currentDir, activeEditor.filePath, isUnitTestRequest)
+        if (activeEditor.fileUri && activeEditor.fileUri.scheme === 'file') {
+            const currentDir = dirname(activeEditor.fileUri.fsPath)
+            return this.getEditorDirContext(currentDir, activeEditor.fileUri, isUnitTestRequest)
         }
         return []
     }
@@ -143,7 +140,7 @@ export class VSCodeEditorContext {
      */
     public async getEditorDirContext(
         directoryPath: string,
-        currentFileName?: string,
+        currentFile?: vscode.Uri,
         isUnitTestRequest = false
     ): Promise<ContextMessage[]> {
         let directoryUri = vscode.Uri.file(directoryPath)
@@ -154,13 +151,13 @@ export class VSCodeEditorContext {
         }
         const filteredFiles = await getFilesFromDir(directoryUri, isUnitTestRequest)
 
-        if (isUnitTestRequest && currentFileName) {
-            const context = await getCurrentDirFilteredContext(directoryUri, filteredFiles, currentFileName)
+        if (isUnitTestRequest && currentFile) {
+            const context = await getCurrentDirFilteredContext(directoryUri, filteredFiles, currentFile)
             if (context.length > 0) {
                 return context
             }
 
-            const testFileContext = await getEditorTestContext(currentFileName, isUnitTestRequest)
+            const testFileContext = await getEditorTestContext(currentFile, isUnitTestRequest)
             if (testFileContext.length > 0) {
                 return testFileContext
             }
@@ -172,20 +169,18 @@ export class VSCodeEditorContext {
     }
 
     /**
-     * Gets context messages for the given file path.
+     * Gets context messages for the given file.
      */
-    public async getFilePathContext(filePath: string): Promise<ContextMessage[]> {
-        const fileName = createVSCodeRelativePath(filePath)
-        const uri = vscode.Uri.file(filePath)
+    public async getFilePathContext(file: vscode.Uri): Promise<ContextMessage[]> {
         try {
-            const decoded = await getCurrentVSCodeDocTextByURI(uri)
+            const decoded = await getCurrentVSCodeDocTextByURI(file)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
             // Make sure the truncatedContent is in JSON format
-            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
-                fileName,
+            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, file), {
+                type: 'file',
                 content: decoded,
-                uri,
+                uri: file,
                 source: 'editor',
                 range,
             })
@@ -209,8 +204,9 @@ export class VSCodeEditorContext {
                 speaker: 'human',
                 text: populateTerminalOutputContextTemplate(truncatedTerminalOutput),
                 file: {
+                    type: 'file',
                     content: commandOutput,
-                    fileName: 'Terminal Output',
+                    title: 'Terminal Output',
                     uri: vscode.Uri.file('terminal-output'),
                     source: 'terminal',
                 },
@@ -239,12 +235,12 @@ export class VSCodeEditorContext {
             contextMessages.push(...rootFileNames)
         }
         // Add package.json content only if files matches the ts/js extension regex
-        if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
-            const packageJson = await this.getPackageJsonContext(selection?.fileName)
+        if (selection?.fileUri && getFileExtension(selection?.fileUri).match(/ts|js/)) {
+            const packageJson = await this.getPackageJsonContext()
             contextMessages.push(...packageJson)
         }
         // Try adding import statements from current file as context
-        if (selection?.fileName) {
+        if (selection?.fileUri) {
             const importsContext = await this.getCurrentFileImportsContext()
             contextMessages.push(...importsContext)
         }
@@ -267,22 +263,21 @@ export class VSCodeEditorContext {
             const directoryFiles = await getFilesFromDir(directoryUri, isTestRequest)
             const fileNames = directoryFiles.map(file => file[0])
             const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)
-            const fsPath = fileName || 'root'
 
             return [
                 {
                     speaker: 'human',
-                    text: populateListOfFilesContextTemplate(truncatedFileNames, fsPath),
+                    text: populateListOfFilesContextTemplate(truncatedFileNames, fileUri),
                     file: {
+                        type: 'file',
                         uri: fileUri,
                         content: truncatedFileNames,
-                        fileName: createVSCodeRelativePath(fsPath),
                         source: 'editor',
                     },
                 },
                 {
                     speaker: 'assistant',
-                    text: answers.fileList.replace('{fileName}', fsPath),
+                    text: answers.fileList.replace('{fileName}', fileName ?? 'root'),
                 },
             ]
         } catch (error) {
@@ -291,11 +286,7 @@ export class VSCodeEditorContext {
         }
     }
 
-    private async getPackageJsonContext(filePath: string): Promise<ContextMessage[]> {
-        const currentFilePath = filePath
-        if (!currentFilePath) {
-            return []
-        }
+    private async getPackageJsonContext(): Promise<ContextMessage[]> {
         // Search for the package.json from the base path
         const packageJsonPath = await findVSCodeFiles('**/package.json', undefined, 1)
         if (!packageJsonPath.length) {
@@ -311,13 +302,12 @@ export class VSCodeEditorContext {
             // stringify the scripts object with devDependencies
             const context = JSON.stringify({ scripts, devDependencies })
             const truncatedContent = truncateText(context.toString() || decoded.toString(), MAX_CURRENT_FILE_TOKENS)
-            const fileName = createVSCodeRelativePath(packageJsonUri.fsPath)
             const templateText =
                 'Here are the scripts and devDependencies from the package.json file for the codebase: '
 
             return getContextMessageWithResponse(
-                populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                { fileName, uri: packageJsonUri, content: truncatedContent, source: 'editor' },
+                populateContextTemplateFromText(templateText, truncatedContent, packageJsonUri),
+                { type: 'file', uri: packageJsonUri, content: truncatedContent, source: 'editor' },
                 answers.packageJson
             )
         } catch {
@@ -348,10 +338,9 @@ export class VSCodeEditorContext {
             }
 
             const truncatedContent = truncateText(importStatements, MAX_CURRENT_FILE_TOKENS / 2)
-            const fileName = createVSCodeRelativePath(editor?.fileName)
 
-            return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileName), {
-                fileName,
+            return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileUri), {
+                type: 'file',
                 uri: fileUri,
                 content: truncatedContent,
                 range: importsRange,

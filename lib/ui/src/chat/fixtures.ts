@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { type ChatMessage } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
@@ -22,8 +24,8 @@ export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
             displayText:
                 "Explain the following code at a high level:\n\n```\nprivate getNonce(): string {\n  let text = ''\n  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'\n  for (let i = 0; i < 32; i++) {\n    text += possible.charAt(Math.floor(Math.random() * possible.length))\n  }\n  return text\n}\n```",
             contextFiles: [
-                { fileName: 'vscode/src/chat/ChatViewProvider.ts' },
-                { fileName: 'lib/shared/src/timestamp.ts' },
+                { type: 'file', uri: URI.file('/vscode/src/chat/ChatViewProvider.ts') },
+                { type: 'file', uri: URI.file('/lib/shared/src/timestamp.ts') },
             ],
         },
         {

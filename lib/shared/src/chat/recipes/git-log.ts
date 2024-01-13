@@ -39,10 +39,10 @@ export class GitHistory implements Recipe {
         ]
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (selection) {
-            const name = path.basename(selection.fileName)
+            const name = path.basename(selection.fileUri.fsPath)
             items.push({
                 label: `Last 5 items for ${name}`,
-                args: ['log', '-n5', logFormat, '--', selection.fileName],
+                args: ['log', '-n5', logFormat, '--', selection.fileUri.fsPath],
                 rawDisplayText: `What changed in ${name} in the last 5 commits`,
             })
         }

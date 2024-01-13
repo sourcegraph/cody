@@ -17,7 +17,7 @@ import { type SymfRunner } from '../../local-context/symf'
 import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
 import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
-export interface CodebaseIdentifiers {
+interface CodebaseIdentifiers {
     local: string
     remote?: string
     remoteRepoId?: string

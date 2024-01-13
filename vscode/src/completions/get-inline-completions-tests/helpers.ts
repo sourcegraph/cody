@@ -1,13 +1,12 @@
 import { isEqual } from 'lodash'
 import { expect } from 'vitest'
-import { URI } from 'vscode-uri'
 
+import { testFileUri } from '@sourcegraph/cody-shared'
 import {
     type CompletionParameters,
     type CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { testFilePath } from '../../testutils/textDocument'
 import { type SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
@@ -30,7 +29,7 @@ import { documentAndPosition } from '../test-helpers'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const URI_FIXTURE = URI.file(testFilePath('test.ts'))
+const URI_FIXTURE = testFileUri('test.ts')
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string

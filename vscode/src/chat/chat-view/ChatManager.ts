@@ -194,11 +194,11 @@ export class ChatManager implements vscode.Disposable {
         })
     }
 
-    private async openFileFromChat(fsPath: string): Promise<void> {
-        const rangeIndex = fsPath.indexOf(':range:')
-        const range = rangeIndex ? fsPath.slice(Math.max(0, rangeIndex + 7)) : 0
-        const filteredFsPath = range ? fsPath.slice(0, rangeIndex) : fsPath
-        const uri = vscode.Uri.file(filteredFsPath)
+    private async openFileFromChat(uriAndRange: string): Promise<void> {
+        const rangeIndex = uriAndRange.indexOf(':range:')
+        const range = rangeIndex ? uriAndRange.slice(Math.max(0, rangeIndex + 7)) : 0
+        const uriStr = range ? uriAndRange.slice(0, rangeIndex) : uriAndRange
+        const uri = vscode.Uri.parse(uriStr)
         // If the active editor is undefined, that means the chat panel is the active editor
         // so we will open the file in the first visible editor instead
         const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
