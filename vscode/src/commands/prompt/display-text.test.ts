@@ -7,7 +7,7 @@ import { setDisplayPathEnvInfo, type DisplayPathEnvInfo } from '@sourcegraph/cod
 import { replaceFileNameWithMarkdownLink } from './display-text'
 
 describe('replaceFileNameWithMarkdownLink', () => {
-    // Mock a `displayPath` function that always uses slashes (even on Windows).
+    // Mock a `displayPath` function that always uses forward slashes (even on Windows).
     let orig: DisplayPathEnvInfo | null
     beforeEach(() => {
         orig = setDisplayPathEnvInfo({ isWindows: false, workspaceFolders: [URI.file('/')] })
