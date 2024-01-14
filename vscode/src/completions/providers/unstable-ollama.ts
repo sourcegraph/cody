@@ -1,4 +1,6 @@
-import type { OllamaOptions } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
+
+import { displayPath, type OllamaOptions } from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
@@ -10,17 +12,17 @@ import { createOllamaClient, type OllamaGenerateParams } from './ollama-client'
 import { Provider, type CompletionProviderTracer, type ProviderConfig, type ProviderOptions } from './provider'
 
 interface LlamaCodePrompt {
-    snippets: { fileName: string; content: string }[]
+    snippets: { uri: vscode.Uri; content: string }[]
 
-    fileName: string
+    uri: vscode.Uri
     prefix: string
     suffix: string
 
     languageId: string
 }
 
-function fileNameLine(fileName: string, commentStart: string): string {
-    return `${commentStart} Path: ${fileName}\n`
+function fileNameLine(uri: vscode.Uri, commentStart: string): string {
+    return `${commentStart} Path: ${displayPath(uri)}\n`
 }
 
 function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: string): string {
@@ -29,8 +31,8 @@ function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: 
 
     const context = prompt.snippets
         .map(
-            ({ fileName, content }) =>
-                fileNameLine(fileName, commentStart) +
+            ({ uri, content }) =>
+                fileNameLine(uri, commentStart) +
                 content
                     .split('\n')
                     .map(line => `${commentStart} ${line}`)
@@ -38,7 +40,7 @@ function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: 
         )
         .join('\n\n')
 
-    const currentFileNameComment = fileNameLine(prompt.fileName, commentStart)
+    const currentFileNameComment = fileNameLine(prompt.uri, commentStart)
 
     if (model.startsWith('codellama:') && infill) {
         const infillPrefix = context + currentFileNameComment + prompt.prefix
@@ -77,7 +79,7 @@ class UnstableOllamaProvider extends Provider {
     protected createPrompt(snippets: ContextSnippet[], infill: boolean): LlamaCodePrompt {
         const prompt: LlamaCodePrompt = {
             snippets: [],
-            fileName: this.options.document.uri.fsPath,
+            uri: this.options.document.uri,
             prefix: this.options.docContext.prefix,
             suffix: this.options.docContext.suffix,
             languageId: this.options.document.languageId,

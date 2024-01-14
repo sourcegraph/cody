@@ -1,5 +1,3 @@
-import * as path from 'path'
-
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -12,6 +10,7 @@ import {
     isDefined,
     isDotCom,
     isError,
+    isFileURI,
     isRateLimitError,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
@@ -19,6 +18,7 @@ import {
     reformatBotMessageForChat,
     truncateTextNearestLine,
     Typewriter,
+    uriBasename,
     type ActiveTextEditorSelectionRange,
     type ChatClient,
     type ChatMessage,
@@ -432,8 +432,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             case 'symf/index': {
                 void this.codebaseStatusProvider.currentCodebase().then((codebase): void => {
-                    if (codebase) {
-                        void this.symf?.ensureIndex(codebase.local, { hard: true })
+                    if (codebase && isFileURI(codebase.localFolder)) {
+                        void this.symf?.ensureIndex(codebase.localFolder, { hard: true })
                     }
                 })
                 break
@@ -1245,7 +1245,7 @@ class ContextProvider implements IContextProvider {
             // Query refers to project, so include the README
             let containsREADME = false
             for (const contextItem of searchContext) {
-                const basename = path.basename(contextItem.uri.fsPath)
+                const basename = uriBasename(contextItem.uri)
                 if (basename.toLocaleLowerCase() === 'readme' || basename.toLocaleLowerCase().startsWith('readme.')) {
                     containsREADME = true
                     break
@@ -1292,8 +1292,8 @@ class ContextProvider implements IContextProvider {
         if (!this.symf) {
             return []
         }
-        const workspaceRoot = this.editor.getWorkspaceRootUri()?.fsPath
-        if (!workspaceRoot) {
+        const workspaceRoot = this.editor.getWorkspaceRootUri()
+        if (!workspaceRoot || !isFileURI(workspaceRoot)) {
             return []
         }
 
@@ -1305,8 +1305,7 @@ class ContextProvider implements IContextProvider {
 
         const r0 = (await this.symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(async (result: Result): Promise<ContextItem[] | ContextItem> => {
-                const uri = vscode.Uri.file(result.file)
-                if (isCodyIgnoredFile(uri)) {
+                if (isCodyIgnoredFile(result.file)) {
                     return []
                 }
                 const range = new vscode.Range(
@@ -1318,7 +1317,7 @@ class ContextProvider implements IContextProvider {
 
                 let text: string | undefined
                 try {
-                    text = await this.editor.getTextEditorContentForFile(uri, range)
+                    text = await this.editor.getTextEditorContentForFile(result.file, range)
                     if (!text) {
                         return []
                     }
@@ -1327,7 +1326,7 @@ class ContextProvider implements IContextProvider {
                     return []
                 }
                 return {
-                    uri,
+                    uri: result.file,
                     range,
                     source: 'search',
                     text,
@@ -1359,11 +1358,6 @@ class ContextProvider implements IContextProvider {
             return []
         }
 
-        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-        if (!workspaceFolder) {
-            return []
-        }
-
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await this.localEmbeddings.getContext(text, NUM_CODE_RESULTS + NUM_TEXT_RESULTS)
@@ -1374,14 +1368,10 @@ class ContextProvider implements IContextProvider {
                 new vscode.Position(result.endLine, 0)
             )
 
-            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
-            // exists in the first workspaceFolder and that the file still exists.
-            const uri = vscode.Uri.joinPath(workspaceFolder.uri, result.fileName)
-
             // Filter out ignored files
-            if (!isCodyIgnoredFile(vscode.Uri.file(result.fileName))) {
+            if (!isCodyIgnoredFile(result.uri)) {
                 contextItems.push({
-                    uri,
+                    uri: result.uri,
                     range,
                     text: result.content,
                     source: 'embeddings',
@@ -1419,16 +1409,13 @@ class ContextProvider implements IContextProvider {
             throw new Error(`Error retrieving embeddings: ${embeddings}`)
         }
         for (const codeResult of embeddings.codeResults) {
-            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
-            // exists in the first workspaceFolder and that the file still exists.
-            const uri = vscode.Uri.joinPath(workspaceFolder.uri, codeResult.fileName)
             const range = new vscode.Range(
                 new vscode.Position(codeResult.startLine, 0),
                 new vscode.Position(codeResult.endLine, 0)
             )
-            if (!isCodyIgnoredFile(uri)) {
+            if (!isCodyIgnoredFile(codeResult.uri)) {
                 contextItems.push({
-                    uri,
+                    uri: codeResult.uri,
                     range,
                     text: codeResult.content,
                     source: 'embeddings',
@@ -1437,16 +1424,13 @@ class ContextProvider implements IContextProvider {
         }
 
         for (const textResult of embeddings.textResults) {
-            // TODO(sqs): this is broken for multi-root workspaces because it assumes that the file
-            // exists in the first workspaceFolder and that the file still exists.
-            const uri = vscode.Uri.joinPath(workspaceFolder.uri, textResult.fileName)
             const range = new vscode.Range(
                 new vscode.Position(textResult.startLine, 0),
                 new vscode.Position(textResult.endLine, 0)
             )
-            if (!isCodyIgnoredFile(uri)) {
+            if (!isCodyIgnoredFile(textResult.uri)) {
                 contextItems.push({
-                    uri,
+                    uri: textResult.uri,
                     range,
                     text: textResult.content,
                     source: 'embeddings',

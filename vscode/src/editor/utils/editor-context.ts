@@ -7,6 +7,7 @@ import * as vscode from 'vscode'
 import {
     displayPath,
     isCodyIgnoredFile,
+    isWindows,
     type ContextFile,
     type ContextFileFile,
     type ContextFileSource,
@@ -59,9 +60,11 @@ export async function getFileContextFiles(
         return []
     }
 
-    // On Windows, if the user has typed forward slashes, map them to backslashes before
-    // running the search so they match the real paths.
-    query = query.replaceAll(path.posix.sep, path.sep)
+    if (isWindows()) {
+        // On Windows, if the user has typed forward slashes, map them to backslashes before
+        // running the search so they match the real paths.
+        query = query.replaceAll('/', '\\')
+    }
 
     // Add on the relative URIs for search, so we only search the visible part
     // of the path and not the full FS path.

@@ -6,7 +6,7 @@ export { ChatClient } from './chat/chat'
 export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './chat/context-filter'
-export { CODY_IGNORE_FILENAME_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
+export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './chat/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export { Transcript } from './chat/transcript'
@@ -49,10 +49,20 @@ export type {
 } from './codebase-context/messages'
 export { defaultCodyCommandContext } from './commands'
 export type { CodyCommand, CodyCommandContext, CustomCommandType } from './commands'
-export { basename, dedupeWith, isDefined, isErrorLike, pluralize } from './common'
+export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { ProgrammingLanguage, languageFromFilename, markdownCodeBlockLanguageIDForFilename } from './common/languages'
 export { renderMarkdown } from './common/markdown'
+export { posixAndURIPaths } from './common/path'
 export { isWindows } from './common/platform'
+export {
+    assertFileURI,
+    isFileURI,
+    uriBasename,
+    uriDirname,
+    uriExtname,
+    uriParseNameAndExtension,
+    type FileURI,
+} from './common/uri'
 export type {
     AutocompleteTimeouts,
     Configuration,
@@ -73,7 +83,14 @@ export type {
     Editor,
     VsCodeCommandsController,
 } from './editor'
-export { displayPath, setDisplayPathEnvInfo, type DisplayPathEnvInfo } from './editor/displayPath'
+export {
+    displayPath,
+    displayPathBasename,
+    displayPathDirname,
+    displayPathWithoutWorkspaceFolderPrefix,
+    setDisplayPathEnvInfo,
+    type DisplayPathEnvInfo,
+} from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export { EmbeddingsDetector } from './embeddings/EmbeddingsDetector'
 export { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
@@ -93,6 +110,7 @@ export type {
     SearchPanelFile,
     SearchPanelSnippet,
 } from './local-context'
+export { logDebug, logError, setLogger } from './logger'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
@@ -150,4 +168,3 @@ export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
-export { logDebug, logError, setLogger } from './logger'

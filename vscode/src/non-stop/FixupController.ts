@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import { type ChatEventSource, type ContextFile, type ContextMessage } from '@sourcegraph/cody-shared'
+import {
+    displayPath,
+    displayPathBasename,
+    type ChatEventSource,
+    type ContextFile,
+    type ContextMessage,
+} from '@sourcegraph/cody-shared'
 
 import { type ExecuteEditArguments } from '../edit/execute'
 import { type EditIntent, type EditMode } from '../edit/types'
@@ -546,7 +552,7 @@ export class FixupController
         }
         const showChangesButton = 'Show Changes'
         const result = await vscode.window.showInformationMessage(
-            `Edit applied to ${task.fixupFile.fileName}`,
+            `Edit applied to ${displayPathBasename(task.fixupFile.uri)}`,
             showChangesButton
         )
         if (result === showChangesButton) {
@@ -942,7 +948,7 @@ export class FixupController
 
         // Prompt the user for a new instruction, and create a new fixup
         const input = await this.typingUI.getInputFromQuickPick({
-            filePath: task.fixupFile.filePath,
+            filePath: displayPath(task.fixupFile.uri),
             range: previousRange,
             initialValue: previousInstruction,
             initialSelectedContextFiles: previousUserContextFiles,

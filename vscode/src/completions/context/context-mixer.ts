@@ -106,7 +106,7 @@ export class ContextMixer implements vscode.Disposable {
         const resultsByDocument = new Map<string, { [identifier: string]: ContextSnippet[] }>()
         for (const { identifier, snippets } of results) {
             for (const snippet of snippets) {
-                const documentId = snippet.fileName
+                const documentId = snippet.uri.toString()
 
                 let document = resultsByDocument.get(documentId)
                 if (!document) {
@@ -128,7 +128,7 @@ export class ContextMixer implements vscode.Disposable {
         const fusedDocumentScores: Map<string, number> = new Map()
         for (const { identifier, snippets } of results) {
             snippets.forEach((snippet, rank) => {
-                const documentId = snippet.fileName
+                const documentId = snippet.uri.toString()
 
                 // Since every retriever can return many snippets for a given document, we need to
                 // only consider the best rank for each document.

@@ -18,7 +18,7 @@ class TestProvider implements status.ContextStatusProvider {
         return (
             this.status_ || [
                 {
-                    name: 'github.com/foo/bar',
+                    displayName: 'github.com/foo/bar',
                     providers: [
                         {
                             kind: 'embeddings',
@@ -38,13 +38,13 @@ class TestProvider implements status.ContextStatusProvider {
 describe('ContextStatusAggregator', () => {
     it('should fire status changed when providers are added and pass through simple status', async () => {
         const aggregator = new ContextStatusAggregator()
-        const promise = new Promise(resolve => {
+        const promise = new Promise<status.ContextGroup[]>(resolve => {
             aggregator.onDidChangeStatus(provider => resolve(provider.status))
         })
         aggregator.addProvider(new TestProvider())
-        expect(await promise).toEqual([
+        expect(await promise).toEqual<status.ContextGroup[]>([
             {
-                name: 'github.com/foo/bar',
+                displayName: 'github.com/foo/bar',
                 providers: [
                     {
                         kind: 'embeddings',
@@ -59,7 +59,7 @@ describe('ContextStatusAggregator', () => {
     it('should fire aggregate status from multiple providers', async () => {
         const aggregator = new ContextStatusAggregator()
         let callbackCount = 0
-        const promise = new Promise(resolve => {
+        const promise = new Promise<status.ContextGroup[]>(resolve => {
             aggregator.onDidChangeStatus(provider => {
                 callbackCount++
                 resolve(provider.status)
@@ -69,11 +69,11 @@ describe('ContextStatusAggregator', () => {
         aggregator.addProvider(
             new TestProvider([
                 {
-                    name: 'host.example/foo',
+                    displayName: 'host.example/foo',
                     providers: [{ kind: 'graph', state: 'ready' }],
                 },
                 {
-                    name: 'github.com/foo/bar',
+                    displayName: 'github.com/foo/bar',
                     providers: [
                         {
                             kind: 'embeddings',
@@ -86,9 +86,9 @@ describe('ContextStatusAggregator', () => {
                 },
             ])
         )
-        expect(await promise).toEqual([
+        expect(await promise).toEqual<status.ContextGroup[]>([
             {
-                name: 'github.com/foo/bar',
+                displayName: 'github.com/foo/bar',
                 providers: [
                     {
                         kind: 'embeddings',
@@ -105,7 +105,7 @@ describe('ContextStatusAggregator', () => {
                 ],
             },
             {
-                name: 'host.example/foo',
+                displayName: 'host.example/foo',
                 providers: [{ kind: 'graph', state: 'ready' }],
             },
         ])
@@ -120,18 +120,18 @@ describe('ContextStatusAggregator', () => {
         // Skip the first update event.
         await Promise.resolve()
         let callbackCount = 0
-        const promise = new Promise(resolve => {
+        const promise = new Promise<status.ContextGroup[]>(resolve => {
             aggregator.onDidChangeStatus(provider => {
                 callbackCount++
                 resolve(provider.status)
             })
         })
-        provider.status = [{ name: 'github.com/foo/bar', providers: [{ kind: 'graph', state: 'indexing' }] }]
+        provider.status = [{ displayName: 'github.com/foo/bar', providers: [{ kind: 'graph', state: 'indexing' }] }]
         provider.emitter.fire(provider)
 
-        expect(await promise).toEqual([
+        expect(await promise).toEqual<status.ContextGroup[]>([
             {
-                name: 'github.com/foo/bar',
+                displayName: 'github.com/foo/bar',
                 providers: [
                     {
                         kind: 'graph',

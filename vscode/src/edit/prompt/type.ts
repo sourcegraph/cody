@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 export interface LLMInteraction {
     prompt: string
     stopSequences?: string[]
@@ -11,7 +13,7 @@ export interface GetLLMInteractionOptions {
     precedingText: string
     selectedText: string
     followingText: string
-    fileName: string
+    uri: vscode.Uri
 }
 
 type LLMInteractionBuilder = (options: GetLLMInteractionOptions) => LLMInteraction

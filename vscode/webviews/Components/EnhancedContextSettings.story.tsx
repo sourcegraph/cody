@@ -94,7 +94,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                 value={{
                     groups: [
                         {
-                            name: args.name,
+                            displayName: args.name,
                             providers: [
                                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 {
@@ -133,7 +133,7 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                 value={{
                     groups: [
                         {
-                            name: '~/projects/foo',
+                            displayName: '~/projects/foo',
                             providers: [
                                 { kind: 'embeddings', type: 'local', state: 'unconsented' },
                                 { kind: 'graph', state: 'ready' },
@@ -141,7 +141,7 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                             ],
                         },
                         {
-                            name: 'gitlab.com/my/repo',
+                            displayName: 'gitlab.com/my/repo',
                             providers: [
                                 {
                                     kind: 'embeddings',
@@ -153,7 +153,7 @@ export const Smorgasbord: StoryObj<typeof EnhancedContextSettings> = {
                             ],
                         },
                         {
-                            name: 'github.com/sourcegraph/bar',
+                            displayName: 'github.com/sourcegraph/bar',
                             providers: [
                                 {
                                     kind: 'embeddings',

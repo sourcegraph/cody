@@ -1,5 +1,3 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
 import { type URI } from 'vscode-uri'
 
@@ -39,13 +37,7 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
                 continue
             }
 
-            matches.push({
-                // Use relative path to remove redundant information from the prompts and
-                // keep in sync with embeddings search results which use relative to repo root paths
-                fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
-                ...match,
-                uri,
-            })
+            matches.push({ ...match, uri })
         }
 
         matches.sort((a, b) => b.score - a.score)
@@ -63,7 +55,6 @@ export class JaccardSimilarityRetriever implements ContextRetriever {
 }
 
 interface JaccardMatchWithFilename extends JaccardMatch {
-    fileName: string
     uri: URI
 }
 

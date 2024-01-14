@@ -1,5 +1,3 @@
-import { basename, extname } from 'path'
-
 import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 import { Utils, type URI } from 'vscode-uri'
@@ -10,6 +8,8 @@ import {
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     truncateText,
+    uriBasename,
+    uriExtname,
     type ContextMessage,
 } from '@sourcegraph/cody-shared'
 
@@ -324,7 +324,7 @@ async function getCurrentTestFileContext(file: vscode.Uri, isUnitTest: boolean):
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
     // pattern to search for test files with same name
-    const searchPattern = createVSCodeTestSearchPattern(file.fsPath)
+    const searchPattern = createVSCodeTestSearchPattern(file)
     const foundFiles = await findVSCodeFiles(searchPattern, excludePattern, 5)
     const testFile = foundFiles.find(uri => isValidTestFile(uri))
     if (testFile) {
@@ -348,20 +348,20 @@ async function getCodebaseTestFilesContext(file: vscode.Uri, isUnitTest: boolean
     // exclude any files in the path with e2e or integration in the directory name
     const excludePattern = isUnitTest ? '**/*{e2e,integration,node_modules}*/**' : undefined
 
-    const testFilesPattern = createVSCodeTestSearchPattern(file.fsPath, true)
+    const testFilesPattern = createVSCodeTestSearchPattern(file, true)
     const testFilesMatches = await findVSCodeFiles(testFilesPattern, excludePattern, 5)
     const filteredTestFiles = testFilesMatches.filter(uri => isValidTestFile(uri))
 
     return getContextMessageFromFiles(filteredTestFiles)
 }
 
-function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
-    const fileExtension = extname(fsPath)
-    const fileName = basename(fsPath, fileExtension)
+function createVSCodeTestSearchPattern(file: vscode.Uri, allTestFiles?: boolean): string {
+    const fileExtension = uriExtname(file)
+    const basenameWithoutExt = uriBasename(file, fileExtension)
 
     const root = '**'
     const defaultTestFilePattern = `/*test*${fileExtension}`
-    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test,spec_${fileName},${fileName}_spec,spec.${fileName},${fileName}.spec,${fileName}Spec}${fileExtension}`
+    const currentTestFilePattern = `/*{test_${basenameWithoutExt},${basenameWithoutExt}_test,test.${basenameWithoutExt},${basenameWithoutExt}.test,${basenameWithoutExt}Test,spec_${basenameWithoutExt},${basenameWithoutExt}_spec,spec.${basenameWithoutExt},${basenameWithoutExt}.spec,${basenameWithoutExt}Spec}${fileExtension}`
 
     if (allTestFiles) {
         return `${root}${defaultTestFilePattern}`

@@ -87,7 +87,7 @@ export const buildInteraction = async ({
         task.intent,
         model,
         {
-            fileName: task.fixupFile.uri.fsPath,
+            uri: task.fixupFile.uri,
             followingText,
             precedingText,
             selectedText,

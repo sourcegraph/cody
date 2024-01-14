@@ -4,6 +4,8 @@ import * as vscode from 'vscode'
 import {
     isDotCom,
     isError,
+    isFileURI,
+    uriBasename,
     type ContextGroup,
     type ContextProvider,
     type ContextStatusProvider,
@@ -18,7 +20,7 @@ import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
 import { type CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
 
 interface CodebaseIdentifiers {
-    local: string
+    localFolder: vscode.Uri
     remote?: string
     remoteRepoId?: string
     setting?: string
@@ -98,7 +100,8 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
         return [
             {
-                name: codebase.local,
+                dir: codebase.localFolder,
+                displayName: uriBasename(codebase.localFolder),
                 providers,
             },
         ]
@@ -169,7 +172,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         const config = getConfiguration()
         if (
             this._currentCodebase !== undefined &&
-            workspaceRoot?.fsPath === this._currentCodebase?.local &&
+            workspaceRoot?.toString() === this._currentCodebase?.localFolder &&
             config.codebase === this._currentCodebase?.setting &&
             this._currentCodebase?.remoteRepoId
         ) {
@@ -179,7 +182,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
         let newCodebase: CodebaseIdentifiers | null = null
         if (workspaceRoot) {
-            newCodebase = { local: workspaceRoot.fsPath, setting: config.codebase }
+            newCodebase = { localFolder: workspaceRoot, setting: config.codebase }
             const currentFile = getEditor()?.active?.document?.uri
             // Get codebase from config or fallback to getting codebase name from current file URL
             // Always use the codebase from config as this is manually set by the user
@@ -202,9 +205,10 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         if (!this.symf) {
             return false
         }
-        const newSymfStatus = this._currentCodebase?.local
-            ? await this.symf.getIndexStatus(this._currentCodebase.local)
-            : undefined
+        const newSymfStatus =
+            this._currentCodebase?.localFolder && isFileURI(this._currentCodebase.localFolder)
+                ? await this.symf.getIndexStatus(this._currentCodebase.localFolder)
+                : undefined
         const didSymfStatusChange = this.symfIndexStatus !== newSymfStatus
         this.symfIndexStatus = newSymfStatus
         return didSymfStatusChange

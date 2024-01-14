@@ -60,15 +60,15 @@ const ContextGroupComponent: React.FunctionComponent<{ group: ContextGroup; allG
     // if there's a single group, we want the group name's basename
     let groupName
     if (allGroups.length === 1) {
-        const matches = group.name.match(/.+[/\\](.+?)$/)
-        groupName = matches ? matches[1] : group.name
+        const matches = group.displayName.match(/.+[/\\](.+?)$/)
+        groupName = matches ? matches[1] : group.displayName
     } else {
-        groupName = group.name
+        groupName = group.displayName
     }
 
     return (
         <>
-            <dt title={group.name} className={styles.lineBreakAll}>
+            <dt title={group.displayName} className={styles.lineBreakAll}>
                 <i className="codicon codicon-folder" /> {groupName}
             </dt>
             <dd>
@@ -299,7 +299,11 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                         </p>
                         <dl className={styles.foldersList}>
                             {context.groups.map(group => (
-                                <ContextGroupComponent key={group.name} group={group} allGroups={context.groups} />
+                                <ContextGroupComponent
+                                    key={group.displayName}
+                                    group={group}
+                                    allGroups={context.groups}
+                                />
                             ))}
                         </dl>
                     </div>

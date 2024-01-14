@@ -1,3 +1,5 @@
+import { displayPath } from '@sourcegraph/cody-shared'
+
 import { PROMPT_TOPICS } from './constants'
 import { type EditLLMInteraction } from './type'
 
@@ -12,7 +14,7 @@ const EDIT_PROMPT = `
 - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
 - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
 
-This is part of the file: {fileName}
+This is part of the file: {filePath}
 
 The user has the following code in their selection:
 <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
@@ -34,7 +36,7 @@ const ADD_PROMPT = `
 - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
 - Do not provide any additional commentary about the code you added. Only respond with the generated code.
 
-The user is currently in the file: {fileName}
+The user is currently in the file: {filePath}
 
 Provide your generated code using the following instructions:
 <${PROMPT_TOPICS.INSTRUCTIONS}>
@@ -53,7 +55,7 @@ const FIX_PROMPT = `
 - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
 - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
 
-This is part of the file: {fileName}
+This is part of the file: {filePath}
 
 The user has the following code in their selection:
 <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
@@ -76,7 +78,7 @@ const NEW_FILE_PROMPT = `
 - Only enclose generated code in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags, with the file name for the generated code enclosed between the <${PROMPT_TOPICS.FILENAME}></${PROMPT_TOPICS.FILENAME}> tags.
 - Exclude any additional comment from the generated code.
 
-This is part of the file: {fileName}
+This is part of the file: {filePath}
 
 The user has the following code in their selection:
 <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
@@ -96,32 +98,32 @@ const SHARED_PARAMETERS = {
 }
 
 export const claude: EditLLMInteraction = {
-    getEdit({ instruction, selectedText, fileName }) {
+    getEdit({ instruction, selectedText, uri }) {
         return {
             ...SHARED_PARAMETERS,
             prompt: EDIT_PROMPT.replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
-                .replace('{fileName}', fileName),
+                .replace('{filePath}', displayPath(uri)),
         }
     },
-    getDoc({ instruction, selectedText, fileName }) {
+    getDoc({ instruction, selectedText, uri }) {
         return {
             ...SHARED_PARAMETERS,
             // TODO: Consider using a different prompt for the `doc` intent
             prompt: EDIT_PROMPT.replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
-                .replace('{fileName}', fileName),
+                .replace('{filePath}', displayPath(uri)),
         }
     },
-    getFix({ instruction, selectedText, fileName }) {
+    getFix({ instruction, selectedText, uri }) {
         return {
             ...SHARED_PARAMETERS,
             prompt: FIX_PROMPT.replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
-                .replace('{fileName}', fileName),
+                .replace('{filePath}', displayPath(uri)),
         }
     },
-    getAdd({ instruction, precedingText, fileName }) {
+    getAdd({ instruction, precedingText, uri }) {
         let assistantPreamble = ''
 
         if (precedingText) {
@@ -130,17 +132,17 @@ export const claude: EditLLMInteraction = {
 
         return {
             ...SHARED_PARAMETERS,
-            prompt: ADD_PROMPT.replace('{instruction}', instruction).replace('{fileName}', fileName),
+            prompt: ADD_PROMPT.replace('{instruction}', instruction).replace('{filePath}', displayPath(uri)),
             assistantText: `${assistantPreamble}${RESPONSE_PREFIX}`,
         }
     },
-    getNew({ instruction, selectedText, fileName }) {
+    getNew({ instruction, selectedText, uri }) {
         // NOTE: Works better with the prompt for "Edit" than "Add"
         return {
             ...SHARED_PARAMETERS,
             prompt: NEW_FILE_PROMPT.replace('{instruction}', instruction)
                 .replace('{selectedText}', selectedText)
-                .replace('{fileName}', fileName),
+                .replace('{filePath}', displayPath(uri)),
         }
     },
 }

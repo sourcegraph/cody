@@ -1,5 +1,8 @@
 // @ts-check
 
+const RESTRICT_PATH_IMPORT_MESSAGE =
+  "Use URIs instead of file system paths, and use the following helpers from @sourcegraph/cody-shared: (1) for displaying paths to the user: displayPath, displayPathDirname, displayPathBasename; (2) for manipulating URI paths: uriDirname, uriBasename, uriExtname. If you are writing code that ONLY runs in Node, import from 'node:path'."
+
 /** @type {import('eslint').Linter.Config} */
 const config = {
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
@@ -72,6 +75,23 @@ const config = {
     ],
   },
   overrides: [
+    {
+      // Apply this rule to a subset of files so we can gradually roll it out.
+      files: ['shared/**/*.ts', 'vscode/src/**/*.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              { name: 'path', message: RESTRICT_PATH_IMPORT_MESSAGE },
+              { name: 'path/posix', message: RESTRICT_PATH_IMPORT_MESSAGE },
+              { name: 'path/win32', message: RESTRICT_PATH_IMPORT_MESSAGE },
+              { name: 'path-browserify', message: RESTRICT_PATH_IMPORT_MESSAGE },
+            ],
+          },
+        ],
+      },
+    },
     {
       files: ['*.d.ts'],
       rules: {

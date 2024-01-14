@@ -190,10 +190,9 @@ function groupResultsByFile(
 ): { file: ContextFile & Required<Pick<ContextFile, 'uri'>>; results: string[] }[] {
     const originalFileOrder: (ContextFile & Required<Pick<ContextFile, 'uri'>>)[] = []
     for (const result of results) {
-        const resultUri = URI.file(result.fileName)
-        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.uri.toString() === resultUri.toString())) {
+        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.uri.toString() === result.uri.toString())) {
             originalFileOrder.push({
-                uri: resultUri,
+                uri: result.uri,
                 repoName: result.repoName,
                 revision: result.revision,
                 range: createContextFileRange(result),
@@ -205,12 +204,11 @@ function groupResultsByFile(
 
     const resultsGroupedByFile = new Map<string /* resultUri.toString() */, EmbeddingsSearchResult[]>()
     for (const result of results) {
-        const resultUri = URI.file(result.fileName)
-        const results = resultsGroupedByFile.get(resultUri.toString())
+        const results = resultsGroupedByFile.get(result.uri.toString())
         if (results === undefined) {
-            resultsGroupedByFile.set(resultUri.toString(), [result])
+            resultsGroupedByFile.set(result.uri.toString(), [result])
         } else {
-            resultsGroupedByFile.set(resultUri.toString(), results.concat([result]))
+            resultsGroupedByFile.set(result.uri.toString(), results.concat([result]))
         }
     }
 
@@ -239,8 +237,8 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
 }
 
 function resultsToMessages(results: ContextResult[]): ContextMessage[] {
-    return results.flatMap(({ content, fileName, uri, repoName, revision }) => {
-        const messageText = populateCodeContextTemplate(content, uri ?? URI.file(fileName), repoName)
+    return results.flatMap(({ content, uri, repoName, revision }) => {
+        const messageText = populateCodeContextTemplate(content, uri, repoName)
         return getContextMessageWithResponse(messageText, { type: 'file', uri, repoName, revision })
     })
 }

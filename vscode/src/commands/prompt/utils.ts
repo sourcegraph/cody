@@ -1,6 +1,6 @@
-import path from 'path'
-
 import { type URI } from 'vscode-uri'
+
+import { uriBasename, uriExtname } from '@sourcegraph/cody-shared'
 
 /**
  * Extracts the test type from the given text.
@@ -40,7 +40,7 @@ export function toSlashCommand(command: string): string {
  * Also returns false for any files in node_modules directory.
  */
 export function isValidTestFile(uri: URI): boolean {
-    const fileNameWithoutExt = path.posix.basename(uri.path, path.posix.extname(uri.path))
+    const fileNameWithoutExt = uriBasename(uri, uriExtname(uri))
 
     const suffixTest = /([._-](test|spec))|Test|Spec$/
 

@@ -122,13 +122,13 @@ export class ContextStatusAggregator implements vscode.Disposable, ContextStatus
 
             // Collect context groups by name
             for (const group of status) {
-                if (group.name in groupBy) {
+                if (group.displayName in groupBy) {
                     // Merge the items in the group.
-                    groupBy[group.name].providers.push(...group.providers)
+                    groupBy[group.displayName].providers.push(...group.providers)
                 } else {
                     // Create a new group for the merged result.
-                    groupBy[group.name] = {
-                        name: group.name,
+                    groupBy[group.displayName] = {
+                        displayName: group.displayName,
                         providers: [...group.providers],
                     }
                 }

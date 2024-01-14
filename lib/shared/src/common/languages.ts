@@ -1,6 +1,6 @@
-import path from 'path'
-
 import { type URI } from 'vscode-uri'
+
+import { uriExtname } from './uri'
 
 /**
  * Programming languages that we treat specially. Add to this (and {@link languageFromFilename} as
@@ -51,8 +51,8 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
  * For languages that we want to programmatically treat specially, check the return value against
  * the {@link ProgrammingLanguage} enum instead of strings like 'java'.
  */
-export function languageFromFilename(file: URI | string): string /* | ProgrammingLanguage */ {
-    const extWithoutDot = path.extname(typeof file === 'string' ? file : file.path).slice(1)
+export function languageFromFilename(file: URI): string /* | ProgrammingLanguage */ {
+    const extWithoutDot = uriExtname(file).slice(1)
     return EXTENSION_TO_LANGUAGE[extWithoutDot] ?? extWithoutDot
 }
 
@@ -69,6 +69,6 @@ export function languageFromFilename(file: URI | string): string /* | Programmin
  *
  * There is no standard ID convention for Markdown code blocks, so we have to do some guesswork.
  */
-export function markdownCodeBlockLanguageIDForFilename(file: URI | string): string {
+export function markdownCodeBlockLanguageIDForFilename(file: URI): string {
     return languageFromFilename(file).toLowerCase()
 }

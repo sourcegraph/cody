@@ -39,7 +39,10 @@ export const getContextForCommand = async (editor: VSCodeEditor, command: CodyCo
     }
     if (contextConfig.directoryPath) {
         contextMessages.push(
-            ...(await editorContext.getEditorDirContext(contextConfig.directoryPath, selection?.fileUri))
+            ...(await editorContext.getEditorDirContext(
+                vscode.Uri.file(contextConfig.directoryPath),
+                selection?.fileUri
+            ))
         )
     }
     if (contextConfig.currentDir) {

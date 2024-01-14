@@ -1,8 +1,8 @@
-import assert from 'assert'
-import { type ChildProcessWithoutNullStreams } from 'child_process'
-import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
-import { dirname } from 'path'
-import { Readable, Writable } from 'stream'
+import assert from 'node:assert'
+import { type ChildProcessWithoutNullStreams } from 'node:child_process'
+import { appendFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { Readable, Writable } from 'node:stream'
 
 import * as vscode from 'vscode'
 
