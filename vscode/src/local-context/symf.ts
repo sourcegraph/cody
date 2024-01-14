@@ -1,6 +1,5 @@
 import { execFile as _execFile, spawn } from 'node:child_process'
-import fs from 'node:fs'
-import { rename, rm, writeFile } from 'node:fs/promises'
+import fs, { access, rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -34,31 +33,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         private completionsClient: SourcegraphCompletionsClient
     ) {
         const indexRoot = path.join(context.globalStorageUri.fsPath, 'symf', 'indexroot')
-        void SymfRunner.removeOldIndexRoot(indexRoot)
         this.indexRoot = indexRoot
-    }
-
-    // TODO(beyang): remove after GA
-    private static removeOldIndexRoot(newIndexRoot: string): void {
-        const oldIndexRoot = path.join(os.homedir(), '.cody-symf')
-        try {
-            fs.stat(oldIndexRoot, (oldIndexRootStatErr, stats) => {
-                if (oldIndexRootStatErr) {
-                    return
-                }
-                fs.stat(newIndexRoot, newIndexRootStatErr => {
-                    if (!newIndexRootStatErr) {
-                        return
-                    }
-                    if (!stats.isDirectory()) {
-                        return
-                    }
-                    void rm(oldIndexRoot, { recursive: true, force: true })
-                })
-            })
-        } catch {
-            logDebug('SymfRunner.removeOldIndexRoot', 'Failed to remove old index root', oldIndexRoot)
-        }
     }
 
     public dispose(): void {
@@ -423,7 +398,7 @@ class IndexStatus implements vscode.Disposable {
 
 async function fileExists(filePath: string): Promise<boolean> {
     try {
-        await fs.promises.access(filePath, fs.constants.F_OK)
+        await access(filePath, fs.constants.F_OK)
         return true
     } catch {
         return false
