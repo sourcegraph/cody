@@ -7,14 +7,18 @@
                 "scripts/*.ts",
                 "test/integration/*.ts",
                 "webviews/index.tsx",
-                "../agent/**/*.ts"
+                "webviews/search.tsx"
             ],
-            "ignore": ["src/testutils/uri.ts"]
+            "ignore": ["src/tree-sitter/query-tests/test-data/**"],
+            "ignoreBinaries": ["code", "code-insiders"],
+            "ignoreDependencies": ["@vscode/vsce", "ovsx", "path-browserify"]
         },
         "agent": {
-            "ignore": ["**"]
+            "vitest": {
+                "entry": ["**/__tests__/**/*.ts"]
+            }
         }
     },
     "ignore": ["**/__mocks__/**", "**/mocks.*"],
-    "exclude": ["classMembers", "enumMembers"]
+    "exclude": ["classMembers"]
 }
