@@ -375,44 +375,6 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.fixup.open",
-        "category": "Cody",
-        "title": "Go to Fixup",
-        "icon": "$(file-code)"
-      },
-      {
-        "command": "cody.fixup.accept",
-        "category": "Cody",
-        "title": "Accept fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check)"
-      },
-      {
-        "command": "cody.fixup.accept-all",
-        "category": "Cody",
-        "title": "Accept all fixups",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check-all)"
-      },
-      {
-        "command": "cody.fixup.accept-by-file",
-        "category": "Cody",
-        "title": "Accept fixups in the selected directory",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check-all)"
-      },
-      {
-        "command": "cody.fixup.diff",
-        "category": "Cody",
-        "title": "Show diff for fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(diff)"
-      },
-      {
         "command": "cody.action.commands.menu",
         "category": "Cody",
         "title": "Commands",
@@ -590,26 +552,6 @@
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
-        },
-        {
-          "command": "cody.fixup.accept",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.accept-all",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.accept-by-file",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.diff",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.open",
-          "when": "false"
         },
         {
           "command": "cody.guardrails.debug",
