@@ -19,7 +19,7 @@
     "build": "tsc --build",
     "watch": "tsc --build --watch",
     "lint": "pnpm run -s lint:js && pnpm run -s lint:css",
-    "lint:js": "NODE_OPTIONS=--max-old-space-size=4096 eslint --quiet --max-warnings 0 --cache '**/*.[tj]s?(x)'",
+    "lint:js": "NODE_OPTIONS=--max-old-space-size=4096 eslint --max-warnings 0 --cache '**/*.[tj]s?(x)'",
     "lint:css": "stylelint --quiet --cache '**/*.css'",
     "format": "prettier '**/{*.{js?(on),ts?(x),md,scss},.*.js?(on)}' --list-different --config .prettierrc.js --write",
     "format:check": "prettier '**/{*.{js?(on),ts?(x),md,scss},.*.js?(on)}' --config .prettierrc.js --check --write=false",
