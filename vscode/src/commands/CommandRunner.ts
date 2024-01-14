@@ -96,22 +96,6 @@ export class CommandRunner implements vscode.Disposable {
     }
 
     /**
-     * codyCommand getter returns command CodyCommand if not a fixup request,
-     * otherwise returns null. Updates context output if needed.
-     */
-    public get codyCommand(): CodyCommand | null {
-        if (this.isFixupRequest) {
-            return null
-        }
-        const context = this.command.context
-        if (context) {
-            context.output = this.contextOutput
-            this.command.context = context
-        }
-        return this.command
-    }
-
-    /**
      * runShell method sets contextOutput and updates command context.
      */
     public async runShell(output: Promise<string | undefined>): Promise<void> {

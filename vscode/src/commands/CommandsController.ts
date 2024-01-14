@@ -9,7 +9,6 @@ import { getEditor } from '../editor/active-editor'
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
-import { type MyPrompts } from '.'
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -51,14 +50,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
-    }
-
-    public isCommand(text: string): boolean {
-        const commandSplit = text.split(' ')
-        // The unique key for the command. e.g. /test
-        const commandKey = commandSplit.shift() || text
-
-        return !!this.default.get(commandKey)
     }
 
     public async findCommand(
@@ -133,15 +124,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public async getAllCommands(keepSperator = false): Promise<[string, CodyCommand][]> {
         await this.refresh()
         return this.default.getGroupedCommands(keepSperator)
-    }
-
-    /**
-     * Gets the custom prompt configuration by refreshing the store.
-     * @returns The custom prompt configuration object containing the prompt map, premade text, and starter text.
-     */
-    public async getCustomConfig(): Promise<MyPrompts> {
-        const myPromptsConfig = await this.custom.refresh()
-        return myPromptsConfig
     }
 
     /**

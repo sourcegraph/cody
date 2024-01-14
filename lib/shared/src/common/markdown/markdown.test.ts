@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from 'vitest'
 
-import { escapeMarkdown, registerHighlightContributions, renderMarkdown } from '.'
+import { registerHighlightContributions, renderMarkdown } from '.'
 
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.
 
@@ -125,44 +125,5 @@ describe('renderMarkdown', () => {
     test('forbids data URI links', () => {
         const input = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
         expect(renderMarkdown(input)).toBe('<p><a download="">D</a>\n<a>D2</a></p>')
-    })
-})
-
-describe('escapeMarkdown', () => {
-    it('handles complicated document', () => {
-        expect(escapeMarkdown(complicatedMarkdown)).toBe(`\
-\\# This is a heading
-
-\\#\\# This is a subheading
-
-Some text
-in the same paragraph
-with a \\[link\\]\\(\\.\\/destination\\)\\.
-
-\\\`\\\`\\\`ts
-const someTypeScriptCode \\= funcCall\\(\\)
-\\\`\\\`\\\`
-
-\\- bullet list item 1
-\\- bullet list item 2
-
-1\\. item 1
-  \\\`\\\`\\\`ts
-  const codeInsideTheBulletPoint \\= \\"string\\"
-  \\\`\\\`\\\`
-1\\. item 2
-
-&gt; quoted
-&gt; text
-
-\\| col 1 \\| col 2 \\|
-\\|\\-\\-\\-\\-\\-\\-\\-\\|\\-\\-\\-\\-\\-\\-\\-\\|
-\\| A     \\| B     \\|
-
-\\!\\[image alt text\\]\\(\\.\\/src\\.jpg\\)
-
-&lt;b&gt;inline html&lt;\\/b&gt;
-
-Escaped \\\\\\* markdown and escaped html code \\\\\\&gt\\\\\\;`)
     })
 })

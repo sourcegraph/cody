@@ -1,7 +1,5 @@
 import { type CodyCommand } from '@sourcegraph/cody-shared/src/commands'
 
-import { logDebug } from '../log'
-
 import { getDefaultCommandsMap } from '.'
 import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
 
@@ -55,11 +53,5 @@ export class PromptsProvider {
         const combinedMap = new Map([...this.defaultPromptsMap])
         combinedMap.set('separator', { prompt: 'separator', slashCommand: '' })
         this.allCommands = new Map([...customCommands, ...combinedMap].sort())
-    }
-
-    // dispose and reset the controller and builder
-    public dispose(): void {
-        this.allCommands = new Map()
-        logDebug('CommandsController:dispose', 'disposed')
     }
 }

@@ -516,13 +516,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    public triggerNotice(notice: { key: string }): void {
-        void this.postMessage({
-            type: 'notice',
-            notice,
-        })
-    }
-
     private async postChatModels(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus?.isLoggedIn) {
@@ -954,10 +947,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 },
             })
         }
-    }
-
-    public setConfiguration(newConfig: Config): void {
-        this.config = newConfig
     }
 
     public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {

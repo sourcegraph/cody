@@ -265,10 +265,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         return Promise.resolve([new SourcegraphGraphQLAPIClient(config)])
     }
 
-    public localEmbeddingsIndexRepository(): void {
-        void this.localEmbeddings?.index()
-    }
-
     // ContextStatusProvider implementation
     private contextStatusChangeEmitter = new vscode.EventEmitter<ContextStatusProvider>()
 

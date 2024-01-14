@@ -375,44 +375,6 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.fixup.open",
-        "category": "Cody",
-        "title": "Go to Fixup",
-        "icon": "$(file-code)"
-      },
-      {
-        "command": "cody.fixup.accept",
-        "category": "Cody",
-        "title": "Accept fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check)"
-      },
-      {
-        "command": "cody.fixup.accept-all",
-        "category": "Cody",
-        "title": "Accept all fixups",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check-all)"
-      },
-      {
-        "command": "cody.fixup.accept-by-file",
-        "category": "Cody",
-        "title": "Accept fixups in the selected directory",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(check-all)"
-      },
-      {
-        "command": "cody.fixup.diff",
-        "category": "Cody",
-        "title": "Show diff for fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "!cody.fixup.view.isEmpty",
-        "icon": "$(diff)"
-      },
-      {
         "command": "cody.action.commands.menu",
         "category": "Cody",
         "title": "Commands",
@@ -590,26 +552,6 @@
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
-        },
-        {
-          "command": "cody.fixup.accept",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.accept-all",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.accept-by-file",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.diff",
-          "when": "false"
-        },
-        {
-          "command": "cody.fixup.open",
-          "when": "false"
         },
         {
           "command": "cody.guardrails.debug",
@@ -1098,7 +1040,6 @@
     "@playwright/test": "1.39.0",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
-    "@pollyjs/node-server": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@types/axios": "^0.14.0",
@@ -1126,7 +1067,6 @@
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
-    "node-server": "link:@types/pollyjs/node-server",
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
     "path-browserify": "^1.0.1",

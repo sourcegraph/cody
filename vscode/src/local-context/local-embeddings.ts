@@ -30,22 +30,19 @@ export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEn
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
 
-function getIndexLibraryPaths(): { indexPath: string; appIndexPath?: string } {
+function getIndexLibraryPath(): { indexPath: string } {
     switch (process.platform) {
         case 'darwin':
             return {
                 indexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`,
-                appIndexPath: `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/blobstore/buckets/embeddings`,
             }
         case 'linux':
             return {
                 indexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`,
-                appIndexPath: `${process.env.HOME}/.cache/com.sourcegraph.cody/blobstore/buckets/embeddings`,
             }
         case 'win32':
             return {
                 indexPath: `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`,
-                // Note, there was no Cody App on Windows, so we do not search for App indexes.
             }
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
@@ -204,7 +201,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, Contex
         })
 
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-        const paths = getIndexLibraryPaths()
+        const paths = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
             logDebug(

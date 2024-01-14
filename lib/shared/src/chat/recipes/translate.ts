@@ -10,8 +10,6 @@ export class TranslateToLanguage implements Recipe {
     public id: RecipeID = 'translate-to-language'
     public title = 'Translate Code to Language'
 
-    public static options = languageNames
-
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const source = this.id
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

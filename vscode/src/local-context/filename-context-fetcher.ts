@@ -7,7 +7,10 @@ import * as vscode from 'vscode'
 import { type ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { type ContextFileSource, type ContextFileType } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { type Editor } from '@sourcegraph/cody-shared/src/editor'
-import { type ContextResult } from '@sourcegraph/cody-shared/src/local-context'
+import {
+    type ContextResult,
+    type FilenameContextFetcher as IFilenameContextFetcher,
+} from '@sourcegraph/cody-shared/src/local-context'
 
 import { logDebug } from '../log'
 
@@ -15,7 +18,7 @@ import { logDebug } from '../log'
  * A local context fetcher that uses a LLM to generate filename fragments, which are then used to
  * find files that are relevant based on their path or name.
  */
-export class FilenameContextFetcher {
+export class FilenameContextFetcher implements IFilenameContextFetcher {
     constructor(
         private rgPath: string,
         private editor: Editor,

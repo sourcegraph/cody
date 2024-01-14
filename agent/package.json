@@ -23,11 +23,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
-    "@pollyjs/node-server": "^6.0.6",
-    "@pollyjs/persister": "^6.0.6",
-    "@pollyjs/persister-fs": "^6.0.6",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "commander": "^11.1.0",
@@ -35,25 +31,17 @@
     "dedent": "^0.7.0",
     "env-paths": "^3.0.0",
     "fast-myers-diff": "^3.1.0",
-    "fs-extra": "^11.2.0",
     "minimatch": "^9.0.3",
-    "pako": "^2.1.0",
     "pretty-ms": "^8.0.0",
     "uuid": "^9.0.0",
-    "vscode-uri": "^3.0.7",
-    "yaml": "^2.3.4"
+    "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
     "@types/dedent": "^0.7.0",
-    "@types/fs-extra": "^11.0.4",
-    "@types/google-protobuf": "^3.15.10",
     "@types/minimatch": "^5.1.2",
-    "@types/pako": "^2.0.3",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.80.0",
-    "@types/yaml": "^1.9.7",
     "esbuild": "^0.18.19",
-    "node-server": "link:@types/pollyjs/node-server",
     "parse-git-diff": "^0.0.14",
     "pkg": "^5.8.1",
     "rimraf": "^5.0.5"

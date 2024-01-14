@@ -1,7 +1,5 @@
 import path from 'path'
 
-import { type ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-
 /**
  * Extracts the test type from the given text.
  * @param text - The text to extract the test type from.
@@ -29,26 +27,6 @@ export function fromSlashCommand(slashCommand: string): string {
 export function toSlashCommand(command: string): string {
     // ensure there is only one leading forward slash
     return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
-}
-
-/**
- * Creates an object containing the start line and line range
- * of the given editor selection.
- * @param selection - The active text editor selection
- * @returns An object with the following properties:
- * - range: The line range of the selection as a string, e.g. "5-10"
- * - start: The start line of the selection as a string
- * If no selection, range and start will be empty strings.
- */
-export function createSelectionDisplayText(selection: ActiveTextEditorSelection): {
-    range: string
-    start: string
-} {
-    const start = selection.selectionRange ? `${selection.selectionRange.start.line + 1}` : ''
-    const range = selection.selectionRange
-        ? `${selection.selectionRange.start.line + 1}-${selection.selectionRange.end.line + 1}`
-        : start
-    return { range, start }
 }
 
 /**

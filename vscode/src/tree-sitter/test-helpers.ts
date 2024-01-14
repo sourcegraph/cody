@@ -2,13 +2,11 @@ import path from 'path'
 
 import { type default as Parser, type QueryCapture, type QueryMatch } from 'web-tree-sitter'
 
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
-
 import { SupportedLanguage } from './grammars'
 import { createParser } from './parser'
 import { getDocumentQuerySDK, type DocumentQuerySDK } from './query-sdk'
 
-const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')
+const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
 
 /**
  * Should be used in tests only.

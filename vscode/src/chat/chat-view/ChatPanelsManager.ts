@@ -68,6 +68,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.treeView = vscode.window.createTreeView('cody.chat.tree.view', {
             treeDataProvider: this.treeViewProvider,
         })
+        this.disposables.push(this.treeViewProvider)
+        this.disposables.push(this.treeView)
 
         // Register Tree View
         this.disposables.push(
@@ -278,11 +280,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             console.error(error, 'errored restoring panel')
             return undefined
         }
-    }
-
-    public async triggerNotice(notice: { key: string }): Promise<void> {
-        const chatProvider = await this.getChatPanel()
-        chatProvider.triggerNotice(notice)
     }
 
     private disposeProvider(chatID: string): void {

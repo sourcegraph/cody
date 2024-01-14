@@ -35,7 +35,6 @@ interface ContextSearchOptions {
 }
 
 export class CodebaseContext {
-    private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'experimentalLocalSymbols'>,
         private codebase: string | undefined,
@@ -48,10 +47,6 @@ export class CodebaseContext {
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
-
-    public getCodebase(): string | undefined {
-        return this.codebase
-    }
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
@@ -87,18 +82,6 @@ export class CodebaseContext {
                     : this.getLocalContextMessages(query, options)
             }
         }
-    }
-
-    public checkEmbeddingsConnection(): boolean {
-        return !!this.embeddings
-    }
-
-    public get embeddingsEndpoint(): string | undefined {
-        return this.embeddings?.endpoint
-    }
-
-    public getEmbeddingSearchErrors(): string {
-        return this.embeddingResultsError.trim()
     }
 
     public async getSearchResults(
@@ -150,10 +133,8 @@ export class CodebaseContext {
             )
             if (isError(embeddingsSearchResults)) {
                 console.error('Error retrieving embeddings:', embeddingsSearchResults)
-                this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
                 return []
             }
-            this.embeddingResultsError = ''
             return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
         }
         return []
@@ -219,12 +200,9 @@ export class CodebaseContext {
             const rerankedResults = await (this.rerank ? this.rerank(query, filenameResults) : filenameResults)
             const messages = resultsToMessages(rerankedResults)
 
-            this.embeddingResultsError = ''
-
             return messages
         } catch (error) {
             console.error('Error retrieving local context:', error)
-            this.embeddingResultsError = `Error retrieving local context: ${error}`
             return []
         }
     }
