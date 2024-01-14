@@ -1,7 +1,7 @@
 import { type ContextFile, type ContextMessage, type PreciseContext } from '../../codebase-context/messages'
 import { isCodyIgnoredFile } from '../context-filter'
 
-import { type ChatMessage, type ChatMetadata, type InteractionMessage } from './messages'
+import { type ChatMessage, type InteractionMessage } from './messages'
 
 export interface InteractionJSON {
     humanMessage: InteractionMessage
@@ -52,19 +52,12 @@ export class Interaction {
         return newMessages
     }
 
-    private metadata?: ChatMetadata
-    public setMetadata(metadata: ChatMetadata): void {
-        this.metadata = metadata
-        this.humanMessage.metadata = this.metadata
-        this.assistantMessage.metadata = this.metadata
-    }
-
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
-        this.assistantMessage = { ...assistantMessage, metadata: this.metadata }
+        this.assistantMessage = { ...assistantMessage }
     }
 
     public getHumanMessage(): InteractionMessage {
@@ -97,21 +90,5 @@ export class Interaction {
                 preciseContext: this.usedPreciseContext,
             },
         ]
-    }
-
-    public async toChatPromise(): Promise<ChatMessage[]> {
-        await this.fullContext
-        return this.toChat()
-    }
-
-    public async toJSON(): Promise<InteractionJSON> {
-        return {
-            humanMessage: this.humanMessage,
-            assistantMessage: this.assistantMessage,
-            fullContext: await this.fullContext,
-            usedContextFiles: this.usedContextFiles,
-            usedPreciseContext: this.usedPreciseContext,
-            timestamp: this.timestamp,
-        }
     }
 }

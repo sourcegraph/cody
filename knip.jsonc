@@ -9,16 +9,17 @@
                 "webviews/index.tsx",
                 "webviews/search.tsx"
             ],
-            "ignore": ["src/tree-sitter/query-tests/test-data/**"],
+            "ignore": ["src/tree-sitter/query-tests/test-data/**", "src/jsonrpc/agent-protocol.ts"],
             "ignoreBinaries": ["code", "code-insiders"],
-            "ignoreDependencies": ["@vscode/vsce", "ovsx", "path-browserify"]
+            "ignoreDependencies": ["@vscode/vsce", "ovsx", "path-browserify", "@vscode/codicons"]
         },
         "agent": {
             "vitest": {
                 "entry": ["**/__tests__/**/*.ts"]
-            }
+            },
+            "ignore": ["src/vscode-shim.ts"]
         }
     },
     "ignore": ["**/__mocks__/**", "**/mocks.*"],
-    "exclude": ["classMembers"]
+    "exclude": []
 }

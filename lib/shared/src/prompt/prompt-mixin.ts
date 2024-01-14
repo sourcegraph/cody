@@ -16,13 +16,6 @@ export class PromptMixin {
     private static defaultMixin: PromptMixin = new PromptMixin(CODY_INTRO_PROMPT)
 
     /**
-     * Adds a prompt mixin to the global set.
-     */
-    public static add(mixin: PromptMixin): void {
-        this.mixins.push(mixin)
-    }
-
-    /**
      * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
      * and any new change could replace the old one.
      */

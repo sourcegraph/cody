@@ -29,10 +29,6 @@ export class VSCodeEditor implements Editor<CommandsController> {
         new EditorCodeLenses()
     }
 
-    public get fileName(): string {
-        return getEditor().active?.document?.fileName ?? ''
-    }
-
     /**
      * @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead
     /** NOTE DO NOT UES - this does not work with chat webview panel

@@ -222,11 +222,4 @@ export class BotResponseMultiplexer {
         }
         return sub.onResponse(content)
     }
-
-    /** Produces a prompt to describe the response format to the bot. */
-    public prompt(): string {
-        return `Enclose each part of the response in one of the relevant tags: ${[...this.subs_.keys()]
-            .map(topic => `<${topic}>`)
-            .join(', ')}:\n\n`
-    }
 }

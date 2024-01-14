@@ -697,10 +697,6 @@ export class FixupController
         this.tasks.delete(task.id)
     }
 
-    public getTasks(): FixupTask[] {
-        return Array.from(this.tasks.values())
-    }
-
     public async didReceiveFixupInsertion(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
